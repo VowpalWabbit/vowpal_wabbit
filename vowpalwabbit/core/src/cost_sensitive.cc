@@ -7,6 +7,7 @@
 #include "vw/common/string_view.h"
 #include "vw/common/text_utils.h"
 #include "vw/common/vw_exception.h"
+#include "vw/core/action_score.h"
 #include "vw/core/example.h"
 #include "vw/core/global_data.h"
 #include "vw/core/model_utils.h"
@@ -110,7 +111,7 @@ void parse_label(VW::cs_label& ld, VW::label_parser_reuse_mem& reuse_mem, const 
     {
       f.class_index = ldict
           ? ldict->get(reuse_mem.tokens[0], logger)
-          : static_cast<uint32_t>(hashstring(reuse_mem.tokens[0].data(), reuse_mem.tokens[0].length(), 0));
+          : static_cast<uint32_t>(VW::details::hashstring(reuse_mem.tokens[0].data(), reuse_mem.tokens[0].length(), 0));
       if (reuse_mem.tokens.size() == 1 && f.x >= 0)
       {  // test examples are specified just by un-valued class #s
         f.x = FLT_MAX;
@@ -123,6 +124,48 @@ void parse_label(VW::cs_label& ld, VW::label_parser_reuse_mem& reuse_mem, const 
   }
 }
 }  // namespace
+
+void VW::details::print_cs_update_multiclass(VW::workspace& all, bool is_test, size_t num_features, uint32_t prediction)
+{
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  {
+    std::string label_buf;
+    if (is_test) { label_buf = "unknown"; }
+    else { label_buf = "known"; }
+
+    if (all.sd->ldict)
+    {
+      std::ostringstream pred_buf;
+      pred_buf << all.sd->ldict->get(prediction);
+
+      all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(),
+          num_features, all.progress_add, all.progress_arg);
+    }
+    else
+    {
+      all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_buf, prediction,
+          num_features, all.progress_add, all.progress_arg);
+    }
+  }
+}
+
+void VW::details::print_cs_update_action_scores(
+    VW::workspace& all, bool is_test, size_t num_features, const VW::action_scores& action_scores)
+{
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  {
+    std::string label_buf;
+    if (is_test) { label_buf = "unknown"; }
+    else { label_buf = "known"; }
+
+    std::ostringstream pred_buf;
+    if (all.sd->ldict) { pred_buf << all.sd->ldict->get(action_scores[0].action); }
+    else { pred_buf << action_scores[0].action; }
+    pred_buf << ".....";
+    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(),
+        num_features, all.progress_add, all.progress_arg);
+  }
+}
 
 void VW::details::print_cs_update(VW::workspace& all, bool is_test, const VW::example& ec, const VW::multi_ex* ec_seq,
     bool action_scores, uint32_t prediction)
@@ -237,6 +280,76 @@ void VW::details::finish_cs_example(VW::workspace& all, VW::example& ec)
 {
   output_cs_example(all, ec, ec.l.cs, ec.pred.multiclass);
   VW::finish_example(all, ec);
+}
+
+void VW::details::update_stats_cs_label(
+    const VW::workspace& /* all */, shared_data& sd, const VW::example& ec, VW::io::logger& logger)
+{
+  const auto& label = ec.l.cs;
+  const auto multiclass_prediction = ec.pred.multiclass;
+  float loss = 0.;
+  if (!label.is_test_label())
+  {
+    // need to compute exact loss
+    auto pred = static_cast<size_t>(multiclass_prediction);
+
+    float chosen_loss = FLT_MAX;
+    float min = FLT_MAX;
+    for (const auto& cl : label.costs)
+    {
+      if (cl.class_index == pred) { chosen_loss = cl.x; }
+      if (cl.x < min) { min = cl.x; }
+    }
+    if (chosen_loss == FLT_MAX)
+    {
+      logger.err_warn("csoaa predicted an invalid class. Are all multi-class labels in the {{1..k}} range?");
+    }
+
+    loss = (chosen_loss - min) * ec.weight;
+    // TODO(alberto): add option somewhere to allow using absolute loss instead?
+    // loss = chosen_loss;
+  }
+
+  sd.update(ec.test_only, !label.is_test_label(), loss, ec.weight, ec.get_num_features());
+}
+void VW::details::output_example_prediction_cs_label(
+    VW::workspace& all, const VW::example& ec, VW::io::logger& /* logger */)
+{
+  const auto& label = ec.l.cs;
+  const auto multiclass_prediction = ec.pred.multiclass;
+
+  for (auto& sink : all.final_prediction_sink)
+  {
+    if (!all.sd->ldict)
+    {
+      all.print_by_ref(sink.get(), static_cast<float>(multiclass_prediction), 0, ec.tag, all.logger);
+    }
+    else
+    {
+      VW::string_view sv_pred = all.sd->ldict->get(multiclass_prediction);
+      all.print_text_by_ref(sink.get(), std::string{sv_pred}, ec.tag, all.logger);
+    }
+  }
+
+  if (all.raw_prediction != nullptr)
+  {
+    std::stringstream output_string_stream;
+    for (unsigned int i = 0; i < label.costs.size(); i++)
+    {
+      VW::cs_class cl = label.costs[i];
+      if (i > 0) { output_string_stream << ' '; }
+      output_string_stream << cl.class_index << ':' << cl.partial_prediction;
+    }
+    all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
+  }
+}
+void VW::details::print_update_cs_label(
+    VW::workspace& all, shared_data& /* sd */, const VW::example& ec, VW::io::logger& /* logger */)
+{
+  const auto& label = ec.l.cs;
+  const auto multiclass_prediction = ec.pred.multiclass;
+
+  print_cs_update(all, label.is_test_label(), ec, nullptr, false, multiclass_prediction);
 }
 
 namespace VW

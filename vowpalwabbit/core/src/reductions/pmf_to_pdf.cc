@@ -166,9 +166,9 @@ void pmf_to_pdf_reduction::learn(example& ec)
   auto actual_bandwidth = !tree_bandwidth ? 1 : 2 * b;  // avoid zero division
 
   ec.l.cb.costs.push_back(
-      CB::cb_class(cost, local_min_value + 1, pdf_value * actual_bandwidth * continuous_range / num_actions));
+      VW::cb_class(cost, local_min_value + 1, pdf_value * actual_bandwidth * continuous_range / num_actions));
   ec.l.cb.costs.push_back(
-      CB::cb_class(cost, local_max_value + 1, pdf_value * actual_bandwidth * continuous_range / num_actions));
+      VW::cb_class(cost, local_max_value + 1, pdf_value * actual_bandwidth * continuous_range / num_actions));
 
   auto swap_prediction = VW::swap_guard(ec.pred.a_s, temp_pred_a_s);
 
@@ -250,10 +250,10 @@ base_learner* VW::reductions::pmf_to_pdf_setup(VW::setup_base_i& stack_builder)
 
   auto* l = VW::LEARNER::make_reduction_learner(
       std::move(data), p_base, learn, predict, stack_builder.get_setupfn_name(pmf_to_pdf_setup))
-                .set_output_prediction_type(VW::prediction_type_t::PDF)
                 .set_input_label_type(VW::label_type_t::CONTINUOUS)
-                // .set_output_label_type(label_type_t::CB)
-                // .set_input_prediction_type(prediction_type_t::ACTION_SCORES)
+                .set_output_label_type(VW::label_type_t::CB)
+                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+                .set_output_prediction_type(VW::prediction_type_t::PDF)
                 .build();
   return make_base(*l);
 }

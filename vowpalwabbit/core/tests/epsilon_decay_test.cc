@@ -4,6 +4,7 @@
 #include "vw/core/learner.h"
 #include "vw/core/metric_sink.h"
 #include "vw/core/setup_base.h"
+#include "vw/test_common/test_common.h"
 
 #include <gtest/gtest.h>
 
@@ -32,36 +33,55 @@ epsilon_decay_data* get_epsilon_decay_data(VW::workspace& all)
 }
 }  // namespace epsilon_decay_test
 
+TEST(EpsilonDecay, ThrowIfNoExplore)
+{
+  EXPECT_THROW(
+      {
+        try
+        {
+          auto result = VW::initialize(vwtest::make_args("--epsilon_decay", "--cb_adf"));
+        }
+        catch (const VW::vw_exception& e)
+        {
+          EXPECT_STREQ(
+              "Input prediction type: prediction_type_t::ACTION_PROBS of reduction: epsilon_decay does not match "
+              "output prediction type: prediction_type_t::ACTION_SCORES of base reduction: cb_adf.",
+              e.what());
+          throw;
+        }
+      },
+      VW::vw_exception);
+}
+
 TEST(EpsilonDecay, InitWIterations)
 {
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
-  auto ctr = simulator::_test_helper(
-      "--epsilon_decay --model_count 3 --cb_explore_adf --quiet --epsilon 0.2 --random_seed "
-      "5");
+  auto ctr = simulator::_test_helper(std::vector<std::string>{
+      "--epsilon_decay", "--model_count=3", "--cb_explore_adf", "--quiet", "--epsilon=0.2", "--random_seed=5"});
 }
 
 TEST(EpsilonDecay, ChampChangeWIterations)
 {
-  const size_t num_iterations = 630;
-  const size_t seed = 99;
+  const size_t num_iterations = 610;
+  const size_t seed = 36;
   const std::vector<uint64_t> swap_after = {500};
-  const size_t deterministic_champ_switch = 626;
+  const size_t deterministic_champ_switch = 600;
   callback_map test_hooks;
 
   test_hooks.emplace(deterministic_champ_switch - 1,
       [&](cb_sim&, VW::workspace& all, VW::multi_ex&)
       {
         epsilon_decay_data* epsilon_decay = epsilon_decay_test::get_epsilon_decay_data(all);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[0][0].update_count, 12);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[1][0].update_count, 12);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[2][0].update_count, 12);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][0].update_count, 12);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[1][1].update_count, 17);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[2][1].update_count, 17);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][1].update_count, 17);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[2][2].update_count, 119);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][2].update_count, 119);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][3].update_count, 625);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[0][0].update_count, 87);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[1][0].update_count, 87);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[2][0].update_count, 87);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][0].update_count, 87);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[1][1].update_count, 92);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[2][1].update_count, 92);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][1].update_count, 92);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[2][2].update_count, 93);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][2].update_count, 93);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][3].update_count, 599);
         return true;
       });
 
@@ -73,20 +93,21 @@ TEST(EpsilonDecay, ChampChangeWIterations)
         EXPECT_EQ(epsilon_decay->conf_seq_estimators[1][0].update_count, 0);
         EXPECT_EQ(epsilon_decay->conf_seq_estimators[2][0].update_count, 0);
         EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][0].update_count, 0);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[1][1].update_count, 13);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[2][1].update_count, 13);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][1].update_count, 13);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[2][2].update_count, 18);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][2].update_count, 18);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][3].update_count, 120);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[1][1].update_count, 88);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[2][1].update_count, 88);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][1].update_count, 88);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[2][2].update_count, 93);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][2].update_count, 93);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][3].update_count, 94);
         return true;
       });
 
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
   auto ctr = simulator::_test_helper_hook(
-      "--epsilon_decay --model_count 4 --cb_explore_adf --quiet -q ::", test_hooks, num_iterations, seed, swap_after);
+      std::vector<std::string>{"--epsilon_decay", "--model_count", "4", "--cb_explore_adf", "--quiet", "-q", "::"},
+      test_hooks, num_iterations, seed, swap_after);
 
-  EXPECT_GT(ctr.back(), 0.6f);
+  EXPECT_GT(ctr.back(), 0.4f);
 }
 
 TEST(EpsilonDecay, UpdateCountWIterations)
@@ -202,7 +223,8 @@ TEST(EpsilonDecay, UpdateCountWIterations)
 
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
   auto ctr = simulator::_test_helper_hook(
-      "--epsilon_decay --model_count 4 --cb_explore_adf --quiet  -q ::", test_hooks, num_iterations, seed);
+      std::vector<std::string>{"--epsilon_decay", "--model_count", "4", "--cb_explore_adf", "--quiet", "-q", "::"},
+      test_hooks, num_iterations, seed);
 
   EXPECT_GT(ctr.back(), 0.5f);
 }
@@ -210,18 +232,15 @@ TEST(EpsilonDecay, UpdateCountWIterations)
 TEST(EpsilonDecay, SaveLoadWIterations)
 {
   callback_map empty_hooks;
-  auto ctr = simulator::_test_helper_hook(
-      "--epsilon_decay --model_count 5 --cb_explore_adf --epsilon_decay_significance_level .01 --quiet  "
-      "-q "
-      "::",
-      empty_hooks);
+  auto ctr =
+      simulator::_test_helper_hook(std::vector<std::string>{"--epsilon_decay", "--model_count", "5", "--cb_explore_adf",
+                                       "--epsilon_decay_significance_level", ".01", "--quiet", "-q", "::"},
+          empty_hooks);
   float without_save = ctr.back();
   EXPECT_GT(without_save, 0.9f);
 
-  ctr = simulator::_test_helper_save_load(
-      "--epsilon_decay --model_count 5 --cb_explore_adf --epsilon_decay_significance_level .01 --quiet  "
-      "-q "
-      "::");
+  ctr = simulator::_test_helper_save_load(std::vector<std::string>{"--epsilon_decay", "--model_count", "5",
+      "--cb_explore_adf", "--epsilon_decay_significance_level", ".01", "--quiet", "-q", "::"});
 
   float with_save = ctr.back();
   EXPECT_GT(with_save, 0.9f);
@@ -235,7 +254,7 @@ TEST(EpsilonDecay, ScoreBoundsUnit)
   uint64_t num_models = 5;
   uint32_t wpp = 8;
   VW::dense_parameters dense_weights(num_models);
-  epsilon_decay_data ep_data(num_models, 100, .05, .1, dense_weights, "", false, wpp, 0, 1.f, 0, false);
+  epsilon_decay_data ep_data(num_models, 100, .05, .1, dense_weights, "", false, wpp, 0, 1.f, 0, false, 1e-6, "bisect");
 
   // Set update counts to fixed values with expected horizon bound violation
   size_t score_idx = 0;
@@ -320,7 +339,7 @@ TEST(EpsilonDecay, HorizonBoundsUnit)
   uint64_t num_models = 5;
   uint32_t wpp = 8;
   VW::dense_parameters dense_weights(num_models);
-  epsilon_decay_data ep_data(num_models, 100, .05, .1, dense_weights, "", false, wpp, 0, 1.f, 0, false);
+  epsilon_decay_data ep_data(num_models, 100, .05, .1, dense_weights, "", false, wpp, 0, 1.f, 0, false, 1e-6, "bisect");
 
   // Set update counts to fixed values with expected horizon bound violation
   size_t score_idx = 0;

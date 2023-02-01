@@ -30,8 +30,8 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, VW::example& ec)
 {
   data.adf_data.copy_example_to_adf(*data.weights, ec);
 
-  CB::label backup_ld;
-  CB::label new_ld;
+  VW::cb_label backup_ld;
+  VW::cb_label new_ld;
   bool is_test_label = ec.l.cb.is_test_label();
 
   uint32_t chosen_action = 0;
@@ -237,8 +237,8 @@ VW::LEARNER::base_learner* VW::reductions::cb_to_cb_adf_setup(VW::setup_base_i& 
     out_pred_type = VW::prediction_type_t::MULTICLASS;
   }
 
-  auto* l = make_reduction_learner(
-      std::move(data), base, predict_or_learn<true>, predict_or_learn<false>, all.get_setupfn_name(cb_to_cb_adf_setup))
+  auto* l = make_reduction_learner(std::move(data), base, predict_or_learn<true>, predict_or_learn<false>,
+      stack_builder.get_setupfn_name(cb_to_cb_adf_setup))
                 .set_input_label_type(VW::label_type_t::CB)
                 .set_output_label_type(VW::label_type_t::CB)
                 .set_input_prediction_type(in_pred_type)
@@ -247,7 +247,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_to_cb_adf_setup(VW::setup_base_i& 
                 .set_output_example_prediction(::output_example_prediction_cb_to_cb_adf)
                 .set_update_stats(::update_stats_cb_to_cb_adf)
                 .set_print_update(::print_update_cb_to_cb_adf)
-                .build(&all.logger);
+                .build();
 
   return make_base(*l);
 }

@@ -3,9 +3,9 @@
 // license as described in the file LICENSE.
 #pragma once
 
+#include "vw/common/random.h"
 #include "vw/core/array_parameters_dense.h"
 #include "vw/core/learner.h"
-#include "vw/core/rand_state.h"
 
 #include <fstream>
 #include <queue>
@@ -29,7 +29,7 @@ class aml_estimator
 public:
   estimator_impl _estimator;
   aml_estimator() : _estimator(estimator_impl()) {}
-  aml_estimator(double alpha) : _estimator(estimator_impl(alpha)) {}
+  aml_estimator(double tol_x, bool is_brentq, double alpha) : _estimator(estimator_impl(tol_x, is_brentq, alpha)) {}
   aml_estimator(
       estimator_impl sc, uint64_t config_index, bool eligible_to_inactivate, interaction_vec_t& live_interactions)
       : _estimator(sc)
@@ -214,6 +214,8 @@ public:
   const bool _ccb_on;
   config_oracle_impl _config_oracle;
   bool reward_as_cost;
+  double tol_x;
+  bool is_brentq;
 
   // TODO: delete all this, gd and cb_adf must respect ft_offset, see header import of automl.cc
   std::vector<double> per_live_model_state_double;
@@ -238,7 +240,7 @@ public:
       std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers, const std::string& interaction_type,
       const std::string& oracle_type, dense_parameters& weights, priority_func* calc_priority,
       double automl_significance_level, VW::io::logger* logger, uint32_t& wpp, bool ccb_on, config_type conf_type,
-      std::string trace_prefix, bool reward_as_cost);
+      std::string trace_prefix, bool reward_as_cost, double tol_x, bool is_brentq);
 
   void do_learning(VW::LEARNER::multi_learner& base, multi_ex& ec, uint64_t live_slot);
   void persist(metric_sink& metrics, bool verbose);
@@ -248,13 +250,13 @@ public:
   void check_for_new_champ();
   void process_example(const multi_ex& ec);
   static void apply_config_at_slot(estimator_vec_t<estimator_impl>& estimators, std::vector<ns_based_config>& configs,
-      const uint64_t live_slot, const uint64_t config_index, const double sig_level,
+      const uint64_t live_slot, const uint64_t config_index, const double sig_level, const double tol_x, bool is_brentq,
       const uint64_t priority_challengers);
   static void apply_new_champ(config_oracle_impl& config_oracle, const uint64_t winning_challenger_slot,
       estimator_vec_t<estimator_impl>& estimators, const uint64_t priority_challengers,
       const std::map<namespace_index, uint64_t>& ns_counter);
-  static void insert_starting_configuration(
-      estimator_vec_t<estimator_impl>& estimators, config_oracle_impl& config_oracle, const double sig_level);
+  static void insert_starting_configuration(estimator_vec_t<estimator_impl>& estimators,
+      config_oracle_impl& config_oracle, const double sig_level, const double tol_x, bool is_brentq);
 
 private:
   static bool swap_eligible_to_inactivate(estimator_vec_t<estimator_impl>& estimators, uint64_t);
@@ -296,8 +298,8 @@ public:
     }
   }
   // This fn gets called before learning any example
-  void one_step(VW::LEARNER::multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action);
-  void offset_learn(VW::LEARNER::multi_learner& base, multi_ex& ec, CB::cb_class& logged, uint64_t labelled_action);
+  void one_step(VW::LEARNER::multi_learner& base, multi_ex& ec, VW::cb_class& logged, uint64_t labelled_action);
+  void offset_learn(VW::LEARNER::multi_learner& base, multi_ex& ec, VW::cb_class& logged, uint64_t labelled_action);
 };
 }  // namespace automl
 

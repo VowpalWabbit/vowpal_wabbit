@@ -21,15 +21,15 @@ class Duals;
 
 namespace estimators
 {
-class ChiSquared;
+class chi_squared;
 }
 
 namespace model_utils
 {
 size_t read_model_field(io_buf&, VW::details::Duals&);
 size_t write_model_field(io_buf&, const VW::details::Duals&, const std::string&, bool);
-size_t read_model_field(io_buf&, VW::estimators::ChiSquared&);
-size_t write_model_field(io_buf&, const VW::estimators::ChiSquared&, const std::string&, bool);
+size_t read_model_field(io_buf&, VW::estimators::chi_squared&);
+size_t write_model_field(io_buf&, const VW::estimators::chi_squared&, const std::string&, bool);
 }  // namespace model_utils
 
 namespace details
@@ -71,15 +71,15 @@ using ScoredDual = std::pair<double, VW::details::Duals>;
 namespace estimators
 {
 // https://en.wikipedia.org/wiki/Divergence_(statistics)
-class ChiSquared
+class chi_squared
 {
 public:
   // alpha: confidence level
   // tau: count decay time constant
-  explicit ChiSquared(double _alpha, double _tau, double _wmin = 0.0,
+  explicit chi_squared(double _alpha, double _tau, double _wmin = 0.0,
       double _wmax = std::numeric_limits<double>::infinity(), double _rmin = 0.0, double _rmax = 1.0);
   bool is_valid() const;
-  ChiSquared& update(double w, double r);
+  chi_squared& update(double w, double r);
   double qlb(double w, double r, double sign);  // sign = 1.0 for lower_bound, sign = -1.0 for upper_bound
   void reset(double _alpha, double _tau);
   double lower_bound_and_update();
@@ -91,9 +91,9 @@ public:
   VW::details::ScoredDual recompute_duals();
   static double chisq_onedof_isf(double alpha);
   const double& effn() { return _n; }
-  friend size_t VW::model_utils::read_model_field(io_buf&, VW::estimators::ChiSquared&);
+  friend size_t VW::model_utils::read_model_field(io_buf&, VW::estimators::chi_squared&);
   friend size_t VW::model_utils::write_model_field(
-      io_buf&, const VW::estimators::ChiSquared&, const std::string&, bool);
+      io_buf&, const VW::estimators::chi_squared&, const std::string&, bool);
   void save_load(io_buf& model_file, bool read, bool text, const char* name);
 
   double _alpha;

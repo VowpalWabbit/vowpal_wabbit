@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include "vw/core/confidence_sequence_robust.h"
+#include "vw/core/estimators/confidence_sequence_robust.h"
 #include "vw/core/io_buf.h"
 #include "vw/core/learner_fwd.h"
 #include "vw/core/vw_fwd.h"
@@ -28,7 +28,7 @@ public:
   epsilon_decay_data(uint64_t model_count, uint64_t min_scope, double epsilon_decay_significance_level,
       double epsilon_decay_estimator_decay, dense_parameters& weights, std::string epsilon_decay_audit_str,
       bool constant_epsilon, uint32_t& wpp, uint64_t _min_champ_examples, float initial_epsilon,
-      uint64_t shift_model_bounds, bool reward_as_cost);
+      uint64_t shift_model_bounds, bool reward_as_cost, double tol_x, bool is_brentq);
   void update_weights(float init_ep, VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
   void promote_model(int64_t model_ind, int64_t swap_dist);
   void rebalance_greater_models(int64_t model_ind, int64_t swap_dist, int64_t model_count);
@@ -39,6 +39,7 @@ public:
 
   std::vector<std::vector<VW::estimators::confidence_sequence_robust>> conf_seq_estimators;
   std::vector<uint64_t> _weight_indices;
+  uint64_t _model_count;
   uint64_t _min_scope;
   double _epsilon_decay_significance_level;  // Confidence interval
   double _epsilon_decay_estimator_decay;     // Count decay time constant

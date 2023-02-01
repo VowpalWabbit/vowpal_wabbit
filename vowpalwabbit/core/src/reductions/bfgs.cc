@@ -162,8 +162,8 @@ constexpr bool test_example(VW::example& ec) noexcept { return ec.l.simple.label
 
 float bfgs_predict(VW::workspace& all, VW::example& ec)
 {
-  ec.partial_prediction = GD::inline_predict(all, ec);
-  return GD::finalize_prediction(all.sd, all.logger, ec.partial_prediction);
+  ec.partial_prediction = VW::inline_predict(all, ec);
+  return VW::details::finalize_prediction(all.sd, all.logger, ec.partial_prediction);
 }
 
 inline void add_grad(float& d, float f, float& fw) { (&fw)[W_GT] += d * f; }
@@ -175,7 +175,7 @@ float predict_and_gradient(VW::workspace& all, VW::example& ec)
   all.set_minmax(all.sd, ld.label);
 
   float loss_grad = all.loss->first_derivative(all.sd, fp, ld.label) * ec.weight;
-  GD::foreach_feature<float, add_grad>(all, ec, loss_grad);
+  VW::foreach_feature<float, add_grad>(all, ec, loss_grad);
 
   return fp;
 }
@@ -185,7 +185,7 @@ inline void add_precond(float& d, float f, float& fw) { (&fw)[W_COND] += d * f *
 void update_preconditioner(VW::workspace& all, VW::example& ec)
 {
   float curvature = all.loss->second_derivative(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
-  GD::foreach_feature<float, add_precond>(all, ec, curvature);
+  VW::foreach_feature<float, add_precond>(all, ec, curvature);
 }
 
 inline void add_dir(float& p, const float fx, float& fw) { p += (&fw)[W_DIR] * fx; }
@@ -194,7 +194,7 @@ float dot_with_direction(VW::workspace& all, VW::example& ec)
 {
   const auto& simple_red_features = ec.ex_reduction_features.template get<VW::simple_label_reduction_features>();
   float temp = simple_red_features.initial;
-  GD::foreach_feature<float, add_dir>(all, ec, temp);
+  VW::foreach_feature<float, add_dir>(all, ec, temp);
   return temp;
 }
 
@@ -561,7 +561,7 @@ void preconditioner_to_regularizer(VW::workspace& all, bfgs& b, float regulariza
 
   if (b.regularizers == nullptr)
   {
-    b.regularizers = calloc_or_throw<VW::weight>(2 * length);
+    b.regularizers = VW::details::calloc_or_throw<VW::weight>(2 * length);
 
     if (b.regularizers == nullptr) THROW("Failed to allocate weight array: try decreasing -b <bits>");
 
@@ -982,7 +982,7 @@ void predict(bfgs& b, base_learner&, VW::example& ec)
 {
   VW::workspace* all = b.all;
   ec.pred.scalar = bfgs_predict(*all, ec);
-  if (audit) { GD::print_audit_features(*(b.all), ec); }
+  if (audit) { VW::details::print_audit_features(*(b.all), ec); }
 }
 
 template <bool audit>
@@ -1048,15 +1048,15 @@ void save_load(bfgs& b, VW::io_buf& model_file, bool read, bool text)
     VW::details::initialize_regressor(*all);
     if (all->per_feature_regularizer_input != "")
     {
-      b.regularizers = calloc_or_throw<VW::weight>(2 * length);
+      b.regularizers = VW::details::calloc_or_throw<VW::weight>(2 * length);
       if (b.regularizers == nullptr) THROW("Failed to allocate regularizers array: try decreasing -b <bits>");
     }
     int m = b.m;
 
     b.mem_stride = (m == 0) ? CG_EXTRA : 2 * m;
-    b.mem = calloc_or_throw<float>(all->length() * b.mem_stride);
-    b.rho = calloc_or_throw<double>(m);
-    b.alpha = calloc_or_throw<double>(m);
+    b.mem = VW::details::calloc_or_throw<float>(all->length() * b.mem_stride);
+    b.rho = VW::details::calloc_or_throw<double>(m);
+    b.alpha = VW::details::calloc_or_throw<double>(m);
 
     uint32_t stride_shift = all->weights.stride_shift();
 
@@ -1103,7 +1103,7 @@ void save_load(bfgs& b, VW::io_buf& model_file, bool read, bool text)
         model_file, reinterpret_cast<char*>(&reg_vector), sizeof(reg_vector), read, msg, text);
 
     if (reg_vector) { save_load_regularizer(*all, b, model_file, read, text); }
-    else { GD::save_load_regressor(*all, model_file, read, text); }
+    else { VW::details::save_load_regressor_gd(*all, model_file, read, text); }
   }
 }
 

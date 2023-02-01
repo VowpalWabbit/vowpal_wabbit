@@ -92,7 +92,7 @@ def test_multiclass_prediction_type():
     del model
 
 
-def test_prob_prediction_type():
+def test_csoaa_ldf_scalars_prediction_type():
     model = Workspace(
         loss_function="logistic",
         csoaa_ldf="mc",
@@ -104,10 +104,10 @@ def test_prob_prediction_type():
         model.example("2:0.8  | a b c"),
     ]
     model.learn(multi_ex)
-    assert model.get_prediction_type() == vowpalwabbit.PredictionType.PROB
+    assert model.get_prediction_type() == vowpalwabbit.PredictionType.SCALARS
     multi_ex = [model.example("1 | a b c"), model.example("2 | a b c")]
     prediction = model.predict(multi_ex)
-    assert isinstance(prediction, float)
+    assert isinstance(prediction, list)
     del model
 
 

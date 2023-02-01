@@ -4,6 +4,7 @@
 
 #include "vw/core/parse_args.h"
 
+#include "vw/common/random.h"
 #include "vw/common/text_utils.h"
 #include "vw/common/vw_exception.h"
 #include "vw/config/cli_help_formatter.h"
@@ -27,8 +28,6 @@
 #include "vw/core/parse_regressor.h"
 #include "vw/core/parser.h"
 #include "vw/core/prediction_type.h"
-#include "vw/core/rand48.h"
-#include "vw/core/rand_state.h"
 #include "vw/core/reduction_stack.h"
 #include "vw/core/reductions/metrics.h"
 #include "vw/core/scope_exit.h"
@@ -175,7 +174,7 @@ void VW::details::parse_dictionary_argument(VW::workspace& all, const std::strin
 
   ssize_t size = 2048, pos, num_read;
   char rc;
-  char* buffer = calloc_or_throw<char>(size);
+  char* buffer = VW::details::calloc_or_throw<char>(size);
   do {
     pos = 0;
     do {
@@ -240,14 +239,14 @@ void VW::details::parse_dictionary_argument(VW::workspace& all, const std::strin
   }
 
   all.namespace_dictionaries[static_cast<size_t>(ns)].push_back(map);
-  dictionary_info info = {std::string{s}, fd_hash, map};
+  details::dictionary_info info = {std::string{s}, fd_hash, map};
   all.loaded_dictionaries.push_back(info);
 }
 
 void parse_affix_argument(VW::workspace& all, const std::string& str)
 {
   if (str.length() == 0) { return; }
-  char* cstr = calloc_or_throw<char>(str.length() + 1);
+  char* cstr = VW::details::calloc_or_throw<char>(str.length() + 1);
   VW::string_cpy(cstr, (str.length() + 1), str.c_str());
 
   char* next_token;
@@ -561,8 +560,8 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
                .help("Ignore namespaces beginning with character <arg> for linear terms only"))
       .add(make_option("ignore_features_dsjson_experimental", ignore_features_dsjson)
                .keep()
-               .help("Ignore specified features from namespace. To ignore a feature arg should be namespace|feature "
-                     "To ignore a feature in the default namespace, arg should be |feature")
+               .help("Ignore specified features from namespace. To ignore a feature arg should be "
+                     "<namespace>|<feature>. <namespace> should be empty for default")
                .experimental())
       .add(make_option("keep", keeps).keep().help("Keep namespaces beginning with character <arg>"))
       .add(make_option("redefine", redefines)
@@ -617,7 +616,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
   options.add_and_parse(feature_options);
 
   // feature manipulation
-  all.example_parser->hasher = get_hasher(hash_function);
+  all.example_parser->hasher = VW::get_hasher(hash_function);
 
   if (options.was_supplied("spelling"))
   {
@@ -655,7 +654,10 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
         VW::kskip_ngram_transformer::build(hex_decoded_ngram_strings, hex_decoded_skip_strings, all.quiet, all.logger));
   }
 
-  if (options.was_supplied("feature_limit")) { compile_limits(all.limit_strings, all.limit, all.quiet, all.logger); }
+  if (options.was_supplied("feature_limit"))
+  {
+    VW::details::compile_limits(all.limit_strings, all.limit, all.quiet, all.logger);
+  }
 
   if (options.was_supplied("bit_precision"))
   {
@@ -734,8 +736,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     if (!all.quiet && !options.was_supplied("leave_duplicate_interactions"))
     {
       auto any_contain_wildcards = std::any_of(decoded_interactions.begin(), decoded_interactions.end(),
-          [](const std::vector<VW::namespace_index>& interaction)
-          { return INTERACTIONS::contains_wildcard(interaction); });
+          [](const std::vector<VW::namespace_index>& interaction) { return VW::contains_wildcard(interaction); });
       if (any_contain_wildcards)
       {
         all.logger.err_warn(
@@ -745,12 +746,12 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     }
 
     // Sorts the overall list
-    std::sort(decoded_interactions.begin(), decoded_interactions.end(), INTERACTIONS::sort_interactions_comparator);
+    std::sort(decoded_interactions.begin(), decoded_interactions.end(), VW::details::sort_interactions_comparator);
 
     size_t removed_cnt = 0;
     size_t sorted_cnt = 0;
     // Sorts individual interactions
-    INTERACTIONS::sort_and_filter_duplicate_interactions(
+    VW::details::sort_and_filter_duplicate_interactions(
         decoded_interactions, !leave_duplicate_interactions, removed_cnt, sorted_cnt);
 
     if (removed_cnt > 0 && !all.quiet)
@@ -1076,7 +1077,7 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
 
   if (options.was_supplied("min_prediction") || options.was_supplied("max_prediction") || test_only)
   {
-    all.set_minmax = noop_mm;
+    all.set_minmax = VW::details::noop_mm;
   }
 
   if (options.was_supplied("named_labels"))
@@ -1320,7 +1321,7 @@ void load_input_model(VW::workspace& all, VW::io_buf& io_temp)
 
 ssize_t trace_message_wrapper_adapter(void* context, const char* buffer, size_t num_bytes)
 {
-  auto* wrapper_context = reinterpret_cast<trace_message_wrapper*>(context);
+  auto* wrapper_context = reinterpret_cast<VW::details::trace_message_wrapper*>(context);
   const std::string str(buffer, num_bytes);
   wrapper_context->trace_message(wrapper_context->inner_context, str);
   return static_cast<ssize_t>(num_bytes);
@@ -1411,7 +1412,8 @@ std::unique_ptr<VW::workspace> VW::details::parse_args(std::unique_ptr<options_i
 
       // Since the trace_message_t interface uses a string and the writer interface uses a buffer we unfortunately
       // need to adapt between them here.
-      all->trace_message_wrapper_context = std::make_shared<trace_message_wrapper>(trace_context, trace_listener);
+      all->trace_message_wrapper_context =
+          std::make_shared<details::trace_message_wrapper>(trace_context, trace_listener);
       all->trace_message = VW::make_unique<VW::io::owning_ostream>(VW::make_unique<VW::io::writer_stream_buf>(
           VW::io::create_custom_writer(all->trace_message_wrapper_context.get(), trace_message_wrapper_adapter)));
     }

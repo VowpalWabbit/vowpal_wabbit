@@ -15,8 +15,8 @@
 
 TEST(Merge, AddSubtractModelDelta)
 {
-  auto vw_base = VW::initialize_experimental(vwtest::make_args("--quiet"));
-  auto vw_new = VW::initialize_experimental(vwtest::make_args("--quiet"));
+  auto vw_base = VW::initialize(vwtest::make_args("--quiet"));
+  auto vw_new = VW::initialize(vwtest::make_args("--quiet"));
 
   // Create a base workspace and another workspace trained on additional example
   {
@@ -53,8 +53,8 @@ TEST(Merge, AddSubtractModelDelta)
 
 TEST(Merge, MergeSimpleModel)
 {
-  auto vw1 = VW::initialize_experimental(vwtest::make_args("--quiet", "--sgd"));
-  auto vw2 = VW::initialize_experimental(vwtest::make_args("--quiet", "--sgd"));
+  auto vw1 = VW::initialize(vwtest::make_args("--quiet", "--sgd"));
+  auto vw2 = VW::initialize(vwtest::make_args("--quiet", "--sgd"));
 
   auto* ex1 = VW::read_example(*vw1, "1 | a b");
   VW::setup_example(*vw1, ex1);
@@ -91,9 +91,9 @@ TEST(Merge, MergeSimpleModel)
 
 TEST(Merge, MergeSimpleModelDelta)
 {
-  auto vw_base = VW::initialize_experimental(vwtest::make_args("--quiet"));
-  auto vw1 = VW::initialize_experimental(vwtest::make_args("--quiet"));
-  auto vw2 = VW::initialize_experimental(vwtest::make_args("--quiet"));
+  auto vw_base = VW::initialize(vwtest::make_args("--quiet"));
+  auto vw1 = VW::initialize(vwtest::make_args("--quiet"));
+  auto vw2 = VW::initialize(vwtest::make_args("--quiet"));
 
   // instead of copying base model, we train all models on the same base example
   {
@@ -150,8 +150,8 @@ TEST(Merge, MergeSimpleModelDelta)
 
 TEST(Merge, MergeCbModel)
 {
-  auto vw1 = VW::initialize_experimental(vwtest::make_args("--quiet", "--cb_explore_adf"));
-  auto vw2 = VW::initialize_experimental(vwtest::make_args("--quiet", "--cb_explore_adf"));
+  auto vw1 = VW::initialize(vwtest::make_args("--quiet", "--cb_explore_adf"));
+  auto vw2 = VW::initialize(vwtest::make_args("--quiet", "--cb_explore_adf"));
 
   VW::multi_ex examples1;
   examples1.push_back(VW::read_example(*vw1, "shared |User user=Tom time_of_day=morning"));
@@ -187,11 +187,11 @@ TEST(Merge, MergeCbModel)
   EXPECT_FLOAT_EQ(vw2->sd->weighted_labeled_examples, 1.f);
   EXPECT_FLOAT_EQ(result->sd->weighted_labeled_examples, 2.f);
 
-  auto* vw1_cb_adf = reinterpret_cast<CB_ADF::cb_adf*>(
+  auto* vw1_cb_adf = reinterpret_cast<VW::reductions::cb_adf*>(
       vw1->l->get_learner_by_name_prefix("cb_adf")->get_internal_type_erased_data_pointer_test_use_only());
-  auto* vw2_cb_adf = reinterpret_cast<CB_ADF::cb_adf*>(
+  auto* vw2_cb_adf = reinterpret_cast<VW::reductions::cb_adf*>(
       vw2->l->get_learner_by_name_prefix("cb_adf")->get_internal_type_erased_data_pointer_test_use_only());
-  auto* vw_merged_cb_adf = reinterpret_cast<CB_ADF::cb_adf*>(
+  auto* vw_merged_cb_adf = reinterpret_cast<VW::reductions::cb_adf*>(
       result->l->get_learner_by_name_prefix("cb_adf")->get_internal_type_erased_data_pointer_test_use_only());
 
   EXPECT_EQ(vw_merged_cb_adf->get_gen_cs().event_sum,
@@ -203,9 +203,9 @@ TEST(Merge, MergeCbModel)
 TEST(Merge, MergeCbModelDelta)
 {
   auto options_strings = std::vector<std::string>{"--quiet", "--cb_explore_adf"};
-  auto vw_base = VW::initialize_experimental(vwtest::make_args("--quiet", "--cb_explore_adf"));
-  auto vw1 = VW::initialize_experimental(vwtest::make_args("--quiet", "--cb_explore_adf"));
-  auto vw2 = VW::initialize_experimental(vwtest::make_args("--quiet", "--cb_explore_adf"));
+  auto vw_base = VW::initialize(vwtest::make_args("--quiet", "--cb_explore_adf"));
+  auto vw1 = VW::initialize(vwtest::make_args("--quiet", "--cb_explore_adf"));
+  auto vw2 = VW::initialize(vwtest::make_args("--quiet", "--cb_explore_adf"));
 
   {
     VW::multi_ex examples;
@@ -299,15 +299,15 @@ TEST(Merge, MergeCbModelDelta)
   auto merged = VW::merge_deltas(std::vector<const VW::model_delta*>{&delta1, &delta2});
   auto result_delta_merge = *vw_base + merged;
 
-  auto* vw_base_cb_adf = reinterpret_cast<CB_ADF::cb_adf*>(
+  auto* vw_base_cb_adf = reinterpret_cast<VW::reductions::cb_adf*>(
       vw_base->l->get_learner_by_name_prefix("cb_adf")->get_internal_type_erased_data_pointer_test_use_only());
-  auto* vw1_cb_adf = reinterpret_cast<CB_ADF::cb_adf*>(
+  auto* vw1_cb_adf = reinterpret_cast<VW::reductions::cb_adf*>(
       vw1->l->get_learner_by_name_prefix("cb_adf")->get_internal_type_erased_data_pointer_test_use_only());
-  auto* vw2_cb_adf = reinterpret_cast<CB_ADF::cb_adf*>(
+  auto* vw2_cb_adf = reinterpret_cast<VW::reductions::cb_adf*>(
       vw2->l->get_learner_by_name_prefix("cb_adf")->get_internal_type_erased_data_pointer_test_use_only());
   auto* delta_merged_cb_adf =
-      reinterpret_cast<CB_ADF::cb_adf*>(result_delta_merge->l->get_learner_by_name_prefix("cb_adf")
-                                            ->get_internal_type_erased_data_pointer_test_use_only());
+      reinterpret_cast<VW::reductions::cb_adf*>(result_delta_merge->l->get_learner_by_name_prefix("cb_adf")
+                                                    ->get_internal_type_erased_data_pointer_test_use_only());
   EXPECT_FLOAT_EQ(result_delta_merge->sd->weighted_labeled_examples, 4.f);
   EXPECT_EQ(delta_merged_cb_adf->get_gen_cs().event_sum,
       vw1_cb_adf->get_gen_cs().event_sum + vw2_cb_adf->get_gen_cs().event_sum - vw_base_cb_adf->get_gen_cs().event_sum);
@@ -320,8 +320,8 @@ TEST(Merge, MergeCbModelDelta)
   auto result_model_merge = VW::merge_models(vw_base.get(), workspaces);
 
   auto* model_merged_cb_adf =
-      reinterpret_cast<CB_ADF::cb_adf*>(result_model_merge->l->get_learner_by_name_prefix("cb_adf")
-                                            ->get_internal_type_erased_data_pointer_test_use_only());
+      reinterpret_cast<VW::reductions::cb_adf*>(result_model_merge->l->get_learner_by_name_prefix("cb_adf")
+                                                    ->get_internal_type_erased_data_pointer_test_use_only());
   EXPECT_FLOAT_EQ(result_delta_merge->sd->weighted_labeled_examples, result_model_merge->sd->weighted_labeled_examples);
   EXPECT_EQ(delta_merged_cb_adf->get_gen_cs().event_sum, model_merged_cb_adf->get_gen_cs().event_sum);
   EXPECT_EQ(delta_merged_cb_adf->get_gen_cs().action_sum, model_merged_cb_adf->get_gen_cs().action_sum);
@@ -329,8 +329,8 @@ TEST(Merge, MergeCbModelDelta)
 
 TEST(Merge, SerializeDeserializeDelta)
 {
-  auto vw_base = VW::initialize_experimental(vwtest::make_args("--quiet"));
-  auto vw_new = VW::initialize_experimental(vwtest::make_args("--quiet"));
+  auto vw_base = VW::initialize(vwtest::make_args("--quiet"));
+  auto vw_new = VW::initialize(vwtest::make_args("--quiet"));
 
   // Create a base workspace and another workspace trained on additional example
   {

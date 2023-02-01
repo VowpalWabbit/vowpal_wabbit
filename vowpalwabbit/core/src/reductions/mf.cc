@@ -100,7 +100,7 @@ void predict(mf& data, single_learner& base, VW::example& ec)
 
   // finalize prediction
   ec.partial_prediction = prediction;
-  ec.pred.scalar = GD::finalize_prediction(data.all->sd, data.all->logger, ec.partial_prediction);
+  ec.pred.scalar = VW::details::finalize_prediction(data.all->sd, data.all->logger, ec.partial_prediction);
 }
 
 void learn(mf& data, single_learner& base, VW::example& ec)

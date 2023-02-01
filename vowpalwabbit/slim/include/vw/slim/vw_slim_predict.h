@@ -144,7 +144,7 @@ public:
 
     for (const auto& inter : _interactions)
     {
-      if (INTERACTIONS::contains_wildcard(inter))
+      if (VW::contains_wildcard(inter))
       {
         _contains_wildcard = true;
         break;
@@ -268,14 +268,14 @@ public:
     {
       // permutations is not supported by slim so we can just use combinations!
       _generate_interactions.update_interactions_if_new_namespace_seen<
-          INTERACTIONS::generate_namespace_combinations_with_repetition, false>(_interactions, ex.indices);
-      score = GD::inline_predict<W>(*_weights, false, _ignore_linear, _generate_interactions.generated_interactions,
+          VW::details::generate_namespace_combinations_with_repetition, false>(_interactions, ex.indices);
+      score = VW::inline_predict<W>(*_weights, false, _ignore_linear, _generate_interactions.generated_interactions,
           _unused_extent_interactions,
           /* permutations */ false, ex, _generate_interactions_object_cache);
     }
     else
     {
-      score = GD::inline_predict<W>(*_weights, false, _ignore_linear, _interactions, _unused_extent_interactions,
+      score = VW::inline_predict<W>(*_weights, false, _ignore_linear, _interactions, _unused_extent_interactions,
           /* permutations */ false, ex, _generate_interactions_object_cache);
     }
     return S_VW_PREDICT_OK;
@@ -341,7 +341,7 @@ public:
         uint32_t top_action = (uint32_t)(top_action_iterator - std::begin(scores));
 
         RETURN_EXPLORATION_ON_FAIL(
-            exploration::generate_epsilon_greedy(_epsilon, top_action, std::begin(pdf), std::end(pdf)));
+            VW::explore::generate_epsilon_greedy(_epsilon, top_action, std::begin(pdf), std::end(pdf)));
         break;
       }
       case vw_predict_exploration::softmax:
@@ -350,7 +350,7 @@ public:
         RETURN_ON_FAIL(predict(shared, actions, num_actions, scores));
 
         // generate exploration distribution
-        RETURN_EXPLORATION_ON_FAIL(exploration::generate_softmax(
+        RETURN_EXPLORATION_ON_FAIL(VW::explore::generate_softmax(
             _lambda, std::begin(scores), std::end(scores), std::begin(pdf), std::end(pdf)));
         break;
       }
@@ -388,11 +388,11 @@ public:
 
         // generate exploration distribution
         RETURN_EXPLORATION_ON_FAIL(
-            exploration::generate_bag(std::begin(top_actions), std::end(top_actions), std::begin(pdf), std::end(pdf)));
+            VW::explore::generate_bag(std::begin(top_actions), std::end(top_actions), std::begin(pdf), std::end(pdf)));
 
         if (_minimum_epsilon > 0)
           RETURN_EXPLORATION_ON_FAIL(
-              exploration::enforce_minimum_probability(_minimum_epsilon, true, std::begin(pdf), std::end(pdf)));
+              VW::explore::enforce_minimum_probability(_minimum_epsilon, true, std::begin(pdf), std::end(pdf)));
 
         break;
       }
@@ -406,7 +406,7 @@ public:
     // Sample from the pdf
     uint32_t chosen_action_idx;
     RETURN_EXPLORATION_ON_FAIL(
-        exploration::sample_after_normalizing(event_id, std::begin(pdf), std::end(pdf), chosen_action_idx));
+        VW::explore::sample_after_normalizing(event_id, std::begin(pdf), std::end(pdf), chosen_action_idx));
 
     // Swap top element with chosen one (unless chosen is the top)
     if (chosen_action_idx != 0)
@@ -475,7 +475,7 @@ private:
   std::vector<std::vector<VW::namespace_index>> _interactions;
   std::vector<std::vector<VW::extent_term>> _unused_extent_interactions;
   VW::details::generate_interactions_object_cache _generate_interactions_object_cache;
-  INTERACTIONS::interactions_generator _generate_interactions;
+  VW::interactions_generator _generate_interactions;
   bool _contains_wildcard;
   std::array<bool, VW::NUM_NAMESPACES> _ignore_linear;
   bool _no_constant;

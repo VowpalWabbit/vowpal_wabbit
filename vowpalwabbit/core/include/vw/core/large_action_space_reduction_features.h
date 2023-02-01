@@ -20,6 +20,7 @@ public:
   std::vector<std::vector<VW::namespace_index>>* generated_interactions = nullptr;
   std::vector<std::vector<extent_term>>* generated_extent_interactions = nullptr;
   VW::multi_ex::value_type shared_example = nullptr;
+  float squarecb_gamma = 1.f;
 
   las_reduction_features() = default;
 
@@ -28,6 +29,7 @@ public:
     generated_interactions = nullptr;
     generated_extent_interactions = nullptr;
     shared_example = nullptr;
+    squarecb_gamma = 1.f;
   }
 };
 

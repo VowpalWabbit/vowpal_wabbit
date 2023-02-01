@@ -18,12 +18,11 @@ TEST(ParseDsjson, UnderscoreP)
   "_p": [0.4, 0.6]
 }
   )";
-  auto vw = VW::initialize("--dsjson --chain_hash --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize(vwtest::make_args("--dsjson", "--chain_hash", "--cb_adf", "--no_stdin", "--quiet"));
   VW::parsers::json::decision_service_interaction interaction;
 
   auto examples = vwtest::parse_dsjson(*vw, json_text, &interaction);
   VW::finish_example(*vw, examples);
-  VW::finish(*vw);
 
   static constexpr float EXPECTED_PDF[2] = {0.4f, 0.6f};
   const size_t num_probabilities = interaction.probabilities.size();
@@ -42,12 +41,11 @@ TEST(ParseDsjson, P)
   "p": [0.4, 0.6]
 }
   )";
-  auto vw = VW::initialize("--dsjson --chain_hash --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize(vwtest::make_args("--dsjson", "--chain_hash", "--cb_adf", "--no_stdin", "--quiet"));
   VW::parsers::json::decision_service_interaction interaction;
 
   auto examples = vwtest::parse_dsjson(*vw, json_text, &interaction);
   VW::finish_example(*vw, examples);
-  VW::finish(*vw);
 
   static constexpr float EXPECTED_PDF[2] = {0.4f, 0.6f};
   const size_t num_probabilities = interaction.probabilities.size();
@@ -70,12 +68,11 @@ TEST(ParseDsjson, PDuplicates)
   "_p": [0.5, 0.5]
 }
   )";
-  auto vw = VW::initialize("--dsjson --chain_hash --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize(vwtest::make_args("--dsjson", "--chain_hash", "--cb_adf", "--no_stdin", "--quiet"));
   VW::parsers::json::decision_service_interaction interaction;
 
   auto examples = vwtest::parse_dsjson(*vw, json_text, &interaction);
   VW::finish_example(*vw, examples);
-  VW::finish(*vw);
 
   // Use the latest "p" or "_p" field provided. The "_p" is ignored when it's inside "c".
   static constexpr float EXPECTED_PDF[2] = {0.5f, 0.5f};
@@ -95,12 +92,11 @@ TEST(ParseDsjson, PdropFloat)
   "pdrop": 0.1
 }
   )";
-  auto vw = VW::initialize("--dsjson --chain_hash --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize(vwtest::make_args("--dsjson", "--chain_hash", "--cb_adf", "--no_stdin", "--quiet"));
   VW::parsers::json::decision_service_interaction interaction;
 
   auto examples = vwtest::parse_dsjson(*vw, json_text, &interaction);
   VW::finish_example(*vw, examples);
-  VW::finish(*vw);
 
   EXPECT_FLOAT_EQ(0.1f, interaction.probability_of_drop);
 }
@@ -112,12 +108,11 @@ TEST(ParseDsjson, PdropUint)
   "pdrop": 0
 }
   )";
-  auto vw = VW::initialize("--dsjson --chain_hash --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize(vwtest::make_args("--dsjson", "--chain_hash", "--cb_adf", "--no_stdin", "--quiet"));
   VW::parsers::json::decision_service_interaction interaction;
 
   auto examples = vwtest::parse_dsjson(*vw, json_text, &interaction);
   VW::finish_example(*vw, examples);
-  VW::finish(*vw);
 
   EXPECT_FLOAT_EQ(0.0f, interaction.probability_of_drop);
 }
@@ -186,7 +181,7 @@ TEST(ParseDsjson, Cb)
   }
 }
 )";
-  auto vw = VW::initialize("--dsjson --chain_hash --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize(vwtest::make_args("--dsjson", "--chain_hash", "--cb_adf", "--no_stdin", "--quiet"));
   auto examples = vwtest::parse_dsjson(*vw, json_text);
 
   EXPECT_EQ(examples.size(), 4);
@@ -205,7 +200,6 @@ TEST(ParseDsjson, Cb)
   EXPECT_FLOAT_EQ(examples[2]->l.cb.costs[0].cost, -1.0);
   EXPECT_EQ(examples[2]->l.cb.costs[0].action, 2);
   VW::finish_example(*vw, examples);
-  VW::finish(*vw);
 }
 
 TEST(ParseDsjson, Cats)
@@ -236,9 +230,8 @@ TEST(ParseDsjson, Cats)
   }
 }
 )";
-  auto vw = VW::initialize(
-      "--dsjson --chain_hash --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet", nullptr,
-      false, nullptr, nullptr);
+  auto vw = VW::initialize(vwtest::make_args("--dsjson", "--chain_hash", "--cats", "4", "--min_value=185",
+      "--max_value=23959", "--bandwidth", "1", "--no_stdin", "--quiet"));
   auto examples = vwtest::parse_dsjson(*vw, json_text);
 
   EXPECT_EQ(examples.size(), 1);
@@ -253,7 +246,6 @@ TEST(ParseDsjson, Cats)
   for (size_t i = 0; i < space_names.size(); i++) { EXPECT_EQ(space_names[i].name, features[i]); }
 
   VW::finish_example(*vw, examples);
-  VW::finish(*vw);
 }
 
 TEST(ParseDsjson, CatsNoLabel)
@@ -278,9 +270,8 @@ TEST(ParseDsjson, CatsNoLabel)
   }
 }
 )";
-  auto vw = VW::initialize(
-      "--dsjson --chain_hash -t --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet", nullptr,
-      false, nullptr, nullptr);
+  auto vw = VW::initialize(vwtest::make_args("--dsjson", "--chain_hash", "-t", "--cats", "4", "--min_value=185",
+      "--max_value=23959", "--bandwidth", "1", "--no_stdin", "--quiet"));
   auto examples = vwtest::parse_dsjson(*vw, json_text);
 
   EXPECT_EQ(examples.size(), 1);
@@ -291,7 +282,6 @@ TEST(ParseDsjson, CatsNoLabel)
   for (size_t i = 0; i < space_names.size(); i++) { EXPECT_EQ(space_names[i].name, features[i]); }
 
   VW::finish_example(*vw, examples);
-  VW::finish(*vw);
 }
 
 TEST(ParseDsjson, CatsWValidPdf)
@@ -318,9 +308,8 @@ TEST(ParseDsjson, CatsWValidPdf)
   }
 }
 )";
-  auto vw = VW::initialize(
-      "--dsjson --chain_hash --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet", nullptr,
-      false, nullptr, nullptr);
+  auto vw = VW::initialize(vwtest::make_args("--dsjson", "--chain_hash", "--cats", "4", "--min_value=185",
+      "--max_value=23959", "--bandwidth", "1", "--no_stdin", "--quiet"));
   auto examples = vwtest::parse_dsjson(*vw, json_text);
 
   EXPECT_EQ(examples.size(), 1);
@@ -344,7 +333,6 @@ TEST(ParseDsjson, CatsWValidPdf)
   for (size_t i = 0; i < space_names.size(); i++) { EXPECT_EQ(space_names[i].name, features[i]); }
 
   VW::finish_example(*vw, examples);
-  VW::finish(*vw);
 }
 
 TEST(ParseDsjson, CatsWInvalidPdf)
@@ -372,9 +360,8 @@ TEST(ParseDsjson, CatsWInvalidPdf)
   }
 }
 )";
-  auto vw = VW::initialize(
-      "--dsjson --chain_hash --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet", nullptr,
-      false, nullptr, nullptr);
+  auto vw = VW::initialize(vwtest::make_args("--dsjson", "--chain_hash", "--cats", "4", "--min_value=185",
+      "--max_value=23959", "--bandwidth", "1", "--no_stdin", "--quiet"));
   auto examples = vwtest::parse_dsjson(*vw, json_text);
 
   EXPECT_EQ(examples.size(), 1);
@@ -390,7 +377,6 @@ TEST(ParseDsjson, CatsWInvalidPdf)
   for (size_t i = 0; i < space_names.size(); i++) { EXPECT_EQ(space_names[i].name, features[i]); }
 
   VW::finish_example(*vw, examples);
-  VW::finish(*vw);
 }
 
 TEST(ParseDsjson, CatsChosenAction)
@@ -418,9 +404,8 @@ TEST(ParseDsjson, CatsChosenAction)
   }
 }
 )";
-  auto vw = VW::initialize(
-      "--dsjson --chain_hash --cats 4 --min_value=185 --max_value=23959 --bandwidth 1 --no_stdin --quiet", nullptr,
-      false, nullptr, nullptr);
+  auto vw = VW::initialize(vwtest::make_args("--dsjson", "--chain_hash", "--cats", "4", "--min_value=185",
+      "--max_value=23959", "--bandwidth", "1", "--no_stdin", "--quiet"));
   auto examples = vwtest::parse_dsjson(*vw, json_text);
 
   const auto& reduction_features =
@@ -436,7 +421,6 @@ TEST(ParseDsjson, CatsChosenAction)
   for (size_t i = 0; i < space_names.size(); i++) { EXPECT_EQ(space_names[i].name, features[i]); }
 
   VW::finish_example(*vw, examples);
-  VW::finish(*vw);
 }
 
 // TODO: Make unit test dig out and verify features.
@@ -491,8 +475,7 @@ TEST(ParseDsjson, Ccb)
 }
 )";
 
-  auto vw =
-      VW::initialize("--ccb_explore_adf --dsjson --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize(vwtest::make_args("--ccb_explore_adf", "--dsjson", "--chain_hash", "--no_stdin", "--quiet"));
   auto examples = vwtest::parse_dsjson(*vw, json_text);
 
   EXPECT_EQ(examples.size(), 5);
@@ -520,7 +503,6 @@ TEST(ParseDsjson, Ccb)
   EXPECT_EQ(label2.outcome->probabilities[1].action, 1);
   EXPECT_FLOAT_EQ(label2.outcome->probabilities[1].score, .25f);
   VW::finish_example(*vw, examples);
-  VW::finish(*vw);
 }
 
 TEST(ParseDsjson, CbAsCcb)
@@ -586,8 +568,7 @@ TEST(ParseDsjson, CbAsCcb)
   }
 }
 )";
-  auto vw =
-      VW::initialize("--ccb_explore_adf --dsjson --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize(vwtest::make_args("--ccb_explore_adf", "--dsjson", "--chain_hash", "--no_stdin", "--quiet"));
   auto examples = vwtest::parse_dsjson(*vw, json_text);
 
   EXPECT_EQ(examples.size(), 5);
@@ -604,7 +585,6 @@ TEST(ParseDsjson, CbAsCcb)
   EXPECT_EQ(label2.outcome->probabilities[0].action, 1);
   EXPECT_FLOAT_EQ(label2.outcome->probabilities[0].score, 0.8166667f);
   VW::finish_example(*vw, examples);
-  VW::finish(*vw);
 }
 
 TEST(ParseDsjson, CbWithNan)
@@ -652,7 +632,7 @@ TEST(ParseDsjson, CbWithNan)
 }
 )";
 
-  auto vw = VW::initialize("--dsjson --chain_hash --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize(vwtest::make_args("--dsjson", "--chain_hash", "--cb_adf", "--no_stdin", "--quiet"));
   auto examples = vwtest::parse_dsjson(*vw, json_text);
 
   EXPECT_EQ(examples.size(), 4);
@@ -671,7 +651,6 @@ TEST(ParseDsjson, CbWithNan)
   EXPECT_EQ(std::isnan(examples[2]->l.cb.costs[0].cost), true);
   EXPECT_EQ(examples[2]->l.cb.costs[0].action, 2);
   VW::finish_example(*vw, examples);
-  VW::finish(*vw);
 }
 
 TEST(ParseDsjson, Slates)
@@ -744,7 +723,7 @@ TEST(ParseDsjson, Slates)
     }
 })";
 
-  auto vw = VW::initialize("--slates --dsjson --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize(vwtest::make_args("--slates", "--dsjson", "--chain_hash", "--no_stdin", "--quiet"));
   VW::parsers::json::decision_service_interaction ds_interaction;
   auto examples = vwtest::parse_dsjson(*vw, json_text, &ds_interaction);
 
@@ -783,7 +762,6 @@ TEST(ParseDsjson, Slates)
   EXPECT_THAT(ds_interaction.probabilities, ::testing::ElementsAre(0.8f, 0.6f));
 
   VW::finish_example(*vw, examples);
-  VW::finish(*vw);
 }
 
 TEST(ParseDsjson, SlatesDomParser)
@@ -819,8 +797,7 @@ TEST(ParseDsjson, SlatesDomParser)
 )";
 
   // Assert parsed values against what they should be
-  auto slates_vw =
-      VW::initialize("--slates --dsjson --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+  auto slates_vw = VW::initialize(vwtest::make_args("--slates", "--dsjson", "--chain_hash", "--no_stdin", "--quiet"));
   auto slates_examples = vwtest::parse_dsjson(*slates_vw, json_text);
 
   EXPECT_EQ(slates_examples.size(), 1);
@@ -835,7 +812,7 @@ TEST(ParseDsjson, SlatesDomParser)
 
   // Compare the DOM parser to parsing the same features with the CCB SAX parser
   auto ccb_vw =
-      VW::initialize("--ccb_explore_adf --dsjson --chain_hash --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+      VW::initialize(vwtest::make_args("--ccb_explore_adf", "--dsjson", "--chain_hash", "--no_stdin", "--quiet"));
   auto ccb_examples = vwtest::parse_dsjson(*ccb_vw, json_text);
   EXPECT_EQ(ccb_examples.size(), 1);
   const auto& ccb_ex = *ccb_examples[0];
@@ -854,7 +831,5 @@ TEST(ParseDsjson, SlatesDomParser)
   EXPECT_THAT(slates_ex.feature_space['e'].values, ::testing::ElementsAreArray(ccb_ex.feature_space['e'].values));
 
   VW::finish_example(*slates_vw, slates_examples);
-  VW::finish(*slates_vw);
   VW::finish_example(*ccb_vw, ccb_examples);
-  VW::finish(*ccb_vw);
 }

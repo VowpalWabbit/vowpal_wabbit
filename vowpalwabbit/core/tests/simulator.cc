@@ -4,6 +4,7 @@
 
 #include "simulator.h"
 
+#include "vw/config/options_cli.h"
 #include "vw/core/vw.h"
 
 #include <fmt/format.h>
@@ -90,14 +91,12 @@ std::pair<std::string, float> cb_sim::get_action(VW::workspace* vw, const std::m
   for (const std::string& ex : multi_ex_str) { examples.push_back(VW::read_example(*vw, ex)); }
   vw->predict(examples);
 
-  std::vector<float> pmf;
   auto const& scores = examples[0]->pred.a_s;
   std::vector<float> ordered_scores(scores.size());
   for (auto const& action_score : scores) { ordered_scores[action_score.action] = action_score.score; }
-  for (auto action_score : ordered_scores) { pmf.push_back(action_score); }
   vw->finish_example(examples);
 
-  std::pair<int, float> pmf_sample = sample_custom_pmf(pmf);
+  std::pair<int, float> pmf_sample = sample_custom_pmf(ordered_scores);
   return std::make_pair(actions[pmf_sample.first], pmf_sample.second);
 }
 
@@ -205,25 +204,25 @@ std::vector<float> cb_sim::run_simulation(
   return cb_sim::run_simulation_hook(vw, num_iterations, callbacks, do_learn, shift, false, 0, swap_after);
 }
 
-std::vector<float> _test_helper(const std::string& vw_arg, size_t num_iterations, int seed)
+std::vector<float> _test_helper(const std::vector<std::string>& vw_arg, size_t num_iterations, int seed)
 {
-  auto vw = VW::initialize(vw_arg);
+  auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(vw_arg));
   simulator::cb_sim sim(seed);
-  auto ctr = sim.run_simulation(vw, num_iterations);
-  VW::finish(*vw);
+  auto ctr = sim.run_simulation(vw.get(), num_iterations);
+  vw->finish();
   return ctr;
 }
 
-std::vector<float> _test_helper_save_load(const std::string& vw_arg, size_t num_iterations, int seed,
+std::vector<float> _test_helper_save_load(const std::vector<std::string>& vw_arg, size_t num_iterations, int seed,
     const std::vector<uint64_t>& swap_after, const size_t split)
 {
   assert(num_iterations > split);
   size_t before_save = num_iterations - split;
 
-  auto first_vw = VW::initialize(vw_arg);
+  auto first_vw = VW::initialize(VW::make_unique<VW::config::options_cli>(vw_arg));
   simulator::cb_sim sim(seed);
   // first chunk
-  auto ctr = sim.run_simulation(first_vw, before_save, true, 1, swap_after);
+  auto ctr = sim.run_simulation(first_vw.get(), before_save, true, 1, swap_after);
 
   auto backing_vector = std::make_shared<std::vector<char>>();
   {
@@ -233,24 +232,28 @@ std::vector<float> _test_helper_save_load(const std::string& vw_arg, size_t num_
     io_writer.flush();
   }
 
-  VW::finish(*first_vw);
+  first_vw->finish();
+  first_vw.reset();
+
   // reload in another instance
-  VW::io_buf io_reader;
-  io_reader.add_file(VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
-  auto* other_vw = VW::initialize(vw_arg + " --quiet", &io_reader);
+  auto load_options = vw_arg;
+  load_options.emplace_back("--quiet");
+  auto other_vw = VW::initialize(VW::make_unique<VW::config::options_cli>(load_options),
+      VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
+
   // continue
-  ctr = sim.run_simulation(other_vw, split, true, before_save + 1, swap_after);
-  VW::finish(*other_vw);
+  ctr = sim.run_simulation(other_vw.get(), split, true, before_save + 1, swap_after);
+  other_vw->finish();
   return ctr;
 }
 
-std::vector<float> _test_helper_hook(const std::string& vw_arg, callback_map& hooks, size_t num_iterations, int seed,
-    const std::vector<uint64_t>& swap_after, float scale_reward)
+std::vector<float> _test_helper_hook(const std::vector<std::string>& vw_arg, callback_map& hooks, size_t num_iterations,
+    int seed, const std::vector<uint64_t>& swap_after, float scale_reward)
 {
-  auto* vw = VW::initialize(vw_arg);
+  auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(vw_arg));
   simulator::cb_sim sim(seed);
-  auto ctr = sim.run_simulation_hook(vw, num_iterations, hooks, true, 1, false, 0, swap_after, scale_reward);
-  VW::finish(*vw);
+  auto ctr = sim.run_simulation_hook(vw.get(), num_iterations, hooks, true, 1, false, 0, swap_after, scale_reward);
+  vw->finish();
   return ctr;
 }
 }  // namespace simulator

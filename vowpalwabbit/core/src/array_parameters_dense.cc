@@ -20,7 +20,7 @@
 #endif
 
 VW::dense_parameters::dense_parameters(size_t length, uint32_t stride_shift)
-    : _begin(calloc_mergable_or_throw<VW::weight>(length << stride_shift))
+    : _begin(VW::details::calloc_mergable_or_throw<VW::weight>(length << stride_shift))
     , _weight_mask((length << stride_shift) - 1)
     , _stride_shift(stride_shift)
     , _seeded(false)
@@ -44,30 +44,6 @@ void VW::dense_parameters::set_zero(size_t offset)
   if (not_null())
   {
     for (iterator iter = begin(); iter != end(); ++iter) { (&(*iter))[offset] = 0; }
-  }
-}
-
-void VW::dense_parameters::move_offsets(const size_t from, const size_t to, const size_t params_per_problem, bool swap)
-{
-  assert(from < params_per_problem);
-  assert(to < params_per_problem);
-
-  auto iterator_from = begin() + from;
-  auto iterator_to = begin() + to;
-
-  for (; iterator_from < end(); iterator_from += params_per_problem, iterator_to += params_per_problem)
-  {
-    assert((iterator_to.index_without_stride() & (params_per_problem - 1)) == to);
-    assert((iterator_from.index_without_stride() & (params_per_problem - 1)) == from);
-
-    for (size_t stride_offset = 0; stride_offset < stride(); stride_offset++)
-    {
-      if (*iterator_to[stride_offset] != *iterator_from[stride_offset])
-      {
-        if (swap) { std::swap(*iterator_to[stride_offset], *iterator_from[stride_offset]); }
-        else { *iterator_to[stride_offset] = *iterator_from[stride_offset]; }
-      }
-    }
   }
 }
 

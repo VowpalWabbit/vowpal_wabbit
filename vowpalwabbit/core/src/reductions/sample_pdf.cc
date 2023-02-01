@@ -4,6 +4,7 @@
 
 #include "vw/core/reductions/sample_pdf.h"
 
+#include "vw/common/random.h"
 #include "vw/config/options.h"
 #include "vw/core/api_status.h"
 #include "vw/core/cb_continuous_label.h"
@@ -12,7 +13,6 @@
 #include "vw/core/global_data.h"
 #include "vw/core/guard.h"
 #include "vw/core/learner.h"
-#include "vw/core/rand_state.h"
 #include "vw/core/setup_base.h"
 #include "vw/explore/explore.h"
 
@@ -68,7 +68,7 @@ int sample_pdf::predict(VW::example& ec, VW::experimental::api_status*)
   }
 
   uint64_t seed = _p_random_state->get_current_state();
-  const int ret_code = exploration::sample_pdf(
+  const int ret_code = VW::explore::sample_pdf(
       &seed, std::begin(_pred_pdf), std::end(_pred_pdf), ec.pred.pdf_value.action, ec.pred.pdf_value.pdf_value);
   _p_random_state->get_and_update_random();
 

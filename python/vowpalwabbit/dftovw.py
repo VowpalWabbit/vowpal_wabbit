@@ -45,7 +45,7 @@ class _Col:
             A valid VW feature name.
         """
         name = str(name)
-        valid_name = name.replace(":", " ").strip().replace(" ", "_")
+        valid_name = name.replace(":", " ").replace("|", " ").strip().replace(" ", "_")
 
         if valid_name != name:
             warnings.warn(

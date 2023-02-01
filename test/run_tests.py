@@ -251,8 +251,8 @@ def create_file_diff(
 def is_line_different(
     output_line: str, ref_line: str, epsilon: float
 ) -> Tuple[bool, str, bool]:
-    output_tokens = re.split("[ \t:,@]+", output_line)
-    ref_tokens = re.split("[ \t:,@]+", ref_line)
+    output_tokens = re.split("[ \t:,@=]+", output_line)
+    ref_tokens = re.split("[ \t:,@=]+", ref_line)
 
     # some compile flags cause VW to report different code line number for the same exception
     # if this is the case we want to ignore that from the diff
@@ -775,7 +775,7 @@ def convert_tests_for_flatbuffers(
         # (324-326) deals with corrupted data, so cannot be translated to fb
         # pdrop is not supported in fb, so 327-331 are excluded
         # 336, 337, 338 - the FB converter script seems to be affecting the invert_hash
-        # 423, 424, 425, 426 - FB converter removes feature names from invert_hash (probably the same issue as above)
+        # 423, 424, 426, 428, 442, 444 - FB converter removes feature names from invert_hash (probably the same issue as above)
         if str(test.id) in (
             "300",
             "189",
@@ -803,12 +803,11 @@ def convert_tests_for_flatbuffers(
             "407",
             "411",
             "415",
-            "425",
             "426",
-            "427",
             "428",
-            "429",
             "438",
+            "442",
+            "444",
         ):
             test.skip = True
             test.skip_reason = "test skipped for automatic converted flatbuffer tests for unknown reason"
@@ -874,6 +873,7 @@ def convert_to_test_data(
                 "daemon" in test["bash_command"]
                 or "spanning_tree" in test["bash_command"]
                 or "sender_test.py" in test["bash_command"]
+                or "active_test.py" in test["bash_command"]
             ):
                 skip = True
                 skip_reason = "daemon not currently supported in MacOS"

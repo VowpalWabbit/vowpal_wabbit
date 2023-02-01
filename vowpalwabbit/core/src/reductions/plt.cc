@@ -4,7 +4,6 @@
 #include "vw/core/reductions/plt.h"
 
 #include "vw/config/options.h"
-#include "vw/core/confidence_sequence.h"
 #include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/model_utils.h"
@@ -93,7 +92,7 @@ inline float learn_node(plt& p, uint32_t n, single_learner& base, VW::example& e
 
 void learn(plt& p, single_learner& base, VW::example& ec)
 {
-  MULTILABEL::labels multilabels = std::move(ec.l.multilabels);
+  auto multilabels = std::move(ec.l.multilabels);
   VW::polyprediction pred = std::move(ec.pred);
 
   double t = p.all->sd->t;
@@ -170,7 +169,7 @@ inline float predict_node(uint32_t n, single_learner& base, VW::example& ec)
 template <bool threshold>
 void predict(plt& p, single_learner& base, VW::example& ec)
 {
-  MULTILABEL::labels multilabels = std::move(ec.l.multilabels);
+  auto multilabels = std::move(ec.l.multilabels);
   VW::polyprediction pred = std::move(ec.pred);
 
   if (p.probabilities) { pred.a_s.clear(); }
@@ -310,13 +309,13 @@ void output_example_prediction_plt(VW::workspace& all, const plt& p, const VW::e
   else
   {
     // print just the list of labels
-    MULTILABEL::output_example_prediction(all, ec);
+    VW::details::output_example_prediction_multilabel(all, ec);
   }
 }
 
 void print_update_plt(VW::workspace& all, VW::shared_data&, const plt&, const VW::example& ec, VW::io::logger&)
 {
-  MULTILABEL::print_update(all, ec);
+  VW::details::print_update_multilabel(all, ec);
 }
 
 void finish(plt& p)
@@ -476,8 +475,10 @@ base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
       stack_builder.get_setupfn_name(plt_setup) + name_addition)
                 .set_params_per_weight(ws)
                 .set_learn_returns_prediction(false)
-                .set_output_prediction_type(pred_type)
                 .set_input_label_type(VW::label_type_t::MULTILABEL)
+                .set_output_label_type(VW::label_type_t::SIMPLE)
+                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
+                .set_output_prediction_type(pred_type)
                 .set_learn_returns_prediction(false)
                 .set_update_stats(update_stats_plt)
                 .set_output_example_prediction(output_example_prediction_plt)
@@ -486,7 +487,7 @@ base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
                 .set_save_load(::save_load_tree)
                 .build();
 
-  all.example_parser->lbl_parser = MULTILABEL::multilabel;
+  all.example_parser->lbl_parser = VW::multilabel_label_parser_global;
 
   return make_base(*l);
 }

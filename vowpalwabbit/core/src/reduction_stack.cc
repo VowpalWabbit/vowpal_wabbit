@@ -94,10 +94,10 @@
 #include "vw/core/reductions/svrg.h"
 #include "vw/core/reductions/topk.h"
 
-void register_reductions(std::vector<reduction_setup_fn>& reductions,
-    std::vector<std::tuple<std::string, reduction_setup_fn>>& reduction_stack)
+void register_reductions(std::vector<VW::reduction_setup_fn>& reductions,
+    std::vector<std::tuple<std::string, VW::reduction_setup_fn>>& reduction_stack)
 {
-  std::map<reduction_setup_fn, std::string> allowlist = {{VW::reductions::gd_setup, "gd"},
+  std::map<VW::reduction_setup_fn, std::string> allowlist = {{VW::reductions::gd_setup, "gd"},
       {VW::reductions::ftrl_setup, "ftrl"}, {VW::reductions::sender_setup, "sender"}, {VW::reductions::nn_setup, "nn"},
       {VW::reductions::oaa_setup, "oaa"}, {VW::reductions::scorer_setup, "scorer"},
       {VW::reductions::csldf_setup, "csoaa_ldf"},
@@ -127,9 +127,9 @@ void register_reductions(std::vector<reduction_setup_fn>& reductions,
   }
 }
 
-void prepare_reductions(std::vector<std::tuple<std::string, reduction_setup_fn>>& reduction_stack)
+void prepare_reductions(std::vector<std::tuple<std::string, VW::reduction_setup_fn>>& reduction_stack)
 {
-  std::vector<reduction_setup_fn> reductions;
+  std::vector<VW::reduction_setup_fn> reductions;
 
   // Base algorithms
   reductions.push_back(VW::reductions::gd_setup);
@@ -250,7 +250,15 @@ void default_reduction_stack_setup::delayed_state_attach(VW::workspace& all, VW:
   _all_ptr = &all;
   _options_impl = &options;
   // populate setup_fn -> name map to be used to lookup names in setup_base
-  all.build_setupfn_name_dict(_reduction_stack);
+
+  for (auto&& setup_tuple : _reduction_stack) { _setup_name_map[std::get<1>(setup_tuple)] = std::get<0>(setup_tuple); }
+}
+
+std::string default_reduction_stack_setup::get_setupfn_name(reduction_setup_fn setup_fn)
+{
+  const auto loc = _setup_name_map.find(setup_fn);
+  if (loc != _setup_name_map.end()) { return loc->second; }
+  return "NA";
 }
 
 // this function consumes all the _reduction_stack until it's able to construct a base_learner
@@ -281,10 +289,5 @@ VW::LEARNER::base_learner* default_reduction_stack_setup::setup_base_learner()
   }
 
   return nullptr;
-}
-
-std::string default_reduction_stack_setup::get_setupfn_name(reduction_setup_fn setup)
-{
-  return _all_ptr->get_setupfn_name(setup);
 }
 }  // namespace VW

@@ -2,13 +2,12 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "qr_decomposition.h"
 #include "reductions/cb/details/large_action_space.h"
 #include "vw/common/future_compat.h"
+#include "vw/common/random.h"
 #include "vw/core/constant.h"
 #include "vw/core/numeric_casts.h"
-#include "vw/core/qr_decomposition.h"
-#include "vw/core/rand48.h"
-#include "vw/core/rand_state.h"
 #include "vw/core/reductions/cb/cb_explore_adf_common.h"
 #include "vw/core/reductions/cb/cb_explore_adf_large_action_space.h"
 #include "vw/core/vw.h"
@@ -27,19 +26,18 @@ using internal_action_space_op =
 TEST(Las, CreationOfTheOgAMatrix)
 {
   uint32_t d = 2;
-  auto& vw = *VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
-          " --quiet --random_seed 5 --two_pass_svd",
-      nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize(vwtest::make_args("--cb_explore_adf", "--large_action_space", "--max_actions",
+      std::to_string(d), "--quiet", "--random_seed", "5", "--two_pass_svd"));
 
   std::vector<std::string> e_r;
-  vw.l->get_enabled_reductions(e_r);
+  vw->l->get_enabled_reductions(e_r);
   if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
   {
     FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
   }
 
   VW::LEARNER::multi_learner* learner =
-      as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+      as_multiline(vw->l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
   auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
 
@@ -50,13 +48,13 @@ TEST(Las, CreationOfTheOgAMatrix)
   {
     VW::multi_ex examples;
 
-    examples.push_back(VW::read_example(vw, "0:1.0:0.5 | 1:0.1 2:0.2 3:0.3"));
+    examples.push_back(VW::read_example(*vw, "0:1.0:0.5 | 1:0.1 2:0.2 3:0.3"));
 
     std::vector<float> ft_values = {0.1f, 0.2f, 0.3f};
 
-    vw.predict(examples);
+    vw->predict(examples);
 
-    VW::cb_explore_adf::_test_only_generate_A(&vw, examples, _triplets, action_space->explore._A);
+    VW::cb_explore_adf::_test_only_generate_A(vw.get(), examples, _triplets, action_space->explore._A);
 
     auto num_actions = examples.size();
     EXPECT_EQ(num_actions, 1);
@@ -64,7 +62,7 @@ TEST(Las, CreationOfTheOgAMatrix)
     uint64_t action_index = 0;
     auto* ex = examples[action_index];
     // test sanity - test assumes no shared features
-    EXPECT_EQ(!CB::ec_is_example_header(*ex), true);
+    EXPECT_EQ(!VW::ec_is_example_header_cb(*ex), true);
     for (auto ns : ex->indices)
     {
       for (size_t i = 0; i < ex->feature_space[ns].indices.size(); i++)
@@ -76,30 +74,27 @@ TEST(Las, CreationOfTheOgAMatrix)
         else if (ns == VW::details::CONSTANT_NAMESPACE) { EXPECT_FLOAT_EQ(ft_value, 1.f); }
 
         EXPECT_EQ(
-            action_space->explore._A.coeffRef(action_index, (ft_index & vw.weights.dense_weights.mask())), ft_value);
+            action_space->explore._A.coeffRef(action_index, (ft_index & vw->weights.dense_weights.mask())), ft_value);
       }
     }
 
-    vw.finish_example(examples);
+    vw->finish_example(examples);
   }
-  VW::finish(vw);
 }
 
 TEST(Las, CheckInteractionsOnY)
 {
   uint32_t d = 2;
-  std::vector<std::pair<VW::workspace*, bool>> vws;
-  auto* vw_no_interactions = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
-          " --quiet --random_seed 5 --two_pass_svd",
-      nullptr, false, nullptr, nullptr);
+  std::vector<std::pair<std::unique_ptr<VW::workspace>, bool>> vws;
+  auto vw_no_interactions = VW::initialize(vwtest::make_args("--cb_explore_adf", "--large_action_space",
+      "--max_actions", std::to_string(d), "--quiet", "--random_seed", "5", "--two_pass_svd"));
 
-  vws.push_back({vw_no_interactions, false});
+  vws.emplace_back(std::move(vw_no_interactions), false);
 
-  auto* vw_yes_interactions = VW::initialize("--cb_explore_adf --large_action_space --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5 -q :: --two_pass_svd",
-      nullptr, false, nullptr, nullptr);
+  auto vw_yes_interactions = VW::initialize(vwtest::make_args("--cb_explore_adf", "--large_action_space",
+      "--max_actions", std::to_string(d), "--quiet", "--random_seed", "5", "-q", "::", "--two_pass_svd"));
 
-  vws.push_back({vw_yes_interactions, true});
+  vws.emplace_back(std::move(vw_yes_interactions), true);
 
   size_t interactions_rows = 0;
   size_t non_interactions_rows = 0;
@@ -146,7 +141,6 @@ TEST(Las, CheckInteractionsOnY)
       if (interactions) { interactions_rows = non_zero_rows.size(); }
       vw.finish_example(examples);
     }
-    VW::finish(vw);
   }
   EXPECT_GT(interactions_rows, non_interactions_rows);
 }
@@ -154,18 +148,16 @@ TEST(Las, CheckInteractionsOnY)
 TEST(Las, CheckInteractionsOnB)
 {
   uint32_t d = 2;
-  std::vector<std::pair<VW::workspace*, bool>> vws;
-  auto* vw_no_interactions = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
-          " --quiet --random_seed 5 --two_pass_svd",
-      nullptr, false, nullptr, nullptr);
+  std::vector<std::pair<std::unique_ptr<VW::workspace>, bool>> vws;
+  auto vw_no_interactions = VW::initialize(vwtest::make_args("--cb_explore_adf", "--large_action_space",
+      "--max_actions", std::to_string(d), "--quiet", "--random_seed", "5", "--two_pass_svd"));
 
-  vws.push_back({vw_no_interactions, false});
+  vws.emplace_back(std::move(vw_no_interactions), false);
 
-  auto* vw_yes_interactions = VW::initialize("--cb_explore_adf --large_action_space --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5 -q :: --two_pass_svd",
-      nullptr, false, nullptr, nullptr);
+  auto vw_yes_interactions = VW::initialize(vwtest::make_args("--cb_explore_adf", "--large_action_space",
+      "--max_actions", std::to_string(d), "--quiet", "--random_seed", "5", "-q", "::", "--two_pass_svd"));
 
-  vws.push_back({vw_yes_interactions, true});
+  vws.emplace_back(std::move(vw_yes_interactions), true);
 
   Eigen::MatrixXf B_non_interactions;
   Eigen::MatrixXf B_interactions;
@@ -203,7 +195,6 @@ TEST(Las, CheckInteractionsOnB)
       if (interactions) { B_interactions = action_space->explore.impl.B; }
       vw.finish_example(examples);
     }
-    VW::finish(vw);
   }
   EXPECT_EQ(B_interactions.isApprox(B_non_interactions), false);
 }
@@ -211,18 +202,16 @@ TEST(Las, CheckInteractionsOnB)
 TEST(Las, CheckAtTimesOmegaIsY)
 {
   uint32_t d = 2;
-  std::vector<std::pair<VW::workspace*, bool>> vws;
-  auto* vw_epsilon = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
-          " --quiet --random_seed 5 --two_pass_svd",
-      nullptr, false, nullptr, nullptr);
+  std::vector<std::pair<std::unique_ptr<VW::workspace>, bool>> vws;
+  auto vw_epsilon = VW::initialize(vwtest::make_args("--cb_explore_adf", "--large_action_space", "--max_actions",
+      std::to_string(d), "--quiet", "--random_seed", "5", "--two_pass_svd"));
 
-  vws.push_back({vw_epsilon, false});
+  vws.emplace_back(std::move(vw_epsilon), false);
 
-  auto* vw_squarecb = VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5 --two_pass_svd",
-      nullptr, false, nullptr, nullptr);
+  auto vw_squarecb = VW::initialize(vwtest::make_args("--cb_explore_adf", "--squarecb", "--large_action_space",
+      "--max_actions", std::to_string(d), "--quiet", "--random_seed", "5", "--two_pass_svd"));
 
-  vws.push_back({vw_squarecb, true});
+  vws.emplace_back(std::move(vw_squarecb), true);
 
   for (auto& vw_pair : vws)
   {
@@ -275,14 +264,14 @@ TEST(Las, CheckAtTimesOmegaIsY)
       {
         auto* ex = examples[action_index];
         // test sanity - test assumes no shared features
-        EXPECT_EQ(!CB::ec_is_example_header(*ex), true);
+        EXPECT_EQ(!VW::ec_is_example_header_cb(*ex), true);
         for (auto ns : ex->indices)
         {
           _UNUSED(ns);
           for (uint64_t col = 0; col < d; col++)
           {
             uint64_t combined_index = action_index + col + seed;
-            auto mm = merand48_boxmuller(combined_index);
+            auto mm = VW::details::merand48_boxmuller(combined_index);
             omega_triplets.push_back(Eigen::Triplet<float>(action_index, col, mm));
           }
         }
@@ -319,25 +308,22 @@ TEST(Las, CheckAtTimesOmegaIsY)
 
       vw.finish_example(examples);
     }
-    VW::finish(vw);
   }
 }
 
 TEST(Las, CheckATimesYIsB)
 {
   uint32_t d = 2;
-  std::vector<std::pair<VW::workspace*, bool>> vws;
-  auto* vw_epsilon = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
-          " --quiet --random_seed 5 --two_pass_svd",
-      nullptr, false, nullptr, nullptr);
+  std::vector<std::pair<std::unique_ptr<VW::workspace>, bool>> vws;
+  auto vw_epsilon = VW::initialize(vwtest::make_args("--cb_explore_adf", "--large_action_space", "--max_actions",
+      std::to_string(d), "--quiet", "--random_seed", "5", "--two_pass_svd"));
 
-  vws.push_back({vw_epsilon, false});
+  vws.emplace_back(std::move(vw_epsilon), false);
 
-  auto* vw_squarecb = VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5 --two_pass_svd",
-      nullptr, false, nullptr, nullptr);
+  auto vw_squarecb = VW::initialize(vwtest::make_args("--cb_explore_adf", "--squarecb", "--large_action_space",
+      "--max_actions", std::to_string(d), "--quiet", "--random_seed", "5", "--two_pass_svd"));
 
-  vws.push_back({vw_squarecb, true});
+  vws.emplace_back(std::move(vw_squarecb), true);
 
   for (auto& vw_pair : vws)
   {
@@ -392,7 +378,6 @@ TEST(Las, CheckATimesYIsB)
 
       vw.finish_example(examples);
     }
-    VW::finish(vw);
   }
 }
 
@@ -400,18 +385,16 @@ TEST(Las, CheckBTimesPIsZ)
 {
   uint32_t d = 2;
 
-  std::vector<std::pair<VW::workspace*, bool>> vws;
-  auto* vw_epsilon = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
-          " --quiet --random_seed 5 --two_pass_svd",
-      nullptr, false, nullptr, nullptr);
+  std::vector<std::pair<std::unique_ptr<VW::workspace>, bool>> vws;
+  auto vw_epsilon = VW::initialize(vwtest::make_args("--cb_explore_adf", "--large_action_space", "--max_actions",
+      std::to_string(d), "--quiet", "--random_seed", "5", "--two_pass_svd"));
 
-  vws.push_back({vw_epsilon, false});
+  vws.emplace_back(std::move(vw_epsilon), false);
 
-  auto* vw_squarecb = VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5 --two_pass_svd",
-      nullptr, false, nullptr, nullptr);
+  auto vw_squarecb = VW::initialize(vwtest::make_args("--cb_explore_adf", "--squarecb", "--large_action_space",
+      "--max_actions", std::to_string(d), "--quiet", "--random_seed", "5", "--two_pass_svd"));
 
-  vws.push_back({vw_squarecb, true});
+  vws.emplace_back(std::move(vw_squarecb), true);
 
   for (auto& vw_pair : vws)
   {
@@ -456,7 +439,7 @@ TEST(Las, CheckBTimesPIsZ)
         for (size_t col = 0; col < d; col++)
         {
           auto combined_index = row + col + static_cast<uint64_t>(seed);
-          auto mm = merand48_boxmuller(combined_index);
+          auto mm = VW::details::merand48_boxmuller(combined_index);
           P(row, col) = mm;
         }
       }
@@ -466,8 +449,6 @@ TEST(Las, CheckBTimesPIsZ)
       EXPECT_EQ(Zp.isApprox(action_space->explore.impl.Z), true);
       vw.finish_example(examples);
     }
-
-    VW::finish(vw);
   }
 }
 
@@ -572,20 +553,19 @@ TEST(Las, CheckFinalTruncatedSVDValidity)
 {
   uint32_t d = 3;
 
-  std::vector<std::tuple<VW::workspace*, bool, VW::cb_explore_adf::implementation_type>> vws;
+  std::vector<std::tuple<std::unique_ptr<VW::workspace>, bool, VW::cb_explore_adf::implementation_type>> vws;
 
-  auto* vw_w_interactions_sq = VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5 -q :: --two_pass_svd",
-      nullptr, false, nullptr, nullptr);
+  auto vw_w_interactions_sq = VW::initialize(vwtest::make_args("--cb_explore_adf", "--squarecb", "--large_action_space",
+      "--max_actions", std::to_string(d), "--quiet", "--random_seed", "5", "-q", "::", "--two_pass_svd"));
 
-  vws.emplace_back(vw_w_interactions_sq, true, VW::cb_explore_adf::implementation_type::two_pass_svd);
+  vws.emplace_back(std::move(vw_w_interactions_sq), true, VW::cb_explore_adf::implementation_type::two_pass_svd);
 
-  auto* vw_w_interactions_sq_sparse_weights =
-      VW::initialize("--cb_explore_adf --squarecb --sparse_weights --large_action_space --max_actions " +
-              std::to_string(d) + " --quiet --random_seed 5 -q :: --two_pass_svd",
-          nullptr, false, nullptr, nullptr);
+  auto vw_w_interactions_sq_sparse_weights =
+      VW::initialize(vwtest::make_args("--cb_explore_adf", "--squarecb", "--sparse_weights", "--large_action_space",
+          "--max_actions", std::to_string(d), "--quiet", "--random_seed", "5", "-q", "::", "--two_pass_svd"));
 
-  vws.emplace_back(vw_w_interactions_sq_sparse_weights, true, VW::cb_explore_adf::implementation_type::two_pass_svd);
+  vws.emplace_back(
+      std::move(vw_w_interactions_sq_sparse_weights), true, VW::cb_explore_adf::implementation_type::two_pass_svd);
 
   for (auto& vw_pair : vws)
   {
@@ -611,26 +591,22 @@ TEST(Las, CheckFinalTruncatedSVDValidity)
           vw, action_space, apply_diag_M, _triplets, d);
     }
     else { FAIL() << "test for implementation type not implemented"; }
-
-    VW::finish(vw);
   }
 }
 
 TEST(Las, CheckShrinkFactor)
 {
   uint32_t d = 2;
-  std::vector<std::pair<VW::workspace*, bool>> vws;
-  auto* vw_epsilon = VW::initialize("--cb_explore_adf --large_action_space --max_actions " + std::to_string(d) +
-          " --quiet --random_seed 5 --two_pass_svd",
-      nullptr, false, nullptr, nullptr);
+  std::vector<std::pair<std::unique_ptr<VW::workspace>, bool>> vws;
+  auto vw_epsilon = VW::initialize(vwtest::make_args("--cb_explore_adf", "--large_action_space", "--max_actions",
+      std::to_string(d), "--quiet", "--random_seed", "5", "--two_pass_svd"));
 
-  vws.push_back({vw_epsilon, false});
+  vws.emplace_back(std::move(vw_epsilon), false);
 
-  auto* vw_squarecb = VW::initialize("--cb_explore_adf --squarecb --large_action_space --max_actions " +
-          std::to_string(d) + " --quiet --random_seed 5 --two_pass_svd",
-      nullptr, false, nullptr, nullptr);
+  auto vw_squarecb = VW::initialize(vwtest::make_args("--cb_explore_adf", "--squarecb", "--large_action_space",
+      "--max_actions", std::to_string(d), "--quiet", "--random_seed", "5", "--two_pass_svd"));
 
-  vws.push_back({vw_squarecb, true});
+  vws.emplace_back(std::move(vw_squarecb), true);
 
   for (auto& vw_pair : vws)
   {
@@ -684,6 +660,5 @@ TEST(Las, CheckShrinkFactor)
     else { EXPECT_EQ(diag_M.isApprox(identity_diag_M), true); }
 
     vw.finish_example(examples);
-    VW::finish(vw);
   }
 }

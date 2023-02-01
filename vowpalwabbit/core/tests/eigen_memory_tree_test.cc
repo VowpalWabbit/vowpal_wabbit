@@ -4,9 +4,9 @@
 
 #include "vw/core/reductions/eigen_memory_tree.h"
 
+#include "vw/common/random.h"
 #include "vw/core/example.h"
 #include "vw/core/learner.h"
-#include "vw/core/rand_state.h"
 #include "vw/core/vw.h"
 #include "vw/test_common/test_common.h"
 
@@ -35,35 +35,31 @@ emt_tree* get_emt_tree(VW::workspace& all)
 
 TEST(Emt, ParamsTest1)
 {
-  auto vw = VW::initialize_experimental(vwtest::make_args("--quiet", "--emt"));
+  auto vw = VW::initialize(vwtest::make_args("--quiet", "--emt"));
   auto* tree = get_emt_tree(*vw);
 
   EXPECT_EQ(tree->leaf_split, 100);
   EXPECT_EQ(tree->scorer_type, emt_scorer_type::SELF_CONSISTENT_RANK);
   EXPECT_EQ(tree->router_type, emt_router_type::EIGEN);
   EXPECT_EQ(tree->bounder->max_size, 0);
-
-  VW::finish(*vw, false);
 }
 
 TEST(Emt, ParamsTest2)
 {
   auto args = vwtest::make_args(
       "--quiet", "--emt", "--emt_tree", "20", "--emt_scorer", "distance", "--emt_router", "random", "--emt_leaf", "50");
-  auto vw = VW::initialize_experimental(std::move(args));
+  auto vw = VW::initialize(std::move(args));
   auto tree = get_emt_tree(*vw);
 
   EXPECT_EQ(tree->leaf_split, 50);
   EXPECT_EQ(tree->scorer_type, emt_scorer_type::DISTANCE);
   EXPECT_EQ(tree->router_type, emt_router_type::RANDOM);
   EXPECT_EQ(tree->bounder->max_size, 20);
-
-  VW::finish(*vw, false);
 }
 
 TEST(Emt, ExactMatchSansRouterTest)
 {
-  auto vw = VW::initialize_experimental(vwtest::make_args("--quiet", "--emt"));
+  auto vw = VW::initialize(vwtest::make_args("--quiet", "--emt"));
 
   auto* ex1 = VW::read_example(*vw, "1 | 1 2 3");
   auto* ex2 = VW::read_example(*vw, "2 | 2 3 4");
@@ -82,12 +78,11 @@ TEST(Emt, ExactMatchSansRouterTest)
 
   vw->finish_example(*ex1);
   vw->finish_example(*ex2);
-  VW::finish(*vw, false);
 }
 
 TEST(Emt, ExactMatchWithRouterTest)
 {
-  auto vw = VW::initialize_experimental(vwtest::make_args("--quiet", "--emt", "--emt_leaf", "5"));
+  auto vw = VW::initialize(vwtest::make_args("--quiet", "--emt", "--emt_leaf", "5"));
 
   for (int i = 0; i < 10; i++)
   {
@@ -103,13 +98,11 @@ TEST(Emt, ExactMatchWithRouterTest)
     EXPECT_EQ(ex->pred.multiclass, i);
     vw->finish_example(*ex);
   }
-
-  VW::finish(*vw, false);
 }
 
 TEST(Emt, Bounding)
 {
-  auto vw = VW::initialize_experimental(vwtest::make_args("--quiet", "--emt", "--emt_tree", "5"));
+  auto vw = VW::initialize(vwtest::make_args("--quiet", "--emt", "--emt_tree", "5"));
   auto* tree = get_emt_tree(*vw);
 
   for (int i = 0; i < 10; i++)
@@ -122,14 +115,12 @@ TEST(Emt, Bounding)
   EXPECT_EQ(tree->bounder->list.size(), 5);
   EXPECT_EQ(tree->root->examples.size(), 5);
   EXPECT_EQ(tree->root->router_weights.size(), 0);
-
-  VW::finish(*vw, false);
 }
 
 TEST(Emt, Split)
 {
   auto args = vwtest::make_args("--quiet", "--emt", "--emt_tree", "10", "--emt_leaf", "3");
-  auto vw = VW::initialize_experimental(std::move(args));
+  auto vw = VW::initialize(std::move(args));
   auto* tree = get_emt_tree(*vw);
 
   for (int i = 0; i < 4; i++)
@@ -148,8 +139,6 @@ TEST(Emt, Split)
   EXPECT_GE(tree->root->router_weights.size(), 0);
   EXPECT_EQ(tree->root->right->router_weights.size(), 0);
   EXPECT_EQ(tree->root->left->router_weights.size(), 0);
-
-  VW::finish(*vw, false);
 }
 
 TEST(Emt, Inner)
@@ -330,7 +319,7 @@ TEST(Emt, Shuffle)
 
 TEST(Emt, SaveLoad)
 {
-  auto vw_save = VW::initialize_experimental(vwtest::make_args("--quiet", "--emt", "--emt_leaf", "5"));
+  auto vw_save = VW::initialize(vwtest::make_args("--quiet", "--emt", "--emt_leaf", "5"));
 
   for (int i = 0; i < 10; i++)
   {
@@ -345,9 +334,8 @@ TEST(Emt, SaveLoad)
   VW::save_predictor(*vw_save, io_writer);
   io_writer.flush();
 
-  auto vw_load =
-      VW::initialize_experimental(vwtest::make_args("--no_stdin", "--quiet", "--preserve_performance_counters"),
-          VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
+  auto vw_load = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--preserve_performance_counters"),
+      VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
 
   for (int i = 0; i < 10; i++)
   {
@@ -356,9 +344,6 @@ TEST(Emt, SaveLoad)
     EXPECT_EQ(ex->pred.multiclass, i);
     vw_load->finish_example(*ex);
   }
-
-  VW::finish(*vw_save, false);
-  VW::finish(*vw_load, false);
 }
 
 }  // namespace eigen_memory_tree_test

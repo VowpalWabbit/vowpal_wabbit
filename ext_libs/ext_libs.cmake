@@ -106,6 +106,11 @@ else()
 endif()
 
 add_library(sse2neon INTERFACE)
-# This submodule is placed into a nested subdirectory since it exposes its
-# header at the root of the repo rather than its own nested sse2neon/ dir
-target_include_directories(sse2neon SYSTEM INTERFACE "${CMAKE_CURRENT_LIST_DIR}/sse2neon")
+if(VW_SSE2NEON_SYS_DEP)
+  find_path(SSE2NEON_INCLUDE_DIRS "sse2neon/sse2neon.h")
+  target_include_directories(sse2neon SYSTEM INTERFACE "${SSE2NEON_INCLUDE_DIRS}")
+else()
+  # This submodule is placed into a nested subdirectory since it exposes its
+  # header at the root of the repo rather than its own nested sse2neon/ dir
+  target_include_directories(sse2neon SYSTEM INTERFACE "${CMAKE_CURRENT_LIST_DIR}/sse2neon")
+endif()

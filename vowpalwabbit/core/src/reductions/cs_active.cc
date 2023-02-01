@@ -11,7 +11,6 @@
 #include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/named_labels.h"
-#include "vw/core/rand48.h"
 #include "vw/core/reductions/csoaa.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
@@ -22,7 +21,7 @@
 #include <cmath>
 #include <limits>
 
-//#define B_SEARCH_MAX_ITER 50
+// #define B_SEARCH_MAX_ITER 50
 #define B_SEARCH_MAX_ITER 20
 
 using namespace VW::LEARNER;
@@ -461,8 +460,10 @@ base_learner* VW::reductions::cs_active_setup(VW::setup_base_i& stack_builder)
       predict_ptr, stack_builder.get_setupfn_name(cs_active_setup) + name_addition)
                 .set_params_per_weight(ws)
                 .set_learn_returns_prediction(true)
+                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
                 .set_output_prediction_type(VW::prediction_type_t::ACTIVE_MULTICLASS)
                 .set_input_label_type(VW::label_type_t::CS)
+                .set_output_label_type(VW::label_type_t::SIMPLE)
                 .set_output_example_prediction(output_example_prediction_cs_active)
                 .set_print_update(print_update_cs_active)
                 .set_update_stats(update_stats_cs_active)

@@ -165,7 +165,7 @@ void set_cache_reader(VW::workspace& all) { all.example_parser->reader = VW::par
 void set_string_reader(VW::workspace& all)
 {
   all.example_parser->reader = VW::parsers::text::read_features_string;
-  all.print_by_ref = print_result_by_ref;
+  all.print_by_ref = VW::details::print_result_by_ref;
 }
 
 bool is_currently_json_reader(const VW::workspace& all)
@@ -527,8 +527,9 @@ void VW::details::enable_sources(
         if (got_sigterm)
         {
           for (size_t i = 0; i < num_children; i++) { kill(children[i], SIGTERM); }
-          VW::finish(all);
-          exit(0);
+          all.finish();
+          delete &all;
+          std::exit(0);
         }
         if (pid < 0) { continue; }
         for (size_t i = 0; i < num_children; i++)

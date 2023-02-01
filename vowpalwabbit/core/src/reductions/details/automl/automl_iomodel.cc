@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "vw/core/automl_impl.h"
-#include "vw/core/confidence_sequence_robust.h"
+#include "vw/core/estimators/confidence_sequence_robust.h"
 #include "vw/core/model_utils.h"
 
 namespace VW
