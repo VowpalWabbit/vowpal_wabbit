@@ -302,7 +302,7 @@ class MultiLabel(object):
             The MultiLabel string representation.
         """
         labels = self.label if isinstance(self.label, list) else [self.label]
-        for (i, label) in enumerate(labels):
+        for i, label in enumerate(labels):
             label_col = label.get_col(df)
             if i == 0:
                 out = label_col
@@ -542,7 +542,6 @@ class _ListLabel(object):
     sep_by_label = dict(ContextualbanditLabel=" ", MultiLabel=",")
 
     def __init__(self, label_list: List[Union[ContextualbanditLabel, MultiLabel]]):
-
         instance_classes = set(
             [type(label_instance).__name__ for label_instance in label_list]
         )
@@ -605,7 +604,7 @@ class _ListLabel(object):
         Returns:
             The _ListLabel string representation.
         """
-        for (i, label) in enumerate(self):
+        for i, label in enumerate(self):
             if i == 0:
                 out = label.process(df)
             else:
@@ -988,7 +987,6 @@ class DFtoVW:
         class_name = type(instance).__name__
 
         for attribute_name, attribute_value in vars(instance).items():
-
             if not isinstance(attribute_value, list):
                 attribute_value = [attribute_value]
 
@@ -1032,7 +1030,7 @@ class DFtoVW:
         if not all([x is None for x in [self.label, self.tag]]):
             self.out += self.process_label_and_tag()
 
-        for (i, namespace) in enumerate(self.namespaces):
+        for i, namespace in enumerate(self.namespaces):
             to_add = namespace.process() + self.process_features(namespace.features)
             self.out += (to_add + " ") if (i < len(self.namespaces) - 1) else to_add
 
