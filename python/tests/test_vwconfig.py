@@ -6,7 +6,7 @@ def helper_options_to_list_strings(config):
     cmd_str_list = []
 
     for name, config_group in config.items():
-        for (group_name, options) in config_group:
+        for group_name, options in config_group:
             for option in options:
                 temp_str = str(option)
                 if temp_str:

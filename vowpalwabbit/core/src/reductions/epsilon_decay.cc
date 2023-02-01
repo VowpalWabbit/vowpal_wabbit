@@ -5,7 +5,7 @@
 #include "vw/core/reductions/epsilon_decay.h"
 
 #include "vw/config/options.h"
-#include "vw/core/distributionally_robust.h"
+#include "vw/core/estimators/distributionally_robust.h"
 #include "vw/core/global_data.h"
 #include "vw/core/label_type.h"
 #include "vw/core/learner.h"
@@ -39,8 +39,10 @@ float decayed_epsilon(float init_ep, uint64_t update_count)
 epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
     double epsilon_decay_significance_level, double epsilon_decay_estimator_decay, dense_parameters& weights,
     std::string epsilon_decay_audit_str, bool constant_epsilon, uint32_t& wpp, uint64_t min_champ_examples,
-    float initial_epsilon, uint64_t shift_model_bounds, bool reward_as_cost)
-    : _min_scope(min_scope)
+    float initial_epsilon, uint64_t shift_model_bounds, bool reward_as_cost, double tol_x, bool is_brentq,
+    bool predict_only_model)
+    : _model_count(model_count)
+    , _min_scope(min_scope)
     , _epsilon_decay_significance_level(epsilon_decay_significance_level)
     , _epsilon_decay_estimator_decay(epsilon_decay_estimator_decay)
     , _weights(weights)
@@ -51,6 +53,7 @@ epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
     , _initial_epsilon(initial_epsilon)
     , _shift_model_bounds(shift_model_bounds)
     , _reward_as_cost(reward_as_cost)
+    , _predict_only_model(predict_only_model)
 {
   _weight_indices.resize(model_count);
   conf_seq_estimators.reserve(model_count);
@@ -59,7 +62,10 @@ epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
   {
     conf_seq_estimators.emplace_back();
     conf_seq_estimators.back().reserve(i + 1);
-    for (uint64_t j = 0; j < i + 1; ++j) { conf_seq_estimators.back().emplace_back(epsilon_decay_significance_level); }
+    for (uint64_t j = 0; j < i + 1; ++j)
+    {
+      conf_seq_estimators.back().emplace_back(tol_x, is_brentq, epsilon_decay_significance_level);
+    }
   }
 }
 
@@ -107,7 +113,6 @@ void epsilon_decay_data::update_weights(float init_ep, VW::LEARNER::multi_learne
         if (a_s.action == labelled_action)
         {
           float w = (logged.probability > 0) ? a_s.score / logged.probability : 0;
-          if (model_ind == model_count - 1) { w = 1; }  // Set w = 1 for champ
           for (int64_t estimator_ind = 0; estimator_ind <= model_ind; ++estimator_ind)
           {
             conf_seq_estimators[model_ind][estimator_ind].update(w, r);
@@ -170,7 +175,7 @@ void epsilon_decay_data::clear_weights_and_estimators(int64_t swap_dist, int64_t
   }
   for (int64_t ind = 0; ind < swap_dist; ++ind)
   {
-    VW::reductions::multi_model::clear_offset(_weights, _weight_indices[ind], _wpp);
+    VW::reductions::multi_model::clear_innermost_offset(_weights, _weight_indices[ind], _wpp, _model_count);
   }
 }
 
@@ -274,7 +279,10 @@ void save_load_epsilon_decay(
 {
   if (io.num_files() == 0) { return; }
   if (read) { VW::model_utils::read_model_field(io, epsilon_decay); }
-  else { VW::model_utils::write_model_field(io, epsilon_decay, "_epsilon_decay", text); }
+  else if (!epsilon_decay._predict_only_model)
+  {
+    VW::model_utils::write_model_field(io, epsilon_decay, "_epsilon_decay", text);
+  }
 }
 
 void finish(VW::reductions::epsilon_decay::epsilon_decay_data& data)
@@ -287,6 +295,34 @@ void finish(VW::reductions::epsilon_decay::epsilon_decay_data& data)
     buf.flush();
     buf.close_file();
   }
+}
+
+void pre_save_load_epsilon_decay(VW::workspace& all, VW::reductions::epsilon_decay::epsilon_decay_data& data)
+{
+  options_i& options = *all.options;
+  if (!data._predict_only_model) { return; }
+  // Clear non-champ weights first
+
+  std::swap(*data._gd_normalized, data.per_live_model_state_double[0]);
+  std::swap(*data._gd_total_weight, data.per_live_model_state_double[1]);
+  std::swap(*data._sd_gravity, data.per_live_model_state_double[2]);
+  std::swap(*data._cb_adf_event_sum, data.per_live_model_state_uint64[0]);
+  std::swap(*data._cb_adf_action_sum, data.per_live_model_state_uint64[1]);
+
+  // Adjust champ weights to new single-model space
+  VW::reductions::multi_model::reduce_innermost_model_weights(
+      data._weights, data._weight_indices[data.conf_seq_estimators.size() - 1], data._wpp, data._model_count);
+
+  for (auto& group : options.get_all_option_group_definitions())
+  {
+    if (group.m_name == "[Reduction] Epsilon-Decaying Exploration Options")
+    {
+      for (auto& opt : group.m_options) { opt->m_keep = false; }
+    }
+  }
+
+  all.num_bits = all.num_bits - static_cast<uint32_t>(std::log2(data._wpp));
+  options.get_typed_option<uint32_t>("bit_precision").value(all.num_bits);
 }
 
 }  // namespace
@@ -309,6 +345,8 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   float initial_epsilon;
   uint64_t shift_model_bounds;
   bool reward_as_cost;
+  float tol_x;
+  std::string opt_func = "bisect";
 
   option_group_definition new_options("[Reduction] Epsilon-Decaying Exploration");
   new_options
@@ -368,6 +406,17 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
       .add(make_option("reward_as_cost", reward_as_cost)
                .keep()
                .help("Treat rewards as cost (do not negate sign)")
+               .experimental())
+      .add(make_option("tol_x", tol_x)
+               .default_value(1e-6f)
+               .keep()
+               .help("Tolerance for estimation optimization")
+               .experimental())
+      .add(make_option("opt_func", opt_func)
+               .default_value("bisect")
+               .keep()
+               .one_of({"bisect", "brentq"})
+               .help("Optimization function for estimation)")
                .experimental());
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
@@ -376,10 +425,13 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
 
   if (!fixed_significance_level) { epsilon_decay_significance_level /= model_count; }
 
+  bool predict_only_model = options.was_supplied("predict_only_model");
+  bool is_brentq = opt_func == "brentq";
+
   auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(model_count, min_scope,
       epsilon_decay_significance_level, epsilon_decay_estimator_decay, all.weights.dense_weights,
       epsilon_decay_audit_str, constant_epsilon, all.wpp, min_champ_examples, initial_epsilon, shift_model_bounds,
-      reward_as_cost);
+      reward_as_cost, tol_x, is_brentq, predict_only_model);
 
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs
@@ -409,6 +461,7 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
                         .set_params_per_weight(model_count)
                         .set_save_load(save_load_epsilon_decay)
                         .set_finish(::finish)
+                        .set_pre_save_load(pre_save_load_epsilon_decay)
                         .build();
 
     return VW::LEARNER::make_base(*learner);
