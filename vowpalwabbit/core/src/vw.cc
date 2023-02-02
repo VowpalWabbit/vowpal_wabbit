@@ -174,8 +174,10 @@ VW::workspace* VW::initialize(config::options_i& options, io_buf* model, bool sk
     VW::trace_message_t trace_listener, void* trace_context)
 {
   std::unique_ptr<config::options_i, options_deleter_type> opts(&options, [](VW::config::options_i*) {});
-
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
   return initialize(std::move(opts), model, skip_model_load, trace_listener, trace_context);
+  VW_WARNING_STATE_POP
 }
 VW::workspace* VW::initialize(
     const std::string& s, io_buf* model, bool skip_model_load, VW::trace_message_t trace_listener, void* trace_context)
@@ -212,8 +214,11 @@ VW::workspace* VW::seed_vw_model(
   auto serialized_options = serializer.str();
   serialized_options = serialized_options + " " + extra_args;
 
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
   VW::workspace* new_model =
       VW::initialize(serialized_options, nullptr, true /* skip_model_load */, trace_listener, trace_context);
+  VW_WARNING_STATE_POP
   delete new_model->sd;
 
   // reference model states stored in the specified VW instance
@@ -236,7 +241,10 @@ VW::workspace* VW::initialize_escaped(
 
   try
   {
+    VW_WARNING_STATE_PUSH
+    VW_WARNING_DISABLE_DEPRECATED_USAGE
     ret = initialize(argc, argv, model, skip_model_load, trace_listener, trace_context);
+    VW_WARNING_STATE_POP
   }
   catch (...)
   {
@@ -276,8 +284,8 @@ std::unique_ptr<VW::workspace> VW::initialize_experimental(std::unique_ptr<confi
 }
 
 std::unique_ptr<VW::workspace> VW::initialize(std::unique_ptr<config::options_i> options,
-    std::unique_ptr<VW::io::reader> model_override_reader, bool skip_model_load,
-    driver_output_func_t driver_output_func, void* driver_output_func_context, VW::io::logger* custom_logger)
+    std::unique_ptr<VW::io::reader> model_override_reader, driver_output_func_t driver_output_func,
+    void* driver_output_func_context, VW::io::logger* custom_logger)
 {
   auto* released_options = options.release();
   std::unique_ptr<config::options_i, options_deleter_type> options_custom_deleter(
@@ -290,7 +298,7 @@ std::unique_ptr<VW::workspace> VW::initialize(std::unique_ptr<config::options_i>
     model = VW::make_unique<io_buf>();
     model->add_file(std::move(model_override_reader));
   }
-  return initialize_internal(std::move(options_custom_deleter), model.get(), skip_model_load /* skip model load */,
+  return initialize_internal(std::move(options_custom_deleter), model.get(), false /* skip model load */,
       driver_output_func, driver_output_func_context, custom_logger, nullptr);
 }
 
@@ -315,8 +323,11 @@ std::unique_ptr<VW::workspace> VW::seed_vw_model(VW::workspace& vw_model, const 
 
   auto options = VW::make_unique<config::options_cli>(serialized_options);
 
-  auto new_model = VW::initialize(std::move(options), nullptr, true /* skip_model_load */, driver_output_func,
-      driver_output_func_context, custom_logger);
+  std::unique_ptr<config::options_i, options_deleter_type> options_custom_deleter(
+      new VW::config::options_cli(serialized_options), [](VW::config::options_i* ptr) { delete ptr; });
+
+  auto new_model = initialize_internal(std::move(options_custom_deleter), nullptr, false /* skip model load */,
+      driver_output_func, driver_output_func_context, custom_logger, nullptr);
   delete new_model->sd;
 
   // reference model states stored in the specified VW instance
@@ -833,7 +844,7 @@ VW::feature* VW::get_features(VW::workspace& all, example* ec, size_t& feature_n
 
 void VW::return_features(feature* f) { delete[] f; }
 
-void VW::add_constant_feature(VW::workspace& all, VW::example* ec)
+void VW::add_constant_feature(const VW::workspace& all, VW::example* ec)
 {
   ec->indices.push_back(VW::details::CONSTANT_NAMESPACE);
   ec->feature_space[VW::details::CONSTANT_NAMESPACE].push_back(

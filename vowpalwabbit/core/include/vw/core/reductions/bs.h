@@ -2,7 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #pragma once
-#include "vw/core/rand_state.h"
+#include "vw/common/random.h"
 #include "vw/core/vw_fwd.h"
 
 namespace VW

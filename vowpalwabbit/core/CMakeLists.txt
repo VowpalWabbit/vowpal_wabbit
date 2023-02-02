@@ -19,18 +19,18 @@ set(vw_core_headers
   include/vw/core/cb.h
   include/vw/core/ccb_label.h
   include/vw/core/ccb_reduction_features.h
-  include/vw/core/confidence_sequence.h
-  include/vw/core/confidence_sequence_robust.h
+  include/vw/core/estimators/confidence_sequence.h
+  include/vw/core/estimators/confidence_sequence_robust.h
   include/vw/core/constant.h
   include/vw/core/continuous_actions_reduction_features.h
   include/vw/core/correctedMath.h
   include/vw/core/cost_sensitive.h
-  include/vw/core/cressieread_estimator.h
+  include/vw/core/estimators/cressieread.h
   include/vw/core/crossplat_compat.h
   include/vw/core/debug_log.h
   include/vw/core/debug_print.h
   include/vw/core/decision_scores.h
-  include/vw/core/distributionally_robust.h
+  include/vw/core/estimators/distributionally_robust.h
   include/vw/core/epsilon_reduction_features.h
   include/vw/core/error_constants.h
   include/vw/core/error_data.h
@@ -81,7 +81,6 @@ set(vw_core_headers
   include/vw/core/prob_dist_cont.h
   include/vw/core/queue.h
   include/vw/core/rand_state.h
-  include/vw/core/rand48.h
   include/vw/core/reduction_features.h
   include/vw/core/reduction_stack.h
   include/vw/core/reductions/active_cover.h
@@ -209,7 +208,7 @@ set(vw_core_sources
   src/confidence_sequence.cc
   src/confidence_sequence_robust.cc
   src/cost_sensitive.cc
-  src/cressieread_estimator.cc
+  src/cressieread.cc
   src/crossplat_compat.cc
   src/debug_print.cc
   src/decision_scores.cc
@@ -247,7 +246,6 @@ set(vw_core_sources
   src/print_utils.cc
   src/prob_dist_cont.cc
   src/qr_decomposition.cc
-  src/rand48.cc
   src/reduction_stack.cc
   src/reductions/active_cover.cc
   src/reductions/active.cc

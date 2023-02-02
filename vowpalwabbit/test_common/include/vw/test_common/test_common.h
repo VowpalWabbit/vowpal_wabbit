@@ -16,6 +16,10 @@ namespace vwtest
 
 constexpr float EXPLICIT_FLOAT_TOL = 0.0001f;
 
+/// Helper to convert a list of strings into a unique_ptr<options_cli>
+/// \code
+/// auto args = make_args("--quiet", "--chain_hash", "--cb_explore_adf");
+/// \endcode
 template <typename... ArgsT>
 std::unique_ptr<VW::config::options_i> make_args(ArgsT const&... args)
 {

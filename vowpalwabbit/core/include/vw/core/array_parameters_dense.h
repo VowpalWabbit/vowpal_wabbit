@@ -137,8 +137,6 @@ public:
 
   void set_zero(size_t offset);
 
-  void move_offsets(const size_t from, const size_t to, const size_t params_per_problem, bool swap = false);
-
   uint64_t mask() const { return _weight_mask; }
 
   uint64_t seeded() const { return _seeded; }

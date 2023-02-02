@@ -4,6 +4,7 @@
 
 #include "vw/core/parse_args.h"
 
+#include "vw/common/random.h"
 #include "vw/common/text_utils.h"
 #include "vw/common/vw_exception.h"
 #include "vw/config/cli_help_formatter.h"
@@ -27,8 +28,6 @@
 #include "vw/core/parse_regressor.h"
 #include "vw/core/parser.h"
 #include "vw/core/prediction_type.h"
-#include "vw/core/rand48.h"
-#include "vw/core/rand_state.h"
 #include "vw/core/reduction_stack.h"
 #include "vw/core/reductions/metrics.h"
 #include "vw/core/scope_exit.h"
@@ -561,8 +560,8 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
                .help("Ignore namespaces beginning with character <arg> for linear terms only"))
       .add(make_option("ignore_features_dsjson_experimental", ignore_features_dsjson)
                .keep()
-               .help("Ignore specified features from namespace. To ignore a feature arg should be namespace|feature "
-                     "To ignore a feature in the default namespace, arg should be |feature")
+               .help("Ignore specified features from namespace. To ignore a feature arg should be "
+                     "<namespace>|<feature>. <namespace> should be empty for default")
                .experimental())
       .add(make_option("keep", keeps).keep().help("Keep namespaces beginning with character <arg>"))
       .add(make_option("redefine", redefines)

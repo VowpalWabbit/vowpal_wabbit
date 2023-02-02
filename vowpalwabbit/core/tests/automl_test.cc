@@ -6,7 +6,7 @@
 
 #include "simulator.h"
 #include "vw/core/automl_impl.h"
-#include "vw/core/confidence_sequence_robust.h"
+#include "vw/core/estimators/confidence_sequence_robust.h"
 #include "vw/core/metric_sink.h"
 #include "vw/core/vw_fwd.h"
 
@@ -153,16 +153,14 @@ TEST(Automl, SaveLoadWIterations)
   const std::vector<uint64_t> swap_after = {500};
   callback_map empty_hooks;
   auto ctr_no_save = simulator::_test_helper_hook(
-      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
-      "--fixed_significance_level "
-      "--random_seed 5 --default_lease 10",
+      std::vector<std::string>{"--automl", "3", "--priority_type", "favor_popular_namespaces", "--cb_explore_adf",
+          "--quiet", "--epsilon", "0.2", "--fixed_significance_level", "--random_seed", "5", "--default_lease", "10"},
       empty_hooks, num_iterations, seed, swap_after);
   EXPECT_GT(ctr_no_save.back(), 0.6f);
 
   auto ctr_with_save = simulator::_test_helper_save_load(
-      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
-      "--fixed_significance_level "
-      "--random_seed 5 --default_lease 10",
+      std::vector<std::string>{"--automl", "3", "--priority_type", "favor_popular_namespaces", "--cb_explore_adf",
+          "--quiet", "--epsilon", "0.2", "--fixed_significance_level", "--random_seed", "5", "--default_lease", "10"},
       num_iterations, seed, swap_after, split);
   EXPECT_GT(ctr_with_save.back(), 0.6f);
 
@@ -196,9 +194,8 @@ TEST(Automl, Assert0thEventAutomlWIterations)
       });
 
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
-      "--random_seed 5 "
-      "--oracle_type rand --default_lease 10",
+      std::vector<std::string>{"--automl", "3", "--priority_type", "favor_popular_namespaces", "--cb_explore_adf",
+          "--quiet", "--epsilon", "0.2", "--random_seed", "5", "--oracle_type", "rand", "--default_lease", "10"},
       test_hooks, num_iterations);
 
   EXPECT_GT(ctr.back(), 0.1f);
@@ -231,9 +228,10 @@ TEST(Automl, Assert0thEventMetricsWIterations)
         return true;
       });
 
-  auto ctr = simulator::_test_helper_hook(
-      "--extra_metrics ut_metrics.json --cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --default_lease 10",
-      test_hooks, num_iterations);
+  auto ctr =
+      simulator::_test_helper_hook(std::vector<std::string>{"--extra_metrics", "ut_metrics.json", "--cb_explore_adf",
+                                       "--quiet", "--epsilon", "0.2", "--random_seed", "5", "--default_lease", "10"},
+          test_hooks, num_iterations);
 
   EXPECT_GT(ctr.back(), 0.1f);
 }
@@ -273,12 +271,11 @@ TEST(Automl, AssertLiveConfigsAndLeaseWIterations)
         return true;
       });
 
-  auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
-      "--fixed_significance_level "
-      "--random_seed 5 "
-      "--oracle_type rand --default_lease 10",
-      test_hooks, num_iterations);
+  auto ctr =
+      simulator::_test_helper_hook(std::vector<std::string>{"--automl=3", "--priority_type", "favor_popular_namespaces",
+                                       "--cb_explore_adf", "--quiet", "--epsilon", "0.2", "--fixed_significance_level",
+                                       "--random_seed", "5", "--oracle_type", "rand", "--default_lease", "10"},
+          test_hooks, num_iterations);
 
   EXPECT_GT(ctr.back(), 0.1f);
 }
@@ -287,8 +284,8 @@ TEST(Automl, AssertLiveConfigsAndLeaseWIterations)
 TEST(Automl, CppSimulatorAutomlWIterations)
 {
   auto ctr = simulator::_test_helper(
-      "--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --automl 3 --priority_type "
-      "favor_popular_namespaces --oracle_type rand --default_lease 10");
+      std::vector<std::string>{"--cb_explore_adf", "--quiet", "--epsilon", "0.2", "--random_seed", "5", "--automl", "3",
+          "--priority_type", "favor_popular_namespaces", "--oracle_type", "rand", "--default_lease", "10"});
   EXPECT_GT(ctr.back(), 0.6f);
 }
 
@@ -331,18 +328,16 @@ TEST(Automl, NamespaceSwitchWIterations)
 
         auto champ_exclusions =
             aml->cm->_config_oracle.configs[aml->cm->estimators[aml->cm->current_champ].first.config_index].elements;
-        EXPECT_EQ(champ_exclusions.size(), 1);
-        std::vector<VW::namespace_index> ans{'U', 'U'};
-        EXPECT_NE(champ_exclusions.find(ans), champ_exclusions.end());
+        EXPECT_EQ(champ_exclusions.size(), 0);
         auto champ_interactions = aml->cm->estimators[aml->cm->current_champ].first.live_interactions;
-        EXPECT_EQ(champ_interactions.size(), 5);
+        EXPECT_EQ(champ_interactions.size(), 6);
         return true;
       });
 
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
-      "--random_seed 5 "
-      "--default_lease 500 --oracle_type one_diff --noconstant ",
+      std::vector<std::string>{"--automl", "3", "--priority_type", "favor_popular_namespaces", "--cb_explore_adf",
+          "--quiet", "--epsilon", "0.2", "--random_seed", "5", "--default_lease", "500", "--oracle_type", "one_diff",
+          "--noconstant"},
       test_hooks, num_iterations, seed, swap_after);
   EXPECT_GT(ctr.back(), 0.65f);
 }
@@ -364,9 +359,9 @@ TEST(Automl, ClearConfigsWIterations)
         EXPECT_EQ(aml->cm->current_champ, 0);
         EXPECT_EQ(aml->cm->_config_oracle.valid_config_size, 4);
         EXPECT_EQ(clear_champ_switch - 1, aml->cm->total_learn_count);
-        EXPECT_EQ(aml->cm->estimators[0].first.live_interactions.size(), 2);
-        EXPECT_EQ(aml->cm->estimators[1].first.live_interactions.size(), 3);
-        EXPECT_EQ(aml->cm->estimators[2].first.live_interactions.size(), 1);
+        EXPECT_EQ(aml->cm->estimators[0].first.live_interactions.size(), 3);
+        EXPECT_EQ(aml->cm->estimators[1].first.live_interactions.size(), 2);
+        EXPECT_EQ(aml->cm->estimators[2].first.live_interactions.size(), 2);
         EXPECT_EQ(aml->current_state, VW::reductions::automl::automl_state::Experimenting);
         return true;
       });
@@ -389,9 +384,9 @@ TEST(Automl, ClearConfigsWIterations)
 
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
-      "--fixed_significance_level "
-      "--random_seed 5 --oracle_type rand --default_lease 500 --noconstant ",
+      std::vector<std::string>{"--automl", "3", "--priority_type", "favor_popular_namespaces", "--cb_explore_adf",
+          "--quiet", "--epsilon", "0.2", "--fixed_significance_level", "--random_seed", "5", "--oracle_type", "rand",
+          "--default_lease", "500", "--noconstant"},
       test_hooks, num_iterations, seed, swap_after);
 
   EXPECT_GT(ctr.back(), 0.4f);
@@ -437,17 +432,17 @@ TEST(Automl, ClearConfigsOneDiffWIterations)
       {
         aml_test::aml_onediff* aml = aml_test::get_automl_data<VW::reductions::automl::one_diff_impl>(all);
         EXPECT_EQ(aml->cm->estimators.size(), 3);
-        EXPECT_EQ(aml->cm->estimators[0].first.live_interactions.size(), 2);
-        EXPECT_EQ(aml->cm->estimators[1].first.live_interactions.size(), 3);
-        EXPECT_EQ(aml->cm->estimators[2].first.live_interactions.size(), 1);
+        EXPECT_EQ(aml->cm->estimators[0].first.live_interactions.size(), 3);
+        EXPECT_EQ(aml->cm->estimators[1].first.live_interactions.size(), 2);
+        EXPECT_EQ(aml->cm->estimators[2].first.live_interactions.size(), 2);
         return true;
       });
 
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
-      "--fixed_significance_level "
-      "--random_seed 5 --noconstant --default_lease 10",
+      std::vector<std::string>{"--automl", "3", "--priority_type", "favor_popular_namespaces", "--cb_explore_adf",
+          "--quiet", "--epsilon", "0.2", "--fixed_significance_level", "--random_seed", "5", "--noconstant",
+          "--default_lease", "10"},
       test_hooks, num_iterations, seed, swap_after);
 
   EXPECT_GT(ctr.back(), 0.65f);
@@ -458,10 +453,12 @@ TEST(Automl, QColConsistencyWIterations)
   const size_t seed = 88;
   const size_t num_iterations = 1000;
 
-  auto ctr_q_col = simulator::_test_helper(
-      "--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 -q :: --default_lease 10", num_iterations, seed);
-  auto ctr_aml = simulator::_test_helper(
-      "--cb_explore_adf --quiet --epsilon 0.2 --random_seed 5 --automl 1 --default_lease 10", num_iterations, seed);
+  auto ctr_q_col = simulator::_test_helper(std::vector<std::string>{"--cb_explore_adf", "--quiet", "--epsilon", "0.2",
+                                               "--random_seed", "5", "-q", "::", "--default_lease", "10"},
+      num_iterations, seed);
+  auto ctr_aml = simulator::_test_helper(std::vector<std::string>{"--cb_explore_adf", "--quiet", "--epsilon", "0.2",
+                                             "--random_seed", "5", "--automl", "1", "--default_lease", "10"},
+      num_iterations, seed);
 
   EXPECT_FLOAT_EQ(ctr_q_col.back(), ctr_aml.back());
 }
@@ -503,7 +500,7 @@ TEST(Automl, OneDiffImplUnittestWIterations)
         EXPECT_EQ(prio_queue.size(), 0);
         interaction_config_manager<config_oracle<one_diff_impl>,
             VW::estimators::confidence_sequence_robust>::insert_starting_configuration(estimators, oracle,
-            aml->cm->automl_significance_level);
+            aml->cm->automl_significance_level, 1e-6, false);
         EXPECT_EQ(configs.size(), 1);
         EXPECT_EQ(estimators.size(), 1);
         EXPECT_EQ(prio_queue.size(), 0);
@@ -543,7 +540,8 @@ TEST(Automl, OneDiffImplUnittestWIterations)
         {
           interaction_config_manager<config_oracle<one_diff_impl>,
               VW::estimators::confidence_sequence_robust>::apply_config_at_slot(estimators, oracle.configs, i,
-              config_oracle<one_diff_impl>::choose(oracle.index_queue), aml->cm->automl_significance_level, 1);
+              config_oracle<one_diff_impl>::choose(oracle.index_queue), aml->cm->automl_significance_level,
+              aml->cm->tol_x, aml->cm->is_brentq, 1);
           auto& temp_exclusions = oracle.configs[estimators[i].first.config_index];
           auto& temp_interactions = estimators[i].first.live_interactions;
           ns_based_config::apply_config_to_interactions(
@@ -575,7 +573,8 @@ TEST(Automl, OneDiffImplUnittestWIterations)
         {
           interaction_config_manager<config_oracle<one_diff_impl>,
               VW::estimators::confidence_sequence_robust>::apply_config_at_slot(estimators, oracle.configs, i,
-              config_oracle<one_diff_impl>::choose(oracle.index_queue), aml->cm->automl_significance_level, 1);
+              config_oracle<one_diff_impl>::choose(oracle.index_queue), aml->cm->automl_significance_level,
+              aml->cm->tol_x, aml->cm->is_brentq, 1);
           auto& temp_config = oracle.configs[estimators[i].first.config_index];
           auto& temp_interactions = estimators[i].first.live_interactions;
           ns_based_config::apply_config_to_interactions(
@@ -599,9 +598,9 @@ TEST(Automl, OneDiffImplUnittestWIterations)
       });
 
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
-      "--random_seed 5 "
-      "--default_lease 500 --oracle_type one_diff --noconstant ",
+      std::vector<std::string>{"--automl", "3", "--priority_type", "favor_popular_namespaces", "--cb_explore_adf",
+          "--quiet", "--epsilon", "0.2", "--random_seed", "5", "--default_lease", "500", "--oracle_type", "one_diff",
+          "--noconstant"},
       test_hooks, num_iterations, seed);
 }
 
@@ -643,7 +642,7 @@ TEST(Automl, QbaseUnittestWIterations)
         EXPECT_EQ(prio_queue.size(), 0);
         interaction_config_manager<config_oracle<qbase_cubic>,
             VW::estimators::confidence_sequence_robust>::insert_starting_configuration(estimators, oracle,
-            aml->cm->automl_significance_level);
+            aml->cm->automl_significance_level, 1e-6, false);
         EXPECT_EQ(configs.size(), 1);
         EXPECT_EQ(estimators.size(), 1);
         EXPECT_EQ(prio_queue.size(), 0);
@@ -688,7 +687,8 @@ TEST(Automl, QbaseUnittestWIterations)
         {
           interaction_config_manager<config_oracle<qbase_cubic>,
               VW::estimators::confidence_sequence_robust>::apply_config_at_slot(estimators, oracle.configs, i,
-              config_oracle<qbase_cubic>::choose(oracle.index_queue), aml->cm->automl_significance_level, 1);
+              config_oracle<qbase_cubic>::choose(oracle.index_queue), aml->cm->automl_significance_level,
+              aml->cm->tol_x, aml->cm->is_brentq, 1);
           auto& temp_exclusions = oracle.configs[estimators[i].first.config_index];
           auto& temp_interactions = estimators[i].first.live_interactions;
           ns_based_config::apply_config_to_interactions(
@@ -731,7 +731,8 @@ TEST(Automl, QbaseUnittestWIterations)
         {
           interaction_config_manager<config_oracle<qbase_cubic>,
               VW::estimators::confidence_sequence_robust>::apply_config_at_slot(estimators, oracle.configs, i,
-              config_oracle<qbase_cubic>::choose(oracle.index_queue), aml->cm->automl_significance_level, 1);
+              config_oracle<qbase_cubic>::choose(oracle.index_queue), aml->cm->automl_significance_level,
+              aml->cm->tol_x, aml->cm->is_brentq, 1);
           auto& temp_config = oracle.configs[estimators[i].first.config_index];
           auto& temp_interactions = estimators[i].first.live_interactions;
           ns_based_config::apply_config_to_interactions(
@@ -755,9 +756,9 @@ TEST(Automl, QbaseUnittestWIterations)
       });
 
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
-      "--random_seed 5 "
-      "--default_lease 500 --oracle_type qbase_cubic --noconstant ",
+      std::vector<std::string>{"--automl", "3", "--priority_type", "favor_popular_namespaces", "--cb_explore_adf",
+          "--quiet", "--epsilon", "0.2", "--random_seed", "5", "--default_lease", "500", "--oracle_type", "qbase_cubic",
+          "--noconstant"},
       test_hooks, num_iterations, seed);
 }
 
@@ -866,9 +867,81 @@ TEST(Automl, InsertionChampChangeWIterations)
 
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
   auto ctr = simulator::_test_helper_hook(
-      "--automl 3 --priority_type favor_popular_namespaces --cb_explore_adf --quiet --epsilon 0.2 "
-      "--fixed_significance_level "
-      "--random_seed 5 --oracle_type one_diff_inclusion --default_lease 500 --noconstant",
+      std::vector<std::string>{"--automl", "3", "--priority_type", "favor_popular_namespaces", "--cb_explore_adf",
+          "--quiet", "--epsilon", "0.2", "--fixed_significance_level", "--random_seed", "5", "--oracle_type",
+          "one_diff_inclusion", "--default_lease", "500", "--noconstant"},
+      test_hooks, num_iterations, seed, swap_after);
+
+  EXPECT_GT(ctr.back(), 0.4f);
+}
+
+TEST(Automl, InsertionChampChangeBagWIterations)
+{
+  const size_t seed = 85;
+  const size_t num_iterations = 940;
+  const std::vector<uint64_t> swap_after = {200, 500};
+  const size_t clear_champ_switch = 936;
+  callback_map test_hooks;
+
+  test_hooks.emplace(clear_champ_switch - 1,
+      [&](cb_sim&, VW::workspace& all, VW::multi_ex&)
+      {
+        auto* aml = aml_test::get_automl_data<VW::reductions::automl::one_diff_inclusion_impl>(all);
+        aml_test::check_config_states(aml);
+        EXPECT_EQ(aml->cm->current_champ, 0);
+        EXPECT_EQ(aml->cm->_config_oracle.valid_config_size, 4);
+        EXPECT_EQ(aml->cm->estimators[0].first.live_interactions.size(), 1);
+        EXPECT_EQ(aml->cm->estimators[1].first.live_interactions.size(), 0);
+        EXPECT_EQ(aml->cm->estimators[2].first.live_interactions.size(), 2);
+        EXPECT_EQ(aml->cm->estimators[3].first.live_interactions.size(), 2);
+        EXPECT_EQ(aml->cm->_config_oracle.configs.size(), 4);
+        EXPECT_EQ(aml->cm->_config_oracle.configs[0].elements.size(), 1);
+        EXPECT_EQ(aml->cm->_config_oracle.configs[1].elements.size(), 0);
+        EXPECT_EQ(aml->cm->_config_oracle.configs[2].elements.size(), 2);
+        EXPECT_EQ(aml->cm->_config_oracle.configs[3].elements.size(), 2);
+        EXPECT_EQ(aml->cm->total_champ_switches, 1);
+        EXPECT_EQ(aml->current_state, VW::reductions::automl::automl_state::Experimenting);
+        return true;
+      });
+
+  test_hooks.emplace(clear_champ_switch,
+      [&](cb_sim&, VW::workspace& all, VW::multi_ex&)
+      {
+        auto* aml = aml_test::get_automl_data<VW::reductions::automl::one_diff_inclusion_impl>(all);
+        aml_test::check_config_states(aml);
+        EXPECT_EQ(aml->cm->current_champ, 0);
+        EXPECT_EQ(aml->cm->estimators.size(), 4);
+        EXPECT_EQ(aml->cm->_config_oracle.valid_config_size, 4);
+        EXPECT_EQ(aml->cm->estimators[0].first.live_interactions.size(), 1);
+        EXPECT_EQ(aml->cm->estimators[1].first.live_interactions.size(), 0);
+        EXPECT_EQ(aml->cm->_config_oracle.configs.size(), 4);
+        EXPECT_EQ(aml->cm->_config_oracle.configs[0].elements.size(), 1);
+        EXPECT_EQ(aml->cm->_config_oracle.configs[1].elements.size(), 0);
+        EXPECT_EQ(aml->cm->_config_oracle.configs[2].elements.size(), 2);
+        EXPECT_EQ(aml->cm->_config_oracle.configs[3].elements.size(), 2);
+        EXPECT_EQ(aml->cm->total_champ_switches, 1);
+        EXPECT_EQ(aml->current_state, VW::reductions::automl::automl_state::Experimenting);
+        return true;
+      });
+
+  test_hooks.emplace(clear_champ_switch + 1,
+      [](cb_sim&, VW::workspace& all, VW::multi_ex&)
+      {
+        auto* aml = aml_test::get_automl_data<VW::reductions::automl::one_diff_inclusion_impl>(all);
+        aml_test::check_config_states(aml);
+        EXPECT_EQ(aml->cm->estimators.size(), 4);
+        EXPECT_EQ(aml->cm->estimators[0].first.live_interactions.size(), 1);
+        EXPECT_EQ(aml->cm->estimators[1].first.live_interactions.size(), 0);
+        EXPECT_EQ(aml->cm->estimators[2].first.live_interactions.size(), 2);
+        EXPECT_EQ(aml->cm->estimators[3].first.live_interactions.size(), 2);
+        return true;
+      });
+
+  // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
+  auto ctr = simulator::_test_helper_hook(
+      std::vector<std::string>{"--automl", "4", "--priority_type", "favor_popular_namespaces", "--cb_explore_adf",
+          "--quiet", "--epsilon", "0.2", "--fixed_significance_level", "--random_seed", "5", "--oracle_type",
+          "one_diff_inclusion", "--default_lease", "500", "--noconstant", "--bag", "2"},
       test_hooks, num_iterations, seed, swap_after);
 
   EXPECT_GT(ctr.back(), 0.4f);

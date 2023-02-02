@@ -11,6 +11,7 @@
 #include "vw/core/global_data.h"
 #include "vw/core/kskip_ngram_transformer.h"
 #include "vw/core/learner.h"
+#include "vw/core/memory.h"
 #include "vw/core/merge.h"
 #include "vw/core/multiclass.h"
 #include "vw/core/multilabel.h"
@@ -268,21 +269,38 @@ vw_ptr my_initialize_with_log(py::list args, py_log_wrapper_ptr py_log)
 
   if (std::find(args_vec.begin(), args_vec.end(), "--no_stdin") == args_vec.end()) { args_vec.push_back("--no_stdin"); }
 
-  trace_message_t trace_listener = nullptr;
+  VW::driver_output_func_t trace_listener = nullptr;
   void* trace_context = nullptr;
+  std::unique_ptr<VW::io::logger> logger_ptr = nullptr;
 
   if (py_log)
   {
-    trace_listener = (py_log_wrapper::trace_listener_py);
+    trace_listener = py_log_wrapper::trace_listener_py;
     trace_context = py_log.get();
+
+    const auto log_function = [](void* context, VW::io::log_level level, const std::string& message)
+    {
+      _UNUSED(level);
+      try
+      {
+        auto inst = static_cast<py_log_wrapper*>(context);
+        inst->py_log.attr("log")(message);
+      }
+      catch (...)
+      {
+        // TODO: Properly translate and return Python exception. #2169
+        PyErr_Print();
+        PyErr_Clear();
+        std::cerr << "error using python logging. ignoring." << std::endl;
+      }
+    };
+
+    logger_ptr = VW::make_unique<VW::io::logger>(VW::io::create_custom_sink_logger(py_log.get(), log_function));
   }
 
-  std::unique_ptr<VW::config::options_i, options_deleter_type> options(
-      new VW::config::options_cli(args_vec), [](VW::config::options_i* ptr) { delete ptr; });
-
-  VW::workspace* foo = VW::initialize(std::move(options), nullptr, false, trace_listener, trace_context);
-  // return boost::shared_ptr<VW::workspace>(foo, [](vw *all){VW::finish(*all);});
-  return boost::shared_ptr<VW::workspace>(foo);
+  auto options = VW::make_unique<VW::config::options_cli>(args_vec);
+  auto foo = VW::initialize(std::move(options), nullptr, trace_listener, trace_context, logger_ptr.get());
+  return boost::shared_ptr<VW::workspace>(foo.release());
 }
 
 vw_ptr my_initialize(py::list args) { return my_initialize_with_log(args, nullptr); }
@@ -340,7 +358,7 @@ py::dict get_learner_metrics(vw_ptr all)
 
 void my_finish(vw_ptr all)
 {
-  VW::finish(*all, false);  // don't delete all because python will do that for us!
+  all->finish();  // don't delete all because python will do that for us!
 }
 
 void my_save(vw_ptr all, std::string name) { VW::save_predictor(*all, name); }

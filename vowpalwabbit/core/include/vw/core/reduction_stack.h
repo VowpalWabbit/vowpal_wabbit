@@ -4,6 +4,7 @@
 #include "vw/core/vw_fwd.h"
 
 #include <tuple>
+#include <unordered_map>
 #include <vector>
 
 using reduction_setup_fn = VW::LEARNER::base_learner* (*)(VW::setup_base_i&);
@@ -36,5 +37,6 @@ private:
 
 protected:
   std::vector<std::tuple<std::string, reduction_setup_fn>> _reduction_stack;
+  std::unordered_map<reduction_setup_fn, std::string> _setup_name_map;
 };
 }  // namespace VW

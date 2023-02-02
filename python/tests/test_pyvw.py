@@ -9,6 +9,7 @@ import filecmp
 
 BIT_SIZE = 18
 
+
 # Since these tests still run with Python 2, this is required.
 # Otherwise we could use math.isclose
 def isclose(a, b, rel_tol=1e-05, abs_tol=0.0):
@@ -16,7 +17,6 @@ def isclose(a, b, rel_tol=1e-05, abs_tol=0.0):
 
 
 class TestVW:
-
     model = Workspace(quiet=True, b=BIT_SIZE)
 
     def test_constructor(self):

@@ -10,10 +10,10 @@
 
 #include "vw/core/reductions/boosting.h"
 
+#include "vw/common/random.h"
 #include "vw/config/options.h"
 #include "vw/core/correctedMath.h"
 #include "vw/core/learner.h"
-#include "vw/core/rand_state.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw_math.h"

@@ -16,6 +16,7 @@
 #include "vw/core/vw_math.h"
 #include "vw/io/io_adapter.h"
 
+#include <algorithm>
 #include <limits>
 
 namespace
@@ -103,7 +104,7 @@ std::unique_ptr<VW::workspace> copy_workspace(const VW::workspace* ws, VW::io::l
   temp_buffer.add_file(VW::io::create_vector_writer(backing_vector));
   VW::save_predictor(*const_cast<VW::workspace*>(ws), temp_buffer);
   return VW::initialize(VW::make_unique<VW::config::options_cli>(command_line),
-      VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()), false, nullptr, nullptr, logger);
+      VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()), nullptr, nullptr, logger);
 }
 
 std::vector<float> calc_per_model_weighting(const std::vector<float>& example_counts)
@@ -174,7 +175,7 @@ VW::model_delta merge_deltas(const std::vector<const VW::model_delta*>& deltas_t
   else { command_line.emplace_back("--driver_output_off"); }
   command_line.emplace_back("--preserve_performance_counters");
   auto dest_workspace =
-      VW::initialize(VW::make_unique<VW::config::options_cli>(command_line), nullptr, false, nullptr, nullptr, logger);
+      VW::initialize(VW::make_unique<VW::config::options_cli>(command_line), nullptr, nullptr, nullptr, logger);
 
   // Get example counts and compute weighting of models
   std::vector<float> example_counts;
@@ -228,6 +229,9 @@ VW::model_delta merge_deltas(const std::vector<const VW::model_delta*>& deltas_t
     dest_workspace->sd->weighted_unlabeled_examples += delta->sd->weighted_unlabeled_examples;
     dest_workspace->sd->example_number += delta->sd->example_number;
     dest_workspace->sd->total_features += delta->sd->total_features;
+    dest_workspace->sd->t += delta->sd->t;
+    dest_workspace->sd->max_label = std::max(dest_workspace->sd->max_label, delta->sd->max_label);
+    dest_workspace->sd->min_label = std::min(dest_workspace->sd->min_label, delta->sd->min_label);
   }
 
   return VW::model_delta(std::move(dest_workspace));
@@ -270,8 +274,8 @@ std::unique_ptr<VW::workspace> VW::operator+(const VW::workspace& base, const VW
   dest_command_line.emplace_back("--quiet");
   dest_command_line.emplace_back("--preserve_performance_counters");
 
-  auto destination_workspace = VW::initialize(
-      VW::make_unique<VW::config::options_cli>(dest_command_line), nullptr, false, nullptr, nullptr, nullptr);
+  auto destination_workspace =
+      VW::initialize(VW::make_unique<VW::config::options_cli>(dest_command_line), nullptr, nullptr, nullptr, nullptr);
 
   auto* target_learner = destination_workspace->l;
   while (target_learner != nullptr)
@@ -305,6 +309,9 @@ std::unique_ptr<VW::workspace> VW::operator+(const VW::workspace& base, const VW
   output_sd.weighted_unlabeled_examples = base.sd->weighted_unlabeled_examples + delta->sd->weighted_unlabeled_examples;
   output_sd.example_number = base.sd->example_number + delta->sd->example_number;
   output_sd.total_features = base.sd->total_features + delta->sd->total_features;
+  output_sd.t = base.sd->t + delta->sd->t;
+  output_sd.max_label = std::max(base.sd->max_label, delta->sd->max_label);
+  output_sd.min_label = std::min(base.sd->min_label, delta->sd->min_label);
 
   return destination_workspace;
 }
@@ -316,8 +323,8 @@ VW::model_delta VW::operator-(const VW::workspace& ws1, const VW::workspace& ws2
   dest_command_line.emplace_back("--quiet");
   dest_command_line.emplace_back("--preserve_performance_counters");
 
-  auto destination_workspace = VW::initialize(
-      VW::make_unique<VW::config::options_cli>(dest_command_line), nullptr, false, nullptr, nullptr, nullptr);
+  auto destination_workspace =
+      VW::initialize(VW::make_unique<VW::config::options_cli>(dest_command_line), nullptr, nullptr, nullptr, nullptr);
 
   auto* target_learner = destination_workspace->l;
   while (target_learner != nullptr)
@@ -351,6 +358,9 @@ VW::model_delta VW::operator-(const VW::workspace& ws1, const VW::workspace& ws2
   output_sd.weighted_unlabeled_examples = ws1.sd->weighted_unlabeled_examples - ws2.sd->weighted_unlabeled_examples;
   output_sd.example_number = ws1.sd->example_number - ws2.sd->example_number;
   output_sd.total_features = ws1.sd->total_features - ws2.sd->total_features;
+  output_sd.t = ws1.sd->t - ws2.sd->t;
+  output_sd.max_label = std::max(ws1.sd->max_label, ws2.sd->max_label);
+  output_sd.min_label = std::min(ws1.sd->min_label, ws2.sd->min_label);
 
   return VW::model_delta(std::move(destination_workspace));
 }
