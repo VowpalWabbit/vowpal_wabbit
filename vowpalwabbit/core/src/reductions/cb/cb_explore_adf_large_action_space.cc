@@ -384,6 +384,15 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_large_actio
     }
   }
 
+  if (use_simd_in_one_pass_svd_impl &&
+      (options.was_supplied("cubic") || options.was_supplied("interactions") ||
+          options.was_supplied("experimental_full_name_interactions")))
+  {
+    all.logger.err_warn(
+        "Large action space with SIMD only supports quadratic interactions for now. Using scalar code path.");
+    use_simd_in_one_pass_svd_impl = false;
+  }
+
   auto base = require_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = VW::cb_label_parser_global;
 

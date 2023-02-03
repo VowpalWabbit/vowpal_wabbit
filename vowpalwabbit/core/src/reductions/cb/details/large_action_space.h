@@ -72,6 +72,9 @@ public:
   // for testing purposes only
   void _test_only_set_rank(uint64_t rank);
   bool _set_testing_components = false;
+#ifdef BUILD_LAS_WITH_SIMD
+  bool _test_only_use_simd() { return _use_simd != simd_type::NO_SIMD; }
+#endif
 
 private:
   VW::workspace* _all;

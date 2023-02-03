@@ -311,6 +311,8 @@ TEST(Las, ComputeDotProdScalarAndSimdHaveSameResults)
 
 TEST(Las, ScalarAndSimdGenerateSamePredictions)
 {
+  const bool cpu_supports_simd = (VW::cb_explore_adf::cpu_supports_avx512() || VW::cb_explore_adf::cpu_supports_avx2());
+
   auto generate_example = [](int num_namespaces, int num_features)
   {
     std::string s;
@@ -338,6 +340,15 @@ TEST(Las, ScalarAndSimdGenerateSamePredictions)
     std::vector<std::string> vw_cmd{"--cb_explore_adf", "--large_action_space", "--quiet"};
 
     auto vw_scalar = VW::initialize(VW::make_unique<VW::config::options_cli>(vw_cmd));
+
+    VW::LEARNER::multi_learner* learner_scalar =
+        as_multiline(vw_scalar->l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+    auto* action_space_scalar =
+        (internal_action_space_op*)learner_scalar->get_internal_type_erased_data_pointer_test_use_only();
+    EXPECT_NE(action_space_scalar, nullptr);
+
+    EXPECT_FALSE(action_space_scalar->explore.impl._test_only_use_simd());
+
     VW::multi_ex ex_scalar;
     for (const auto& example : examples) { ex_scalar.push_back(VW::read_example(*vw_scalar, example)); }
     vw_scalar->predict(ex_scalar);
@@ -345,6 +356,16 @@ TEST(Las, ScalarAndSimdGenerateSamePredictions)
 
     vw_cmd.push_back("--las_hint_explicit_simd");
     auto vw_simd = VW::initialize(VW::make_unique<VW::config::options_cli>(vw_cmd));
+
+    VW::LEARNER::multi_learner* learner_simd =
+        as_multiline(vw_simd->l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+    auto* action_space_simd =
+        (internal_action_space_op*)learner_simd->get_internal_type_erased_data_pointer_test_use_only();
+    EXPECT_NE(action_space_simd, nullptr);
+
+    if (cpu_supports_simd) { EXPECT_TRUE(action_space_simd->explore.impl._test_only_use_simd()); }
+    else { EXPECT_FALSE(action_space_simd->explore.impl._test_only_use_simd()); }
+
     VW::multi_ex ex_simd;
     for (const auto& example : examples) { ex_simd.push_back(VW::read_example(*vw_simd, example)); }
     vw_simd->predict(ex_simd);
@@ -365,6 +386,15 @@ TEST(Las, ScalarAndSimdGenerateSamePredictions)
     std::vector<std::string> vw_cmd{"--cb_explore_adf", "--large_action_space", "--quiet", "-q::"};
 
     auto vw_scalar = VW::initialize(VW::make_unique<VW::config::options_cli>(vw_cmd));
+
+    VW::LEARNER::multi_learner* learner_scalar =
+        as_multiline(vw_scalar->l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+    auto* action_space_scalar =
+        (internal_action_space_op*)learner_scalar->get_internal_type_erased_data_pointer_test_use_only();
+    EXPECT_NE(action_space_scalar, nullptr);
+
+    EXPECT_FALSE(action_space_scalar->explore.impl._test_only_use_simd());
+
     VW::multi_ex ex_scalar;
     for (const auto& example : examples) { ex_scalar.push_back(VW::read_example(*vw_scalar, example)); }
     vw_scalar->predict(ex_scalar);
@@ -372,6 +402,16 @@ TEST(Las, ScalarAndSimdGenerateSamePredictions)
 
     vw_cmd.push_back("--las_hint_explicit_simd");
     auto vw_simd = VW::initialize(VW::make_unique<VW::config::options_cli>(vw_cmd));
+
+    VW::LEARNER::multi_learner* learner_simd =
+        as_multiline(vw_simd->l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+    auto* action_space_simd =
+        (internal_action_space_op*)learner_simd->get_internal_type_erased_data_pointer_test_use_only();
+    EXPECT_NE(action_space_simd, nullptr);
+
+    if (cpu_supports_simd) { EXPECT_TRUE(action_space_simd->explore.impl._test_only_use_simd()); }
+    else { EXPECT_FALSE(action_space_simd->explore.impl._test_only_use_simd()); }
+
     VW::multi_ex ex_simd;
     for (const auto& example : examples) { ex_simd.push_back(VW::read_example(*vw_simd, example)); }
     vw_simd->predict(ex_simd);
@@ -393,6 +433,15 @@ TEST(Las, ScalarAndSimdGenerateSamePredictions)
         "--cb_explore_adf", "--large_action_space", "--quiet", "-q::", "--ignore=A", "--ignore_linear=B"};
 
     auto vw_scalar = VW::initialize(VW::make_unique<VW::config::options_cli>(vw_cmd));
+
+    VW::LEARNER::multi_learner* learner_scalar =
+        as_multiline(vw_scalar->l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+    auto* action_space_scalar =
+        (internal_action_space_op*)learner_scalar->get_internal_type_erased_data_pointer_test_use_only();
+    EXPECT_NE(action_space_scalar, nullptr);
+
+    EXPECT_FALSE(action_space_scalar->explore.impl._test_only_use_simd());
+
     VW::multi_ex ex_scalar;
     for (const auto& example : examples) { ex_scalar.push_back(VW::read_example(*vw_scalar, example)); }
     vw_scalar->predict(ex_scalar);
@@ -400,6 +449,16 @@ TEST(Las, ScalarAndSimdGenerateSamePredictions)
 
     vw_cmd.push_back("--las_hint_explicit_simd");
     auto vw_simd = VW::initialize(VW::make_unique<VW::config::options_cli>(vw_cmd));
+
+    VW::LEARNER::multi_learner* learner_simd =
+        as_multiline(vw_simd->l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+    auto* action_space_simd =
+        (internal_action_space_op*)learner_simd->get_internal_type_erased_data_pointer_test_use_only();
+    EXPECT_NE(action_space_simd, nullptr);
+
+    if (cpu_supports_simd) { EXPECT_TRUE(action_space_simd->explore.impl._test_only_use_simd()); }
+    else { EXPECT_FALSE(action_space_simd->explore.impl._test_only_use_simd()); }
+
     VW::multi_ex ex_simd;
     for (const auto& example : examples) { ex_simd.push_back(VW::read_example(*vw_simd, example)); }
     vw_simd->predict(ex_simd);
@@ -419,51 +478,25 @@ TEST(Las, ScalarAndSimdGenerateSamePredictions)
     // Cubics & generic interactions are not supported yet
     auto vw_simd = VW::initialize(vwtest::make_args(
         "--cb_explore_adf", "--large_action_space", "--quiet", "--cubic", ":::", "--las_hint_explicit_simd"));
-    VW::multi_ex ex_simd;
-    for (const auto& example : examples) { ex_simd.push_back(VW::read_example(*vw_simd, example)); }
 
-    EXPECT_THROW(
-        {
-          try
-          {
-            vw_simd->predict(ex_simd);
-          }
-          catch (const VW::vw_exception& e)
-          {
-            EXPECT_STREQ("Generic interactions are not supported yet in LAS SIMD implementations", e.what());
-            throw;
-          }
-        },
-        VW::vw_exception);
+    VW::LEARNER::multi_learner* learner =
+        as_multiline(vw_simd->l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+    auto* action_space = (internal_action_space_op*)learner->get_internal_type_erased_data_pointer_test_use_only();
+    EXPECT_NE(action_space, nullptr);
 
-    vw_simd->finish_example(ex_simd);
+    EXPECT_FALSE(action_space->explore.impl._test_only_use_simd());
   }
   {
     // Extent interactions are not supported yet
-    const std::string vw_cmd =
-        "--cb_explore_adf --large_action_space --quiet --experimental_full_name_interactions A|B";
-
     auto vw_simd = VW::initialize(vwtest::make_args("--cb_explore_adf", "--large_action_space", "--quiet",
         "--experimental_full_name_interactions", "A|B", "--las_hint_explicit_simd"));
 
-    VW::multi_ex ex_simd;
-    for (const auto& example : examples) { ex_simd.push_back(VW::read_example(*vw_simd, example)); }
+    VW::LEARNER::multi_learner* learner =
+        as_multiline(vw_simd->l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+    auto* action_space = (internal_action_space_op*)learner->get_internal_type_erased_data_pointer_test_use_only();
+    EXPECT_NE(action_space, nullptr);
 
-    EXPECT_THROW(
-        {
-          try
-          {
-            vw_simd->predict(ex_simd);
-          }
-          catch (const VW::vw_exception& e)
-          {
-            EXPECT_STREQ("Extent_interactions are not supported yet in LAS SIMD implementations", e.what());
-            throw;
-          }
-        },
-        VW::vw_exception);
-
-    vw_simd->finish_example(ex_simd);
+    EXPECT_FALSE(action_space->explore.impl._test_only_use_simd());
   }
 }
 #endif
