@@ -383,6 +383,14 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
     }
   }
 
+  if (use_simd_in_one_pass_svd_impl &&
+      (options.was_supplied("cubic") || options.was_supplied("interactions") ||
+          options.was_supplied("experimental_full_name_interactions")))
+  {
+    all.logger.err_warn("LAS SIMD only supports quadratic interactions for now. Using scalar code path.");
+    use_simd_in_one_pass_svd_impl = false;
+  }
+
   VW::LEARNER::multi_learner* base = as_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
