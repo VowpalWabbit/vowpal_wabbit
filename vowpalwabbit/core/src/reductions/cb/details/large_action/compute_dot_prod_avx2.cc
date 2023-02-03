@@ -147,7 +147,8 @@ float compute_dot_prod_avx2(uint64_t column_index, VW::workspace* _all, uint64_t
     {
       // TODO: Add support for interactions other than quadratics.
       // This code should not be reachable, since we checked conflicting command line options.
-      _all->logger.err_error("Generic interactions are not supported yet in large action space with SIMD implementations");
+      _all->logger.err_error(
+          "Generic interactions are not supported yet in large action space with SIMD implementations");
     }
 
     const bool same_namespace = (!_all->permutations && (ns[0] == ns[1]));
