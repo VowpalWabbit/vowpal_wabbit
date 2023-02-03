@@ -138,7 +138,7 @@ float compute_dot_prod_avx2(uint64_t column_index, VW::workspace* _all, uint64_t
   {
     // TODO: Add support for extent_interactions.
     // This code should not be reachable, since we checked conflicting command line options.
-    _all->logger.err_error("Extent_interactions are not supported yet in LAS SIMD implementations");
+    _all->logger.err_error("Extent_interactions are not supported yet in large action space with SIMD implementations");
   }
 
   for (const auto& ns : interactions)
