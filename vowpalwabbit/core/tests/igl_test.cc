@@ -61,18 +61,12 @@ example_vector sl_vector = {
   }
 };
 
-// , "DefinitelyBad": false
-// , "DefinitelyBad": false
-// , "DefinitelyBad": false
-// , "DefinitelyBad": false
-// , "DefinitelyBad": false
-
 std::vector<std::string> multi_vector = {
-  R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v=none": 1}}], "a": [5, 1, 2, 4, 0], "c": {"c": {"id=2": 1}, "_multi": [{"a": {"id=5": 1}}, {"a": {"id=1": 1}}, {"a": {"id=2": 1}}, {"a": {"id=4": 1}}, {"a": {"id=0": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2]})",
-  R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 2, "_labelIndex": 1, "o": [{"v": {"v=none": 1}}], "a": [0, 1, 3, 2, 4], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=0": 1}}, {"a": {"id=1": 1}}, {"a": {"id=3": 1}}, {"a": {"id=2": 1}}, {"a": {"id=4": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2]})",
-  R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 3, "_labelIndex": 2, "o": [{"v": {"v=none": 1}}], "a": [1, 4, 5, 2, 0], "c": {"c": {"id=3": 1}, "_multi": [{"a": {"id=1": 1}}, {"a": {"id=4": 1}}, {"a": {"id=5": 1}}, {"a": {"id=2": 1}}, {"a": {"id=0": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2]})",
-  R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 3, "_labelIndex": 2, "o": [{"v": {"v=none": 1}}], "a": [5, 4, 1, 3, 2], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=5": 1}}, {"a": {"id=4": 1}}, {"a": {"id=1": 1}}, {"a": {"id=3": 1}}, {"a": {"id=2": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2]})",
-  R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 4, "_labelIndex": 3, "o": [{"v": {"v=none": 1}}], "a": [0, 1, 2, 3, 4], "c": {"c": {"id=4": 1}, "_multi": [{"a": {"id=0": 1}}, {"a": {"id=1": 1}}, {"a": {"id=2": 1}}, {"a": {"id=3": 1}}, {"a": {"id=4": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2]})"
+  R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v=none": 1}, "_definitely_bad": true}], "a": [5, 1, 2, 4, 0], "c": {"c": {"id=2": 1}, "_multi": [{"a": {"id=5": 1}}, {"a": {"id=1": 1}}, {"a": {"id=2": 1}}, {"a": {"id=4": 1}}, {"a": {"id=0": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2]})",
+  R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 2, "_labelIndex": 1, "o": [{"v": {"v=none": 1}, "_definitely_bad": false}], "a": [0, 1, 3, 2, 4], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=0": 1}}, {"a": {"id=1": 1}}, {"a": {"id=3": 1}}, {"a": {"id=2": 1}}, {"a": {"id=4": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2]})",
+  R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 3, "_labelIndex": 2, "o": [{"v": {"v=none": 1}, "_definitely_bad": false}], "a": [1, 4, 5, 2, 0], "c": {"c": {"id=3": 1}, "_multi": [{"a": {"id=1": 1}}, {"a": {"id=4": 1}}, {"a": {"id=5": 1}}, {"a": {"id=2": 1}}, {"a": {"id=0": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2]})",
+  R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 3, "_labelIndex": 2, "o": [{"v": {"v=none": 1}, "_definitely_bad": false}], "a": [5, 4, 1, 3, 2], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=5": 1}}, {"a": {"id=4": 1}}, {"a": {"id=1": 1}}, {"a": {"id=3": 1}}, {"a": {"id=2": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2]})",
+  R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 4, "_labelIndex": 3, "o": [{"v": {"v=none": 1}, "_definitely_bad": false}], "a": [0, 1, 2, 3, 4], "c": {"c": {"id=4": 1}, "_multi": [{"a": {"id=0": 1}}, {"a": {"id=1": 1}}, {"a": {"id=2": 1}}, {"a": {"id=3": 1}}, {"a": {"id=4": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2]})"
 };
 
 separate_weights_vector get_separate_weights(std::unique_ptr<VW::workspace> vw) {
@@ -96,7 +90,6 @@ separate_weights_vector get_separate_weights(std::unique_ptr<VW::workspace> vw) 
     ++iter;
   }
 
-  // print_separate_weights(weights_vector);
   return weights_vector;
 }
 
@@ -129,10 +122,6 @@ std::vector<separate_weights_vector> split_weights(std::unique_ptr<VW::workspace
 
     ++iter;
   }
-
-  // print_separate_weights(sl_weights_vector);
-
-  // print_separate_weights(multi_weights_vector);
 
   result.emplace_back(sl_weights_vector);
   result.emplace_back(multi_weights_vector);

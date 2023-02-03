@@ -834,6 +834,32 @@ TEST(ParseDsjson, SlatesDomParser)
   VW::finish_example(*ccb_vw, ccb_examples);
 }
 
+TEST(ParseDsjson, IGLWithDefinitelyBadFlag)
+{
+  std::string json_text = R"(
+{
+  "o": [
+    {
+      "o_feature": "some value",
+      "_definitely_bad": true
+    }
+  ],
+  "c": {
+    "shared_feature": 1
+  }
+}
+  )";
+
+
+  auto vw = VW::initialize(vwtest::make_args("--dsjson", "--experimental_igl", "--chain_hash", "--coin", "--cb_adf", "--no_stdin", "--quiet"));
+  auto examples = vwtest::parse_dsjson(*vw, json_text);
+
+  EXPECT_EQ(examples.size(), 2);
+  EXPECT_EQ(examples[1]->l.cb_with_observations.is_observation, true);
+  EXPECT_EQ(examples[1]->l.cb_with_observations.is_definitely_bad, true);
+  VW::finish_example(*vw, examples);
+}
+
 TEST(ParseDsjson, CbWithObservations)
 {
   std::string json_text = R"(
@@ -910,8 +936,8 @@ TEST(ParseDsjson, CbWithObservations)
   }
 }
 )";
-//--experimental_igl --coin  --chain_hash
-  auto vw = VW::initialize("--dsjson --experimental_igl --chain_hash --coin --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
+
+  auto vw = VW::initialize(vwtest::make_args("--dsjson", "--experimental_igl", "--chain_hash", "--coin", "--cb_adf", "--no_stdin", "--quiet"));
   auto examples = vwtest::parse_dsjson(*vw, json_text);
 
   EXPECT_EQ(examples.size(), 5);
@@ -934,7 +960,7 @@ TEST(ParseDsjson, CbWithObservations)
   // Action examples
   EXPECT_EQ(examples[1]->l.cb_with_observations.event.costs.size(), 0);
   EXPECT_EQ(examples[2]->l.cb_with_observations.event.costs.size(), 1);
-  EXPECT_FLOAT_EQ(examples[2]->l.cb_with_observations.event.costs[0].probability, 0.8166667);
+  EXPECT_FLOAT_EQ(examples[2]->l.cb_with_observations.event.costs[0].probability, 0.8166667f);
   EXPECT_EQ(examples[2]->l.cb_with_observations.event.costs[0].action, 2);
   EXPECT_FLOAT_EQ(examples[2]->l.cb_with_observations.event.costs[0].cost, -1.0); // cost is not used
   EXPECT_EQ(examples[3]->l.cb_with_observations.event.costs.size(), 0);
@@ -952,7 +978,7 @@ TEST(ParseDsjson, CbWithObservations)
 
   EXPECT_EQ(examples[1]->feature_space['f'].indices.size(), 1);
   EXPECT_EQ(examples[1]->feature_space['f'].indices[0], VW::hash_feature(*vw, "g_feature", VW::hash_space(*vw, "f_ns")));
-  EXPECT_FLOAT_EQ(examples[1]->feature_space['f'].values[0], 0.994963765);
+  EXPECT_FLOAT_EQ(examples[1]->feature_space['f'].values[0], 0.994963765f);
 
   EXPECT_THAT(examples[2]->indices, ::testing::ElementsAre('d'));
   EXPECT_EQ(examples[2]->feature_space['d'].indices.size(), 1);
@@ -980,5 +1006,4 @@ TEST(ParseDsjson, CbWithObservations)
   EXPECT_EQ(examples[4]->feature_space['o'].indices.size(), 1);
 
   VW::finish_example(*vw, examples);
-  VW::finish(*vw);
 }

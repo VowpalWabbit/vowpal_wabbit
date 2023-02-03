@@ -177,9 +177,8 @@ void learn(interaction_ground& igl, learner& base, VW::multi_ex& ec_seq)
   float fake_cost = 0.f;
   // 4. update multi line ex label
   if (ik_pred * 2 > 1) {
-    // TODO: get Definitely Bad label from feedback example
-    bool is_neg = 1;
-    fake_cost = -p_unlabeled_prior + is_neg * (1 + p_unlabeled_prior); // TODO: update to latest version
+    bool is_definitely_bad = observation_ex->l.cb_with_observations.is_definitely_bad;
+    fake_cost = -p_unlabeled_prior + is_definitely_bad * (1 + p_unlabeled_prior);
   }
 
   // 5. Train pi policy

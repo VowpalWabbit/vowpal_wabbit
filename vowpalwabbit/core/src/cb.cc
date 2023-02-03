@@ -257,6 +257,7 @@ void default_label_cb_eval(VW::cb_eval_label& ld)
 void default_label_cb_with_observations(VW::cb_with_observations_label& ld) {
   ld.event.reset_to_default();
   ld.is_observation = false;
+  ld.is_definitely_bad = false;
 }
 
 bool test_label_cb_eval(const VW::cb_eval_label& ld) { return ld.event.is_test_label(); }

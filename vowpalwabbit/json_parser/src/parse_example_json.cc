@@ -680,6 +680,22 @@ public:
   }
 };
 
+template <bool audit>
+class DefinitelyBadState : public BaseState<audit>
+{
+public:
+  DefinitelyBadState() : BaseState<audit>("DefinitelyBad") {}
+
+  BaseState<audit>* Bool(Context<audit>& ctx, bool b) override
+  {
+    if (b) {
+      ctx.observation_example->l.cb_with_observations.is_definitely_bad = true;
+    }
+
+    return ctx.previous_state;
+  }
+};
+
 // This state makes the assumption we are in CCB
 template <bool audit>
 class SlotsState : public BaseState<audit>
@@ -976,6 +992,13 @@ public:
       {
         ctx.uint_dedup_state.return_state = this;
         return &ctx.uint_dedup_state;
+      }
+
+      else if (ctx.key_length == 15 && !strncmp(str, "_definitely_bad", 15))
+      {
+        if ((ctx.return_path.back())->name == ctx.o_state.name) {
+          return &ctx.definitely_bad_state;
+        }
       }
 
       return Ignore(ctx, length);
@@ -1466,7 +1489,7 @@ public:
             ctx.key_length = 1;
 
             // allocate new example
-            ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
+            ctx.ex = &ctx.example_factory();
             ctx._label_parser.default_label(ctx.ex->l);
             ctx.ex->l.cb_with_observations.is_observation = true;
             ctx.observation_example = ctx.ex;
@@ -1602,6 +1625,7 @@ public:
   TagState<audit> tag_state;
   MultiState<audit> multi_state;
   ObservationState<audit> o_state;
+  DefinitelyBadState<audit> definitely_bad_state;
   IgnoreState<audit> ignore_state;
   ArrayState<audit> array_state;
   SlotsState<audit> slots_state;
