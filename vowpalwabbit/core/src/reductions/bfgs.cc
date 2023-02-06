@@ -1193,7 +1193,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::bfgs_setup(VW::setup_base_
     learner_name = stack_builder.get_setupfn_name(bfgs_setup);
   }
 
-  return make_base_learner(
+  return make_foundation_learner(
       std::move(b), learn_ptr, predict_ptr, learner_name, VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
       .set_params_per_weight(all.weights.stride())
       .set_save_load(save_load)

@@ -566,7 +566,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::oja_newton_setup(VW::setup
 
   all.weights.stride_shift(static_cast<uint32_t>(std::ceil(std::log2(oja_newton_ptr->m + 2))));
 
-  auto l = make_base_learner(std::move(oja_newton_ptr), learn, predict,
+  auto l = make_foundation_learner(std::move(oja_newton_ptr), learn, predict,
       stack_builder.get_setupfn_name(oja_newton_setup), VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
                .set_params_per_weight(all.weights.stride())
                .set_save_load(save_load)

@@ -453,19 +453,19 @@ void learner::save_load(io_buf& io, const bool read, const bool text)
       throw VW::save_load_model_exception(vwex.filename(), vwex.line_number(), better_msg.str());
     }
   }
-  if (_previous_learner) { _previous_learner->save_load(io, read, text); }
+  if (_base_learner) { _base_learner->save_load(io, read, text); }
 }
 
 void learner::pre_save_load(VW::workspace& all)
 {
   if (_pre_save_load_f) { _pre_save_load_f(all); }
-  if (_previous_learner) { _previous_learner->pre_save_load(all); }
+  if (_base_learner) { _base_learner->pre_save_load(all); }
 }
 
 void learner::persist_metrics(metric_sink& metrics)
 {
   if (_persist_metrics_f) { _persist_metrics_f(metrics); }
-  if (_previous_learner) { _previous_learner->persist_metrics(metrics); }
+  if (_base_learner) { _base_learner->persist_metrics(metrics); }
 }
 
 void learner::finish()
@@ -473,19 +473,19 @@ void learner::finish()
   // TODO: ensure that finish does not actually manage memory but just does driver finalization.
   // Then move the call to finish from the destructor of workspace to driver_finalize
   if (_finisher_f) { _finisher_f(); }
-  if (_previous_learner) { _previous_learner->finish(); }
+  if (_base_learner) { _base_learner->finish(); }
 }
 
 void learner::end_pass()
 {
   if (_end_pass_f) { _end_pass_f(); }
-  if (_previous_learner) { _previous_learner->end_pass(); }
+  if (_base_learner) { _base_learner->end_pass(); }
 }
 
 void learner::end_examples()
 {
   if (_end_examples_f) { _end_examples_f(); }
-  if (_previous_learner) { _previous_learner->end_examples(); }
+  if (_base_learner) { _base_learner->end_examples(); }
 }
 
 void learner::init_driver()
@@ -498,7 +498,7 @@ void learner::finish_example(VW::workspace& all, polymorphic_ex ec)
   debug_log_message(ec, "finish_example");
   // If the current learner implements finish - that takes priority.
   // Else, we call the new style functions.
-  // Else, we forward to the previous learner if it exists.
+  // Else, we forward to the base learner if it exists.
 
   if (has_legacy_finish())
   {
@@ -525,13 +525,13 @@ void learner::finish_example(VW::workspace& all, polymorphic_ex ec)
 
   // Finish example used to utilize the copy forwarding semantics.
   // Traverse until first hit to mimic this but with greater type safety.
-  if (_previous_learner)
+  if (_base_learner)
   {
-    if (is_multiline() != _previous_learner->is_multiline())
+    if (is_multiline() != _base_learner->is_multiline())
     {
       THROW("Cannot forward finish_example call across multiline/singleline boundary.");
     }
-    _previous_learner->finish_example(all, ec);
+    _base_learner->finish_example(all, ec);
   }
   else { THROW("No finish functions were registered in the stack."); }
 }
@@ -573,7 +573,7 @@ void learner::cleanup_example(polymorphic_ex ec)
 
 void learner::get_enabled_reductions(std::vector<std::string>& enabled_reductions) const
 {
-  if (_previous_learner) { _previous_learner->get_enabled_reductions(enabled_reductions); }
+  if (_base_learner) { _base_learner->get_enabled_reductions(enabled_reductions); }
   enabled_reductions.push_back(_name);
 }
 
@@ -582,7 +582,7 @@ learner* learner::get_learner_by_name_prefix(const std::string& reduction_name)
   if (_name.find(reduction_name) != std::string::npos) { return this; }
   else
   {
-    if (_previous_learner) { return _previous_learner->get_learner_by_name_prefix(reduction_name); }
+    if (_base_learner) { return _base_learner->get_learner_by_name_prefix(reduction_name); }
     else { THROW("fatal: could not find in learner chain: " << reduction_name); }
   }
 }
@@ -647,13 +647,13 @@ void learner::subtract(const VW::workspace& ws1, const VW::workspace& ws2, const
   else { THROW("learner " << name << " does not support subtraction to generate a delta."); }
 }
 
-std::shared_ptr<learner> learner::make_next_learner()
+std::shared_ptr<learner> learner::create_learner_above_this()
 {
   // Copy this learner and give the new learner ownership of this learner.
   std::shared_ptr<learner> l(new learner(*this));
-  l->_previous_learner = shared_from_this();
+  l->_base_learner = shared_from_this();
 
-  // We explicitly overwrite the copy of the previous learner's finish_example functions.
+  // We explicitly overwrite the copy of the base learner's finish_example functions.
   // This is to allow us to determine if the current reduction implements finish and in what way.
   l->_finish_example_f = nullptr;
   l->_update_stats_f = nullptr;
@@ -684,23 +684,23 @@ std::shared_ptr<learner> learner::make_next_learner()
 }  // namespace LEARNER
 }  // namespace VW
 
-void VW::LEARNER::details::learner_build_diagnostic(VW::string_view this_name, VW::string_view prev_name,
-    prediction_type_t in_pred_type, prediction_type_t prev_out_pred_type, label_type_t out_label_type,
-    label_type_t prev_in_label_type, details::merge_func merge_f, details::merge_with_all_func merge_with_all_f)
+void VW::LEARNER::details::learner_build_diagnostic(VW::string_view this_name, VW::string_view base_name,
+    prediction_type_t in_pred_type, prediction_type_t base_out_pred_type, label_type_t out_label_type,
+    label_type_t base_in_label_type, details::merge_func merge_f, details::merge_with_all_func merge_with_all_f)
 {
-  if (in_pred_type != prev_out_pred_type)
+  if (in_pred_type != base_out_pred_type)
   {
     const auto message = fmt::format(
-        "Input prediction type: {} of reduction: {} does not match output prediction type: {} of previous reduction: "
+        "Input prediction type: {} of reduction: {} does not match output prediction type: {} of base reduction: "
         "{}.",
-        to_string(in_pred_type), this_name, to_string(prev_out_pred_type), prev_name);
+        to_string(in_pred_type), this_name, to_string(base_out_pred_type), base_name);
     THROW(message);
   }
-  if (out_label_type != prev_in_label_type)
+  if (out_label_type != base_in_label_type)
   {
-    const auto message = fmt::format(
-        "Output label type: {} of reduction: {} does not match input label type: {} of previous reduction: {}.",
-        to_string(out_label_type), this_name, to_string(prev_in_label_type), prev_name);
+    const auto message =
+        fmt::format("Output label type: {} of reduction: {} does not match input label type: {} of base reduction: {}.",
+            to_string(out_label_type), this_name, to_string(base_in_label_type), base_name);
     THROW(message);
   }
 

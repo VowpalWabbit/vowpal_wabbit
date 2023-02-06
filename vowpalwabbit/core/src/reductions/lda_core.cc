@@ -1368,7 +1368,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::lda_setup(VW::setup_base_i
   const auto pred_type = ld->minibatch > 1 ? VW::prediction_type_t::NOPRED : VW::prediction_type_t::SCALARS;
 
   // FIXME: lda with batch size > 1 doesnt produce predictions.
-  auto l = make_base_learner(std::move(ld), ld->compute_coherence_metrics ? learn_with_metrics : learn,
+  auto l = make_foundation_learner(std::move(ld), ld->compute_coherence_metrics ? learn_with_metrics : learn,
       ld->compute_coherence_metrics ? predict_with_metrics : predict, stack_builder.get_setupfn_name(lda_setup),
       pred_type, VW::label_type_t::NOLABEL)
                .set_params_per_weight(VW::details::UINT64_ONE << all.weights.stride_shift())

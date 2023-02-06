@@ -1501,7 +1501,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i&
   all.weights.stride_shift(static_cast<uint32_t>(::ceil_log_2(stride - 1)));
 
   auto* bare = g.get();
-  auto l = make_base_learner(std::move(g), g->learn, bare->predict, stack_builder.get_setupfn_name(gd_setup),
+  auto l = make_foundation_learner(std::move(g), g->learn, bare->predict, stack_builder.get_setupfn_name(gd_setup),
       VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
                .set_learn_returns_prediction(true)
                .set_params_per_weight(VW::details::UINT64_ONE << all.weights.stride_shift())

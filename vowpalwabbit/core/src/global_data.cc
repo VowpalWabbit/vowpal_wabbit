@@ -253,7 +253,7 @@ std::string workspace::dump_weights_to_json_experimental()
 
   // This could be extended to other base learners reasonably. Since this is new and experimental though keep the scope
   // small.
-  while (current->get_previous_learner() != nullptr) { current = current->get_previous_learner(); }
+  while (current->get_base_learner() != nullptr) { current = current->get_base_learner(); }
   if (current->get_name() == "ksvm")
   {
     THROW("dump_weights_to_json is currently only supported for KSVM base learner. The current base learner is "

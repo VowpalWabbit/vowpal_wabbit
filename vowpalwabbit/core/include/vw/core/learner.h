@@ -84,7 +84,7 @@ using cleanup_example_func = std::function<void(polymorphic_ex ex)>;
 
 // Merge functions come in two variants, with or without the `all` VW::workspace reference
 // Use the version without all for reduction learners, where the workspace reference is not needed
-// Use the version with all for base learners
+// Use the version with all for foundation learners
 using merge_func = std::function<void(
     const std::vector<float>& per_model_weighting, const std::vector<const void*>& all_data, void* output_data)>;
 using merge_with_all_func = std::function<void(const std::vector<float>& per_model_weighting,
@@ -99,20 +99,20 @@ void debug_decrement_depth(polymorphic_ex ex);
 void increment_offset(polymorphic_ex ex, const size_t increment, const size_t i);
 void decrement_offset(polymorphic_ex ex, const size_t increment, const size_t i);
 
-void learner_build_diagnostic(VW::string_view this_name, VW::string_view prev_name, prediction_type_t in_pred_type,
-    prediction_type_t prev_out_pred_type, label_type_t out_label_type, label_type_t prev_in_label_type,
+void learner_build_diagnostic(VW::string_view this_name, VW::string_view base_name, prediction_type_t in_pred_type,
+    prediction_type_t base_out_pred_type, label_type_t out_label_type, label_type_t base_in_label_type,
     details::merge_func merge_f, details::merge_with_all_func merge_with_all_f);
 }  // namespace details
 
 /// \brief Defines the interface for a learning algorithm.
 ///
-/// VW has two types of learners: reduction learners and base learners. The same
-/// learner class is used to implement both. A reduction stack is created as a
-/// chain of learners, starting from a base learner. Each learner after the base
-/// is a reduction learner and holds a std::shared_ptr to its previous learner.
-/// The difference between a reduction and base learner is that a reduction will
-/// recursively call its previous learner, whereas a base learner has no previous
-/// and will simply return its result.
+/// VW has two types of learners: reduction learners and foundation learners.
+/// The same learner class is used to implement both. A reduction stack is created
+/// as a chain of learners, starting from a foundation learner at the bottom of
+/// the stack. Each learner after it is a reduction learner and holds a shared_ptr
+/// to its base. The difference between a reduction and a foundation learner is
+/// that a reduction will recursively call its base, whereas a foundation learner
+/// has no base and will simply return its result.
 ///
 /// The learner class is not meant to be inherited from. Instead, it implements a
 /// sort of virtual inheritance via std::function objects. Each type of learner
@@ -123,9 +123,10 @@ void learner_build_diagnostic(VW::string_view this_name, VW::string_view prev_na
 /// arbitrary learner types to be implemented by the same learner class.
 ///
 /// The learner class itself has a private constructor. Learners should be created
-/// only through the make_reduction_learner and make_base_learner functions and their
-/// associated learner builder template classes. The templates enforce consistency
-/// of types at compile time, before types are erased to make the learner object.
+/// only through the make_reduction_learner and make_foundation_learner functions
+/// and their associated learner builder template classes. The templates enforce
+/// consistency of types at compile time, before types-erasure occurs to make the
+/// acutal learner object.
 class learner final : public std::enable_shared_from_this<learner>
 {
 private:
@@ -239,13 +240,13 @@ public:
   // Get the reduction's name
   VW_ATTR(nodiscard) const std::string& get_name() const { return _name; }
 
-  // Returns a pointer to the previous learner in the reduction stack
-  // Returns nullptr if this is the base learner of the stack
-  VW_ATTR(nodiscard) const learner* get_previous_learner() const { return _previous_learner.get(); }
-  VW_ATTR(nodiscard) learner* get_previous_learner() { return _previous_learner.get(); }
+  // Returns a pointer to the base of this learner, which is immediately below this one
+  // Returns nullptr if this is the foundation learner of the stack (the bottom-most learner)
+  VW_ATTR(nodiscard) const learner* get_base_learner() const { return _base_learner.get(); }
+  VW_ATTR(nodiscard) learner* get_base_learner() { return _base_learner.get(); }
 
   // If true, this specific learner defines a save load function.
-  // If false, it simply forwards to a previous learner's implementation.
+  // If false, it simply forwards to the base learner's implementation.
   VW_ATTR(nodiscard) bool learner_defines_own_save_load() { return _save_load_f != nullptr; }
 
 private:
@@ -296,18 +297,20 @@ private:
   // Except for model merging functions, where the void* will get casted back into the original data type.
   std::shared_ptr<void> _learner_data;
 
-  // This holds ownership of the previous learner in the reduction stack.
-  // For base learners, this will be nullptr.
-  std::shared_ptr<learner> _previous_learner;
+  // This holds ownership of this learner's base.
+  // It is the learner immediately below this one in the reduction stack.
+  // For foundation learners, this will be nullptr.
+  std::shared_ptr<learner> _base_learner;
 
   // Create a copy of this learner. The implementation of this functions determines which of the
-  // functions inside the learner are propagated to the next learner, and which are reset to nullptr.
-  // The new learner will share ownership of this learner in its _previous_learner shared pointer.
-  std::shared_ptr<learner> make_next_learner();
+  // functions inside the learner are propagated to the new learner, and which are reset to nullptr.
+  // The new learner will share ownership of this learner in its _base_learner shared pointer.
+  std::shared_ptr<learner> create_learner_above_this();
 
   // Private constructor/copy/move
-  // Should only be able to construct a std::shared_ptr<learner> through make_reduction_learner / make_base_learner.
-  // All learners must be owned by a std::shared_ptr because we use std::enable_shared_from_this
+  // Should only be able to construct a std::shared_ptr<learner> through make_reduction_learner /
+  // make_foundation_learner. All learners must be owned by a std::shared_ptr because we use
+  // std::enable_shared_from_this
   learner() = default;
   learner(const learner&) = default;
   learner(learner&&) = default;
@@ -320,7 +323,7 @@ private:
   template <class FluentBuilderT, class DataT, class ExampleT>
   friend class common_learner_builder;
   template <class DataT, class ExampleT>
-  friend class base_learner_builder;
+  friend class foundation_learner_builder;
   template <class DataT, class ExampleT>
   friend class reduction_learner_builder;
   template <class ExampleT>
@@ -328,7 +331,7 @@ private:
 };
 
 template <bool is_learn>
-void multiline_learn_or_predict(learner& prev, multi_ex& examples, const uint64_t offset, const uint32_t id = 0)
+void multiline_learn_or_predict(learner& base, multi_ex& examples, const uint64_t offset, const uint32_t id = 0)
 {
   std::vector<uint64_t> saved_offsets;
   saved_offsets.reserve(examples.size());
@@ -345,18 +348,18 @@ void multiline_learn_or_predict(learner& prev, multi_ex& examples, const uint64_
         for (size_t i = 0; i < examples.size(); i++) { examples[i]->ft_offset = saved_offsets[i]; }
       });
 
-  if (is_learn) { prev.learn(examples, id); }
-  else { prev.predict(examples, id); }
+  if (is_learn) { base.learn(examples, id); }
+  else { base.predict(examples, id); }
 }
 
 namespace details
 {
-inline float recur_sensitivity(learner& prev, example& ec) { return prev.sensitivity(ec); }
+inline float recur_sensitivity(learner& base, example& ec) { return base.sensitivity(ec); }
 
 template <typename DataT>
-inline float recur_sensitivity(DataT&, learner& prev, example& ec)
+inline float recur_sensitivity(DataT&, learner& base, example& ec)
 {
-  return prev.sensitivity(ec);
+  return base.sensitivity(ec);
 }
 }  // namespace details
 
@@ -527,69 +530,69 @@ class reduction_learner_builder
 public:
   using FluentBuilderT = reduction_learner_builder<DataT, ExampleT>;
   using super = common_learner_builder<reduction_learner_builder<DataT, ExampleT>, DataT, ExampleT>;
-  reduction_learner_builder(std::unique_ptr<DataT>&& data, std::shared_ptr<learner> prev, const std::string& name)
-      // NOTE: This is a copy of the previous learner! The purpose is to copy all of the
+  reduction_learner_builder(std::unique_ptr<DataT>&& data, std::shared_ptr<learner> base, const std::string& name)
+      // NOTE: This is a copy of the base learner! The purpose is to copy all of the
       // function data objects so that if this reduction does not define a function such as
       // save_load then calling save_load on this object will essentially result in forwarding the
       // call the next reduction that actually implements it.
       : common_learner_builder<reduction_learner_builder<DataT, ExampleT>, DataT, ExampleT>(
-            prev->make_next_learner(), std::move(data), name)
+            base->create_learner_above_this(), std::move(data), name)
   {
-    // Default sensitivity calls the previous learner's sensitivity recursively
+    // Default sensitivity calls the base learner's sensitivity recursively
     this->set_sensitivity(details::recur_sensitivity<DataT>);
 
     set_params_per_weight(1);
     this->set_learn_returns_prediction(false);
 
-    // By default, will produce what the previous learner expects
-    super::set_input_label_type(prev->get_input_label_type());
-    super::set_output_label_type(prev->get_input_label_type());
-    super::set_input_prediction_type(prev->get_output_prediction_type());
-    super::set_output_prediction_type(prev->get_output_prediction_type());
+    // By default, will produce what the base learner expects
+    super::set_input_label_type(base->get_input_label_type());
+    super::set_output_label_type(base->get_input_label_type());
+    super::set_input_prediction_type(base->get_output_prediction_type());
+    super::set_output_prediction_type(base->get_output_prediction_type());
   }
 
   // clang-format off
   LEARNER_BUILDER_DEFINE(set_predict(void (*fn_ptr)(DataT&, learner&, ExampleT&)),
     assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
-    learner* prev = this->learner_ptr->get_previous_learner();
-    this->learner_ptr->_predict_f = [fn_ptr, data, prev](polymorphic_ex ex) { fn_ptr(*data, *prev, ex); };
+    learner* base = this->learner_ptr->get_base_learner();
+    this->learner_ptr->_predict_f = [fn_ptr, data, base](polymorphic_ex ex) { fn_ptr(*data, *base, ex); };
   )
 
   LEARNER_BUILDER_DEFINE(set_learn(void (*fn_ptr)(DataT&, learner&, ExampleT&)),
     assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
-    learner* prev = this->learner_ptr->get_previous_learner();
-    this->learner_ptr->_learn_f = [fn_ptr, data, prev](polymorphic_ex ex) { fn_ptr(*data, *prev, ex); };
+    learner* base = this->learner_ptr->get_base_learner();
+    this->learner_ptr->_learn_f = [fn_ptr, data, base](polymorphic_ex ex) { fn_ptr(*data, *base, ex); };
   )
 
   LEARNER_BUILDER_DEFINE(set_multipredict(void (*fn_ptr)(DataT&, learner&, ExampleT&, size_t, size_t, polyprediction*, bool)),
     assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
-    learner* prev = this->learner_ptr->get_previous_learner();
-    this->learner_ptr->_multipredict_f = [fn_ptr, data, prev](polymorphic_ex ex, size_t count, size_t step,
+    learner* base = this->learner_ptr->get_base_learner();
+    this->learner_ptr->_multipredict_f = [fn_ptr, data, base](polymorphic_ex ex, size_t count, size_t step,
         polyprediction* pred, bool finalize_predictions)
-    { fn_ptr(*data, *prev, ex, count, step, pred, finalize_predictions); };
+    { fn_ptr(*data, *base, ex, count, step, pred, finalize_predictions); };
   )
 
   LEARNER_BUILDER_DEFINE(set_update(void (*fn_ptr)(DataT& data, learner&, ExampleT&)),
     assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
-    learner* prev = this->learner_ptr->get_previous_learner();
-    this->learner_ptr->_update_f = [fn_ptr, data, prev](polymorphic_ex ex) { fn_ptr(*data, *prev, ex); };
+    learner* base = this->learner_ptr->get_base_learner();
+    this->learner_ptr->_update_f = [fn_ptr, data, base](polymorphic_ex ex) { fn_ptr(*data, *base, ex); };
   )
 
   // used for active learning and confidence to determine how easily predictions are changed
   LEARNER_BUILDER_DEFINE(set_sensitivity(float (*fn_ptr)(DataT& data, learner&, example&)),
     assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
-    learner* prev = this->learner_ptr->get_previous_learner();
-    this->learner_ptr->_sensitivity_f = [fn_ptr, data, prev](example& ex) { return fn_ptr(*data, *prev, ex); };
+    learner* base = this->learner_ptr->get_base_learner();
+    this->learner_ptr->_sensitivity_f = [fn_ptr, data, base](example& ex) { return fn_ptr(*data, *base, ex); };
   )
 
   LEARNER_BUILDER_DEFINE(set_params_per_weight(size_t params_per_weight),
     this->learner_ptr->weights = params_per_weight;
-    this->learner_ptr->increment = this->learner_ptr->_previous_learner->increment * this->learner_ptr->weights;
+    this->learner_ptr->increment = this->learner_ptr->_base_learner->increment * this->learner_ptr->weights;
   )
 
   LEARNER_BUILDER_DEFINE(set_merge(void (*fn_ptr)(const std::vector<float>&, const std::vector<const DataT*>&, DataT&)),
@@ -618,12 +621,12 @@ public:
   std::shared_ptr<learner> build()
   {
     prediction_type_t in_pred_type = this->learner_ptr->get_input_prediction_type();
-    prediction_type_t prev_out_pred_type = this->learner_ptr->get_previous_learner()->get_output_prediction_type();
+    prediction_type_t base_out_pred_type = this->learner_ptr->get_base_learner()->get_output_prediction_type();
     label_type_t out_label_type = this->learner_ptr->get_output_label_type();
-    label_type_t prev_in_label_type = this->learner_ptr->get_previous_learner()->get_input_label_type();
-    details::learner_build_diagnostic(this->learner_ptr->get_name(),
-        this->learner_ptr->get_previous_learner()->get_name(), in_pred_type, prev_out_pred_type, out_label_type,
-        prev_in_label_type, this->learner_ptr->_merge_f, this->learner_ptr->_merge_with_all_f);
+    label_type_t base_in_label_type = this->learner_ptr->get_base_learner()->get_input_label_type();
+    details::learner_build_diagnostic(this->learner_ptr->get_name(), this->learner_ptr->get_base_learner()->get_name(),
+        in_pred_type, base_out_pred_type, out_label_type, base_in_label_type, this->learner_ptr->_merge_f,
+        this->learner_ptr->_merge_with_all_f);
 
     return this->learner_ptr;
   }
@@ -636,64 +639,64 @@ class reduction_no_data_learner_builder
 public:
   using FluentBuilderT = reduction_no_data_learner_builder<ExampleT>;
   using super = common_learner_builder<reduction_learner_builder<char, ExampleT>, char, ExampleT>;
-  reduction_no_data_learner_builder(std::shared_ptr<learner> prev, const std::string& name)
-      // NOTE: This is a copy of the previous learner! The purpose is to copy all of the
+  reduction_no_data_learner_builder(std::shared_ptr<learner> base, const std::string& name)
+      // NOTE: This is a copy of the base learner! The purpose is to copy all of the
       // function data objects so that if this reduction does not define a function such as
       // save_load then calling save_load on this object will essentially result in forwarding the
       // call the next reduction that actually implements it.
 
       // For the no data reduction, allocate a placeholder char as its data to avoid nullptr issues
       : common_learner_builder<reduction_learner_builder<char, ExampleT>, char, ExampleT>(
-            prev->make_next_learner(), VW::make_unique<char>(0), name)
+            base->create_learner_above_this(), VW::make_unique<char>(0), name)
   {
-    // Default sensitivity calls previous learner's sensitivity recursively
+    // Default sensitivity calls base learner's sensitivity recursively
     this->set_sensitivity(details::recur_sensitivity);
 
     set_params_per_weight(1);
-    // By default, will produce what the previous learner expects
-    super::set_input_label_type(prev->get_input_label_type());
-    super::set_output_label_type(prev->get_input_label_type());
-    super::set_input_prediction_type(prev->get_output_prediction_type());
-    super::set_output_prediction_type(prev->get_output_prediction_type());
+    // By default, will produce what the base learner expects
+    super::set_input_label_type(base->get_input_label_type());
+    super::set_output_label_type(base->get_input_label_type());
+    super::set_input_prediction_type(base->get_output_prediction_type());
+    super::set_output_prediction_type(base->get_output_prediction_type());
   }
 
   // clang-format off
   LEARNER_BUILDER_DEFINE(set_predict(void (*fn_ptr)(learner&, ExampleT&)),
     assert(fn_ptr != nullptr);
-    learner* prev = this->learner_ptr->get_previous_learner();
-    this->learner_ptr->_predict_f = [fn_ptr, prev](polymorphic_ex ex) { fn_ptr(*prev, ex); };
+    learner* base = this->learner_ptr->get_base_learner();
+    this->learner_ptr->_predict_f = [fn_ptr, base](polymorphic_ex ex) { fn_ptr(*base, ex); };
   )
 
   LEARNER_BUILDER_DEFINE(set_learn(void (*fn_ptr)(learner&, ExampleT&)),
     assert(fn_ptr != nullptr);
-    learner* prev = this->learner_ptr->get_previous_learner();
-    this->learner_ptr->_learn_f = [fn_ptr, prev](polymorphic_ex ex) { fn_ptr(*prev, ex); };
+    learner* base = this->learner_ptr->get_base_learner();
+    this->learner_ptr->_learn_f = [fn_ptr, base](polymorphic_ex ex) { fn_ptr(*base, ex); };
   )
 
   LEARNER_BUILDER_DEFINE(set_multipredict(void (*fn_ptr)(learner&, ExampleT&, size_t, size_t, polyprediction*, bool)),
     assert(fn_ptr != nullptr);
-    learner* prev = this->learner_ptr->get_previous_learner();
+    learner* base = this->learner_ptr->get_base_learner();
     this->learner_ptr->_multipredict_f =
-        [fn_ptr, prev](polymorphic_ex ex, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)
-    { fn_ptr(*prev, ex, count, step, pred, finalize_predictions); };
+        [fn_ptr, base](polymorphic_ex ex, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)
+    { fn_ptr(*base, ex, count, step, pred, finalize_predictions); };
   )
 
   LEARNER_BUILDER_DEFINE(set_update(void (*fn_ptr)(learner&, ExampleT&)),
     assert(fn_ptr != nullptr);
-    learner* prev = this->learner_ptr->get_previous_learner();
-    this->learner_ptr->_update_f = [fn_ptr, prev](polymorphic_ex ex) { fn_ptr(*prev, ex); };
+    learner* base = this->learner_ptr->get_base_learner();
+    this->learner_ptr->_update_f = [fn_ptr, base](polymorphic_ex ex) { fn_ptr(*base, ex); };
   )
 
   // used for active learning and confidence to determine how easily predictions are changed
   LEARNER_BUILDER_DEFINE(set_sensitivity(float (*fn_ptr)(learner&, example&)),
     assert(fn_ptr != nullptr);
-    learner* prev = this->learner_ptr->get_previous_learner();
-    this->learner_ptr->_sensitivity_f = [fn_ptr, prev](example& ex) { return fn_ptr(*prev, ex); };
+    learner* base = this->learner_ptr->get_base_learner();
+    this->learner_ptr->_sensitivity_f = [fn_ptr, base](example& ex) { return fn_ptr(*base, ex); };
   )
 
   LEARNER_BUILDER_DEFINE(set_params_per_weight(size_t params_per_weight),
     this->learner_ptr->weights = params_per_weight;
-    this->learner_ptr->increment = this->learner_ptr->_previous_learner->increment * this->learner_ptr->weights;
+    this->learner_ptr->increment = this->learner_ptr->_base_learner->increment * this->learner_ptr->weights;
   )
   // clang-format on
 
@@ -701,14 +704,15 @@ public:
 };
 
 template <class DataT, class ExampleT>
-class base_learner_builder : public common_learner_builder<base_learner_builder<DataT, ExampleT>, DataT, ExampleT>
+class foundation_learner_builder
+    : public common_learner_builder<foundation_learner_builder<DataT, ExampleT>, DataT, ExampleT>
 {
 public:
-  using FluentBuilderT = base_learner_builder<DataT, ExampleT>;
-  using super = common_learner_builder<base_learner_builder<DataT, ExampleT>, DataT, ExampleT>;
-  base_learner_builder(std::unique_ptr<DataT>&& data, const std::string& name, prediction_type_t out_pred_type,
+  using FluentBuilderT = foundation_learner_builder<DataT, ExampleT>;
+  using super = common_learner_builder<foundation_learner_builder<DataT, ExampleT>, DataT, ExampleT>;
+  foundation_learner_builder(std::unique_ptr<DataT>&& data, const std::string& name, prediction_type_t out_pred_type,
       label_type_t in_label_type)
-      : common_learner_builder<base_learner_builder<DataT, ExampleT>, DataT, ExampleT>(
+      : common_learner_builder<foundation_learner_builder<DataT, ExampleT>, DataT, ExampleT>(
             std::shared_ptr<learner>(new learner()), std::move(data), name)
   {
     // Default sensitivity function returns zero
@@ -810,10 +814,10 @@ public:
 
 template <class DataT, class ExampleT>
 reduction_learner_builder<DataT, ExampleT> make_reduction_learner(std::unique_ptr<DataT>&& data,
-    std::shared_ptr<learner> prev, void (*learn_fn)(DataT&, learner&, ExampleT&),
+    std::shared_ptr<learner> base, void (*learn_fn)(DataT&, learner&, ExampleT&),
     void (*predict_fn)(DataT&, learner&, ExampleT&), const std::string& name)
 {
-  auto builder = reduction_learner_builder<DataT, ExampleT>(std::move(data), std::move(prev), name);
+  auto builder = reduction_learner_builder<DataT, ExampleT>(std::move(data), std::move(base), name);
   builder.set_learn(learn_fn);
   builder.set_update(learn_fn);
   builder.set_predict(predict_fn);
@@ -821,10 +825,10 @@ reduction_learner_builder<DataT, ExampleT> make_reduction_learner(std::unique_pt
 }
 
 template <class ExampleT>
-reduction_no_data_learner_builder<ExampleT> make_no_data_reduction_learner(std::shared_ptr<learner> prev,
+reduction_no_data_learner_builder<ExampleT> make_no_data_reduction_learner(std::shared_ptr<learner> base,
     void (*learn_fn)(learner&, ExampleT&), void (*predict_fn)(learner&, ExampleT&), const std::string& name)
 {
-  auto builder = reduction_no_data_learner_builder<ExampleT>(std::move(prev), name);
+  auto builder = reduction_no_data_learner_builder<ExampleT>(std::move(base), name);
   builder.set_learn(learn_fn);
   builder.set_update(learn_fn);
   builder.set_predict(predict_fn);
@@ -832,11 +836,11 @@ reduction_no_data_learner_builder<ExampleT> make_no_data_reduction_learner(std::
 }
 
 template <class DataT, class ExampleT>
-base_learner_builder<DataT, ExampleT> make_base_learner(std::unique_ptr<DataT>&& data,
+foundation_learner_builder<DataT, ExampleT> make_foundation_learner(std::unique_ptr<DataT>&& data,
     void (*learn_fn)(DataT&, ExampleT&), void (*predict_fn)(DataT&, ExampleT&), const std::string& name,
     prediction_type_t out_pred_type, label_type_t in_label_type)
 {
-  auto builder = base_learner_builder<DataT, ExampleT>(std::move(data), name, out_pred_type, in_label_type);
+  auto builder = foundation_learner_builder<DataT, ExampleT>(std::move(data), name, out_pred_type, in_label_type);
   builder.set_learn(learn_fn);
   builder.set_update(learn_fn);
   builder.set_predict(predict_fn);
@@ -844,12 +848,12 @@ base_learner_builder<DataT, ExampleT> make_base_learner(std::unique_ptr<DataT>&&
 }
 
 template <class ExampleT>
-base_learner_builder<char, ExampleT> make_no_data_base_learner(void (*learn_fn)(char&, ExampleT&),
+foundation_learner_builder<char, ExampleT> make_no_data_foundation_learner(void (*learn_fn)(char&, ExampleT&),
     void (*predict_fn)(char&, ExampleT&), const std::string& name, prediction_type_t out_pred_type,
     label_type_t in_label_type)
 {
   // For the no data reduction, allocate a placeholder char as its data to avoid nullptr issues
-  return make_base_learner<char, ExampleT>(
+  return make_foundation_learner<char, ExampleT>(
       VW::make_unique<char>(0), learn_fn, predict_fn, name, out_pred_type, in_label_type);
 }
 

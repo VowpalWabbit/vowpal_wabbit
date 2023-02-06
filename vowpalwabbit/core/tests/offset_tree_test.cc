@@ -65,7 +65,7 @@ std::shared_ptr<learner> get_test_harness_reduction(const predictions_t& base_re
   // Setup a test harness base reduction
   auto test_harness = VW::make_unique<reduction_test_harness>();
   test_harness->set_predict_response(base_reduction_predictions);
-  auto test_learner = VW::LEARNER::make_base_learner(
+  auto test_learner = VW::LEARNER::make_foundation_learner(
       std::move(test_harness),          // Data structure passed by vw_framework into test_harness predict/learn calls
       reduction_test_harness::learn,    // test_harness learn
       reduction_test_harness::predict,  // test_harness predict
