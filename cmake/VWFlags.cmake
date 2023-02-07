@@ -12,16 +12,6 @@ if(LTO)
   set(VW_LINUX_FLAGS ${VW_LINUX_FLAGS} -flto=thin)
 endif()
 
-if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
-  if(NOT "arm64" IN_LIST "${CMAKE_OSX_ARCHITECTURES}")
-    # Use sse2 by default. Change to latest simd extensions such as avx512 on supported architecture.
-    set(LINUX_X86_64_OPT_FLAGS -msse2 -mfpmath=sse)
-    if(UNIX AND NOT APPLE)
-      set(LINUX_X86_64_OPT_FLAGS ${LINUX_X86_64_OPT_FLAGS} -mavx2)
-    endif()
-  endif()
-endif()
-
 # Add -ffast-math for speed, remove for testability.
 # no-stack-check is added to mitigate stack alignment issue on Catalina where there is a bug with aligning stack-check instructions, and stack-check became default option
 set(LINUX_RELEASE_CONFIG -fno-strict-aliasing ${LINUX_X86_64_OPT_FLAGS} -fno-stack-check -fomit-frame-pointer)
