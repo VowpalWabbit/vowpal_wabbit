@@ -81,15 +81,15 @@ class OptionManager : VW::config::typed_option_visitor
   // see pyvw.py class VWOption
   py::object m_py_opt_class;
   VW::config::options_i& m_opt;
-  std::vector<std::string>& m_enabled_reductions;
+  std::vector<std::string>& m_enabled_learners;
   std::string default_group_name;
 
   py::object* m_visitor_output_var;
 
 public:
-  OptionManager(VW::config::options_i& options, std::vector<std::string>& enabled_reductions, py::object py_class)
+  OptionManager(VW::config::options_i& options, std::vector<std::string>& enabled_learners, py::object py_class)
       : m_opt(options)
-      , m_enabled_reductions(enabled_reductions)
+      , m_enabled_learners(enabled_learners)
       , m_option_group_dic(options.get_collection_of_options())
       , m_py_opt_class(py_class)
   {
@@ -197,7 +197,7 @@ public:
     while (it != m_option_group_dic.end())
     {
       auto reduction_enabled =
-          std::find(m_enabled_reductions.begin(), m_enabled_reductions.end(), it->first) != m_enabled_reductions.end();
+          std::find(m_enabled_learners.begin(), m_enabled_learners.end(), it->first) != m_enabled_learners.end();
 
       if (((it->first).compare(default_group_name) != 0) && enabled_only && !reduction_enabled)
       {
@@ -370,9 +370,9 @@ search_ptr get_search_ptr(vw_ptr all)
 
 py::object get_options(vw_ptr all, py::object py_class, bool enabled_only)
 {
-  std::vector<std::string> enabled_reductions;
-  if (all->l) all->l->get_enabled_reductions(enabled_reductions);
-  auto opt_manager = OptionManager(*all->options, enabled_reductions, py_class);
+  std::vector<std::string> enabled_learners;
+  if (all->l) all->l->get_enabled_learners(enabled_learners);
+  auto opt_manager = OptionManager(*all->options, enabled_learners, py_class);
   return opt_manager.get_vw_option_pyobjects(enabled_only);
 }
 
@@ -391,14 +391,14 @@ std::string get_arguments(vw_ptr all)
   return serializer.str();
 }
 
-py::list get_enabled_reductions(vw_ptr all)
+py::list get_enabled_learners(vw_ptr all)
 {
-  py::list py_enabled_reductions;
-  std::vector<std::string> enabled_reductions;
-  if (all->l) all->l->get_enabled_reductions(enabled_reductions);
-  for (auto ex : enabled_reductions) { py_enabled_reductions.append(ex); }
+  py::list py_enabled_learners;
+  std::vector<std::string> enabled_learners;
+  if (all->l) all->l->get_enabled_learners(enabled_learners);
+  for (auto ex : enabled_learners) { py_enabled_learners.append(ex); }
 
-  return py_enabled_reductions;
+  return py_enabled_learners;
 }
 
 predictor_ptr get_predictor(search_ptr _sch, ptag my_tag)
@@ -1420,7 +1420,11 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("audit_example", &my_audit_example, "print example audit information")
       .def("get_id", &get_model_id, "return the model id")
       .def("get_arguments", &get_arguments, "return the arguments after resolving all dependencies")
-      .def("get_enabled_reductions", &get_enabled_reductions, "return the list of names of the enabled reductions")
+
+      // this returns all learners, not just reduction learners, but the API was originally called
+      // get_enabled_reductions
+      .def("get_enabled_learners", &get_enabled_learners, "return the list of names of the enabled learners")
+      .def("get_enabled_reductions", &get_enabled_learners, "return the list of names of the enabled learners")
 
       .def("learn_multi", &my_learn_multi_ex, "given a list pyvw examples, learn (and predict) on those examples")
       .def("predict_multi", &my_predict_multi_ex, "given a list of pyvw examples, predict on that example")
