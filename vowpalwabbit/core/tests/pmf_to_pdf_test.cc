@@ -47,11 +47,11 @@ private:
 
 using predictions_t = vector<pair<uint32_t, float>>;
 
-std::shared_ptr<learner> get_test_harness_reduction(const predictions_t& base_reduction_predictions)
+std::shared_ptr<learner> get_test_harness(const predictions_t& bottom_learner_predictions)
 {
-  // Setup a test harness base reduction
+  // Setup a test harness bottom learner
   auto test_harness = VW::make_unique<reduction_test_harness>();
-  test_harness->set_predict_response(base_reduction_predictions);
+  test_harness->set_predict_response(bottom_learner_predictions);
   auto test_learner = VW::LEARNER::make_bottom_learner(
       std::move(test_harness),          // Data structure passed by vw_framework into test_harness predict/learn calls
       reduction_test_harness::learn,    // test_harness learn
@@ -61,7 +61,7 @@ std::shared_ptr<learner> get_test_harness_reduction(const predictions_t& base_re
                           .set_output_example_prediction([](VW::workspace& /* all */, const reduction_test_harness&,
                                                              const VW::example&, VW::io::logger&) {})
 
-                          .build();  // Create a learner using the base reduction.
+                          .build();  // Create a learner using the bottom learner.
   return test_learner;
 }
 }  // namespace
@@ -119,7 +119,7 @@ TEST(PmfToPdf, Basic)
   uint32_t action = 2;
   const ::predictions_t prediction_scores{{action, 1.f}};
 
-  const auto test_harness = ::get_test_harness_reduction(prediction_scores);
+  const auto test_harness = ::get_test_harness(prediction_scores);
 
   VW::example ec;
 
@@ -170,7 +170,7 @@ TEST(PmfToPdf, WLargeBandwidth)
   {
     const ::predictions_t prediction_scores{{action, 1.f}};
 
-    const auto test_harness = ::get_test_harness_reduction(prediction_scores);
+    const auto test_harness = ::get_test_harness(prediction_scores);
     data->_p_base = test_harness.get();
 
     data->predict(ec);
@@ -204,7 +204,7 @@ TEST(PmfToPdf, WLargeDiscretization)
   {
     const ::predictions_t prediction_scores{{action, 1.f}};
 
-    const auto test_harness = ::get_test_harness_reduction(prediction_scores);
+    const auto test_harness = ::get_test_harness(prediction_scores);
     data->_p_base = test_harness.get();
 
     data->predict(ec);

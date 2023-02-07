@@ -1627,7 +1627,9 @@ void VW::details::instantiate_learner(VW::workspace& all, std::unique_ptr<VW::se
   }
   else { learner_builder->delayed_state_attach(all, *all.options.get()); }
 
-  // kick-off reduction setup functions
+  // Workspace holds shared_ptr to learner at the top of the stack.
+  // setup_base_learner() will recurse down the stack and create all enabled
+  // learners starting from the bottom learner.
   all.l = learner_builder->setup_base_learner();
 
   // explicit destroy of learner_builder state
@@ -1653,7 +1655,7 @@ void VW::details::parse_sources(options_i& options, VW::workspace& all, VW::io_b
 
 void VW::details::print_enabled_learners(VW::workspace& all, std::vector<std::string>& enabled_learners)
 {
-  // output list of enabled reductions
+  // output list of enabled learners
   if (!all.quiet && !all.options->was_supplied("audit_regressor") && !enabled_learners.empty())
   {
     const char* const delim = ", ";
@@ -1661,7 +1663,7 @@ void VW::details::print_enabled_learners(VW::workspace& all, std::vector<std::st
     std::copy(
         enabled_learners.begin(), enabled_learners.end() - 1, std::ostream_iterator<std::string>(imploded, delim));
 
-    *(all.trace_message) << "Enabled reductions: " << imploded.str() << enabled_learners.back() << std::endl;
+    *(all.trace_message) << "Enabled learners: " << imploded.str() << enabled_learners.back() << std::endl;
   }
 }
 

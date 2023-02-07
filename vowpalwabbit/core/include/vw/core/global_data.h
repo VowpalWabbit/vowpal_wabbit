@@ -135,7 +135,7 @@ public:
 
   /**
    * @brief Generate a JSON string with the current model state and invert hash
-   * lookup table. Base reduction in use must be gd and workspace.hash_inv must
+   * lookup table. Bottom learner in use must be gd and workspace.hash_inv must
    * be true. This function is experimental and subject to change.
    *
    * @return std::string JSON formatted string
@@ -213,7 +213,7 @@ public:
   uint64_t parse_mask;  // 1 << num_bits -1
   bool permutations;    // if true - permutations of features generated instead of simple combinations. false by default
 
-  // Referenced by examples as their set of interactions. Can be overriden by reductions.
+  // Referenced by examples as their set of interactions. Can be overriden by learners.
   std::vector<std::vector<namespace_index>> interactions;
   std::vector<std::vector<extent_term>> extent_interactions;
   bool ignore_some;
@@ -307,7 +307,7 @@ public:
 
   std::map<uint64_t, VW::details::invert_hash_info> index_name_map;
 
-  // hack to support cb model loading into ccb reduction
+  // hack to support cb model loading into ccb learner
   bool is_ccb_input_model = false;
 
   // Default value of 2 follows behavior of 1-indexing and can change to 0-indexing if detected

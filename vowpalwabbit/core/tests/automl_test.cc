@@ -100,7 +100,7 @@ get_automl_data(VW::workspace& all)
 {
   std::vector<std::string> e_r;
   all.l->get_enabled_learners(e_r);
-  if (std::find(e_r.begin(), e_r.end(), "automl") == e_r.end()) { THROW("automl not found in enabled reductions"); }
+  if (std::find(e_r.begin(), e_r.end(), "automl") == e_r.end()) { THROW("automl not found in enabled learners"); }
 
   VW::LEARNER::learner* automl_learner = require_multiline(all.l->get_learner_by_name_prefix("automl"));
 

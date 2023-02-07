@@ -25,7 +25,7 @@ emt_tree* get_emt_tree(VW::workspace& all)
   all.l->get_enabled_learners(e_r);
   if (std::find(e_r.begin(), e_r.end(), "emt") == e_r.end())
   {
-    ADD_FAILURE() << "Eigen memory tree not found in enabled reductions";
+    ADD_FAILURE() << "Eigen memory tree not found in enabled learners";
   }
 
   VW::LEARNER::learner* emt = require_singleline(all.l->get_learner_by_name_prefix("emt"));

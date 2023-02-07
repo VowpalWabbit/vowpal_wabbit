@@ -152,7 +152,7 @@ TEST(Las, CheckSpannerResultsSquarecb)
     vw.l->get_enabled_learners(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
-      FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
+      FAIL() << "cb_explore_adf_large_action_space not found in enabled learners";
     }
 
     VW::LEARNER::learner* learner =
@@ -255,7 +255,7 @@ TEST(Las, CheckSpannerResultsEpsilonGreedy)
     vw.l->get_enabled_learners(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
-      FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
+      FAIL() << "cb_explore_adf_large_action_space not found in enabled learners";
     }
 
     VW::LEARNER::learner* learner =
@@ -392,7 +392,7 @@ TEST(Las, CheckProbabilitiesWhenDIsLarger)
     vw->l->get_enabled_learners(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
-      FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
+      FAIL() << "cb_explore_adf_large_action_space not found in enabled learners";
     }
 
     VW::LEARNER::learner* learner =
@@ -488,7 +488,7 @@ TEST(Las, CheckSpannerChoosesActionsThatClearlyMaximiseVolume)
     vw.l->get_enabled_learners(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
-      FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
+      FAIL() << "cb_explore_adf_large_action_space not found in enabled learners";
     }
 
     VW::LEARNER::learner* learner =
@@ -637,7 +637,7 @@ TEST(Las, CheckSpannerRejectsSameActions)
     vw.l->get_enabled_learners(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
-      FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
+      FAIL() << "cb_explore_adf_large_action_space not found in enabled learners";
     }
 
     VW::LEARNER::learner* learner =
@@ -701,7 +701,7 @@ TEST(Las, CheckSpannerWithActionsThatAreLinearCombinationsOfOtherActions)
     vw.l->get_enabled_learners(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
-      FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
+      FAIL() << "cb_explore_adf_large_action_space not found in enabled learners";
     }
 
     VW::LEARNER::learner* learner =
@@ -816,7 +816,7 @@ TEST(Las, CheckSingularValueSumDiffForDiffRanksIsSmall)
     vw->l->get_enabled_learners(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
-      FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
+      FAIL() << "cb_explore_adf_large_action_space not found in enabled learners";
     }
 
     VW::LEARNER::learner* learner =

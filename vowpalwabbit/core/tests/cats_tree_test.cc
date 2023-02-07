@@ -70,19 +70,19 @@ using predictions_t = vector<float>;
 using scores_t = int;
 
 template <typename T = reduction_test_harness>
-std::shared_ptr<learner> get_test_harness_reduction(const predictions_t& base_reduction_predictions)
+std::shared_ptr<learner> get_test_harness(const predictions_t& bottom_learner_predictions)
 {
   T* pharness = nullptr;
-  return get_test_harness_reduction(base_reduction_predictions, pharness);
+  return get_test_harness(bottom_learner_predictions, pharness);
 }
 
 template <typename T = reduction_test_harness>
-std::shared_ptr<learner> get_test_harness_reduction(const predictions_t& base_reduction_predictions, T*& pharness)
+std::shared_ptr<learner> get_test_harness(const predictions_t& bottom_learner_predictions, T*& pharness)
 {
-  // Setup a test harness base reduction
+  // Setup a test harness bottom learner
   auto test_harness = VW::make_unique<T>();
   pharness = test_harness.get();
-  test_harness->set_predict_response(base_reduction_predictions);
+  test_harness->set_predict_response(bottom_learner_predictions);
   auto test_learner = VW::LEARNER::make_bottom_learner(
       std::move(test_harness),          // Data structure passed by vw_framework into test_harness predict/learn calls
       reduction_test_harness::learn,    // test_harness learn
@@ -91,14 +91,14 @@ std::shared_ptr<learner> get_test_harness_reduction(const predictions_t& base_re
                           .set_output_example_prediction([](VW::workspace& /* all */, const reduction_test_harness&,
                                                              const VW::example&, VW::io::logger&) {})
 
-                          .build();  // Create a learner using the base reduction.
+                          .build();  // Create a learner using the bottom learner.
   return test_learner;
 }
 
-void predict_test_helper(const predictions_t& base_reduction_predictions, const scores_t& expected_action,
+void predict_test_helper(const predictions_t& bottom_learner_predictions, const scores_t& expected_action,
     uint32_t num_leaves, uint32_t bandwidth)
 {
-  const auto test_base = get_test_harness_reduction(base_reduction_predictions);
+  const auto test_base = get_test_harness(bottom_learner_predictions);
   VW::reductions::cats::cats_tree tree;
   tree.init(num_leaves, bandwidth);
   VW::example ec;
@@ -117,7 +117,7 @@ TEST(CatsTree, OtcAlgoLearn1ActionTillRoot)
 {
   reduction_test_harness* pharness = nullptr;
   predictions_t preds_to_return = {1.f, -1.f};
-  auto base = get_test_harness_reduction(preds_to_return, pharness);
+  auto base = get_test_harness(preds_to_return, pharness);
   VW::reductions::cats::cats_tree tree;
   tree.init(4, 0);
 
@@ -145,7 +145,7 @@ TEST(CatsTree, OtcAlgoLearn1Action)
 {
   reduction_test_harness* pharness = nullptr;
   predictions_t preds_to_return = {-1.f};
-  auto base = get_test_harness_reduction(preds_to_return, pharness);
+  auto base = get_test_harness(preds_to_return, pharness);
   VW::reductions::cats::cats_tree tree;
   tree.init(4, 0);
 
@@ -181,7 +181,7 @@ TEST(CatsTree, OtcAlgoLearn2ActionSiblings)
   predictions_t preds_to_return = {1.f, -1.f};
 
   reduction_test_harness* pharness = nullptr;
-  auto base = get_test_harness_reduction(preds_to_return, pharness);
+  auto base = get_test_harness(preds_to_return, pharness);
   VW::reductions::cats::cats_tree tree;
   tree.init(8, 0);
 
@@ -211,7 +211,7 @@ TEST(CatsTree, OtcAlgoLearn2ActionNotSiblings)
   predictions_t preds_to_return = {1.f, 1.f, -1.f, 1.f};
 
   reduction_test_harness* pharness = nullptr;
-  auto base = get_test_harness_reduction(preds_to_return, pharness);
+  auto base = get_test_harness(preds_to_return, pharness);
   VW::reductions::cats::cats_tree tree;
   tree.init(8, 0);
 
@@ -241,7 +241,7 @@ TEST(CatsTree, OtcAlgoLearn2ActionNotSiblingsBandwidth1)
   predictions_t preds_to_return = {1.f, -1.f, 1.f};
 
   reduction_test_harness* pharness = nullptr;
-  auto base = get_test_harness_reduction(preds_to_return, pharness);
+  auto base = get_test_harness(preds_to_return, pharness);
   VW::reductions::cats::cats_tree tree;
   tree.init(8, 1);
 
@@ -275,7 +275,7 @@ TEST(CatsTree, OtcAlgoLearn2ActionSeparate)
   predictions_t preds_to_return = {-1.f, -1.f, -1.f};
 
   reduction_test_harness* pharness = nullptr;
-  auto base = get_test_harness_reduction(preds_to_return, pharness);
+  auto base = get_test_harness(preds_to_return, pharness);
   VW::reductions::cats::cats_tree tree;
   tree.init(8, 0);
 
@@ -305,7 +305,7 @@ TEST(CatsTree, OtcAlgoLearn2ActionSeparate2)
   predictions_t preds_to_return = {1.f, 1.f, 1.f, -1.f};
 
   reduction_test_harness* pharness = nullptr;
-  auto base = get_test_harness_reduction(preds_to_return, pharness);
+  auto base = get_test_harness(preds_to_return, pharness);
   VW::reductions::cats::cats_tree tree;
   tree.init(8, 0);
 
@@ -335,7 +335,7 @@ TEST(CatsTree, OtcAlgoLearn2ActionSeparateBandwidth2)
   predictions_t preds_to_return = {};
 
   reduction_test_harness* pharness = nullptr;
-  auto base = get_test_harness_reduction(preds_to_return, pharness);
+  auto base = get_test_harness(preds_to_return, pharness);
   VW::reductions::cats::cats_tree tree;
   tree.init(8, 2);
 
@@ -365,7 +365,7 @@ TEST(CatsTree, OtcAlgoLearn2ActionSeparate2Bandwidth2)
   predictions_t preds_to_return = {1, 1, -1};
 
   reduction_test_harness* pharness = nullptr;
-  auto base = get_test_harness_reduction(preds_to_return, pharness);
+  auto base = get_test_harness(preds_to_return, pharness);
   VW::reductions::cats::cats_tree tree;
   tree.init(16, 2);
 
@@ -395,7 +395,7 @@ TEST(CatsTree, OtcAlgoLearn2ActionSeparateBandwidth1Asym)
   predictions_t preds_to_return = {-1.f, 1.f, -1.f};
 
   reduction_test_harness* pharness = nullptr;
-  auto base = get_test_harness_reduction(preds_to_return, pharness);
+  auto base = get_test_harness(preds_to_return, pharness);
   VW::reductions::cats::cats_tree tree;
   tree.init(8, 1);
 
