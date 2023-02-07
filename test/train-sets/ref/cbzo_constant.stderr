@@ -6,7 +6,7 @@ Num weight bits = 18
 learning rate = 0.001
 initial_t = 0
 power_t = 0.5
-Enabled reductions: cbzo
+Enabled learners: cbzo
 Input label = CONTINUOUS
 Output pred = PDF
 average  since         example        example        current        current  current
