@@ -183,7 +183,7 @@ void VW::shared_data::update(bool test_example, bool labeled_example, float loss
   }
 }
 
-void VW::shared_data::update_dump_interval(bool progress_add, float progress_arg)
+void VW::shared_data::update_dump_interval()
 {
   sum_loss_since_last_dump = 0.0;
   old_weighted_labeled_examples = weighted_labeled_examples;
@@ -243,7 +243,7 @@ std::string num_to_fixed_string(T num, int decimal_precision)
 }
 
 void VW::shared_data::print_update(std::ostream& output_stream, bool holdout_set_off, size_t current_pass, float label,
-    float prediction, size_t num_features, bool progress_add, float progress_arg)
+    float prediction, size_t num_features)
 {
   std::ostringstream label_buf, pred_buf;
 
@@ -252,12 +252,11 @@ void VW::shared_data::print_update(std::ostream& output_stream, bool holdout_set
 
   pred_buf << num_to_fixed_string(prediction, PREC_CURRENT_PREDICT);
 
-  print_update(output_stream, holdout_set_off, current_pass, label_buf.str(), pred_buf.str(), num_features,
-      progress_add, progress_arg);
+  print_update(output_stream, holdout_set_off, current_pass, label_buf.str(), pred_buf.str(), num_features);
 }
 
 void VW::shared_data::print_update(std::ostream& output_stream, bool holdout_set_off, size_t current_pass,
-    uint32_t label, uint32_t prediction, size_t num_features, bool progress_add, float progress_arg)
+    uint32_t label, uint32_t prediction, size_t num_features)
 {
   std::ostringstream label_buf, pred_buf;
 
@@ -266,23 +265,21 @@ void VW::shared_data::print_update(std::ostream& output_stream, bool holdout_set
 
   pred_buf << prediction;
 
-  print_update(output_stream, holdout_set_off, current_pass, label_buf.str(), pred_buf.str(), num_features,
-      progress_add, progress_arg);
+  print_update(output_stream, holdout_set_off, current_pass, label_buf.str(), pred_buf.str(), num_features);
 }
 
 void VW::shared_data::print_update(std::ostream& output_stream, bool holdout_set_off, size_t current_pass,
-    const std::string& label, uint32_t prediction, size_t num_features, bool progress_add, float progress_arg)
+    const std::string& label, uint32_t prediction, size_t num_features)
 {
   std::ostringstream pred_buf;
 
   pred_buf << prediction;
 
-  print_update(
-      output_stream, holdout_set_off, current_pass, label, pred_buf.str(), num_features, progress_add, progress_arg);
+  print_update(output_stream, holdout_set_off, current_pass, label, pred_buf.str(), num_features);
 }
 
 void VW::shared_data::print_update(std::ostream& output_stream, bool holdout_set_off, size_t current_pass,
-    const std::string& label, const std::string& prediction, size_t num_features, bool progress_add, float progress_arg)
+    const std::string& label, const std::string& prediction, size_t num_features)
 {
   bool holding_out = false;
 
@@ -331,7 +328,7 @@ void VW::shared_data::print_update(std::ostream& output_stream, bool holdout_set
 
   if (holding_out) { output_stream << " h"; }
   output_stream << std::endl;
-  update_dump_interval(progress_add, progress_arg);
+  update_dump_interval();
 }
 
 void VW::shared_data::print_summary(std::ostream& output, const shared_data& sd, const VW::loss_function& loss_func,

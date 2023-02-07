@@ -162,8 +162,8 @@ void print_update_topk(VW::workspace& all, VW::shared_data& sd, const topk& /* d
       sep = ",";
     }
 
-    sd.print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_ss.str(), pred_ss.str(),
-        num_features, all.progress_add, all.progress_arg);
+    sd.print_update(
+        *all.trace_message, all.holdout_set_off, all.current_pass, label_ss.str(), pred_ss.str(), num_features);
   }
 }
 

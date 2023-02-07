@@ -196,7 +196,7 @@ void print_update_audit_regressor(VW::workspace& all, VW::shared_data& /* sd */,
     print_row(*all.trace_message, ec.example_counter + 1, rd.values_audited,
         rd.values_audited * 100 / rd.loaded_regressor_values);
     all.sd->weighted_unlabeled_examples = static_cast<double>(ec.example_counter + 1);  // used in update_dump_interval
-    all.sd->update_dump_interval(all.progress_add, all.progress_arg);
+    all.sd->update_dump_interval();
     printed = true;
   }
 
