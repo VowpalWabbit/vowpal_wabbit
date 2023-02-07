@@ -1271,7 +1271,7 @@ void print_update_lda(VW::workspace& all, VW::shared_data& sd, const lda& data, 
     if (sd.weighted_examples() >= sd.dump_interval && !all.quiet)
     {
       sd.print_update(*all.trace_message, all.holdout_set_off, all.current_pass, "none", 0,
-          data.batch_buffer.at(0)->get_num_features(), all.progress_add, all.progress_arg);
+          data.batch_buffer.at(0)->get_num_features());
     }
   }
 }

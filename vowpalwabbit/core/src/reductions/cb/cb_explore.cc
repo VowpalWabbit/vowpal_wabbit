@@ -247,7 +247,7 @@ void print_update_cb_explore(
       label_string << cost.action << ":" << cost.cost << ":" << cost.probability;
     }
     sd.print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_string.str(), pred_string.str(),
-        ec.get_num_features(), all.progress_add, all.progress_arg);
+        ec.get_num_features());
   }
 }
 

@@ -576,7 +576,7 @@ void print_update_search(VW::workspace& all, VW::shared_data& /* sd */, const se
 
   fprintf(stderr, "\n");
   fflush(stderr);
-  all.sd->update_dump_interval(all.progress_add, all.progress_arg);
+  all.sd->update_dump_interval();
 }
 
 void add_new_feature(search_private& priv, float val, uint64_t idx)
