@@ -149,7 +149,7 @@ TEST(Las, CheckSpannerResultsSquarecb)
     }
 
     std::vector<std::string> e_r;
-    vw.l->get_enabled_reductions(e_r);
+    vw.l->get_enabled_learners(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
       FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
@@ -252,7 +252,7 @@ TEST(Las, CheckSpannerResultsEpsilonGreedy)
     }
 
     std::vector<std::string> e_r;
-    vw.l->get_enabled_reductions(e_r);
+    vw.l->get_enabled_learners(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
       FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
@@ -389,7 +389,7 @@ TEST(Las, CheckProbabilitiesWhenDIsLarger)
     }
 
     std::vector<std::string> e_r;
-    vw->l->get_enabled_reductions(e_r);
+    vw->l->get_enabled_learners(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
       FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
@@ -485,7 +485,7 @@ TEST(Las, CheckSpannerChoosesActionsThatClearlyMaximiseVolume)
     }
 
     std::vector<std::string> e_r;
-    vw.l->get_enabled_reductions(e_r);
+    vw.l->get_enabled_learners(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
       FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
@@ -634,7 +634,7 @@ TEST(Las, CheckSpannerRejectsSameActions)
     }
 
     std::vector<std::string> e_r;
-    vw.l->get_enabled_reductions(e_r);
+    vw.l->get_enabled_learners(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
       FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
@@ -698,7 +698,7 @@ TEST(Las, CheckSpannerWithActionsThatAreLinearCombinationsOfOtherActions)
   {
     auto& vw = *vw_ptr;
     std::vector<std::string> e_r;
-    vw.l->get_enabled_reductions(e_r);
+    vw.l->get_enabled_learners(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
       FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
@@ -813,7 +813,7 @@ TEST(Las, CheckSingularValueSumDiffForDiffRanksIsSmall)
     }
 
     std::vector<std::string> e_r;
-    vw->l->get_enabled_reductions(e_r);
+    vw->l->get_enabled_learners(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
       FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";

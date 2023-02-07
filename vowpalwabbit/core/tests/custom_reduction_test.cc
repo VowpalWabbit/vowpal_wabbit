@@ -71,17 +71,17 @@ std::shared_ptr<VW::LEARNER::learner> test_reduction_setup(VW::setup_base_i& sta
 
   if (test_stack)
   {
-    std::vector<std::string> enabled_reductions;
-    ret->get_enabled_reductions(enabled_reductions);
+    std::vector<std::string> enabled_learners;
+    ret->get_enabled_learners(enabled_learners);
 
     // this is the learner stack of instantiated reductions,
     // included itself "test_reduction_name"
-    EXPECT_EQ(enabled_reductions.size(), 4);
-    EXPECT_EQ(enabled_reductions[0], "gd");
-    EXPECT_EQ(enabled_reductions[1], "scorer-identity");
+    EXPECT_EQ(enabled_learners.size(), 4);
+    EXPECT_EQ(enabled_learners[0], "gd");
+    EXPECT_EQ(enabled_learners[1], "scorer-identity");
     // this matches string from custom_builder constructor auto-magically [sic]
-    EXPECT_EQ(enabled_reductions[2], "count_label");
-    EXPECT_EQ(enabled_reductions[3], "test_reduction_name");
+    EXPECT_EQ(enabled_learners[2], "count_label");
+    EXPECT_EQ(enabled_learners[3], "test_reduction_name");
   }
   else { EXPECT_TRUE(false); }
 

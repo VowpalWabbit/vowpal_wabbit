@@ -30,7 +30,7 @@ TEST(Las, CreationOfTheOgAMatrix)
       std::to_string(d), "--quiet", "--random_seed", "5", "--two_pass_svd"));
 
   std::vector<std::string> e_r;
-  vw->l->get_enabled_reductions(e_r);
+  vw->l->get_enabled_learners(e_r);
   if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
   {
     FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
@@ -105,7 +105,7 @@ TEST(Las, CheckInteractionsOnY)
     bool interactions = std::get<1>(vw_pair);
 
     std::vector<std::string> e_r;
-    vw.l->get_enabled_reductions(e_r);
+    vw.l->get_enabled_learners(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
       FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
@@ -168,7 +168,7 @@ TEST(Las, CheckInteractionsOnB)
     bool interactions = std::get<1>(vw_pair);
 
     std::vector<std::string> e_r;
-    vw.l->get_enabled_reductions(e_r);
+    vw.l->get_enabled_learners(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
       FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
@@ -219,7 +219,7 @@ TEST(Las, CheckAtTimesOmegaIsY)
     auto apply_diag_M = std::get<1>(vw_pair);
 
     std::vector<std::string> e_r;
-    vw.l->get_enabled_reductions(e_r);
+    vw.l->get_enabled_learners(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
       FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
@@ -332,7 +332,7 @@ TEST(Las, CheckATimesYIsB)
     auto apply_diag_M = std::get<1>(vw_pair);
 
     std::vector<std::string> e_r;
-    vw.l->get_enabled_reductions(e_r);
+    vw.l->get_enabled_learners(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
       FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
@@ -402,7 +402,7 @@ TEST(Las, CheckBTimesPIsZ)
     std::vector<Eigen::Triplet<float>> _triplets;
 
     std::vector<std::string> e_r;
-    vw.l->get_enabled_reductions(e_r);
+    vw.l->get_enabled_learners(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
       FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
@@ -575,7 +575,7 @@ TEST(Las, CheckFinalTruncatedSVDValidity)
     auto impl_type = std::get<2>(vw_pair);
 
     std::vector<std::string> e_r;
-    vw.l->get_enabled_reductions(e_r);
+    vw.l->get_enabled_learners(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
       FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
@@ -614,7 +614,7 @@ TEST(Las, CheckShrinkFactor)
     auto apply_diag_M = std::get<1>(vw_pair);
 
     std::vector<std::string> e_r;
-    vw.l->get_enabled_reductions(e_r);
+    vw.l->get_enabled_learners(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
       FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";

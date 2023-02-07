@@ -25,7 +25,7 @@ using namespace rapidjson;
 namespace
 {
 void insert_dsjson_metrics(const VW::details::dsjson_metrics* ds_metrics, VW::metric_sink& metrics,
-    const std::vector<std::string>& enabled_reductions)
+    const std::vector<std::string>& enabled_learners)
 {
   // ds_metrics is nullptr when --dsjson is disabled
   if (ds_metrics != nullptr)
@@ -38,7 +38,7 @@ void insert_dsjson_metrics(const VW::details::dsjson_metrics* ds_metrics, VW::me
     metrics.set_string("last_event_id", ds_metrics->last_event_id);
     metrics.set_string("last_event_time", ds_metrics->last_event_time);
     metrics.set_float("dsjson_sum_cost_original", ds_metrics->dsjson_sum_cost_original);
-    if (std::find(enabled_reductions.begin(), enabled_reductions.end(), "ccb_explore_adf") != enabled_reductions.end())
+    if (std::find(enabled_learners.begin(), enabled_learners.end(), "ccb_explore_adf") != enabled_learners.end())
     {
       metrics.set_float("dsjson_sum_cost_original_first_slot", ds_metrics->dsjson_sum_cost_original_first_slot);
       metrics.set_uint("dsjson_number_label_equal_baseline_first_slot",
@@ -139,9 +139,9 @@ void VW::reductions::additional_metrics(VW::workspace& all, VW::metric_sink& sin
 {
   sink.set_uint("total_log_calls", all.logger.get_log_count());
 
-  std::vector<std::string> enabled_reductions;
-  if (all.l != nullptr) { all.l->get_enabled_reductions(enabled_reductions); }
-  insert_dsjson_metrics(all.example_parser->metrics.get(), sink, enabled_reductions);
+  std::vector<std::string> enabled_learners;
+  if (all.l != nullptr) { all.l->get_enabled_learners(enabled_learners); }
+  insert_dsjson_metrics(all.example_parser->metrics.get(), sink, enabled_learners);
 }
 
 void VW::reductions::output_metrics(VW::workspace& all)

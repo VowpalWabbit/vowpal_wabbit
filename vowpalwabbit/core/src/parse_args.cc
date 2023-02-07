@@ -1651,17 +1651,17 @@ void VW::details::parse_sources(options_i& options, VW::workspace& all, VW::io_b
   all.wpp = (1 << i) >> all.weights.stride_shift();
 }
 
-void VW::details::print_enabled_reductions(VW::workspace& all, std::vector<std::string>& enabled_reductions)
+void VW::details::print_enabled_learners(VW::workspace& all, std::vector<std::string>& enabled_learners)
 {
   // output list of enabled reductions
-  if (!all.quiet && !all.options->was_supplied("audit_regressor") && !enabled_reductions.empty())
+  if (!all.quiet && !all.options->was_supplied("audit_regressor") && !enabled_learners.empty())
   {
     const char* const delim = ", ";
     std::ostringstream imploded;
     std::copy(
-        enabled_reductions.begin(), enabled_reductions.end() - 1, std::ostream_iterator<std::string>(imploded, delim));
+        enabled_learners.begin(), enabled_learners.end() - 1, std::ostream_iterator<std::string>(imploded, delim));
 
-    *(all.trace_message) << "Enabled reductions: " << imploded.str() << enabled_reductions.back() << std::endl;
+    *(all.trace_message) << "Enabled reductions: " << imploded.str() << enabled_learners.back() << std::endl;
   }
 }
 

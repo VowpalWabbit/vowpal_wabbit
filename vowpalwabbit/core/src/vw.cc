@@ -83,8 +83,8 @@ std::unique_ptr<VW::workspace> initialize_internal(
   // we must delay so parse_mask is fully defined.
   for (const auto& name_space : dictionary_namespaces) { VW::details::parse_dictionary_argument(*all, name_space); }
 
-  std::vector<std::string> enabled_reductions;
-  if (all->l != nullptr) { all->l->get_enabled_reductions(enabled_reductions); }
+  std::vector<std::string> enabled_learners;
+  if (all->l != nullptr) { all->l->get_enabled_learners(enabled_learners); }
 
   // upon direct query for help -- spit it out to stdout;
   if (all->options->get_typed_option<bool>("help").value())
@@ -120,7 +120,7 @@ std::unique_ptr<VW::workspace> initialize_internal(
     std::exit(0);
   }
 
-  VW::details::print_enabled_reductions(*all, enabled_reductions);
+  VW::details::print_enabled_learners(*all, enabled_learners);
 
   if (!all->quiet)
   {

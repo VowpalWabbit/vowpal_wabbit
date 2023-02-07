@@ -329,28 +329,28 @@ bool ec_is_example_header(const example& ec, label_type_t label_type)
 learner* require_multiline(learner* l)
 {
   if (l->is_multiline()) { return l; }
-  auto message = fmt::format("Tried to use a singleline reduction as a multiline reduction Name: {}", l->get_name());
+  auto message = fmt::format("Tried to use a singleline learner as a multiline learner Name: {}", l->get_name());
   THROW(message);
 }
 
 learner* require_singleline(learner* l)
 {
   if (!l->is_multiline()) { return l; }
-  auto message = fmt::format("Tried to use a multiline reduction as a singleline reduction. Name: {}", l->get_name());
+  auto message = fmt::format("Tried to use a multiline learner as a singleline learner. Name: {}", l->get_name());
   THROW(message);
 }
 
 std::shared_ptr<learner> require_multiline(std::shared_ptr<learner> l)
 {
   if (l->is_multiline()) { return l; }
-  auto message = fmt::format("Tried to use a singleline reduction as a multiline reduction Name: {}", l->get_name());
+  auto message = fmt::format("Tried to use a singleline learner as a multiline learner Name: {}", l->get_name());
   THROW(message);
 }
 
 std::shared_ptr<learner> require_singleline(std::shared_ptr<learner> l)
 {
   if (!l->is_multiline()) { return l; }
-  auto message = fmt::format("Tried to use a multiline reduction as a singleline reduction. Name: {}", l->get_name());
+  auto message = fmt::format("Tried to use a multiline learner as a singleline learner. Name: {}", l->get_name());
   THROW(message);
 }
 
@@ -571,19 +571,19 @@ void learner::cleanup_example(polymorphic_ex ec)
   _cleanup_example_f(ec);
 }
 
-void learner::get_enabled_reductions(std::vector<std::string>& enabled_reductions) const
+void learner::get_enabled_learners(std::vector<std::string>& enabled_learners) const
 {
-  if (_base_learner) { _base_learner->get_enabled_reductions(enabled_reductions); }
-  enabled_reductions.push_back(_name);
+  if (_base_learner) { _base_learner->get_enabled_learners(enabled_learners); }
+  enabled_learners.push_back(_name);
 }
 
-learner* learner::get_learner_by_name_prefix(const std::string& reduction_name)
+learner* learner::get_learner_by_name_prefix(const std::string& learner_name)
 {
-  if (_name.find(reduction_name) != std::string::npos) { return this; }
+  if (_name.find(learner_name) != std::string::npos) { return this; }
   else
   {
-    if (_base_learner) { return _base_learner->get_learner_by_name_prefix(reduction_name); }
-    else { THROW("fatal: could not find in learner chain: " << reduction_name); }
+    if (_base_learner) { return _base_learner->get_learner_by_name_prefix(learner_name); }
+    else { THROW("fatal: could not find in learner chain: " << learner_name); }
   }
 }
 
@@ -654,7 +654,7 @@ std::shared_ptr<learner> learner::create_learner_above_this()
   l->_base_learner = shared_from_this();
 
   // We explicitly overwrite the copy of the base learner's finish_example functions.
-  // This is to allow us to determine if the current reduction implements finish and in what way.
+  // This is to allow us to determine if the current learner implements finish and in what way.
   l->_finish_example_f = nullptr;
   l->_update_stats_f = nullptr;
   l->_output_example_prediction_f = nullptr;
@@ -691,7 +691,7 @@ void VW::LEARNER::details::learner_build_diagnostic(VW::string_view this_name, V
   if (in_pred_type != base_out_pred_type)
   {
     const auto message = fmt::format(
-        "Input prediction type: {} of reduction: {} does not match output prediction type: {} of base reduction: "
+        "Input prediction type: {} of learner: {} does not match output prediction type: {} of base learner: "
         "{}.",
         to_string(in_pred_type), this_name, to_string(base_out_pred_type), base_name);
     THROW(message);
@@ -699,7 +699,7 @@ void VW::LEARNER::details::learner_build_diagnostic(VW::string_view this_name, V
   if (out_label_type != base_in_label_type)
   {
     const auto message =
-        fmt::format("Output label type: {} of reduction: {} does not match input label type: {} of base reduction: {}.",
+        fmt::format("Output label type: {} of learner: {} does not match input label type: {} of base learner: {}.",
             to_string(out_label_type), this_name, to_string(base_in_label_type), base_name);
     THROW(message);
   }

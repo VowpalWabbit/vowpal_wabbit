@@ -148,20 +148,20 @@ public:
   /// \brief Will update the model according to the labels and examples supplied.
   /// \param ec The ::example object or ::multi_ex to be operated on. This
   /// object **must** have a valid label set for every ::example in the field
-  /// example::l that corresponds to the type this reduction expects.
+  /// example::l that corresponds to the type this learner expects.
   /// \param i This is the offset used for the weights in this call. If using
   /// multiple regressors/learners you can increment this value for each call.
-  /// \returns While some reductions may fill the example::pred, this is not
+  /// \returns While some learner may fill the example::pred, this is not
   /// guaranteed and is undefined behavior if accessed.
   void learn(polymorphic_ex ec, size_t i = 0);
 
   /// \brief Make a prediction for the given example.
   /// \param ec The ::example object or ::multi_ex to be operated on. This
   /// object **must** have a valid prediction allocated in the field
-  /// example::pred that corresponds to this reduction type.
+  /// example::pred that corresponds to this learner type.
   /// \param i This is the offset used for the weights in this call. If using
   /// multiple regressors/learners you can increment this value for each call.
-  /// \returns The prediction calculated by this reduction be set on
+  /// \returns The prediction calculated by this learner be set on
   /// example::pred. If the polymorphic_ex is ::multi_ex then the prediction is
   /// set on the 0th item in the list.
   void predict(polymorphic_ex ec, size_t i = 0);
@@ -175,7 +175,7 @@ public:
   // Called anytime saving or loading needs to happen. Autorecursive.
   void save_load(io_buf& io, const bool read, const bool text);
 
-  // Called to edit the command-line from a reduction. Autorecursive
+  // Called to edit the command-line from a learner. Autorecursive
   void pre_save_load(VW::workspace& all);
 
   // Called when metrics is enabled.  Autorecursive.
@@ -207,8 +207,8 @@ public:
 
   void cleanup_example(polymorphic_ex ec);
 
-  void get_enabled_reductions(std::vector<std::string>& enabled_reductions) const;
-  learner* get_learner_by_name_prefix(const std::string& reduction_name);
+  void get_enabled_learners(std::vector<std::string>& enabled_learners) const;
+  learner* get_learner_by_name_prefix(const std::string& learner_name);
 
   // The functions merge/add/subtract are NOT auto recursive
   // They are effectively static implementing a trait for this learner type.
@@ -238,7 +238,7 @@ public:
   // Is this learner multiline or singleline?
   VW_ATTR(nodiscard) bool is_multiline() const { return _is_multiline; }
 
-  // Get the reduction's name
+  // Get the learner's name
   VW_ATTR(nodiscard) const std::string& get_name() const { return _name; }
 
   // Returns a pointer to the base of this learner, which is immediately below this one
@@ -251,10 +251,10 @@ public:
   VW_ATTR(nodiscard) bool learner_defines_own_save_load() { return _save_load_f != nullptr; }
 
 private:
-  // Name of the reduction. Used in VW_DBG to trace nested learn() and predict() calls.
+  // Name of the learner. Used in VW_DBG to trace nested learn() and predict() calls.
   std::string _name;
 
-  // Is this a single-line or multi-line reduction?
+  // Is this a single-line or multi-line learner?
   bool _is_multiline;
 
   // Input and output data types
@@ -517,7 +517,7 @@ public:
   )
 
   // This is the prediction type of the example at the end of the predict function.
-  // This prediction will be passed when the reduction above it calls predict on its base.
+  // This prediction will be passed when the learner above it calls predict on its base.
   LEARNER_BUILDER_DEFINE(set_output_prediction_type(prediction_type_t pred_type),
     this->learner_ptr->_output_pred_type = pred_type;
   )
@@ -533,9 +533,9 @@ public:
   using super = common_learner_builder<reduction_learner_builder<DataT, ExampleT>, DataT, ExampleT>;
   reduction_learner_builder(std::unique_ptr<DataT>&& data, std::shared_ptr<learner> base, const std::string& name)
       // NOTE: This is a copy of the base learner! The purpose is to copy all of the
-      // function data objects so that if this reduction does not define a function such as
+      // function data objects so that if this learner does not define a function such as
       // save_load then calling save_load on this object will essentially result in forwarding the
-      // call the next reduction that actually implements it.
+      // call the next learner that actually implements it.
       : common_learner_builder<reduction_learner_builder<DataT, ExampleT>, DataT, ExampleT>(
             base->create_learner_above_this(), std::move(data), name)
   {
@@ -642,9 +642,9 @@ public:
   using super = common_learner_builder<reduction_learner_builder<char, ExampleT>, char, ExampleT>;
   reduction_no_data_learner_builder(std::shared_ptr<learner> base, const std::string& name)
       // NOTE: This is a copy of the base learner! The purpose is to copy all of the
-      // function data objects so that if this reduction does not define a function such as
+      // function data objects so that if this learner does not define a function such as
       // save_load then calling save_load on this object will essentially result in forwarding the
-      // call the next reduction that actually implements it.
+      // call the next learner that actually implements it.
 
       // For the no data reduction, allocate a placeholder char as its data to avoid nullptr issues
       : common_learner_builder<reduction_learner_builder<char, ExampleT>, char, ExampleT>(
@@ -852,7 +852,7 @@ bottom_learner_builder<char, ExampleT> make_no_data_bottom_learner(void (*learn_
     void (*predict_fn)(char&, ExampleT&), const std::string& name, prediction_type_t out_pred_type,
     label_type_t in_label_type)
 {
-  // For the no data reduction, allocate a placeholder char as its data to avoid nullptr issues
+  // For the no data bottom learner, allocate a placeholder char as its data to avoid nullptr issues
   return make_bottom_learner<char, ExampleT>(
       VW::make_unique<char>(0), learn_fn, predict_fn, name, out_pred_type, in_label_type);
 }

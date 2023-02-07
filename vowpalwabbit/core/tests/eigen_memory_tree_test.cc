@@ -22,7 +22,7 @@ namespace eigen_memory_tree_test
 emt_tree* get_emt_tree(VW::workspace& all)
 {
   std::vector<std::string> e_r;
-  all.l->get_enabled_reductions(e_r);
+  all.l->get_enabled_learners(e_r);
   if (std::find(e_r.begin(), e_r.end(), "emt") == e_r.end())
   {
     ADD_FAILURE() << "Eigen memory tree not found in enabled reductions";

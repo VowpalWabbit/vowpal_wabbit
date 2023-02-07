@@ -64,17 +64,17 @@ void validate_compatibility(const std::vector<const VW::workspace*>& workspaces,
         "training in memory then pass some examples prior to merging.");
   }
 
-  std::vector<std::string> destination_enabled_reductions;
-  ref_model.l->get_enabled_reductions(destination_enabled_reductions);
+  std::vector<std::string> destination_enabled_learners;
+  ref_model.l->get_enabled_learners(destination_enabled_learners);
   for (const auto* model : workspaces)
   {
-    std::vector<std::string> source_enabled_reductions;
-    model->l->get_enabled_reductions(source_enabled_reductions);
+    std::vector<std::string> source_enabled_learners;
+    model->l->get_enabled_learners(source_enabled_learners);
 
-    if (source_enabled_reductions != destination_enabled_reductions)
+    if (source_enabled_learners != destination_enabled_learners)
     {
       auto message = fmt::format("Enabled reductions are not identical between models.\n One: {}\n Other:{} ",
-          fmt::join(source_enabled_reductions, ", "), fmt::join(destination_enabled_reductions, ", "));
+          fmt::join(source_enabled_learners, ", "), fmt::join(destination_enabled_learners, ", "));
       THROW(message);
     }
   }
