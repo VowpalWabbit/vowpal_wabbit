@@ -804,6 +804,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::csldf_setup(VW::setup_base
                .build();
 
   all.example_parser->lbl_parser = VW::cs_label_parser_global;
-  all.cost_sensitive = l;
-  return all.cost_sensitive;
+
+  return l;
 }

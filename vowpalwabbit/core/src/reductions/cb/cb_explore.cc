@@ -391,7 +391,9 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_setup(VW::setup
       data->epsilon = 1.f;
       data->epsilon_decay = true;
     }
-    data->cs = all.cost_sensitive.get();
+
+    data->cs = VW::LEARNER::require_singleline(base->get_learner_by_name_prefix("cs"));
+
     for (uint32_t j = 0; j < num_actions; j++) { data->second_cs_label.costs.push_back(VW::cs_class{}); }
     data->cover_probs.resize(num_actions);
     data->preds.reserve(data->cover_size);

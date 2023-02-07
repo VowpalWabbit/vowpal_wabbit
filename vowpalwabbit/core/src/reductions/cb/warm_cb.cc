@@ -52,6 +52,7 @@ public:
   size_t example_counter = 0;
   VW::workspace* all = nullptr;
   std::shared_ptr<VW::rand_state> random_state;
+  VW::LEARNER::learner* cost_sensitive = nullptr;
   VW::multi_ex ecs;
   float loss0 = 0.f;
   float loss1 = 0.f;
@@ -333,8 +334,7 @@ void learn_sup_adf(warm_cb& data, VW::example& ec, int ec_type)
   {
     float weight_multiplier = compute_weight_multiplier(data, i, ec_type);
     for (size_t a = 0; a < data.num_actions; ++a) { data.ecs[a]->weight = old_weights[a] * weight_multiplier; }
-    learner* cs_learner = require_multiline(data.all->cost_sensitive.get());
-    cs_learner->learn(data.ecs, i);
+    data.cost_sensitive->learn(data.ecs, i);
   }
 
   for (size_t a = 0; a < data.num_actions; ++a) { data.ecs[a]->weight = old_weights[a]; }
@@ -607,6 +607,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::warm_cb_setup(VW::setup_ba
   VW::learner_update_stats_func<warm_cb, VW::example>* update_stats_func = nullptr;
   VW::learner_output_example_prediction_func<warm_cb, VW::example>* output_example_prediction_func = nullptr;
   VW::learner_print_update_func<warm_cb, VW::example>* print_update_func = nullptr;
+
+  data->cost_sensitive = require_multiline(base->get_learner_by_name_prefix("cs"));
 
   if (use_cs)
   {

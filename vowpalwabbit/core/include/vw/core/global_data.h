@@ -118,8 +118,6 @@ public:
   bool chain_hash_json = false;
 
   std::shared_ptr<VW::LEARNER::learner> l;  // the top level learner
-  std::shared_ptr<VW::LEARNER::learner>
-      cost_sensitive;  // a cost sensitive learning algorithm.  can be single or multi line learner
 
   void learn(example&);
   void learn(multi_ex&);
