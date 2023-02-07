@@ -78,81 +78,73 @@ void print_raw_text_by_ref(
   if (t != len) { logger.err_error("write error: {}", VW::io::strerror_to_string(errno)); }
 }
 
-void set_mm(VW::shared_data* sd, float label)
-{
-  sd->min_label = std::min(sd->min_label, label);
-  if (label != FLT_MAX) { sd->max_label = std::max(sd->max_label, label); }
-}
-
-void VW::details::noop_mm(VW::shared_data*, float) {}
-
 namespace VW
 {
 void workspace::learn(example& ec)
 {
-  if (l->is_multiline()) THROW("This reduction does not support single-line examples.");
+  if (l->is_multiline()) THROW("This learner does not support single-line examples.");
 
-  if (ec.test_only || !training) { VW::LEARNER::as_singleline(l)->predict(ec); }
+  if (ec.test_only || !training) { VW::LEARNER::require_singleline(l)->predict(ec); }
   else
   {
-    if (l->learn_returns_prediction) { VW::LEARNER::as_singleline(l)->learn(ec); }
+    if (l->learn_returns_prediction) { VW::LEARNER::require_singleline(l)->learn(ec); }
     else
     {
-      VW::LEARNER::as_singleline(l)->predict(ec);
-      VW::LEARNER::as_singleline(l)->learn(ec);
+      VW::LEARNER::require_singleline(l)->predict(ec);
+      VW::LEARNER::require_singleline(l)->learn(ec);
     }
   }
 }
 
 void workspace::learn(multi_ex& ec)
 {
-  if (!l->is_multiline()) THROW("This reduction does not support multi-line example.");
+  if (!l->is_multiline()) THROW("This learner does not support multi-line example.");
 
-  if (!training) { VW::LEARNER::as_multiline(l)->predict(ec); }
+  if (!training) { VW::LEARNER::require_multiline(l)->predict(ec); }
   else
   {
-    if (l->learn_returns_prediction) { VW::LEARNER::as_multiline(l)->learn(ec); }
+    if (l->learn_returns_prediction) { VW::LEARNER::require_multiline(l)->learn(ec); }
     else
     {
-      VW::LEARNER::as_multiline(l)->predict(ec);
-      VW::LEARNER::as_multiline(l)->learn(ec);
+      VW::LEARNER::require_multiline(l)->predict(ec);
+      VW::LEARNER::require_multiline(l)->learn(ec);
     }
   }
 }
 
 void workspace::predict(example& ec)
 {
-  if (l->is_multiline()) THROW("This reduction does not support single-line examples.");
+  if (l->is_multiline()) THROW("This learner does not support single-line examples.");
 
   // be called directly in library mode, test_only must be explicitly set here. If the example has a label but is passed
   // to predict it would otherwise be incorrectly labelled as test_only = false.
   ec.test_only = true;
-  VW::LEARNER::as_singleline(l)->predict(ec);
+  VW::LEARNER::require_singleline(l)->predict(ec);
 }
 
 void workspace::predict(multi_ex& ec)
 {
-  if (!l->is_multiline()) THROW("This reduction does not support multi-line example.");
+  if (!l->is_multiline()) THROW("This learner does not support multi-line example.");
 
   // be called directly in library mode, test_only must be explicitly set here. If the example has a label but is passed
   // to predict it would otherwise be incorrectly labelled as test_only = false.
   for (auto& ex : ec) { ex->test_only = true; }
 
-  VW::LEARNER::as_multiline(l)->predict(ec);
+  VW::LEARNER::require_multiline(l)->predict(ec);
 }
 
 void workspace::finish_example(example& ec)
 {
-  if (l->is_multiline()) THROW("This reduction does not support single-line examples.");
+  if (l->is_multiline()) THROW("This learner does not support single-line examples.");
 
-  VW::LEARNER::as_singleline(l)->finish_example(*this, ec);
+  VW::LEARNER::require_singleline(l)->finish_example(*this, ec);
 }
 
 void workspace::finish_example(multi_ex& ec)
 {
-  if (!l->is_multiline()) THROW("This reduction does not support multi-line example.");
+  if (!l->is_multiline()) THROW("This learner does not support multi-line example.");
 
-  VW::LEARNER::as_multiline(l)->finish_example(*this, ec);
+  VW::LEARNER::require_multiline(l)->finish_example(*this, ec);
 }
 
 template <typename WeightsT>
@@ -257,11 +249,11 @@ std::string dump_weights_to_json_weight_typed(const WeightsT& weights,
 std::string workspace::dump_weights_to_json_experimental()
 {
   assert(l != nullptr);
-  const auto* current = l;
+  const auto* current = l.get();
 
   // This could be extended to other base learners reasonably. Since this is new and experimental though keep the scope
   // small.
-  while (current->get_learn_base() != nullptr) { current = current->get_learn_base(); }
+  while (current->get_base_learner() != nullptr) { current = current->get_base_learner(); }
   if (current->get_name() == "ksvm")
   {
     THROW("dump_weights_to_json is currently only supported for KSVM base learner. The current base learner is "
@@ -317,12 +309,10 @@ namespace VW
 workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(std::move(logger))
 {
   _random_state_sp = std::make_shared<VW::rand_state>();
-  sd = new shared_data();
+  sd = std::make_shared<shared_data>();
   // Default is stderr.
-  trace_message = VW::make_unique<std::ostream>(std::cout.rdbuf());
+  trace_message = std::make_shared<std::ostream>(std::cout.rdbuf());
 
-  l = nullptr;
-  cost_sensitive = nullptr;
   loss = nullptr;
 
   reg_mode = 0;
@@ -341,7 +331,12 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
 
   weights.sparse = false;
 
-  set_minmax = set_mm;
+  // default set_minmax function
+  set_minmax = [this](float label)
+  {
+    this->sd->min_label = std::min(this->sd->min_label, label);
+    if (label != FLT_MAX) { this->sd->max_label = std::max(this->sd->max_label, label); }
+  };
 
   power_t = 0.5f;
   eta = 0.5f;  // default learning rate for normalized adaptive updates, this is switched to 10 by default for the other
@@ -369,8 +364,6 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   eta_decay_rate = 1.0;
   initial_weight = 0.0;
   initial_constant = 0.0;
-
-  all_reduce = nullptr;
 
   for (size_t i = 0; i < NUM_NAMESPACES; i++)
   {
@@ -434,24 +427,8 @@ void workspace::finish()
 
 workspace::~workspace()
 {
-  if (l != nullptr)
-  {
-    delete l;
-    l = nullptr;
-  }
-
   // TODO: migrate all finalization into parser destructor
   if (example_parser != nullptr) { VW::details::free_parser(*this); }
-
-  const bool seeded = weights.seeded() > 0;
-  if (!seeded)
-  {
-    delete sd;
-    sd = nullptr;
-  }
-
-  delete all_reduce;
-  all_reduce = nullptr;
 }
 
 }  // namespace VW

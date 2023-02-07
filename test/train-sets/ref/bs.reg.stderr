@@ -7,7 +7,7 @@ Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
-Enabled reductions: gd, scorer-identity, bootstrap, count_label
+Enabled learners: gd, scorer-identity, bootstrap, count_label
 Input label = SIMPLE
 Output pred = SCALAR
 average  since         example        example        current        current  current

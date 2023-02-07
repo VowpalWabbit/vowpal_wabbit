@@ -21,14 +21,14 @@ void all_reduce(VW::workspace& all, T* buffer, const size_t n)
   {
     case all_reduce_type::SOCKET:
     {
-      auto* all_reduce_sockets_ptr = dynamic_cast<all_reduce_sockets*>(all.all_reduce);
+      auto* all_reduce_sockets_ptr = dynamic_cast<all_reduce_sockets*>(all.all_reduce.get());
       if (all_reduce_sockets_ptr == nullptr) { THROW("all_reduce was not a all_reduce_sockets* object") }
       all_reduce_sockets_ptr->all_reduce<T, f>(buffer, n, all.logger);
       break;
     }
     case all_reduce_type::THREAD:
     {
-      auto* all_reduce_threads_ptr = dynamic_cast<all_reduce_threads*>(all.all_reduce);
+      auto* all_reduce_threads_ptr = dynamic_cast<all_reduce_threads*>(all.all_reduce.get());
       if (all_reduce_threads_ptr == nullptr) { THROW("all_reduce was not a all_reduce_threads* object") }
       all_reduce_threads_ptr->all_reduce<T, f>(buffer, n);
       break;

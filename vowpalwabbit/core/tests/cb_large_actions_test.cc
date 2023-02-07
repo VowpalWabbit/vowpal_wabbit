@@ -30,14 +30,14 @@ TEST(Las, CreationOfTheOgAMatrix)
       std::to_string(d), "--quiet", "--random_seed", "5", "--two_pass_svd"));
 
   std::vector<std::string> e_r;
-  vw->l->get_enabled_reductions(e_r);
+  vw->l->get_enabled_learners(e_r);
   if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
   {
-    FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
+    FAIL() << "cb_explore_adf_large_action_space not found in enabled learners";
   }
 
-  VW::LEARNER::multi_learner* learner =
-      as_multiline(vw->l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+  VW::LEARNER::learner* learner =
+      require_multiline(vw->l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
   auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
 
@@ -105,14 +105,14 @@ TEST(Las, CheckInteractionsOnY)
     bool interactions = std::get<1>(vw_pair);
 
     std::vector<std::string> e_r;
-    vw.l->get_enabled_reductions(e_r);
+    vw.l->get_enabled_learners(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
-      FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
+      FAIL() << "cb_explore_adf_large_action_space not found in enabled learners";
     }
 
-    VW::LEARNER::multi_learner* learner =
-        as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+    VW::LEARNER::learner* learner =
+        require_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
     auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
 
@@ -168,14 +168,14 @@ TEST(Las, CheckInteractionsOnB)
     bool interactions = std::get<1>(vw_pair);
 
     std::vector<std::string> e_r;
-    vw.l->get_enabled_reductions(e_r);
+    vw.l->get_enabled_learners(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
-      FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
+      FAIL() << "cb_explore_adf_large_action_space not found in enabled learners";
     }
 
-    VW::LEARNER::multi_learner* learner =
-        as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+    VW::LEARNER::learner* learner =
+        require_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
     auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
 
@@ -219,14 +219,14 @@ TEST(Las, CheckAtTimesOmegaIsY)
     auto apply_diag_M = std::get<1>(vw_pair);
 
     std::vector<std::string> e_r;
-    vw.l->get_enabled_reductions(e_r);
+    vw.l->get_enabled_learners(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
-      FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
+      FAIL() << "cb_explore_adf_large_action_space not found in enabled learners";
     }
 
-    VW::LEARNER::multi_learner* learner =
-        as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+    VW::LEARNER::learner* learner =
+        require_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
     auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
 
@@ -332,14 +332,14 @@ TEST(Las, CheckATimesYIsB)
     auto apply_diag_M = std::get<1>(vw_pair);
 
     std::vector<std::string> e_r;
-    vw.l->get_enabled_reductions(e_r);
+    vw.l->get_enabled_learners(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
-      FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
+      FAIL() << "cb_explore_adf_large_action_space not found in enabled learners";
     }
 
-    VW::LEARNER::multi_learner* learner =
-        as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+    VW::LEARNER::learner* learner =
+        require_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
     auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
 
@@ -402,14 +402,14 @@ TEST(Las, CheckBTimesPIsZ)
     std::vector<Eigen::Triplet<float>> _triplets;
 
     std::vector<std::string> e_r;
-    vw.l->get_enabled_reductions(e_r);
+    vw.l->get_enabled_learners(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
-      FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
+      FAIL() << "cb_explore_adf_large_action_space not found in enabled learners";
     }
 
-    VW::LEARNER::multi_learner* learner =
-        as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+    VW::LEARNER::learner* learner =
+        require_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
     auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
 
@@ -575,14 +575,14 @@ TEST(Las, CheckFinalTruncatedSVDValidity)
     auto impl_type = std::get<2>(vw_pair);
 
     std::vector<std::string> e_r;
-    vw.l->get_enabled_reductions(e_r);
+    vw.l->get_enabled_learners(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
-      FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
+      FAIL() << "cb_explore_adf_large_action_space not found in enabled learners";
     }
 
-    VW::LEARNER::multi_learner* learner =
-        as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+    VW::LEARNER::learner* learner =
+        require_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
     if (impl_type == VW::cb_explore_adf::implementation_type::two_pass_svd)
     {
@@ -614,14 +614,14 @@ TEST(Las, CheckShrinkFactor)
     auto apply_diag_M = std::get<1>(vw_pair);
 
     std::vector<std::string> e_r;
-    vw.l->get_enabled_reductions(e_r);
+    vw.l->get_enabled_learners(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
-      FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
+      FAIL() << "cb_explore_adf_large_action_space not found in enabled learners";
     }
 
-    VW::LEARNER::multi_learner* learner =
-        as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+    VW::LEARNER::learner* learner =
+        require_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
     auto action_space = (internal_action_space*)learner->get_internal_type_erased_data_pointer_test_use_only();
 

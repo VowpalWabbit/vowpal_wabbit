@@ -149,7 +149,7 @@ void make_marginal(data& sm, VW::example& ec)
           if VW_STD17_CONSTEXPR (is_learn)
           {
             const float label = ec.l.simple.label;
-            sm.alg_loss += weight * sm.m_all->loss->get_loss(sm.m_all->sd, marginal_pred, label);
+            sm.alg_loss += weight * sm.m_all->loss->get_loss(sm.m_all->sd.get(), marginal_pred, label);
           }
         }
       }
@@ -184,7 +184,7 @@ void compute_expert_loss(data& sm, VW::example& ec)
   if VW_STD17_CONSTEXPR (is_learn)
   {
     const float label = ec.l.simple.label;
-    sm.alg_loss += sm.net_feature_weight * sm.m_all->loss->get_loss(sm.m_all->sd, sm.feature_pred, label);
+    sm.alg_loss += sm.net_feature_weight * sm.m_all->loss->get_loss(sm.m_all->sd.get(), sm.feature_pred, label);
     sm.alg_loss *= inv_weight;
   }
 }
@@ -213,8 +213,8 @@ void update_marginal(data& sm, VW::example& ec)
         {
           expert_pair& e = sm.expert_state[key];
           const float regret1 =
-              sm.alg_loss - sm.m_all->loss->get_loss(sm.m_all->sd, static_cast<float>(m.first / m.second), label);
-          const float regret2 = sm.alg_loss - sm.m_all->loss->get_loss(sm.m_all->sd, sm.feature_pred, label);
+              sm.alg_loss - sm.m_all->loss->get_loss(sm.m_all->sd.get(), static_cast<float>(m.first / m.second), label);
+          const float regret2 = sm.alg_loss - sm.m_all->loss->get_loss(sm.m_all->sd.get(), sm.feature_pred, label);
 
           e.first.regret += regret1 * weight;
           e.first.abs_regret += regret1 * regret1 * weight;  // fabs(regret1);
@@ -232,7 +232,7 @@ void update_marginal(data& sm, VW::example& ec)
 }
 
 template <bool is_learn>
-void predict_or_learn(data& sm, VW::LEARNER::single_learner& base, VW::example& ec)
+void predict_or_learn(data& sm, VW::LEARNER::learner& base, VW::example& ec)
 {
   make_marginal<is_learn>(sm, ec);
   if VW_STD17_CONSTEXPR (is_learn)
@@ -384,7 +384,7 @@ void save_load(data& sm, VW::io_buf& io, bool read, bool text)
 }
 }  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::marginal_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::marginal_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace* all = stack_builder.get_all_pointer();
@@ -416,15 +416,15 @@ VW::LEARNER::base_learner* VW::reductions::marginal_setup(VW::setup_base_i& stac
   if (marginal.find(':') != std::string::npos) { THROW("Cannot use wildcard with marginal.") }
   for (const auto ns : marginal) { d->id_features[static_cast<unsigned char>(ns)] = true; }
 
-  auto* l = VW::LEARNER::make_reduction_learner(std::move(d), as_singleline(stack_builder.setup_base_learner()),
+  auto l = make_reduction_learner(std::move(d), require_singleline(stack_builder.setup_base_learner()),
       predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(marginal_setup))
-                .set_input_label_type(VW::label_type_t::SIMPLE)
-                .set_output_label_type(VW::label_type_t::SIMPLE)
-                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
-                .set_output_prediction_type(VW::prediction_type_t::SCALAR)
-                .set_learn_returns_prediction(true)
-                .set_save_load(save_load)
-                .build();
+               .set_input_label_type(VW::label_type_t::SIMPLE)
+               .set_output_label_type(VW::label_type_t::SIMPLE)
+               .set_input_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_output_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_learn_returns_prediction(true)
+               .set_save_load(save_load)
+               .build();
 
-  return make_base(*l);
+  return l;
 }

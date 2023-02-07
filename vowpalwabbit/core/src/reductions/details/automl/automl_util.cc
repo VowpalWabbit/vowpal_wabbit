@@ -60,10 +60,10 @@ namespace util
 // todo: audit if they reference global all interactions
 void fail_if_enabled(VW::workspace& all, const std::set<std::string>& not_compat)
 {
-  std::vector<std::string> enabled_reductions;
-  if (all.l != nullptr) { all.l->get_enabled_reductions(enabled_reductions); }
+  std::vector<std::string> enabled_learners;
+  if (all.l != nullptr) { all.l->get_enabled_learners(enabled_learners); }
 
-  for (const auto& reduction : enabled_reductions)
+  for (const auto& reduction : enabled_learners)
   {
     if (not_compat.count(reduction) > 0) THROW("automl does not yet support this reduction: " + reduction);
   }

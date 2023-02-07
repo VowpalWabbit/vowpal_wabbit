@@ -64,17 +64,17 @@ void validate_compatibility(const std::vector<const VW::workspace*>& workspaces,
         "training in memory then pass some examples prior to merging.");
   }
 
-  std::vector<std::string> destination_enabled_reductions;
-  ref_model.l->get_enabled_reductions(destination_enabled_reductions);
+  std::vector<std::string> destination_enabled_learners;
+  ref_model.l->get_enabled_learners(destination_enabled_learners);
   for (const auto* model : workspaces)
   {
-    std::vector<std::string> source_enabled_reductions;
-    model->l->get_enabled_reductions(source_enabled_reductions);
+    std::vector<std::string> source_enabled_learners;
+    model->l->get_enabled_learners(source_enabled_learners);
 
-    if (source_enabled_reductions != destination_enabled_reductions)
+    if (source_enabled_learners != destination_enabled_learners)
     {
-      auto message = fmt::format("Enabled reductions are not identical between models.\n One: {}\n Other:{} ",
-          fmt::join(source_enabled_reductions, ", "), fmt::join(destination_enabled_reductions, ", "));
+      auto message = fmt::format("Enabled learners are not identical between models.\n One: {}\n Other:{} ",
+          fmt::join(source_enabled_learners, ", "), fmt::join(destination_enabled_learners, ", "));
       THROW(message);
     }
   }
@@ -184,12 +184,12 @@ VW::model_delta merge_deltas(const std::vector<const VW::model_delta*>& deltas_t
   const auto per_model_weighting = calc_per_model_weighting(example_counts);
 
   // Iterate through learners and merge each one
-  auto* target_learner = dest_workspace->l;
+  auto* target_learner = dest_workspace->l.get();
   while (target_learner != nullptr)
   {
     if (target_learner->has_merge())
     {
-      std::vector<const VW::LEARNER::base_learner*> learners_to_merge;
+      std::vector<const VW::LEARNER::learner*> learners_to_merge;
       for (const auto* delta : workspaces_to_merge)
       {
         auto* source_data = delta->l->get_learner_by_name_prefix(target_learner->get_name());
@@ -199,12 +199,13 @@ VW::model_delta merge_deltas(const std::vector<const VW::model_delta*>& deltas_t
       target_learner->merge(
           per_model_weighting, workspaces_to_merge, learners_to_merge, *dest_workspace, *target_learner);
     }
-    // If this is a base reduction and has no merge then emit an error because a base with no merge is almost certainly
-    // not going to work.
-    else if (!target_learner->has_merge() && target_learner->get_learn_base() == nullptr)
+    // If this is a bottom learner and has no merge then emit an error because a bottom with no merge is almost
+    // certainly not going to work.
+    else if (!target_learner->has_merge() && target_learner->get_base_learner() == nullptr)
     {
-      THROW("Base learner '" << target_learner->get_name()
-                             << "' does not have a merge function defined. Since it is a base learner, merging will "
+      THROW(
+          "Bottom learner '" << target_learner->get_name()
+                             << "' does not have a merge function defined. Since it is a bottom learner, merging will "
                                 "not work as expected.");
     }
     else if (!target_learner->has_merge() && target_learner->learner_defines_own_save_load())
@@ -212,12 +213,12 @@ VW::model_delta merge_deltas(const std::vector<const VW::model_delta*>& deltas_t
       if (logger != nullptr)
       {
         logger->warn(
-            "Reduction '{}' supports save/load but does not have a merge function defined. Merging will still run but "
-            "this reduction will not be merged and may result in incorrect results.",
+            "Learner '{}' supports save/load but does not have a merge function defined. Merging will still run but "
+            "this learner will not be merged and may result in incorrect results.",
             target_learner->get_name());
       }
     }
-    target_learner = target_learner->get_learn_base();
+    target_learner = target_learner->get_base_learner();
   }
 
   // Merge shared data
@@ -277,28 +278,29 @@ std::unique_ptr<VW::workspace> VW::operator+(const VW::workspace& base, const VW
   auto destination_workspace =
       VW::initialize(VW::make_unique<VW::config::options_cli>(dest_command_line), nullptr, nullptr, nullptr, nullptr);
 
-  auto* target_learner = destination_workspace->l;
+  auto* target_learner = destination_workspace->l.get();
   while (target_learner != nullptr)
   {
     if (target_learner->has_add())
     {
       auto learner_name = target_learner->get_name();
-      const VW::LEARNER::base_learner* base_learner = base.l->get_learner_by_name_prefix(learner_name);
-      const VW::LEARNER::base_learner* delta_learner = delta->l->get_learner_by_name_prefix(learner_name);
+      const VW::LEARNER::learner* learner = base.l->get_learner_by_name_prefix(learner_name);
+      const VW::LEARNER::learner* delta_learner = delta->l->get_learner_by_name_prefix(learner_name);
 
-      target_learner->add(base, *delta, base_learner, delta_learner, *destination_workspace, target_learner);
+      target_learner->add(base, *delta, learner, delta_learner, *destination_workspace, target_learner);
     }
-    // If this is a base reduction and has no merge then emit an error because a base with no merge is almost certainly
-    // not going to work.
-    else if (!target_learner->has_merge() && target_learner->get_learn_base() == nullptr)
+    // If this is a bottom learner and has no merge then emit an error because a bottom with no merge is almost
+    // certainly not going to work.
+    else if (!target_learner->has_merge() && target_learner->get_base_learner() == nullptr)
     {
-      THROW("Base learner '" << target_learner->get_name()
-                             << "' does not have a merge function defined. Since it is a base learner, merging will "
+      THROW(
+          "Bottom learner '" << target_learner->get_name()
+                             << "' does not have a merge function defined. Since it is a bottom learner, merging will "
                                 "not work as expected.");
     }
     // Skip the save-load case for now
 
-    target_learner = target_learner->get_learn_base();
+    target_learner = target_learner->get_base_learner();
   }
 
   // Add shared data
@@ -326,28 +328,29 @@ VW::model_delta VW::operator-(const VW::workspace& ws1, const VW::workspace& ws2
   auto destination_workspace =
       VW::initialize(VW::make_unique<VW::config::options_cli>(dest_command_line), nullptr, nullptr, nullptr, nullptr);
 
-  auto* target_learner = destination_workspace->l;
+  auto* target_learner = destination_workspace->l.get();
   while (target_learner != nullptr)
   {
     if (target_learner->has_subtract())
     {
       auto learner_name = target_learner->get_name();
-      const VW::LEARNER::base_learner* ws1_learner = ws1.l->get_learner_by_name_prefix(learner_name);
-      const VW::LEARNER::base_learner* ws2_learner = ws2.l->get_learner_by_name_prefix(learner_name);
+      const VW::LEARNER::learner* ws1_learner = ws1.l->get_learner_by_name_prefix(learner_name);
+      const VW::LEARNER::learner* ws2_learner = ws2.l->get_learner_by_name_prefix(learner_name);
 
       target_learner->subtract(ws1, ws2, ws1_learner, ws2_learner, *destination_workspace, target_learner);
     }
-    // If this is a base reduction and has no merge then emit an error because a base with no merge is almost certainly
-    // not going to work.
-    else if (!target_learner->has_merge() && target_learner->get_learn_base() == nullptr)
+    // If this is a bottom learner and has no merge then emit an error because a bottom with no merge is almost
+    // certainly not going to work.
+    else if (!target_learner->has_merge() && target_learner->get_base_learner() == nullptr)
     {
-      THROW("Base learner '" << target_learner->get_name()
-                             << "' does not have a merge function defined. Since it is a base learner, merging will "
+      THROW(
+          "Bottom learner '" << target_learner->get_name()
+                             << "' does not have a merge function defined. Since it is a bottom learner, merging will "
                                 "not work as expected.");
     }
     // Skip the save-load case for now
 
-    target_learner = target_learner->get_learn_base();
+    target_learner = target_learner->get_base_learner();
   }
 
   // Subtract shared data

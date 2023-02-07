@@ -23,6 +23,7 @@
 #include "vw/core/v_array.h"
 
 #include <cstdint>
+#include <functional>
 #include <vector>
 
 namespace VW
@@ -181,7 +182,7 @@ inline void add_passthrough_feature_magic(example& ec, uint64_t magic, uint64_t 
 
 void return_multiple_example(VW::workspace& all, VW::multi_ex& examples);
 
-using example_factory_t = example& (*)(void*);
+using example_factory_t = std::function<example&()>;
 
 namespace details
 {

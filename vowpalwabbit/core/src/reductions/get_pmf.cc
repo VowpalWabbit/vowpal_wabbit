@@ -20,7 +20,7 @@ using VW::cb_continuous::continuous_label_elm;
 using VW::config::make_option;
 using VW::config::option_group_definition;
 using VW::config::options_i;
-using VW::LEARNER::single_learner;
+using VW::LEARNER::learner;
 
 // Enable/Disable indented debug statements
 #undef VW_DEBUG_LOG
@@ -36,10 +36,10 @@ public:
   int learn(VW::example& ec, VW::experimental::api_status* status);
   int predict(VW::example& ec, VW::experimental::api_status* status);
 
-  void init(single_learner* p_base, float epsilon);
+  void init(learner* p_base, float epsilon);
 
 private:
-  single_learner* _base = nullptr;
+  learner* _base = nullptr;
   float _epsilon = 0.f;
 };
 
@@ -66,7 +66,7 @@ int get_pmf::predict(VW::example& ec, VW::experimental::api_status* /*unused*/)
   return VW::experimental::error_code::success;
 }
 
-void get_pmf::init(single_learner* p_base, float epsilon)
+void get_pmf::init(learner* p_base, float epsilon)
 {
   _base = p_base;
   _epsilon = epsilon;
@@ -74,7 +74,7 @@ void get_pmf::init(single_learner* p_base, float epsilon)
 
 // Free function to tie function pointers to reduction class methods
 template <bool is_learn>
-void predict_or_learn(get_pmf& reduction, single_learner& /*unused*/, VW::example& ec)
+void predict_or_learn(get_pmf& reduction, learner& /*unused*/, VW::example& ec)
 {
   VW::experimental::api_status status;
   if (is_learn) { reduction.learn(ec, &status); }
@@ -91,7 +91,7 @@ void predict_or_learn(get_pmf& reduction, single_learner& /*unused*/, VW::exampl
 ////////////////////////////////////////////////////
 
 // Setup reduction in stack
-VW::LEARNER::base_learner* VW::reductions::get_pmf_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::get_pmf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   option_group_definition new_options("[Reduction] Continuous Actions: Convert to Pmf");
@@ -104,17 +104,17 @@ VW::LEARNER::base_learner* VW::reductions::get_pmf_setup(VW::setup_base_i& stack
   // to the reduction stack;
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  LEARNER::base_learner* p_base = stack_builder.setup_base_learner();
+  auto p_base = stack_builder.setup_base_learner();
   auto p_reduction = VW::make_unique<get_pmf>();
-  p_reduction->init(as_singleline(p_base), epsilon);
+  p_reduction->init(require_singleline(p_base).get(), epsilon);
 
-  auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
+  auto l = make_reduction_learner(std::move(p_reduction), require_singleline(p_base), predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(get_pmf_setup))
-                .set_input_label_type(p_base->get_input_label_type())
-                .set_output_label_type(p_base->get_input_label_type())
-                .set_input_prediction_type(VW::prediction_type_t::MULTICLASS)
-                .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
-                .build();
+               .set_input_label_type(p_base->get_input_label_type())
+               .set_output_label_type(p_base->get_input_label_type())
+               .set_input_prediction_type(VW::prediction_type_t::MULTICLASS)
+               .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+               .build();
 
-  return make_base(*l);
+  return l;
 }

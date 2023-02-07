@@ -35,15 +35,12 @@ class cb_explore_adf_cover
 {
 public:
   cb_explore_adf_cover(size_t cover_size, float psi, bool nounif, float epsilon, bool epsilon_decay, bool first_only,
-      VW::LEARNER::multi_learner* cs_ldf_learner, VW::LEARNER::single_learner* scorer, VW::cb_type_t cb_type,
+      VW::LEARNER::learner* cs_ldf_learner, VW::LEARNER::learner* scorer, VW::cb_type_t cb_type,
       VW::version_struct model_file_version, VW::io::logger logger);
 
   // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
-  {
-    predict_or_learn_impl<false>(base, examples);
-  }
-  void learn(VW::LEARNER::multi_learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
+  void predict(VW::LEARNER::learner& base, VW::multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
+  void learn(VW::LEARNER::learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
   void save_load(VW::io_buf& io, bool read, bool text);
 
 private:
@@ -55,7 +52,7 @@ private:
   bool _first_only;
   size_t _counter;
 
-  VW::LEARNER::multi_learner* _cs_ldf_learner;
+  VW::LEARNER::learner* _cs_ldf_learner;
   VW::details::cb_to_cs_adf gen_cs;
 
   VW::version_struct _model_file_version;
@@ -68,12 +65,12 @@ private:
   std::vector<VW::cs_label> _prepped_cs_labels;
   std::vector<VW::cb_label> _cb_labels;
   template <bool is_learn>
-  void predict_or_learn_impl(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
+  void predict_or_learn_impl(VW::LEARNER::learner& base, VW::multi_ex& examples);
 };
 
 cb_explore_adf_cover::cb_explore_adf_cover(size_t cover_size, float psi, bool nounif, float epsilon, bool epsilon_decay,
-    bool first_only, VW::LEARNER::multi_learner* cs_ldf_learner, VW::LEARNER::single_learner* scorer,
-    VW::cb_type_t cb_type, VW::version_struct model_file_version, VW::io::logger logger)
+    bool first_only, VW::LEARNER::learner* cs_ldf_learner, VW::LEARNER::learner* scorer, VW::cb_type_t cb_type,
+    VW::version_struct model_file_version, VW::io::logger logger)
     : _cover_size(cover_size)
     , _psi(psi)
     , _nounif(nounif)
@@ -90,7 +87,7 @@ cb_explore_adf_cover::cb_explore_adf_cover(size_t cover_size, float psi, bool no
 }
 
 template <bool is_learn>
-void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
+void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::learner& base, VW::multi_ex& examples)
 {
   // Redundant with the call in cb_explore_adf_base, but encapsulation means we need to do this again here
   gen_cs.known_cost = VW::get_observed_cost_or_default_cb_adf(examples);
@@ -236,7 +233,7 @@ void cb_explore_adf_cover::save_load(VW::io_buf& io, bool read, bool text)
 }
 }  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_cover_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_cover_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -307,7 +304,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_cover_setup(VW::setup_
   // Cover is using doubly robust without the cooperation of the base reduction
   if (cb_type == VW::cb_type_t::MTR) { problem_multiplier *= 2; }
 
-  VW::LEARNER::multi_learner* base = VW::LEARNER::as_multiline(stack_builder.setup_base_learner());
+  auto base = VW::LEARNER::require_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   bool epsilon_decay;
@@ -322,25 +319,25 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_cover_setup(VW::setup_
     epsilon_decay = true;
   }
 
-  auto* scorer = VW::LEARNER::as_singleline(base->get_learner_by_name_prefix("scorer"));
+  auto* scorer = VW::LEARNER::require_singleline(base->get_learner_by_name_prefix("scorer"));
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_cover>;
   auto data = VW::make_unique<explore_type>(all.global_metrics.are_metrics_enabled(),
       VW::cast_to_smaller_type<size_t>(cover_size), psi, nounif, epsilon, epsilon_decay, first_only,
-      as_multiline(all.cost_sensitive), scorer, cb_type, all.model_file_ver, all.logger);
-  auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
+      require_multiline(all.cost_sensitive.get()), scorer, cb_type, all.model_file_ver, all.logger);
+  auto l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_cover_setup))
-                .set_input_label_type(VW::label_type_t::CB)
-                .set_output_label_type(VW::label_type_t::CB)
-                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
-                .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
-                .set_learn_returns_prediction(true)
-                .set_params_per_weight(problem_multiplier)
-                .set_output_example_prediction(explore_type::output_example_prediction)
-                .set_update_stats(explore_type::update_stats)
-                .set_print_update(explore_type::print_update)
-                .set_save_load(explore_type::save_load)
-                .set_persist_metrics(explore_type::persist_metrics)
-                .build();
-  return make_base(*l);
+               .set_input_label_type(VW::label_type_t::CB)
+               .set_output_label_type(VW::label_type_t::CB)
+               .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+               .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
+               .set_learn_returns_prediction(true)
+               .set_params_per_weight(problem_multiplier)
+               .set_output_example_prediction(explore_type::output_example_prediction)
+               .set_update_stats(explore_type::update_stats)
+               .set_print_update(explore_type::print_update)
+               .set_save_load(explore_type::save_load)
+               .set_persist_metrics(explore_type::persist_metrics)
+               .build();
+  return l;
 }
