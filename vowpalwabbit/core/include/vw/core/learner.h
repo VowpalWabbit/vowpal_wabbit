@@ -132,8 +132,6 @@ class learner final : public std::enable_shared_from_this<learner>
 {
 private:
   void debug_log_message(polymorphic_ex ex, const std::string& msg);
-  // Used as a hook to intercept incorrect calls to the base learner.
-  void debug_log_message(const char& /* ec */, const std::string& msg);
 
 public:
   size_t weights;  // this stores the number of "weight vectors" required by the learner.

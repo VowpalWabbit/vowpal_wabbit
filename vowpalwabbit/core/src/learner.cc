@@ -363,14 +363,6 @@ void learner::debug_log_message(polymorphic_ex ex, const std::string& msg)
   else { VW_DBG(static_cast<VW::example&>(ex)) << "[" << _name << "." << msg << "]" << std::endl; }
 }
 
-// Used as a hook to intercept incorrect calls to the base learner.
-void learner::debug_log_message(const char& /* ec */, const std::string& msg)
-{
-  auto message = fmt::format(
-      "Learner: '{}', function: '{}' was called without first being cast to singleline or multiline.", get_name(), msg);
-  THROW(message);
-}
-
 void learner::learn(polymorphic_ex ec, size_t i)
 {
   assert(is_multiline() == ec.is_multiline());
