@@ -65,7 +65,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::print_setup(VW::setup_base
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   all.weights.stride_shift(0);
-  auto learner = VW::LEARNER::make_foundation_learner(VW::make_unique<print>(&all), learn, learn,
+  auto learner = VW::LEARNER::make_bottom_learner(VW::make_unique<print>(&all), learn, learn,
       stack_builder.get_setupfn_name(print_setup), VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
                      .set_output_example_prediction(VW::details::output_example_prediction_simple_label<print>)
                      .set_update_stats(VW::details::update_stats_simple_label<print>)

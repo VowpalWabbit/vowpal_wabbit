@@ -799,7 +799,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::kernel_svm_setup(VW::setup
 
   params->all->weights.stride_shift(0);
 
-  auto l = make_foundation_learner(std::move(params), learn, predict, stack_builder.get_setupfn_name(kernel_svm_setup),
+  auto l = make_bottom_learner(std::move(params), learn, predict, stack_builder.get_setupfn_name(kernel_svm_setup),
       VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
                .set_save_load(save_load)
                .set_finish(finish_kernel_svm)

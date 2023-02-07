@@ -477,7 +477,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::ftrl_setup(VW::setup_base_
   auto multipredict_ptr = (all.audit || all.hash_inv) ? multipredict<true> : multipredict<false>;
   std::string name_addition = (all.audit || all.hash_inv) ? "-audit" : "";
 
-  auto l = VW::LEARNER::make_foundation_learner(std::move(b), learn_ptr, predict_ptr,
+  auto l = VW::LEARNER::make_bottom_learner(std::move(b), learn_ptr, predict_ptr,
       stack_builder.get_setupfn_name(ftrl_setup) + "-" + algorithm_name + name_addition, VW::prediction_type_t::SCALAR,
       VW::label_type_t::SIMPLE)
                .set_learn_returns_prediction(learn_returns_prediction)

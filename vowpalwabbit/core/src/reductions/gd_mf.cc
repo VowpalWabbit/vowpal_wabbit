@@ -389,7 +389,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_mf_setup(VW::setup_base
   }
   all.eta *= powf(static_cast<float>(all.sd->t), all.power_t);
 
-  auto l = make_foundation_learner(std::move(data), learn, predict, stack_builder.get_setupfn_name(gd_mf_setup),
+  auto l = make_bottom_learner(std::move(data), learn, predict, stack_builder.get_setupfn_name(gd_mf_setup),
       VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
                .set_params_per_weight(VW::details::UINT64_ONE << all.weights.stride_shift())
                .set_learn_returns_prediction(true)

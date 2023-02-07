@@ -84,7 +84,7 @@ using cleanup_example_func = std::function<void(polymorphic_ex ex)>;
 
 // Merge functions come in two variants, with or without the `all` VW::workspace reference
 // Use the version without all for reduction learners, where the workspace reference is not needed
-// Use the version with all for foundation learners
+// Use the version with all for bottom learners
 using merge_func = std::function<void(
     const std::vector<float>& per_model_weighting, const std::vector<const void*>& all_data, void* output_data)>;
 using merge_with_all_func = std::function<void(const std::vector<float>& per_model_weighting,
@@ -106,13 +106,14 @@ void learner_build_diagnostic(VW::string_view this_name, VW::string_view base_na
 
 /// \brief Defines the interface for a learning algorithm.
 ///
-/// VW has two types of learners: reduction learners and foundation learners.
-/// The same learner class is used to implement both. A reduction stack is created
-/// as a chain of learners, starting from a foundation learner at the bottom of
+/// VW has two types of learners: reduction learners and bottom learners. The
+/// same learner class is used to implement both. A reduction stack is created
+/// as a chain of learners, starting from a bottom learner at the bottom of
 /// the stack. Each learner after it is a reduction learner and holds a shared_ptr
-/// to its base. The difference between a reduction and a foundation learner is
-/// that a reduction will recursively call its base, whereas a foundation learner
-/// has no base and will simply return its result.
+/// to its base, the learner immediately below it in the stack. The final VW
+/// workspace holds a shared_ptr to the topmost learner. The difference between a
+/// reduction and a bottom learner is that a reduction will recursively call its
+/// base, whereas a bottom learner has no base and will simply return its result.
 ///
 /// The learner class is not meant to be inherited from. Instead, it implements a
 /// sort of virtual inheritance via std::function objects. Each type of learner
@@ -123,7 +124,7 @@ void learner_build_diagnostic(VW::string_view this_name, VW::string_view base_na
 /// arbitrary learner types to be implemented by the same learner class.
 ///
 /// The learner class itself has a private constructor. Learners should be created
-/// only through the make_reduction_learner and make_foundation_learner functions
+/// only through the make_reduction_learner and make_bottom_learner functions
 /// and their associated learner builder template classes. The templates enforce
 /// consistency of types at compile time, before types-erasure occurs to make the
 /// acutal learner object.
@@ -241,7 +242,7 @@ public:
   VW_ATTR(nodiscard) const std::string& get_name() const { return _name; }
 
   // Returns a pointer to the base of this learner, which is immediately below this one
-  // Returns nullptr if this is the foundation learner of the stack (the bottom-most learner)
+  // Returns nullptr if this is the bottom learner of the stack (the bottom-most learner)
   VW_ATTR(nodiscard) const learner* get_base_learner() const { return _base_learner.get(); }
   VW_ATTR(nodiscard) learner* get_base_learner() { return _base_learner.get(); }
 
@@ -299,7 +300,7 @@ private:
 
   // This holds ownership of this learner's base.
   // It is the learner immediately below this one in the reduction stack.
-  // For foundation learners, this will be nullptr.
+  // For bottom learners, this will be nullptr.
   std::shared_ptr<learner> _base_learner;
 
   // Create a copy of this learner. The implementation of this functions determines which of the
@@ -309,7 +310,7 @@ private:
 
   // Private constructor/copy/move
   // Should only be able to construct a std::shared_ptr<learner> through make_reduction_learner /
-  // make_foundation_learner. All learners must be owned by a std::shared_ptr because we use
+  // make_bottom_learner. All learners must be owned by a std::shared_ptr because we use
   // std::enable_shared_from_this
   learner() = default;
   learner(const learner&) = default;
@@ -323,7 +324,7 @@ private:
   template <class FluentBuilderT, class DataT, class ExampleT>
   friend class common_learner_builder;
   template <class DataT, class ExampleT>
-  friend class foundation_learner_builder;
+  friend class bottom_learner_builder;
   template <class DataT, class ExampleT>
   friend class reduction_learner_builder;
   template <class ExampleT>
@@ -704,15 +705,14 @@ public:
 };
 
 template <class DataT, class ExampleT>
-class foundation_learner_builder
-    : public common_learner_builder<foundation_learner_builder<DataT, ExampleT>, DataT, ExampleT>
+class bottom_learner_builder : public common_learner_builder<bottom_learner_builder<DataT, ExampleT>, DataT, ExampleT>
 {
 public:
-  using FluentBuilderT = foundation_learner_builder<DataT, ExampleT>;
-  using super = common_learner_builder<foundation_learner_builder<DataT, ExampleT>, DataT, ExampleT>;
-  foundation_learner_builder(std::unique_ptr<DataT>&& data, const std::string& name, prediction_type_t out_pred_type,
+  using FluentBuilderT = bottom_learner_builder<DataT, ExampleT>;
+  using super = common_learner_builder<bottom_learner_builder<DataT, ExampleT>, DataT, ExampleT>;
+  bottom_learner_builder(std::unique_ptr<DataT>&& data, const std::string& name, prediction_type_t out_pred_type,
       label_type_t in_label_type)
-      : common_learner_builder<foundation_learner_builder<DataT, ExampleT>, DataT, ExampleT>(
+      : common_learner_builder<bottom_learner_builder<DataT, ExampleT>, DataT, ExampleT>(
             std::shared_ptr<learner>(new learner()), std::move(data), name)
   {
     // Default sensitivity function returns zero
@@ -836,11 +836,11 @@ reduction_no_data_learner_builder<ExampleT> make_no_data_reduction_learner(std::
 }
 
 template <class DataT, class ExampleT>
-foundation_learner_builder<DataT, ExampleT> make_foundation_learner(std::unique_ptr<DataT>&& data,
+bottom_learner_builder<DataT, ExampleT> make_bottom_learner(std::unique_ptr<DataT>&& data,
     void (*learn_fn)(DataT&, ExampleT&), void (*predict_fn)(DataT&, ExampleT&), const std::string& name,
     prediction_type_t out_pred_type, label_type_t in_label_type)
 {
-  auto builder = foundation_learner_builder<DataT, ExampleT>(std::move(data), name, out_pred_type, in_label_type);
+  auto builder = bottom_learner_builder<DataT, ExampleT>(std::move(data), name, out_pred_type, in_label_type);
   builder.set_learn(learn_fn);
   builder.set_update(learn_fn);
   builder.set_predict(predict_fn);
@@ -848,12 +848,12 @@ foundation_learner_builder<DataT, ExampleT> make_foundation_learner(std::unique_
 }
 
 template <class ExampleT>
-foundation_learner_builder<char, ExampleT> make_no_data_foundation_learner(void (*learn_fn)(char&, ExampleT&),
+bottom_learner_builder<char, ExampleT> make_no_data_bottom_learner(void (*learn_fn)(char&, ExampleT&),
     void (*predict_fn)(char&, ExampleT&), const std::string& name, prediction_type_t out_pred_type,
     label_type_t in_label_type)
 {
   // For the no data reduction, allocate a placeholder char as its data to avoid nullptr issues
-  return make_foundation_learner<char, ExampleT>(
+  return make_bottom_learner<char, ExampleT>(
       VW::make_unique<char>(0), learn_fn, predict_fn, name, out_pred_type, in_label_type);
 }
 
