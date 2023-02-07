@@ -53,7 +53,7 @@ void mf_print_offset_features(gdmf& d, VW::example& ec, size_t offset)
       std::cout << ':' << (&weights[f.index()])[offset];
     }
   }
-  for (const auto& i : all.interactions)
+  for (const auto& i : all.fc.interactions)
   {
     if (i.size() != 2) THROW("can only use pairs in matrix factorization");
 
@@ -107,7 +107,7 @@ float mf_predict(gdmf& d, VW::example& ec, T& weights)
   float prediction = simple_red_features.initial;
 
   ec.num_features_from_interactions = 0;
-  for (const auto& i : d.all->interactions)
+  for (const auto& i : d.all->fc.interactions)
   {
     if (i.size() != 2) THROW("can only use pairs in matrix factorization");
     const auto interacted_count =
@@ -132,7 +132,7 @@ float mf_predict(gdmf& d, VW::example& ec, T& weights)
 
   prediction += linear_prediction;
   // interaction terms
-  for (const auto& i : d.all->interactions)
+  for (const auto& i : d.all->fc.interactions)
   {
     // The check for non-pair interactions is done in the previous loop
 
@@ -212,7 +212,7 @@ void mf_train(gdmf& d, VW::example& ec, T& weights)
   for (VW::features& fs : ec) { sd_offset_update<T>(weights, fs, 0, update, regularization); }
 
   // quadratic update
-  for (const auto& i : all.interactions)
+  for (const auto& i : all.fc.interactions)
   {
     if (i.size() != 2) THROW("can only use pairs in matrix factorization");
 
@@ -313,14 +313,12 @@ void end_pass(gdmf& d)
   VW::workspace* all = d.all;
 
   all->eta *= all->eta_decay_rate;
-  if (all->save_per_pass) { VW::details::save_predictor(*all, all->final_regressor_name, all->current_pass); }
+  if (all->om.save_per_pass) { VW::details::save_predictor(*all, all->om.final_regressor_name, all->current_pass); }
 
   if (!all->holdout_set_off)
   {
     if (VW::details::summarize_holdout_set(*all, d.no_win_counter))
-    {
-      VW::details::finalize_regressor(*all, all->final_regressor_name);
-    }
+    { VW::details::finalize_regressor(*all, all->om.final_regressor_name); }
     if ((d.early_stop_thres == d.no_win_counter) &&
         ((all->check_holdout_every_n_passes <= 1) || ((all->current_pass % all->check_holdout_every_n_passes) == 0)))
     {

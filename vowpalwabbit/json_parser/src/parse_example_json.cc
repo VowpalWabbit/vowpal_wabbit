@@ -1735,7 +1735,7 @@ void VW::parsers::json::read_line_json(VW::workspace& all, VW::multi_ex& example
 {
   return read_line_json<audit>(all.example_parser->lbl_parser, all.example_parser->hasher, all.hash_seed,
       all.parse_mask, all.chain_hash_json, &all.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), examples,
-      line, length, std::move(example_factory), all.logger, &all.ignore_features_dsjson, dedup_examples);
+      line, length, std::move(example_factory), all.logger, &all.fc.ignore_features_dsjson, dedup_examples);
 }
 
 inline bool apply_pdrop(VW::label_type_t label_type, float pdrop, VW::multi_ex& examples, VW::io::logger& logger)
@@ -1788,7 +1788,7 @@ bool VW::parsers::json::read_line_decision_service_json(VW::workspace& all, VW::
   VWReaderHandler<audit>& handler = parser.handler;
   handler.init(all.example_parser->lbl_parser, all.example_parser->hasher, all.hash_seed, all.parse_mask,
       all.chain_hash_json, &all.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), &all.logger, &examples,
-      &ss, line + length, example_factory, &all.ignore_features_dsjson);
+      &ss, line + length, example_factory, &all.fc.ignore_features_dsjson);
 
   handler.ctx.SetStartStateToDecisionService(data);
   handler.ctx.decision_service_data = data;

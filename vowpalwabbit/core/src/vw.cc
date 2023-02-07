@@ -459,71 +459,72 @@ const char* VW::are_features_compatible(const VW::workspace& vw1, const VW::work
 {
   if (vw1.example_parser->hasher != vw2.example_parser->hasher) { return "hasher"; }
 
-  if (!std::equal(vw1.spelling_features.begin(), vw1.spelling_features.end(), vw2.spelling_features.begin()))
+  if (!std::equal(vw1.fc.spelling_features.begin(), vw1.fc.spelling_features.end(), vw2.fc.spelling_features.begin()))
   {
     return "spelling_features";
   }
 
-  if (!std::equal(vw1.affix_features.begin(), vw1.affix_features.end(), vw2.affix_features.begin()))
+  if (!std::equal(vw1.fc.affix_features.begin(), vw1.fc.affix_features.end(), vw2.fc.affix_features.begin()))
   {
     return "affix_features";
   }
 
-  if (vw1.skip_gram_transformer != nullptr && vw2.skip_gram_transformer != nullptr)
+  if (vw1.fc.skip_gram_transformer != nullptr && vw2.fc.skip_gram_transformer != nullptr)
   {
-    const auto& vw1_ngram_strings = vw1.skip_gram_transformer->get_initial_ngram_definitions();
-    const auto& vw2_ngram_strings = vw2.skip_gram_transformer->get_initial_ngram_definitions();
-    const auto& vw1_skips_strings = vw1.skip_gram_transformer->get_initial_skip_definitions();
-    const auto& vw2_skips_strings = vw2.skip_gram_transformer->get_initial_skip_definitions();
+    const auto& vw1_ngram_strings = vw1.fc.skip_gram_transformer->get_initial_ngram_definitions();
+    const auto& vw2_ngram_strings = vw2.fc.skip_gram_transformer->get_initial_ngram_definitions();
+    const auto& vw1_skips_strings = vw1.fc.skip_gram_transformer->get_initial_skip_definitions();
+    const auto& vw2_skips_strings = vw2.fc.skip_gram_transformer->get_initial_skip_definitions();
 
     if (!std::equal(vw1_ngram_strings.begin(), vw1_ngram_strings.end(), vw2_ngram_strings.begin())) { return "ngram"; }
 
     if (!std::equal(vw1_skips_strings.begin(), vw1_skips_strings.end(), vw2_skips_strings.begin())) { return "skips"; }
   }
-  else if (vw1.skip_gram_transformer != nullptr || vw2.skip_gram_transformer != nullptr)
+  else if (vw1.fc.skip_gram_transformer != nullptr || vw2.fc.skip_gram_transformer != nullptr)
   {
     // If one of them didn't define the ngram transformer then they differ by ngram (skips depends on ngram)
     return "ngram";
   }
 
-  if (!std::equal(vw1.limit.begin(), vw1.limit.end(), vw2.limit.begin())) { return "limit"; }
+  if (!std::equal(vw1.fc.limit.begin(), vw1.fc.limit.end(), vw2.fc.limit.begin())) { return "limit"; }
 
   if (vw1.num_bits != vw2.num_bits) { return "num_bits"; }
 
-  if (vw1.permutations != vw2.permutations) { return "permutations"; }
+  if (vw1.fc.permutations != vw2.fc.permutations) { return "permutations"; }
 
-  if (vw1.interactions.size() != vw2.interactions.size()) { return "interactions size"; }
+  if (vw1.fc.interactions.size() != vw2.fc.interactions.size()) { return "interactions size"; }
 
-  if (vw1.ignore_some != vw2.ignore_some) { return "ignore_some"; }
+  if (vw1.fc.ignore_some != vw2.fc.ignore_some) { return "ignore_some"; }
 
-  if (vw1.ignore_some && !std::equal(vw1.ignore.begin(), vw1.ignore.end(), vw2.ignore.begin())) { return "ignore"; }
+  if (vw1.fc.ignore_some && !std::equal(vw1.fc.ignore.begin(), vw1.fc.ignore.end(), vw2.fc.ignore.begin()))
+  { return "ignore"; }
 
-  if (vw1.ignore_some_linear != vw2.ignore_some_linear) { return "ignore_some_linear"; }
+  if (vw1.fc.ignore_some_linear != vw2.fc.ignore_some_linear) { return "ignore_some_linear"; }
 
-  if (vw1.ignore_some_linear &&
-      !std::equal(vw1.ignore_linear.begin(), vw1.ignore_linear.end(), vw2.ignore_linear.begin()))
+  if (vw1.fc.ignore_some_linear &&
+      !std::equal(vw1.fc.ignore_linear.begin(), vw1.fc.ignore_linear.end(), vw2.fc.ignore_linear.begin()))
   {
     return "ignore_linear";
   }
 
-  if (vw1.redefine_some != vw2.redefine_some) { return "redefine_some"; }
+  if (vw1.fc.redefine_some != vw2.fc.redefine_some) { return "redefine_some"; }
 
-  if (vw1.redefine_some && !std::equal(vw1.redefine.begin(), vw1.redefine.end(), vw2.redefine.begin()))
+  if (vw1.fc.redefine_some && !std::equal(vw1.fc.redefine.begin(), vw1.fc.redefine.end(), vw2.fc.redefine.begin()))
   {
     return "redefine";
   }
 
-  if (vw1.add_constant != vw2.add_constant) { return "add_constant"; }
+  if (vw1.fc.add_constant != vw2.fc.add_constant) { return "add_constant"; }
 
-  if (vw1.dictionary_path.size() != vw2.dictionary_path.size()) { return "dictionary_path size"; }
+  if (vw1.fc.dictionary_path.size() != vw2.fc.dictionary_path.size()) { return "dictionary_path size"; }
 
-  if (!std::equal(vw1.dictionary_path.begin(), vw1.dictionary_path.end(), vw2.dictionary_path.begin()))
+  if (!std::equal(vw1.fc.dictionary_path.begin(), vw1.fc.dictionary_path.end(), vw2.fc.dictionary_path.begin()))
   {
     return "dictionary_path";
   }
 
-  for (auto i = std::begin(vw1.interactions), j = std::begin(vw2.interactions); i != std::end(vw1.interactions);
-       ++i, ++j)
+  for (auto i = std::begin(vw1.fc.interactions), j = std::begin(vw2.fc.interactions);
+       i != std::end(vw1.fc.interactions); ++i, ++j)
   {
     if (*i != *j) { return "interaction mismatch"; }
   }
@@ -658,11 +659,11 @@ void feature_limit(VW::workspace& all, VW::example* ex)
 {
   for (VW::namespace_index index : ex->indices)
   {
-    if (all.limit[index] < ex->feature_space[index].size())
+    if (all.fc.limit[index] < ex->feature_space[index].size())
     {
       auto& fs = ex->feature_space[index];
       fs.sort(all.parse_mask);
-      VW::unique_features(fs, all.limit[index]);
+      VW::unique_features(fs, all.fc.limit[index]);
     }
   }
 }
@@ -690,7 +691,7 @@ void VW::setup_example(VW::workspace& all, VW::example* ae)
   ae->reset_total_sum_feat_sq();
   ae->loss = 0.;
   ae->debug_current_reduction_depth = 0;
-  ae->_use_permutations = all.permutations;
+  ae->_use_permutations = all.fc.permutations;
 
   all.example_parser->num_setup_examples++;
   if (!all.example_parser->emptylines_separate_examples) { all.example_parser->in_pass_counter++; }
@@ -711,11 +712,11 @@ void VW::setup_example(VW::workspace& all, VW::example* ae)
 
   ae->weight = all.example_parser->lbl_parser.get_weight(ae->l, ae->ex_reduction_features);
 
-  if (all.ignore_some)
+  if (all.fc.ignore_some)
   {
     for (unsigned char* i = ae->indices.begin(); i != ae->indices.end(); i++)
     {
-      if (all.ignore[*i])
+      if (all.fc.ignore[*i])
       {
         // Delete namespace
         ae->feature_space[*i].clear();
@@ -727,14 +728,14 @@ void VW::setup_example(VW::workspace& all, VW::example* ae)
     }
   }
 
-  if (all.skip_gram_transformer != nullptr) { all.skip_gram_transformer->generate_grams(ae); }
+  if (all.fc.skip_gram_transformer != nullptr) { all.fc.skip_gram_transformer->generate_grams(ae); }
 
-  if (all.add_constant)
+  if (all.fc.add_constant)
   {  // add constant feature
     VW::add_constant_feature(all, ae);
   }
 
-  if (!all.limit_strings.empty()) { feature_limit(all, ae); }
+  if (!all.fc.limit_strings.empty()) { feature_limit(all, ae); }
 
   uint64_t multiplier = static_cast<uint64_t>(all.wpp) << all.weights.stride_shift();
 
@@ -749,8 +750,8 @@ void VW::setup_example(VW::workspace& all, VW::example* ae)
   for (const features& fs : *ae) { ae->num_features += fs.size(); }
 
   // Set the interactions for this example to the global set.
-  ae->interactions = &all.interactions;
-  ae->extent_interactions = &all.extent_interactions;
+  ae->interactions = &all.fc.interactions;
+  ae->extent_interactions = &all.fc.extent_interactions;
 }
 
 VW::example* VW::new_unused_example(VW::workspace& all)

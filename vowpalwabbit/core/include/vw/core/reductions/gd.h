@@ -114,11 +114,11 @@ inline void foreach_feature(VW::workspace& all, VW::example& ec, DataT& dat)
 {
   return all.weights.sparse
       ? foreach_feature<DataT, WeightOrIndexT, FuncT, VW::sparse_parameters>(all.weights.sparse_weights,
-            all.ignore_some_linear, all.ignore_linear, *ec.interactions, *ec.extent_interactions, all.permutations, ec,
-            dat, all.generate_interactions_object_cache_state)
+            all.fc.ignore_some_linear, all.fc.ignore_linear, *ec.interactions, *ec.extent_interactions,
+            all.fc.permutations, ec, dat, all.generate_interactions_object_cache_state)
       : foreach_feature<DataT, WeightOrIndexT, FuncT, VW::dense_parameters>(all.weights.dense_weights,
-            all.ignore_some_linear, all.ignore_linear, *ec.interactions, *ec.extent_interactions, all.permutations, ec,
-            dat, all.generate_interactions_object_cache_state);
+            all.fc.ignore_some_linear, all.fc.ignore_linear, *ec.interactions, *ec.extent_interactions,
+            all.fc.permutations, ec, dat, all.generate_interactions_object_cache_state);
 }
 
 // iterate through one namespace (or its part), callback function FuncT(some_data_R, feature_value_x, feature_weight)
@@ -127,11 +127,11 @@ inline void foreach_feature(VW::workspace& all, VW::example& ec, DataT& dat, siz
 {
   return all.weights.sparse
       ? foreach_feature<DataT, WeightOrIndexT, FuncT, VW::sparse_parameters>(all.weights.sparse_weights,
-            all.ignore_some_linear, all.ignore_linear, *ec.interactions, *ec.extent_interactions, all.permutations, ec,
-            dat, num_interacted_features, all.generate_interactions_object_cache_state)
+            all.fc.ignore_some_linear, all.fc.ignore_linear, *ec.interactions, *ec.extent_interactions,
+            all.fc.permutations, ec, dat, num_interacted_features, all.generate_interactions_object_cache_state)
       : foreach_feature<DataT, WeightOrIndexT, FuncT, VW::dense_parameters>(all.weights.dense_weights,
-            all.ignore_some_linear, all.ignore_linear, *ec.interactions, *ec.extent_interactions, all.permutations, ec,
-            dat, num_interacted_features, all.generate_interactions_object_cache_state);
+            all.fc.ignore_some_linear, all.fc.ignore_linear, *ec.interactions, *ec.extent_interactions,
+            all.fc.permutations, ec, dat, num_interacted_features, all.generate_interactions_object_cache_state);
 }
 
 // iterate through all namespaces and quadratic&cubic features, callback function T(some_data_R, feature_value_x,
@@ -163,23 +163,24 @@ inline void foreach_feature(VW::workspace& all, VW::example& ec, DataT& dat, siz
 inline float inline_predict(VW::workspace& all, VW::example& ec)
 {
   const auto& simple_red_features = ec.ex_reduction_features.template get<VW::simple_label_reduction_features>();
-  return all.weights.sparse ? inline_predict<VW::sparse_parameters>(all.weights.sparse_weights, all.ignore_some_linear,
-                                  all.ignore_linear, *ec.interactions, *ec.extent_interactions, all.permutations, ec,
-                                  all.generate_interactions_object_cache_state, simple_red_features.initial)
-                            : inline_predict<VW::dense_parameters>(all.weights.dense_weights, all.ignore_some_linear,
-                                  all.ignore_linear, *ec.interactions, *ec.extent_interactions, all.permutations, ec,
-                                  all.generate_interactions_object_cache_state, simple_red_features.initial);
+  return all.weights.sparse
+      ? inline_predict<VW::sparse_parameters>(all.weights.sparse_weights, all.fc.ignore_some_linear,
+            all.fc.ignore_linear, *ec.interactions, *ec.extent_interactions, all.fc.permutations, ec,
+            all.generate_interactions_object_cache_state, simple_red_features.initial)
+      : inline_predict<VW::dense_parameters>(all.weights.dense_weights, all.fc.ignore_some_linear, all.fc.ignore_linear,
+            *ec.interactions, *ec.extent_interactions, all.fc.permutations, ec,
+            all.generate_interactions_object_cache_state, simple_red_features.initial);
 }
 
 inline float inline_predict(VW::workspace& all, VW::example& ec, size_t& num_generated_features)
 {
   const auto& simple_red_features = ec.ex_reduction_features.template get<VW::simple_label_reduction_features>();
   return all.weights.sparse
-      ? inline_predict<VW::sparse_parameters>(all.weights.sparse_weights, all.ignore_some_linear, all.ignore_linear,
-            *ec.interactions, *ec.extent_interactions, all.permutations, ec, num_generated_features,
-            all.generate_interactions_object_cache_state, simple_red_features.initial)
-      : inline_predict<VW::dense_parameters>(all.weights.dense_weights, all.ignore_some_linear, all.ignore_linear,
-            *ec.interactions, *ec.extent_interactions, all.permutations, ec, num_generated_features,
+      ? inline_predict<VW::sparse_parameters>(all.weights.sparse_weights, all.fc.ignore_some_linear,
+            all.fc.ignore_linear, *ec.interactions, *ec.extent_interactions, all.fc.permutations, ec,
+            num_generated_features, all.generate_interactions_object_cache_state, simple_red_features.initial)
+      : inline_predict<VW::dense_parameters>(all.weights.dense_weights, all.fc.ignore_some_linear, all.fc.ignore_linear,
+            *ec.interactions, *ec.extent_interactions, all.fc.permutations, ec, num_generated_features,
             all.generate_interactions_object_cache_state, simple_red_features.initial);
 }
 
@@ -198,13 +199,13 @@ inline void generate_interactions(VW::workspace& all, VW::example_predict& ec, R
   if (all.weights.sparse)
   {
     generate_interactions<R, S, T, audit, audit_func, VW::sparse_parameters>(*ec.interactions, *ec.extent_interactions,
-        all.permutations, ec, dat, all.weights.sparse_weights, num_interacted_features,
+        all.fc.permutations, ec, dat, all.weights.sparse_weights, num_interacted_features,
         all.generate_interactions_object_cache_state);
   }
   else
   {
     generate_interactions<R, S, T, audit, audit_func, VW::dense_parameters>(*ec.interactions, *ec.extent_interactions,
-        all.permutations, ec, dat, all.weights.dense_weights, num_interacted_features,
+        all.fc.permutations, ec, dat, all.weights.dense_weights, num_interacted_features,
         all.generate_interactions_object_cache_state);
   }
 }
@@ -215,13 +216,15 @@ inline void generate_interactions(VW::workspace& all, VW::example_predict& ec, R
 {
   if (all.weights.sparse)
   {
-    generate_interactions<R, S, T, VW::sparse_parameters>(all.interactions, all.extent_interactions, all.permutations,
-        ec, dat, all.weights.sparse_weights, num_interacted_features, all.generate_interactions_object_cache_state);
+    generate_interactions<R, S, T, VW::sparse_parameters>(all.fc.interactions, all.fc.extent_interactions,
+        all.fc.permutations, ec, dat, all.weights.sparse_weights, num_interacted_features,
+        all.generate_interactions_object_cache_state);
   }
   else
   {
-    generate_interactions<R, S, T, VW::dense_parameters>(all.interactions, all.extent_interactions, all.permutations,
-        ec, dat, all.weights.dense_weights, num_interacted_features, all.generate_interactions_object_cache_state);
+    generate_interactions<R, S, T, VW::dense_parameters>(all.fc.interactions, all.fc.extent_interactions,
+        all.fc.permutations, ec, dat, all.weights.dense_weights, num_interacted_features,
+        all.generate_interactions_object_cache_state);
   }
 }
 

@@ -73,22 +73,22 @@ bool _test_only_generate_A(VW::workspace* _all, const multi_ex& examples, std::v
     {
       A_triplet_constructor w(_all->weights.sparse_weights.mask(), row_index, _triplets, max_non_zero_col);
       VW::foreach_feature<A_triplet_constructor, uint64_t, triplet_construction, sparse_parameters>(
-          _all->weights.sparse_weights, _all->ignore_some_linear, _all->ignore_linear,
+          _all->weights.sparse_weights, _all->fc.ignore_some_linear, _all->fc.ignore_linear,
           (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
           (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
                                                       : *ex->extent_interactions),
-          _all->permutations, *ex, w, _all->generate_interactions_object_cache_state);
+          _all->fc.permutations, *ex, w, _all->generate_interactions_object_cache_state);
     }
     else
     {
       A_triplet_constructor w(_all->weights.dense_weights.mask(), row_index, _triplets, max_non_zero_col);
 
       VW::foreach_feature<A_triplet_constructor, uint64_t, triplet_construction, dense_parameters>(
-          _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear,
+          _all->weights.dense_weights, _all->fc.ignore_some_linear, _all->fc.ignore_linear,
           (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
           (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
                                                       : *ex->extent_interactions),
-          _all->permutations, *ex, w, _all->generate_interactions_object_cache_state);
+          _all->fc.permutations, *ex, w, _all->generate_interactions_object_cache_state);
     }
 
     if (shared_example != nullptr) { VW::details::append_example_namespaces_from_example(*ex, *shared_example); }

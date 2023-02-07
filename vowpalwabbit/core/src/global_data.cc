@@ -259,23 +259,24 @@ std::string workspace::dump_weights_to_json_experimental()
     THROW("dump_weights_to_json is currently only supported for KSVM base learner. The current base learner is "
         << current->get_name());
   }
-  if (dump_json_weights_include_feature_names && !hash_inv)
+  if (om.dump_json_weights_include_feature_names && !hash_inv)
   {
     THROW("hash_inv == true is required to dump weights to json including feature names");
   }
-  if (dump_json_weights_include_extra_online_state && !save_resume)
+  if (om.dump_json_weights_include_extra_online_state && !om.save_resume)
   {
     THROW("save_resume == true is required to dump weights to json including feature names");
   }
-  if (dump_json_weights_include_extra_online_state && current->get_name() != "gd")
+  if (om.dump_json_weights_include_extra_online_state && current->get_name() != "gd")
   {
     THROW("including extra online state is only allowed with GD as base learner");
   }
 
-  return weights.sparse ? dump_weights_to_json_weight_typed(weights.sparse_weights, index_name_map, weights,
-                              dump_json_weights_include_feature_names, dump_json_weights_include_extra_online_state)
-                        : dump_weights_to_json_weight_typed(weights.dense_weights, index_name_map, weights,
-                              dump_json_weights_include_feature_names, dump_json_weights_include_extra_online_state);
+  return weights.sparse
+      ? dump_weights_to_json_weight_typed(weights.sparse_weights, index_name_map, weights,
+            om.dump_json_weights_include_feature_names, om.dump_json_weights_include_extra_online_state)
+      : dump_weights_to_json_weight_typed(weights.dense_weights, index_name_map, weights,
+            om.dump_json_weights_include_feature_names, om.dump_json_weights_include_extra_online_state);
 }
 }  // namespace VW
 
@@ -324,8 +325,8 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   num_bits = 18;
   default_bits = true;
   daemon = false;
-  save_resume = true;
-  preserve_performance_counters = false;
+  om.save_resume = true;
+  om.preserve_performance_counters = false;
 
   random_positive_weights = false;
 
@@ -350,8 +351,8 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   normal_weights = false;
   tnormal_weights = false;
   per_feature_regularizer_input = "";
-  per_feature_regularizer_output = "";
-  per_feature_regularizer_text = "";
+  om.per_feature_regularizer_output = "";
+  om.per_feature_regularizer_text = "";
 
   stdout_adapter = VW::io::open_stdout();
 
@@ -363,26 +364,27 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
 
   eta_decay_rate = 1.0;
   initial_weight = 0.0;
-  initial_constant = 0.0;
+  fc.initial_constant = 0.0;
 
   for (size_t i = 0; i < NUM_NAMESPACES; i++)
   {
-    limit[i] = INT_MAX;
-    affix_features[i] = 0;
-    spelling_features[i] = 0;
+    fc.limit[i] = INT_MAX;
+    fc.affix_features[i] = 0;
+    fc.spelling_features[i] = 0;
   }
+
+  fc.add_constant = true;
 
   invariant_updates = true;
   normalized_idx = 2;
 
-  add_constant = true;
   audit = false;
   audit_writer = VW::io::open_stdout();
 
   pass_length = std::numeric_limits<size_t>::max();
   passes_complete = 0;
 
-  save_per_pass = false;
+  om.save_per_pass = false;
 
   do_reset_source = false;
   holdout_set_off = true;
@@ -406,11 +408,11 @@ void workspace::finish()
     sd->print_summary(*trace_message, *sd, *loss, current_pass, holdout_set_off);
   }
 
-  details::finalize_regressor(*this, final_regressor_name);
+  details::finalize_regressor(*this, om.final_regressor_name);
   if (options->was_supplied("dump_json_weights_experimental"))
   {
     auto content = dump_weights_to_json_experimental();
-    auto writer = VW::io::open_file_writer(json_weights_file_name);
+    auto writer = VW::io::open_file_writer(om.json_weights_file_name);
     writer->write(content.c_str(), content.length());
   }
   global_metrics.register_metrics_callback(

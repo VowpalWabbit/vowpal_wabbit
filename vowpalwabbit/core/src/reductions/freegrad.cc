@@ -290,7 +290,7 @@ void save_load(freegrad& fg, VW::io_buf& model_file, bool read, bool text)
 
   if (model_file.num_files() != 0)
   {
-    bool resume = all->save_resume;
+    bool resume = all->om.save_resume;
     std::stringstream msg;
     msg << ":" << resume << "\n";
     VW::details::bin_text_read_write_fixed(
@@ -312,9 +312,7 @@ void end_pass(freegrad& fg)
   if (!all.holdout_set_off)
   {
     if (VW::details::summarize_holdout_set(all, fg.no_win_counter))
-    {
-      VW::details::finalize_regressor(all, all.final_regressor_name);
-    }
+    { VW::details::finalize_regressor(all, all.om.final_regressor_name); }
     if ((fg.early_stop_thres == fg.no_win_counter) &&
         ((all.check_holdout_every_n_passes <= 1) || ((all.current_pass % all.check_holdout_every_n_passes) == 0)))
     {

@@ -59,13 +59,13 @@ void eval_count_of_generated_ft_naive(
     VW::workspace& all, VW::example_predict& ec, size_t& new_features_cnt, float& new_features_value)
 {
   // Only makes sense to do this when not in permutations mode.
-  assert(!all.permutations);
+  assert(!all.fc.permutations);
 
   new_features_cnt = 0;
   new_features_value = 0.;
 
   auto interactions = VW::details::compile_interactions<generate_func, leave_duplicate_interactions>(
-      all.interactions, std::set<VW::namespace_index>(ec.indices.begin(), ec.indices.end()));
+      all.fc.interactions, std::set<VW::namespace_index>(ec.indices.begin(), ec.indices.end()));
 
   VW::v_array<float> results;
 
@@ -73,7 +73,7 @@ void eval_count_of_generated_ft_naive(
   size_t ignored = 0;
   ec.interactions = &interactions;
   VW::generate_interactions<eval_gen_data, uint64_t, ft_cnt, false, nullptr>(all, ec, dat, ignored);
-  ec.interactions = &all.interactions;
+  ec.interactions = &all.fc.interactions;
 }
 
 template <VW::generate_func_t<VW::extent_term> generate_func, bool leave_duplicate_interactions>
@@ -81,7 +81,7 @@ void eval_count_of_generated_ft_naive(
     VW::workspace& all, VW::example_predict& ec, size_t& new_features_cnt, float& new_features_value)
 {
   // Only makes sense to do this when not in permutations mode.
-  assert(!all.permutations);
+  assert(!all.fc.permutations);
 
   new_features_cnt = 0;
   new_features_value = 0.;
@@ -95,7 +95,7 @@ void eval_count_of_generated_ft_naive(
   }
 
   auto interactions = VW::details::compile_extent_interactions<generate_func, leave_duplicate_interactions>(
-      all.extent_interactions, seen_extents);
+      all.fc.extent_interactions, seen_extents);
 
   VW::v_array<float> results;
 
@@ -103,7 +103,7 @@ void eval_count_of_generated_ft_naive(
   size_t ignored = 0;
   ec.extent_interactions = &interactions;
   VW::generate_interactions<eval_gen_data, uint64_t, ft_cnt, false, nullptr>(all, ec, dat, ignored);
-  ec.extent_interactions = &all.extent_interactions;
+  ec.extent_interactions = &all.fc.extent_interactions;
 }
 
 inline void noop_func(float& /* unused_dat */, const float /* ft_weight */, const uint64_t /* ft_idx */) {}

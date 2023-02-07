@@ -377,8 +377,8 @@ void synthetic_reset(stagewise_poly& poly, VW::example& ec)
   poly.synth_ec.weight = ec.weight;
   poly.synth_ec.tag = ec.tag;
   poly.synth_ec.example_counter = ec.example_counter;
-  poly.synth_ec.interactions = &poly.all->interactions;
-  poly.synth_ec.extent_interactions = &poly.all->extent_interactions;
+  poly.synth_ec.interactions = &poly.all->fc.interactions;
+  poly.synth_ec.extent_interactions = &poly.all->fc.extent_interactions;
 
   /**
    * Some comments on ft_offset.

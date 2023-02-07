@@ -217,7 +217,7 @@ void end_pass(VW::reductions::gd& g)
 {
   VW::workspace& all = *g.all;
 
-  if (!all.save_resume) { sync_weights(all); }
+  if (!all.om.save_resume) { sync_weights(all); }
 
   if (all.all_reduce != nullptr)
   {
@@ -225,14 +225,12 @@ void end_pass(VW::reductions::gd& g)
     else { VW::details::accumulate_avg(all, all.weights, 0); }
   }
   all.eta *= all.eta_decay_rate;
-  if (all.save_per_pass) { VW::details::save_predictor(all, all.final_regressor_name, all.current_pass); }
+  if (all.om.save_per_pass) { VW::details::save_predictor(all, all.om.final_regressor_name, all.current_pass); }
 
   if (!all.holdout_set_off)
   {
     if (VW::details::summarize_holdout_set(all, g.no_win_counter))
-    {
-      VW::details::finalize_regressor(all, all.final_regressor_name);
-    }
+    { VW::details::finalize_regressor(all, all.om.final_regressor_name); }
     if ((g.early_stop_thres == g.no_win_counter) &&
         ((all.check_holdout_every_n_passes <= 1) || ((all.current_pass % all.check_holdout_every_n_passes) == 0)))
     {
@@ -1101,7 +1099,7 @@ void VW::details::save_load_online_state_gd(VW::workspace& all, VW::io_buf& mode
   msg << "dump_interval " << dump_interval << "\n";
   VW::details::bin_text_read_write_fixed(
       model_file, reinterpret_cast<char*>(&dump_interval), sizeof(dump_interval), read, msg, text);
-  if (!read || (all.training && all.preserve_performance_counters))
+  if (!read || (all.training && all.om.preserve_performance_counters))
   {  // update dump_interval from input model
     all.sd->dump_interval = dump_interval;
   }
@@ -1197,9 +1195,8 @@ void VW::details::save_load_online_state_gd(VW::workspace& all, VW::io_buf& mode
     }
   }
 
-  if (read &&
-      (!all.training ||
-          !all.preserve_performance_counters))  // reset various things so that we report test set performance properly
+  if (read && (!all.training || !all.om.preserve_performance_counters))  // reset various things so that we report test
+                                                                         // set performance properly
   {
     all.sd->sum_loss = 0;
     all.sd->sum_loss_since_last_dump = 0;
@@ -1251,7 +1248,7 @@ void save_load(VW::reductions::gd& g, VW::io_buf& model_file, bool read, bool te
 
   if (model_file.num_files() > 0)
   {
-    bool resume = all.save_resume;
+    bool resume = all.om.save_resume;
     std::stringstream msg;
     msg << ":" << resume << "\n";
     VW::details::bin_text_read_write_fixed(
@@ -1378,11 +1375,12 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i&
   float local_contraction = 0;
 
   option_group_definition new_options("[Reduction] Gradient Descent");
-  new_options.add(make_option("sgd", sgd).help("Use regular stochastic gradient descent update").keep(all.save_resume))
-      .add(make_option("adaptive", adaptive).help("Use adaptive, individual learning rates").keep(all.save_resume))
+  new_options
+      .add(make_option("sgd", sgd).help("Use regular stochastic gradient descent update").keep(all.om.save_resume))
+      .add(make_option("adaptive", adaptive).help("Use adaptive, individual learning rates").keep(all.om.save_resume))
       .add(make_option("adax", adax).help("Use adaptive learning rates with x^2 instead of g^2x^2"))
-      .add(make_option("invariant", invariant).help("Use safe/importance aware updates").keep(all.save_resume))
-      .add(make_option("normalized", normalized).help("Use per feature normalized updates").keep(all.save_resume))
+      .add(make_option("invariant", invariant).help("Use safe/importance aware updates").keep(all.om.save_resume))
+      .add(make_option("normalized", normalized).help("Use per feature normalized updates").keep(all.om.save_resume))
       .add(make_option("sparse_l2", g->sparse_l2)
                .default_value(0.f)
                .help("Degree of l2 regularization applied to activated sparse parameters"))
@@ -1426,7 +1424,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i&
     g->early_stop_thres = options.get_typed_option<uint64_t>("early_terminate").value();
   }
 
-  g->initial_constant = all.initial_constant;
+  g->initial_constant = all.fc.initial_constant;
 
   if (sgd || adaptive || invariant || normalized)
   {

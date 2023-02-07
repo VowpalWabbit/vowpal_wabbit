@@ -90,8 +90,8 @@ void finish_setup(nn& n, VW::workspace& all)
 {
   // TODO: output_layer audit
 
-  n.output_layer.interactions = &all.interactions;
-  n.output_layer.extent_interactions = &all.extent_interactions;
+  n.output_layer.interactions = &all.fc.interactions;
+  n.output_layer.extent_interactions = &all.fc.extent_interactions;
   n.output_layer.indices.push_back(VW::details::NN_OUTPUT_NAMESPACE);
   uint64_t nn_index = NN_CONSTANT << all.weights.stride_shift();
 
@@ -117,8 +117,8 @@ void finish_setup(nn& n, VW::workspace& all)
   }
 
   // TODO: not correct if --noconstant
-  n.hiddenbias.interactions = &all.interactions;
-  n.hiddenbias.extent_interactions = &all.extent_interactions;
+  n.hiddenbias.interactions = &all.fc.interactions;
+  n.hiddenbias.extent_interactions = &all.fc.extent_interactions;
   n.hiddenbias.indices.push_back(VW::details::CONSTANT_NAMESPACE);
   n.hiddenbias.feature_space[VW::details::CONSTANT_NAMESPACE].push_back(1, VW::details::CONSTANT);
   if (all.audit || all.hash_inv)
@@ -128,8 +128,8 @@ void finish_setup(nn& n, VW::workspace& all)
   n.hiddenbias.l.simple.label = FLT_MAX;
   n.hiddenbias.weight = 1;
 
-  n.outputweight.interactions = &all.interactions;
-  n.outputweight.extent_interactions = &all.extent_interactions;
+  n.outputweight.interactions = &all.fc.interactions;
+  n.outputweight.extent_interactions = &all.fc.extent_interactions;
   n.outputweight.indices.push_back(VW::details::NN_OUTPUT_NAMESPACE);
   VW::features& outfs = n.output_layer.feature_space[VW::details::NN_OUTPUT_NAMESPACE];
   n.outputweight.feature_space[VW::details::NN_OUTPUT_NAMESPACE].push_back(outfs.values[0], outfs.indices[0]);

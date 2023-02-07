@@ -187,7 +187,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::generate_interactions_setu
   options.add_and_parse(new_options);
 
   auto interactions_spec_contains_wildcards = false;
-  for (const auto& inter : all.interactions)
+  for (const auto& inter : all.fc.interactions)
   {
     if (VW::contains_wildcard(inter))
     {
@@ -197,7 +197,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::generate_interactions_setu
   }
 
   auto interactions_spec_contains_extent_wildcards = false;
-  for (const auto& inter : all.extent_interactions)
+  for (const auto& inter : all.fc.extent_interactions)
   {
     if (VW::contains_wildcard(inter))
     {

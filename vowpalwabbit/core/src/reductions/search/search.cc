@@ -2343,7 +2343,7 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, VW::
   {
     size_t prev_num = priv.num_calls_to_run_previous / priv.save_every_k_runs;
     size_t this_num = priv.num_calls_to_run / priv.save_every_k_runs;
-    if (this_num > prev_num) { VW::details::save_predictor(all, all.final_regressor_name, this_num); }
+    if (this_num > prev_num) { VW::details::save_predictor(all, all.om.final_regressor_name, this_num); }
     priv.num_calls_to_run_previous = priv.num_calls_to_run;
   }
 }

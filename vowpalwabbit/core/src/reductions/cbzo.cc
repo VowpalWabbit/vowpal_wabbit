@@ -236,7 +236,8 @@ void save_load(cbzo& data, VW::io_buf& model_file, bool read, bool text)
   if (read)
   {
     VW::details::initialize_regressor(all);
-    if (data.all->initial_constant != 0.0f) { set_weight(all, VW::details::CONSTANT, 0, data.all->initial_constant); }
+    if (data.all->fc.initial_constant != 0.0f)
+    { set_weight(all, VW::details::CONSTANT, 0, data.all->fc.initial_constant); }
   }
   if (model_file.num_files() > 0) { save_load_regressor(all, model_file, read, text); }
 }
@@ -339,7 +340,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cbzo_setup(VW::setup_base_
                .one_of({"linear", "constant"})
                .keep()
                .help("Policy/Model to Learn"))
-      .add(make_option("radius", data->radius).default_value(0.1f).keep(all.save_resume).help("Exploration Radius"));
+      .add(make_option("radius", data->radius).default_value(0.1f).keep(all.om.save_resume).help("Exploration Radius"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 

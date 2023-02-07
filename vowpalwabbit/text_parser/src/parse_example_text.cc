@@ -438,12 +438,12 @@ public:
     {
       this->_read_idx = 0;
       this->_p = all.example_parser.get();
-      this->_redefine_some = all.redefine_some;
-      this->_redefine = &all.redefine;
+      this->_redefine_some = all.fc.redefine_some;
+      this->_redefine = &all.fc.redefine;
       this->_ae = ae;
-      this->_affix_features = &all.affix_features;
-      this->_spelling_features = &all.spelling_features;
-      this->_namespace_dictionaries = &all.namespace_dictionaries;
+      this->_affix_features = &all.fc.affix_features;
+      this->_spelling_features = &all.fc.spelling_features;
+      this->_namespace_dictionaries = &all.fc.namespace_dictionaries;
       this->_hash_seed = all.hash_seed;
       this->_parse_mask = all.parse_mask;
       this->_logger = &all.logger;

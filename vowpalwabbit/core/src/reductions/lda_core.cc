@@ -1334,7 +1334,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::lda_setup(VW::setup_base_i
 
   all.weights.stride_shift(static_cast<size_t>(temp));
   all.random_weights = true;
-  all.add_constant = false;
+  all.fc.add_constant = false;
 
   if (all.eta > 1.)
   {

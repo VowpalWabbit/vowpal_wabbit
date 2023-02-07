@@ -102,11 +102,65 @@ public:
   uint64_t offset;
   uint64_t stride_shift;
 };
+
+class feature_tweaks_config
+{
+public:
+  bool add_constant;
+  float initial_constant;
+  bool permutations;  // if true - permutations of features generated instead of simple combinations. false by default
+  // Referenced by examples as their set of interactions. Can be overriden by learners.
+  std::vector<std::vector<namespace_index>> interactions;
+  std::vector<std::vector<extent_term>> extent_interactions;
+  bool ignore_some;
+  std::array<bool, NUM_NAMESPACES> ignore;  // a set of namespaces to ignore
+  bool ignore_some_linear;
+  std::array<bool, NUM_NAMESPACES> ignore_linear;  // a set of namespaces to ignore for linear
+  std::unordered_map<std::string, std::set<std::string>>
+      ignore_features_dsjson;  // a map from hash(namespace) to a vector of hash(feature). This flag is only available
+                               // for dsjson.
+
+  bool redefine_some;                                  // --redefine param was used
+  std::array<unsigned char, NUM_NAMESPACES> redefine;  // keeps new chars for namespaces
+  std::unique_ptr<VW::kskip_ngram_transformer> skip_gram_transformer;
+  std::vector<std::string> limit_strings;      // descriptor of feature limits
+  std::array<uint32_t, NUM_NAMESPACES> limit;  // count to limit features by
+  std::array<uint64_t, NUM_NAMESPACES>
+      affix_features;  // affixes to generate (up to 16 per namespace - 4 bits per affix)
+  std::array<bool, NUM_NAMESPACES> spelling_features;  // generate spelling features for which namespace
+  std::vector<std::string> dictionary_path;            // where to look for dictionaries
+
+  // feature_dict can be created in either loaded_dictionaries or namespace_dictionaries.
+  // use shared pointers to avoid the question of ownership
+  std::vector<details::dictionary_info>
+      loaded_dictionaries;  // which dictionaries have we loaded from a file to memory?
+  // This array is required to be value initialized so that the std::vectors are constructed.
+  std::array<std::vector<std::shared_ptr<details::feature_dict>>, NUM_NAMESPACES>
+      namespace_dictionaries{};  // each namespace has a list of dictionaries attached to it
+};
+
+class output_model_config
+{
+public:
+  std::string final_regressor_name;
+  std::string text_regressor_name;
+  std::string inv_hash_regressor_name;
+  std::string json_weights_file_name;
+  bool dump_json_weights_include_feature_names = false;
+  bool dump_json_weights_include_extra_online_state = false;
+  bool save_resume;
+  bool preserve_performance_counters;
+  bool save_per_pass;
+  std::string per_feature_regularizer_output;
+  std::string per_feature_regularizer_text;
+};
 }  // namespace details
 
 class workspace
 {
 public:
+  VW::version_struct model_file_ver;
+
   std::shared_ptr<VW::shared_data> sd;
 
   std::unique_ptr<parser> example_parser;
@@ -166,17 +220,12 @@ public:
 
   bool daemon;
 
-  bool save_per_pass;
   float initial_weight;
-  float initial_constant;
 
   bool bfgs;
 
-  bool save_resume;
-  bool preserve_performance_counters;
   std::string id;
 
-  VW::version_struct model_file_ver;
   bool vw_is_main = false;  // true if vw is executable; false in library mode
 
   // error reporting
@@ -196,8 +245,6 @@ public:
   std::string feature_mask;
 
   std::string per_feature_regularizer_input;
-  std::string per_feature_regularizer_output;
-  std::string per_feature_regularizer_text;
 
   float l1_lambda;  // the level of l_1 regularization to impose.
   float l2_lambda;  // the level of l_2 regularization to impose.
@@ -209,36 +256,8 @@ public:
   size_t numpasses;
   size_t passes_complete;
   uint64_t parse_mask;  // 1 << num_bits -1
-  bool permutations;    // if true - permutations of features generated instead of simple combinations. false by default
 
-  // Referenced by examples as their set of interactions. Can be overriden by learners.
-  std::vector<std::vector<namespace_index>> interactions;
-  std::vector<std::vector<extent_term>> extent_interactions;
-  bool ignore_some;
-  std::array<bool, NUM_NAMESPACES> ignore;  // a set of namespaces to ignore
-  bool ignore_some_linear;
-  std::array<bool, NUM_NAMESPACES> ignore_linear;  // a set of namespaces to ignore for linear
-  std::unordered_map<std::string, std::set<std::string>>
-      ignore_features_dsjson;  // a map from hash(namespace) to a vector of hash(feature). This flag is only available
-                               // for dsjson.
-
-  bool redefine_some;                                  // --redefine param was used
-  std::array<unsigned char, NUM_NAMESPACES> redefine;  // keeps new chars for namespaces
-  std::unique_ptr<VW::kskip_ngram_transformer> skip_gram_transformer;
-  std::vector<std::string> limit_strings;      // descriptor of feature limits
-  std::array<uint32_t, NUM_NAMESPACES> limit;  // count to limit features by
-  std::array<uint64_t, NUM_NAMESPACES>
-      affix_features;  // affixes to generate (up to 16 per namespace - 4 bits per affix)
-  std::array<bool, NUM_NAMESPACES> spelling_features;  // generate spelling features for which namespace
-  std::vector<std::string> dictionary_path;            // where to look for dictionaries
-
-  // feature_dict can be created in either loaded_dictionaries or namespace_dictionaries.
-  // use shared pointers to avoid the question of ownership
-  std::vector<details::dictionary_info>
-      loaded_dictionaries;  // which dictionaries have we loaded from a file to memory?
-  // This array is required to be value initialized so that the std::vectors are constructed.
-  std::array<std::vector<std::shared_ptr<details::feature_dict>>, NUM_NAMESPACES>
-      namespace_dictionaries{};  // each namespace has a list of dictionaries attached to it
+  details::feature_tweaks fc;  // feature related configs
 
   VW::io::logger logger;
   bool quiet;
@@ -252,7 +271,6 @@ public:
   bool random_positive_weights;  // for initialize_regressor w/ new_mf
   bool normal_weights;
   bool tnormal_weights;
-  bool add_constant;
   bool nonormalize;
   bool do_reset_source;
   bool holdout_set_off;
@@ -267,12 +285,6 @@ public:
   size_t normalized_idx;  // offset idx where the norm is stored (1 or 2 depending on whether adaptive is true)
 
   uint32_t lda;
-
-  std::string text_regressor_name;
-  std::string inv_hash_regressor_name;
-  std::string json_weights_file_name;
-  bool dump_json_weights_include_feature_names = false;
-  bool dump_json_weights_include_extra_online_state = false;
 
   size_t length() { return (static_cast<size_t>(1)) << num_bits; };
 
@@ -289,7 +301,7 @@ public:
   float eta;  // learning rate control.
   float eta_decay_rate;
 
-  std::string final_regressor_name;
+  details::output_model om;
 
   parameters weights;
 

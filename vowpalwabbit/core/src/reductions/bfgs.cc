@@ -873,7 +873,7 @@ int process_pass(VW::workspace& all, bfgs& b)
   b.net_time = static_cast<double>(
       std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
 
-  if (all.save_per_pass) { VW::details::save_predictor(all, all.final_regressor_name, b.current_pass); }
+  if (all.om.save_per_pass) { VW::details::save_predictor(all, all.om.final_regressor_name, b.current_pass); }
   return status;
 }
 
@@ -954,9 +954,7 @@ void end_pass(bfgs& b)
       if (!all->holdout_set_off)
       {
         if (VW::details::summarize_holdout_set(*all, b.no_win_counter))
-        {
-          VW::details::finalize_regressor(*all, all->final_regressor_name);
-        }
+        { VW::details::finalize_regressor(*all, all->om.final_regressor_name); }
         if (b.early_stop_thres == b.no_win_counter)
         {
           VW::details::set_done(*all);
@@ -965,7 +963,7 @@ void end_pass(bfgs& b)
       }
       if (b.final_pass == b.current_pass)
       {
-        VW::details::finalize_regressor(*all, all->final_regressor_name);
+        VW::details::finalize_regressor(*all, all->om.final_regressor_name);
         VW::details::set_done(*all);
       }
     }
@@ -1080,7 +1078,7 @@ void save_load(bfgs& b, VW::io_buf& model_file, bool read, bool text)
     {
       all->l2_lambda = 1;  // To make sure we are adding the regularization
     }
-    b.output_regularizer = (all->per_feature_regularizer_output != "" || all->per_feature_regularizer_text != "");
+    b.output_regularizer = (all->om.per_feature_regularizer_output != "" || all->om.per_feature_regularizer_text != "");
     reset_state(*all, b, false);
   }
 
@@ -1089,7 +1087,7 @@ void save_load(bfgs& b, VW::io_buf& model_file, bool read, bool text)
 
   if (model_file.num_files() > 0)
   {
-    if (all->save_resume)
+    if (all->om.save_resume)
     {
       const auto* const msg =
           "BFGS does not support models with save_resume data. Only models produced and consumed with "
