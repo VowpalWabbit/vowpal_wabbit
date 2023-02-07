@@ -21,13 +21,13 @@ namespace epsilon_decay_test
 epsilon_decay_data* get_epsilon_decay_data(VW::workspace& all)
 {
   std::vector<std::string> e_r;
-  all.l->get_enabled_reductions(e_r);
+  all.l->get_enabled_learners(e_r);
   if (std::find(e_r.begin(), e_r.end(), "epsilon_decay") == e_r.end())
   {
-    THROW("Epsilon decay not found in enabled reductions");
+    THROW("Epsilon decay not found in enabled learners");
   }
 
-  VW::LEARNER::multi_learner* epsilon_decay_learner = as_multiline(all.l->get_learner_by_name_prefix("epsilon_decay"));
+  VW::LEARNER::learner* epsilon_decay_learner = require_multiline(all.l->get_learner_by_name_prefix("epsilon_decay"));
 
   return (epsilon_decay_data*)epsilon_decay_learner->get_internal_type_erased_data_pointer_test_use_only();
 }
@@ -44,8 +44,8 @@ TEST(EpsilonDecay, ThrowIfNoExplore)
         catch (const VW::vw_exception& e)
         {
           EXPECT_STREQ(
-              "Input prediction type: prediction_type_t::ACTION_PROBS of reduction: epsilon_decay does not match "
-              "output prediction type: prediction_type_t::ACTION_SCORES of base reduction: cb_adf.",
+              "Input prediction type: prediction_type_t::ACTION_PROBS of learner: epsilon_decay does not match "
+              "output prediction type: prediction_type_t::ACTION_SCORES of base learner: cb_adf.",
               e.what());
           throw;
         }

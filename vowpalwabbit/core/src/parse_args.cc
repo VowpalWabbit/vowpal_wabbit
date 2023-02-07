@@ -1077,7 +1077,7 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
 
   if (options.was_supplied("min_prediction") || options.was_supplied("max_prediction") || test_only)
   {
-    all.set_minmax = VW::details::noop_mm;
+    all.set_minmax = nullptr;
   }
 
   if (options.was_supplied("named_labels"))
@@ -1498,9 +1498,9 @@ std::unique_ptr<VW::workspace> VW::details::parse_args(std::unique_ptr<options_i
   if (all->options->was_supplied("span_server"))
   {
     all->selected_all_reduce_type = VW::all_reduce_type::SOCKET;
-    all->all_reduce = new VW::all_reduce_sockets(span_server_arg, VW::cast_to_smaller_type<int>(span_server_port_arg),
-        VW::cast_to_smaller_type<size_t>(unique_id_arg), VW::cast_to_smaller_type<size_t>(total_arg),
-        VW::cast_to_smaller_type<size_t>(node_arg), all->quiet);
+    all->all_reduce.reset(new VW::all_reduce_sockets(span_server_arg,
+        VW::cast_to_smaller_type<int>(span_server_port_arg), VW::cast_to_smaller_type<size_t>(unique_id_arg),
+        VW::cast_to_smaller_type<size_t>(total_arg), VW::cast_to_smaller_type<size_t>(node_arg), all->quiet));
   }
 
   parse_diagnostics(*all->options, *all);
@@ -1627,7 +1627,9 @@ void VW::details::instantiate_learner(VW::workspace& all, std::unique_ptr<VW::se
   }
   else { learner_builder->delayed_state_attach(all, *all.options.get()); }
 
-  // kick-off reduction setup functions
+  // Workspace holds shared_ptr to learner at the top of the stack.
+  // setup_base_learner() will recurse down the stack and create all enabled
+  // learners starting from the bottom learner.
   all.l = learner_builder->setup_base_learner();
 
   // explicit destroy of learner_builder state
@@ -1651,17 +1653,17 @@ void VW::details::parse_sources(options_i& options, VW::workspace& all, VW::io_b
   all.wpp = (1 << i) >> all.weights.stride_shift();
 }
 
-void VW::details::print_enabled_reductions(VW::workspace& all, std::vector<std::string>& enabled_reductions)
+void VW::details::print_enabled_learners(VW::workspace& all, std::vector<std::string>& enabled_learners)
 {
-  // output list of enabled reductions
-  if (!all.quiet && !all.options->was_supplied("audit_regressor") && !enabled_reductions.empty())
+  // output list of enabled learners
+  if (!all.quiet && !all.options->was_supplied("audit_regressor") && !enabled_learners.empty())
   {
     const char* const delim = ", ";
     std::ostringstream imploded;
     std::copy(
-        enabled_reductions.begin(), enabled_reductions.end() - 1, std::ostream_iterator<std::string>(imploded, delim));
+        enabled_learners.begin(), enabled_learners.end() - 1, std::ostream_iterator<std::string>(imploded, delim));
 
-    *(all.trace_message) << "Enabled reductions: " << imploded.str() << enabled_reductions.back() << std::endl;
+    *(all.trace_message) << "Enabled learners: " << imploded.str() << enabled_learners.back() << std::endl;
   }
 }
 

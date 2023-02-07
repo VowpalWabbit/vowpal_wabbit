@@ -16,7 +16,7 @@ void metrics_collector::register_metrics_callback(const metrics_callback_fn& cal
   if (_are_metrics_enabled) { _metrics_callbacks.push_back(callback); }
 }
 
-metric_sink metrics_collector::collect_metrics(LEARNER::base_learner* l) const
+metric_sink metrics_collector::collect_metrics(LEARNER::learner* l) const
 {
   VW::metric_sink sink;
   if (!_are_metrics_enabled) { THROW("Metrics must be enabled to call collect_metrics"); }

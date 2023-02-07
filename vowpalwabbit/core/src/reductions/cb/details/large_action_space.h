@@ -160,8 +160,8 @@ public:
   ~cb_explore_adf_large_action_space() = default;
 
   void save_load(io_buf& io, bool read, bool text);
-  void predict(VW::LEARNER::multi_learner& base, multi_ex& examples);
-  void learn(VW::LEARNER::multi_learner& base, multi_ex& examples);
+  void predict(VW::LEARNER::learner& base, multi_ex& examples);
+  void learn(VW::LEARNER::learner& base, multi_ex& examples);
 
   void randomized_SVD(const multi_ex& examples);
 

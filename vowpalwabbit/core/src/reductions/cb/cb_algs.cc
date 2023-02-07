@@ -30,7 +30,7 @@ public:
 };
 
 template <bool is_learn>
-void predict_or_learn(cb& data, single_learner& base, VW::example& ec)
+void predict_or_learn(cb& data, learner& base, VW::example& ec)
 {
   VW::details::cb_to_cs& c = data.cbcs;
   auto optional_cost = get_observed_cost_cb(ec.l.cb);
@@ -59,9 +59,9 @@ void predict_or_learn(cb& data, single_learner& base, VW::example& ec)
   }
 }
 
-void predict_eval(cb&, single_learner&, VW::example&) { THROW("can not use a test label for evaluation"); }
+void predict_eval(cb&, learner&, VW::example&) { THROW("can not use a test label for evaluation"); }
 
-void learn_eval(cb& data, single_learner&, VW::example& ec)
+void learn_eval(cb& data, learner&, VW::example& ec)
 {
   VW::details::cb_to_cs& c = data.cbcs;
   auto optional_cost = get_observed_cost_cb(ec.l.cb_eval.event);
@@ -128,7 +128,7 @@ void print_update_cb_algs(
 }
 }  // namespace
 
-base_learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -194,10 +194,10 @@ base_learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
     options.insert("csoaa", ss.str());
   }
 
-  auto* base = as_singleline(stack_builder.setup_base_learner());
+  auto base = require_singleline(stack_builder.setup_base_learner());
   if (eval) { all.example_parser->lbl_parser = VW::cb_eval_label_parser_global; }
   else { all.example_parser->lbl_parser = VW::cb_label_parser_global; }
-  c.scorer = VW::LEARNER::as_singleline(base->get_learner_by_name_prefix("scorer"));
+  c.scorer = VW::LEARNER::require_singleline(base->get_learner_by_name_prefix("scorer"));
 
   std::string name_addition = eval ? "-eval" : "";
   auto learn_ptr = eval ? learn_eval : predict_or_learn<true>;
@@ -210,18 +210,18 @@ base_learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
   VW::learner_print_update_func<cb, VW::example>* print_update_func =
       eval ? print_update_cb_algs<true> : print_update_cb_algs<false>;
 
-  auto* l = make_reduction_learner(
+  auto l = make_reduction_learner(
       std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cb_algs_setup) + name_addition)
-                .set_input_label_type(label_type)
-                .set_output_label_type(VW::label_type_t::CS)
-                .set_input_prediction_type(VW::prediction_type_t::MULTICLASS)
-                .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
-                .set_params_per_weight(problem_multiplier)
-                .set_learn_returns_prediction(eval)
-                .set_update_stats(update_stats_func)
-                .set_output_example_prediction(output_example_prediction_func)
-                .set_print_update(print_update_func)
-                .build();
+               .set_input_label_type(label_type)
+               .set_output_label_type(VW::label_type_t::CS)
+               .set_input_prediction_type(VW::prediction_type_t::MULTICLASS)
+               .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
+               .set_params_per_weight(problem_multiplier)
+               .set_learn_returns_prediction(eval)
+               .set_update_stats(update_stats_func)
+               .set_output_example_prediction(output_example_prediction_func)
+               .set_print_update(print_update_func)
+               .build();
 
-  return make_base(*l);
+  return l;
 }

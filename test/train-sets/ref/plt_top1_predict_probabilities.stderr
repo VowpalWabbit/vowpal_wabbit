@@ -10,7 +10,7 @@ Num weight bits = 18
 learning rate = 10
 initial_t = 10
 power_t = 0.5
-Enabled reductions: gd, scorer-identity, plt -top_k -prob
+Enabled learners: gd, scorer-identity, plt -top_k -prob
 Input label = MULTILABEL
 Output pred = ACTION_PROBS
 average  since         example        example        current        current  current

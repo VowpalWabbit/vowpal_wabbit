@@ -94,7 +94,7 @@ inline void audit_regressor_feature(audit_regressor_data& dat, const float, cons
   weights[ft_idx] = 0.;  // mark value audited
 }
 
-void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::single_learner& /* base */, VW::example& ec)
+void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::learner& /* base */, VW::example& ec)
 {
   VW::workspace& all = *rd.all;
 
@@ -121,9 +121,9 @@ void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::single_learner& 
 }
 
 // This is a learner which does nothing with examples.
-// void learn(audit_regressor_data&, VW::LEARNER::base_learner&, example&) {}
+// void learn(audit_regressor_data&, VW::LEARNER::learner&, example&) {}
 
-void audit_regressor(audit_regressor_data& rd, VW::LEARNER::single_learner& base, VW::example& ec)
+void audit_regressor(audit_regressor_data& rd, VW::LEARNER::learner& base, VW::example& ec)
 {
   VW::workspace& all = *rd.all;
 
@@ -267,7 +267,7 @@ void init_driver(audit_regressor_data& dat)
 }
 }  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::audit_regressor_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::audit_regressor_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -292,14 +292,14 @@ VW::LEARNER::base_learner* VW::reductions::audit_regressor_setup(VW::setup_base_
   // predictions but also needs to inherit the type from the loaded base so that
   // the rest of the stack loads.
   auto dat = VW::make_unique<audit_regressor_data>(&all, VW::io::open_file_writer(out_file));
-  auto* ret = VW::LEARNER::make_reduction_learner(std::move(dat), as_singleline(stack_builder.setup_base_learner()),
+  auto ret = VW::LEARNER::make_reduction_learner(std::move(dat), require_singleline(stack_builder.setup_base_learner()),
       audit_regressor, audit_regressor, stack_builder.get_setupfn_name(audit_regressor_setup))
-                  // learn does not predict or learn. nothing to be gained by calling predict() before learn()
-                  .set_learn_returns_prediction(true)
-                  .set_finish(::finish)
-                  .set_print_update(::print_update_audit_regressor)
-                  .set_init_driver(init_driver)
-                  .build();
+                 // learn does not predict or learn. nothing to be gained by calling predict() before learn()
+                 .set_learn_returns_prediction(true)
+                 .set_finish(::finish)
+                 .set_print_update(::print_update_audit_regressor)
+                 .set_init_driver(init_driver)
+                 .build();
 
-  return make_base(*ret);
+  return ret;
 }

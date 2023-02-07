@@ -8,6 +8,7 @@
 #include "vw/core/learner_fwd.h"
 #include "vw/core/vw_fwd.h"
 
+#include <memory>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -16,7 +17,7 @@ namespace VW
 {
 namespace reductions
 {
-VW::LEARNER::base_learner* epsilon_decay_setup(VW::setup_base_i&);
+std::shared_ptr<VW::LEARNER::learner> epsilon_decay_setup(VW::setup_base_i&);
 
 namespace epsilon_decay
 {
@@ -29,7 +30,7 @@ public:
       double epsilon_decay_estimator_decay, dense_parameters& weights, std::string epsilon_decay_audit_str,
       bool constant_epsilon, uint32_t& wpp, uint64_t _min_champ_examples, float initial_epsilon,
       uint64_t shift_model_bounds, bool reward_as_cost, double tol_x, bool is_brentq, bool predict_only_model);
-  void update_weights(float init_ep, VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
+  void update_weights(float init_ep, VW::LEARNER::learner& base, VW::multi_ex& examples);
   void promote_model(int64_t model_ind, int64_t swap_dist);
   void rebalance_greater_models(int64_t model_ind, int64_t swap_dist, int64_t model_count);
   void clear_weights_and_estimators(int64_t swap_dist, int64_t model_count);

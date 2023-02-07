@@ -99,10 +99,10 @@ VW::reductions::automl::automl<
 get_automl_data(VW::workspace& all)
 {
   std::vector<std::string> e_r;
-  all.l->get_enabled_reductions(e_r);
-  if (std::find(e_r.begin(), e_r.end(), "automl") == e_r.end()) { THROW("automl not found in enabled reductions"); }
+  all.l->get_enabled_learners(e_r);
+  if (std::find(e_r.begin(), e_r.end(), "automl") == e_r.end()) { THROW("automl not found in enabled learners"); }
 
-  VW::LEARNER::multi_learner* automl_learner = as_multiline(all.l->get_learner_by_name_prefix("automl"));
+  VW::LEARNER::learner* automl_learner = require_multiline(all.l->get_learner_by_name_prefix("automl"));
 
   return (VW::reductions::automl::automl<interaction_config_manager<VW::reductions::automl::config_oracle<T>,
           VW::estimators::confidence_sequence_robust>>*)
@@ -212,7 +212,7 @@ TEST(Automl, Assert0thEventMetricsWIterations)
   test_hooks.emplace(zero,
       [&metric_name, &zero](cb_sim&, VW::workspace& all, VW::multi_ex&)
       {
-        auto metrics = all.global_metrics.collect_metrics(all.l);
+        auto metrics = all.global_metrics.collect_metrics(all.l.get());
 
         EXPECT_EQ(metrics.get_uint(metric_name), zero);
         return true;
@@ -222,7 +222,7 @@ TEST(Automl, Assert0thEventMetricsWIterations)
   test_hooks.emplace(num_iterations,
       [&metric_name, &num_iterations](cb_sim&, VW::workspace& all, VW::multi_ex&)
       {
-        auto metrics = all.global_metrics.collect_metrics(all.l);
+        auto metrics = all.global_metrics.collect_metrics(all.l.get());
 
         EXPECT_EQ(metrics.get_uint(metric_name), num_iterations);
         return true;

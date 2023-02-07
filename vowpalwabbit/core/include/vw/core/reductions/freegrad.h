@@ -6,6 +6,8 @@
 
 #include "vw/core/vw_fwd.h"
 
+#include <memory>
+
 namespace VW
 {
 namespace reductions
@@ -13,6 +15,6 @@ namespace reductions
 /**
  * @brief Wiki page: https://github.com/VowpalWabbit/vowpal_wabbit/wiki/FreeGrad
  */
-VW::LEARNER::base_learner* freegrad_setup(VW::setup_base_i& stack_builder);
+std::shared_ptr<VW::LEARNER::learner> freegrad_setup(VW::setup_base_i& stack_builder);
 }  // namespace reductions
 }  // namespace VW

@@ -67,7 +67,7 @@ void update_example_weight(classweights& cweights, VW::example& ec)
 }
 
 template <bool is_learn, VW::prediction_type_t pred_type>
-void predict_or_learn(classweights& cweights, VW::LEARNER::single_learner& base, VW::example& ec)
+void predict_or_learn(classweights& cweights, VW::LEARNER::learner& base, VW::example& ec)
 {
   if (is_learn)
   {
@@ -78,7 +78,7 @@ void predict_or_learn(classweights& cweights, VW::LEARNER::single_learner& base,
 }
 }  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::classweight_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::classweight_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -93,11 +93,11 @@ VW::LEARNER::base_learner* VW::reductions::classweight_setup(VW::setup_base_i& s
   for (auto& s : classweight_array) { cweights->load_string(s); }
   all.logger.err_info("parsed {} class weights", cweights->weights.size());
 
-  VW::LEARNER::single_learner* base = as_singleline(stack_builder.setup_base_learner());
+  auto base = require_singleline(stack_builder.setup_base_learner());
 
   std::string name_addition;
-  void (*learn_ptr)(classweights&, VW::LEARNER::single_learner&, VW::example&);
-  void (*pred_ptr)(classweights&, VW::LEARNER::single_learner&, VW::example&);
+  void (*learn_ptr)(classweights&, VW::LEARNER::learner&, VW::example&);
+  void (*pred_ptr)(classweights&, VW::LEARNER::learner&, VW::example&);
   VW::prediction_type_t pred_type;
 
   if (base->get_output_prediction_type() == VW::prediction_type_t::SCALAR)
@@ -116,10 +116,10 @@ VW::LEARNER::base_learner* VW::reductions::classweight_setup(VW::setup_base_i& s
   }
   else { THROW("--classweight not implemented for this type of prediction"); }
 
-  auto* l = make_reduction_learner(
+  auto l = make_reduction_learner(
       std::move(cweights), base, learn_ptr, pred_ptr, stack_builder.get_setupfn_name(classweight_setup) + name_addition)
-                .set_output_prediction_type(pred_type)
-                .build();
+               .set_output_prediction_type(pred_type)
+               .build();
 
-  return make_base(*l);
+  return l;
 }

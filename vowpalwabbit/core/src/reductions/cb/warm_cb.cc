@@ -274,14 +274,14 @@ float compute_weight_multiplier(warm_cb& data, size_t i, int ec_type)
   return weight_multiplier;
 }
 
-uint32_t predict_sublearner_adf(warm_cb& data, multi_learner& base, VW::example& ec, uint32_t i)
+uint32_t predict_sublearner_adf(warm_cb& data, learner& base, VW::example& ec, uint32_t i)
 {
   copy_example_to_adf(data, ec);
   base.predict(data.ecs, i);
   return data.ecs[0]->pred.a_s[0].action + 1;
 }
 
-void accumu_costs_iv_adf(warm_cb& data, multi_learner& base, VW::example& ec)
+void accumu_costs_iv_adf(warm_cb& data, learner& base, VW::example& ec)
 {
   VW::cb_class& cl = data.cl_adf;
   // IPS for approximating the cumulative costs for all lambdas
@@ -302,7 +302,7 @@ void add_to_vali(warm_cb& data, VW::example& ec)
   data.ws_vali.push_back(ec_copy);
 }
 
-uint32_t predict_sup_adf(warm_cb& data, multi_learner& base, VW::example& ec)
+uint32_t predict_sup_adf(warm_cb& data, learner& base, VW::example& ec)
 {
   uint32_t argmin = find_min(data.cumulative_costs);
   return predict_sublearner_adf(data, base, ec, argmin);
@@ -334,7 +334,7 @@ void learn_sup_adf(warm_cb& data, VW::example& ec, int ec_type)
   {
     float weight_multiplier = compute_weight_multiplier(data, i, ec_type);
     for (size_t a = 0; a < data.num_actions; ++a) { data.ecs[a]->weight = old_weights[a] * weight_multiplier; }
-    multi_learner* cs_learner = as_multiline(data.cost_sensitive);
+    learner* cs_learner = require_multiline(data.cost_sensitive);
     cs_learner->learn(data.ecs, i);
   }
 
@@ -344,7 +344,7 @@ void learn_sup_adf(warm_cb& data, VW::example& ec, int ec_type)
 }
 
 template <bool use_cs>
-void predict_or_learn_sup_adf(warm_cb& data, multi_learner& base, VW::example& ec, int ec_type)
+void predict_or_learn_sup_adf(warm_cb& data, learner& base, VW::example& ec, int ec_type)
 {
   uint32_t action = predict_sup_adf(data, base, ec);
 
@@ -353,7 +353,7 @@ void predict_or_learn_sup_adf(warm_cb& data, multi_learner& base, VW::example& e
   ec.pred.multiclass = action;
 }
 
-uint32_t predict_bandit_adf(warm_cb& data, multi_learner& base, VW::example& ec)
+uint32_t predict_bandit_adf(warm_cb& data, learner& base, VW::example& ec)
 {
   uint32_t argmin = find_min(data.cumulative_costs);
 
@@ -372,7 +372,7 @@ uint32_t predict_bandit_adf(warm_cb& data, multi_learner& base, VW::example& ec)
   return chosen_action;
 }
 
-void learn_bandit_adf(warm_cb& data, multi_learner& base, VW::example& ec, int ec_type)
+void learn_bandit_adf(warm_cb& data, learner& base, VW::example& ec, int ec_type)
 {
   copy_example_to_adf(data, ec);
 
@@ -400,7 +400,7 @@ void learn_bandit_adf(warm_cb& data, multi_learner& base, VW::example& ec, int e
 }
 
 template <bool use_cs>
-void predict_or_learn_bandit_adf(warm_cb& data, multi_learner& base, VW::example& ec, int ec_type)
+void predict_or_learn_bandit_adf(warm_cb& data, learner& base, VW::example& ec, int ec_type)
 {
   uint32_t chosen_action = predict_bandit_adf(data, base, ec);
 
@@ -421,7 +421,7 @@ void predict_or_learn_bandit_adf(warm_cb& data, multi_learner& base, VW::example
   ec.pred.multiclass = cl.action;
 }
 
-void accumu_var_adf(warm_cb& data, multi_learner& base, VW::example& ec)
+void accumu_var_adf(warm_cb& data, learner& base, VW::example& ec)
 {
   size_t pred_best_approx = predict_sup_adf(data, base, ec);
   float temp_var = 0.f;
@@ -435,7 +435,7 @@ void accumu_var_adf(warm_cb& data, multi_learner& base, VW::example& ec)
 }
 
 template <bool use_cs>
-void predict_and_learn_adf(warm_cb& data, multi_learner& base, VW::example& ec)
+void predict_and_learn_adf(warm_cb& data, learner& base, VW::example& ec)
 {
   // Corrupt labels (only corrupting multiclass labels as of now)
   if (use_cs) { data.cs_label = ec.l.cs; }
@@ -508,7 +508,7 @@ void init_adf_data(warm_cb& data, const uint32_t num_actions)
 }
 }  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::warm_cb_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::warm_cb_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -590,7 +590,7 @@ VW::LEARNER::base_learner* VW::reductions::warm_cb_setup(VW::setup_base_i& stack
     options.insert("lr_multiplier", ss.str());
   }
 
-  multi_learner* base = as_multiline(stack_builder.setup_base_learner());
+  auto base = require_multiline(stack_builder.setup_base_learner());
   // Note: the current version of warm start CB can only support epsilon-greedy exploration
   // We need to wait for the epsilon value to be passed from the base
   // cb_explore learner, if there is one
@@ -601,7 +601,7 @@ VW::LEARNER::base_learner* VW::reductions::warm_cb_setup(VW::setup_base_i& stack
     data->epsilon = 0.05f;
   }
 
-  void (*learn_pred_ptr)(warm_cb&, multi_learner&, VW::example&);
+  void (*learn_pred_ptr)(warm_cb&, learner&, VW::example&);
   size_t ws = data->choices_lambda;
   std::string name_addition;
   VW::label_type_t label_type;
@@ -632,19 +632,19 @@ VW::LEARNER::base_learner* VW::reductions::warm_cb_setup(VW::setup_base_i& stack
     label_type = VW::label_type_t::MULTICLASS;
   }
 
-  auto* l = make_reduction_learner(std::move(data), base, learn_pred_ptr, learn_pred_ptr,
+  auto l = make_reduction_learner(std::move(data), base, learn_pred_ptr, learn_pred_ptr,
       stack_builder.get_setupfn_name(warm_cb_setup) + name_addition)
-                .set_input_label_type(label_type)
-                .set_output_label_type(VW::label_type_t::CB)
-                .set_input_prediction_type(VW::prediction_type_t::ACTION_PROBS)
-                .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
-                .set_params_per_weight(ws)
-                .set_learn_returns_prediction(true)
-                .set_update_stats(update_stats_func)
-                .set_output_example_prediction(output_example_prediction_func)
-                .set_print_update(print_update_func)
-                .set_finish(::finish)
-                .build();
+               .set_input_label_type(label_type)
+               .set_output_label_type(VW::label_type_t::CB)
+               .set_input_prediction_type(VW::prediction_type_t::ACTION_PROBS)
+               .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
+               .set_params_per_weight(ws)
+               .set_learn_returns_prediction(true)
+               .set_update_stats(update_stats_func)
+               .set_output_example_prediction(output_example_prediction_func)
+               .set_print_update(print_update_func)
+               .set_finish(::finish)
+               .build();
 
-  return make_base(*l);
+  return l;
 }
