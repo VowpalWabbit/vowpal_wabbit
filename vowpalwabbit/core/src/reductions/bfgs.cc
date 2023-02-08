@@ -717,7 +717,7 @@ int process_pass(VW::workspace& all, bfgs& b)
       if (all.l2_lambda > 0.) { b.loss_sum += add_regularization(all, b, all.l2_lambda); }
       if (!all.quiet)
       {
-        if (!all.holdout_set_off && b.current_pass >= 1)
+        if (!all.pc.holdout_set_off && b.current_pass >= 1)
         {
           if (all.sd->holdout_sum_loss_since_last_pass == 0. && all.sd->weighted_holdout_examples_since_last_pass == 0.)
           {
@@ -951,7 +951,7 @@ void end_pass(bfgs& b)
         // Reset preconditioner to zero so that it is correctly recomputed in the next pass
         zero_preconditioner(*all);
       }
-      if (!all->holdout_set_off)
+      if (!all->pc.holdout_set_off)
       {
         if (VW::details::summarize_holdout_set(*all, b.no_win_counter))
         {
@@ -1155,7 +1155,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::bfgs_setup(VW::setup_base_
     b->hessian_on = local_hessian_on;
   }
 
-  if (!all.holdout_set_off)
+  if (!all.pc.holdout_set_off)
   {
     all.sd->holdout_best_loss = FLT_MAX;
     b->early_stop_thres = options.get_typed_option<uint64_t>("early_terminate").value();

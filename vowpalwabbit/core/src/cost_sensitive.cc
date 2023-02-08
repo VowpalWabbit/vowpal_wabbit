@@ -139,12 +139,12 @@ void VW::details::print_cs_update_multiclass(VW::workspace& all, bool is_test, s
       pred_buf << all.sd->ldict->get(prediction);
 
       all.sd->print_update(
-          *all.trace_message, all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(), num_features);
+          *all.trace_message, all.pc.holdout_set_off, all.pc.current_pass, label_buf, pred_buf.str(), num_features);
     }
     else
     {
       all.sd->print_update(
-          *all.trace_message, all.holdout_set_off, all.current_pass, label_buf, prediction, num_features);
+          *all.trace_message, all.pc.holdout_set_off, all.pc.current_pass, label_buf, prediction, num_features);
     }
   }
 }
@@ -163,7 +163,7 @@ void VW::details::print_cs_update_action_scores(
     else { pred_buf << action_scores[0].action; }
     pred_buf << ".....";
     all.sd->print_update(
-        *all.trace_message, all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(), num_features);
+        *all.trace_message, all.pc.holdout_set_off, all.pc.current_pass, label_buf, pred_buf.str(), num_features);
   }
 }
 
@@ -203,14 +203,14 @@ void VW::details::print_cs_update(VW::workspace& all, bool is_test, const VW::ex
       }
       else { pred_buf << ec.pred.a_s[0].action; }
       if (action_scores) { pred_buf << "....."; }
-      all.sd->print_update(
-          *all.trace_message, all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(), num_current_features);
+      all.sd->print_update(*all.trace_message, all.pc.holdout_set_off, all.pc.current_pass, label_buf, pred_buf.str(),
+          num_current_features);
       ;
     }
     else
     {
       all.sd->print_update(
-          *all.trace_message, all.holdout_set_off, all.current_pass, label_buf, prediction, num_current_features);
+          *all.trace_message, all.pc.holdout_set_off, all.pc.current_pass, label_buf, prediction, num_current_features);
     }
   }
 }

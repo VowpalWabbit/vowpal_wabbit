@@ -43,7 +43,7 @@ void learn_multi_ex(multi_ex& ec_seq, VW::workspace& all)
 
 void end_pass(example& ec, VW::workspace& all)
 {
-  all.current_pass++;
+  all.pc.current_pass++;
   all.l->end_pass();
 
   VW::finish_example(all, ec);
@@ -80,7 +80,7 @@ bool inline is_save_cmd(example* ec)
 
 void drain_examples(VW::workspace& all)
 {
-  if (all.early_terminate)
+  if (all.pc.early_terminate)
   {  // drain any extra examples from parser.
     example* ec = nullptr;
     while ((ec = VW::get_example(all.example_parser.get())) != nullptr) { VW::finish_example(all, *ec); }
@@ -228,7 +228,7 @@ class ready_examples_queue
 public:
   ready_examples_queue(VW::workspace& master) : _master(master) {}
 
-  example* pop() { return !_master.early_terminate ? VW::get_example(_master.example_parser.get()) : nullptr; }
+  example* pop() { return !_master.pc.early_terminate ? VW::get_example(_master.example_parser.get()) : nullptr; }
 
 private:
   VW::workspace& _master;

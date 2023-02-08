@@ -225,16 +225,17 @@ void end_pass(VW::reductions::gd& g)
     else { VW::details::accumulate_avg(all, all.weights, 0); }
   }
   all.eta *= all.eta_decay_rate;
-  if (all.om.save_per_pass) { VW::details::save_predictor(all, all.om.final_regressor_name, all.current_pass); }
+  if (all.om.save_per_pass) { VW::details::save_predictor(all, all.om.final_regressor_name, all.pc.current_pass); }
 
-  if (!all.holdout_set_off)
+  if (!all.pc.holdout_set_off)
   {
     if (VW::details::summarize_holdout_set(all, g.no_win_counter))
     {
       VW::details::finalize_regressor(all, all.om.final_regressor_name);
     }
     if ((g.early_stop_thres == g.no_win_counter) &&
-        ((all.check_holdout_every_n_passes <= 1) || ((all.current_pass % all.check_holdout_every_n_passes) == 0)))
+        ((all.pc.check_holdout_every_n_passes <= 1) ||
+            ((all.pc.current_pass % all.pc.check_holdout_every_n_passes) == 0)))
     {
       VW::details::set_done(all);
     }
@@ -383,7 +384,7 @@ inline void audit_feature(audit_results& dat, const float ft_weight, const uint6
     dat.results.push_back(sv);
   }
 
-  if ((dat.all.current_pass == 0 || dat.all.training == false) && dat.all.hash_inv)
+  if ((dat.all.pc.current_pass == 0 || dat.all.training == false) && dat.all.hash_inv)
   {
     const auto strided_index = index >> stride_shift;
     if (dat.all.index_name_map.count(strided_index) == 0)
@@ -1149,18 +1150,18 @@ void VW::details::save_load_online_state_gd(VW::workspace& all, VW::io_buf& mode
         sizeof(all.sd->old_weighted_labeled_examples), read, msg, text);
 
     // fix "number of examples per pass"
-    msg << "current_pass " << all.current_pass << "\n";
+    msg << "current_pass " << all.pc.current_pass << "\n";
     if (all.model_file_ver >= VW::version_definitions::VERSION_PASS_UINT64)
     {
       VW::details::bin_text_read_write_fixed(
-          model_file, reinterpret_cast<char*>(&all.current_pass), sizeof(all.current_pass), read, msg, text);
+          model_file, reinterpret_cast<char*>(&all.pc.current_pass), sizeof(all.pc.current_pass), read, msg, text);
     }
     else  // backwards compatiblity.
     {
-      size_t temp_pass = static_cast<size_t>(all.current_pass);
+      size_t temp_pass = static_cast<size_t>(all.pc.current_pass);
       VW::details::bin_text_read_write_fixed(
           model_file, reinterpret_cast<char*>(&temp_pass), sizeof(temp_pass), read, msg, text);
-      all.current_pass = temp_pass;
+      all.pc.current_pass = temp_pass;
     }
   }
 
@@ -1208,7 +1209,7 @@ void VW::details::save_load_online_state_gd(VW::workspace& all, VW::io_buf& mode
     all.sd->old_weighted_labeled_examples = 0.;
     all.sd->example_number = 0;
     all.sd->total_features = 0;
-    all.current_pass = 0;
+    all.pc.current_pass = 0;
   }
   if (all.weights.sparse)
   {
@@ -1420,7 +1421,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i&
   bool feature_mask_off = true;
   if (options.was_supplied("feature_mask")) { feature_mask_off = false; }
 
-  if (!all.holdout_set_off)
+  if (!all.pc.holdout_set_off)
   {
     all.sd->holdout_best_loss = FLT_MAX;
     g->early_stop_thres = options.get_typed_option<uint64_t>("early_terminate").value();

@@ -596,8 +596,8 @@ void update_stats_csoaa_ldf_prob(const VW::workspace& all, VW::shared_data& sd, 
   // (ec.test_only) OR (COST_SENSITIVE::example_is_test(ec))
   // What should be the "ec"? data.ec_seq[0]?
   // Based on parse_args.cc (where "average multiclass log loss") is printed,
-  // I decided to try yet another way: (!all.holdout_set_off).
-  if (!all.holdout_set_off) { sd.holdout_multiclass_log_loss += multiclass_log_loss; }
+  // I decided to try yet another way: (!all.pc.holdout_set_off).
+  if (!all.pc.holdout_set_off) { sd.holdout_multiclass_log_loss += multiclass_log_loss; }
   else { sd.multiclass_log_loss += multiclass_log_loss; }
 }
 

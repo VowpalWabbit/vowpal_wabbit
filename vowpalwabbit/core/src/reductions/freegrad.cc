@@ -309,14 +309,15 @@ void end_pass(freegrad& fg)
 {
   VW::workspace& all = *fg.all;
 
-  if (!all.holdout_set_off)
+  if (!all.pc.holdout_set_off)
   {
     if (VW::details::summarize_holdout_set(all, fg.no_win_counter))
     {
       VW::details::finalize_regressor(all, all.om.final_regressor_name);
     }
     if ((fg.early_stop_thres == fg.no_win_counter) &&
-        ((all.check_holdout_every_n_passes <= 1) || ((all.current_pass % all.check_holdout_every_n_passes) == 0)))
+        ((all.pc.check_holdout_every_n_passes <= 1) ||
+            ((all.pc.current_pass % all.pc.check_holdout_every_n_passes) == 0)))
     {
       VW::details::set_done(all);
     }
@@ -382,7 +383,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::freegrad_setup(VW::setup_b
     *(fg_ptr->all->trace_message) << "Algorithm used: " << algorithm_name << std::endl;
   }
 
-  if (!fg_ptr->all->holdout_set_off)
+  if (!fg_ptr->all->pc.holdout_set_off)
   {
     fg_ptr->all->sd->holdout_best_loss = FLT_MAX;
     fg_ptr->early_stop_thres = options.get_typed_option<uint64_t>("early_terminate").value();

@@ -466,8 +466,8 @@ bool must_run_test(VW::workspace& all, VW::multi_ex& ec, bool is_test_ex)
       //     OR it's a test example
       ((!all.quiet || !all.vw_is_main) &&  // had to disable this because of library mode!
           (!is_test_ex) &&
-          (all.holdout_set_off ||                          // no holdout
-              ec[0]->test_only || (all.current_pass == 0)  // we need error rates for progressive cost
+          (all.pc.holdout_set_off ||                          // no holdout
+              ec[0]->test_only || (all.pc.current_pass == 0)  // we need error rates for progressive cost
               ));
 }
 
@@ -538,7 +538,8 @@ void print_update_search(VW::workspace& all, VW::shared_data& /* sd */, const se
 
   float avg_loss = 0.;
   float avg_loss_since = 0.;
-  bool use_heldout_loss = (!all.holdout_set_off && all.current_pass >= 1) && (all.sd->weighted_holdout_examples > 0);
+  bool use_heldout_loss =
+      (!all.pc.holdout_set_off && all.pc.current_pass >= 1) && (all.sd->weighted_holdout_examples > 0);
   if (use_heldout_loss)
   {
     avg_loss =
@@ -3354,7 +3355,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::search_setup(VW::setup_bas
 
   if (!priv.allow_current_policy)
   {  // if we're not dagger
-    all.check_holdout_every_n_passes = priv.passes_per_policy;
+    all.pc.check_holdout_every_n_passes = priv.passes_per_policy;
   }
 
   all.searchstr = sch.get();

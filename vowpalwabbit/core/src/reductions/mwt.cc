@@ -206,7 +206,7 @@ void print_update_mwt(
     if (data.optional_observation.first) { label_buf = "unknown"; }
     else { label_buf = " known"; }
 
-    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_buf,
+    all.sd->print_update(*all.trace_message, all.pc.holdout_set_off, all.pc.current_pass, label_buf,
         static_cast<uint32_t>(pred), num_features);
   }
 }

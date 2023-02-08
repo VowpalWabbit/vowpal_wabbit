@@ -54,7 +54,7 @@ void VW::details::print_no_label_update(VW::workspace& all, VW::example& ec)
       !all.bfgs)
   {
     all.sd->print_update(
-        *all.trace_message, all.holdout_set_off, all.current_pass, 0.f, ec.pred.scalar, ec.get_num_features());
+        *all.trace_message, all.pc.holdout_set_off, all.pc.current_pass, 0.f, ec.pred.scalar, ec.get_num_features());
   }
 }
 

@@ -159,13 +159,13 @@ API vw_net_native::ERROR_CODE WorkspaceSavePredictorToWriter(vw_net_native::work
 API void WorkspaceGetPerformanceStatistics(
     vw_net_native::workspace_context* workspace, vw_net_native::performance_statistics_t* statistics)
 {
-  if (workspace->vw->current_pass == 0) { statistics->examples_per_pass = workspace->vw->sd->example_number; }
-  else { statistics->examples_per_pass = workspace->vw->sd->example_number / workspace->vw->current_pass; }
+  if (workspace->vw->pc.current_pass == 0) { statistics->examples_per_pass = workspace->vw->sd->example_number; }
+  else { statistics->examples_per_pass = workspace->vw->sd->example_number / workspace->vw->pc.current_pass; }
 
   statistics->weighted_examples = workspace->vw->sd->weighted_examples();
   statistics->weighted_labels = workspace->vw->sd->weighted_labels;
 
-  if (workspace->vw->holdout_set_off)
+  if (workspace->vw->pc.holdout_set_off)
   {
     if (workspace->vw->sd->weighted_labeled_examples > 0)
     {

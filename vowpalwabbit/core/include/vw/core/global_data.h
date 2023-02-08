@@ -154,6 +154,18 @@ public:
   std::string per_feature_regularizer_output;
   std::string per_feature_regularizer_text;
 };
+
+class passes_config
+{
+public:
+  uint64_t current_pass;
+  bool holdout_set_off;
+  bool early_terminate;
+  uint32_t holdout_period;
+  uint32_t holdout_after;
+  size_t check_holdout_every_n_passes;  // default: 1, but search might want to set it higher if you spend multiple
+                                        // passes learning a single policy
+};
 }  // namespace details
 
 class workspace
@@ -205,13 +217,7 @@ public:
   // May be nullptr, so you must check before calling it
   std::function<void(float)> set_minmax;
 
-  uint64_t current_pass;
-  bool holdout_set_off;
-  bool early_terminate;
-  uint32_t holdout_period;
-  uint32_t holdout_after;
-  size_t check_holdout_every_n_passes;  // default: 1, but search might want to set it higher if you spend multiple
-                                        // passes learning a single policy
+  details::passes_config pc;
 
   uint32_t num_bits;  // log_2 of the number of features.
   bool default_bits;

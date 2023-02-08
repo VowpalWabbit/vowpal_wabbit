@@ -246,8 +246,8 @@ void print_update_cb_explore(
       const auto& cost = ec.l.cb.costs[0];
       label_string << cost.action << ":" << cost.cost << ":" << cost.probability;
     }
-    sd.print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_string.str(), pred_string.str(),
-        ec.get_num_features());
+    sd.print_update(*all.trace_message, all.pc.holdout_set_off, all.pc.current_pass, label_string.str(),
+        pred_string.str(), ec.get_num_features());
   }
 }
 

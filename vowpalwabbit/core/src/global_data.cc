@@ -317,7 +317,7 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   loss = nullptr;
 
   reg_mode = 0;
-  current_pass = 0;
+  pc.current_pass = 0;
 
   bfgs = false;
   no_bias = false;
@@ -387,10 +387,10 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   om.save_per_pass = false;
 
   do_reset_source = false;
-  holdout_set_off = true;
-  holdout_after = 0;
-  check_holdout_every_n_passes = 1;
-  early_terminate = false;
+  pc.holdout_set_off = true;
+  pc.holdout_after = 0;
+  pc.check_holdout_every_n_passes = 1;
+  pc.early_terminate = false;
 
   max_examples = std::numeric_limits<size_t>::max();
 
@@ -405,7 +405,7 @@ void workspace::finish()
   // also update VowpalWabbit::PerformanceStatistics::get() (vowpalwabbit.cpp)
   if (!quiet && !options->was_supplied("audit_regressor"))
   {
-    sd->print_summary(*trace_message, *sd, *loss, current_pass, holdout_set_off);
+    sd->print_summary(*trace_message, *sd, *loss, pc.current_pass, pc.holdout_set_off);
   }
 
   details::finalize_regressor(*this, om.final_regressor_name);

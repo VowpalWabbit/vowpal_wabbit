@@ -220,11 +220,11 @@ void ::VW::details::print_update_cb(VW::workspace& all, bool is_test, const VW::
       }
       else { pred_buf << "no action"; }
       all.sd->print_update(
-          *all.trace_message, all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(), num_features);
+          *all.trace_message, all.pc.holdout_set_off, all.pc.current_pass, label_buf, pred_buf.str(), num_features);
     }
     else
     {
-      all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_buf,
+      all.sd->print_update(*all.trace_message, all.pc.holdout_set_off, all.pc.current_pass, label_buf,
           static_cast<uint32_t>(pred), num_features);
     }
   }

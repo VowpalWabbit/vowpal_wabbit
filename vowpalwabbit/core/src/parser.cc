@@ -657,7 +657,7 @@ void VW::details::lock_done(parser& p)
 
 void VW::details::set_done(VW::workspace& all)
 {
-  all.early_terminate = true;
+  all.pc.early_terminate = true;
   lock_done(*all.example_parser);
 }
 

@@ -32,8 +32,8 @@ void VW::details::print_update(VW::workspace& all, const VW::example& ec)
   if (all.sd->weighted_labeled_examples + all.sd->weighted_unlabeled_examples >= all.sd->dump_interval && !all.quiet &&
       !all.bfgs)
   {
-    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, ec.l.simple.label, ec.pred.scalar,
-        ec.get_num_features());
+    all.sd->print_update(*all.trace_message, all.pc.holdout_set_off, all.pc.current_pass, ec.l.simple.label,
+        ec.pred.scalar, ec.get_num_features());
   }
 }
 
@@ -72,7 +72,7 @@ void VW::details::print_update_simple_label(
 
   if (should_print_driver_update)
   {
-    sd.print_update(*all.trace_message, all.holdout_set_off, all.current_pass, ec.l.simple.label, ec.pred.scalar,
+    sd.print_update(*all.trace_message, all.pc.holdout_set_off, all.pc.current_pass, ec.l.simple.label, ec.pred.scalar,
         ec.get_num_features());
   }
 }
@@ -97,7 +97,7 @@ bool VW::details::summarize_holdout_set(VW::workspace& all, size_t& no_win_count
   if (this_loss < all.sd->holdout_best_loss)
   {
     all.sd->holdout_best_loss = this_loss;
-    all.sd->holdout_best_pass = all.current_pass;
+    all.sd->holdout_best_pass = all.pc.current_pass;
     no_win_counter = 0;
     return true;
   }

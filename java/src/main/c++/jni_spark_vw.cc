@@ -318,15 +318,15 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getPerf
   float bestConstantLoss;
   long totalNumberOfFeatures;
 
-  if (all->current_pass == 0)
+  if (all->pc.current_pass == 0)
     numberOfExamplesPerPass = all->sd->example_number;
   else
-    numberOfExamplesPerPass = all->sd->example_number / all->current_pass;
+    numberOfExamplesPerPass = all->sd->example_number / all->pc.current_pass;
 
   weightedExampleSum = all->sd->weighted_examples();
   weightedLabelSum = all->sd->weighted_labels;
 
-  if (all->holdout_set_off)
+  if (all->pc.holdout_set_off)
     if (all->sd->weighted_labeled_examples > 0)
       averageLoss = all->sd->sum_loss / all->sd->weighted_labeled_examples;
     else
@@ -362,7 +362,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_endPass(JN
     all->do_reset_source = false;
     all->passes_complete++;
 
-    all->current_pass++;
+    all->pc.current_pass++;
     all->l->end_pass();
   }
   catch (...)
