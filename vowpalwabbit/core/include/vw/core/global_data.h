@@ -257,7 +257,7 @@ public:
   size_t passes_complete;
   uint64_t parse_mask;  // 1 << num_bits -1
 
-  details::feature_tweaks fc;  // feature related configs
+  details::feature_tweaks_config fc;  // feature related configs
 
   VW::io::logger logger;
   bool quiet;
@@ -301,7 +301,7 @@ public:
   float eta;  // learning rate control.
   float eta_decay_rate;
 
-  details::output_model om;
+  details::output_model_config om;
 
   parameters weights;
 
