@@ -335,30 +335,30 @@ void parse_diagnostics(options_i& options, VW::workspace& all)
 
   if (options.was_supplied("progress") && !all.quiet)
   {
-    all.progress_arg = static_cast<float>(::atof(progress_arg.c_str()));
+    all.sd->progress_arg = static_cast<float>(::atof(progress_arg.c_str()));
     // --progress interval is dual: either integer or floating-point
     if (progress_arg.find_first_of('.') == std::string::npos)
     {
       // No "." in arg: assume integer -> additive
-      all.progress_add = true;
-      if (all.progress_arg < 1)
+      all.sd->progress_add = true;
+      if (all.sd->progress_arg < 1)
       {
         all.logger.err_warn("Additive --progress <int> can't be < 1: forcing to 1");
-        all.progress_arg = 1;
+        all.sd->progress_arg = 1;
       }
-      all.sd->dump_interval = all.progress_arg;
+      all.sd->dump_interval = all.sd->progress_arg;
     }
     else
     {
       // A "." in arg: assume floating-point -> multiplicative
-      all.progress_add = false;
+      all.sd->progress_add = false;
 
-      if (all.progress_arg <= 1.f)
+      if (all.sd->progress_arg <= 1.f)
       {
         all.logger.err_warn("Multiplicative --progress <float> '{}' is <= 1.0: adding 1.0", progress_arg);
-        all.progress_arg += 1.f;
+        all.sd->progress_arg += 1.f;
       }
-      else if (all.progress_arg > 9.f)
+      else if (all.sd->progress_arg > 9.f)
       {
         all.logger.err_warn(
             "Multiplicative --progress <float> '' is > 9.0: Did you mean mean to use an integer?", progress_arg);

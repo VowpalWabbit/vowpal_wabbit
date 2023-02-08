@@ -126,7 +126,7 @@ void print_update_cats_pdf(VW::workspace& all, VW::shared_data& /* sd */, const 
             ? "unknown"
             : VW::to_string(ec.l.cb_cont.costs[0], VW::details::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION),  // Label
         VW::to_string(ec.pred.pdf, VW::details::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION),  // Prediction
-        ec.get_num_features(), all.progress_add, all.progress_arg);
+        ec.get_num_features());
   }
 }
 }  // namespace

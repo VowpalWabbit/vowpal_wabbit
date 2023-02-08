@@ -219,13 +219,13 @@ void ::VW::details::print_update_cb(VW::workspace& all, bool is_test, const VW::
             VW::fmt_float(ec.pred.a_s[0].score, VW::details::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION));
       }
       else { pred_buf << "no action"; }
-      all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(),
-          num_features, all.progress_add, all.progress_arg);
+      all.sd->print_update(
+          *all.trace_message, all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(), num_features);
     }
     else
     {
       all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_buf,
-          static_cast<uint32_t>(pred), num_features, all.progress_add, all.progress_arg);
+          static_cast<uint32_t>(pred), num_features);
     }
   }
 }

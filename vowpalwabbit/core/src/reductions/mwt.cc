@@ -207,7 +207,7 @@ void print_update_mwt(
     else { label_buf = " known"; }
 
     all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_buf,
-        static_cast<uint32_t>(pred), num_features, all.progress_add, all.progress_arg);
+        static_cast<uint32_t>(pred), num_features);
   }
 }
 

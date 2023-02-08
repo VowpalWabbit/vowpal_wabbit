@@ -715,7 +715,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::stagewise_poly_setup(VW::s
                      if (should_print_driver_update)
                      {
                        sd.print_update(*all.trace_message, all.holdout_set_off, all.current_pass, ec.l.simple.label,
-                           ec.pred.scalar, data.synth_ec.get_num_features(), all.progress_add, all.progress_arg);
+                           ec.pred.scalar, data.synth_ec.get_num_features());
                      }
                    }
 

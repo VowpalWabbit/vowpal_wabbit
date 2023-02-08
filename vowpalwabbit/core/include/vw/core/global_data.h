@@ -299,10 +299,6 @@ public:
   bool print_invert;
   bool hexfloat_weights;
 
-  // Set by --progress <arg>
-  bool progress_add;   // additive (rather than multiplicative) progress dumps
-  float progress_arg;  // next update progress dump multiplier
-
   std::map<uint64_t, VW::details::invert_hash_info> index_name_map;
 
   // hack to support cb model loading into ccb learner

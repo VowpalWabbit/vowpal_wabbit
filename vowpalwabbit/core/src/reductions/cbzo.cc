@@ -269,8 +269,7 @@ void print_update_cbzo(VW::workspace& all, VW::shared_data& sd, const cbzo& /* d
     const auto& costs = ec.l.cb_cont.costs;
     sd.print_update(*all.trace_message, all.holdout_set_off, all.current_pass,
         ec.test_only ? "unknown" : VW::to_string(costs[0]),
-        VW::to_string(ec.pred.pdf, VW::details::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION), ec.get_num_features(),
-        all.progress_add, all.progress_arg);
+        VW::to_string(ec.pred.pdf, VW::details::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION), ec.get_num_features());
   }
 }
 
