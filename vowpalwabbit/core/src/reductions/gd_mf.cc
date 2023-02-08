@@ -318,7 +318,9 @@ void end_pass(gdmf& d)
   if (!all->holdout_set_off)
   {
     if (VW::details::summarize_holdout_set(*all, d.no_win_counter))
-    { VW::details::finalize_regressor(*all, all->om.final_regressor_name); }
+    {
+      VW::details::finalize_regressor(*all, all->om.final_regressor_name);
+    }
     if ((d.early_stop_thres == d.no_win_counter) &&
         ((all->check_holdout_every_n_passes <= 1) || ((all->current_pass % all->check_holdout_every_n_passes) == 0)))
     {

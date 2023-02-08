@@ -427,7 +427,9 @@ void learn_or_predict(ccb_data& data, learner& base, VW::multi_ex& examples)
   // mode a new namespace is added (VW::details::CCB_ID_NAMESPACE) and so we can be confident
   // that the cache will be invalidated.
   if (!previously_should_augment_with_slot_info && should_augment_with_slot_info)
-  { insert_ccb_interactions(data.all->fc.interactions, data.all->fc.extent_interactions); }
+  {
+    insert_ccb_interactions(data.all->fc.interactions, data.all->fc.extent_interactions);
+  }
 
   // This will overwrite the labels with CB.
   create_cb_labels(data);
@@ -620,7 +622,9 @@ void save_load(ccb_data& sm, VW::io_buf& io, bool read, bool text)
   }
 
   if (read && sm.has_seen_multi_slot_example)
-  { insert_ccb_interactions(sm.all->fc.interactions, sm.all->fc.extent_interactions); }
+  {
+    insert_ccb_interactions(sm.all->fc.interactions, sm.all->fc.extent_interactions);
+  }
 }
 }  // namespace
 std::shared_ptr<VW::LEARNER::learner> VW::reductions::ccb_explore_adf_setup(VW::setup_base_i& stack_builder)

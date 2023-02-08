@@ -954,7 +954,9 @@ void end_pass(bfgs& b)
       if (!all->holdout_set_off)
       {
         if (VW::details::summarize_holdout_set(*all, b.no_win_counter))
-        { VW::details::finalize_regressor(*all, all->om.final_regressor_name); }
+        {
+          VW::details::finalize_regressor(*all, all->om.final_regressor_name);
+        }
         if (b.early_stop_thres == b.no_win_counter)
         {
           VW::details::set_done(*all);

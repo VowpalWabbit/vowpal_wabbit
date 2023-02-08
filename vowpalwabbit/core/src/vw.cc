@@ -497,7 +497,9 @@ const char* VW::are_features_compatible(const VW::workspace& vw1, const VW::work
   if (vw1.fc.ignore_some != vw2.fc.ignore_some) { return "ignore_some"; }
 
   if (vw1.fc.ignore_some && !std::equal(vw1.fc.ignore.begin(), vw1.fc.ignore.end(), vw2.fc.ignore.begin()))
-  { return "ignore"; }
+  {
+    return "ignore";
+  }
 
   if (vw1.fc.ignore_some_linear != vw2.fc.ignore_some_linear) { return "ignore_some_linear"; }
 

@@ -218,7 +218,6 @@ public:
 
   uint32_t hash_seed;
 
-
   std::string data_filename;
 
   bool daemon;

@@ -225,7 +225,9 @@ void VW::details::save_load_header(VW::workspace& all, VW::io_buf& model_file, b
         bytes_read_write += VW::details::bin_text_read_write_fixed_validated(model_file, pair, 2, read, msg, text);
         std::vector<VW::namespace_index> temp(pair, *(&pair + 1));
         if (std::count(all.fc.interactions.begin(), all.fc.interactions.end(), temp) == 0)
-        { all.fc.interactions.emplace_back(temp.begin(), temp.end()); }
+        {
+          all.fc.interactions.emplace_back(temp.begin(), temp.end());
+        }
       }
 
       msg << "\n";
@@ -247,7 +249,9 @@ void VW::details::save_load_header(VW::workspace& all, VW::io_buf& model_file, b
 
         std::vector<VW::namespace_index> temp(triple, *(&triple + 1));
         if (count(all.fc.interactions.begin(), all.fc.interactions.end(), temp) == 0)
-        { all.fc.interactions.emplace_back(temp.begin(), temp.end()); }
+        {
+          all.fc.interactions.emplace_back(temp.begin(), temp.end());
+        }
       }
 
       msg << "\n";
@@ -280,7 +284,9 @@ void VW::details::save_load_header(VW::workspace& all, VW::io_buf& model_file, b
 
           std::vector<VW::namespace_index> temp(buff2.data(), buff2.data() + size);
           if (count(all.fc.interactions.begin(), all.fc.interactions.end(), temp) == 0)
-          { all.fc.interactions.emplace_back(buff2.data(), buff2.data() + inter_len); }
+          {
+            all.fc.interactions.emplace_back(buff2.data(), buff2.data() + inter_len);
+          }
         }
 
         msg << "\n";
@@ -511,10 +517,14 @@ void VW::details::finalize_regressor(VW::workspace& all, const std::string& reg_
   if (!all.early_terminate)
   {
     if (all.om.per_feature_regularizer_output.length() > 0)
-    { dump_regressor(all, all.om.per_feature_regularizer_output, false); }
+    {
+      dump_regressor(all, all.om.per_feature_regularizer_output, false);
+    }
     else { dump_regressor(all, reg_name, false); }
     if (all.om.per_feature_regularizer_text.length() > 0)
-    { dump_regressor(all, all.om.per_feature_regularizer_text, true); }
+    {
+      dump_regressor(all, all.om.per_feature_regularizer_text, true);
+    }
     else
     {
       dump_regressor(all, all.om.text_regressor_name, true);

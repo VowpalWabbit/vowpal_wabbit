@@ -37,7 +37,7 @@ private:
 
   internal : VowpalWabbitArguments(VW::workspace* vw)
       : m_data(gcnew String(vw->data_filename.c_str()))
-      , m_finalRegressor(gcnew String(vw->final_regressor_name.c_str()))
+      , m_finalRegressor(gcnew String(vw->om.final_regressor_name.c_str()))
       , m_testonly(!vw->training)
       , m_passes((int)vw->numpasses)
   {

@@ -777,7 +777,9 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cbify_setup(VW::setup_base
     auto base = require_multiline(stack_builder.setup_base_learner());
 
     if (data->use_adf)
-    { data->adf_data.init_adf_data(num_actions, base->increment, all.fc.interactions, all.fc.extent_interactions); }
+    {
+      data->adf_data.init_adf_data(num_actions, base->increment, all.fc.interactions, all.fc.extent_interactions);
+    }
 
     if (use_cs)
     {

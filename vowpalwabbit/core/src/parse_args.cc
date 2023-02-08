@@ -624,10 +624,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     {
       spelling_n = VW::decode_inline_hex(spelling_n, all.logger);
       if (spelling_n[0] == '_') { all.fc.spelling_features[static_cast<unsigned char>(' ')] = true; }
-      else
-      {
-        all.fc.spelling_features[static_cast<size_t>(spelling_n[0])] = true;
-      }
+      else { all.fc.spelling_features[static_cast<size_t>(spelling_n[0])] = true; }
     }
   }
 
@@ -658,7 +655,9 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
   }
 
   if (options.was_supplied("feature_limit"))
-  { VW::details::compile_limits(all.fc.limit_strings, all.fc.limit, all.quiet, all.logger); }
+  {
+    VW::details::compile_limits(all.fc.limit_strings, all.fc.limit, all.quiet, all.logger);
+  }
 
   if (options.was_supplied("bit_precision"))
   {
@@ -852,11 +851,10 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
       if (!(ns.empty() || feature_name.empty()))
       {
         if (all.fc.ignore_features_dsjson.find(ns) == all.fc.ignore_features_dsjson.end())
-        { all.fc.ignore_features_dsjson.insert({ns, std::set<std::string>{feature_name}}); }
-        else
         {
-          all.fc.ignore_features_dsjson.at(ns).insert(feature_name);
+          all.fc.ignore_features_dsjson.insert({ns, std::set<std::string>{feature_name}});
         }
+        else { all.fc.ignore_features_dsjson.at(ns).insert(feature_name); }
       }
     }
   }
@@ -1276,7 +1274,9 @@ void parse_output_model(options_i& options, VW::workspace& all)
   options.add_and_parse(output_model_options);
 
   if (!all.om.final_regressor_name.empty() && !all.quiet)
-  { *(all.trace_message) << "final_regressor = " << all.om.final_regressor_name << endl; }
+  {
+    *(all.trace_message) << "final_regressor = " << all.om.final_regressor_name << endl;
+  }
 
   if (options.was_supplied("invert_hash")) { all.hash_inv = true; }
   if (options.was_supplied("dump_json_weights_experimental") && all.om.dump_json_weights_include_feature_names)
