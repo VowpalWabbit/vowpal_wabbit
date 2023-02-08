@@ -164,12 +164,18 @@ public:
   std::shared_ptr<VW::shared_data> sd;
 
   std::unique_ptr<parser> example_parser;
+  // Experimental field.
+  // Generic parser interface to make it possible to use any external parser.
+  std::unique_ptr<VW::details::input_parser> custom_parser;
   std::thread parse_thread;
+  size_t max_examples;  // for TLC
+  bool chain_hash_json = false;
+#ifdef BUILD_FLATBUFFERS
+  std::unique_ptr<VW::parsers::flatbuffer::parser> flat_converter;
+#endif
 
   all_reduce_type selected_all_reduce_type;
   std::unique_ptr<all_reduce_base> all_reduce;
-
-  bool chain_hash_json = false;
 
   std::shared_ptr<VW::LEARNER::learner> l;  // the top level learner
 
@@ -200,21 +206,18 @@ public:
   std::function<void(float)> set_minmax;
 
   uint64_t current_pass;
+  bool holdout_set_off;
+  bool early_terminate;
+  uint32_t holdout_period;
+  uint32_t holdout_after;
+  size_t check_holdout_every_n_passes;  // default: 1, but search might want to set it higher if you spend multiple
+                                        // passes learning a single policy
 
   uint32_t num_bits;  // log_2 of the number of features.
   bool default_bits;
 
   uint32_t hash_seed;
 
-#ifdef BUILD_FLATBUFFERS
-  std::unique_ptr<VW::parsers::flatbuffer::parser> flat_converter;
-#endif
-
-  VW::metrics_collector global_metrics;
-
-  // Experimental field.
-  // Generic parser interface to make it possible to use any external parser.
-  std::unique_ptr<VW::details::input_parser> custom_parser;
 
   std::string data_filename;
 
@@ -264,6 +267,8 @@ public:
   bool audit;  // should I print lots of debugging information?
   std::shared_ptr<std::vector<char>> audit_buffer;
   std::unique_ptr<VW::io::writer> audit_writer;
+  VW::metrics_collector global_metrics;
+
   bool training;  // Should I train if lable data is available?
   bool active;
   bool invariant_updates;  // Should we use importance aware/safe updates
@@ -273,12 +278,6 @@ public:
   bool tnormal_weights;
   bool nonormalize;
   bool do_reset_source;
-  bool holdout_set_off;
-  bool early_terminate;
-  uint32_t holdout_period;
-  uint32_t holdout_after;
-  size_t check_holdout_every_n_passes;  // default: 1, but search might want to set it higher if you spend multiple
-                                        // passes learning a single policy
 
   VW::details::generate_interactions_object_cache generate_interactions_object_cache_state;
 
@@ -305,8 +304,6 @@ public:
 
   parameters weights;
 
-  size_t max_examples;  // for TLC
-
   bool hash_inv;
   bool print_invert;
   bool hexfloat_weights;
@@ -319,9 +316,10 @@ public:
   // Default value of 2 follows behavior of 1-indexing and can change to 0-indexing if detected
   uint32_t indexing = 2;  // for 0 or 1 indexing
 
-  explicit workspace(VW::io::logger logger);
-  ~workspace();
   std::shared_ptr<VW::rand_state> get_random_state() { return _random_state_sp; }
+  explicit workspace(VW::io::logger logger);
+
+  ~workspace();
 
   workspace(const VW::workspace&) = delete;
   VW::workspace& operator=(const VW::workspace&) = delete;

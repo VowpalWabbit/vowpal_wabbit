@@ -247,7 +247,7 @@ TEST(Las, ComputeDotProdScalarAndSimdHaveSameResults)
     auto* ex = examples[0];
     auto interactions =
         VW::details::compile_interactions<VW::details::generate_namespace_combinations_with_repetition, false>(
-            vw->interactions, std::set<VW::namespace_index>(ex->indices.begin(), ex->indices.end()));
+            vw->fc.interactions, std::set<VW::namespace_index>(ex->indices.begin(), ex->indices.end()));
     ex->interactions = &interactions;
     EXPECT_EQ(interactions.size(), 0);
 
@@ -264,7 +264,7 @@ TEST(Las, ComputeDotProdScalarAndSimdHaveSameResults)
     auto* ex = examples[0];
     auto interactions =
         VW::details::compile_interactions<VW::details::generate_namespace_combinations_with_repetition, false>(
-            vw->interactions, std::set<VW::namespace_index>(ex->indices.begin(), ex->indices.end()));
+            vw->fc.interactions, std::set<VW::namespace_index>(ex->indices.begin(), ex->indices.end()));
     ex->interactions = &interactions;
     EXPECT_EQ(interactions.size(), 0);
 
@@ -281,7 +281,7 @@ TEST(Las, ComputeDotProdScalarAndSimdHaveSameResults)
     auto* ex = examples[0];
     auto interactions =
         VW::details::compile_interactions<VW::details::generate_namespace_combinations_with_repetition, false>(
-            vw->interactions, std::set<VW::namespace_index>(ex->indices.begin(), ex->indices.end()));
+            vw->fc.interactions, std::set<VW::namespace_index>(ex->indices.begin(), ex->indices.end()));
     ex->interactions = &interactions;
     EXPECT_EQ(interactions.size(), 6);
 
@@ -298,7 +298,7 @@ TEST(Las, ComputeDotProdScalarAndSimdHaveSameResults)
     auto* ex = examples[0];
     auto interactions =
         VW::details::compile_interactions<VW::details::generate_namespace_combinations_with_repetition, false>(
-            vw->interactions, std::set<VW::namespace_index>(ex->indices.begin(), ex->indices.end()));
+            vw->fc.interactions, std::set<VW::namespace_index>(ex->indices.begin(), ex->indices.end()));
     ex->interactions = &interactions;
     EXPECT_EQ(interactions.size(), 6);
 

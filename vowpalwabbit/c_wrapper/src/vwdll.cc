@@ -398,7 +398,7 @@ extern "C"
   {
     auto* pointer = static_cast<VW::workspace*>(handle);
 
-    std::string name = pointer->final_regressor_name;
+    std::string name = pointer->om.final_regressor_name;
     if (name.empty()) { return; }
 
     return VW::save_predictor(*pointer, name);
