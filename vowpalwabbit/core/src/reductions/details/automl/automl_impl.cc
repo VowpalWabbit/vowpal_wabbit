@@ -59,12 +59,12 @@ namespace automl
 {
 // config_manager is a state machine (config_manager_state) 'time' moves forward after a call into one_step()
 // this can also be interpreted as a pre-learn() hook since it gets called by a learn() right before calling
-// into its own base_learner.learn(). see learn_automl(...)
+// into its own learner.learn(). see learn_automl(...)
 template <typename config_oracle_impl, typename estimator_impl>
 interaction_config_manager<config_oracle_impl, estimator_impl>::interaction_config_manager(uint64_t default_lease,
     uint64_t max_live_configs, std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers,
     const std::string& interaction_type, const std::string& oracle_type, dense_parameters& weights,
-    priority_func* calc_priority, double automl_significance_level, VW::io::logger* logger, uint32_t& wpp, bool ccb_on,
+    priority_func calc_priority, double automl_significance_level, VW::io::logger* logger, uint32_t& wpp, bool ccb_on,
     config_type conf_type, std::string trace_prefix, bool reward_as_cost, double tol_x, bool is_brentq)
     : default_lease(default_lease)
     , max_live_configs(max_live_configs)
@@ -74,8 +74,8 @@ interaction_config_manager<config_oracle_impl, estimator_impl>::interaction_conf
     , logger(logger)
     , wpp(wpp)
     , _ccb_on(ccb_on)
-    , _config_oracle(
-          config_oracle_impl(default_lease, calc_priority, interaction_type, oracle_type, rand_state, conf_type))
+    , _config_oracle(config_oracle_impl(
+          default_lease, std::move(calc_priority), interaction_type, oracle_type, rand_state, conf_type))
     , reward_as_cost(reward_as_cost)
     , tol_x(tol_x)
     , is_brentq(is_brentq)
@@ -330,7 +330,7 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::apply_new_c
 
 template <typename config_oracle_impl, typename estimator_impl>
 void interaction_config_manager<config_oracle_impl, estimator_impl>::do_learning(
-    LEARNER::multi_learner& base, multi_ex& ec, uint64_t live_slot)
+    LEARNER::learner& base, multi_ex& ec, uint64_t live_slot)
 {
   assert(live_slot < max_live_configs);
   // TODO: what to do if that slot is switched with a new config?
@@ -374,8 +374,7 @@ template class interaction_config_manager<config_oracle<one_diff_inclusion_impl>
 template class interaction_config_manager<config_oracle<qbase_cubic>, VW::estimators::confidence_sequence_robust>;
 
 template <typename CMType>
-void automl<CMType>::one_step(
-    LEARNER::multi_learner& base, multi_ex& ec, VW::cb_class& logged, uint64_t labelled_action)
+void automl<CMType>::one_step(LEARNER::learner& base, multi_ex& ec, VW::cb_class& logged, uint64_t labelled_action)
 {
   cm->total_learn_count++;
   cm->process_example(ec);
@@ -385,8 +384,7 @@ void automl<CMType>::one_step(
 }
 
 template <typename CMType>
-void automl<CMType>::offset_learn(
-    LEARNER::multi_learner& base, multi_ex& ec, VW::cb_class& logged, uint64_t labelled_action)
+void automl<CMType>::offset_learn(LEARNER::learner& base, multi_ex& ec, VW::cb_class& logged, uint64_t labelled_action)
 {
   interaction_vec_t* incoming_interactions = ec[0]->interactions;
   for (VW::example* ex : ec)

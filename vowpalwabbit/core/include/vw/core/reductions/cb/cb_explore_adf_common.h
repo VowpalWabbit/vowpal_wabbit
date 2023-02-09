@@ -26,6 +26,8 @@
 #include "vw/core/vw_fwd.h"
 #include "vw/core/vw_math.h"
 
+#include <memory>
+
 namespace VW
 {
 namespace cb_explore_adf
@@ -92,8 +94,8 @@ public:
 
   static void save_load(cb_explore_adf_base<ExploreType>& data, io_buf& io, bool read, bool text);
   static void persist_metrics(cb_explore_adf_base<ExploreType>& data, metric_sink& metrics);
-  static void predict(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
-  static void learn(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
+  static void predict(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::learner& base, multi_ex& examples);
+  static void learn(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::learner& base, multi_ex& examples);
 
   static void update_stats(const VW::workspace& all, VW::shared_data& sd, const cb_explore_adf_base<ExploreType>& data,
       const multi_ex& ec_seq, VW::io::logger& logger);
@@ -120,7 +122,7 @@ private:
 
 template <typename ExploreType>
 inline void cb_explore_adf_base<ExploreType>::predict(
-    cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
+    cb_explore_adf_base<ExploreType>& data, VW::LEARNER::learner& base, multi_ex& examples)
 {
   example* label_example = VW::test_cb_adf_sequence(examples);
   data._known_cost = VW::get_observed_cost_or_default_cb_adf(examples);
@@ -145,7 +147,7 @@ inline void cb_explore_adf_base<ExploreType>::predict(
 
 template <typename ExploreType>
 inline void cb_explore_adf_base<ExploreType>::learn(
-    cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
+    cb_explore_adf_base<ExploreType>& data, VW::LEARNER::learner& base, multi_ex& examples)
 {
   example* label_example = VW::test_cb_adf_sequence(examples);
   if (label_example != nullptr)

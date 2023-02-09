@@ -9,7 +9,7 @@ learning rate = 0.05
 initial_t = 1
 power_t = 0
 decay_learning_rate = 0.97
-Enabled reductions: rank, scorer-identity, count_label
+Enabled learners: rank, scorer-identity, count_label
 Input label = SIMPLE
 Output pred = SCALAR
 average  since         example        example        current        current  current

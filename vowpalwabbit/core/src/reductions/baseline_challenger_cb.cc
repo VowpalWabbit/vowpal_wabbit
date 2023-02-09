@@ -70,7 +70,7 @@ public:
   static int get_chosen_action(const VW::action_scores& action_scores) { return action_scores[0].action; }
 
   template <bool is_learn>
-  inline void learn_or_predict(multi_learner& base, multi_ex& examples)
+  inline void learn_or_predict(learner& base, multi_ex& examples)
   {
     multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
 
@@ -158,7 +158,7 @@ size_t write_model_field(
 }  // namespace VW
 
 template <bool is_learn>
-void learn_or_predict(baseline_challenger_data& data, multi_learner& base, VW::multi_ex& examples)
+void learn_or_predict(baseline_challenger_data& data, learner& base, VW::multi_ex& examples)
 {
   data.learn_or_predict<is_learn>(base, examples);
 }
@@ -180,7 +180,7 @@ void persist_metrics(baseline_challenger_data& data, metric_sink& metrics)
   metrics.set_bool("baseline_cb_baseline_in_use", ci > exp);
 }
 
-VW::LEARNER::base_learner* VW::reductions::baseline_challenger_cb_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::baseline_challenger_cb_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
 
@@ -213,14 +213,14 @@ VW::LEARNER::base_learner* VW::reductions::baseline_challenger_cb_setup(VW::setu
 
   auto data = VW::make_unique<baseline_challenger_data>(alpha, tau);
 
-  auto* l = make_reduction_learner(std::move(data), as_multiline(stack_builder.setup_base_learner()),
+  auto l = make_reduction_learner(std::move(data), require_multiline(stack_builder.setup_base_learner()),
       learn_or_predict<true>, learn_or_predict<false>, stack_builder.get_setupfn_name(baseline_challenger_cb_setup))
-                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
-                .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
-                .set_input_label_type(VW::label_type_t::CB)
-                .set_output_label_type(VW::label_type_t::CB)
-                .set_save_load(save_load)
-                .set_persist_metrics(persist_metrics)
-                .build();
-  return make_base(*l);
+               .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+               .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+               .set_input_label_type(VW::label_type_t::CB)
+               .set_output_label_type(VW::label_type_t::CB)
+               .set_save_load(save_load)
+               .set_persist_metrics(persist_metrics)
+               .build();
+  return l;
 }

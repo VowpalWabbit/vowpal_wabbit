@@ -38,36 +38,36 @@ void insert_if_is_allowed_to_remove(set_ns_list_t& new_elements, const std::vect
 }
 
 template <>
-config_oracle<oracle_rand_impl>::config_oracle(uint64_t default_lease, priority_func* calc_priority,
+config_oracle<oracle_rand_impl>::config_oracle(uint64_t default_lease, priority_func calc_priority,
     const std::string& interaction_type, const std::string& oracle_type, std::shared_ptr<VW::rand_state>& rand_state,
     config_type conf_type)
     : _interaction_type(interaction_type)
     , _oracle_type(oracle_type)
-    , calc_priority(calc_priority)
+    , calc_priority(std::move(calc_priority))
     , default_lease(default_lease)
     , _impl(oracle_rand_impl(std::move(rand_state)))
 {
   _conf_type = conf_type;
 }
 template <>
-config_oracle<qbase_cubic>::config_oracle(uint64_t default_lease, priority_func* calc_priority,
+config_oracle<qbase_cubic>::config_oracle(uint64_t default_lease, priority_func calc_priority,
     const std::string& interaction_type, const std::string& oracle_type, std::shared_ptr<VW::rand_state>& rand_state,
     config_type conf_type)
     : _interaction_type(interaction_type)
     , _oracle_type(oracle_type)
-    , calc_priority(calc_priority)
+    , calc_priority(std::move(calc_priority))
     , default_lease(default_lease)
     , _impl(qbase_cubic(std::move(rand_state)))
 {
   _conf_type = conf_type;
 }
 template <typename oracle_impl>
-config_oracle<oracle_impl>::config_oracle(uint64_t default_lease, priority_func* calc_priority,
+config_oracle<oracle_impl>::config_oracle(uint64_t default_lease, priority_func calc_priority,
     const std::string& interaction_type, const std::string& oracle_type, std::shared_ptr<VW::rand_state>&,
     config_type conf_type)
     : _interaction_type(interaction_type)
     , _oracle_type(oracle_type)
-    , calc_priority(calc_priority)
+    , calc_priority(std::move(calc_priority))
     , default_lease(default_lease)
     , _impl(oracle_impl())
 {
@@ -220,7 +220,7 @@ bool config_oracle<oracle_impl>::insert_config(set_ns_list_t&& new_elements,
   }
   else { configs.emplace_back(std::move(new_elements), default_lease, conf_type); }
 
-  float priority = (*calc_priority)(configs[valid_config_size], ns_counter);
+  float priority = calc_priority(configs[valid_config_size], ns_counter);
   index_queue.push(std::make_pair(priority, valid_config_size));
   ++valid_config_size;
   return true;
@@ -405,7 +405,7 @@ bool config_oracle<oracle_impl>::repopulate_index_queue(const std::map<namespace
     if (configs[i].state == VW::reductions::automl::config_state::New ||
         configs[i].state == VW::reductions::automl::config_state::Inactive)
     {
-      float priority = (*calc_priority)(configs[i], ns_counter);
+      float priority = calc_priority(configs[i], ns_counter);
       index_queue.push(std::make_pair(priority, i));
     }
   }

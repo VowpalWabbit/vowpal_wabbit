@@ -203,12 +203,12 @@ void approx_pmf_to_pdf(float a, float b, probability_density_function& pdf)
 }
 
 template <uint8_t policy, bool audit_or_hash_inv>
-void predict(cbzo& data, base_learner&, VW::example& ec)
+void predict(cbzo& data, VW::example& ec)
 {
   ec.pred.pdf.clear();
 
   float action_centroid = inference<policy>(*data.all, ec);
-  set_minmax(data.all->sd, action_centroid, data.min_prediction_supplied, data.max_prediction_supplied);
+  set_minmax(data.all->sd.get(), action_centroid, data.min_prediction_supplied, data.max_prediction_supplied);
   action_centroid = VW::math::clamp(action_centroid, data.all->sd->min_label, data.all->sd->max_label);
 
   approx_pmf_to_pdf(action_centroid - data.radius, action_centroid + data.radius, ec.pred.pdf);
@@ -216,14 +216,12 @@ void predict(cbzo& data, base_learner&, VW::example& ec)
   if (audit_or_hash_inv) { print_audit_features(*data.all, ec); }
 }
 
-// NO_SANITIZE_UNDEFINED needed in learn functions because
-// base_learner& base might be a reference created from nullptr
 template <uint8_t policy, bool feature_mask_off, bool audit_or_hash_inv>
-void NO_SANITIZE_UNDEFINED learn(cbzo& data, base_learner& base, VW::example& ec)
+void learn(cbzo& data, VW::example& ec)
 {
   // update_weights() doesn't require predict() to be called. It is called
   // to respect --audit, --invert_hash, --predictions for train examples
-  predict<policy, audit_or_hash_inv>(data, base, ec);
+  predict<policy, audit_or_hash_inv>(data, ec);
   update_weights<policy, feature_mask_off>(data, ec);
 }
 
@@ -271,12 +269,11 @@ void print_update_cbzo(VW::workspace& all, VW::shared_data& sd, const cbzo& /* d
     const auto& costs = ec.l.cb_cont.costs;
     sd.print_update(*all.trace_message, all.holdout_set_off, all.current_pass,
         ec.test_only ? "unknown" : VW::to_string(costs[0]),
-        VW::to_string(ec.pred.pdf, VW::details::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION), ec.get_num_features(),
-        all.progress_add, all.progress_arg);
+        VW::to_string(ec.pred.pdf, VW::details::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION), ec.get_num_features());
   }
 }
 
-void (*get_learn(VW::workspace& all, uint8_t policy, bool feature_mask_off))(cbzo&, base_learner&, VW::example&)
+void (*get_learn(VW::workspace& all, uint8_t policy, bool feature_mask_off))(cbzo&, VW::example&)
 {
   if (policy == CONSTANT_POLICY)
   {
@@ -302,7 +299,7 @@ void (*get_learn(VW::workspace& all, uint8_t policy, bool feature_mask_off))(cbz
     THROW("Unknown policy encountered: " << policy)
 }
 
-void (*get_predict(VW::workspace& all, uint8_t policy))(cbzo&, base_learner&, VW::example&)
+void (*get_predict(VW::workspace& all, uint8_t policy))(cbzo&, VW::example&)
 {
   if (policy == CONSTANT_POLICY)
   {
@@ -320,7 +317,7 @@ void (*get_predict(VW::workspace& all, uint8_t policy))(cbzo&, base_learner&, VW
 
 }  // namespace
 
-base_learner* VW::reductions::cbzo_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::cbzo_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -370,14 +367,14 @@ base_learner* VW::reductions::cbzo_setup(VW::setup_base_i& stack_builder)
   data->min_prediction_supplied = options.was_supplied("min_prediction");
   data->max_prediction_supplied = options.was_supplied("max_prediction");
 
-  auto* l = make_base_learner(std::move(data), get_learn(all, policy, feature_mask_off), get_predict(all, policy),
+  auto l = make_bottom_learner(std::move(data), get_learn(all, policy, feature_mask_off), get_predict(all, policy),
       stack_builder.get_setupfn_name(cbzo_setup), prediction_type_t::PDF, label_type_t::CONTINUOUS)
-                .set_params_per_weight(0)
-                .set_save_load(save_load)
-                .set_output_example_prediction(output_example_prediction_cbzo)
-                .set_print_update(print_update_cbzo)
-                .set_update_stats(update_stats_cbzo)
-                .build();
+               .set_params_per_weight(0)
+               .set_save_load(save_load)
+               .set_output_example_prediction(output_example_prediction_cbzo)
+               .set_print_update(print_update_cbzo)
+               .set_update_stats(update_stats_cbzo)
+               .build();
 
-  return make_base(*l);
+  return l;
 }

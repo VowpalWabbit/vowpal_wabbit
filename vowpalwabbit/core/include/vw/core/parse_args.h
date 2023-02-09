@@ -64,7 +64,7 @@ void parse_modules(config::options_i& options, VW::workspace& all, bool interact
     std::vector<std::string>& dictionary_namespaces);
 void instantiate_learner(VW::workspace& all, std::unique_ptr<VW::setup_base_i> learner_builder);
 void parse_sources(config::options_i& options, VW::workspace& all, io_buf& model, bool skip_model_load);
-void print_enabled_reductions(VW::workspace& all, std::vector<std::string>& enabled_reductions);
+void print_enabled_learners(VW::workspace& all, std::vector<std::string>& enabled_learners);
 void parse_dictionary_argument(VW::workspace& all, const std::string& str);
 }  // namespace details
 }  // namespace VW

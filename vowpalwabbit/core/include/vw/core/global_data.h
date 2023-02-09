@@ -13,6 +13,7 @@
 #include "vw/core/interaction_generation_state.h"
 #include "vw/core/metrics_collector.h"
 #include "vw/core/multi_ex.h"
+#include "vw/core/setup_base.h"
 #include "vw/core/version.h"
 #include "vw/core/vw_fwd.h"
 #include "vw/io/logger.h"
@@ -21,6 +22,7 @@
 #include <cfloat>
 #include <cinttypes>
 #include <cstdint>
+#include <functional>
 #include <map>
 #include <memory>
 #include <string>
@@ -53,7 +55,7 @@ public:
   std::shared_ptr<details::feature_dict> dict;
 };
 }  // namespace details
-using reduction_setup_fn = VW::LEARNER::base_learner* (*)(VW::setup_base_i&);
+
 using options_deleter_type = void (*)(VW::config::options_i*);
 class workspace;
 
@@ -101,22 +103,21 @@ public:
   uint64_t stride_shift;
 };
 }  // namespace details
+
 class workspace
 {
 public:
-  VW::shared_data* sd;
+  std::shared_ptr<VW::shared_data> sd;
 
   std::unique_ptr<parser> example_parser;
   std::thread parse_thread;
 
   all_reduce_type selected_all_reduce_type;
-  all_reduce_base* all_reduce;
+  std::unique_ptr<all_reduce_base> all_reduce;
 
   bool chain_hash_json = false;
 
-  VW::LEARNER::base_learner* l;  // the top level learner
-  VW::LEARNER::base_learner*
-      cost_sensitive;  // a cost sensitive learning algorithm.  can be single or multi line learner
+  std::shared_ptr<VW::LEARNER::learner> l;  // the top level learner
 
   void learn(example&);
   void learn(multi_ex&);
@@ -132,14 +133,17 @@ public:
 
   /**
    * @brief Generate a JSON string with the current model state and invert hash
-   * lookup table. Base reduction in use must be gd and workspace.hash_inv must
+   * lookup table. Bottom learner in use must be gd and workspace.hash_inv must
    * be true. This function is experimental and subject to change.
    *
    * @return std::string JSON formatted string
    */
   std::string dump_weights_to_json_experimental();
 
-  void (*set_minmax)(VW::shared_data* sd, float label);
+  // Function to set min_label and max_label in shared_data
+  // Should be bound to a VW::shared_data pointer upon creating the function
+  // May be nullptr, so you must check before calling it
+  std::function<void(float)> set_minmax;
 
   uint64_t current_pass;
 
@@ -177,7 +181,7 @@ public:
 
   // error reporting
   std::shared_ptr<details::trace_message_wrapper> trace_message_wrapper_context;
-  std::unique_ptr<std::ostream> trace_message;
+  std::shared_ptr<std::ostream> trace_message;
 
   std::unique_ptr<VW::config::options_i, options_deleter_type> options;
 
@@ -208,7 +212,7 @@ public:
   uint64_t parse_mask;  // 1 << num_bits -1
   bool permutations;    // if true - permutations of features generated instead of simple combinations. false by default
 
-  // Referenced by examples as their set of interactions. Can be overriden by reductions.
+  // Referenced by examples as their set of interactions. Can be overriden by learners.
   std::vector<std::vector<namespace_index>> interactions;
   std::vector<std::vector<extent_term>> extent_interactions;
   bool ignore_some;
@@ -296,13 +300,9 @@ public:
   bool print_invert;
   bool hexfloat_weights;
 
-  // Set by --progress <arg>
-  bool progress_add;   // additive (rather than multiplicative) progress dumps
-  float progress_arg;  // next update progress dump multiplier
-
   std::map<uint64_t, VW::details::invert_hash_info> index_name_map;
 
-  // hack to support cb model loading into ccb reduction
+  // hack to support cb model loading into ccb learner
   bool is_ccb_input_model = false;
 
   // Default value of 2 follows behavior of 1-indexing and can change to 0-indexing if detected
@@ -329,7 +329,6 @@ namespace details
 void print_result_by_ref(
     VW::io::writer* f, float res, float weight, const VW::v_array<char>& tag, VW::io::logger& logger);
 
-void noop_mm(VW::shared_data*, float label);
 void compile_limits(std::vector<std::string> limits, std::array<uint32_t, VW::NUM_NAMESPACES>& dest, bool quiet,
     VW::io::logger& logger);
 }  // namespace details
