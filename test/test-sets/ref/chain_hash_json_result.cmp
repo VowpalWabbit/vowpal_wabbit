@@ -8,8 +8,6 @@ lda:0
 options: --chain_hash
 Checksum: 2756098922
 :0
-_gd_ppw_state[0]_normalized_sum_norm_x = 9
-_gd_ppw_state[0]_total_weight = 5
 emotion^happiness^true:106841:0.205255
 Constant:116060:0.702477
 happiness:143395:0.341188

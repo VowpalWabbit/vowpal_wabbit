@@ -113,15 +113,6 @@ bool _test_only_generate_A(VW::workspace* _all, const multi_ex& examples, std::v
 }
 
 template <typename randomized_svd_impl, typename spanner_impl>
-void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::save_load(io_buf& io, bool read, bool text)
-{
-  if (io.num_files() == 0) { return; }
-
-  if (read) { model_utils::read_model_field(io, _counter); }
-  else { model_utils::write_model_field(io, _counter, "cb large action space storing example counter", text); }
-}
-
-template <typename randomized_svd_impl, typename spanner_impl>
 void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::randomized_SVD(const multi_ex& examples)
 {
   impl.run(examples, shrink_factors, U, S, _V);
@@ -157,7 +148,10 @@ void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::updat
 
   if (_d < preds.size())
   {
-    shrink_fact_config.calculate_shrink_factor(_counter, _d, preds, shrink_factors);
+    auto& red_features =
+        examples[0]->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
+
+    shrink_fact_config.calculate_shrink_factor(red_features.squarecb_gamma, _d, preds, shrink_factors);
     randomized_SVD(examples);
 
     // The U matrix is empty before learning anything.
@@ -205,9 +199,9 @@ template <typename randomized_svd_impl, typename spanner_impl>
 void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::learn(
     VW::LEARNER::multi_learner& base, multi_ex& examples)
 {
+  VW::v_array<VW::action_score> preds = std::move(examples[0]->pred.a_s);
+  auto restore_guard = VW::scope_exit([&preds, &examples] { examples[0]->pred.a_s = std::move(preds); });
   base.learn(examples);
-  if (base.learn_returns_prediction) { update_example_prediction(examples); }
-  ++_counter;
 }
 
 void generate_Z(const multi_ex& examples, Eigen::MatrixXf& Z, Eigen::MatrixXf& B, uint64_t d, uint64_t seed)
@@ -235,33 +229,28 @@ void generate_Z(const multi_ex& examples, Eigen::MatrixXf& Z, Eigen::MatrixXf& B
 }
 
 template <typename T, typename S>
-cb_explore_adf_large_action_space<T, S>::cb_explore_adf_large_action_space(uint64_t d, float gamma_scale,
-    float gamma_exponent, float c, bool apply_shrink_factor, VW::workspace* all, uint64_t seed, size_t total_size,
-    size_t thread_pool_size, size_t block_size, bool use_explicit_simd, implementation_type impl_type)
+cb_explore_adf_large_action_space<T, S>::cb_explore_adf_large_action_space(uint64_t d, float c,
+    bool apply_shrink_factor, VW::workspace* all, uint64_t seed, size_t total_size, size_t thread_pool_size,
+    size_t block_size, bool use_explicit_simd, implementation_type impl_type)
     : _d(d)
     , _all(all)
-    , _counter(0)
     , _seed(seed)
     , _impl_type(impl_type)
     , spanner_state(c, d)
-    , shrink_fact_config(gamma_scale, gamma_exponent, apply_shrink_factor)
+    , shrink_fact_config(apply_shrink_factor)
     , impl(all, d, _seed, total_size, thread_pool_size, block_size, use_explicit_simd)
 {
 }
 
-shrink_factor_config::shrink_factor_config(float gamma_scale, float gamma_exponent, bool apply_shrink_factor)
-    : _gamma_scale(gamma_scale), _gamma_exponent(gamma_exponent), _apply_shrink_factor(apply_shrink_factor)
-{
-}
+shrink_factor_config::shrink_factor_config(bool apply_shrink_factor) : _apply_shrink_factor(apply_shrink_factor) {}
 
 void shrink_factor_config::calculate_shrink_factor(
-    size_t counter, size_t max_actions, const VW::action_scores& preds, std::vector<float>& shrink_factors)
+    float gamma, size_t max_actions, const VW::action_scores& preds, std::vector<float>& shrink_factors)
 {
   if (_apply_shrink_factor)
   {
     shrink_factors.clear();
     float min_ck = std::min_element(preds.begin(), preds.end())->score;
-    float gamma = _gamma_scale * static_cast<float>(std::pow(counter, _gamma_exponent));
     for (size_t i = 0; i < preds.size(); i++)
     {
       shrink_factors.push_back(std::sqrt(1 + max_actions + gamma / (4.0f * max_actions) * (preds[i].score - min_ck)));
@@ -284,12 +273,6 @@ void persist_metrics(cb_explore_adf_large_action_space<T, S>& data, VW::metric_s
 }
 
 template <typename T, typename S>
-void save_load(cb_explore_adf_large_action_space<T, S>& data, VW::io_buf& io, bool read, bool text)
-{
-  data.save_load(io, read, text);
-}
-
-template <typename T, typename S>
 void predict(cb_explore_adf_large_action_space<T, S>& data, VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
 {
   data.predict(base, examples);
@@ -303,15 +286,15 @@ void learn(cb_explore_adf_large_action_space<T, S>& data, VW::LEARNER::multi_lea
 
 template <typename T, typename S>
 VW::LEARNER::base_learner* make_las_with_impl(VW::setup_base_i& stack_builder, VW::LEARNER::multi_learner* base,
-    implementation_type& impl_type, VW::workspace& all, uint64_t d, float gamma_scale, float gamma_exponent, float c,
-    bool apply_shrink_factor, size_t thread_pool_size, size_t block_size, bool use_explicit_simd)
+    implementation_type& impl_type, VW::workspace& all, uint64_t d, float c, bool apply_shrink_factor,
+    size_t thread_pool_size, size_t block_size, bool use_explicit_simd)
 {
   size_t problem_multiplier = 1;
 
   float seed = (all.get_random_state()->get_random() + 1) * 10.f;
 
-  auto data = VW::make_unique<cb_explore_adf_large_action_space<T, S>>(d, gamma_scale, gamma_exponent, c,
-      apply_shrink_factor, &all, seed, 1 << all.num_bits, thread_pool_size, block_size, use_explicit_simd, impl_type);
+  auto data = VW::make_unique<cb_explore_adf_large_action_space<T, S>>(d, c, apply_shrink_factor, &all, seed,
+      1 << all.num_bits, thread_pool_size, block_size, use_explicit_simd, impl_type);
 
   auto* l = make_reduction_learner(std::move(data), base, learn<T, S>, predict<T, S>,
       stack_builder.get_setupfn_name(VW::reductions::cb_explore_adf_large_action_space_setup))
@@ -321,8 +304,7 @@ VW::LEARNER::base_learner* make_las_with_impl(VW::setup_base_i& stack_builder, V
                 .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                 .set_params_per_weight(problem_multiplier)
                 .set_persist_metrics(persist_metrics<T, S>)
-                .set_save_load(save_load<T, S>)
-                .set_learn_returns_prediction(base->learn_returns_prediction)
+                .set_learn_returns_prediction(false)
                 .build();
   return VW::LEARNER::make_base(*l);
 }
@@ -336,8 +318,6 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   bool cb_explore_adf_option = false;
   bool large_action_space = false;
   uint64_t d;
-  float gamma_scale = 1.f;
-  float gamma_exponent = 0.f;
   float c;
   bool apply_shrink_factor = false;
   bool use_two_pass_svd_impl = false;
@@ -389,12 +369,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   auto enabled = options.add_parse_and_check_necessary(new_options) && large_action_space;
   if (!enabled) { return nullptr; }
 
-  if (options.was_supplied("squarecb"))
-  {
-    apply_shrink_factor = true;
-    gamma_scale = options.get_typed_option<float>("gamma_scale").value();
-    gamma_exponent = options.get_typed_option<float>("gamma_exponent").value();
-  }
+  if (options.was_supplied("squarecb")) { apply_shrink_factor = true; }
 
   if (options.was_supplied("cb_type"))
   {
@@ -414,15 +389,14 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
   if (use_two_pass_svd_impl)
   {
     auto impl_type = implementation_type::two_pass_svd;
-    return make_las_with_impl<two_pass_svd_impl, one_rank_spanner_state>(stack_builder, base, impl_type, all, d,
-        gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size, block_size,
+    return make_las_with_impl<two_pass_svd_impl, one_rank_spanner_state>(stack_builder, base, impl_type, all, d, c,
+        apply_shrink_factor, thread_pool_size, block_size,
         /*use_explicit_simd=*/false);
   }
   else
   {
     auto impl_type = implementation_type::one_pass_svd;
-    return make_las_with_impl<one_pass_svd_impl, one_rank_spanner_state>(stack_builder, base, impl_type, all, d,
-        gamma_scale, gamma_exponent, c, apply_shrink_factor, thread_pool_size, block_size,
-        use_simd_in_one_pass_svd_impl);
+    return make_las_with_impl<one_pass_svd_impl, one_rank_spanner_state>(stack_builder, base, impl_type, all, d, c,
+        apply_shrink_factor, thread_pool_size, block_size, use_simd_in_one_pass_svd_impl);
   }
 }

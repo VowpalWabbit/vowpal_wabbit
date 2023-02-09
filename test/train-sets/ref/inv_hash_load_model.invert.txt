@@ -9,10 +9,8 @@ lda:0
 options: --noconstant
 Checksum: 2673762800
 :0
-_gd_ppw_state[0]_normalized_sum_norm_x = 7
-_gd_ppw_state[0]_total_weight = 4
 :39524:0.253423
 feature_second_run_one:51985:0.187343
 feature_first_run_one:123312:0.696285
-feature_second_run_two:144690:0.26517
+feature_second_run_two:144690:0.278967
 :212398:0.294434

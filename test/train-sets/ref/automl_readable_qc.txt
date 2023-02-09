@@ -1808,13 +1808,6 @@ sd::oec.weighted_labeled_examples 3
 current_pass 1
 l1_state 0
 l2_state 1
-gd_ppw_state.size() = 3
-gd_ppw_state[0]_normalized_sum_norm_x = 98.98610879850912
-gd_ppw_state[0]_total_weight = 0.30612243711948395
-gd_ppw_state[1]_normalized_sum_norm_x = 101.435088295465
-gd_ppw_state[1]_total_weight = 0.30612243711948395
-gd_ppw_state[2]_normalized_sum_norm_x = 103.88406779242086
-gd_ppw_state[2]_total_weight = 0.30612243711948395
 824:-0.00344349 0.273984 1
 825:-0.00338733 0.274929 1
 826:-0.00333381 0.275914 1

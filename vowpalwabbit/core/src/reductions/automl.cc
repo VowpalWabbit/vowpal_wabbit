@@ -111,6 +111,7 @@ void pre_save_load_automl(VW::workspace& all, automl<CMType>& data)
   }
   options.insert("interactions", "");
   options.get_typed_option<std::vector<std::string>>("interactions").value(interactions_opt);
+  all.wpp_innermost_removals.push_back(std::make_pair(data.cm->max_live_configs, 0));
 }
 
 template <typename CMType>
