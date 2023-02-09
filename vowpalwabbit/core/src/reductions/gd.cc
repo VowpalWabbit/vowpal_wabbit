@@ -864,10 +864,16 @@ void learn(VW::reductions::gd& g, VW::example& ec)
   g.predict(g, ec);
   // this state should only matter on learn and not predict
   // assert(g.current_model_state == nullptr);
-  g.current_model_state = &(g.per_model_states.at(ec.ft_offset / g.all->weights.stride()));
-  update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare>(g, ec);
-  assert(g.current_model_state == nullptr);  // update clears this pointer
-  g.current_model_state = nullptr;
+  // Guard example state restore against throws
+  auto restore_guard = VW::scope_exit(
+      [&g, &ec]
+      {
+        g.current_model_state = &(g.per_model_states.at(ec.ft_offset / g.all->weights.stride()));
+
+        update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare>(g, ec);
+        assert(g.current_model_state == nullptr);  // update clears this pointer
+        g.current_model_state = nullptr;
+      });
 }
 
 size_t write_index(VW::io_buf& model_file, std::stringstream& msg, bool text, uint32_t num_bits, uint64_t i)
