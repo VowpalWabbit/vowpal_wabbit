@@ -102,7 +102,7 @@ void epsilon_decay_data::update_weights(float init_ep, VW::LEARNER::learner& bas
       base.learn(examples, _weight_indices[model_ind]);
       std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[model_ind * 2]);
       std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[model_ind * 2 + 1]);
-      
+
       for (const auto& a_s : examples[0]->pred.a_s)
       {
         if (a_s.action == labelled_action)
@@ -242,7 +242,8 @@ size_t write_model_field(io_buf& io, const VW::reductions::epsilon_decay::epsilo
   size_t bytes = 0;
   bytes += write_model_field(io, epsilon_decay.conf_seq_estimators, upstream_name + "conf_seq_estimators", text);
   bytes += write_model_field(io, epsilon_decay._global_counter, upstream_name + "_global_counter", text);
-  bytes += write_model_field(io, epsilon_decay.per_live_model_state_uint64, upstream_name + "_per_live_model_state_uint64", text);
+  bytes += write_model_field(
+      io, epsilon_decay.per_live_model_state_uint64, upstream_name + "_per_live_model_state_uint64", text);
   return bytes;
 }
 }  // namespace model_utils
@@ -317,7 +318,8 @@ void pre_save_load_epsilon_decay(VW::workspace& all, VW::reductions::epsilon_dec
 
   all.num_bits = all.num_bits - static_cast<uint32_t>(std::log2(data._wpp));
   options.get_typed_option<uint32_t>("bit_precision").value(all.num_bits);
-  all.wpp_innermost_removals.push_back(std::make_pair(data._model_count, data._weight_indices[data.conf_seq_estimators.size() - 1]));
+  all.wpp_innermost_removals.push_back(
+      std::make_pair(data._model_count, data._weight_indices[data.conf_seq_estimators.size() - 1]));
 }
 
 }  // namespace

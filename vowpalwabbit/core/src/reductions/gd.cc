@@ -1333,7 +1333,7 @@ void save_load(VW::reductions::gd& g, VW::io_buf& model_file, bool read, bool te
         }
         VW::model_utils::write_model_field(model_file, g.per_model_states[0], "_gd_ppw_state", text);
       }*/
-      
+
       if (!all.weights.not_null()) { THROW("Model weights not initialized."); }
       VW::details::save_load_regressor_gd(all, model_file, read, text);
     }
