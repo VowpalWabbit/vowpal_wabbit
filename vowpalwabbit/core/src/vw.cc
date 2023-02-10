@@ -461,7 +461,7 @@ void VW::free_args(int argc, char* argv[])
 
 const char* VW::are_features_compatible(const VW::workspace& vw1, const VW::workspace& vw2)
 {
-  if (vw1.example_parser->hasher != vw2.example_parser->hasher) { return "hasher"; }
+  if (vw1.parser_runtime.example_parser->hasher != vw2.parser_runtime.example_parser->hasher) { return "hasher"; }
 
   if (!std::equal(vw1.fc.spelling_features.begin(), vw1.fc.spelling_features.end(), vw2.fc.spelling_features.begin()))
   {
@@ -575,19 +575,19 @@ namespace
 
 void thread_dispatch(VW::workspace& all, const VW::multi_ex& examples)
 {
-  for (auto* example : examples) { all.example_parser->ready_parsed_examples.push(example); }
+  for (auto* example : examples) { all.parser_runtime.example_parser->ready_parsed_examples.push(example); }
 }
 void main_parse_loop(VW::workspace* all) { VW::details::parse_dispatch(*all, thread_dispatch); }
 }  // namespace
 
-void VW::start_parser(VW::workspace& all) { all.parse_thread = std::thread(main_parse_loop, &all); }
-void VW::end_parser(VW::workspace& all) { all.parse_thread.join(); }
+void VW::start_parser(VW::workspace& all) { all.parser_runtime.parse_thread = std::thread(main_parse_loop, &all); }
+void VW::end_parser(VW::workspace& all) { all.parser_runtime.parse_thread.join(); }
 
 bool VW::is_ring_example(const VW::workspace& all, const example* ae)
 {
   VW_WARNING_STATE_PUSH
   VW_WARNING_DISABLE_DEPRECATED_USAGE
-  return all.example_parser->example_pool.is_from_pool(ae);
+  return all.parser_runtime.example_parser->example_pool.is_from_pool(ae);
   VW_WARNING_STATE_POP
 }
 
@@ -611,7 +611,7 @@ VW::example* VW::import_example(
     VW::workspace& all, const std::string& label, primitive_feature_space* features, size_t len)
 {
   VW::example* ret = &get_unused_example(&all);
-  all.example_parser->lbl_parser.default_label(ret->l);
+  all.parser_runtime.example_parser->lbl_parser.default_label(ret->l);
 
   if (label.length() > 0) { parse_example_label(all, *ret, label); }
 
@@ -636,8 +636,8 @@ void VW::parse_example_label(VW::workspace& all, example& ec, const std::string&
 {
   std::vector<VW::string_view> words;
   VW::tokenize(' ', label, words);
-  all.example_parser->lbl_parser.parse_label(ec.l, ec.ex_reduction_features, all.example_parser->parser_memory_to_reuse,
-      all.sd->ldict.get(), words, all.logger);
+  all.parser_runtime.example_parser->lbl_parser.parse_label(ec.l, ec.ex_reduction_features,
+      all.parser_runtime.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), words, all.logger);
 }
 
 void VW::setup_examples(VW::workspace& all, VW::multi_ex& examples)
@@ -679,12 +679,13 @@ void feature_limit(VW::workspace& all, VW::example* ex)
 void VW::setup_example(VW::workspace& all, VW::example* ae)
 {
   assert(ae != nullptr);
-  if (all.example_parser->sort_features && !ae->sorted) { unique_sort_features(all.parse_mask, *ae); }
+  if (all.parser_runtime.example_parser->sort_features && !ae->sorted) { unique_sort_features(all.parse_mask, *ae); }
 
-  if (all.example_parser->write_cache)
+  if (all.parser_runtime.example_parser->write_cache)
   {
-    VW::parsers::cache::write_example_to_cache(all.example_parser->output, ae, all.example_parser->lbl_parser,
-        all.parse_mask, all.example_parser->cache_temp_buffer_obj);
+    VW::parsers::cache::write_example_to_cache(all.parser_runtime.example_parser->output, ae,
+        all.parser_runtime.example_parser->lbl_parser, all.parse_mask,
+        all.parser_runtime.example_parser->cache_temp_buffer_obj);
   }
 
   // Require all extents to be complete in an VW::example.
@@ -699,24 +700,28 @@ void VW::setup_example(VW::workspace& all, VW::example* ae)
   ae->debug_current_reduction_depth = 0;
   ae->_use_permutations = all.fc.permutations;
 
-  all.example_parser->num_setup_examples++;
-  if (!all.example_parser->emptylines_separate_examples) { all.example_parser->in_pass_counter++; }
-
-  // Determine if this example is part of the holdout set.
-  ae->test_only = is_test_only(all.example_parser->in_pass_counter, all.pc.holdout_period, all.pc.holdout_after,
-      all.pc.holdout_set_off, all.example_parser->emptylines_separate_examples ? (all.pc.holdout_period - 1) : 0);
-  // If this example has a test only label then it is true regardless.
-  ae->test_only |= all.example_parser->lbl_parser.test_label(ae->l);
-
-  if (all.example_parser->emptylines_separate_examples &&
-      (example_is_newline(*ae) &&
-          (all.example_parser->lbl_parser.label_type != label_type_t::CCB ||
-              VW::reductions::ccb::ec_is_example_unset(*ae))))
+  all.parser_runtime.example_parser->num_setup_examples++;
+  if (!all.parser_runtime.example_parser->emptylines_separate_examples)
   {
-    all.example_parser->in_pass_counter++;
+    all.parser_runtime.example_parser->in_pass_counter++;
   }
 
-  ae->weight = all.example_parser->lbl_parser.get_weight(ae->l, ae->ex_reduction_features);
+  // Determine if this example is part of the holdout set.
+  ae->test_only = is_test_only(all.parser_runtime.example_parser->in_pass_counter, all.pc.holdout_period,
+      all.pc.holdout_after, all.pc.holdout_set_off,
+      all.parser_runtime.example_parser->emptylines_separate_examples ? (all.pc.holdout_period - 1) : 0);
+  // If this example has a test only label then it is true regardless.
+  ae->test_only |= all.parser_runtime.example_parser->lbl_parser.test_label(ae->l);
+
+  if (all.parser_runtime.example_parser->emptylines_separate_examples &&
+      (example_is_newline(*ae) &&
+          (all.parser_runtime.example_parser->lbl_parser.label_type != label_type_t::CCB ||
+              VW::reductions::ccb::ec_is_example_unset(*ae))))
+  {
+    all.parser_runtime.example_parser->in_pass_counter++;
+  }
+
+  ae->weight = all.parser_runtime.example_parser->lbl_parser.get_weight(ae->l, ae->ex_reduction_features);
 
   if (all.fc.ignore_some)
   {
@@ -763,7 +768,7 @@ void VW::setup_example(VW::workspace& all, VW::example* ae)
 VW::example* VW::new_unused_example(VW::workspace& all)
 {
   VW::example* ec = &get_unused_example(&all);
-  all.example_parser->lbl_parser.default_label(ec->l);
+  all.parser_runtime.example_parser->lbl_parser.default_label(ec->l);
   return ec;
 }
 
@@ -880,9 +885,9 @@ void VW::finish_example(VW::workspace& all, example& ec)
   details::clean_example(all, ec);
 
   {
-    std::lock_guard<std::mutex> lock(all.example_parser->output_lock);
-    ++all.example_parser->num_finished_examples;
-    all.example_parser->output_done.notify_one();
+    std::lock_guard<std::mutex> lock(all.parser_runtime.example_parser->output_lock);
+    ++all.parser_runtime.example_parser->num_finished_examples;
+    all.parser_runtime.example_parser->output_done.notify_one();
   }
 }
 

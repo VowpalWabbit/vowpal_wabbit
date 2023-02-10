@@ -463,7 +463,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::log_multi_setup(VW::setup_
                .set_output_label_type(VW::label_type_t::SIMPLE)
                .build();
 
-  all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
+  all.parser_runtime.example_parser->lbl_parser = VW::multiclass_label_parser_global;
 
   return l;
 }

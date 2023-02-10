@@ -305,7 +305,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_cover_setup
   if (cb_type == VW::cb_type_t::MTR) { problem_multiplier *= 2; }
 
   auto base = VW::LEARNER::require_multiline(stack_builder.setup_base_learner());
-  all.example_parser->lbl_parser = VW::cb_label_parser_global;
+  all.parser_runtime.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   bool epsilon_decay;
   if (options.was_supplied("epsilon"))

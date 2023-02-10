@@ -374,14 +374,14 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
   ExampleBuilder ex_builder;
 
   VW::example* ae = nullptr;
-  all.example_parser->ready_parsed_examples.try_pop(ae);
+  all.parser_runtime.example_parser->ready_parsed_examples.try_pop(ae);
 
   while (ae != nullptr && !ae->end_pass)
   {
     // Create Label for current example
     flatbuffers::Offset<void> label;
     VW::parsers::flatbuffer::Label label_type = VW::parsers::flatbuffer::Label_NONE;
-    switch (all.example_parser->lbl_parser.label_type)
+    switch (all.parser_runtime.example_parser->lbl_parser.label_type)
     {
       case VW::label_type_t::NOLABEL:
         to_flat::create_no_label(ae, ex_builder);
@@ -451,11 +451,11 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
     if (all.l->is_multiline())
     {
       if (!VW::example_is_newline(*ae) ||
-          (all.example_parser->lbl_parser.label_type == VW::label_type_t::CB &&
+          (all.parser_runtime.example_parser->lbl_parser.label_type == VW::label_type_t::CB &&
               !VW::example_is_newline_not_header_cb(*ae)) ||
-          ((all.example_parser->lbl_parser.label_type == VW::label_type_t::CCB &&
+          ((all.parser_runtime.example_parser->lbl_parser.label_type == VW::label_type_t::CCB &&
                ae->l.conditional_contextual_bandit.type == VW::ccb_example_type::SLOT) ||
-              (all.example_parser->lbl_parser.label_type == VW::label_type_t::SLATES &&
+              (all.parser_runtime.example_parser->lbl_parser.label_type == VW::label_type_t::SLATES &&
                   ae->l.slates.type == VW::slates::example_type::SLOT)))
       {
         ex_builder.namespaces.insert(ex_builder.namespaces.end(), namespaces.begin(), namespaces.end());
@@ -466,7 +466,7 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
         _multi_ex_index++;
         _examples++;
         ae = nullptr;
-        all.example_parser->ready_parsed_examples.try_pop(ae);
+        all.parser_runtime.example_parser->ready_parsed_examples.try_pop(ae);
         continue;
       }
       else { ex_builder.is_newline = true; }
@@ -482,7 +482,7 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
     write_to_file(collection, all.l->is_multiline(), multi_ex_builder, ex_builder, outfile);
 
     ae = nullptr;
-    all.example_parser->ready_parsed_examples.try_pop(ae);
+    all.parser_runtime.example_parser->ready_parsed_examples.try_pop(ae);
   }
 
   if (collection && _collection_count > 0)

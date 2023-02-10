@@ -750,7 +750,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::csldf_setup(VW::setup_base
     }
   }
 
-  all.example_parser->emptylines_separate_examples = true;  // TODO: check this to be sure!!!  !ld->is_singleline;
+  all.parser_runtime.example_parser->emptylines_separate_examples =
+      true;  // TODO: check this to be sure!!!  !ld->is_singleline;
 
   ld->label_features.max_load_factor(0.25);
   ld->label_features.reserve(256);
@@ -803,7 +804,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::csldf_setup(VW::setup_base
                .set_print_update(print_update_func)
                .build();
 
-  all.example_parser->lbl_parser = VW::cs_label_parser_global;
+  all.parser_runtime.example_parser->lbl_parser = VW::cs_label_parser_global;
 
   return l;
 }

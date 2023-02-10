@@ -392,7 +392,7 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   pc.check_holdout_every_n_passes = 1;
   pc.early_terminate = false;
 
-  max_examples = std::numeric_limits<size_t>::max();
+  parser_runtime.max_examples = std::numeric_limits<size_t>::max();
 
   hash_inv = false;
   print_invert = false;
@@ -426,7 +426,7 @@ void workspace::finish()
 workspace::~workspace()
 {
   // TODO: migrate all finalization into parser destructor
-  if (example_parser != nullptr) { VW::details::free_parser(*this); }
+  if (parser_runtime.example_parser != nullptr) { VW::details::free_parser(*this); }
 }
 
 }  // namespace VW

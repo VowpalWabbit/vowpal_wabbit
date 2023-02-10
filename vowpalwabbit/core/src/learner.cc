@@ -69,7 +69,7 @@ void save(example& ec, VW::workspace& all)
 inline bool example_is_newline_not_header(example& ec, VW::workspace& all)
 {
   // If we are using CCB, test against CCB implementation otherwise fallback to previous behavior.
-  const bool is_header = ec_is_example_header(ec, all.example_parser->lbl_parser.label_type);
+  const bool is_header = ec_is_example_header(ec, all.parser_runtime.example_parser->lbl_parser.label_type);
   return example_is_newline(ec) && !is_header;
 }
 
@@ -83,7 +83,7 @@ void drain_examples(VW::workspace& all)
   if (all.pc.early_terminate)
   {  // drain any extra examples from parser.
     example* ec = nullptr;
-    while ((ec = VW::get_example(all.example_parser.get())) != nullptr) { VW::finish_example(all, *ec); }
+    while ((ec = VW::get_example(all.parser_runtime.example_parser.get())) != nullptr) { VW::finish_example(all, *ec); }
   }
   all.l->end_examples();
 }
@@ -195,7 +195,7 @@ private:
   bool complete_multi_ex(example* ec)
   {
     auto& master = _context.get_master();
-    const bool is_test_ec = master.example_parser->lbl_parser.test_label(ec->l);
+    const bool is_test_ec = master.parser_runtime.example_parser->lbl_parser.test_label(ec->l);
     const bool is_newline = (example_is_newline_not_header(*ec, master) && is_test_ec);
 
     if (!is_newline && !ec->end_pass) { _ec_seq.push_back(ec); }
@@ -228,7 +228,10 @@ class ready_examples_queue
 public:
   ready_examples_queue(VW::workspace& master) : _master(master) {}
 
-  example* pop() { return !_master.pc.early_terminate ? VW::get_example(_master.example_parser.get()) : nullptr; }
+  example* pop()
+  {
+    return !_master.pc.early_terminate ? VW::get_example(_master.parser_runtime.example_parser.get()) : nullptr;
+  }
 
 private:
   VW::workspace& _master;

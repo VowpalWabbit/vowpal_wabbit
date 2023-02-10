@@ -172,7 +172,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cats_pdf_setup(setup_base_
                .set_update_stats(update_stats_cats_pdf)
                .build();
 
-  all.example_parser->lbl_parser = cb_continuous::the_label_parser;
+  all.parser_runtime.example_parser->lbl_parser = cb_continuous::the_label_parser;
 
   return l;
 }

@@ -220,7 +220,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_to_cb_adf_setup(VW::set
   data->adf_data.init_adf_data(num_actions, base->increment, all.fc.interactions, all.fc.extent_interactions);
 
   // see csoaa.cc ~ line 894 / setup for csldf_setup
-  all.example_parser->emptylines_separate_examples = false;
+  all.parser_runtime.example_parser->emptylines_separate_examples = false;
   VW::prediction_type_t in_pred_type;
   VW::prediction_type_t out_pred_type;
 

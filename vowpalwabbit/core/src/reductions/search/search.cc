@@ -2777,8 +2777,8 @@ void search::set_label_parser(VW::label_parser& lp, bool (*is_test)(const VW::po
   {
     priv->all->logger.err_warn("Task should not set label parser except in initialize function.");
   }
-  this->priv->all->example_parser->lbl_parser = lp;
-  this->priv->all->example_parser->lbl_parser.test_label = is_test;
+  this->priv->all->parser_runtime.example_parser->lbl_parser = lp;
+  this->priv->all->parser_runtime.example_parser->lbl_parser.test_label = is_test;
   this->priv->label_is_test = is_test;
 }
 
@@ -3317,7 +3317,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::search_setup(VW::setup_bas
       break;
     }
   }
-  all.example_parser->emptylines_separate_examples = true;
+  all.parser_runtime.example_parser->emptylines_separate_examples = true;
 
   if (!options.was_supplied("csoaa") && !options.was_supplied("cs_active") && !options.was_supplied("csoaa_ldf") &&
       !options.was_supplied("wap_ldf") && !options.was_supplied("cb"))
@@ -3337,13 +3337,13 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::search_setup(VW::setup_bas
   auto base = stack_builder.setup_base_learner();
 
   // default to OAA labels unless the task wants to override this (which they can do in initialize)
-  all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
+  all.parser_runtime.example_parser->lbl_parser = VW::multiclass_label_parser_global;
 
   if (priv.task && priv.task->initialize) { priv.task->initialize(*sch.get(), priv.A, options); }
   if (priv.metatask && priv.metatask->initialize) { priv.metatask->initialize(*sch.get(), priv.A, options); }
   priv.meta_t = 0;
 
-  VW::label_type_t expected_label_type = all.example_parser->lbl_parser.label_type;
+  VW::label_type_t expected_label_type = all.parser_runtime.example_parser->lbl_parser.label_type;
 
   if (options.was_supplied("search_allowed_transitions"))
   {

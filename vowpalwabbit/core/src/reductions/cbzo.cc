@@ -365,7 +365,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cbzo_setup(VW::setup_base_
     }
   }
 
-  all.example_parser->lbl_parser = cb_continuous::the_label_parser;
+  all.parser_runtime.example_parser->lbl_parser = cb_continuous::the_label_parser;
   data->all = &all;
   data->min_prediction_supplied = options.was_supplied("min_prediction");
   data->max_prediction_supplied = options.was_supplied("max_prediction");

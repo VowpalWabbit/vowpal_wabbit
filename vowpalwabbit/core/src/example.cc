@@ -157,7 +157,7 @@ namespace details
 void clean_example(VW::workspace& all, example& ec)
 {
   VW::empty_example(all, ec);
-  all.example_parser->example_pool.return_object(&ec);
+  all.parser_runtime.example_parser->example_pool.return_object(&ec);
 }
 void truncate_example_namespace(VW::example& ec, VW::namespace_index ns, const features& fs)
 {

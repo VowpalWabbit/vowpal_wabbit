@@ -172,7 +172,7 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_learnFr
   {
     VW::multi_ex ex_coll;
     ex_coll.push_back(&VW::get_unused_example(all));
-    all->example_parser->text_reader(
+    all->parser_runtime.example_parser->text_reader(
         all, VW::string_view(exampleStringGuard.c_str(), exampleStringGuard.length()), ex_coll);
     VW::setup_examples(*all, ex_coll);
     return callLearner<true>(env, all, ex_coll);
@@ -212,7 +212,7 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_predict
   {
     VW::multi_ex ex_coll;
     ex_coll.push_back(&VW::get_unused_example(all));
-    all->example_parser->text_reader(
+    all->parser_runtime.example_parser->text_reader(
         all, VW::string_view(exampleStringGuard.c_str(), exampleStringGuard.length()), ex_coll);
     VW::setup_examples(*all, ex_coll);
     return callLearner<false>(env, all, ex_coll);
@@ -419,7 +419,7 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_initiali
       VW::parsers::text::read_line(*all, ex, &empty);
     }
     else
-      all->example_parser->lbl_parser.default_label(ex->l);
+      all->parser_runtime.example_parser->lbl_parser.default_label(ex->l);
 
     return reinterpret_cast<jlong>(new VowpalWabbitExampleWrapper(all, ex));
   }
@@ -451,7 +451,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_clear(JNI
   try
   {
     VW::empty_example(*all, *ex);
-    all->example_parser->lbl_parser.default_label(ex->l);
+    all->parser_runtime.example_parser->lbl_parser.default_label(ex->l);
   }
   catch (...)
   {
@@ -572,7 +572,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setDefaul
 
   try
   {
-    all->example_parser->lbl_parser.default_label(ex->l);
+    all->parser_runtime.example_parser->lbl_parser.default_label(ex->l);
   }
   catch (...)
   {
@@ -882,7 +882,7 @@ JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_toStri
     std::ostringstream ostr;
 
     ostr << "VowpalWabbitExample(label=";
-    auto lp = all->example_parser->lbl_parser;
+    auto lp = all->parser_runtime.example_parser->lbl_parser;
 
     if (!memcmp(&lp, &VW::simple_label_parser_global, sizeof(lp)))
     {

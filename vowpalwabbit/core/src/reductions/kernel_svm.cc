@@ -254,14 +254,14 @@ void save_load_svm_model(svm_params& params, VW::io_buf& model_file, bool read, 
     {
       auto fec = VW::make_unique<VW::flat_example>();
       auto* tmp = &VW::details::calloc_or_throw<svm_example>();
-      VW::model_utils::read_model_field(model_file, *fec, params.all->example_parser->lbl_parser);
+      VW::model_utils::read_model_field(model_file, *fec, params.all->parser_runtime.example_parser->lbl_parser);
       tmp->ex = *fec;
       model->support_vec.push_back(tmp);
     }
     else
     {
       VW::model_utils::write_model_field(model_file, model->support_vec[i]->ex, "_flat_example", false,
-          params.all->example_parser->lbl_parser, params.all->parse_mask);
+          params.all->parser_runtime.example_parser->lbl_parser, params.all->parse_mask);
     }
   }
 
@@ -510,7 +510,7 @@ void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
 
     fec = &(params.pool[i]->ex);
     VW::model_utils::write_model_field(
-        *b, *fec, "_flat_example", false, all.example_parser->lbl_parser, all.parse_mask);
+        *b, *fec, "_flat_example", false, all.parser_runtime.example_parser->lbl_parser, all.parse_mask);
     delete params.pool[i];
   }
 
@@ -539,7 +539,7 @@ void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
 
     for (size_t i = 0; i < params.pool_size; i++)
     {
-      if (!VW::model_utils::read_model_field(*b, *fec, all.example_parser->lbl_parser))
+      if (!VW::model_utils::read_model_field(*b, *fec, all.parser_runtime.example_parser->lbl_parser))
       {
         params.pool[i] = &VW::details::calloc_or_throw<svm_example>();
         params.pool[i]->init_svm_example(fec);

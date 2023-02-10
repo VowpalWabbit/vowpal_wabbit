@@ -233,17 +233,10 @@ public:
   // bool nonormalize; not used?
   bool do_reset_source;
 };
-}  // namespace details
 
-class workspace
+class parser_runtime
 {
 public:
-  VW::version_struct model_file_ver;
-  parameters weights;
-  std::shared_ptr<VW::LEARNER::learner> l;  // the top level learner
-  std::unique_ptr<VW::config::options_i, options_deleter_type> options;
-  std::shared_ptr<VW::shared_data> sd;
-
   std::unique_ptr<parser> example_parser;
   // Experimental field.
   // Generic parser interface to make it possible to use any external parser.
@@ -254,6 +247,17 @@ public:
 #ifdef BUILD_FLATBUFFERS
   std::unique_ptr<VW::parsers::flatbuffer::parser> flat_converter;
 #endif
+};
+}  // namespace details
+
+class workspace
+{
+public:
+  VW::version_struct model_file_ver;
+  parameters weights;
+  std::shared_ptr<VW::LEARNER::learner> l;  // the top level learner
+  std::unique_ptr<VW::config::options_i, options_deleter_type> options;
+  std::shared_ptr<VW::shared_data> sd;
 
   void learn(example&);
   void learn(multi_ex&);
@@ -276,6 +280,7 @@ public:
    */
   std::string dump_weights_to_json_experimental();
 
+  details::parser_runtime parser_runtime;
   details::feature_tweaks_config fc;  // feature related configs
   details::output_model_config om;
   details::passes_config pc;

@@ -141,7 +141,7 @@ void VW::reductions::additional_metrics(VW::workspace& all, VW::metric_sink& sin
 
   std::vector<std::string> enabled_learners;
   if (all.l != nullptr) { all.l->get_enabled_learners(enabled_learners); }
-  insert_dsjson_metrics(all.example_parser->metrics.get(), sink, enabled_learners);
+  insert_dsjson_metrics(all.parser_runtime.example_parser->metrics.get(), sink, enabled_learners);
 }
 
 void VW::reductions::output_metrics(VW::workspace& all)

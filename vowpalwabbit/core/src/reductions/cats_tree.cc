@@ -372,6 +372,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cats_tree_setup(VW::setup_
                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
                .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
                .build();
-  all.example_parser->lbl_parser = VW::cb_label_parser_global;
+  all.parser_runtime.example_parser->lbl_parser = VW::cb_label_parser_global;
   return l;
 }

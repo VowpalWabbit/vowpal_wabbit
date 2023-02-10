@@ -437,7 +437,7 @@ public:
     if (!_line.empty())
     {
       this->_read_idx = 0;
-      this->_p = all.example_parser.get();
+      this->_p = all.parser_runtime.example_parser.get();
       this->_redefine_some = all.fc.redefine_some;
       this->_redefine = &all.fc.redefine;
       this->_ae = ae;
@@ -457,11 +457,11 @@ void VW::parsers::text::details::substring_to_example(VW::workspace* all, VW::ex
 {
   if (example.empty()) { ae->is_newline = true; }
 
-  all->example_parser->lbl_parser.default_label(ae->l);
+  all->parser_runtime.example_parser->lbl_parser.default_label(ae->l);
 
   size_t bar_idx = example.find('|');
 
-  all->example_parser->words.clear();
+  all->parser_runtime.example_parser->words.clear();
   if (bar_idx != 0)
   {
     VW::string_view label_space(example);
@@ -474,23 +474,25 @@ void VW::parsers::text::details::substring_to_example(VW::workspace* all, VW::ex
     size_t tab_idx = label_space.find('\t');
     if (tab_idx != VW::string_view::npos) { label_space.remove_prefix(tab_idx + 1); }
 
-    VW::tokenize(' ', label_space, all->example_parser->words);
-    if (all->example_parser->words.size() > 0 &&
-        ((all->example_parser->words.back().data() + all->example_parser->words.back().size()) ==
-                (label_space.data() + label_space.size()) ||
-            all->example_parser->words.back().front() == '\''))  // The last field is a tag, so record and strip it off
+    VW::tokenize(' ', label_space, all->parser_runtime.example_parser->words);
+    if (all->parser_runtime.example_parser->words.size() > 0 &&
+        ((all->parser_runtime.example_parser->words.back().data() +
+             all->parser_runtime.example_parser->words.back().size()) == (label_space.data() + label_space.size()) ||
+            all->parser_runtime.example_parser->words.back().front() ==
+                '\''))  // The last field is a tag, so record and strip it off
     {
-      VW::string_view tag = all->example_parser->words.back();
-      all->example_parser->words.pop_back();
+      VW::string_view tag = all->parser_runtime.example_parser->words.back();
+      all->parser_runtime.example_parser->words.pop_back();
       if (tag.front() == '\'') { tag.remove_prefix(1); }
       ae->tag.insert(ae->tag.end(), tag.begin(), tag.end());
     }
   }
 
-  if (!all->example_parser->words.empty())
+  if (!all->parser_runtime.example_parser->words.empty())
   {
-    all->example_parser->lbl_parser.parse_label(ae->l, ae->ex_reduction_features,
-        all->example_parser->parser_memory_to_reuse, all->sd->ldict.get(), all->example_parser->words, all->logger);
+    all->parser_runtime.example_parser->lbl_parser.parse_label(ae->l, ae->ex_reduction_features,
+        all->parser_runtime.example_parser->parser_memory_to_reuse, all->sd->ldict.get(),
+        all->parser_runtime.example_parser->words, all->logger);
   }
 
   if (bar_idx != VW::string_view::npos)

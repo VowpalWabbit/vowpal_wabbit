@@ -617,7 +617,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
   options.add_and_parse(feature_options);
 
   // feature manipulation
-  all.example_parser->hasher = VW::get_hasher(hash_function);
+  all.parser_runtime.example_parser->hasher = VW::get_hasher(hash_function);
 
   if (options.was_supplied("spelling"))
   {
@@ -1026,7 +1026,7 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
       .add(make_option("examples", max_examples).default_value(-1).help("Number of examples to parse. -1 for no limit"))
       .add(make_option("min_prediction", all.sd->min_label).help("Smallest prediction to output"))
       .add(make_option("max_prediction", all.sd->max_label).help("Largest prediction to output"))
-      .add(make_option("sort_features", all.example_parser->sort_features)
+      .add(make_option("sort_features", all.parser_runtime.example_parser->sort_features)
                .help("Turn this on to disregard order in which features have been defined. This will lead to smaller "
                      "cache sizes"))
       .add(make_option("loss_function", loss_function)
@@ -1060,7 +1060,7 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
 
   all.runtime_config.pass_length =
       pass_length == -1 ? std::numeric_limits<size_t>::max() : VW::cast_signed_to_unsigned<size_t>(pass_length);
-  all.max_examples =
+  all.parser_runtime.max_examples =
       max_examples == -1 ? std::numeric_limits<size_t>::max() : VW::cast_signed_to_unsigned<size_t>(max_examples);
 
   if (test_only || all.uc.eta == 0.)
@@ -1458,7 +1458,7 @@ std::unique_ptr<VW::workspace> VW::details::parse_args(std::unique_ptr<options_i
     }
   }
 
-  all->example_parser = VW::make_unique<VW::parser>(final_example_queue_limit, strict_parse);
+  all->parser_runtime.example_parser = VW::make_unique<VW::parser>(final_example_queue_limit, strict_parse);
 
   option_group_definition weight_args("Weight");
   weight_args

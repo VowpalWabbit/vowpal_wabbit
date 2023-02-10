@@ -224,7 +224,7 @@ private:
 
   inline FORCE_INLINE void parse_example()
   {
-    _all->example_parser->lbl_parser.default_label(_ae->l);
+    _all->parser_runtime.example_parser->lbl_parser.default_label(_ae->l);
     if (!_parser->label_list.empty()) { parse_label(); }
     if (!_parser->tag_list.empty()) { parse_tag(); }
 
@@ -236,14 +236,14 @@ private:
     VW::string_view label_content = _csv_line[_parser->label_list[0]];
     if (_parser->options.csv_remove_outer_quotes) { remove_quotation_marks(label_content); }
 
-    _all->example_parser->words.clear();
-    VW::tokenize(' ', label_content, _all->example_parser->words);
+    _all->parser_runtime.example_parser->words.clear();
+    VW::tokenize(' ', label_content, _all->parser_runtime.example_parser->words);
 
-    if (!_all->example_parser->words.empty())
+    if (!_all->parser_runtime.example_parser->words.empty())
     {
-      _all->example_parser->lbl_parser.parse_label(_ae->l, _ae->ex_reduction_features,
-          _all->example_parser->parser_memory_to_reuse, _all->sd->ldict.get(), _all->example_parser->words,
-          _all->logger);
+      _all->parser_runtime.example_parser->lbl_parser.parse_label(_ae->l, _ae->ex_reduction_features,
+          _all->parser_runtime.example_parser->parser_memory_to_reuse, _all->sd->ldict.get(),
+          _all->parser_runtime.example_parser->words, _all->logger);
     }
   }
 
@@ -272,7 +272,7 @@ private:
       else
       {
         ns = f.first;
-        _channel_hash = _all->example_parser->hasher(ns.data(), ns.length(), _all->hash_seed);
+        _channel_hash = _all->parser_runtime.example_parser->hasher(ns.data(), ns.length(), _all->hash_seed);
       }
 
       unsigned char _index = static_cast<unsigned char>(ns[0]);
@@ -327,15 +327,17 @@ private:
     if (!is_feature_float)
     {
       // chain hash is hash(feature_value, hash(feature_name, namespace_hash)) & parse_mask
-      word_hash = (_all->example_parser->hasher(string_feature_value.data(), string_feature_value.length(),
-                       _all->example_parser->hasher(feature_name.data(), feature_name.length(), _channel_hash)) &
-          _all->parse_mask);
+      word_hash =
+          (_all->parser_runtime.example_parser->hasher(string_feature_value.data(), string_feature_value.length(),
+               _all->parser_runtime.example_parser->hasher(feature_name.data(), feature_name.length(), _channel_hash)) &
+              _all->parse_mask);
     }
     // Case where feature value is float and feature name is not empty
     else if (!feature_name.empty())
     {
       word_hash =
-          (_all->example_parser->hasher(feature_name.data(), feature_name.length(), _channel_hash) & _all->parse_mask);
+          (_all->parser_runtime.example_parser->hasher(feature_name.data(), feature_name.length(), _channel_hash) &
+              _all->parse_mask);
     }
     // Case where feature value is float and feature name is empty
     else { word_hash = _channel_hash + _anon++; }

@@ -412,7 +412,7 @@ VW::label_parser* get_label_parser(VW::workspace* all, size_t labelType)
   switch (labelType)
   {
     case lDEFAULT:
-      return all ? &all->example_parser->lbl_parser : NULL;
+      return all ? &all->parser_runtime.example_parser->lbl_parser : NULL;
     case lBINARY:  // or #lSIMPLE
       return &VW::simple_label_parser_global;
     case lMULTICLASS:
@@ -438,7 +438,7 @@ VW::label_parser* get_label_parser(VW::workspace* all, size_t labelType)
 
 size_t my_get_label_type(VW::workspace* all)
 {
-  VW::label_parser* lp = &all->example_parser->lbl_parser;
+  VW::label_parser* lp = &all->parser_runtime.example_parser->lbl_parser;
   if (lp->parse_label == VW::simple_label_parser_global.parse_label) { return lSIMPLE; }
   else if (lp->parse_label == VW::multiclass_label_parser_global.parse_label) { return lMULTICLASS; }
   else if (lp->parse_label == VW::cs_label_parser_global.parse_label) { return lCOST_SENSITIVE; }
@@ -567,7 +567,7 @@ py::list my_parse(vw_ptr& all, char* str)
 {
   VW::multi_ex examples;
   examples.push_back(&VW::get_unused_example(all.get()));
-  all->example_parser->text_reader(all.get(), VW::string_view(str, strlen(str)), examples);
+  all->parser_runtime.example_parser->text_reader(all.get(), VW::string_view(str, strlen(str)), examples);
 
   py::list example_collection;
   for (auto* ex : examples)

@@ -1350,10 +1350,10 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::lda_setup(VW::setup_base_i
   }
 
   size_t minibatch2 = next_pow2(ld->minibatch);
-  if (minibatch2 > all.example_parser->example_queue_limit)
+  if (minibatch2 > all.parser_runtime.example_parser->example_queue_limit)
   {
-    bool previous_strict_parse = all.example_parser->strict_parse;
-    all.example_parser = VW::make_unique<VW::parser>(minibatch2, previous_strict_parse);
+    bool previous_strict_parse = all.parser_runtime.example_parser->strict_parse;
+    all.parser_runtime.example_parser = VW::make_unique<VW::parser>(minibatch2, previous_strict_parse);
   }
 
   if (ld->minibatch > 1)
@@ -1369,7 +1369,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::lda_setup(VW::setup_base_i
 
   ld->decay_levels.push_back(0.f);
 
-  all.example_parser->lbl_parser = VW::no_label_parser_global;
+  all.parser_runtime.example_parser->lbl_parser = VW::no_label_parser_global;
 
   // If minibatch is > 1, then the predict function does not actually produce predictions.
   const auto pred_type = ld->minibatch > 1 ? VW::prediction_type_t::NOPRED : VW::prediction_type_t::SCALARS;

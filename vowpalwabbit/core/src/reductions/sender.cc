@@ -94,7 +94,7 @@ void receive_result(sender& s)
   float weight{};
 
   VW::details::get_prediction(s.socket_reader.get(), prediction, weight);
-  const auto& sent_info = s.delay_ring[s.received_index++ % s.all->example_parser->example_queue_limit];
+  const auto& sent_info = s.delay_ring[s.received_index++ % s.all->parser_runtime.example_parser->example_queue_limit];
 
   const auto& ld = sent_info.label;
   const auto loss = s.all->lc.loss->get_loss(s.all->sd.get(), prediction, ld.label) * sent_info.weight;
@@ -106,13 +106,16 @@ void receive_result(sender& s)
 
 void send_example(sender& s, VW::example& ec)
 {
-  if (s.received_index + s.all->example_parser->example_queue_limit / 2 - 1 == s.sent_index) { receive_result(s); }
+  if (s.received_index + s.all->parser_runtime.example_parser->example_queue_limit / 2 - 1 == s.sent_index)
+  {
+    receive_result(s);
+  }
 
   if (s.all->set_minmax) { s.all->set_minmax(ec.l.simple.label); }
   VW::parsers::cache::write_example_to_cache(
-      s.socket_output_buffer, &ec, s.all->example_parser->lbl_parser, s.all->parse_mask, s.cache_buffer);
+      s.socket_output_buffer, &ec, s.all->parser_runtime.example_parser->lbl_parser, s.all->parse_mask, s.cache_buffer);
   s.socket_output_buffer.flush();
-  s.delay_ring[s.sent_index++ % s.all->example_parser->example_queue_limit] =
+  s.delay_ring[s.sent_index++ % s.all->parser_runtime.example_parser->example_queue_limit] =
       sent_example_info{ec.l.simple, ec.weight, ec.test_only, ec.get_num_features(), ec.tag};
 }
 
@@ -142,7 +145,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::sender_setup(VW::setup_bas
 
   auto s = VW::make_unique<sender>();
   s->all = &all;
-  s->delay_ring.resize(all.example_parser->example_queue_limit);
+  s->delay_ring.resize(all.parser_runtime.example_parser->example_queue_limit);
   open_sockets(*s, host);
 
   auto l = make_bottom_learner(std::move(s), send_example, send_example, stack_builder.get_setupfn_name(sender_setup),
