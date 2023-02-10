@@ -282,7 +282,7 @@ void save_predictor(VW::workspace& all, io_buf& buf);
 // First create the hash of a namespace.
 inline uint64_t hash_space(VW::workspace& all, const std::string& s)
 {
-  return all.parser_runtime.example_parser->hasher(s.data(), s.length(), all.hash_seed);
+  return all.parser_runtime.example_parser->hasher(s.data(), s.length(), all.runtime_config.hash_seed);
 }
 inline uint64_t hash_space_static(const std::string& s, const std::string& hash)
 {
@@ -290,7 +290,7 @@ inline uint64_t hash_space_static(const std::string& s, const std::string& hash)
 }
 inline uint64_t hash_space_cstr(VW::workspace& all, const char* fstr)
 {
-  return all.parser_runtime.example_parser->hasher(fstr, strlen(fstr), all.hash_seed);
+  return all.parser_runtime.example_parser->hasher(fstr, strlen(fstr), all.runtime_config.hash_seed);
 }
 // Then use it as the seed for hashing features.
 inline uint64_t hash_feature(VW::workspace& all, const std::string& s, uint64_t u)

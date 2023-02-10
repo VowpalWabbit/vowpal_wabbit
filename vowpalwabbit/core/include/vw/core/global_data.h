@@ -222,6 +222,8 @@ public:
   size_t pass_length;
   size_t numpasses;
   bool default_bits;
+  all_reduce_type selected_all_reduce_type;
+  uint32_t hash_seed;
 };
 
 class runtime_state
@@ -232,11 +234,14 @@ public:
   uint32_t indexing = 2;  // for 0 or 1 indexing
   // bool nonormalize; not used?
   bool do_reset_source;
+  std::unique_ptr<all_reduce_base> all_reduce;
+  VW::details::generate_interactions_object_cache generate_interactions_object_cache_state;
 };
 
 class parser_runtime
 {
 public:
+  std::string data_filename;
   std::unique_ptr<parser> example_parser;
   // Experimental field.
   // Generic parser interface to make it possible to use any external parser.
@@ -325,27 +330,17 @@ public:
   VW::io::logger logger;
   details::output_runtime output_runtime;
 
-  all_reduce_type selected_all_reduce_type;
-  std::unique_ptr<all_reduce_base> all_reduce;
-
   // Function to set min_label and max_label in shared_data
   // Should be bound to a VW::shared_data pointer upon creating the function
   // May be nullptr, so you must check before calling it
   std::function<void(float)> set_minmax;
 
+  std::string id;
+  std::string feature_mask;
+
   uint32_t num_bits;    // log_2 of the number of features.
   uint64_t parse_mask;  // 1 << num_bits -1
   size_t length() { return (static_cast<size_t>(1)) << num_bits; };
-
-  uint32_t hash_seed;
-
-  std::string data_filename;
-
-  std::string id;
-
-  std::string feature_mask;
-
-  VW::details::generate_interactions_object_cache generate_interactions_object_cache_state;
 
   void (*print_by_ref)(VW::io::writer*, float, float, const v_array<char>&, VW::io::logger&);
   void (*print_text_by_ref)(VW::io::writer*, const std::string&, const v_array<char>&, VW::io::logger&);

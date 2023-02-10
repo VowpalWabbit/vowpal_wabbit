@@ -324,7 +324,7 @@ void parse_diagnostics(options_i& options, VW::workspace& all)
   }
 
   // pass all.output_config.quiet around
-  if (all.all_reduce) { all.all_reduce->quiet = all.output_config.quiet; }
+  if (all.runtime_state.all_reduce) { all.runtime_state.all_reduce->quiet = all.output_config.quiet; }
 
   // Upon direct query for version -- spit it out directly to stdout
   if (version_arg)
@@ -373,7 +373,7 @@ VW::details::input_options parse_source(VW::workspace& all, options_i& options)
   VW::details::input_options parsed_options;
 
   option_group_definition input_options("Input");
-  input_options.add(make_option("data", all.data_filename).short_name("d").help("Example set"))
+  input_options.add(make_option("data", all.parser_runtime.data_filename).short_name("d").help("Example set"))
       .add(make_option("daemon", parsed_options.daemon).help("Persistent daemon mode on port 26542"))
       .add(make_option("foreground", parsed_options.foreground)
                .help("In persistent daemon mode, do not run in the background"))
@@ -422,7 +422,7 @@ VW::details::input_options parse_source(VW::workspace& all, options_i& options)
   const auto positional_tokens = options.get_positional_tokens();
   if (!positional_tokens.empty())
   {
-    all.data_filename = positional_tokens[0];
+    all.parser_runtime.data_filename = positional_tokens[0];
     if (positional_tokens.size() > 1)
     {
       all.logger.err_warn(
@@ -440,7 +440,7 @@ VW::details::input_options parse_source(VW::workspace& all, options_i& options)
   }
 
   // Add an implicit cache file based on the data filename.
-  if (parsed_options.cache) { parsed_options.cache_files.push_back(all.data_filename + ".cache"); }
+  if (parsed_options.cache) { parsed_options.cache_files.push_back(all.parser_runtime.data_filename + ".cache"); }
 
   if ((parsed_options.cache || options.was_supplied("cache_file")) && options.was_supplied("invert_hash"))
     THROW("invert_hash is incompatible with a cache file.  Use it in single pass mode only.")
@@ -554,7 +554,8 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
                .keep()
                .one_of({"strings", "all"})
                .help("How to hash the features"))
-      .add(make_option("hash_seed", all.hash_seed).keep().default_value(0).help("Seed for hash function"))
+      .add(
+          make_option("hash_seed", all.runtime_config.hash_seed).keep().default_value(0).help("Seed for hash function"))
       .add(make_option("ignore", ignores).keep().help("Ignore namespaces beginning with character <arg>"))
       .add(make_option("ignore_linear", ignore_linears)
                .keep()
@@ -1515,8 +1516,8 @@ std::unique_ptr<VW::workspace> VW::details::parse_args(std::unique_ptr<options_i
 
   if (all->options->was_supplied("span_server"))
   {
-    all->selected_all_reduce_type = VW::all_reduce_type::SOCKET;
-    all->all_reduce.reset(
+    all->runtime_config.selected_all_reduce_type = VW::all_reduce_type::SOCKET;
+    all->runtime_state.all_reduce.reset(
         new VW::all_reduce_sockets(span_server_arg, VW::cast_to_smaller_type<int>(span_server_port_arg),
             VW::cast_to_smaller_type<size_t>(unique_id_arg), VW::cast_to_smaller_type<size_t>(total_arg),
             VW::cast_to_smaller_type<size_t>(node_arg), all->output_config.quiet));

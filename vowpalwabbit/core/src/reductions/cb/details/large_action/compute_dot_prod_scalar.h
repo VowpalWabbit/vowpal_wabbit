@@ -60,7 +60,7 @@ inline float compute_dot_prod_scalar(uint64_t col, VW::workspace* _all, uint64_t
       (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
       (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
                                                   : *ex->extent_interactions),
-      _all->fc.permutations, *ex, tc, _all->generate_interactions_object_cache_state);
+      _all->fc.permutations, *ex, tc, _all->runtime_state.generate_interactions_object_cache_state);
 
   return final_dot_prod;
 }

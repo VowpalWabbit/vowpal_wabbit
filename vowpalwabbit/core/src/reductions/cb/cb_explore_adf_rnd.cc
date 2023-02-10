@@ -162,7 +162,7 @@ float cb_explore_adf_rnd::get_initial_prediction(VW::example* ec)
   std::pair<float, float> dotwithnorm(0.f, 0.f);
   VW::foreach_feature<std::pair<float, float>, float, vec_add_with_norm, lazy_gaussian>(w, _all->fc.ignore_some_linear,
       _all->fc.ignore_linear, _all->fc.interactions, _all->fc.extent_interactions, _all->fc.permutations, *ec,
-      dotwithnorm, _all->generate_interactions_object_cache_state);
+      dotwithnorm, _all->runtime_state.generate_interactions_object_cache_state);
 
   return _sqrtinvlambda * dotwithnorm.second / std::sqrt(2.0f * std::max(1e-12f, dotwithnorm.first));
 }

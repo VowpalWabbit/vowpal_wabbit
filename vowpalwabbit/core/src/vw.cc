@@ -552,7 +552,7 @@ void VW::finish(VW::workspace& all, bool delete_all)
 
 void VW::sync_stats(VW::workspace& all)
 {
-  if (all.all_reduce != nullptr)
+  if (all.runtime_state.all_reduce != nullptr)
   {
     const auto loss = static_cast<float>(all.sd->sum_loss);
     all.sd->sum_loss = static_cast<double>(VW::details::accumulate_scalar(all, loss));

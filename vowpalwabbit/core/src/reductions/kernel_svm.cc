@@ -514,14 +514,14 @@ void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
     delete params.pool[i];
   }
 
-  size_t* sizes = VW::details::calloc_or_throw<size_t>(all.all_reduce->total);
-  sizes[all.all_reduce->node] = b->unflushed_bytes_count();
-  VW::details::all_reduce<size_t, add_size_t>(all, sizes, all.all_reduce->total);
+  size_t* sizes = VW::details::calloc_or_throw<size_t>(all.runtime_state.all_reduce->total);
+  sizes[all.runtime_state.all_reduce->node] = b->unflushed_bytes_count();
+  VW::details::all_reduce<size_t, add_size_t>(all, sizes, all.runtime_state.all_reduce->total);
 
   size_t prev_sum = 0, total_sum = 0;
-  for (size_t i = 0; i < all.all_reduce->total; i++)
+  for (size_t i = 0; i < all.runtime_state.all_reduce->total; i++)
   {
-    if (i <= (all.all_reduce->node - 1)) { prev_sum += sizes[i]; }
+    if (i <= (all.runtime_state.all_reduce->node - 1)) { prev_sum += sizes[i]; }
     total_sum += sizes[i];
   }
 
@@ -550,7 +550,7 @@ void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
 
       num_read += b->unflushed_bytes_count();
       if (num_read == prev_sum) { params.local_begin = i + 1; }
-      if (num_read == prev_sum + sizes[all.all_reduce->node]) { params.local_end = i; }
+      if (num_read == prev_sum + sizes[all.runtime_state.all_reduce->node]) { params.local_end = i; }
     }
   }
   if (fec) { free(fec); }
@@ -774,7 +774,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::kernel_svm_setup(VW::setup
 
   if (!options.was_supplied("subsample") && params->para_active)
   {
-    params->subsample = static_cast<size_t>(ceil(params->pool_size / all.all_reduce->total));
+    params->subsample = static_cast<size_t>(ceil(params->pool_size / all.runtime_state.all_reduce->total));
   }
 
   params->lambda = all.lc.l2_lambda;

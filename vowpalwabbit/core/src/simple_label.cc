@@ -95,7 +95,7 @@ bool VW::details::summarize_holdout_set(VW::workspace& all, size_t& no_win_count
   float this_loss = (all.sd->weighted_holdout_examples_since_last_pass > 0)
       ? static_cast<float>(all.sd->holdout_sum_loss_since_last_pass / all.sd->weighted_holdout_examples_since_last_pass)
       : FLT_MAX * 0.5f;
-  if (all.all_reduce != nullptr) { this_loss = accumulate_scalar(all, this_loss); }
+  if (all.runtime_state.all_reduce != nullptr) { this_loss = accumulate_scalar(all, this_loss); }
 
   all.sd->weighted_holdout_examples_since_last_pass = 0;
   all.sd->holdout_sum_loss_since_last_pass = 0;

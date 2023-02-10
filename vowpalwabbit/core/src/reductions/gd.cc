@@ -219,7 +219,7 @@ void end_pass(VW::reductions::gd& g)
 
   if (!all.om.save_resume) { sync_weights(all); }
 
-  if (all.all_reduce != nullptr)
+  if (all.runtime_state.all_reduce != nullptr)
   {
     if (all.weights.adaptive) { VW::details::accumulate_weighted_avg(all, all.weights); }
     else { VW::details::accumulate_avg(all, all.weights, 0); }

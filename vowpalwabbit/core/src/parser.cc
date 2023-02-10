@@ -595,7 +595,7 @@ void VW::details::enable_sources(
     }
     else
     {
-      std::string filename_to_read = all.data_filename;
+      std::string filename_to_read = all.parser_runtime.data_filename;
       std::string input_name = filename_to_read;
       auto should_use_compressed = input_options.compressed || VW::ends_with(filename_to_read, ".gz");
 

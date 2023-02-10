@@ -69,7 +69,7 @@ float VW::details::accumulate_scalar(VW::workspace& all, float local_sum)
 void VW::details::accumulate_avg(VW::workspace& all, parameters& weights, size_t offset)
 {
   uint32_t length = 1 << all.num_bits;  // This is size of gradient
-  float numnodes = static_cast<float>(all.all_reduce->total);
+  float numnodes = static_cast<float>(all.runtime_state.all_reduce->total);
   float* local_grad = new float[length];
 
   if (weights.sparse)

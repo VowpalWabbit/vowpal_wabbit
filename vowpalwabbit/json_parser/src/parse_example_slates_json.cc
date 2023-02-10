@@ -237,8 +237,8 @@ void VW::parsers::json::details::parse_slates_example_json(const VW::workspace& 
     size_t length, VW::example_factory_t example_factory, std::unordered_map<uint64_t, VW::example*>* dedup_examples)
 {
   parse_slates_example_json<audit>(all.parser_runtime.example_parser->lbl_parser,
-      all.parser_runtime.example_parser->hasher, all.hash_seed, all.parse_mask, all.parser_runtime.chain_hash_json,
-      examples, line, length, std::move(example_factory), dedup_examples);
+      all.parser_runtime.example_parser->hasher, all.runtime_config.hash_seed, all.parse_mask,
+      all.parser_runtime.chain_hash_json, examples, line, length, std::move(example_factory), dedup_examples);
 }
 
 template <bool audit>
@@ -252,8 +252,8 @@ void VW::parsers::json::details::parse_slates_example_dsjson(VW::workspace& all,
   const Value& context = document["c"].GetObject();
   VW::multi_ex slot_examples;
   parse_context<audit>(context, all.parser_runtime.example_parser->lbl_parser,
-      all.parser_runtime.example_parser->hasher, all.hash_seed, all.parse_mask, all.parser_runtime.chain_hash_json,
-      examples, std::move(example_factory), slot_examples, dedup_examples);
+      all.parser_runtime.example_parser->hasher, all.runtime_config.hash_seed, all.parse_mask,
+      all.parser_runtime.chain_hash_json, examples, std::move(example_factory), slot_examples, dedup_examples);
 
   if (document.HasMember("_label_cost"))
   {

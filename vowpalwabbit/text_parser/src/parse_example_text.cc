@@ -444,7 +444,7 @@ public:
       this->_affix_features = &all.fc.affix_features;
       this->_spelling_features = &all.fc.spelling_features;
       this->_namespace_dictionaries = &all.fc.namespace_dictionaries;
-      this->_hash_seed = all.hash_seed;
+      this->_hash_seed = all.runtime_config.hash_seed;
       this->_parse_mask = all.parse_mask;
       this->_logger = &all.logger;
       list_name_space();

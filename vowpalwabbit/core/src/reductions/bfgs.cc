@@ -661,14 +661,14 @@ int process_pass(VW::workspace& all, bfgs& b)
   /********************************************************************/
   if (b.first_pass)
   {
-    if (all.all_reduce != nullptr)
+    if (all.runtime_state.all_reduce != nullptr)
     {
       VW::details::accumulate(all, all.weights, W_COND);  // Accumulate preconditioner
       float temp = static_cast<float>(b.importance_weight_sum);
       b.importance_weight_sum = VW::details::accumulate_scalar(all, temp);
     }
     // finalize_preconditioner(all, b, all.lc.l2_lambda);
-    if (all.all_reduce != nullptr)
+    if (all.runtime_state.all_reduce != nullptr)
     {
       float temp = static_cast<float>(b.loss_sum);
       b.loss_sum = VW::details::accumulate_scalar(all, temp);  // Accumulate loss_sums
@@ -708,7 +708,7 @@ int process_pass(VW::workspace& all, bfgs& b)
     /********************************************************************/
     if (b.gradient_pass)  // We just finished computing all gradients
     {
-      if (all.all_reduce != nullptr)
+      if (all.runtime_state.all_reduce != nullptr)
       {
         float t = static_cast<float>(b.loss_sum);
         b.loss_sum = VW::details::accumulate_scalar(all, t);  // Accumulate loss_sums
@@ -825,7 +825,7 @@ int process_pass(VW::workspace& all, bfgs& b)
     /********************************************************************/
     else  // just finished all second gradients
     {
-      if (all.all_reduce != nullptr)
+      if (all.runtime_state.all_reduce != nullptr)
       {
         float t = static_cast<float>(b.curvature);
         b.curvature = VW::details::accumulate_scalar(all, t);  // Accumulate curvatures
@@ -866,7 +866,7 @@ int process_pass(VW::workspace& all, bfgs& b)
 
   if (b.output_regularizer)  // need to accumulate and place the regularizer.
   {
-    if (all.all_reduce != nullptr)
+    if (all.runtime_state.all_reduce != nullptr)
     {
       VW::details::accumulate(all, all.weights, W_COND);  // Accumulate preconditioner
     }

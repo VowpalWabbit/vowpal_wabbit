@@ -539,7 +539,7 @@ void learn(stagewise_poly& poly, learner& base, VW::example& ec)
             (!poly.batch_sz_double && !(ec.example_counter % poly.batch_sz))))
     {
       poly.next_batch_sz *= 2;  // no effect when !poly.batch_sz_double
-      poly.update_support = (poly.all->all_reduce == nullptr || poly.numpasses == 1);
+      poly.update_support = (poly.all->runtime_state.all_reduce == nullptr || poly.numpasses == 1);
     }
     poly.last_example_counter = ec.example_counter;
   }
@@ -572,7 +572,7 @@ void reduce_min_max(uint8_t& v1, const uint8_t& v2)
 
 void end_pass(stagewise_poly& poly)
 {
-  if (!!poly.batch_sz || (poly.all->all_reduce != nullptr && poly.numpasses > 1)) { return; }
+  if (!!poly.batch_sz || (poly.all->runtime_state.all_reduce != nullptr && poly.numpasses > 1)) { return; }
 
   uint64_t sum_sparsity_inc = poly.sum_sparsity - poly.sum_sparsity_sync;
   uint64_t sum_input_sparsity_inc = poly.sum_input_sparsity - poly.sum_input_sparsity_sync;
@@ -584,7 +584,7 @@ void end_pass(stagewise_poly& poly)
 #endif  // DEBUG
 
   VW::workspace& all = *poly.all;
-  if (all.all_reduce != nullptr)
+  if (all.runtime_state.all_reduce != nullptr)
   {
     /*
      * The following is inconsistent with the transplant code in

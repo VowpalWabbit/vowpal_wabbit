@@ -77,7 +77,7 @@ bool _test_only_generate_A(VW::workspace* _all, const multi_ex& examples, std::v
           (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
           (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
                                                       : *ex->extent_interactions),
-          _all->fc.permutations, *ex, w, _all->generate_interactions_object_cache_state);
+          _all->fc.permutations, *ex, w, _all->runtime_state.generate_interactions_object_cache_state);
     }
     else
     {
@@ -88,7 +88,7 @@ bool _test_only_generate_A(VW::workspace* _all, const multi_ex& examples, std::v
           (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
           (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
                                                       : *ex->extent_interactions),
-          _all->fc.permutations, *ex, w, _all->generate_interactions_object_cache_state);
+          _all->fc.permutations, *ex, w, _all->runtime_state.generate_interactions_object_cache_state);
     }
 
     if (shared_example != nullptr) { VW::details::append_example_namespaces_from_example(*ex, *shared_example); }
