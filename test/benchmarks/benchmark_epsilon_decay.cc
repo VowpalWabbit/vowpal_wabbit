@@ -35,13 +35,14 @@ static void bench_epsilon_decay(benchmark::State& state, ExtraArgs&&... extra_ar
     {
       simulator::_test_helper_hook(
           std::vector<std::string>{"-l", "1e-3", "--power_t", "0", "-q::", "--cb_explore_adf", "--epsilon_decay",
-              "--model_count", model_count, "-b", bit_size, "--tol_x", tolerance},
+              "--model_count", model_count, "-b", bit_size, "--tol_x", "--quiet", tolerance},
           test_hooks, num_iterations, seed, swap_after);
     }
     else
     {
-      simulator::_test_helper_hook(std::vector<std::string>{"-l", "1e-3", "--power_t", "0", "-q::", "--cb_explore_adf"},
-          test_hooks, num_iterations, seed, swap_after);
+      simulator::_test_helper_hook(
+          std::vector<std::string>{"-l", "1e-3", "--power_t", "0", "-q::", "--cb_explore_adf", "--quiet"}, test_hooks,
+          num_iterations, seed, swap_after);
     }
     benchmark::ClobberMemory();
   }
