@@ -40,10 +40,10 @@ std::unique_ptr<VW::workspace> initialize_internal(
   VW::io_buf local_model;
   if (model == nullptr)
   {
-    std::vector<std::string> all_initial_regressor_files(all->initial_regressors);
+    std::vector<std::string> all_initial_regressor_files(all->iwc.initial_regressors);
     if (all->options->was_supplied("input_feature_regularizer"))
     {
-      all_initial_regressor_files.push_back(all->per_feature_regularizer_input);
+      all_initial_regressor_files.push_back(all->iwc.per_feature_regularizer_input);
     }
     VW::details::read_regressor_file(*all, all_initial_regressor_files, local_model);
     model = &local_model;
@@ -62,17 +62,20 @@ std::unique_ptr<VW::workspace> initialize_internal(
   }
   catch (VW::save_load_model_exception& e)
   {
-    auto msg = fmt::format("{}, model files = {}", e.what(), fmt::join(all->initial_regressors, ", "));
+    auto msg = fmt::format("{}, model files = {}", e.what(), fmt::join(all->iwc.initial_regressors, ", "));
     throw VW::save_load_model_exception(e.filename(), e.line_number(), msg);
   }
 
   if (!all->quiet)
   {
     *(all->trace_message) << "Num weight bits = " << all->num_bits << std::endl;
-    *(all->trace_message) << "learning rate = " << all->eta << std::endl;
+    *(all->trace_message) << "learning rate = " << all->uc.eta << std::endl;
     *(all->trace_message) << "initial_t = " << all->sd->t << std::endl;
-    *(all->trace_message) << "power_t = " << all->power_t << std::endl;
-    if (all->numpasses > 1) { *(all->trace_message) << "decay_learning_rate = " << all->eta_decay_rate << std::endl; }
+    *(all->trace_message) << "power_t = " << all->uc.power_t << std::endl;
+    if (all->numpasses > 1)
+    {
+      *(all->trace_message) << "decay_learning_rate = " << all->uc.eta_decay_rate << std::endl;
+    }
     if (all->options->was_supplied("cb_type"))
     {
       *(all->trace_message) << "cb_type = " << all->options->get_typed_option<std::string>("cb_type").value()

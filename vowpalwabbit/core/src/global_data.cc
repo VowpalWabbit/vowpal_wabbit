@@ -314,13 +314,13 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   // Default is stderr.
   trace_message = std::make_shared<std::ostream>(std::cout.rdbuf());
 
-  loss = nullptr;
+  lc.loss = nullptr;
 
-  reg_mode = 0;
+  lc.reg_mode = 0;
   pc.current_pass = 0;
 
   bfgs = false;
-  no_bias = false;
+  lc.no_bias = false;
   active = false;
   num_bits = 18;
   default_bits = true;
@@ -328,7 +328,7 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   om.save_resume = true;
   om.preserve_performance_counters = false;
 
-  random_positive_weights = false;
+  iwc.random_positive_weights = false;
 
   weights.sparse = false;
 
@@ -339,18 +339,18 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
     if (label != FLT_MAX) { this->sd->max_label = std::max(this->sd->max_label, label); }
   };
 
-  power_t = 0.5f;
-  eta = 0.5f;  // default learning rate for normalized adaptive updates, this is switched to 10 by default for the other
-               // updates (see parse_args.cc)
+  uc.power_t = 0.5f;
+  uc.eta = 0.5f;  // default learning rate for normalized adaptive updates, this is switched to 10 by default for the
+                  // other updates (see parse_args.cc)
   numpasses = 1;
 
   print_by_ref = VW::details::print_result_by_ref;
   print_text_by_ref = print_raw_text_by_ref;
   lda = 0;
-  random_weights = false;
-  normal_weights = false;
-  tnormal_weights = false;
-  per_feature_regularizer_input = "";
+  iwc.random_weights = false;
+  iwc.normal_weights = false;
+  iwc.tnormal_weights = false;
+  iwc.per_feature_regularizer_input = "";
   om.per_feature_regularizer_output = "";
   om.per_feature_regularizer_text = "";
 
@@ -358,12 +358,12 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
 
   searchstr = nullptr;
 
-  nonormalize = false;
-  l1_lambda = 0.0;
-  l2_lambda = 0.0;
+  // nonormalize = false;
+  lc.l1_lambda = 0.0;
+  lc.l2_lambda = 0.0;
 
-  eta_decay_rate = 1.0;
-  initial_weight = 0.0;
+  uc.eta_decay_rate = 1.0;
+  iwc.initial_weight = 0.0;
   fc.initial_constant = 0.0;
 
   for (size_t i = 0; i < NUM_NAMESPACES; i++)
@@ -376,7 +376,7 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   fc.add_constant = true;
 
   invariant_updates = true;
-  normalized_idx = 2;
+  iwc.normalized_idx = 2;
 
   audit = false;
   audit_writer = VW::io::open_stdout();
@@ -405,7 +405,7 @@ void workspace::finish()
   // also update VowpalWabbit::PerformanceStatistics::get() (vowpalwabbit.cpp)
   if (!quiet && !options->was_supplied("audit_regressor"))
   {
-    sd->print_summary(*trace_message, *sd, *loss, pc.current_pass, pc.holdout_set_off);
+    sd->print_summary(*trace_message, *sd, *lc.loss, pc.current_pass, pc.holdout_set_off);
   }
 
   details::finalize_regressor(*this, om.final_regressor_name);

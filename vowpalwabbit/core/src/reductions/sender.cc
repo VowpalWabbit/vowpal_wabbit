@@ -97,7 +97,7 @@ void receive_result(sender& s)
   const auto& sent_info = s.delay_ring[s.received_index++ % s.all->example_parser->example_queue_limit];
 
   const auto& ld = sent_info.label;
-  const auto loss = s.all->loss->get_loss(s.all->sd.get(), prediction, ld.label) * sent_info.weight;
+  const auto loss = s.all->lc.loss->get_loss(s.all->sd.get(), prediction, ld.label) * sent_info.weight;
 
   update_stats_sender(*(s.all->sd), sent_info, loss);
   output_example_prediction_sender(*s.all, sent_info, prediction, s.all->logger);

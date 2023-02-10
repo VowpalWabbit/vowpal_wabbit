@@ -59,18 +59,18 @@ inline void set_weight(VW::workspace& all, uint64_t index, uint32_t offset, floa
 
 float l1_grad(VW::workspace& all, uint64_t fi)
 {
-  if (all.no_bias && fi == VW::details::CONSTANT) { return 0.0f; }
+  if (all.lc.no_bias && fi == VW::details::CONSTANT) { return 0.0f; }
 
   float fw = get_weight(all, fi, 0);
-  return fw >= 0.0f ? all.l1_lambda : -all.l1_lambda;
+  return fw >= 0.0f ? all.lc.l1_lambda : -all.lc.l1_lambda;
 }
 
 float l2_grad(VW::workspace& all, uint64_t fi)
 {
-  if (all.no_bias && fi == VW::details::CONSTANT) { return 0.0f; }
+  if (all.lc.no_bias && fi == VW::details::CONSTANT) { return 0.0f; }
 
   float fw = get_weight(all, fi, 0);
-  return all.l2_lambda * fw;
+  return all.lc.l2_lambda * fw;
 }
 
 inline void accumulate_dotprod(float& dotprod, float x, float& fw) { dotprod += x * fw; }
@@ -107,8 +107,8 @@ void constant_update(cbzo& data, VW::example& ec)
   {
     float action_centroid = inference<CONSTANT_POLICY>(*data.all, ec);
     float grad = ec.l.cb_cont.costs[0].cost / (ec.l.cb_cont.costs[0].action - action_centroid);
-    float update =
-        -data.all->eta * (grad + l1_grad(*data.all, VW::details::CONSTANT) + l2_grad(*data.all, VW::details::CONSTANT));
+    float update = -data.all->uc.eta *
+        (grad + l1_grad(*data.all, VW::details::CONSTANT) + l2_grad(*data.all, VW::details::CONSTANT));
 
     set_weight(*data.all, VW::details::CONSTANT, 0, fw + update);
   }
@@ -129,7 +129,7 @@ void linear_per_feature_update(linear_update_data& upd_data, float x, uint64_t f
 template <bool feature_mask_off>
 void linear_update(cbzo& data, VW::example& ec)
 {
-  float mult = -data.all->eta;
+  float mult = -data.all->uc.eta;
 
   float action_centroid = inference<LINEAR_POLICY>(*data.all, ec);
   float part_grad = ec.l.cb_cont.costs[0].cost / (ec.l.cb_cont.costs[0].action - action_centroid);

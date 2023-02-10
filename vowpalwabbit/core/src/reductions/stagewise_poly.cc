@@ -303,7 +303,7 @@ void sort_data_update_support(stagewise_poly& poly)
     uint64_t wid = stride_shift(poly, i);
     if (!parent_get(poly, wid) && wid != constant_feat_masked(poly))
     {
-      float weightsal = (fabsf(poly.all->weights[wid]) * poly.all->weights[poly.all->normalized_idx + (wid)]);
+      float weightsal = (fabsf(poly.all->weights[wid]) * poly.all->weights[poly.all->iwc.normalized_idx + (wid)]);
       /*
        * here's some depth penalization code.  It was found to not improve
        * statistical performance, and meanwhile it is verified as giving

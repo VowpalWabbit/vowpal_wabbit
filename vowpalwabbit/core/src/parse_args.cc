@@ -1043,9 +1043,9 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
       .add(make_option("logistic_max", logistic_loss_max)
                .default_value(1.0f)
                .help("Maximum loss value for logistic loss. Defaults to +1"))
-      .add(make_option("l1", all.l1_lambda).default_value(0.0f).help("L_1 lambda"))
-      .add(make_option("l2", all.l2_lambda).default_value(0.0f).help("L_2 lambda"))
-      .add(make_option("no_bias_regularization", all.no_bias).help("No bias in regularization"))
+      .add(make_option("l1", all.lc.l1_lambda).default_value(0.0f).help("L_1 lambda"))
+      .add(make_option("l2", all.lc.l2_lambda).default_value(0.0f).help("L_2 lambda"))
+      .add(make_option("no_bias_regularization", all.lc.no_bias).help("No bias in regularization"))
       .add(make_option("named_labels", named_labels)
                .keep()
                .help("Use names for labels (multiclass, etc.) rather than integers, argument specified all possible "
@@ -1062,11 +1062,11 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
   all.max_examples =
       max_examples == -1 ? std::numeric_limits<size_t>::max() : VW::cast_signed_to_unsigned<size_t>(max_examples);
 
-  if (test_only || all.eta == 0.)
+  if (test_only || all.uc.eta == 0.)
   {
     if (!all.quiet) { *(all.trace_message) << "only testing" << endl; }
     all.training = false;
-    if (all.lda > 0) { all.eta = 0; }
+    if (all.lda > 0) { all.uc.eta = 0; }
   }
   else { all.training = true; }
 
@@ -1116,7 +1116,10 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
         << loss_function);
   }
 
-  if (loss_function_accepts_quantile_tau) { all.loss = get_loss_function(all, loss_function, quantile_loss_parameter); }
+  if (loss_function_accepts_quantile_tau)
+  {
+    all.lc.loss = get_loss_function(all, loss_function, quantile_loss_parameter);
+  }
   else if (loss_function_accepts_expectile_q)
   {
     if (expectile_loss_parameter <= 0.0f || expectile_loss_parameter > 0.5f)
@@ -1125,33 +1128,33 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
           "Option 'expectile_q' must be specified with a value in range (0.0, 0.5] "
           "when using the expectile loss function.");
     }
-    all.loss = get_loss_function(all, loss_function, expectile_loss_parameter);
+    all.lc.loss = get_loss_function(all, loss_function, expectile_loss_parameter);
   }
   else if (loss_function_accepts_logistic_args)
   {
-    all.loss = get_loss_function(all, loss_function, logistic_loss_min, logistic_loss_max);
+    all.lc.loss = get_loss_function(all, loss_function, logistic_loss_min, logistic_loss_max);
   }
-  else { all.loss = get_loss_function(all, loss_function); }
+  else { all.lc.loss = get_loss_function(all, loss_function); }
 
-  if (all.l1_lambda < 0.f)
+  if (all.lc.l1_lambda < 0.f)
   {
-    *(all.trace_message) << "l1_lambda should be nonnegative: resetting from " << all.l1_lambda << " to 0" << endl;
-    all.l1_lambda = 0.f;
+    *(all.trace_message) << "l1_lambda should be nonnegative: resetting from " << all.lc.l1_lambda << " to 0" << endl;
+    all.lc.l1_lambda = 0.f;
   }
-  if (all.l2_lambda < 0.f)
+  if (all.lc.l2_lambda < 0.f)
   {
-    *(all.trace_message) << "l2_lambda should be nonnegative: resetting from " << all.l2_lambda << " to 0" << endl;
-    all.l2_lambda = 0.f;
+    *(all.trace_message) << "l2_lambda should be nonnegative: resetting from " << all.lc.l2_lambda << " to 0" << endl;
+    all.lc.l2_lambda = 0.f;
   }
-  all.reg_mode += (all.l1_lambda > 0.) ? 1 : 0;
-  all.reg_mode += (all.l2_lambda > 0.) ? 2 : 0;
+  all.lc.reg_mode += (all.lc.l1_lambda > 0.) ? 1 : 0;
+  all.lc.reg_mode += (all.lc.l2_lambda > 0.) ? 2 : 0;
   if (!all.quiet)
   {
-    if (all.reg_mode % 2 && !options.was_supplied("bfgs"))
+    if (all.lc.reg_mode % 2 && !options.was_supplied("bfgs"))
     {
-      *(all.trace_message) << "using l1 regularization = " << all.l1_lambda << endl;
+      *(all.trace_message) << "using l1 regularization = " << all.lc.l1_lambda << endl;
     }
-    if (all.reg_mode > 1) { *(all.trace_message) << "using l2 regularization = " << all.l2_lambda << endl; }
+    if (all.lc.reg_mode > 1) { *(all.trace_message) << "using l2 regularization = " << all.lc.l2_lambda << endl; }
   }
 }
 
@@ -1160,18 +1163,18 @@ void parse_update_options(options_i& options, VW::workspace& all)
   option_group_definition update_args("Update");
   float t_arg = 0.f;
   update_args
-      .add(make_option("learning_rate", all.eta)
+      .add(make_option("learning_rate", all.uc.eta)
                .default_value(0.5f)
                .keep(all.om.save_resume)
                .allow_override(all.om.save_resume)
                .help("Set learning rate")
                .short_name("l"))
-      .add(make_option("power_t", all.power_t)
+      .add(make_option("power_t", all.uc.power_t)
                .default_value(0.5f)
                .keep(all.om.save_resume)
                .allow_override(all.om.save_resume)
                .help("T power value"))
-      .add(make_option("decay_learning_rate", all.eta_decay_rate)
+      .add(make_option("decay_learning_rate", all.uc.eta_decay_rate)
                .default_value(1.f)
                .help("Set Decay factor for learning_rate between passes"))
       .add(make_option("initial_t", t_arg).help("Initial t value"))
@@ -1180,7 +1183,7 @@ void parse_update_options(options_i& options, VW::workspace& all)
                      "given, also used for initial weights."));
   options.add_and_parse(update_args);
   if (options.was_supplied("initial_t")) { all.sd->t = t_arg; }
-  all.initial_t = static_cast<float>(all.sd->t);
+  all.uc.initial_t = static_cast<float>(all.sd->t);
 }
 
 void parse_output_preds(options_i& options, VW::workspace& all)
@@ -1302,17 +1305,18 @@ void load_input_model(VW::workspace& all, VW::io_buf& io_temp)
 {
   // Need to see if we have to load feature mask first or second.
   // -i and -mask are from same file, load -i file first so mask can use it
-  if (!all.feature_mask.empty() && !all.initial_regressors.empty() && all.feature_mask == all.initial_regressors[0])
+  if (!all.feature_mask.empty() && !all.iwc.initial_regressors.empty() &&
+      all.feature_mask == all.iwc.initial_regressors[0])
   {
     // load rest of regressor
     all.l->save_load(io_temp, true, false);
     io_temp.close_file();
 
-    VW::details::parse_mask_regressor_args(all, all.feature_mask, all.initial_regressors);
+    VW::details::parse_mask_regressor_args(all, all.feature_mask, all.iwc.initial_regressors);
   }
   else
   {  // load mask first
-    VW::details::parse_mask_regressor_args(all, all.feature_mask, all.initial_regressors);
+    VW::details::parse_mask_regressor_args(all, all.feature_mask, all.iwc.initial_regressors);
 
     // load rest of regressor
     all.l->save_load(io_temp, true, false);
@@ -1457,15 +1461,16 @@ std::unique_ptr<VW::workspace> VW::details::parse_args(std::unique_ptr<options_i
 
   option_group_definition weight_args("Weight");
   weight_args
-      .add(make_option("initial_regressor", all->initial_regressors).help("Initial regressor(s)").short_name("i"))
-      .add(make_option("initial_weight", all->initial_weight)
+      .add(make_option("initial_regressor", all->iwc.initial_regressors).help("Initial regressor(s)").short_name("i"))
+      .add(make_option("initial_weight", all->iwc.initial_weight)
                .default_value(0.f)
                .help("Set all weights to an initial value of arg"))
-      .add(make_option("random_weights", all->random_weights).help("Make initial weights random"))
-      .add(make_option("normal_weights", all->normal_weights).help("Make initial weights normal"))
-      .add(make_option("truncated_normal_weights", all->tnormal_weights).help("Make initial weights truncated normal"))
+      .add(make_option("random_weights", all->iwc.random_weights).help("Make initial weights random"))
+      .add(make_option("normal_weights", all->iwc.normal_weights).help("Make initial weights normal"))
+      .add(make_option("truncated_normal_weights", all->iwc.tnormal_weights)
+               .help("Make initial weights truncated normal"))
       .add(make_option("sparse_weights", all->weights.sparse).help("Use a sparse datastructure for weights"))
-      .add(make_option("input_feature_regularizer", all->per_feature_regularizer_input)
+      .add(make_option("input_feature_regularizer", all->iwc.per_feature_regularizer_input)
                .help("Per feature regularization input file"));
   all->options->add_and_parse(weight_args);
 

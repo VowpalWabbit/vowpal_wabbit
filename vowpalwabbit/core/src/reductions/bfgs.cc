@@ -174,7 +174,7 @@ float predict_and_gradient(VW::workspace& all, VW::example& ec)
   auto& ld = ec.l.simple;
   if (all.set_minmax) { all.set_minmax(ld.label); }
 
-  float loss_grad = all.loss->first_derivative(all.sd.get(), fp, ld.label) * ec.weight;
+  float loss_grad = all.lc.loss->first_derivative(all.sd.get(), fp, ld.label) * ec.weight;
   VW::foreach_feature<float, add_grad>(all, ec, loss_grad);
 
   return fp;
@@ -184,7 +184,7 @@ inline void add_precond(float& d, float f, float& fw) { (&fw)[W_COND] += d * f *
 
 void update_preconditioner(VW::workspace& all, VW::example& ec)
 {
-  float curvature = all.loss->second_derivative(all.sd.get(), ec.pred.scalar, ec.l.simple.label) * ec.weight;
+  float curvature = all.lc.loss->second_derivative(all.sd.get(), ec.pred.scalar, ec.l.simple.label) * ec.weight;
   VW::foreach_feature<float, add_precond>(all, ec, curvature);
 }
 
@@ -490,7 +490,7 @@ double add_regularization(VW::workspace& all, bfgs& b, float regularization, T& 
 
   // if we're not regularizing the intercept term, then subtract it off from the result above
   // when accessing weights[constant], always use weights.strided_index(constant)
-  if (all.no_bias)
+  if (all.lc.no_bias)
   {
     if (b.regularizers == nullptr)
     {
@@ -655,7 +655,7 @@ int process_pass(VW::workspace& all, bfgs& b)
 {
   int status = LEARN_OK;
 
-  finalize_preconditioner(all, b, all.l2_lambda);
+  finalize_preconditioner(all, b, all.lc.l2_lambda);
   /********************************************************************/
   /* A) FIRST PASS FINISHED: INITIALIZE FIRST LINE SEARCH *************/
   /********************************************************************/
@@ -667,14 +667,14 @@ int process_pass(VW::workspace& all, bfgs& b)
       float temp = static_cast<float>(b.importance_weight_sum);
       b.importance_weight_sum = VW::details::accumulate_scalar(all, temp);
     }
-    // finalize_preconditioner(all, b, all.l2_lambda);
+    // finalize_preconditioner(all, b, all.lc.l2_lambda);
     if (all.all_reduce != nullptr)
     {
       float temp = static_cast<float>(b.loss_sum);
       b.loss_sum = VW::details::accumulate_scalar(all, temp);  // Accumulate loss_sums
       VW::details::accumulate(all, all.weights, 1);            // Accumulate gradients from all nodes
     }
-    if (all.l2_lambda > 0.) { b.loss_sum += add_regularization(all, b, all.l2_lambda); }
+    if (all.lc.l2_lambda > 0.) { b.loss_sum += add_regularization(all, b, all.lc.l2_lambda); }
     if (!all.quiet)
     {
       fprintf(stderr, "%2lu %-10.5f\t", static_cast<long unsigned int>(b.current_pass) + 1,
@@ -714,7 +714,7 @@ int process_pass(VW::workspace& all, bfgs& b)
         b.loss_sum = VW::details::accumulate_scalar(all, t);  // Accumulate loss_sums
         VW::details::accumulate(all, all.weights, 1);         // Accumulate gradients from all nodes
       }
-      if (all.l2_lambda > 0.) { b.loss_sum += add_regularization(all, b, all.l2_lambda); }
+      if (all.lc.l2_lambda > 0.) { b.loss_sum += add_regularization(all, b, all.lc.l2_lambda); }
       if (!all.quiet)
       {
         if (!all.pc.holdout_set_off && b.current_pass >= 1)
@@ -827,7 +827,7 @@ int process_pass(VW::workspace& all, bfgs& b)
         float t = static_cast<float>(b.curvature);
         b.curvature = VW::details::accumulate_scalar(all, t);  // Accumulate curvatures
       }
-      if (all.l2_lambda > 0.) { b.curvature += regularizer_direction_magnitude(all, b, all.l2_lambda); }
+      if (all.lc.l2_lambda > 0.) { b.curvature += regularizer_direction_magnitude(all, b, all.lc.l2_lambda); }
       float dd = static_cast<float>(derivative_in_direction(all, b, b.mem, b.origin));
       if (b.curvature == 0. && dd != 0.)
       {
@@ -867,7 +867,7 @@ int process_pass(VW::workspace& all, bfgs& b)
     {
       VW::details::accumulate(all, all.weights, W_COND);  // Accumulate preconditioner
     }
-    // preconditioner_to_regularizer(all, b, all.l2_lambda);
+    // preconditioner_to_regularizer(all, b, all.lc.l2_lambda);
   }
   b.t_end_global = std::chrono::system_clock::now();
   b.net_time = static_cast<double>(
@@ -888,7 +888,7 @@ void process_example(VW::workspace& all, bfgs& b, VW::example& ec)
   if (b.gradient_pass)
   {
     ec.pred.scalar = predict_and_gradient(all, ec);  // w[0] & w[1]
-    ec.loss = all.loss->get_loss(all.sd.get(), ec.pred.scalar, ld.label) * ec.weight;
+    ec.loss = all.lc.loss->get_loss(all.sd.get(), ec.pred.scalar, ld.label) * ec.weight;
     b.loss_sum += ec.loss;
     b.predictions.push_back(ec.pred.scalar);
   }
@@ -904,8 +904,8 @@ void process_example(VW::workspace& all, bfgs& b, VW::example& ec)
     }
     ec.pred.scalar = b.predictions[b.example_number];
     ec.partial_prediction = b.predictions[b.example_number];
-    ec.loss = all.loss->get_loss(all.sd.get(), ec.pred.scalar, ld.label) * ec.weight;
-    float sd = all.loss->second_derivative(all.sd.get(), b.predictions[b.example_number++], ld.label);
+    ec.loss = all.lc.loss->get_loss(all.sd.get(), ec.pred.scalar, ld.label) * ec.weight;
+    float sd = all.lc.loss->second_derivative(all.sd.get(), b.predictions[b.example_number++], ld.label);
     b.curvature += (static_cast<double>(d_dot_x)) * d_dot_x * sd * ec.weight;
   }
   ec.updated_prediction = ec.pred.scalar;
@@ -1003,7 +1003,7 @@ void save_load_regularizer(VW::workspace& all, bfgs& b, VW::io_buf& model_file, 
   uint32_t i = 0;
   size_t brw = 1;
 
-  if (b.output_regularizer && !read) { preconditioner_to_regularizer(*(b.all), b, b.all->l2_lambda); }
+  if (b.output_regularizer && !read) { preconditioner_to_regularizer(*(b.all), b, b.all->lc.l2_lambda); }
 
   do {
     brw = 1;
@@ -1046,7 +1046,7 @@ void save_load(bfgs& b, VW::io_buf& model_file, bool read, bool text)
   if (read)
   {
     VW::details::initialize_regressor(*all);
-    if (all->per_feature_regularizer_input != "")
+    if (all->iwc.per_feature_regularizer_input != "")
     {
       b.regularizers = VW::details::calloc_or_throw<VW::weight>(2 * length);
       if (b.regularizers == nullptr) THROW("Failed to allocate regularizers array: try decreasing -b <bits>");
@@ -1078,14 +1078,14 @@ void save_load(bfgs& b, VW::io_buf& model_file, bool read, bool text)
 
     if (b.regularizers != nullptr)
     {
-      all->l2_lambda = 1;  // To make sure we are adding the regularization
+      all->lc.l2_lambda = 1;  // To make sure we are adding the regularization
     }
     b.output_regularizer = (all->om.per_feature_regularizer_output != "" || all->om.per_feature_regularizer_text != "");
     reset_state(*all, b, false);
   }
 
-  // bool reg_vector = b.output_regularizer || all->per_feature_regularizer_input.length() > 0;
-  bool reg_vector = (b.output_regularizer && !read) || (all->per_feature_regularizer_input.length() > 0 && read);
+  // bool reg_vector = b.output_regularizer || all->iwc.per_feature_regularizer_input.length() > 0;
+  bool reg_vector = (b.output_regularizer && !read) || (all->iwc.per_feature_regularizer_input.length() > 0 && read);
 
   if (model_file.num_files() > 0)
   {

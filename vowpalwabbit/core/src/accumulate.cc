@@ -136,8 +136,11 @@ void VW::details::accumulate_weighted_avg(VW::workspace& all, parameters& weight
   // First compute weights for averaging
   VW::details::all_reduce<float, add_float>(all, local_weights, length);
 
-  if (weights.sparse) { VW::details::do_weighting(all.normalized_idx, length, local_weights, weights.sparse_weights); }
-  else { VW::details::do_weighting(all.normalized_idx, length, local_weights, weights.dense_weights); }
+  if (weights.sparse)
+  {
+    VW::details::do_weighting(all.iwc.normalized_idx, length, local_weights, weights.sparse_weights);
+  }
+  else { VW::details::do_weighting(all.iwc.normalized_idx, length, local_weights, weights.dense_weights); }
 
   if (weights.sparse)
   {

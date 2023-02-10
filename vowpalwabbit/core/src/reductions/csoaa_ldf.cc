@@ -738,7 +738,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::csldf_setup(VW::setup_base
   if (ld->is_probabilities)
   {
     all.sd->report_multiclass_log_loss = true;
-    auto loss_function_type = all.loss->get_type();
+    auto loss_function_type = all.lc.loss->get_type();
     if (loss_function_type != "logistic")
     {
       all.logger.out_warn(

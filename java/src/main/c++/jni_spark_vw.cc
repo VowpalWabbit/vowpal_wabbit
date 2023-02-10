@@ -293,7 +293,7 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getArgu
   jmethodID ctor = env->GetMethodID(clazz, "<init>", "(IILjava/lang/String;DD)V");
   CHECK_JNI_EXCEPTION(nullptr);
 
-  return env->NewObject(clazz, ctor, all->num_bits, all->hash_seed, args, all->eta, all->power_t);
+  return env->NewObject(clazz, ctor, all->num_bits, all->hash_seed, args, all->uc.eta, all->uc.power_t);
 }
 
 JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getOutputPredictionType(
@@ -336,7 +336,7 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getPerf
   else
     averageLoss = all->sd->holdout_best_loss;
 
-  VW::get_best_constant(*all->loss, *all->sd, bestConstant, bestConstantLoss);
+  VW::get_best_constant(*all->lc.loss, *all->sd, bestConstant, bestConstantLoss);
   totalNumberOfFeatures = all->sd->total_features;
 
   jclass clazz = env->FindClass("org/vowpalwabbit/spark/VowpalWabbitPerformanceStatistics");

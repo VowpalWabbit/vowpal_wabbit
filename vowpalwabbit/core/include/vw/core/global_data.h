@@ -166,12 +166,46 @@ public:
   size_t check_holdout_every_n_passes;  // default: 1, but search might want to set it higher if you spend multiple
                                         // passes learning a single policy
 };
+
+class initial_weights_config
+{
+public:
+  size_t normalized_idx;  // offset idx where the norm is stored (1 or 2 depending on whether adaptive is true)
+  std::vector<std::string> initial_regressors;
+  float initial_weight;
+  bool random_weights;
+  bool random_positive_weights;  // for initialize_regressor w/ new_mf
+  bool normal_weights;
+  bool tnormal_weights;
+  std::string per_feature_regularizer_input;
+};
+
+class update_rule_config
+{
+public:
+  // runtime accounting variables.
+  float initial_t;
+  float power_t;  // the power on learning rate decay.
+  float eta;      // learning rate control.
+  float eta_decay_rate;
+};
+
+class loss_config
+{
+public:
+  std::unique_ptr<loss_function> loss;
+  float l1_lambda;  // the level of l_1 regularization to impose.
+  float l2_lambda;  // the level of l_2 regularization to impose.
+  bool no_bias;     // no bias in regularization
+  int reg_mode;
+};
 }  // namespace details
 
 class workspace
 {
 public:
   VW::version_struct model_file_ver;
+  parameters weights;
 
   std::shared_ptr<VW::shared_data> sd;
 
@@ -217,7 +251,12 @@ public:
   // May be nullptr, so you must check before calling it
   std::function<void(float)> set_minmax;
 
+  details::feature_tweaks_config fc;  // feature related configs
+  details::output_model_config om;
   details::passes_config pc;
+  details::initial_weights_config iwc;
+  details::update_rule_config uc;
+  details::loss_config lc;
 
   uint32_t num_bits;  // log_2 of the number of features.
   bool default_bits;
@@ -228,9 +267,11 @@ public:
 
   bool daemon;
 
-  float initial_weight;
-
+  bool active;
   bool bfgs;
+  uint32_t lda;
+  // hack to support cb model loading into ccb learner
+  bool is_ccb_input_model = false;
 
   std::string id;
 
@@ -248,47 +289,33 @@ public:
 
   std::unique_ptr<VW::io::writer> stdout_adapter;
 
-  std::vector<std::string> initial_regressors;
-
   std::string feature_mask;
-
-  std::string per_feature_regularizer_input;
-
-  float l1_lambda;  // the level of l_1 regularization to impose.
-  float l2_lambda;  // the level of l_2 regularization to impose.
-  bool no_bias;     // no bias in regularization
-  float power_t;    // the power on learning rate decay.
-  int reg_mode;
 
   size_t pass_length;
   size_t numpasses;
   size_t passes_complete;
   uint64_t parse_mask;  // 1 << num_bits -1
 
-  details::feature_tweaks_config fc;  // feature related configs
+  // Default value of 2 follows behavior of 1-indexing and can change to 0-indexing if detected
+  uint32_t indexing = 2;  // for 0 or 1 indexing
 
+  bool training;           // Should I train if lable data is available?
+  bool invariant_updates;  // Should we use importance aware/safe updates, gd only
+  // bool nonormalize; not used?
+  bool do_reset_source;
+
+  std::map<uint64_t, VW::details::invert_hash_info> index_name_map;
   VW::io::logger logger;
   bool quiet;
   bool audit;  // should I print lots of debugging information?
   std::shared_ptr<std::vector<char>> audit_buffer;
   std::unique_ptr<VW::io::writer> audit_writer;
   VW::metrics_collector global_metrics;
-
-  bool training;  // Should I train if lable data is available?
-  bool active;
-  bool invariant_updates;  // Should we use importance aware/safe updates
-  bool random_weights;
-  bool random_positive_weights;  // for initialize_regressor w/ new_mf
-  bool normal_weights;
-  bool tnormal_weights;
-  bool nonormalize;
-  bool do_reset_source;
+  bool hash_inv;
+  bool print_invert;
+  bool hexfloat_weights;
 
   VW::details::generate_interactions_object_cache generate_interactions_object_cache_state;
-
-  size_t normalized_idx;  // offset idx where the norm is stored (1 or 2 depending on whether adaptive is true)
-
-  uint32_t lda;
 
   size_t length() { return (static_cast<size_t>(1)) << num_bits; };
 
@@ -298,28 +325,6 @@ public:
 
   void (*print_by_ref)(VW::io::writer*, float, float, const v_array<char>&, VW::io::logger&);
   void (*print_text_by_ref)(VW::io::writer*, const std::string&, const v_array<char>&, VW::io::logger&);
-  std::unique_ptr<loss_function> loss;
-
-  // runtime accounting variables.
-  float initial_t;
-  float eta;  // learning rate control.
-  float eta_decay_rate;
-
-  details::output_model_config om;
-
-  parameters weights;
-
-  bool hash_inv;
-  bool print_invert;
-  bool hexfloat_weights;
-
-  std::map<uint64_t, VW::details::invert_hash_info> index_name_map;
-
-  // hack to support cb model loading into ccb learner
-  bool is_ccb_input_model = false;
-
-  // Default value of 2 follows behavior of 1-indexing and can change to 0-indexing if detected
-  uint32_t indexing = 2;  // for 0 or 1 indexing
 
   std::shared_ptr<VW::rand_state> get_random_state() { return _random_state_sp; }
   explicit workspace(VW::io::logger logger);

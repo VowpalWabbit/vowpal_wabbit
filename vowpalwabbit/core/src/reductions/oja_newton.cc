@@ -400,7 +400,8 @@ void learn(OjaNewton& oja_newton_ptr, VW::example& ec)
   predict(oja_newton_ptr, ec);
 
   oja_n_update_data& data = oja_newton_ptr.data;
-  data.g = oja_newton_ptr.all->loss->first_derivative(oja_newton_ptr.all->sd.get(), ec.pred.scalar, ec.l.simple.label) *
+  data.g =
+      oja_newton_ptr.all->lc.loss->first_derivative(oja_newton_ptr.all->sd.get(), ec.pred.scalar, ec.l.simple.label) *
       ec.weight;
   data.g /= 2;  // for half square loss
 

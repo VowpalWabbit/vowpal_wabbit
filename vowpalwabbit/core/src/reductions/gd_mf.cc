@@ -171,7 +171,7 @@ float mf_predict(gdmf& d, VW::example& ec, T& weights)
 
   if (ec.l.simple.label != FLT_MAX)
   {
-    ec.loss = all.loss->get_loss(all.sd.get(), ec.pred.scalar, ec.l.simple.label) * ec.weight;
+    ec.loss = all.lc.loss->get_loss(all.sd.get(), ec.pred.scalar, ec.l.simple.label) * ec.weight;
   }
 
   if (all.audit) { mf_print_audit_features(d, ec, 0); }
@@ -203,10 +203,10 @@ void mf_train(gdmf& d, VW::example& ec, T& weights)
 
   // use final prediction to get update size
   // update = eta_t*(y-y_hat) where eta_t = eta/(3*t^p) * importance weight
-  float eta_t = all.eta / powf(static_cast<float>(all.sd->t) + ec.weight, all.power_t) / 3.f * ec.weight;
-  float update = all.loss->get_update(ec.pred.scalar, ld.label, eta_t, 1.);  // ec.total_sum_feat_sq);
+  float eta_t = all.uc.eta / powf(static_cast<float>(all.sd->t) + ec.weight, all.uc.power_t) / 3.f * ec.weight;
+  float update = all.lc.loss->get_update(ec.pred.scalar, ld.label, eta_t, 1.);  // ec.total_sum_feat_sq);
 
-  float regularization = eta_t * all.l2_lambda;
+  float regularization = eta_t * all.lc.l2_lambda;
 
   // linear update
   for (VW::features& fs : ec) { sd_offset_update<T>(weights, fs, 0, update, regularization); }
@@ -261,7 +261,7 @@ void save_load(gdmf& d, VW::io_buf& model_file, bool read, bool text)
   if (read)
   {
     VW::details::initialize_regressor(all);
-    if (all.random_weights)
+    if (all.iwc.random_weights)
     {
       uint32_t stride = all.weights.stride();
       auto weight_initializer = [stride](VW::weight* weights, uint64_t index)
@@ -312,7 +312,7 @@ void end_pass(gdmf& d)
 {
   VW::workspace* all = d.all;
 
-  all->eta *= all->eta_decay_rate;
+  all->uc.eta *= all->uc.eta_decay_rate;
   if (all->om.save_per_pass) { VW::details::save_predictor(*all, all->om.final_regressor_name, all->pc.current_pass); }
 
   if (!all->pc.holdout_set_off)
@@ -369,7 +369,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_mf_setup(VW::setup_base
   // store linear + 2*rank weights per index, round up to power of two
   float temp = ceilf(logf(static_cast<float>(data->rank * 2 + 1)) / logf(2.f));
   all.weights.stride_shift(static_cast<size_t>(temp));
-  all.random_weights = true;
+  all.iwc.random_weights = true;
 
   if (!all.pc.holdout_set_off)
   {
@@ -379,16 +379,16 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_mf_setup(VW::setup_base
 
   if (!options.was_supplied("learning_rate") && !options.was_supplied("l"))
   {
-    all.eta = 10;  // default learning rate to 10 for non default update rule
+    all.uc.eta = 10;  // default learning rate to 10 for non default update rule
   }
 
   // default initial_t to 1 instead of 0
   if (!options.was_supplied("initial_t"))
   {
     all.sd->t = 1.f;
-    all.initial_t = 1.f;
+    all.uc.initial_t = 1.f;
   }
-  all.eta *= powf(static_cast<float>(all.sd->t), all.power_t);
+  all.uc.eta *= powf(static_cast<float>(all.sd->t), all.uc.power_t);
 
   auto l = make_bottom_learner(std::move(data), learn, predict, stack_builder.get_setupfn_name(gd_mf_setup),
       VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)

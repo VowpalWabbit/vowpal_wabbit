@@ -414,9 +414,9 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::plt_setup(VW::setup_base_i
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  if (all.loss->get_type() != "logistic")
+  if (all.lc.loss->get_type() != "logistic")
   {
-    THROW("--plt requires --loss_function=logistic, but instead found: " << all.loss->get_type());
+    THROW("--plt requires --loss_function=logistic, but instead found: " << all.lc.loss->get_type());
   }
 
   tree->all = &all;
@@ -442,7 +442,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::plt_setup(VW::setup_base_i
 
   // resize VW::v_arrays
   tree->nodes_time.resize(tree->t);
-  std::fill(tree->nodes_time.begin(), tree->nodes_time.end(), all.initial_t);
+  std::fill(tree->nodes_time.begin(), tree->nodes_time.end(), all.uc.initial_t);
   tree->node_pred.resize(tree->kary);
   if (tree->top_k > 0)
   {

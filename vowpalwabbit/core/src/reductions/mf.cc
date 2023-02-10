@@ -206,7 +206,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::mf_setup(VW::setup_base_i&
       [](const std::vector<unsigned char>& interaction) { return interaction.size() != 2; });
   if (non_pair_count > 0) { THROW("can only use pairs with new_mf"); }
 
-  all.random_positive_weights = true;
+  all.iwc.random_positive_weights = true;
 
   size_t ws = 2 * data->rank + 1;
 
