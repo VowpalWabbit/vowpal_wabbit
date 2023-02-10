@@ -10,7 +10,7 @@
 API VW::example* CreateExample(vw_net_native::workspace_context* workspace)
 {
   auto* ex = new VW::example;
-  workspace->vw->example_parser->lbl_parser.default_label(ex->l);
+  workspace->vw->parser_runtime.example_parser->lbl_parser.default_label(ex->l);
   return ex;
 }
 
@@ -189,12 +189,13 @@ API void MakeIntoNewlineExample(vw_net_native::workspace_context* workspace, VW:
 
 API void MakeLabelDefault(vw_net_native::workspace_context* workspace, VW::example* example)
 {
-  workspace->vw->example_parser->lbl_parser.default_label(example->l);
+  workspace->vw->parser_runtime.example_parser->lbl_parser.default_label(example->l);
 }
 
 API void UpdateExampleWeight(vw_net_native::workspace_context* workspace, VW::example* example)
 {
-  example->weight = workspace->vw->example_parser->lbl_parser.get_weight(example->l, example->ex_reduction_features);
+  example->weight =
+      workspace->vw->parser_runtime.example_parser->lbl_parser.get_weight(example->l, example->ex_reduction_features);
 }
 
 API vw_net_native::namespace_enumerator* CreateNamespaceEnumerator(

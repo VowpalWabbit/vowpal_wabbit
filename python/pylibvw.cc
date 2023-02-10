@@ -716,7 +716,7 @@ void ex_push_feature_dict(example_ptr ec, vw_ptr vw, unsigned char ns_first_lett
     {
       key_chars = (const char*)PyUnicode_1BYTE_DATA(key);
       key_size = PyUnicode_GET_LENGTH(key);
-      feat_index = vw->example_parser->hasher(key_chars, key_size, ns_hash) & vw->parse_mask;
+      feat_index = vw->parser_runtime.example_parser->hasher(key_chars, key_size, ns_hash) & vw->parse_mask;
     }
     else if (PyLong_Check(key)) { feat_index = (feature_index)PyLong_AsUnsignedLongLong(key); }
     else
@@ -848,10 +848,10 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
 
 void ex_set_label_string(example_ptr ec, vw_ptr vw, std::string label, size_t labelType)
 {  // SPEEDUP: if it's already set properly, don't modify
-  VW::label_parser& old_lp = vw->example_parser->lbl_parser;
-  vw->example_parser->lbl_parser = *get_label_parser(&*vw, labelType);
+  VW::label_parser& old_lp = vw->parser_runtime.example_parser->lbl_parser;
+  vw->parser_runtime.example_parser->lbl_parser = *get_label_parser(&*vw, labelType);
   VW::parse_example_label(*vw, *ec, label);
-  vw->example_parser->lbl_parser = old_lp;
+  vw->parser_runtime.example_parser->lbl_parser = old_lp;
 }
 
 float ex_get_simplelabel_label(example_ptr ec) { return ec->l.simple.label; }

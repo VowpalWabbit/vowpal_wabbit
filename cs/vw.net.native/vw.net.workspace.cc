@@ -340,5 +340,5 @@ API void WorkspaceSetId(vw_net_native::workspace_context* workspace, char* id, s
 
 API VW::label_type_t WorkspaceGetLabelType(vw_net_native::workspace_context* workspace)
 {
-  return workspace->vw->example_parser->lbl_parser.label_type;
+  return workspace->vw->parser_runtime.example_parser->lbl_parser.label_type;
 }

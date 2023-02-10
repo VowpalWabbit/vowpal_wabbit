@@ -793,7 +793,7 @@ VowpalWabbitExample^ VowpalWabbit::GetOrCreateNativeExample()
   { try
     {
       auto ex = new VW::example;
-      m_vw->example_parser->lbl_parser.default_label(ex->l);
+      m_vw->parser_runtime.example_parser->lbl_parser.default_label(ex->l);
       return gcnew VowpalWabbitExample(this, ex);
     }
     CATCHRETHROW
@@ -801,7 +801,7 @@ VowpalWabbitExample^ VowpalWabbit::GetOrCreateNativeExample()
 
   try
   { VW::empty_example(*m_vw, *ex->m_example);
-    m_vw->example_parser->lbl_parser.default_label(ex->m_example->l);
+    m_vw->parser_runtime.example_parser->lbl_parser.default_label(ex->m_example->l);
 
     return ex;
   }

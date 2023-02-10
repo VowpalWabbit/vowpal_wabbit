@@ -73,7 +73,7 @@ bool VowpalWabbitExample::IsNewLine::get()
 
 ILabel^ VowpalWabbitExample::Label::get()
 { ILabel^ label;
-  auto lp = m_owner->Native->m_vw->example_parser->lbl_parser;
+  auto lp = m_owner->Native->m_vw->parser_runtime.example_parser->lbl_parser;
   if (!memcmp(&lp, &VW::simple_label_parser_global, sizeof(lp)))
     label = gcnew SimpleLabel();
   else if (!memcmp(&lp, &VW::cb_label_parser_global, sizeof(lp)))
@@ -103,7 +103,7 @@ void VowpalWabbitExample::Label::set(ILabel^ label)
 	label->UpdateExample(m_owner->Native->m_vw, m_example);
 
 	// we need to update the example weight as setup_example() can be called prior to this call.
-	m_example->weight = m_owner->Native->m_vw->example_parser->lbl_parser.get_weight(m_example->l, m_example->ex_reduction_features);
+	m_example->weight = m_owner->Native->m_vw->parser_runtime.example_parser->lbl_parser.get_weight(m_example->l, m_example->ex_reduction_features);
 }
 
 void VowpalWabbitExample::MakeEmpty(VowpalWabbit^ vw)
