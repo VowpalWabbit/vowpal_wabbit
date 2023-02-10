@@ -157,9 +157,9 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_to_cb_adf_setup(VW::set
   if (options.was_supplied("eval")) { return nullptr; }
 
   // ANY model created with older version should default to --cb_force_legacy
-  if (all.model_file_ver != VW::version_definitions::EMPTY_VERSION_FILE)
+  if (all.runtime_state.model_file_ver != VW::version_definitions::EMPTY_VERSION_FILE)
   {
-    compat_old_cb = !(all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_CB_TO_CBADF);
+    compat_old_cb = !(all.runtime_state.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_CB_TO_CBADF);
   }
 
   // not compatible with adf

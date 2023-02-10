@@ -230,6 +230,7 @@ public:
 class runtime_state
 {
 public:
+  VW::version_struct model_file_ver;
   size_t passes_complete;
   // Default value of 2 follows behavior of 1-indexing and can change to 0-indexing if detected
   uint32_t indexing = 2;  // for 0 or 1 indexing
@@ -289,7 +290,6 @@ public:
 class workspace
 {
 public:
-  VW::version_struct model_file_ver;
   parameters weights;
   std::shared_ptr<VW::LEARNER::learner> l;  // the top level learner
   std::unique_ptr<VW::config::options_i, options_deleter_type> options;

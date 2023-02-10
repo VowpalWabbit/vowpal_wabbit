@@ -453,7 +453,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::plt_setup(VW::setup_base_i
     tree->r_at.resize(tree->top_k);
   }
 
-  tree->model_file_version = all.model_file_ver;
+  tree->model_file_version = all.runtime_state.model_file_ver;
 
   size_t ws = tree->t;
   std::string name_addition = "";

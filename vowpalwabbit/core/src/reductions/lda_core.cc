@@ -799,7 +799,7 @@ void save_load(lda& l, VW::io_buf& model_file, bool read, bool text)
       size_t K = all.reduction_state.lda;  // NOLINT
       if (!read && text) { msg << i << " "; }
 
-      if (!read || all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_ID)
+      if (!read || all.runtime_state.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_ID)
       {
         brw +=
             VW::details::bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), read, msg, text);

@@ -697,7 +697,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::ccb_explore_adf_setup(VW::
   // Extract from lower level reductions
   data->shared = nullptr;
   data->all = &all;
-  data->model_file_version = all.model_file_ver;
+  data->model_file_version = all.runtime_state.model_file_ver;
 
   data->id_namespace_str = "_id";
   data->id_namespace_audit_str = "_ccb_slot_index";

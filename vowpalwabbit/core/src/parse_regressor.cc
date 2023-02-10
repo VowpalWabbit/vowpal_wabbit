@@ -149,15 +149,16 @@ void VW::details::save_load_header(VW::workspace& all, VW::io_buf& model_file, b
       buff2[std::min(v_length, DEFAULT_BUF_SIZE) - 1] = '\0';
     }
     bytes_read_write += VW::details::bin_text_read_write(model_file, buff2.data(), v_length, read, msg, text);
-    all.model_file_ver = VW::version_struct{buff2.data()};  // stored in all to check save_resume fix in gd
+    all.runtime_state.model_file_ver =
+        VW::version_struct{buff2.data()};  // stored in all to check save_resume fix in gd
     VW::validate_version(all);
 
-    if (all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_CHAINED_HASH)
+    if (all.runtime_state.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_CHAINED_HASH)
     {
       model_file.verify_hash(true);
     }
 
-    if (all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_ID)
+    if (all.runtime_state.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_ID)
     {
       v_length = all.id.length() + 1;
 
@@ -206,7 +207,7 @@ void VW::details::save_load_header(VW::workspace& all, VW::io_buf& model_file, b
 
     VW::validate_num_bits(all);
 
-    if (all.model_file_ver < VW::version_definitions::VERSION_FILE_WITH_INTERACTIONS_IN_FO)
+    if (all.runtime_state.model_file_ver < VW::version_definitions::VERSION_FILE_WITH_INTERACTIONS_IN_FO)
     {
       if (!read) THROW("cannot write legacy format");
 
@@ -257,7 +258,7 @@ void VW::details::save_load_header(VW::workspace& all, VW::io_buf& model_file, b
       msg << "\n";
       bytes_read_write += VW::details::bin_text_read_write_fixed_validated(model_file, nullptr, 0, read, msg, text);
 
-      if (all.model_file_ver >=
+      if (all.runtime_state.model_file_ver >=
           VW::version_definitions::VERSION_FILE_WITH_INTERACTIONS)  // && < VERSION_FILE_WITH_INTERACTIONS_IN_FO
                                                                     // (previous if)
       {
@@ -294,7 +295,7 @@ void VW::details::save_load_header(VW::workspace& all, VW::io_buf& model_file, b
       }
     }
 
-    if (all.model_file_ver <= VW::version_definitions::VERSION_FILE_WITH_RANK_IN_HEADER)
+    if (all.runtime_state.model_file_ver <= VW::version_definitions::VERSION_FILE_WITH_RANK_IN_HEADER)
     {
       // to fix compatibility that was broken in 7.9
       uint32_t rank = 0;
@@ -454,9 +455,10 @@ void VW::details::save_load_header(VW::workspace& all, VW::io_buf& model_file, b
     }
 
     // Read/write checksum if required by version
-    if (all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_HASH)
+    if (all.runtime_state.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_HASH)
     {
-      uint32_t check_sum = (all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_CHAINED_HASH)
+      uint32_t check_sum =
+          (all.runtime_state.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_CHAINED_HASH)
           ? model_file.hash()
           : static_cast<uint32_t>(VW::uniform_hash(model_file.buffer_start(), bytes_read_write, 0));
 
@@ -469,7 +471,7 @@ void VW::details::save_load_header(VW::workspace& all, VW::io_buf& model_file, b
       if (check_sum_saved != check_sum) { THROW("Checksum is inconsistent, file is possibly corrupted."); }
     }
 
-    if (all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_CHAINED_HASH)
+    if (all.runtime_state.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_CHAINED_HASH)
     {
       model_file.verify_hash(false);
     }

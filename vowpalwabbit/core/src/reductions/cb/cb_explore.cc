@@ -372,7 +372,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_setup(VW::setup
   if (data->epsilon < 0.0 || data->epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
 
   data->cbcs.cb_type = VW::cb_type_t::DR;
-  data->model_file_version = all.model_file_ver;
+  data->model_file_version = all.runtime_state.model_file_ver;
 
   auto base = require_singleline(stack_builder.setup_base_learner());
   data->cbcs.scorer = VW::LEARNER::require_singleline(base->get_learner_by_name_prefix("scorer"));

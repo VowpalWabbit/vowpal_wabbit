@@ -1138,7 +1138,7 @@ void VW::details::save_load_online_state_gd(VW::workspace& all, VW::io_buf& mode
   VW::details::bin_text_read_write_fixed(
       model_file, reinterpret_cast<char*>(&all.sd->total_features), sizeof(all.sd->total_features), read, msg, text);
 
-  if (!read || all.model_file_ver >= VW::version_definitions::VERSION_SAVE_RESUME_FIX)
+  if (!read || all.runtime_state.model_file_ver >= VW::version_definitions::VERSION_SAVE_RESUME_FIX)
   {
     // restore some data to allow save_resume work more accurate
 
@@ -1154,7 +1154,7 @@ void VW::details::save_load_online_state_gd(VW::workspace& all, VW::io_buf& mode
 
     // fix "number of examples per pass"
     msg << "current_pass " << all.pc.current_pass << "\n";
-    if (all.model_file_ver >= VW::version_definitions::VERSION_PASS_UINT64)
+    if (all.runtime_state.model_file_ver >= VW::version_definitions::VERSION_PASS_UINT64)
     {
       VW::details::bin_text_read_write_fixed(
           model_file, reinterpret_cast<char*>(&all.pc.current_pass), sizeof(all.pc.current_pass), read, msg, text);
@@ -1168,7 +1168,7 @@ void VW::details::save_load_online_state_gd(VW::workspace& all, VW::io_buf& mode
     }
   }
 
-  if (!read || all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_L1_AND_L2_STATE_IN_MODEL_DATA)
+  if (!read || all.runtime_state.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_L1_AND_L2_STATE_IN_MODEL_DATA)
   {
     msg << "l1_state " << all.sd->gravity << "\n";
     auto local_gravity = all.sd->gravity;
@@ -1262,7 +1262,7 @@ void save_load(VW::reductions::gd& g, VW::io_buf& model_file, bool read, bool te
         model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
     if (resume)
     {
-      if (read && all.model_file_ver < VW::version_definitions::VERSION_SAVE_RESUME_FIX)
+      if (read && all.runtime_state.model_file_ver < VW::version_definitions::VERSION_SAVE_RESUME_FIX)
       {
         g.all->logger.err_warn(
             "save_resume functionality is known to have inaccuracy in model files version less than '{}'",

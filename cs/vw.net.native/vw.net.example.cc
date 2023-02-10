@@ -257,7 +257,7 @@ API VW::feature_index GetShiftedWeightIndex(
     vw_net_native::workspace_context* workspace, VW::example* example, VW::feature_index feature_index)
 {
   VW::workspace* vw = workspace->vw;
-  return ((feature_index + example->ft_offset) >> vw->weights.stride_shift()) & vw->parse_mask;
+  return ((feature_index + example->ft_offset) >> vw->weights.stride_shift()) & vw->parser_runtime.parse_mask;
 }
 
 API float GetWeight(vw_net_native::workspace_context* workspace, VW::example* example, VW::feature_index feature_index)

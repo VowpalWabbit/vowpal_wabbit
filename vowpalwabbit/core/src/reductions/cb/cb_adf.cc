@@ -84,7 +84,10 @@ VW::example* VW::test_cb_adf_sequence(const VW::multi_ex& ec_seq)
   return ret;
 }
 
-const VW::version_struct* VW::reductions::cb_adf::get_model_file_ver() const { return &_all->model_file_ver; }
+const VW::version_struct* VW::reductions::cb_adf::get_model_file_ver() const
+{
+  return &_all->runtime_state.model_file_ver;
+}
 
 void VW::reductions::cb_adf::learn_ips(learner& base, VW::multi_ex& examples)
 {
