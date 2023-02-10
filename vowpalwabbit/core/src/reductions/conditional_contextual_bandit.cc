@@ -249,7 +249,7 @@ void inject_slot_id(ccb_data& data, VW::example* shared, size_t id)
     index = VW::hash_feature(*data.all, current_index_str, data.id_namespace_hash);
 
     // To maintain indices consistent with what the parser does we must scale.
-    index *= static_cast<uint64_t>(data.all->wpp) << data.base_learner_stride_shift;
+    index *= static_cast<uint64_t>(data.all->reduction_state.wpp) << data.base_learner_stride_shift;
     data.slot_id_hashes[id] = index;
   }
   else { index = data.slot_id_hashes[id]; }
@@ -581,7 +581,7 @@ void print_update_ccb(VW::workspace& all, shared_data& /* sd */, const ccb_data&
     VW::io::logger& /* unused */)
 {
   const bool should_print_driver_update =
-      all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs;
+      all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.reduction_state.bfgs;
 
   if (should_print_driver_update && !ec_seq.empty() && !data.no_pred)
   {
@@ -636,7 +636,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::ccb_explore_adf_setup(VW::
   bool all_slots_loss_report = false;
   std::string type_string = "mtr";
 
-  data->is_ccb_input_model = all.is_ccb_input_model;
+  data->is_ccb_input_model = all.reduction_state.is_ccb_input_model;
 
   option_group_definition new_options("[Reduction] Conditional Contextual Bandit Exploration with ADF");
   new_options

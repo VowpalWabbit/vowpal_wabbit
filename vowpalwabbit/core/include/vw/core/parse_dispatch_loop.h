@@ -28,7 +28,8 @@ void parse_dispatch(VW::workspace& all, DispatchFuncT& dispatch)
     while (!all.example_parser->done)
     {
       examples.push_back(&VW::get_unused_example(&all));  // need at least 1 example
-      if (!all.do_reset_source && example_number != all.pass_length && all.max_examples > example_number &&
+      if (!all.runtime_state.do_reset_source && example_number != all.runtime_config.pass_length &&
+          all.max_examples > example_number &&
           all.example_parser->reader(&all, all.example_parser->input, examples) > 0)
       {
         VW::setup_examples(all, examples);
@@ -38,8 +39,8 @@ void parse_dispatch(VW::workspace& all, DispatchFuncT& dispatch)
       else
       {
         VW::details::reset_source(all, all.num_bits);
-        all.do_reset_source = false;
-        all.passes_complete++;
+        all.runtime_state.do_reset_source = false;
+        all.runtime_state.passes_complete++;
 
         // setup an end_pass example
         all.example_parser->lbl_parser.default_label(examples[0]->l);
@@ -48,13 +49,14 @@ void parse_dispatch(VW::workspace& all, DispatchFuncT& dispatch)
         // Since this example gets finished, we need to keep the counter correct.
         all.example_parser->num_setup_examples++;
 
-        if (all.passes_complete == all.numpasses && example_number == all.pass_length)
+        if (all.runtime_state.passes_complete == all.runtime_config.numpasses &&
+            example_number == all.runtime_config.pass_length)
         {
-          all.passes_complete = 0;
-          all.pass_length = all.pass_length * 2 + 1;
+          all.runtime_state.passes_complete = 0;
+          all.runtime_config.pass_length = all.runtime_config.pass_length * 2 + 1;
         }
         dispatch(all, examples);  // must be called before lock_done or race condition exists.
-        if (all.passes_complete >= all.numpasses && all.max_examples >= example_number)
+        if (all.runtime_state.passes_complete >= all.runtime_config.numpasses && all.max_examples >= example_number)
         {
           VW::details::lock_done(*all.example_parser);
         }

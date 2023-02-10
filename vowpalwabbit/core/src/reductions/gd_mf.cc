@@ -337,7 +337,7 @@ void learn(gdmf& d, VW::example& ec)
   VW::workspace& all = *d.all;
 
   mf_predict(d, ec);
-  if (all.training && ec.l.simple.label != FLT_MAX) { mf_train(d, ec); }
+  if (all.runtime_config.training && ec.l.simple.label != FLT_MAX) { mf_train(d, ec); }
 }
 
 }  // namespace

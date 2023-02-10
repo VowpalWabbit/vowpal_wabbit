@@ -321,7 +321,7 @@ void print_update_plt(VW::workspace& all, VW::shared_data&, const plt&, const VW
 void finish(plt& p)
 {
   // print results in the test mode
-  if (!p.all->training && p.ec_count > 0)
+  if (!p.all->runtime_config.training && p.ec_count > 0)
   {
     // top-k predictions
     if (p.top_k > 0)
@@ -433,7 +433,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::plt_setup(VW::setup_base_i
   if (!all.quiet)
   {
     *(all.trace_message) << "PLT k = " << tree->k << "\nkary_tree = " << tree->kary << std::endl;
-    if (!all.training)
+    if (!all.runtime_config.training)
     {
       if (tree->top_k > 0) { *(all.trace_message) << "top_k = " << tree->top_k << std::endl; }
       else { *(all.trace_message) << "threshold = " << tree->threshold << std::endl; }

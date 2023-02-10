@@ -92,9 +92,9 @@ extern "C"
   VW_DLL_PUBLIC void VW_CALLING_CONV VW_Finish_Passes(VW_HANDLE handle)
   {
     auto* pointer = static_cast<VW::workspace*>(handle);
-    if (pointer->numpasses > 1)
+    if (pointer->runtime_config.numpasses > 1)
     {
-      pointer->do_reset_source = true;
+      pointer->runtime_state.do_reset_source = true;
       VW::start_parser(*pointer);
       VW::LEARNER::generic_driver(*pointer);
       VW::end_parser(*pointer);

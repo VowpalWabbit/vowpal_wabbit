@@ -230,7 +230,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_performRem
 
   try
   {
-    if (all->numpasses > 1)
+    if (all->runtime_config.numpasses > 1)
     {
       all->do_reset_source = true;
       VW::start_parser(*all);
@@ -360,7 +360,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_endPass(JN
     // from learner.cc:41
     VW::details::reset_source(*all, all->num_bits);
     all->do_reset_source = false;
-    all->passes_complete++;
+    all->runtime_state.passes_complete++;
 
     all->pc.current_pass++;
     all->l->end_pass();

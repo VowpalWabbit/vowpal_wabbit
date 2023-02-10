@@ -131,7 +131,7 @@ void VW::details::print_update_multilabel(VW::workspace& all, const VW::example&
 {
   const auto& ld = ec.l.multilabels;
   const bool is_test = ld.is_test();
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.reduction_state.bfgs)
   {
     std::stringstream label_string;
     if (is_test) { label_string << "unknown"; }

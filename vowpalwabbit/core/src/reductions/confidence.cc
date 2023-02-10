@@ -97,7 +97,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::confidence_setup(VW::setup
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  if (!all.training)
+  if (!all.runtime_config.training)
   {
     all.logger.out_warn(
         "Confidence does not work in test mode because learning algorithm state is needed.  Do not use "

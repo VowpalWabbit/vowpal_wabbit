@@ -365,7 +365,7 @@ void my_save(vw_ptr all, std::string name) { VW::save_predictor(*all, name); }
 
 search_ptr get_search_ptr(vw_ptr all)
 {
-  return boost::shared_ptr<Search::search>((Search::search*)(all->searchstr), dont_delete_me);
+  return boost::shared_ptr<Search::search>((Search::search*)(all->reduction_state.searchstr), dont_delete_me);
 }
 
 py::object get_options(vw_ptr all, py::object py_class, bool enabled_only)
@@ -840,7 +840,7 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
     }
   }
 
-  uint32_t multiplier = all.wpp << all.weights.stride_shift();
+  uint32_t multiplier = all.reduction_state.wpp << all.weights.stride_shift();
   if (multiplier != 1)  // make room for per-feature information.
     for (auto ns : ae->indices)
       for (auto& idx : ae->feature_space[ns].indices) idx /= multiplier;

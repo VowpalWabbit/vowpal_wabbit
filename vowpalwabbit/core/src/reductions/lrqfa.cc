@@ -164,7 +164,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::lrqfa_setup(VW::setup_base
   int fd_id = 0;
   for (char i : lrq->field_name) { lrq->field_id[static_cast<int>(i)] = fd_id++; }
 
-  all.wpp = all.wpp * static_cast<uint64_t>(1 + lrq->k);
+  all.reduction_state.wpp = all.reduction_state.wpp * static_cast<uint64_t>(1 + lrq->k);
   auto base = stack_builder.setup_base_learner();
   size_t ws = 1 + lrq->field_name.size() * lrq->k;
 

@@ -84,7 +84,7 @@ void workspace::learn(example& ec)
 {
   if (l->is_multiline()) THROW("This learner does not support single-line examples.");
 
-  if (ec.test_only || !training) { VW::LEARNER::require_singleline(l)->predict(ec); }
+  if (ec.test_only || !runtime_config.training) { VW::LEARNER::require_singleline(l)->predict(ec); }
   else
   {
     if (l->learn_returns_prediction) { VW::LEARNER::require_singleline(l)->learn(ec); }
@@ -100,7 +100,7 @@ void workspace::learn(multi_ex& ec)
 {
   if (!l->is_multiline()) THROW("This learner does not support multi-line example.");
 
-  if (!training) { VW::LEARNER::require_multiline(l)->predict(ec); }
+  if (!runtime_config.training) { VW::LEARNER::require_multiline(l)->predict(ec); }
   else
   {
     if (l->learn_returns_prediction) { VW::LEARNER::require_multiline(l)->learn(ec); }
@@ -319,12 +319,12 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   lc.reg_mode = 0;
   pc.current_pass = 0;
 
-  bfgs = false;
+  reduction_state.bfgs = false;
   lc.no_bias = false;
-  active = false;
+  reduction_state.active = false;
   num_bits = 18;
-  default_bits = true;
-  daemon = false;
+  runtime_config.default_bits = true;
+  runtime_config.daemon = false;
   om.save_resume = true;
   om.preserve_performance_counters = false;
 
@@ -342,11 +342,11 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   uc.power_t = 0.5f;
   uc.eta = 0.5f;  // default learning rate for normalized adaptive updates, this is switched to 10 by default for the
                   // other updates (see parse_args.cc)
-  numpasses = 1;
+  runtime_config.numpasses = 1;
 
   print_by_ref = VW::details::print_result_by_ref;
   print_text_by_ref = print_raw_text_by_ref;
-  lda = 0;
+  reduction_state.lda = 0;
   iwc.random_weights = false;
   iwc.normal_weights = false;
   iwc.tnormal_weights = false;
@@ -356,7 +356,7 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
 
   stdout_adapter = VW::io::open_stdout();
 
-  searchstr = nullptr;
+  reduction_state.searchstr = nullptr;
 
   // nonormalize = false;
   lc.l1_lambda = 0.0;
@@ -375,18 +375,18 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
 
   fc.add_constant = true;
 
-  invariant_updates = true;
+  reduction_state.invariant_updates = true;
   iwc.normalized_idx = 2;
 
   audit = false;
   audit_writer = VW::io::open_stdout();
 
-  pass_length = std::numeric_limits<size_t>::max();
-  passes_complete = 0;
+  runtime_config.pass_length = std::numeric_limits<size_t>::max();
+  runtime_state.passes_complete = 0;
 
   om.save_per_pass = false;
 
-  do_reset_source = false;
+  runtime_state.do_reset_source = false;
   pc.holdout_set_off = true;
   pc.holdout_after = 0;
   pc.check_holdout_every_n_passes = 1;

@@ -384,7 +384,7 @@ inline void audit_feature(audit_results& dat, const float ft_weight, const uint6
     dat.results.push_back(sv);
   }
 
-  if ((dat.all.pc.current_pass == 0 || dat.all.training == false) && dat.all.hash_inv)
+  if ((dat.all.pc.current_pass == 0 || dat.all.runtime_config.training == false) && dat.all.hash_inv)
   {
     const auto strided_index = index >> stride_shift;
     if (dat.all.index_name_map.count(strided_index) == 0)
@@ -410,7 +410,7 @@ void print_lda_features(VW::workspace& all, VW::example& ec)
     {
       std::cout << '\t' << VW::to_string(*f.audit()) << ':' << ((f.index() >> stride_shift) & all.parse_mask) << ':'
                 << f.value();
-      for (size_t k = 0; k < all.lda; k++) { std::cout << ':' << (&weights[f.index()])[k]; }
+      for (size_t k = 0; k < all.reduction_state.lda; k++) { std::cout << ':' << (&weights[f.index()])[k]; }
     }
   }
   std::cout << " total of " << count << " features." << std::endl;
@@ -419,7 +419,7 @@ void print_lda_features(VW::workspace& all, VW::example& ec)
 
 void VW::details::print_features(VW::workspace& all, VW::example& ec)
 {
-  if (all.lda > 0) { print_lda_features(all, ec); }
+  if (all.reduction_state.lda > 0) { print_lda_features(all, ec); }
   else
   {
     audit_results dat(all, ec.ft_offset);
@@ -1102,7 +1102,7 @@ void VW::details::save_load_online_state_gd(VW::workspace& all, VW::io_buf& mode
   msg << "dump_interval " << dump_interval << "\n";
   VW::details::bin_text_read_write_fixed(
       model_file, reinterpret_cast<char*>(&dump_interval), sizeof(dump_interval), read, msg, text);
-  if (!read || (all.training && all.om.preserve_performance_counters))
+  if (!read || (all.runtime_config.training && all.om.preserve_performance_counters))
   {  // update dump_interval from input model
     all.sd->dump_interval = dump_interval;
   }
@@ -1198,8 +1198,9 @@ void VW::details::save_load_online_state_gd(VW::workspace& all, VW::io_buf& mode
     }
   }
 
-  if (read && (!all.training || !all.om.preserve_performance_counters))  // reset various things so that we report test
-                                                                         // set performance properly
+  if (read &&
+      (!all.runtime_config.training || !all.om.preserve_performance_counters))  // reset various things so that we
+                                                                                // report test set performance properly
   {
     all.sd->sum_loss = 0;
     all.sd->sum_loss_since_last_dump = 0;
@@ -1273,7 +1274,7 @@ void save_load(VW::reductions::gd& g, VW::io_buf& model_file, bool read, bool te
       VW::details::save_load_regressor_gd(all, model_file, read, text);
     }
   }
-  if (!all.training)
+  if (!all.runtime_config.training)
   {  // If the regressor was saved without --predict_only_model, then when testing we want to
      // materialize the weights.
     sync_weights(all);
@@ -1326,7 +1327,7 @@ uint64_t set_learn(VW::workspace& all, bool feature_mask_off, VW::reductions::gd
 template <bool sqrt_rate, uint64_t adaptive, uint64_t normalized, uint64_t spare, uint64_t next>
 uint64_t set_learn(VW::workspace& all, bool feature_mask_off, VW::reductions::gd& g)
 {
-  if (all.invariant_updates)
+  if (all.reduction_state.invariant_updates)
   {
     return set_learn<true, sqrt_rate, adaptive, normalized, spare, next>(all, feature_mask_off, g);
   }
@@ -1433,7 +1434,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i&
   {
     // nondefault
     all.weights.adaptive = adaptive;
-    all.invariant_updates = all.training && invariant;
+    all.reduction_state.invariant_updates = all.runtime_config.training && invariant;
     all.weights.normalized = normalized;
 
     if (!options.was_supplied("learning_rate") && !options.was_supplied("l") &&
@@ -1453,22 +1454,22 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i&
       all.uc.eta *= powf(static_cast<float>(all.sd->t), all.uc.power_t);
     }
   }
-  else { all.invariant_updates = all.training; }
+  else { all.reduction_state.invariant_updates = all.runtime_config.training; }
   g->adaptive_input = all.weights.adaptive;
   g->normalized_input = all.weights.normalized;
 
-  all.weights.adaptive = all.weights.adaptive && all.training;
-  all.weights.normalized = all.weights.normalized && all.training;
+  all.weights.adaptive = all.weights.adaptive && all.runtime_config.training;
+  all.weights.normalized = all.weights.normalized && all.runtime_config.training;
 
-  if (adax) { g->adax = all.training && adax; }
+  if (adax) { g->adax = all.runtime_config.training && adax; }
 
   if (g->adax && !all.weights.adaptive) THROW("Cannot use adax without adaptive");
 
-  if (pow(static_cast<double>(all.uc.eta_decay_rate), static_cast<double>(all.numpasses)) < 0.0001)
+  if (pow(static_cast<double>(all.uc.eta_decay_rate), static_cast<double>(all.runtime_config.numpasses)) < 0.0001)
   {
     all.logger.err_warn(
         "The learning rate for the last pass is multiplied by '{}' adjust --decay_learning_rate larger to avoid this.",
-        pow(static_cast<double>(all.uc.eta_decay_rate), static_cast<double>(all.numpasses)));
+        pow(static_cast<double>(all.uc.eta_decay_rate), static_cast<double>(all.runtime_config.numpasses)));
   }
 
   if (all.lc.reg_mode % 2)

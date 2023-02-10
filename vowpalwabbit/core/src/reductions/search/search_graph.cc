@@ -77,7 +77,7 @@ public:
 
   // for adding new features
   uint64_t mask;        // all->reg.weight_mask
-  uint64_t multiplier;  // all.wpp << all.stride_shift
+  uint64_t multiplier;  // all.reduction_state.wpp << all.stride_shift
   size_t ss;            // stride_shift
   size_t wpp;
 
@@ -189,7 +189,7 @@ void setup(Search::search& sch, VW::multi_ex& ec)
 {
   task_data& D = *sch.get_task_data<task_data>();  // NOLINT
   D.multiplier = D.wpp << D.ss;
-  D.wpp = sch.get_vw_pointer_unsafe().wpp;
+  D.wpp = sch.get_vw_pointer_unsafe().reduction_state.wpp;
   D.mask = sch.get_vw_pointer_unsafe().weights.mask();
   D.ss = sch.get_vw_pointer_unsafe().weights.stride_shift();
   D.N = 0;

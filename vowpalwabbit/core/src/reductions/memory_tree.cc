@@ -1253,7 +1253,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::memory_tree_setup(VW::setu
   tree->all = &all;
   tree->random_state = all.get_random_state();
   tree->current_pass = 0;
-  tree->final_pass = all.numpasses;
+  tree->final_pass = all.runtime_config.numpasses;
 
   tree->max_leaf_examples = static_cast<size_t>(tree->leaf_example_multiplier * (log(tree->max_nodes) / log(2)));
 

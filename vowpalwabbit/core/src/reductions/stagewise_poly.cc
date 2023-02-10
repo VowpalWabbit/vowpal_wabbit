@@ -129,7 +129,7 @@ inline uint64_t wid_mask_un_shifted(const stagewise_poly& poly, uint64_t wid)
 
 inline uint64_t constant_feat(const stagewise_poly& poly)
 {
-  return stride_shift(poly, VW::details::CONSTANT * poly.all->wpp);
+  return stride_shift(poly, VW::details::CONSTANT * poly.all->reduction_state.wpp);
 }
 
 inline uint64_t constant_feat_masked(const stagewise_poly& poly) { return wid_mask(poly, constant_feat(poly)); }
@@ -513,7 +513,7 @@ void predict(stagewise_poly& poly, learner& base, VW::example& ec)
 
 void learn(stagewise_poly& poly, learner& base, VW::example& ec)
 {
-  bool training = poly.all->training && ec.l.simple.label != FLT_MAX;
+  bool training = poly.all->runtime_config.training && ec.l.simple.label != FLT_MAX;
   poly.original_ec = &ec;
 
   if (training)
@@ -612,7 +612,7 @@ void end_pass(stagewise_poly& poly)
   sanity_check_state(poly);
 #endif  // DEBUG
 
-  if (poly.numpasses != poly.all->numpasses)
+  if (poly.numpasses != poly.all->runtime_config.numpasses)
   {
     poly.update_support = true;
     poly.numpasses++;
@@ -709,8 +709,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::stagewise_poly_setup(VW::s
                      // This impl is the same as standard simple label printing apart from the fact the feature count
                      // from synth_ec is used.
 
-                     const bool should_print_driver_update =
-                         all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs;
+                     const bool should_print_driver_update = all.sd->weighted_examples() >= all.sd->dump_interval &&
+                         !all.quiet && !all.reduction_state.bfgs;
 
                      if (should_print_driver_update)
                      {

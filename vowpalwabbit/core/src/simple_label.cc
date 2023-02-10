@@ -30,7 +30,7 @@ void VW::simple_label::reset_to_default() { label = FLT_MAX; }
 void VW::details::print_update(VW::workspace& all, const VW::example& ec)
 {
   if (all.sd->weighted_labeled_examples + all.sd->weighted_unlabeled_examples >= all.sd->dump_interval && !all.quiet &&
-      !all.bfgs)
+      !all.reduction_state.bfgs)
   {
     all.sd->print_update(*all.trace_message, all.pc.holdout_set_off, all.pc.current_pass, ec.l.simple.label,
         ec.pred.scalar, ec.get_num_features());
@@ -68,7 +68,7 @@ void VW::details::print_update_simple_label(
     VW::workspace& all, shared_data& sd, const VW::example& ec, VW::io::logger& /* logger */)
 {
   const bool should_print_driver_update =
-      all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs;
+      all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.reduction_state.bfgs;
 
   if (should_print_driver_update)
   {

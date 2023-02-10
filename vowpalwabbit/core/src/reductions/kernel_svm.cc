@@ -614,7 +614,7 @@ void train(svm_params& params)
     sync_queries(*(params.all), params, train_pool);
   }
 
-  if (params.all->training)
+  if (params.all->runtime_config.training)
   {
     svm_model* model = params.model;
 
@@ -682,8 +682,8 @@ void learn(svm_params& params, VW::example& ec)
     ec.pred.scalar = score;
     ec.loss = std::max(0.f, 1.f - score * ec.l.simple.label);
     params.loss_sum += ec.loss;
-    if (params.all->training && ec.example_counter % 100 == 0) { trim_cache(params); }
-    if (params.all->training && ec.example_counter % 1000 == 0 && ec.example_counter >= 2)
+    if (params.all->runtime_config.training && ec.example_counter % 100 == 0) { trim_cache(params); }
+    if (params.all->runtime_config.training && ec.example_counter % 1000 == 0 && ec.example_counter >= 2)
     {
       *params.all->trace_message << "Number of support vectors = " << params.model->num_support << endl;
       *params.all->trace_message << "Number of kernel evaluations = " << num_kernel_evals << " "
@@ -765,7 +765,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::kernel_svm_setup(VW::setup
   // This param comes from the active reduction.
   // During options refactor: this changes the semantics a bit - now this will only be true if --active was supplied and
   // NOT --simulation
-  if (all.active) { params->active = true; }
+  if (all.reduction_state.active) { params->active = true; }
   if (params->active) { params->active_c = 1.; }
 
   params->pool = VW::details::calloc_or_throw<svm_example*>(params->pool_size);

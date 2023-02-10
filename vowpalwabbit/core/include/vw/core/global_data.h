@@ -199,6 +199,40 @@ public:
   bool no_bias;     // no bias in regularization
   int reg_mode;
 };
+
+class reduction_state
+{
+public:
+  bool active;
+  bool bfgs;
+  uint32_t lda;
+  // hack to support cb model loading into ccb learner
+  bool is_ccb_input_model = false;
+  void* /*Search::search*/ searchstr;
+  bool invariant_updates;  // Should we use importance aware/safe updates, gd only
+  uint32_t wpp;
+};
+
+class runtime_config
+{
+public:
+  bool daemon;
+  bool vw_is_main = false;  // true if vw is executable; false in library mode
+  bool training;            // Should I train if lable data is available?
+  size_t pass_length;
+  size_t numpasses;
+  bool default_bits;
+};
+
+class runtime_state
+{
+public:
+  size_t passes_complete;
+  // Default value of 2 follows behavior of 1-indexing and can change to 0-indexing if detected
+  uint32_t indexing = 2;  // for 0 or 1 indexing
+  // bool nonormalize; not used?
+  bool do_reset_source;
+};
 }  // namespace details
 
 class workspace
@@ -206,7 +240,8 @@ class workspace
 public:
   VW::version_struct model_file_ver;
   parameters weights;
-
+  std::shared_ptr<VW::LEARNER::learner> l;  // the top level learner
+  std::unique_ptr<VW::config::options_i, options_deleter_type> options;
   std::shared_ptr<VW::shared_data> sd;
 
   std::unique_ptr<parser> example_parser;
@@ -219,11 +254,6 @@ public:
 #ifdef BUILD_FLATBUFFERS
   std::unique_ptr<VW::parsers::flatbuffer::parser> flat_converter;
 #endif
-
-  all_reduce_type selected_all_reduce_type;
-  std::unique_ptr<all_reduce_base> all_reduce;
-
-  std::shared_ptr<VW::LEARNER::learner> l;  // the top level learner
 
   void learn(example&);
   void learn(multi_ex&);
@@ -246,63 +276,41 @@ public:
    */
   std::string dump_weights_to_json_experimental();
 
-  // Function to set min_label and max_label in shared_data
-  // Should be bound to a VW::shared_data pointer upon creating the function
-  // May be nullptr, so you must check before calling it
-  std::function<void(float)> set_minmax;
-
   details::feature_tweaks_config fc;  // feature related configs
   details::output_model_config om;
   details::passes_config pc;
   details::initial_weights_config iwc;
   details::update_rule_config uc;
   details::loss_config lc;
+  details::reduction_state reduction_state;
+  details::runtime_config runtime_config;
+  details::runtime_state runtime_state;
 
-  uint32_t num_bits;  // log_2 of the number of features.
-  bool default_bits;
+  all_reduce_type selected_all_reduce_type;
+  std::unique_ptr<all_reduce_base> all_reduce;
+
+  // Function to set min_label and max_label in shared_data
+  // Should be bound to a VW::shared_data pointer upon creating the function
+  // May be nullptr, so you must check before calling it
+  std::function<void(float)> set_minmax;
+
+  uint32_t num_bits;    // log_2 of the number of features.
+  uint64_t parse_mask;  // 1 << num_bits -1
+  size_t length() { return (static_cast<size_t>(1)) << num_bits; };
 
   uint32_t hash_seed;
 
   std::string data_filename;
 
-  bool daemon;
-
-  bool active;
-  bool bfgs;
-  uint32_t lda;
-  // hack to support cb model loading into ccb learner
-  bool is_ccb_input_model = false;
-
   std::string id;
 
-  bool vw_is_main = false;  // true if vw is executable; false in library mode
+  std::string feature_mask;
 
   // error reporting
   std::shared_ptr<details::trace_message_wrapper> trace_message_wrapper_context;
   std::shared_ptr<std::ostream> trace_message;
 
-  std::unique_ptr<VW::config::options_i, options_deleter_type> options;
-
-  void* /*Search::search*/ searchstr;
-
-  uint32_t wpp;
-
   std::unique_ptr<VW::io::writer> stdout_adapter;
-
-  std::string feature_mask;
-
-  size_t pass_length;
-  size_t numpasses;
-  size_t passes_complete;
-  uint64_t parse_mask;  // 1 << num_bits -1
-
-  // Default value of 2 follows behavior of 1-indexing and can change to 0-indexing if detected
-  uint32_t indexing = 2;  // for 0 or 1 indexing
-
-  bool training;           // Should I train if lable data is available?
-  bool invariant_updates;  // Should we use importance aware/safe updates, gd only
-  // bool nonormalize; not used?
-  bool do_reset_source;
 
   std::map<uint64_t, VW::details::invert_hash_info> index_name_map;
   VW::io::logger logger;
@@ -316,8 +324,6 @@ public:
   bool hexfloat_weights;
 
   VW::details::generate_interactions_object_cache generate_interactions_object_cache_state;
-
-  size_t length() { return (static_cast<size_t>(1)) << num_bits; };
 
   // Prediction output
   std::vector<std::unique_ptr<VW::io::writer>> final_prediction_sink;  // set to send global predictions to.

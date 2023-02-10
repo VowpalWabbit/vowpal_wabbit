@@ -124,7 +124,7 @@ void learn(svrg& s, VW::example& ec)
 {
   predict(s, ec);
 
-  const int pass = static_cast<int>(s.all->passes_complete);
+  const int pass = static_cast<int>(s.all->runtime_state.passes_complete);
 
   if (pass % (s.stage_size + 1) == 0)  // Compute exact gradient
   {

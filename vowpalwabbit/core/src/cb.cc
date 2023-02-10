@@ -187,7 +187,7 @@ void VW::cb_label::reset_to_default()
 void ::VW::details::print_update_cb(VW::workspace& all, bool is_test, const VW::example& ec, const VW::multi_ex* ec_seq,
     bool action_scores, const VW::cb_class* known_cost)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.reduction_state.bfgs)
   {
     size_t num_features = ec.get_num_features();
 

@@ -51,7 +51,7 @@ VW::label_parser no_label_parser_global = {
 void VW::details::print_no_label_update(VW::workspace& all, VW::example& ec)
 {
   if (all.sd->weighted_labeled_examples + all.sd->weighted_unlabeled_examples >= all.sd->dump_interval && !all.quiet &&
-      !all.bfgs)
+      !all.reduction_state.bfgs)
   {
     all.sd->print_update(
         *all.trace_message, all.pc.holdout_set_off, all.pc.current_pass, 0.f, ec.pred.scalar, ec.get_num_features());

@@ -63,7 +63,7 @@ constexpr inline bool example_is_test(VW::example& ec) { return ec.l.simple.labe
 
 void reset_seed(lrq_state& lrq)
 {
-  if (lrq.all->bfgs) { lrq.seed = lrq.initial_seed; }
+  if (lrq.all->reduction_state.bfgs) { lrq.seed = lrq.initial_seed; }
 }
 
 template <bool is_learn>
@@ -224,7 +224,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::lrq_setup(VW::setup_base_i
 
   if (!all.quiet) { *(all.trace_message) << std::endl; }
 
-  all.wpp = all.wpp * static_cast<uint64_t>(1 + maxk);
+  all.reduction_state.wpp = all.reduction_state.wpp * static_cast<uint64_t>(1 + maxk);
   auto base = stack_builder.setup_base_learner();
 
   auto l = make_reduction_learner(std::move(lrq), require_singleline(base), predict_or_learn<true>,

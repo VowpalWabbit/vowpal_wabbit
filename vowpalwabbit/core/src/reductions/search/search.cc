@@ -437,7 +437,7 @@ bool should_print_update(VW::workspace& all, bool hit_new_pass = false)
   {
     if (hit_new_pass) { return true; }
   }
-  return (all.sd->weighted_examples() >= all.sd->dump_interval) && !all.quiet && !all.bfgs;
+  return (all.sd->weighted_examples() >= all.sd->dump_interval) && !all.quiet && !all.reduction_state.bfgs;
 }
 
 bool might_print_update(VW::workspace& all)
@@ -450,21 +450,21 @@ bool might_print_update(VW::workspace& all)
   {
     return true;  // SPEEDUP: make this better
   }
-  return (all.sd->weighted_examples() + 1. >= all.sd->dump_interval) && !all.quiet && !all.bfgs;
+  return (all.sd->weighted_examples() + 1. >= all.sd->dump_interval) && !all.quiet && !all.reduction_state.bfgs;
 }
 
 bool must_run_test(VW::workspace& all, VW::multi_ex& ec, bool is_test_ex)
 {
-  return (all.final_prediction_sink.size() > 0) ||  // if we have to produce output, we need to run this
-      might_print_update(all) ||                    // if we have to print and update to stderr
-      (all.raw_prediction != nullptr) ||            // we need raw predictions
-      ((!all.vw_is_main) && (is_test_ex)) ||        // library needs predictions
+  return (all.final_prediction_sink.size() > 0) ||           // if we have to produce output, we need to run this
+      might_print_update(all) ||                             // if we have to print and update to stderr
+      (all.raw_prediction != nullptr) ||                     // we need raw predictions
+      ((!all.runtime_config.vw_is_main) && (is_test_ex)) ||  // library needs predictions
       // or:
       //   it's not quiet AND
       //     current_pass == 0
       //     OR holdout is off
       //     OR it's a test example
-      ((!all.quiet || !all.vw_is_main) &&  // had to disable this because of library mode!
+      ((!all.quiet || !all.runtime_config.vw_is_main) &&  // had to disable this because of library mode!
           (!is_test_ex) &&
           (all.pc.holdout_set_off ||                          // no holdout
               ec[0]->test_only || (all.pc.current_pass == 0)  // we need error rates for progressive cost
@@ -1845,7 +1845,7 @@ action search_predict(search_private& priv, VW::example* ecs, size_t ec_cnt, pta
             : action_repr(0);
       }
 
-      bool not_test = priv.all->training && !ecs[0].test_only;
+      bool not_test = priv.all->runtime_config.training && !ecs[0].test_only;
 
       if ((!skip) && (!need_fea) && not_test &&
           cached_action_store_or_find(priv, mytag, condition_on, condition_on_names, priv.condition_on_actions.data(),
@@ -2166,7 +2166,7 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, VW::
   // if (! priv.no_caching)
   priv.cache_hash_map.clear();
 
-  cdbg << "is_test_ex=" << is_test_ex << " vw_is_main=" << all.vw_is_main << endl;
+  cdbg << "is_test_ex=" << is_test_ex << " vw_is_main=" << all.runtime_config.vw_is_main << endl;
   cdbg << "must_run_test = " << must_run_test(all, ec_seq, is_test_ex) << endl;
   // do an initial test pass to compute output (and loss)
   if (must_run_test(all, ec_seq, is_test_ex))
@@ -2202,7 +2202,7 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, VW::
 
   // if we're not training, then we're done!
   if (!is_learn) { return; }
-  if (is_test_ex || is_holdout_ex || ec_seq[0]->test_only || (!priv.all->training)) { return; }
+  if (is_test_ex || is_holdout_ex || ec_seq[0]->test_only || (!priv.all->runtime_config.training)) { return; }
 
   // SPEEDUP: if the oracle was never called, we can skip this!
 
@@ -2427,7 +2427,7 @@ void end_pass(search& sch)
   if (priv.passes_since_new_policy >= priv.passes_per_policy)
   {
     priv.passes_since_new_policy = 0;
-    if (all->training) { priv.current_policy++; }
+    if (all->runtime_config.training) { priv.current_policy++; }
     if (priv.current_policy > priv.total_number_of_policies)
     {
       priv.all->logger.err_error("internal error (bug): too many policies; not advancing");
@@ -2445,7 +2445,7 @@ void end_examples(search& sch)
   search_private& priv = *sch.priv;
   VW::workspace* all = priv.all;
 
-  if (all->training)
+  if (all->runtime_config.training)
   {
     // TODO work out a better system to update state that will be saved in the model.
     // Dig out option and change it in case we already loaded a predictor which had a value stored for
@@ -2750,7 +2750,7 @@ std::stringstream& search::output()
 
 void search::set_options(uint32_t opts)
 {
-  if (this->priv->all->vw_is_main && (this->priv->state != search_state::INITIALIZE))
+  if (this->priv->all->runtime_config.vw_is_main && (this->priv->state != search_state::INITIALIZE))
   {
     priv->all->logger.err_warn("Task should not set options except in initialize function.");
   }
@@ -2773,7 +2773,7 @@ void search::set_options(uint32_t opts)
 
 void search::set_label_parser(VW::label_parser& lp, bool (*is_test)(const VW::polylabel&))
 {
-  if (this->priv->all->vw_is_main && (this->priv->state != search_state::INITIALIZE))
+  if (this->priv->all->runtime_config.vw_is_main && (this->priv->state != search_state::INITIALIZE))
   {
     priv->all->logger.err_warn("Task should not set label parser except in initialize function.");
   }
@@ -3184,7 +3184,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::search_setup(VW::setup_bas
   {
     priv.adaptive_beta = true;
     priv.allow_current_policy = true;
-    priv.passes_per_policy = all.numpasses;
+    priv.passes_per_policy = all.runtime_config.numpasses;
     if (priv.current_policy > 1) { priv.current_policy = 1; }
   }
   else if (interpolation_string == "policy") { ; }
@@ -3237,10 +3237,10 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::search_setup(VW::setup_bas
   // compute total number of policies we will have at end of training
   // we add current_policy for cases where we start from an initial set of policies loaded through -i option
   uint32_t tmp_number_of_policies = priv.current_policy;
-  if (all.training)
+  if (all.runtime_config.training)
   {
-    tmp_number_of_policies +=
-        static_cast<int>(std::ceil((static_cast<float>(all.numpasses)) / (static_cast<float>(priv.passes_per_policy))));
+    tmp_number_of_policies += static_cast<int>(
+        std::ceil((static_cast<float>(all.runtime_config.numpasses)) / (static_cast<float>(priv.passes_per_policy))));
   }
 
   // the user might have specified the number of policies that will eventually be trained through multiple vw calls,
@@ -3261,7 +3261,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::search_setup(VW::setup_bas
   // current policy currently points to a new policy we would train
   // if we are not training and loaded a bunch of policies for testing, we need to subtract 1 from current policy
   // so that we only use those loaded when testing (as run_prediction is called with allow_current to true)
-  if (!all.training && priv.current_policy > 0) { priv.current_policy--; }
+  if (!all.runtime_config.training && priv.current_policy > 0) { priv.current_policy--; }
 
   all.options->replace("search_trained_nb_policies", std::to_string(priv.current_policy));
   all.options->get_typed_option<uint32_t>("search_trained_nb_policies").value(priv.current_policy);
@@ -3358,7 +3358,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::search_setup(VW::setup_bas
     all.pc.check_holdout_every_n_passes = priv.passes_per_policy;
   }
 
-  all.searchstr = sch.get();
+  all.reduction_state.searchstr = sch.get();
 
   priv.start_clock_time = clock();
 

@@ -237,7 +237,7 @@ void predict_or_learn_cover(cb_explore& data, learner& base, VW::example& ec)
 void print_update_cb_explore(
     VW::workspace& all, VW::shared_data& sd, bool is_test, const VW::example& ec, std::stringstream& pred_string)
 {
-  if ((sd.weighted_examples() >= all.sd->dump_interval) && !all.quiet && !all.bfgs)
+  if ((sd.weighted_examples() >= all.sd->dump_interval) && !all.quiet && !all.reduction_state.bfgs)
   {
     std::stringstream label_string;
     if (is_test) { label_string << "unknown"; }

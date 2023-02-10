@@ -242,7 +242,7 @@ void VW::details::reset_source(VW::workspace& all, size_t numbits)
 
   if (all.example_parser->resettable == true)
   {
-    if (all.daemon)
+    if (all.runtime_config.daemon)
     {
       // wait for all predictions to be sent back to client
       {
@@ -389,7 +389,7 @@ void VW::details::enable_sources(
   // default text reader
   all.example_parser->text_reader = VW::parsers::text::read_lines;
 
-  if (!input_options.no_daemon && (all.daemon || all.active))
+  if (!input_options.no_daemon && (all.runtime_config.daemon || all.reduction_state.active))
   {
 #ifdef _WIN32
     WSAData wsaData;
@@ -452,7 +452,7 @@ void VW::details::enable_sources(
       // FIXME switch to posix_spawn
       VW_WARNING_STATE_PUSH
       VW_WARNING_DISABLE_DEPRECATED_USAGE
-      if (!all.active && daemon(1, 1)) THROWERRNO("daemon");
+      if (!all.reduction_state.active && daemon(1, 1)) THROWERRNO("daemon");
       VW_WARNING_STATE_POP
     }
 
@@ -466,7 +466,7 @@ void VW::details::enable_sources(
       pid_file.close();
     }
 
-    if (all.daemon && !all.active)
+    if (all.runtime_config.daemon && !all.reduction_state.active)
     {
       // See support notes here: https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Daemon-example
 #ifdef __APPLE__
@@ -571,9 +571,9 @@ void VW::details::enable_sources(
     all.example_parser->input.add_file(socket->get_reader());
     if (!all.quiet) { *(all.trace_message) << "reading data from port " << port << endl; }
 
-    if (all.active) { set_string_reader(all); }
+    if (all.reduction_state.active) { set_string_reader(all); }
     else { set_daemon_reader(all, input_options.json, input_options.dsjson); }
-    all.example_parser->resettable = all.example_parser->write_cache || all.daemon;
+    all.example_parser->resettable = all.example_parser->write_cache || all.runtime_config.daemon;
   }
   else
   {
@@ -642,7 +642,7 @@ void VW::details::enable_sources(
   if (passes > 1 && !all.example_parser->resettable)
     THROW("need a cache file for multiple passes : try using  --cache or --cache_file <name>");
 
-  if (!quiet && !all.daemon)
+  if (!quiet && !all.runtime_config.daemon)
   {
     *(all.trace_message) << "num sources = " << all.example_parser->input.num_files() << endl;
   }

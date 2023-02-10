@@ -201,7 +201,7 @@ void VW::details::save_load_header(VW::workspace& all, VW::io_buf& model_file, b
 
     VW::validate_default_bits(all, local_num_bits);
 
-    all.default_bits = false;
+    all.runtime_config.default_bits = false;
     all.num_bits = local_num_bits;
 
     VW::validate_num_bits(all);
@@ -320,9 +320,9 @@ void VW::details::save_load_header(VW::workspace& all, VW::io_buf& model_file, b
       }
     }
 
-    msg << "lda:" << all.lda << "\n";
-    bytes_read_write += VW::details::bin_text_read_write_fixed_validated(
-        model_file, reinterpret_cast<char*>(&all.lda), sizeof(all.lda), read, msg, text);
+    msg << "lda:" << all.reduction_state.lda << "\n";
+    bytes_read_write += VW::details::bin_text_read_write_fixed_validated(model_file,
+        reinterpret_cast<char*>(&all.reduction_state.lda), sizeof(all.reduction_state.lda), read, msg, text);
 
     // TODO: validate ngram_len?
     auto* g_transformer = all.fc.skip_gram_transformer.get();

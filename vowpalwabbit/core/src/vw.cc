@@ -72,7 +72,7 @@ std::unique_ptr<VW::workspace> initialize_internal(
     *(all->trace_message) << "learning rate = " << all->uc.eta << std::endl;
     *(all->trace_message) << "initial_t = " << all->sd->t << std::endl;
     *(all->trace_message) << "power_t = " << all->uc.power_t << std::endl;
-    if (all->numpasses > 1)
+    if (all->runtime_config.numpasses > 1)
     {
       *(all->trace_message) << "decay_learning_rate = " << all->uc.eta_decay_rate << std::endl;
     }
@@ -134,7 +134,8 @@ std::unique_ptr<VW::workspace> initialize_internal(
 
   if (!all->options->get_typed_option<bool>("dry_run").value())
   {
-    if (!all->quiet && !all->bfgs && (all->searchstr == nullptr) && !all->options->was_supplied("audit_regressor"))
+    if (!all->quiet && !all->reduction_state.bfgs && (all->reduction_state.searchstr == nullptr) &&
+        !all->options->was_supplied("audit_regressor"))
     {
       all->sd->print_update_header(*all->trace_message);
     }
@@ -742,7 +743,7 @@ void VW::setup_example(VW::workspace& all, VW::example* ae)
 
   if (!all.fc.limit_strings.empty()) { feature_limit(all, ae); }
 
-  uint64_t multiplier = static_cast<uint64_t>(all.wpp) << all.weights.stride_shift();
+  uint64_t multiplier = static_cast<uint64_t>(all.reduction_state.wpp) << all.weights.stride_shift();
 
   if (multiplier != 1)
   {  // make room for per-feature information.

@@ -728,7 +728,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::csldf_setup(VW::setup_base
   else if (ldf_arg == "multiline-classifier" || ldf_arg == "mc") { ld->treat_as_classifier = true; }
   else
   {
-    if (all.training) THROW("ldf requires either m/multiline or mc/multiline-classifier");
+    if (all.runtime_config.training) THROW("ldf requires either m/multiline or mc/multiline-classifier");
     if ((ldf_arg == "singleline" || ldf_arg == "s") || (ldf_arg == "singleline-classifier" || ldf_arg == "sc"))
       THROW(
           "ldf requires either m/multiline or mc/multiline-classifier.  s/sc/singleline/singleline-classifier is no "

@@ -27,7 +27,7 @@ void validate_min_max_label(VW::workspace& all)
 
 void validate_default_bits(VW::workspace& all, uint32_t local_num_bits)
 {
-  if (all.default_bits != true && all.num_bits != local_num_bits)
+  if (all.runtime_config.default_bits != true && all.num_bits != local_num_bits)
     THROW("-b bits mismatch: command-line " << all.num_bits << " != " << local_num_bits << " stored in model");
 }
 

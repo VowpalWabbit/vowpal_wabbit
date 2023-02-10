@@ -216,7 +216,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::active_setup(VW::setup_bas
   }
   else
   {
-    all.active = true;
+    all.reduction_state.active = true;
     learn_func = predict_or_learn_active<true>;
     pred_func = predict_or_learn_active<false>;
     update_stats_func = update_stats_active;

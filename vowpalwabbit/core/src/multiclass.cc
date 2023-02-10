@@ -112,7 +112,7 @@ void print_label_pred(VW::workspace& all, const VW::example& ec, uint32_t predic
 void print_probability(VW::workspace& all, const VW::example& ec, uint32_t prediction)
 {
   std::stringstream pred_ss;
-  uint32_t pred_ind = (all.indexing == 0) ? prediction : prediction - 1;
+  uint32_t pred_ind = (all.runtime_state.indexing == 0) ? prediction : prediction - 1;
   pred_ss << prediction << "(" << std::setw(VW::details::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION)
           << std::setprecision(0) << std::fixed << 100 * ec.pred.scalars[pred_ind] << "%)";
 
@@ -144,7 +144,7 @@ void direct_print_update(VW::workspace& all, const VW::example& ec, uint32_t pre
 template <void (*T)(VW::workspace&, const VW::example&, uint32_t)>
 void print_update(VW::workspace& all, const VW::example& ec, uint32_t prediction)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.reduction_state.bfgs)
   {
     if (!all.sd->ldict) { T(all, ec, prediction); }
     else { print_label_pred(all, ec, ec.pred.multiclass); }

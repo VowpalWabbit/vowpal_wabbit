@@ -19,7 +19,7 @@ using namespace VW::config;
 std::unique_ptr<VW::workspace> setup(std::unique_ptr<options_i> options)
 {
   auto all = VW::initialize(std::move(options));
-  all->vw_is_main = true;
+  all->runtime_config.vw_is_main = true;
   return all;
 }
 

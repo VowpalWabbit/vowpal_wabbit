@@ -213,7 +213,7 @@ void print_update_slates(VW::workspace& all, VW::shared_data& /* sd */, const VW
     const VW::multi_ex& ec_seq, VW::io::logger& /* unused */)
 {
   const bool should_print_driver_update =
-      all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs;
+      all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.reduction_state.bfgs;
 
   if (!should_print_driver_update) { return; }
 

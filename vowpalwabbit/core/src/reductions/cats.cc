@@ -133,7 +133,7 @@ void print_update_cats(VW::workspace& all, VW::shared_data& sd, const VW::reduct
     const VW::example& ec, VW::io::logger& /* unused */)
 {
   const auto should_print_driver_update =
-      all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs;
+      all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.reduction_state.bfgs;
   if (should_print_driver_update)
   {
     sd.print_update(*all.trace_message, all.pc.holdout_set_off, all.pc.current_pass,

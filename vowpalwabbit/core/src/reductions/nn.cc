@@ -147,7 +147,7 @@ void finish_setup(nn& n, VW::workspace& all)
 
 void end_pass(nn& n)
 {
-  if (n.all->bfgs) { n.xsubi = n.save_xsubi; }
+  if (n.all->reduction_state.bfgs) { n.xsubi = n.save_xsubi; }
 }
 
 template <bool is_learn, bool recompute_hidden>
@@ -327,7 +327,7 @@ void predict_or_learn_multi(nn& n, learner& base, VW::example& ec)
 
     if (is_learn)
     {
-      if (n.all->training && ld.label != FLT_MAX)
+      if (n.all->runtime_config.training && ld.label != FLT_MAX)
       {
         float gradient = n.all->lc.loss->first_derivative(n.all->sd.get(), n.prediction, ld.label);
 
@@ -448,23 +448,26 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::nn_setup(VW::setup_base_i&
 
   if (n->multitask && !all.quiet)
   {
-    all.logger.err_info("using multitask sharing for neural network {}", (all.training ? "training" : "testing"));
+    all.logger.err_info(
+        "using multitask sharing for neural network {}", (all.runtime_config.training ? "training" : "testing"));
   }
 
   if (options.was_supplied("meanfield"))
   {
     n->dropout = false;
-    all.logger.err_info("using mean field for neural network {}", (all.training ? "training" : "testing"));
+    all.logger.err_info(
+        "using mean field for neural network {}", (all.runtime_config.training ? "training" : "testing"));
   }
 
   if (n->dropout && !all.quiet)
   {
-    all.logger.err_info("using dropout for neural network {}", (all.training ? "training" : "testing"));
+    all.logger.err_info("using dropout for neural network {}", (all.runtime_config.training ? "training" : "testing"));
   }
 
   if (n->inpass && !all.quiet)
   {
-    all.logger.err_info("using input passthrough for neural network {}", (all.training ? "training" : "testing"));
+    all.logger.err_info(
+        "using input passthrough for neural network {}", (all.runtime_config.training ? "training" : "testing"));
   }
 
   n->finished_setup = false;

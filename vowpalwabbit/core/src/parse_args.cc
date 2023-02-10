@@ -431,11 +431,12 @@ VW::details::input_options parse_source(VW::workspace& all, options_i& options)
     }
   }
 
-  if (parsed_options.daemon || options.was_supplied("pid_file") || (options.was_supplied("port") && !all.active))
+  if (parsed_options.daemon || options.was_supplied("pid_file") ||
+      (options.was_supplied("port") && !all.reduction_state.active))
   {
-    all.daemon = true;
+    all.runtime_config.daemon = true;
     // allow each child to process up to 1e5 connections
-    all.numpasses = static_cast<size_t>(1e5);
+    all.runtime_config.numpasses = static_cast<size_t>(1e5);
   }
 
   // Add an implicit cache file based on the data filename.
@@ -661,11 +662,11 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
 
   if (options.was_supplied("bit_precision"))
   {
-    if (all.default_bits == false && new_bits != all.num_bits)
+    if (all.runtime_config.default_bits == false && new_bits != all.num_bits)
       THROW("Number of bits is set to " << new_bits << " and " << all.num_bits
                                         << " by argument and model.  That does not work.")
 
-    all.default_bits = false;
+    all.runtime_config.default_bits = false;
     all.num_bits = new_bits;
 
     VW::validate_num_bits(all);
@@ -1052,12 +1053,12 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
                      "labels, comma-sep, eg \"--named_labels Noun,Verb,Adj,Punc\""));
   options.add_and_parse(example_options);
 
-  all.numpasses = VW::cast_to_smaller_type<size_t>(numpasses);
+  all.runtime_config.numpasses = VW::cast_to_smaller_type<size_t>(numpasses);
   if (pass_length < -1) { THROW("pass_length must be -1 or positive"); }
 
   if (max_examples < -1) { THROW("--examples must be -1 or positive"); }
 
-  all.pass_length =
+  all.runtime_config.pass_length =
       pass_length == -1 ? std::numeric_limits<size_t>::max() : VW::cast_signed_to_unsigned<size_t>(pass_length);
   all.max_examples =
       max_examples == -1 ? std::numeric_limits<size_t>::max() : VW::cast_signed_to_unsigned<size_t>(max_examples);
@@ -1065,12 +1066,12 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
   if (test_only || all.uc.eta == 0.)
   {
     if (!all.quiet) { *(all.trace_message) << "only testing" << endl; }
-    all.training = false;
-    if (all.lda > 0) { all.uc.eta = 0; }
+    all.runtime_config.training = false;
+    if (all.reduction_state.lda > 0) { all.uc.eta = 0; }
   }
-  else { all.training = true; }
+  else { all.runtime_config.training = true; }
 
-  if ((all.numpasses > 1 || all.pc.holdout_after > 0) && !all.pc.holdout_set_off)
+  if ((all.runtime_config.numpasses > 1 || all.pc.holdout_after > 0) && !all.pc.holdout_set_off)
   {
     all.pc.holdout_set_off = false;  // holdout is on unless explicitly off
   }
@@ -1597,7 +1598,7 @@ options_i& VW::details::load_header_merge_options(
       std::istream_iterator<std::string>{ss}, std::istream_iterator<std::string>{}};
 
   VW::details::merge_options_from_header_strings(
-      container, interactions_settings_duplicated, options, all.is_ccb_input_model);
+      container, interactions_settings_duplicated, options, all.reduction_state.is_ccb_input_model);
 
   return options;
 }
@@ -1650,13 +1651,13 @@ void VW::details::parse_sources(options_i& options, VW::workspace& all, VW::io_b
   else { model.close_file(); }
 
   auto parsed_source_options = parse_source(all, options);
-  enable_sources(all, all.quiet, all.numpasses, parsed_source_options);
+  enable_sources(all, all.quiet, all.runtime_config.numpasses, parsed_source_options);
 
   // force wpp to be a power of 2 to avoid 32-bit overflow
   uint32_t i = 0;
   const size_t params_per_problem = all.l->increment;
   while (params_per_problem > (static_cast<uint64_t>(1) << i)) { i++; }
-  all.wpp = (1 << i) >> all.weights.stride_shift();
+  all.reduction_state.wpp = (1 << i) >> all.weights.stride_shift();
 }
 
 void VW::details::print_enabled_learners(VW::workspace& all, std::vector<std::string>& enabled_learners)

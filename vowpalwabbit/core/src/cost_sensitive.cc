@@ -127,7 +127,7 @@ void parse_label(VW::cs_label& ld, VW::label_parser_reuse_mem& reuse_mem, const 
 
 void VW::details::print_cs_update_multiclass(VW::workspace& all, bool is_test, size_t num_features, uint32_t prediction)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.reduction_state.bfgs)
   {
     std::string label_buf;
     if (is_test) { label_buf = "unknown"; }
@@ -152,7 +152,7 @@ void VW::details::print_cs_update_multiclass(VW::workspace& all, bool is_test, s
 void VW::details::print_cs_update_action_scores(
     VW::workspace& all, bool is_test, size_t num_features, const VW::action_scores& action_scores)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.reduction_state.bfgs)
   {
     std::string label_buf;
     if (is_test) { label_buf = "unknown"; }
@@ -170,7 +170,7 @@ void VW::details::print_cs_update_action_scores(
 void VW::details::print_cs_update(VW::workspace& all, bool is_test, const VW::example& ec, const VW::multi_ex* ec_seq,
     bool action_scores, uint32_t prediction)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.reduction_state.bfgs)
   {
     size_t num_current_features = ec.get_num_features();
     // for csoaa_ldf we want features from the whole (multiline example),

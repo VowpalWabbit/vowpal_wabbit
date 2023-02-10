@@ -107,7 +107,7 @@ void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::learner& /* base
     {
       tempstream << '\t' << fs.space_names[j].ns << '^' << fs.space_names[j].name << ':'
                  << ((fs.indices[j] >> weights.stride_shift()) & all.parse_mask);
-      for (size_t k = 0; k < all.lda; k++)
+      for (size_t k = 0; k < all.reduction_state.lda; k++)
       {
         VW::weight& w = weights[(fs.indices[j] + k)];
         tempstream << ':' << w;
@@ -127,7 +127,7 @@ void audit_regressor(audit_regressor_data& rd, VW::LEARNER::learner& base, VW::e
 {
   VW::workspace& all = *rd.all;
 
-  if (all.lda > 0) { audit_regressor_lda(rd, base, ec); }
+  if (all.reduction_state.lda > 0) { audit_regressor_lda(rd, base, ec); }
   else
   {
     rd.cur_class = 0;
@@ -284,7 +284,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::audit_regressor_setup(VW::
 
   if (out_file.empty()) { THROW("audit_regressor argument (output filename) is missing.") }
 
-  if (all.numpasses > 1) { THROW("audit_regressor can't be used with --passes > 1.") }
+  if (all.runtime_config.numpasses > 1) { THROW("audit_regressor can't be used with --passes > 1.") }
 
   all.audit = true;
 

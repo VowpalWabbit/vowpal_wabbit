@@ -1145,7 +1145,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::bfgs_setup(VW::setup_base_
   b->gradient_pass = true;
   b->preconditioner_pass = true;
   b->backstep_on = false;
-  b->final_pass = all.numpasses;
+  b->final_pass = all.runtime_config.numpasses;
   b->no_win_counter = 0;
 
   if (bfgs_enabled)
@@ -1172,9 +1172,12 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::bfgs_setup(VW::setup_base_
     else { *(all.trace_message) << "**without** curvature calculation" << std::endl; }
   }
 
-  if (all.numpasses < 2 && all.training) { THROW("At least 2 passes must be used for BFGS"); }
+  if (all.runtime_config.numpasses < 2 && all.runtime_config.training)
+  {
+    THROW("At least 2 passes must be used for BFGS");
+  }
 
-  all.bfgs = true;
+  all.reduction_state.bfgs = true;
   all.weights.stride_shift(2);
 
   void (*learn_ptr)(bfgs&, VW::example&) = nullptr;

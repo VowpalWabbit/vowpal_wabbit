@@ -326,7 +326,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::oaa_setup(VW::setup_base_i
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto data = VW::make_unique<oaa>(all.logger, all.indexing);
+  auto data = VW::make_unique<oaa>(all.logger, all.runtime_state.indexing);
   bool probabilities = false;
   bool scores = false;
   option_group_definition new_options("[Reduction] One Against All");
@@ -335,7 +335,10 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::oaa_setup(VW::setup_base_i
                .help("Subsample this number of negative examples when learning"))
       .add(make_option("probabilities", probabilities).help("Predict probabilities of all classes"))
       .add(make_option("scores", scores).help("Output raw scores per class"))
-      .add(make_option("indexing", all.indexing).one_of({0, 1}).keep().help("Choose between 0 or 1-indexing"));
+      .add(make_option("indexing", all.runtime_state.indexing)
+               .one_of({0, 1})
+               .keep()
+               .help("Choose between 0 or 1-indexing"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
