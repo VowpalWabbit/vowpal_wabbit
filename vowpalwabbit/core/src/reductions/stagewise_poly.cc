@@ -710,11 +710,11 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::stagewise_poly_setup(VW::s
                      // from synth_ec is used.
 
                      const bool should_print_driver_update = all.sd->weighted_examples() >= all.sd->dump_interval &&
-                         !all.quiet && !all.reduction_state.bfgs;
+                         !all.output_config.quiet && !all.reduction_state.bfgs;
 
                      if (should_print_driver_update)
                      {
-                       sd.print_update(*all.trace_message, all.pc.holdout_set_off, all.pc.current_pass,
+                       sd.print_update(*all.output_runtime.trace_message, all.pc.holdout_set_off, all.pc.current_pass,
                            ec.l.simple.label, ec.pred.scalar, data.synth_ec.get_num_features());
                      }
                    }

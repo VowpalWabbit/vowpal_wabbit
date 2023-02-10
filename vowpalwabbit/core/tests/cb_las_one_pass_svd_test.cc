@@ -46,7 +46,7 @@ TEST(Las, CheckMatricsWithLASRunsOK)
 
   vw->finish_example(examples);
 
-  auto metrics = vw->global_metrics.collect_metrics(vw->l.get());
+  auto metrics = vw->output_runtime.global_metrics.collect_metrics(vw->l.get());
   EXPECT_EQ(metrics.get_uint("cbea_labeled_ex"), 1);
   EXPECT_EQ(metrics.get_uint("cb_las_filtering_factor"), 5);
 }

@@ -437,7 +437,8 @@ bool should_print_update(VW::workspace& all, bool hit_new_pass = false)
   {
     if (hit_new_pass) { return true; }
   }
-  return (all.sd->weighted_examples() >= all.sd->dump_interval) && !all.quiet && !all.reduction_state.bfgs;
+  return (all.sd->weighted_examples() >= all.sd->dump_interval) && !all.output_config.quiet &&
+      !all.reduction_state.bfgs;
 }
 
 bool might_print_update(VW::workspace& all)
@@ -450,21 +451,22 @@ bool might_print_update(VW::workspace& all)
   {
     return true;  // SPEEDUP: make this better
   }
-  return (all.sd->weighted_examples() + 1. >= all.sd->dump_interval) && !all.quiet && !all.reduction_state.bfgs;
+  return (all.sd->weighted_examples() + 1. >= all.sd->dump_interval) && !all.output_config.quiet &&
+      !all.reduction_state.bfgs;
 }
 
 bool must_run_test(VW::workspace& all, VW::multi_ex& ec, bool is_test_ex)
 {
-  return (all.final_prediction_sink.size() > 0) ||           // if we have to produce output, we need to run this
-      might_print_update(all) ||                             // if we have to print and update to stderr
-      (all.raw_prediction != nullptr) ||                     // we need raw predictions
-      ((!all.runtime_config.vw_is_main) && (is_test_ex)) ||  // library needs predictions
+  return (all.output_runtime.final_prediction_sink.size() > 0) ||  // if we have to produce output, we need to run this
+      might_print_update(all) ||                                   // if we have to print and update to stderr
+      (all.output_runtime.raw_prediction != nullptr) ||            // we need raw predictions
+      ((!all.runtime_config.vw_is_main) && (is_test_ex)) ||        // library needs predictions
       // or:
       //   it's not quiet AND
       //     current_pass == 0
       //     OR holdout is off
       //     OR it's a test example
-      ((!all.quiet || !all.runtime_config.vw_is_main) &&  // had to disable this because of library mode!
+      ((!all.output_config.quiet || !all.runtime_config.vw_is_main) &&  // had to disable this because of library mode!
           (!is_test_ex) &&
           (all.pc.holdout_set_off ||                          // no holdout
               ec[0]->test_only || (all.pc.current_pass == 0)  // we need error rates for progressive cost
@@ -510,7 +512,7 @@ void print_update_search(VW::workspace& all, VW::shared_data& /* sd */, const se
   //       Currently there is no way to convert an ostream to FILE*, so the lines will need to be converted
   //       to ostream format
   auto& priv = *data.priv;
-  if (!priv.printed_output_header && !all.quiet)
+  if (!priv.printed_output_header && !all.output_config.quiet)
   {
     const char* header_fmt = "%-10s %-10s %8s%24s %22s %5s %5s  %7s  %7s  %7s  %-8s\n";
     fprintf(stderr, header_fmt, "average", "since", "instance", "current true", "current predicted", "cur", "cur",
@@ -589,7 +591,7 @@ void add_new_feature(search_private& priv, float val, uint64_t idx)
   auto& fs = priv.dat_new_feature_ec->feature_space[priv.dat_new_feature_namespace];
   fs.push_back(val * priv.dat_new_feature_value, ((priv.dat_new_feature_idx + idx2) << ss));
   cdbg << "adding: " << fs.indices.back() << ':' << fs.values.back() << endl;
-  if (priv.all->audit)
+  if (priv.all->output_config.audit)
   {
     std::stringstream temp;
     temp << "fid=" << ((idx & mask) >> ss) << "_" << priv.dat_new_feature_audit_ss.str();
@@ -632,7 +634,7 @@ void add_neighbor_features(search_private& priv, VW::multi_ex& ec_seq)
       priv.dat_new_feature_value = 1.;
       priv.dat_new_feature_idx = static_cast<uint64_t>(priv.neighbor_features[n_id]) * static_cast<uint64_t>(13748127);
       priv.dat_new_feature_namespace = VW::details::NEIGHBOR_NAMESPACE;
-      if (priv.all->audit)
+      if (priv.all->output_config.audit)
       {
         priv.dat_new_feature_feature_space = &neighbor_feature_space;
         priv.dat_new_feature_audit_ss.str("");
@@ -781,7 +783,7 @@ void add_example_conditioning(search_private& priv, VW::example& ec, size_t cond
   for (size_t i = 0; i < I; i++)                                                            // position in conditioning
   {
     uint64_t fid = 71933 + 8491087 * extra_offset;
-    if (priv.all->audit)
+    if (priv.all->output_config.audit)
     {
       priv.dat_new_feature_audit_ss.str("");
       priv.dat_new_feature_audit_ss.clear();
@@ -803,7 +805,7 @@ void add_example_conditioning(search_private& priv, VW::example& ec, size_t cond
       priv.dat_new_feature_namespace = VW::details::CONDITIONING_NAMESPACE;
       priv.dat_new_feature_value = priv.acset.feature_value;
 
-      if (priv.all->audit)
+      if (priv.all->output_config.audit)
       {
         if (n > 0) { priv.dat_new_feature_audit_ss << ','; }
         if ((33 <= name) && (name <= 126)) { priv.dat_new_feature_audit_ss << name; }
@@ -837,7 +839,7 @@ void add_example_conditioning(search_private& priv, VW::example& ec, size_t cond
         if ((fs.values[k] > 1e-10) || (fs.values[k] < -1e-10))
         {
           uint64_t fid = 84913 + 48371803 * (extra_offset + 8392817 * name) + 840137 * (4891 + fs.indices[k]);
-          if (priv.all->audit)
+          if (priv.all->output_config.audit)
           {
             priv.dat_new_feature_audit_ss.str("");
             priv.dat_new_feature_audit_ss.clear();
@@ -1276,7 +1278,7 @@ action single_prediction_not_ldf(search_private& priv, VW::example& ec, int poli
   }
 
   // generate raw predictions if necessary
-  if ((priv.state == search_state::INIT_TEST) && (all.raw_prediction != nullptr))
+  if ((priv.state == search_state::INIT_TEST) && (all.output_runtime.raw_prediction != nullptr))
   {
     priv.raw_output_string_stream->str("");
     for (size_t k = 0; k < cs_get_costs_size(priv.cb_learner, ec.l); k++)
@@ -1285,7 +1287,8 @@ action single_prediction_not_ldf(search_private& priv, VW::example& ec, int poli
       (*priv.raw_output_string_stream) << cs_get_cost_index(priv.cb_learner, ec.l, k) << ':'
                                        << cs_get_cost_partial_prediction(priv.cb_learner, ec.l, k);
     }
-    all.print_text_by_ref(all.raw_prediction.get(), priv.raw_output_string_stream->str(), ec.tag, all.logger);
+    all.print_text_by_ref(
+        all.output_runtime.raw_prediction.get(), priv.raw_output_string_stream->str(), ec.tag, all.logger);
   }
 
   ec.l = old_label;
@@ -2179,8 +2182,8 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, VW::
     // do the prediction
     reset_search_structure(priv);
     priv.state = search_state::INIT_TEST;
-    priv.should_produce_string =
-        might_print_update(all) || (all.final_prediction_sink.size() > 0) || (all.raw_prediction != nullptr);
+    priv.should_produce_string = might_print_update(all) || (all.output_runtime.final_prediction_sink.size() > 0) ||
+        (all.output_runtime.raw_prediction != nullptr);
     priv.pred_string->str("");
     priv.test_action_sequence.clear();
     run_task(sch, ec_seq);
@@ -2189,14 +2192,14 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, VW::
     if (!is_test_ex) { all.sd->update(ec_seq[0]->test_only, !is_test_ex, priv.test_loss, 1.f, priv.num_features); }
 
     // generate output
-    for (auto& sink : all.final_prediction_sink)
+    for (auto& sink : all.output_runtime.final_prediction_sink)
     {
       all.print_text_by_ref(sink.get(), priv.pred_string->str(), ec_seq[0]->tag, all.logger);
     }
 
-    if (all.raw_prediction != nullptr)
+    if (all.output_runtime.raw_prediction != nullptr)
     {
-      all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag, all.logger);
+      all.print_text_by_ref(all.output_runtime.raw_prediction.get(), "", ec_seq[0]->tag, all.logger);
     }
   }
 

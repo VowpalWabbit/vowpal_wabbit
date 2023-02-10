@@ -186,7 +186,7 @@ void set_json_reader(VW::workspace& all, bool dsjson = false)
 {
   // TODO: change to class with virtual method
   // --invert_hash requires the audit parser version to save the extra information.
-  if (all.audit || all.hash_inv)
+  if (all.output_config.audit || all.output_config.hash_inv)
   {
     all.parser_runtime.example_parser->reader = &VW::parsers::json::read_features_json<true>;
     all.parser_runtime.example_parser->text_reader = &VW::parsers::json::line_to_examples_json<true>;
@@ -201,7 +201,7 @@ void set_json_reader(VW::workspace& all, bool dsjson = false)
 
   all.parser_runtime.example_parser->decision_service_json = dsjson;
 
-  if (dsjson && all.global_metrics.are_metrics_enabled())
+  if (dsjson && all.output_runtime.global_metrics.are_metrics_enabled())
   {
     all.parser_runtime.example_parser->metrics = VW::make_unique<VW::details::dsjson_metrics>();
   }
@@ -261,7 +261,7 @@ void VW::details::reset_source(VW::workspace& all, size_t numbits)
             });
       }
 
-      all.final_prediction_sink.clear();
+      all.output_runtime.final_prediction_sink.clear();
       all.parser_runtime.example_parser->input.close_files();
       all.parser_runtime.example_parser->input.reset();
       sockaddr_in client_address;
@@ -277,7 +277,7 @@ void VW::details::reset_source(VW::workspace& all, size_t numbits)
       // note: breaking cluster parallel online learning by dropping support for id
 
       auto socket = VW::io::wrap_socket_descriptor(f);
-      all.final_prediction_sink.push_back(socket->get_writer());
+      all.output_runtime.final_prediction_sink.push_back(socket->get_writer());
       all.parser_runtime.example_parser->input.add_file(socket->get_reader());
 
       set_daemon_reader(all, is_currently_json_reader(all), is_currently_dsjson_reader(all));
@@ -331,7 +331,7 @@ void make_write_cache(VW::workspace& all, std::string& newname, bool quiet)
 
   all.parser_runtime.example_parser->finalname = newname;
   all.parser_runtime.example_parser->write_cache = true;
-  if (!quiet) { *(all.trace_message) << "creating cache_file = " << newname << endl; }
+  if (!quiet) { *(all.output_runtime.trace_message) << "creating cache_file = " << newname << endl; }
 }
 
 void parse_cache(VW::workspace& all, std::vector<std::string> cache_files, bool kill_cache, bool quiet)
@@ -368,7 +368,7 @@ void parse_cache(VW::workspace& all, std::vector<std::string> cache_files, bool 
       }
       else
       {
-        if (!quiet) { *(all.trace_message) << "using cache_file = " << file.c_str() << endl; }
+        if (!quiet) { *(all.output_runtime.trace_message) << "using cache_file = " << file.c_str() << endl; }
         set_cache_reader(all);
         all.parser_runtime.example_parser->resettable = true;
       }
@@ -378,7 +378,7 @@ void parse_cache(VW::workspace& all, std::vector<std::string> cache_files, bool 
   all.parse_mask = (static_cast<uint64_t>(1) << all.num_bits) - 1;
   if (cache_files.size() == 0)
   {
-    if (!quiet) { *(all.trace_message) << "using no cache" << endl; }
+    if (!quiet) { *(all.output_runtime.trace_message) << "using no cache" << endl; }
   }
 }
 
@@ -412,7 +412,7 @@ void VW::details::enable_sources(
     if (setsockopt(all.parser_runtime.example_parser->bound_sock, SOL_SOCKET, SO_REUSEADDR,
             reinterpret_cast<char*>(&on), sizeof(on)) < 0)
     {
-      *(all.trace_message) << "setsockopt SO_REUSEADDR: " << VW::io::strerror_to_string(errno) << endl;
+      *(all.output_runtime.trace_message) << "setsockopt SO_REUSEADDR: " << VW::io::strerror_to_string(errno) << endl;
     }
 
     // Enable TCP Keep Alive to prevent socket leaks
@@ -420,7 +420,7 @@ void VW::details::enable_sources(
     if (setsockopt(all.parser_runtime.example_parser->bound_sock, SOL_SOCKET, SO_KEEPALIVE,
             reinterpret_cast<char*>(&enable_tka), sizeof(enable_tka)) < 0)
     {
-      *(all.trace_message) << "setsockopt SO_KEEPALIVE: " << VW::io::strerror_to_string(errno) << endl;
+      *(all.output_runtime.trace_message) << "setsockopt SO_KEEPALIVE: " << VW::io::strerror_to_string(errno) << endl;
     }
 
     sockaddr_in address;
@@ -447,7 +447,7 @@ void VW::details::enable_sources(
       if (getsockname(
               all.parser_runtime.example_parser->bound_sock, reinterpret_cast<sockaddr*>(&address), &address_size) < 0)
       {
-        *(all.trace_message) << "getsockname: " << VW::io::strerror_to_string(errno) << endl;
+        *(all.output_runtime.trace_message) << "getsockname: " << VW::io::strerror_to_string(errno) << endl;
       }
       std::ofstream port_file;
       port_file.open(input_options.port_file.c_str());
@@ -509,7 +509,7 @@ void VW::details::enable_sources(
         // store fork value and run child process if child
         if ((children[i] = fork()) == 0)
         {
-          all.quiet |= (i > 0);
+          all.output_config.quiet |= (i > 0);
           goto child;
         }
       }
@@ -550,7 +550,7 @@ void VW::details::enable_sources(
           {
             if ((children[i] = fork()) == 0)
             {
-              all.quiet |= (i > 0);
+              all.output_config.quiet |= (i > 0);
               goto child;
             }
             break;
@@ -566,7 +566,7 @@ void VW::details::enable_sources(
 #endif
     sockaddr_in client_address;
     socklen_t size = sizeof(client_address);
-    if (!all.quiet) { *(all.trace_message) << "calling accept" << endl; }
+    if (!all.output_config.quiet) { *(all.output_runtime.trace_message) << "calling accept" << endl; }
     auto f_a = static_cast<int>(
         accept(all.parser_runtime.example_parser->bound_sock, reinterpret_cast<sockaddr*>(&client_address), &size));
     if (f_a < 0) THROWERRNO("accept");
@@ -577,10 +577,10 @@ void VW::details::enable_sources(
 
     auto socket = VW::io::wrap_socket_descriptor(f_a);
 
-    all.final_prediction_sink.push_back(socket->get_writer());
+    all.output_runtime.final_prediction_sink.push_back(socket->get_writer());
 
     all.parser_runtime.example_parser->input.add_file(socket->get_reader());
-    if (!all.quiet) { *(all.trace_message) << "reading data from port " << port << endl; }
+    if (!all.output_config.quiet) { *(all.output_runtime.trace_message) << "reading data from port " << port << endl; }
 
     if (all.reduction_state.active) { set_string_reader(all); }
     else { set_daemon_reader(all, input_options.json, input_options.dsjson); }
@@ -591,7 +591,7 @@ void VW::details::enable_sources(
   {
     if (all.parser_runtime.example_parser->input.num_files() != 0)
     {
-      if (!quiet) { *(all.trace_message) << "ignoring text input in favor of cache input" << endl; }
+      if (!quiet) { *(all.output_runtime.trace_message) << "ignoring text input in favor of cache input" << endl; }
     }
     else
     {
@@ -620,7 +620,7 @@ void VW::details::enable_sources(
           input_name = "none";
         }
 
-        if (!quiet) { *(all.trace_message) << "Reading datafile = " << input_name << endl; }
+        if (!quiet) { *(all.output_runtime.trace_message) << "Reading datafile = " << input_name << endl; }
 
         if (adapter) { all.parser_runtime.example_parser->input.add_file(std::move(adapter)); }
       }
@@ -656,7 +656,8 @@ void VW::details::enable_sources(
 
   if (!quiet && !all.runtime_config.daemon)
   {
-    *(all.trace_message) << "num sources = " << all.parser_runtime.example_parser->input.num_files() << endl;
+    *(all.output_runtime.trace_message) << "num sources = " << all.parser_runtime.example_parser->input.num_files()
+                                        << endl;
   }
 }
 

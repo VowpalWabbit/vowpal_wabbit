@@ -908,7 +908,7 @@ void learn_batch(lda& l, std::vector<example*>& batch)
   for (size_t d = 0; d < batch_size; d++)
   {
     float score = lda_loop(l, l.Elogtheta, &(l.v[d * l.all->reduction_state.lda]), batch[d], l.all->uc.power_t);
-    if (l.all->audit) { VW::details::print_audit_features(*l.all, *batch[d]); }
+    if (l.all->output_config.audit) { VW::details::print_audit_features(*l.all, *batch[d]); }
     // If the doc is empty, give it loss of 0.
     if (l.doc_lengths[d] > 0)
     {
@@ -1262,7 +1262,7 @@ void output_example_prediction_lda(
   {
     for (auto* ex : data.batch_buffer)
     {
-      for (auto& sink : all.final_prediction_sink)
+      for (auto& sink : all.output_runtime.final_prediction_sink)
       {
         VW::details::print_scalars(sink.get(), ex->pred.scalars, ex->tag, logger);
       }
@@ -1275,9 +1275,9 @@ void print_update_lda(VW::workspace& all, VW::shared_data& sd, const lda& data, 
 {
   if (data.minibatch == data.batch_buffer.size())
   {
-    if (sd.weighted_examples() >= sd.dump_interval && !all.quiet)
+    if (sd.weighted_examples() >= sd.dump_interval && !all.output_config.quiet)
     {
-      sd.print_update(*all.trace_message, all.pc.holdout_set_off, all.pc.current_pass, "none", 0,
+      sd.print_update(*all.output_runtime.trace_message, all.pc.holdout_set_off, all.pc.current_pass, "none", 0,
           data.batch_buffer.at(0)->get_num_features());
     }
   }

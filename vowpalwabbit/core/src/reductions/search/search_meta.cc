@@ -27,7 +27,7 @@ void run(Search::search& sch, VW::multi_ex& ec)
       .foreach_action(
           [](Search::search& sch, size_t t, float min_cost, action a, bool taken, float a_cost) -> void
           {
-            *(sch.get_vw_pointer_unsafe().trace_message)
+            *(sch.get_vw_pointer_unsafe().output_runtime.trace_message)
                 << "==DebugMT== foreach_action(t=" << t << ", min_cost=" << min_cost << ", a=" << a
                 << ", taken=" << taken << ", a_cost=" << a_cost << ")" << std::endl;
           })
@@ -35,15 +35,16 @@ void run(Search::search& sch, VW::multi_ex& ec)
       .post_prediction(
           [](Search::search& sch, size_t t, action a, float a_cost) -> void
           {
-            *(sch.get_vw_pointer_unsafe().trace_message)
+            *(sch.get_vw_pointer_unsafe().output_runtime.trace_message)
                 << "==DebugMT== post_prediction(t=" << t << ", a=" << a << ", a_cost=" << a_cost << ")" << std::endl;
           })
 
       .maybe_override_prediction(
           [](Search::search& sch, size_t t, action& a, float& a_cost) -> bool
           {
-            *(sch.get_vw_pointer_unsafe().trace_message) << "==DebugMT== maybe_override_prediction(t=" << t
-                                                         << ", a=" << a << ", a_cost=" << a_cost << ")" << std::endl;
+            *(sch.get_vw_pointer_unsafe().output_runtime.trace_message)
+                << "==DebugMT== maybe_override_prediction(t=" << t << ", a=" << a << ", a_cost=" << a_cost << ")"
+                << std::endl;
             return false;
           })
 

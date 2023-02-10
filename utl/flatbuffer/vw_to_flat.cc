@@ -442,7 +442,8 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
       {
         // The extent hash for a non-hash-extent will be 0, which is the same as the field no existing to flatbuffers.
         auto created_ns = create_namespace(ae->feature_space[ns].audit_begin() + extent.begin_index,
-            ae->feature_space[ns].audit_begin() + extent.end_index, ns, extent.hash, all.audit || all.hash_inv);
+            ae->feature_space[ns].audit_begin() + extent.end_index, ns, extent.hash,
+            all.output_config.audit || all.output_config.hash_inv);
         namespaces.push_back(created_ns);
       }
     }
@@ -496,6 +497,6 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
     write_to_file(collection, all.l->is_multiline(), multi_ex_builder, ex_builder, outfile);
   }
 
-  *(all.trace_message) << "Converted " << _examples << " examples" << std::endl;
-  *(all.trace_message) << "Flatbuffer " << output_flatbuffer_name << " created" << std::endl;
+  *(all.output_runtime.trace_message) << "Converted " << _examples << " examples" << std::endl;
+  *(all.output_runtime.trace_message) << "Flatbuffer " << output_flatbuffer_name << " created" << std::endl;
 }

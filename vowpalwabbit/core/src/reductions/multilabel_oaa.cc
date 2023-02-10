@@ -97,7 +97,10 @@ void output_example_prediction_multilabel_oaa(
       output_string_stream << ':' << ec.pred.scalars[i];
     }
     const auto ss_str = output_string_stream.str();
-    for (auto& sink : all.final_prediction_sink) { all.print_text_by_ref(sink.get(), ss_str, ec.tag, all.logger); }
+    for (auto& sink : all.output_runtime.final_prediction_sink)
+    {
+      all.print_text_by_ref(sink.get(), ss_str, ec.tag, all.logger);
+    }
   }
   VW::details::output_example_prediction_multilabel(all, ec);
 }

@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
 
   // initialize model
   auto model = VW::initialize(VW::make_unique<VW::config::options_cli>(VW::split_command_line(vwparams)));
-  model->audit = true;
+  model->output_config.audit = true;
 
   string target("--rank ");
   size_t loc = vwparams.find(target);

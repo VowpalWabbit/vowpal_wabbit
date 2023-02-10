@@ -146,7 +146,7 @@ void VW::reductions::additional_metrics(VW::workspace& all, VW::metric_sink& sin
 
 void VW::reductions::output_metrics(VW::workspace& all)
 {
-  metrics_collector& manager = all.global_metrics;
+  metrics_collector& manager = all.output_runtime.global_metrics;
   if (manager.are_metrics_enabled())
   {
     std::string filename = all.options->get_typed_option<std::string>("extra_metrics").value();
@@ -170,7 +170,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::metrics_setup(VW::setup_ba
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   if (out_file.empty()) THROW("extra_metrics argument (output filename) is missing.");
-  all.global_metrics = VW::metrics_collector(true);
+  all.output_runtime.global_metrics = VW::metrics_collector(true);
 
   auto base = stack_builder.setup_base_learner();
 

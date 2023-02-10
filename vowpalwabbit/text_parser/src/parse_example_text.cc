@@ -497,7 +497,10 @@ void VW::parsers::text::details::substring_to_example(VW::workspace* all, VW::ex
 
   if (bar_idx != VW::string_view::npos)
   {
-    if (all->audit || all->hash_inv) { tc_parser<true> parser_line(example.substr(bar_idx), *all, ae); }
+    if (all->output_config.audit || all->output_config.hash_inv)
+    {
+      tc_parser<true> parser_line(example.substr(bar_idx), *all, ae);
+    }
     else { tc_parser<false> parser_line(example.substr(bar_idx), *all, ae); }
   }
 }

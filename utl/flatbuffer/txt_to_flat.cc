@@ -43,10 +43,10 @@ VW::workspace* setup(std::unique_ptr<options_i, VW::options_deleter_type> option
   }
   all->runtime_config.vw_is_main = true;
 
-  if (!all->quiet && !all->reduction_state.bfgs && !all->reduction_state.searchstr &&
+  if (!all->output_config.quiet && !all->reduction_state.bfgs && !all->reduction_state.searchstr &&
       !all->options->was_supplied("audit_regressor"))
   {
-    all->sd->print_update_header(*(all->trace_message));
+    all->sd->print_update_header(*(all->output_runtime.trace_message));
   }
 
   return all;

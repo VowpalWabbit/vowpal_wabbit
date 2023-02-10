@@ -522,7 +522,7 @@ void scorer_learn(emt_tree& b, learner& base, emt_node& cn, const emt_example& e
 
   if (alternative_ex == nullptr || preferred_ex == nullptr)
   {
-    *(b.all->trace_message) << "ERROR" << std::endl;
+    *(b.all->output_runtime.trace_message) << "ERROR" << std::endl;
     return;
   }
 
@@ -647,7 +647,8 @@ void emt_learn(emt_tree& b, learner& base, VW::example& ec)
 #ifdef VW_ENABLE_EMT_DEBUG_TIMER
 void emt_end_pass_timer(emt_tree& b)
 {
-  *(b.all->trace_message) << "##### pass_time: " << static_cast<float>(clock() - b.begin) / CLOCKS_PER_SEC << std::endl;
+  *(b.all->output_runtime.trace_message) << "##### pass_time: "
+                                         << static_cast<float>(clock() - b.begin) / CLOCKS_PER_SEC << std::endl;
 
   b.begin = clock();
 }

@@ -528,9 +528,9 @@ void VW::details::finalize_regressor(VW::workspace& all, const std::string& reg_
     else
     {
       dump_regressor(all, all.om.text_regressor_name, true);
-      all.print_invert = true;
+      all.output_config.print_invert = true;
       dump_regressor(all, all.om.inv_hash_regressor_name, true);
-      all.print_invert = false;
+      all.output_config.print_invert = false;
     }
   }
 }
@@ -542,9 +542,9 @@ void VW::details::read_regressor_file(
   {
     io_temp.add_file(VW::io::open_file_reader(all_intial[0]));
 
-    if (!all.quiet)
+    if (!all.output_config.quiet)
     {
-      // *(all.trace_message) << "initial_regressor = " << regs[0] << std::endl;
+      // *(all.output_runtime.trace_message) << "initial_regressor = " << regs[0] << std::endl;
       if (all_intial.size() > 1)
       {
         all.logger.err_warn("Ignoring remaining {} initial regressors", (all_intial.size() - 1));

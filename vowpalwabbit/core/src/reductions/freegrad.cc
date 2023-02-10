@@ -377,10 +377,10 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::freegrad_setup(VW::setup_b
   fg_ptr->all->weights.stride_shift(3);  // NOTE: for more parameter storage
   fg_ptr->freegrad_size = 6;
 
-  if (!fg_ptr->all->quiet)
+  if (!fg_ptr->all->output_config.quiet)
   {
-    *(fg_ptr->all->trace_message) << "Enabling FreeGrad based optimization" << std::endl;
-    *(fg_ptr->all->trace_message) << "Algorithm used: " << algorithm_name << std::endl;
+    *(fg_ptr->all->output_runtime.trace_message) << "Enabling FreeGrad based optimization" << std::endl;
+    *(fg_ptr->all->output_runtime.trace_message) << "Algorithm used: " << algorithm_name << std::endl;
   }
 
   if (!fg_ptr->all->pc.holdout_set_off)
@@ -389,8 +389,10 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::freegrad_setup(VW::setup_b
     fg_ptr->early_stop_thres = options.get_typed_option<uint64_t>("early_terminate").value();
   }
 
-  auto predict_ptr = (fg_ptr->all->audit || fg_ptr->all->hash_inv) ? predict<true> : predict<false>;
-  auto learn_ptr = (fg_ptr->all->audit || fg_ptr->all->hash_inv) ? learn_freegrad<true> : learn_freegrad<false>;
+  auto predict_ptr =
+      (fg_ptr->all->output_config.audit || fg_ptr->all->output_config.hash_inv) ? predict<true> : predict<false>;
+  auto learn_ptr = (fg_ptr->all->output_config.audit || fg_ptr->all->output_config.hash_inv) ? learn_freegrad<true>
+                                                                                             : learn_freegrad<false>;
   auto l =
       VW::LEARNER::make_bottom_learner(std::move(fg_ptr), learn_ptr, predict_ptr,
           stack_builder.get_setupfn_name(freegrad_setup), VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)

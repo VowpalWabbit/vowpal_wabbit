@@ -29,11 +29,11 @@ void VW::simple_label::reset_to_default() { label = FLT_MAX; }
 // TODO: Delete once there are no more usages.
 void VW::details::print_update(VW::workspace& all, const VW::example& ec)
 {
-  if (all.sd->weighted_labeled_examples + all.sd->weighted_unlabeled_examples >= all.sd->dump_interval && !all.quiet &&
-      !all.reduction_state.bfgs)
+  if (all.sd->weighted_labeled_examples + all.sd->weighted_unlabeled_examples >= all.sd->dump_interval &&
+      !all.output_config.quiet && !all.reduction_state.bfgs)
   {
-    all.sd->print_update(*all.trace_message, all.pc.holdout_set_off, all.pc.current_pass, ec.l.simple.label,
-        ec.pred.scalar, ec.get_num_features());
+    all.sd->print_update(*all.output_runtime.trace_message, all.pc.holdout_set_off, all.pc.current_pass,
+        ec.l.simple.label, ec.pred.scalar, ec.get_num_features());
   }
 }
 
@@ -44,8 +44,11 @@ void VW::details::output_and_account_example(VW::workspace& all, const VW::examp
   all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.get_num_features());
   if (ld.label != FLT_MAX && !ec.test_only) { all.sd->weighted_labels += (static_cast<double>(ld.label)) * ec.weight; }
 
-  all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag, all.logger);
-  for (auto& f : all.final_prediction_sink) { all.print_by_ref(f.get(), ec.pred.scalar, 0, ec.tag, all.logger); }
+  all.print_by_ref(all.output_runtime.raw_prediction.get(), ec.partial_prediction, -1, ec.tag, all.logger);
+  for (auto& f : all.output_runtime.final_prediction_sink)
+  {
+    all.print_by_ref(f.get(), ec.pred.scalar, 0, ec.tag, all.logger);
+  }
 
   print_update(all, ec);
 }
@@ -68,20 +71,23 @@ void VW::details::print_update_simple_label(
     VW::workspace& all, shared_data& sd, const VW::example& ec, VW::io::logger& /* logger */)
 {
   const bool should_print_driver_update =
-      all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.reduction_state.bfgs;
+      all.sd->weighted_examples() >= all.sd->dump_interval && !all.output_config.quiet && !all.reduction_state.bfgs;
 
   if (should_print_driver_update)
   {
-    sd.print_update(*all.trace_message, all.pc.holdout_set_off, all.pc.current_pass, ec.l.simple.label, ec.pred.scalar,
-        ec.get_num_features());
+    sd.print_update(*all.output_runtime.trace_message, all.pc.holdout_set_off, all.pc.current_pass, ec.l.simple.label,
+        ec.pred.scalar, ec.get_num_features());
   }
 }
 
 void VW::details::output_example_prediction_simple_label(
     VW::workspace& all, const VW::example& ec, VW::io::logger& /* logger */)
 {
-  all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag, all.logger);
-  for (auto& f : all.final_prediction_sink) { all.print_by_ref(f.get(), ec.pred.scalar, 0, ec.tag, all.logger); }
+  all.print_by_ref(all.output_runtime.raw_prediction.get(), ec.partial_prediction, -1, ec.tag, all.logger);
+  for (auto& f : all.output_runtime.final_prediction_sink)
+  {
+    all.print_by_ref(f.get(), ec.pred.scalar, 0, ec.tag, all.logger);
+  }
 }
 
 bool VW::details::summarize_holdout_set(VW::workspace& all, size_t& no_win_counter)

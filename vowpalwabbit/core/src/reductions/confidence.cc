@@ -76,8 +76,8 @@ void confidence_print_result(
 void output_example_prediction_confidence(
     VW::workspace& all, const confidence& /* data */, const VW::example& ec, VW::io::logger& logger)
 {
-  all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag, logger);
-  for (const auto& sink : all.final_prediction_sink)
+  all.print_by_ref(all.output_runtime.raw_prediction.get(), ec.partial_prediction, -1, ec.tag, logger);
+  for (const auto& sink : all.output_runtime.final_prediction_sink)
   {
     confidence_print_result(sink.get(), ec.pred.scalar, ec.confidence, ec.tag, logger);
   }

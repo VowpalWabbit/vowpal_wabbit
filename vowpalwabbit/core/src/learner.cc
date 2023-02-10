@@ -59,7 +59,10 @@ void save(example& ec, VW::workspace& all)
     final_regressor_name = std::string(ec.tag.begin() + 5, (ec.tag).size() - 5);
   }
 
-  if (!all.quiet) { *(all.trace_message) << "saving regressor to " << final_regressor_name << std::endl; }
+  if (!all.output_config.quiet)
+  {
+    *(all.output_runtime.trace_message) << "saving regressor to " << final_regressor_name << std::endl;
+  }
   VW::details::save_predictor(all, final_regressor_name, 0);
 
   VW::finish_example(all, ec);

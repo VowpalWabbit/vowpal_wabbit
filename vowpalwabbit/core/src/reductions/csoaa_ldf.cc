@@ -528,12 +528,15 @@ void output_example_prediction_csoaa_ldf_rank(
     VW::workspace& all, const ldf& /* data */, const VW::multi_ex& ec_seq, VW::io::logger& logger)
 {
   const auto& head_ec = *ec_seq[0];
-  for (auto& sink : all.final_prediction_sink)
+  for (auto& sink : all.output_runtime.final_prediction_sink)
   {
     VW::details::print_action_score(sink.get(), head_ec.pred.a_s, head_ec.tag, logger);
   }
-  if (all.raw_prediction != nullptr) { csoaa_ldf_print_raw(all, all.raw_prediction.get(), ec_seq, logger); }
-  VW::details::global_print_newline(all.final_prediction_sink, logger);
+  if (all.output_runtime.raw_prediction != nullptr)
+  {
+    csoaa_ldf_print_raw(all, all.output_runtime.raw_prediction.get(), ec_seq, logger);
+  }
+  VW::details::global_print_newline(all.output_runtime.final_prediction_sink, logger);
 }
 
 void print_update_csoaa_ldf_rank(VW::workspace& all, VW::shared_data& /* sd */, const ldf& /* data */,
@@ -604,12 +607,15 @@ void update_stats_csoaa_ldf_prob(const VW::workspace& all, VW::shared_data& sd, 
 void output_example_prediction_csoaa_ldf_prob(
     VW::workspace& all, const ldf& /* data */, const VW::multi_ex& ec_seq, VW::io::logger& logger)
 {
-  for (auto& sink : all.final_prediction_sink)
+  for (auto& sink : all.output_runtime.final_prediction_sink)
   {
     for (const auto prob : ec_seq[0]->pred.scalars) { all.print_by_ref(sink.get(), prob, 0, ec_seq[0]->tag, logger); }
   }
-  if (all.raw_prediction != nullptr) { csoaa_ldf_print_raw(all, all.raw_prediction.get(), ec_seq, logger); }
-  VW::details::global_print_newline(all.final_prediction_sink, logger);
+  if (all.output_runtime.raw_prediction != nullptr)
+  {
+    csoaa_ldf_print_raw(all, all.output_runtime.raw_prediction.get(), ec_seq, logger);
+  }
+  VW::details::global_print_newline(all.output_runtime.final_prediction_sink, logger);
 }
 
 void print_update_csoaa_ldf_prob(VW::workspace& all, VW::shared_data& /* sd */, const ldf& /* data */,
@@ -655,9 +661,15 @@ void update_stats_csoaa_ldf_multiclass(const VW::workspace& /* all */, VW::share
 void output_example_prediction_csoaa_ldf_multiclass(
     VW::workspace& all, const ldf& /* data */, const VW::multi_ex& ec_seq, VW::io::logger& logger)
 {
-  for (auto& sink : all.final_prediction_sink) { csoaa_ldf_multiclass_printline(all, sink.get(), ec_seq, logger); }
-  if (all.raw_prediction != nullptr) { csoaa_ldf_print_raw(all, all.raw_prediction.get(), ec_seq, logger); }
-  VW::details::global_print_newline(all.final_prediction_sink, logger);
+  for (auto& sink : all.output_runtime.final_prediction_sink)
+  {
+    csoaa_ldf_multiclass_printline(all, sink.get(), ec_seq, logger);
+  }
+  if (all.output_runtime.raw_prediction != nullptr)
+  {
+    csoaa_ldf_print_raw(all, all.output_runtime.raw_prediction.get(), ec_seq, logger);
+  }
+  VW::details::global_print_newline(all.output_runtime.final_prediction_sink, logger);
 }
 
 void print_update_csoaa_ldf_multiclass(VW::workspace& all, VW::shared_data& /* sd */, const ldf& /* data */,

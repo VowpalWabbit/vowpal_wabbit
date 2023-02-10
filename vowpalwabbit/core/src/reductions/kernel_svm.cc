@@ -277,7 +277,7 @@ void save_load(svm_params& params, VW::io_buf& model_file, bool read, bool text)
 {
   if (text)
   {
-    *params.all->trace_message << "Not supporting readable model for kernel svm currently" << endl;
+    *params.all->output_runtime.trace_message << "Not supporting readable model for kernel svm currently" << endl;
     return;
   }
   else if (params.all->model_file_ver > VW::version_definitions::EMPTY_VERSION_FILE &&
@@ -644,7 +644,7 @@ void train(svm_params& params)
             {
               if (!overshoot && max_pos == static_cast<size_t>(model_pos) && max_pos > 0 && j == 0)
               {
-                *params.all->trace_message << "Shouldn't reprocess right after process." << endl;
+                *params.all->output_runtime.trace_message << "Shouldn't reprocess right after process." << endl;
               }
               if (max_pos * model->num_support <= params.maxcache) { make_hot_sv(params, max_pos); }
               update(params, max_pos);
@@ -685,11 +685,12 @@ void learn(svm_params& params, VW::example& ec)
     if (params.all->runtime_config.training && ec.example_counter % 100 == 0) { trim_cache(params); }
     if (params.all->runtime_config.training && ec.example_counter % 1000 == 0 && ec.example_counter >= 2)
     {
-      *params.all->trace_message << "Number of support vectors = " << params.model->num_support << endl;
-      *params.all->trace_message << "Number of kernel evaluations = " << num_kernel_evals << " "
-                                 << "Number of cache queries = " << num_cache_evals << " loss sum = " << params.loss_sum
-                                 << " " << params.model->alpha[params.model->num_support - 1] << " "
-                                 << params.model->alpha[params.model->num_support - 2] << endl;
+      *params.all->output_runtime.trace_message << "Number of support vectors = " << params.model->num_support << endl;
+      *params.all->output_runtime.trace_message << "Number of kernel evaluations = " << num_kernel_evals << " "
+                                                << "Number of cache queries = " << num_cache_evals
+                                                << " loss sum = " << params.loss_sum << " "
+                                                << params.model->alpha[params.model->num_support - 1] << " "
+                                                << params.model->alpha[params.model->num_support - 2] << endl;
     }
     params.pool[params.pool_pos] = sec;
     params.pool_pos++;
@@ -706,10 +707,10 @@ void finish_kernel_svm(svm_params& params)
 {
   if (params.all != nullptr)
   {
-    *(params.all->trace_message) << "Num support = " << params.model->num_support << endl;
-    *(params.all->trace_message) << "Number of kernel evaluations = " << num_kernel_evals << " "
-                                 << "Number of cache queries = " << num_cache_evals << endl;
-    *(params.all->trace_message) << "Total loss = " << params.loss_sum << endl;
+    *(params.all->output_runtime.trace_message) << "Num support = " << params.model->num_support << endl;
+    *(params.all->output_runtime.trace_message) << "Number of kernel evaluations = " << num_kernel_evals << " "
+                                                << "Number of cache queries = " << num_cache_evals << endl;
+    *(params.all->output_runtime.trace_message) << "Total loss = " << params.loss_sum << endl;
   }
 }
 }  // namespace
@@ -778,20 +779,20 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::kernel_svm_setup(VW::setup
 
   params->lambda = all.lc.l2_lambda;
   if (params->lambda == 0.) { params->lambda = 1.; }
-  *params->all->trace_message << "Lambda = " << params->lambda << endl;
-  *params->all->trace_message << "Kernel = " << kernel_type << endl;
+  *params->all->output_runtime.trace_message << "Lambda = " << params->lambda << endl;
+  *params->all->output_runtime.trace_message << "Kernel = " << kernel_type << endl;
 
   if (kernel_type.compare("rbf") == 0)
   {
     params->kernel_type = SVM_KER_RBF;
-    *params->all->trace_message << "bandwidth = " << bandwidth << endl;
+    *params->all->output_runtime.trace_message << "bandwidth = " << bandwidth << endl;
     params->kernel_params = &VW::details::calloc_or_throw<double>();
     *(static_cast<float*>(params->kernel_params)) = bandwidth;
   }
   else if (kernel_type.compare("poly") == 0)
   {
     params->kernel_type = SVM_KER_POLY;
-    *params->all->trace_message << "degree = " << degree << endl;
+    *params->all->output_runtime.trace_message << "degree = " << degree << endl;
     params->kernel_params = &VW::details::calloc_or_throw<int>();
     *(static_cast<int*>(params->kernel_params)) = degree;
   }

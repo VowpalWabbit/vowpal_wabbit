@@ -86,7 +86,8 @@ void mf_print_offset_features(gdmf& d, VW::example& ec, size_t offset)
 
 void mf_print_audit_features(gdmf& d, VW::example& ec, size_t offset)
 {
-  VW::details::print_result_by_ref(d.all->stdout_adapter.get(), ec.pred.scalar, -1, ec.tag, d.all->logger);
+  VW::details::print_result_by_ref(
+      d.all->output_runtime.stdout_adapter.get(), ec.pred.scalar, -1, ec.tag, d.all->logger);
   mf_print_offset_features(d, ec, offset);
 }
 
@@ -174,7 +175,7 @@ float mf_predict(gdmf& d, VW::example& ec, T& weights)
     ec.loss = all.lc.loss->get_loss(all.sd.get(), ec.pred.scalar, ec.l.simple.label) * ec.weight;
   }
 
-  if (all.audit) { mf_print_audit_features(d, ec, 0); }
+  if (all.output_config.audit) { mf_print_audit_features(d, ec, 0); }
 
   return ec.pred.scalar;
 }

@@ -114,7 +114,7 @@ void output_example_prediction_cats(VW::workspace& all, const VW::reductions::ca
 {
   // output to the prediction to all files
   const auto str = VW::to_string(ec.pred.pdf_value, VW::details::AS_MANY_AS_NEEDED_FLOAT_FORMATTING_DECIMAL_PRECISION);
-  for (auto& f : all.final_prediction_sink)
+  for (auto& f : all.output_runtime.final_prediction_sink)
   {
     f->write(str.c_str(), str.size());
     f->write("\n", 1);
@@ -133,10 +133,10 @@ void print_update_cats(VW::workspace& all, VW::shared_data& sd, const VW::reduct
     const VW::example& ec, VW::io::logger& /* unused */)
 {
   const auto should_print_driver_update =
-      all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.reduction_state.bfgs;
+      all.sd->weighted_examples() >= all.sd->dump_interval && !all.output_config.quiet && !all.reduction_state.bfgs;
   if (should_print_driver_update)
   {
-    sd.print_update(*all.trace_message, all.pc.holdout_set_off, all.pc.current_pass,
+    sd.print_update(*all.output_runtime.trace_message, all.pc.holdout_set_off, all.pc.current_pass,
         ec.test_only
             ? "unknown"
             : VW::to_string(ec.l.cb_cont.costs[0], VW::details::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION),  // Label

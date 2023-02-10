@@ -430,7 +430,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::ftrl_setup(VW::setup_base_
     b->ftrl_alpha = options.was_supplied("ftrl_alpha") ? b->ftrl_alpha : 0.005f;
     b->ftrl_beta = options.was_supplied("ftrl_beta") ? b->ftrl_beta : 0.1f;
     algorithm_name = "Proximal-FTRL";
-    learn_ptr = all.audit || all.hash_inv ? learn_proximal<true> : learn_proximal<false>;
+    learn_ptr = all.output_config.audit || all.output_config.hash_inv ? learn_proximal<true> : learn_proximal<false>;
     all.weights.stride_shift(2);  // NOTE: for more parameter storage
     b->ftrl_size = 3;
   }
@@ -439,7 +439,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::ftrl_setup(VW::setup_base_
     b->ftrl_alpha = options.was_supplied("ftrl_alpha") ? b->ftrl_alpha : 1.0f;
     b->ftrl_beta = options.was_supplied("ftrl_beta") ? b->ftrl_beta : 0.5f;
     algorithm_name = "PiSTOL";
-    learn_ptr = all.audit || all.hash_inv ? learn_pistol<true> : learn_pistol<false>;
+    learn_ptr = all.output_config.audit || all.output_config.hash_inv ? learn_pistol<true> : learn_pistol<false>;
     all.weights.stride_shift(2);  // NOTE: for more parameter storage
     b->ftrl_size = 4;
     learn_returns_prediction = true;
@@ -449,7 +449,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::ftrl_setup(VW::setup_base_
     b->ftrl_alpha = options.was_supplied("ftrl_alpha") ? b->ftrl_alpha : 4.0f;
     b->ftrl_beta = options.was_supplied("ftrl_beta") ? b->ftrl_beta : 1.0f;
     algorithm_name = "Coin Betting";
-    learn_ptr = all.audit || all.hash_inv ? learn_coin_betting<true> : learn_coin_betting<false>;
+    learn_ptr =
+        all.output_config.audit || all.output_config.hash_inv ? learn_coin_betting<true> : learn_coin_betting<false>;
     all.weights.stride_shift(3);  // NOTE: for more parameter storage
     b->ftrl_size = 6;
     learn_returns_prediction = true;
@@ -460,12 +461,12 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::ftrl_setup(VW::setup_base_
   b->data.l1_lambda = b->all->lc.l1_lambda;
   b->data.l2_lambda = b->all->lc.l2_lambda;
 
-  if (!all.quiet)
+  if (!all.output_config.quiet)
   {
-    *(all.trace_message) << "Enabling FTRL based optimization" << std::endl;
-    *(all.trace_message) << "Algorithm used: " << algorithm_name << std::endl;
-    *(all.trace_message) << "ftrl_alpha = " << b->ftrl_alpha << std::endl;
-    *(all.trace_message) << "ftrl_beta = " << b->ftrl_beta << std::endl;
+    *(all.output_runtime.trace_message) << "Enabling FTRL based optimization" << std::endl;
+    *(all.output_runtime.trace_message) << "Algorithm used: " << algorithm_name << std::endl;
+    *(all.output_runtime.trace_message) << "ftrl_alpha = " << b->ftrl_alpha << std::endl;
+    *(all.output_runtime.trace_message) << "ftrl_beta = " << b->ftrl_beta << std::endl;
   }
 
   if (!all.pc.holdout_set_off)
@@ -474,9 +475,10 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::ftrl_setup(VW::setup_base_
     b->early_stop_thres = options.get_typed_option<uint64_t>("early_terminate").value();
   }
 
-  auto predict_ptr = (all.audit || all.hash_inv) ? predict<true> : predict<false>;
-  auto multipredict_ptr = (all.audit || all.hash_inv) ? multipredict<true> : multipredict<false>;
-  std::string name_addition = (all.audit || all.hash_inv) ? "-audit" : "";
+  auto predict_ptr = (all.output_config.audit || all.output_config.hash_inv) ? predict<true> : predict<false>;
+  auto multipredict_ptr =
+      (all.output_config.audit || all.output_config.hash_inv) ? multipredict<true> : multipredict<false>;
+  std::string name_addition = (all.output_config.audit || all.output_config.hash_inv) ? "-audit" : "";
 
   auto l = VW::LEARNER::make_bottom_learner(std::move(b), learn_ptr, predict_ptr,
       stack_builder.get_setupfn_name(ftrl_setup) + "-" + algorithm_name + name_addition, VW::prediction_type_t::SCALAR,

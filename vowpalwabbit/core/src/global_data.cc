@@ -259,7 +259,7 @@ std::string workspace::dump_weights_to_json_experimental()
     THROW("dump_weights_to_json is currently only supported for KSVM base learner. The current base learner is "
         << current->get_name());
   }
-  if (om.dump_json_weights_include_feature_names && !hash_inv)
+  if (om.dump_json_weights_include_feature_names && !output_config.hash_inv)
   {
     THROW("hash_inv == true is required to dump weights to json including feature names");
   }
@@ -273,9 +273,9 @@ std::string workspace::dump_weights_to_json_experimental()
   }
 
   return weights.sparse
-      ? dump_weights_to_json_weight_typed(weights.sparse_weights, index_name_map, weights,
+      ? dump_weights_to_json_weight_typed(weights.sparse_weights, output_runtime.index_name_map, weights,
             om.dump_json_weights_include_feature_names, om.dump_json_weights_include_extra_online_state)
-      : dump_weights_to_json_weight_typed(weights.dense_weights, index_name_map, weights,
+      : dump_weights_to_json_weight_typed(weights.dense_weights, output_runtime.index_name_map, weights,
             om.dump_json_weights_include_feature_names, om.dump_json_weights_include_extra_online_state);
 }
 }  // namespace VW
@@ -312,7 +312,7 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   _random_state_sp = std::make_shared<VW::rand_state>();
   sd = std::make_shared<shared_data>();
   // Default is stderr.
-  trace_message = std::make_shared<std::ostream>(std::cout.rdbuf());
+  output_runtime.trace_message = std::make_shared<std::ostream>(std::cout.rdbuf());
 
   lc.loss = nullptr;
 
@@ -354,7 +354,7 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   om.per_feature_regularizer_output = "";
   om.per_feature_regularizer_text = "";
 
-  stdout_adapter = VW::io::open_stdout();
+  output_runtime.stdout_adapter = VW::io::open_stdout();
 
   reduction_state.searchstr = nullptr;
 
@@ -378,8 +378,8 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   reduction_state.invariant_updates = true;
   iwc.normalized_idx = 2;
 
-  audit = false;
-  audit_writer = VW::io::open_stdout();
+  output_config.audit = false;
+  output_runtime.audit_writer = VW::io::open_stdout();
 
   runtime_config.pass_length = std::numeric_limits<size_t>::max();
   runtime_state.passes_complete = 0;
@@ -394,18 +394,18 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
 
   parser_runtime.max_examples = std::numeric_limits<size_t>::max();
 
-  hash_inv = false;
-  print_invert = false;
-  hexfloat_weights = false;
+  output_config.hash_inv = false;
+  output_config.print_invert = false;
+  output_config.hexfloat_weights = false;
 }
 VW_WARNING_STATE_POP
 
 void workspace::finish()
 {
   // also update VowpalWabbit::PerformanceStatistics::get() (vowpalwabbit.cpp)
-  if (!quiet && !options->was_supplied("audit_regressor"))
+  if (!output_config.quiet && !options->was_supplied("audit_regressor"))
   {
-    sd->print_summary(*trace_message, *sd, *lc.loss, pc.current_pass, pc.holdout_set_off);
+    sd->print_summary(*output_runtime.trace_message, *sd, *lc.loss, pc.current_pass, pc.holdout_set_off);
   }
 
   details::finalize_regressor(*this, om.final_regressor_name);
@@ -415,7 +415,7 @@ void workspace::finish()
     auto writer = VW::io::open_file_writer(om.json_weights_file_name);
     writer->write(content.c_str(), content.length());
   }
-  global_metrics.register_metrics_callback(
+  output_runtime.global_metrics.register_metrics_callback(
       [this](VW::metric_sink& sink) -> void { VW::reductions::additional_metrics(*this, sink); });
   VW::reductions::output_metrics(*this);
   logger.log_summary();

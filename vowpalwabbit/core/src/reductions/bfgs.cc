@@ -270,7 +270,7 @@ void bfgs_iter_start(
     ((&(*w))[W_GT]) = 0;
   }
   lastj = 0;
-  if (!all.quiet)
+  if (!all.output_config.quiet)
   {
     fprintf(stderr, "%-10.5f\t%-10.5f\t%-10s\t%-10s\t%-10s\t", g1_g1 / (importance_weight_sum * importance_weight_sum),
         g1_Hg1 / importance_weight_sum, "", "", "");
@@ -321,12 +321,12 @@ void bfgs_iter_middle(
       (&(*w))[W_GT] = 0;
     }
     // TODO: spdlog can't print partial log lines. Figure out how to handle this..
-    if (!all.quiet) { fprintf(stderr, "%f\t", beta); }
+    if (!all.output_config.quiet) { fprintf(stderr, "%f\t", beta); }
     return;
   }
   else
   {
-    if (!all.quiet) { fprintf(stderr, "%-10s\t", ""); }
+    if (!all.output_config.quiet) { fprintf(stderr, "%-10s\t", ""); }
   }
 
   // implement bfgs
@@ -440,7 +440,7 @@ double wolfe_eval(VW::workspace& all, bfgs& b, float* mem, double loss_sum, doub
   double wolfe2 = g1_d / g0_d;
   // double new_step_cross = (loss_sum-previous_loss_sum-g1_d*step)/(g0_d-g1_d);
 
-  if (!all.quiet)
+  if (!all.output_config.quiet)
   {
     fprintf(stderr, "%-10.5f\t%-10.5f\t%s%-10f\t%-10f\t", g1_g1 / (importance_weight_sum * importance_weight_sum),
         g1_Hg1 / importance_weight_sum, " ", wolfe1, wolfe2);
@@ -675,7 +675,7 @@ int process_pass(VW::workspace& all, bfgs& b)
       VW::details::accumulate(all, all.weights, 1);            // Accumulate gradients from all nodes
     }
     if (all.lc.l2_lambda > 0.) { b.loss_sum += add_regularization(all, b, all.lc.l2_lambda); }
-    if (!all.quiet)
+    if (!all.output_config.quiet)
     {
       fprintf(stderr, "%2lu %-10.5f\t", static_cast<long unsigned int>(b.current_pass) + 1,
           b.loss_sum / b.importance_weight_sum);
@@ -697,7 +697,7 @@ int process_pass(VW::workspace& all, bfgs& b)
       b.t_end_global = std::chrono::system_clock::now();
       b.net_time = static_cast<double>(
           std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
-      if (!all.quiet) { fprintf(stderr, "%-10s\t%-10.5f\t%-.5f\n", "", d_mag, b.step_size); }
+      if (!all.output_config.quiet) { fprintf(stderr, "%-10s\t%-10.5f\t%-.5f\n", "", d_mag, b.step_size); }
       b.predictions.clear();
       update_weight(all, b.step_size);
     }
@@ -715,7 +715,7 @@ int process_pass(VW::workspace& all, bfgs& b)
         VW::details::accumulate(all, all.weights, 1);         // Accumulate gradients from all nodes
       }
       if (all.lc.l2_lambda > 0.) { b.loss_sum += add_regularization(all, b, all.lc.l2_lambda); }
-      if (!all.quiet)
+      if (!all.output_config.quiet)
       {
         if (!all.pc.holdout_set_off && b.current_pass >= 1)
         {
@@ -760,7 +760,10 @@ int process_pass(VW::workspace& all, bfgs& b)
         b.net_time = static_cast<double>(
             std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
         float ratio = (b.step_size == 0.f) ? 0.f : static_cast<float>(new_step) / b.step_size;
-        if (!all.quiet) { fprintf(stderr, "%-10s\t%-10s\t(revise x %.1f)\t%-.5f\n", "", "", ratio, new_step); }
+        if (!all.output_config.quiet)
+        {
+          fprintf(stderr, "%-10s\t%-10s\t(revise x %.1f)\t%-.5f\n", "", "", ratio, new_step);
+        }
         b.predictions.clear();
         update_weight(all, static_cast<float>(-b.step_size + new_step));
         b.step_size = static_cast<float>(new_step);
@@ -810,7 +813,7 @@ int process_pass(VW::workspace& all, bfgs& b)
           b.t_end_global = std::chrono::system_clock::now();
           b.net_time = static_cast<double>(
               std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
-          if (!all.quiet) { fprintf(stderr, "%-10s\t%-10.5f\t%-.5f\n", "", d_mag, b.step_size); }
+          if (!all.output_config.quiet) { fprintf(stderr, "%-10s\t%-10.5f\t%-.5f\n", "", d_mag, b.step_size); }
           b.predictions.clear();
           update_weight(all, b.step_size);
         }
@@ -851,7 +854,7 @@ int process_pass(VW::workspace& all, bfgs& b)
       b.net_time = static_cast<double>(
           std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
 
-      if (!all.quiet)
+      if (!all.output_config.quiet)
       {
         fprintf(stderr, "%-10.5f\t%-10.5f\t%-.5f\n", b.curvature / b.importance_weight_sum, d_mag, b.step_size);
       }
@@ -929,16 +932,17 @@ void end_pass(bfgs& b)
       // reaching the max number of passes regardless of convergence
       if (b.final_pass == b.current_pass)
       {
-        *(b.all->trace_message) << "Maximum number of passes reached. ";
+        *(b.all->output_runtime.trace_message) << "Maximum number of passes reached. ";
         if (!b.output_regularizer)
         {
-          *(b.all->trace_message) << "To optimize further, increase the number of passes\n";
+          *(b.all->output_runtime.trace_message) << "To optimize further, increase the number of passes\n";
         }
         if (b.output_regularizer)
         {
-          *(b.all->trace_message) << "\nRegular model file has been created. ";
-          *(b.all->trace_message) << "Output feature regularizer file is created only when the convergence is reached. "
-                                     "Try increasing the number of passes for convergence\n";
+          *(b.all->output_runtime.trace_message) << "\nRegular model file has been created. ";
+          *(b.all->output_runtime.trace_message)
+              << "Output feature regularizer file is created only when the convergence is reached. "
+                 "Try increasing the number of passes for convergence\n";
           b.output_regularizer = false;
         }
       }
@@ -960,7 +964,7 @@ void end_pass(bfgs& b)
         if (b.early_stop_thres == b.no_win_counter)
         {
           VW::details::set_done(*all);
-          *(b.all->trace_message) << "Early termination reached w.r.t. holdout set error";
+          *(b.all->output_runtime.trace_message) << "Early termination reached w.r.t. holdout set error";
         }
       }
       if (b.final_pass == b.current_pass)
@@ -1068,7 +1072,7 @@ void save_load(bfgs& b, VW::io_buf& model_file, bool read, bool text)
     b.net_time = 0.0;
     b.t_start_global = std::chrono::system_clock::now();
 
-    if (!all->quiet)
+    if (!all->output_config.quiet)
     {
       const char* header_fmt = "%2s %-10s\t%-10s\t%-10s\t %-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-s\n";
       fprintf(stderr, header_fmt, "##", "avg. loss", "der. mag.", "d. m. cond.", "wolfe1", "wolfe2", "mix fraction",
@@ -1163,13 +1167,13 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::bfgs_setup(VW::setup_base_
 
   if (b->m == 0) { b->hessian_on = true; }
 
-  if (!all.quiet)
+  if (!all.output_config.quiet)
   {
-    if (b->m > 0) { *(all.trace_message) << "enabling BFGS based optimization "; }
-    else { *(all.trace_message) << "enabling conjugate gradient optimization via BFGS "; }
+    if (b->m > 0) { *(all.output_runtime.trace_message) << "enabling BFGS based optimization "; }
+    else { *(all.output_runtime.trace_message) << "enabling conjugate gradient optimization via BFGS "; }
 
-    if (b->hessian_on) { *(all.trace_message) << "with curvature calculation" << std::endl; }
-    else { *(all.trace_message) << "**without** curvature calculation" << std::endl; }
+    if (b->hessian_on) { *(all.output_runtime.trace_message) << "with curvature calculation" << std::endl; }
+    else { *(all.output_runtime.trace_message) << "**without** curvature calculation" << std::endl; }
   }
 
   if (all.runtime_config.numpasses < 2 && all.runtime_config.training)
@@ -1183,7 +1187,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::bfgs_setup(VW::setup_base_
   void (*learn_ptr)(bfgs&, VW::example&) = nullptr;
   void (*predict_ptr)(bfgs&, VW::example&) = nullptr;
   std::string learner_name;
-  if (all.audit || all.hash_inv)
+  if (all.output_config.audit || all.output_config.hash_inv)
   {
     learn_ptr = learn<true>;
     predict_ptr = predict<true>;

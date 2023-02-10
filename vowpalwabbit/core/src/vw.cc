@@ -66,20 +66,20 @@ std::unique_ptr<VW::workspace> initialize_internal(
     throw VW::save_load_model_exception(e.filename(), e.line_number(), msg);
   }
 
-  if (!all->quiet)
+  if (!all->output_config.quiet)
   {
-    *(all->trace_message) << "Num weight bits = " << all->num_bits << std::endl;
-    *(all->trace_message) << "learning rate = " << all->uc.eta << std::endl;
-    *(all->trace_message) << "initial_t = " << all->sd->t << std::endl;
-    *(all->trace_message) << "power_t = " << all->uc.power_t << std::endl;
+    *(all->output_runtime.trace_message) << "Num weight bits = " << all->num_bits << std::endl;
+    *(all->output_runtime.trace_message) << "learning rate = " << all->uc.eta << std::endl;
+    *(all->output_runtime.trace_message) << "initial_t = " << all->sd->t << std::endl;
+    *(all->output_runtime.trace_message) << "power_t = " << all->uc.power_t << std::endl;
     if (all->runtime_config.numpasses > 1)
     {
-      *(all->trace_message) << "decay_learning_rate = " << all->uc.eta_decay_rate << std::endl;
+      *(all->output_runtime.trace_message) << "decay_learning_rate = " << all->uc.eta_decay_rate << std::endl;
     }
     if (all->options->was_supplied("cb_type"))
     {
-      *(all->trace_message) << "cb_type = " << all->options->get_typed_option<std::string>("cb_type").value()
-                            << std::endl;
+      *(all->output_runtime.trace_message)
+          << "cb_type = " << all->options->get_typed_option<std::string>("cb_type").value() << std::endl;
     }
   }
 
@@ -125,19 +125,20 @@ std::unique_ptr<VW::workspace> initialize_internal(
 
   VW::details::print_enabled_learners(*all, enabled_learners);
 
-  if (!all->quiet)
+  if (!all->output_config.quiet)
   {
-    *(all->trace_message) << "Input label = " << VW::to_string(all->l->get_input_label_type()).substr(14) << std::endl;
-    *(all->trace_message) << "Output pred = " << VW::to_string(all->l->get_output_prediction_type()).substr(19)
-                          << std::endl;
+    *(all->output_runtime.trace_message) << "Input label = " << VW::to_string(all->l->get_input_label_type()).substr(14)
+                                         << std::endl;
+    *(all->output_runtime.trace_message) << "Output pred = "
+                                         << VW::to_string(all->l->get_output_prediction_type()).substr(19) << std::endl;
   }
 
   if (!all->options->get_typed_option<bool>("dry_run").value())
   {
-    if (!all->quiet && !all->reduction_state.bfgs && (all->reduction_state.searchstr == nullptr) &&
+    if (!all->output_config.quiet && !all->reduction_state.bfgs && (all->reduction_state.searchstr == nullptr) &&
         !all->options->was_supplied("audit_regressor"))
     {
-      all->sd->print_update_header(*all->trace_message);
+      all->sd->print_update_header(*all->output_runtime.trace_message);
     }
     all->l->init_driver();
   }
@@ -860,7 +861,7 @@ void VW::add_constant_feature(const VW::workspace& all, VW::example* ec)
   ec->feature_space[VW::details::CONSTANT_NAMESPACE].push_back(
       1, VW::details::CONSTANT, VW::details::CONSTANT_NAMESPACE);
   ec->num_features++;
-  if (all.audit || all.hash_inv)
+  if (all.output_config.audit || all.output_config.hash_inv)
   {
     ec->feature_space[VW::details::CONSTANT_NAMESPACE].space_names.emplace_back("", "Constant");
   }

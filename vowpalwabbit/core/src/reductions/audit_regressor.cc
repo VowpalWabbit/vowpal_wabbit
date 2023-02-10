@@ -191,9 +191,9 @@ void print_update_audit_regressor(VW::workspace& all, VW::shared_data& /* sd */,
     const VW::example& ec, VW::io::logger& /* unused */)
 {
   bool printed = false;
-  if (static_cast<float>(ec.example_counter + std::size_t{1}) >= all.sd->dump_interval && !all.quiet)
+  if (static_cast<float>(ec.example_counter + std::size_t{1}) >= all.sd->dump_interval && !all.output_config.quiet)
   {
-    print_row(*all.trace_message, ec.example_counter + 1, rd.values_audited,
+    print_row(*all.output_runtime.trace_message, ec.example_counter + 1, rd.values_audited,
         rd.values_audited * 100 / rd.loaded_regressor_values);
     all.sd->weighted_unlabeled_examples = static_cast<double>(ec.example_counter + 1);  // used in update_dump_interval
     all.sd->update_dump_interval();
@@ -203,7 +203,7 @@ void print_update_audit_regressor(VW::workspace& all, VW::shared_data& /* sd */,
   if (rd.values_audited == rd.loaded_regressor_values)
   {
     // all regressor values were audited
-    if (!printed) { print_row(*all.trace_message, ec.example_counter + 1, rd.values_audited, 100); }
+    if (!printed) { print_row(*all.output_runtime.trace_message, ec.example_counter + 1, rd.values_audited, 100); }
     VW::details::set_done(all);
   }
 }
@@ -214,9 +214,9 @@ void finish(audit_regressor_data& rd)
 
   if (rd.values_audited < rd.loaded_regressor_values)
   {
-    *rd.all->trace_message << fmt::format(
-        "Note: for some reason audit couldn't find all regressor values in dataset ({} of {} found).\n",
-        rd.values_audited, rd.loaded_regressor_values);
+    *rd.all->output_runtime.trace_message
+        << fmt::format("Note: for some reason audit couldn't find all regressor values in dataset ({} of {} found).\n",
+               rd.values_audited, rd.loaded_regressor_values);
   }
 }
 
@@ -258,11 +258,11 @@ void init_driver(audit_regressor_data& dat)
 
   if (dat.loaded_regressor_values == 0) { THROW("regressor has no non-zero weights. Nothing to audit.") }
 
-  if (!dat.all->quiet)
+  if (!dat.all->output_config.quiet)
   {
-    *dat.all->trace_message << "Regressor contains " << dat.loaded_regressor_values << " values\n";
-    VW::format_row(AUDIT_REGRESSOR_HEADER, AUDIT_REGRESSOR_COLUMNS, 1, *dat.all->trace_message);
-    (*dat.all->trace_message) << "\n";
+    *dat.all->output_runtime.trace_message << "Regressor contains " << dat.loaded_regressor_values << " values\n";
+    VW::format_row(AUDIT_REGRESSOR_HEADER, AUDIT_REGRESSOR_COLUMNS, 1, *dat.all->output_runtime.trace_message);
+    (*dat.all->output_runtime.trace_message) << "\n";
   }
 }
 }  // namespace
@@ -286,7 +286,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::audit_regressor_setup(VW::
 
   if (all.runtime_config.numpasses > 1) { THROW("audit_regressor can't be used with --passes > 1.") }
 
-  all.audit = true;
+  all.output_config.audit = true;
 
   // TODO: work out how to handle the fact that this reduction produces no
   // predictions but also needs to inherit the type from the loaded base so that

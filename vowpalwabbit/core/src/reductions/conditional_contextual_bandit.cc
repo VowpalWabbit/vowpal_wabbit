@@ -455,7 +455,10 @@ void learn_or_predict(ccb_data& data, learner& base, VW::multi_ex& examples)
 
       if (should_augment_with_slot_info)
       {
-        if (data.all->audit || data.all->hash_inv) { inject_slot_id<true>(data, data.shared, slot_id); }
+        if (data.all->output_config.audit || data.all->output_config.hash_inv)
+        {
+          inject_slot_id<true>(data, data.shared, slot_id);
+        }
         else { inject_slot_id<false>(data, data.shared, slot_id); }
       }
 
@@ -506,7 +509,7 @@ void learn_or_predict(ccb_data& data, learner& base, VW::multi_ex& examples)
 
       if (should_augment_with_slot_info)
       {
-        if (data.all->audit || data.all->hash_inv) { remove_slot_id<true>(data.shared); }
+        if (data.all->output_config.audit || data.all->output_config.hash_inv) { remove_slot_id<true>(data.shared); }
         else { remove_slot_id<false>(data.shared); }
       }
 
@@ -569,11 +572,11 @@ void output_example_prediction_ccb(
   if (!ec_seq.empty() && !data.no_pred)
   {
     // Print predictions
-    for (auto& sink : all.final_prediction_sink)
+    for (auto& sink : all.output_runtime.final_prediction_sink)
     {
       VW::print_decision_scores(sink.get(), ec_seq[VW::details::SHARED_EX_INDEX]->pred.decision_scores, all.logger);
     }
-    VW::details::global_print_newline(all.final_prediction_sink, all.logger);
+    VW::details::global_print_newline(all.output_runtime.final_prediction_sink, all.logger);
   }
 }
 
@@ -581,7 +584,7 @@ void print_update_ccb(VW::workspace& all, shared_data& /* sd */, const ccb_data&
     VW::io::logger& /* unused */)
 {
   const bool should_print_driver_update =
-      all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.reduction_state.bfgs;
+      all.sd->weighted_examples() >= all.sd->dump_interval && !all.output_config.quiet && !all.reduction_state.bfgs;
 
   if (should_print_driver_update && !ec_seq.empty() && !data.no_pred)
   {

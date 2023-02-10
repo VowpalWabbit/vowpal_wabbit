@@ -74,17 +74,20 @@ void update_stats_sender(VW::shared_data& sd, const sent_example_info& info, flo
 void output_example_prediction_sender(
     VW::workspace& all, const sent_example_info& info, float prediction, VW::io::logger& logger)
 {
-  for (auto& f : all.final_prediction_sink) { all.print_by_ref(f.get(), prediction, 0, info.tag, logger); }
+  for (auto& f : all.output_runtime.final_prediction_sink)
+  {
+    all.print_by_ref(f.get(), prediction, 0, info.tag, logger);
+  }
 }
 
 void print_update_sender(VW::workspace& all, VW::shared_data& sd, const sent_example_info& info, float prediction)
 {
-  const bool should_print_driver_update = sd.weighted_examples() >= sd.dump_interval && !all.quiet;
+  const bool should_print_driver_update = sd.weighted_examples() >= sd.dump_interval && !all.output_config.quiet;
 
   if (should_print_driver_update)
   {
-    sd.print_update(*all.trace_message, all.pc.holdout_set_off, all.pc.current_pass, info.label.label, prediction,
-        info.num_features);
+    sd.print_update(*all.output_runtime.trace_message, all.pc.holdout_set_off, all.pc.current_pass, info.label.label,
+        prediction, info.num_features);
   }
 }
 

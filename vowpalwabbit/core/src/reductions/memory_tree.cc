@@ -1259,15 +1259,15 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::memory_tree_setup(VW::setu
 
   init_tree(*tree);
 
-  if (!all.quiet)
+  if (!all.output_config.quiet)
   {
-    *(all.trace_message) << "memory_tree:"
-                         << " "
-                         << "max_nodes = " << tree->max_nodes << " "
-                         << "max_leaf_examples = " << tree->max_leaf_examples << " "
-                         << "alpha = " << tree->alpha << " "
-                         << "oas = " << tree->oas << " "
-                         << "online =" << tree->online << " " << std::endl;
+    *(all.output_runtime.trace_message) << "memory_tree:"
+                                        << " "
+                                        << "max_nodes = " << tree->max_nodes << " "
+                                        << "max_leaf_examples = " << tree->max_leaf_examples << " "
+                                        << "alpha = " << tree->alpha << " "
+                                        << "oas = " << tree->oas << " "
+                                        << "online =" << tree->online << " " << std::endl;
   }
 
   size_t num_learners;

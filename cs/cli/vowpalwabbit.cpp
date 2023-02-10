@@ -321,7 +321,7 @@ List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<By
 
 			VW::parsers::json::decision_service_interaction interaction;
 
-			if (m_vw->audit)
+			if (m_vw->output_config.audit)
 				VW::parsers::json::read_line_decision_service_json<true>(*m_vw, examples, reinterpret_cast<char*>(data), length, copyJson, std::bind(get_example_from_pool, &state), &interaction);
 			else
 				VW::parsers::json::read_line_decision_service_json<false>(*m_vw, examples, reinterpret_cast<char*>(data), length, copyJson, std::bind(get_example_from_pool, &state), &interaction);
@@ -385,7 +385,7 @@ List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<By
 
 			  interior_ptr<ParseJsonState^> state_ptr = &state;
 
-			  if (m_vw->audit)
+			  if (m_vw->output_config.audit)
 				VW::parsers::json::read_line_json<true>(*m_vw, examples, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()), (size_t)bytes->Length, std::bind(get_example_from_pool, &state));
 			  else
 				VW::parsers::json::read_line_json<false>(*m_vw, examples, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()), (size_t)bytes->Length, std::bind(get_example_from_pool, &state));

@@ -99,7 +99,7 @@ void finish_setup(nn& n, VW::workspace& all)
   for (unsigned int i = 0; i < n.k; ++i)
   {
     fs.push_back(1., nn_index);
-    if (all.audit || all.hash_inv)
+    if (all.output_config.audit || all.output_config.hash_inv)
     {
       std::stringstream ss;
       ss << "OutputLayer" << i;
@@ -112,7 +112,7 @@ void finish_setup(nn& n, VW::workspace& all)
   if (!n.inpass)
   {
     fs.push_back(1., nn_index);
-    if (all.audit || all.hash_inv) { fs.space_names.emplace_back("", "OutputLayerConst"); }
+    if (all.output_config.audit || all.output_config.hash_inv) { fs.space_names.emplace_back("", "OutputLayerConst"); }
     ++n.output_layer.num_features;
   }
 
@@ -121,7 +121,7 @@ void finish_setup(nn& n, VW::workspace& all)
   n.hiddenbias.extent_interactions = &all.fc.extent_interactions;
   n.hiddenbias.indices.push_back(VW::details::CONSTANT_NAMESPACE);
   n.hiddenbias.feature_space[VW::details::CONSTANT_NAMESPACE].push_back(1, VW::details::CONSTANT);
-  if (all.audit || all.hash_inv)
+  if (all.output_config.audit || all.output_config.hash_inv)
   {
     n.hiddenbias.feature_space[VW::details::CONSTANT_NAMESPACE].space_names.emplace_back("", "HiddenBias");
   }
@@ -133,7 +133,7 @@ void finish_setup(nn& n, VW::workspace& all)
   n.outputweight.indices.push_back(VW::details::NN_OUTPUT_NAMESPACE);
   VW::features& outfs = n.output_layer.feature_space[VW::details::NN_OUTPUT_NAMESPACE];
   n.outputweight.feature_space[VW::details::NN_OUTPUT_NAMESPACE].push_back(outfs.values[0], outfs.indices[0]);
-  if (all.audit || all.hash_inv)
+  if (all.output_config.audit || all.output_config.hash_inv)
   {
     n.outputweight.feature_space[VW::details::NN_OUTPUT_NAMESPACE].space_names.emplace_back("", "OutputWeight");
   }
@@ -153,7 +153,7 @@ void end_pass(nn& n)
 template <bool is_learn, bool recompute_hidden>
 void predict_or_learn_multi(nn& n, learner& base, VW::example& ec)
 {
-  bool should_output = n.all->raw_prediction != nullptr;
+  bool should_output = n.all->output_runtime.raw_prediction != nullptr;
   if (!n.finished_setup) { finish_setup(n, *(n.all)); }
   // Yes, copy all of shared data.
   VW::shared_data sd{*n.all->sd};
@@ -322,7 +322,8 @@ void predict_or_learn_multi(nn& n, learner& base, VW::example& ec)
     if (should_output)
     {
       output_string_stream << ' ' << n.output_layer.partial_prediction;
-      n.all->print_text_by_ref(n.all->raw_prediction.get(), output_string_stream.str(), ec.tag, n.all->logger);
+      n.all->print_text_by_ref(
+          n.all->output_runtime.raw_prediction.get(), output_string_stream.str(), ec.tag, n.all->logger);
     }
 
     if (is_learn)
@@ -421,7 +422,10 @@ void multipredict(nn& n, learner& base, VW::example& ec, size_t count, size_t st
 void output_example_prediction_nn(
     VW::workspace& all, const nn& /* data */, const VW::example& ec, VW::io::logger& /* unused */)
 {
-  for (auto& f : all.final_prediction_sink) { all.print_by_ref(f.get(), ec.pred.scalar, 0, ec.tag, all.logger); }
+  for (auto& f : all.output_runtime.final_prediction_sink)
+  {
+    all.print_by_ref(f.get(), ec.pred.scalar, 0, ec.tag, all.logger);
+  }
 }
 }  // namespace
 
@@ -446,7 +450,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::nn_setup(VW::setup_base_i&
   n->all = &all;
   n->random_state = all.get_random_state();
 
-  if (n->multitask && !all.quiet)
+  if (n->multitask && !all.output_config.quiet)
   {
     all.logger.err_info(
         "using multitask sharing for neural network {}", (all.runtime_config.training ? "training" : "testing"));
@@ -459,12 +463,12 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::nn_setup(VW::setup_base_i&
         "using mean field for neural network {}", (all.runtime_config.training ? "training" : "testing"));
   }
 
-  if (n->dropout && !all.quiet)
+  if (n->dropout && !all.output_config.quiet)
   {
     all.logger.err_info("using dropout for neural network {}", (all.runtime_config.training ? "training" : "testing"));
   }
 
-  if (n->inpass && !all.quiet)
+  if (n->inpass && !all.output_config.quiet)
   {
     all.logger.err_info(
         "using input passthrough for neural network {}", (all.runtime_config.training ? "training" : "testing"));

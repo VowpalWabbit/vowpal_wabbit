@@ -137,12 +137,12 @@ void VW::details::parse_dictionary_argument(VW::workspace& all, const std::strin
 
   uint64_t fd_hash = hash_file_contents(file_adapter.get());
 
-  if (!all.quiet)
+  if (!all.output_config.quiet)
   {
     std::string out_file_name = file_name;
     std::replace(out_file_name.begin(), out_file_name.end(), '\\', '/');
-    *(all.trace_message) << "scanned dictionary '" << s << "' from '" << out_file_name << "', hash=" << std::hex
-                         << fd_hash << std::dec << endl;
+    *(all.output_runtime.trace_message) << "scanned dictionary '" << s << "' from '" << out_file_name
+                                        << "', hash=" << std::hex << fd_hash << std::dec << endl;
   }
 
   // see if we've already read this dictionary
@@ -232,10 +232,10 @@ void VW::details::parse_dictionary_argument(VW::workspace& all, const std::strin
   } while ((rc != EOF) && (num_read > 0));
   free(buffer);
 
-  if (!all.quiet)
+  if (!all.output_config.quiet)
   {
-    *(all.trace_message) << "dictionary " << s << " contains " << map->size() << " item"
-                         << (map->size() == 1 ? "" : "s") << endl;
+    *(all.output_runtime.trace_message) << "dictionary " << s << " contains " << map->size() << " item"
+                                        << (map->size() == 1 ? "" : "s") << endl;
   }
 
   all.fc.namespace_dictionaries[static_cast<size_t>(ns)].push_back(map);
@@ -301,7 +301,7 @@ void parse_diagnostics(options_i& options, VW::workspace& all)
   std::string progress_arg;
   option_group_definition diagnostic_group("Diagnostic");
   diagnostic_group.add(make_option("version", version_arg).help("Version information"))
-      .add(make_option("audit", all.audit).short_name("a").help("Print weights of features"))
+      .add(make_option("audit", all.output_config.audit).short_name("a").help("Print weights of features"))
       .add(make_option("progress", progress_arg)
                .short_name("P")
                .help("Progress update frequency. int: additive, float: multiplicative"))
@@ -315,16 +315,16 @@ void parse_diagnostics(options_i& options, VW::workspace& all)
 
   if (help)
   {
-    all.quiet = true;
+    all.output_config.quiet = true;
     all.logger.set_level(VW::io::log_level::OFF_LEVEL);
     // This is valid:
     // https://stackoverflow.com/questions/25690636/is-it-valid-to-construct-an-stdostream-from-a-null-buffer This
     // results in the ostream not outputting anything.
-    all.trace_message = VW::make_unique<std::ostream>(nullptr);
+    all.output_runtime.trace_message = VW::make_unique<std::ostream>(nullptr);
   }
 
-  // pass all.quiet around
-  if (all.all_reduce) { all.all_reduce->quiet = all.quiet; }
+  // pass all.output_config.quiet around
+  if (all.all_reduce) { all.all_reduce->quiet = all.output_config.quiet; }
 
   // Upon direct query for version -- spit it out directly to stdout
   if (version_arg)
@@ -333,7 +333,7 @@ void parse_diagnostics(options_i& options, VW::workspace& all)
     exit(0);
   }
 
-  if (options.was_supplied("progress") && !all.quiet)
+  if (options.was_supplied("progress") && !all.output_config.quiet)
   {
     all.sd->progress_arg = static_cast<float>(::atof(progress_arg.c_str()));
     // --progress interval is dual: either integer or floating-point
@@ -450,7 +450,7 @@ VW::details::input_options parse_source(VW::workspace& all, options_i& options)
           options.was_supplied("output_feature_regularizer_text")))
   {
     all.pc.holdout_set_off = true;
-    *(all.trace_message) << "Making holdout_set_off=true since output regularizer specified" << endl;
+    *(all.output_runtime.trace_message) << "Making holdout_set_off=true since output regularizer specified" << endl;
   }
 
 #ifdef VW_BUILD_CSV
@@ -651,13 +651,13 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     std::transform(skip_strings.begin(), skip_strings.end(), std::back_inserter(hex_decoded_skip_strings),
         [&](const std::string& arg) { return VW::decode_inline_hex(arg, all.logger); });
 
-    all.fc.skip_gram_transformer = VW::make_unique<VW::kskip_ngram_transformer>(
-        VW::kskip_ngram_transformer::build(hex_decoded_ngram_strings, hex_decoded_skip_strings, all.quiet, all.logger));
+    all.fc.skip_gram_transformer = VW::make_unique<VW::kskip_ngram_transformer>(VW::kskip_ngram_transformer::build(
+        hex_decoded_ngram_strings, hex_decoded_skip_strings, all.output_config.quiet, all.logger));
   }
 
   if (options.was_supplied("feature_limit"))
   {
-    VW::details::compile_limits(all.fc.limit_strings, all.fc.limit, all.quiet, all.logger);
+    VW::details::compile_limits(all.fc.limit_strings, all.fc.limit, all.output_config.quiet, all.logger);
   }
 
   if (options.was_supplied("bit_precision"))
@@ -696,9 +696,10 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
       decoded_interactions.emplace_back(parsed.begin(), parsed.end());
     }
 
-    if (!all.quiet)
+    if (!all.output_config.quiet)
     {
-      *(all.trace_message) << fmt::format("creating quadratic features for pairs: {}\n", fmt::join(quadratics, " "));
+      *(all.output_runtime.trace_message)
+          << fmt::format("creating quadratic features for pairs: {}\n", fmt::join(quadratics, " "));
     }
   }
 
@@ -711,9 +712,10 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
       decoded_interactions.emplace_back(parsed.begin(), parsed.end());
     }
 
-    if (!all.quiet)
+    if (!all.output_config.quiet)
     {
-      *(all.trace_message) << fmt::format("creating cubic features for triples: {}\n", fmt::join(cubics, " "));
+      *(all.output_runtime.trace_message)
+          << fmt::format("creating cubic features for triples: {}\n", fmt::join(cubics, " "));
     }
   }
 
@@ -725,16 +727,16 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
       if (parsed.size() < 2) { THROW("Feature interactions must involve at least two namespaces.") }
       decoded_interactions.emplace_back(parsed.begin(), parsed.end());
     }
-    if (!all.quiet)
+    if (!all.output_config.quiet)
     {
-      *(all.trace_message) << fmt::format(
-          "creating features for following interactions: {}\n", fmt::join(interactions, " "));
+      *(all.output_runtime.trace_message)
+          << fmt::format("creating features for following interactions: {}\n", fmt::join(interactions, " "));
     }
   }
 
   if (!decoded_interactions.empty())
   {
-    if (!all.quiet && !options.was_supplied("leave_duplicate_interactions"))
+    if (!all.output_config.quiet && !options.was_supplied("leave_duplicate_interactions"))
     {
       auto any_contain_wildcards = std::any_of(decoded_interactions.begin(), decoded_interactions.end(),
           [](const std::vector<VW::namespace_index>& interaction) { return VW::contains_wildcard(interaction); });
@@ -755,7 +757,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     VW::details::sort_and_filter_duplicate_interactions(
         decoded_interactions, !leave_duplicate_interactions, removed_cnt, sorted_cnt);
 
-    if (removed_cnt > 0 && !all.quiet)
+    if (removed_cnt > 0 && !all.output_config.quiet)
     {
       all.logger.err_warn(
           "Duplicate namespace interactions were found. Removed: {}.\nYou can use --leave_duplicate_interactions to "
@@ -763,7 +765,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
           removed_cnt);
     }
 
-    if (sorted_cnt > 0 && !all.quiet)
+    if (sorted_cnt > 0 && !all.output_config.quiet)
     {
       all.logger.err_warn(
           "Some interactions contain duplicate characters and their characters order has been changed. Interactions "
@@ -810,14 +812,14 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
       for (auto j : i) { all.fc.ignore[static_cast<size_t>(static_cast<unsigned char>(j))] = true; }
     }
 
-    if (!all.quiet)
+    if (!all.output_config.quiet)
     {
-      *(all.trace_message) << "ignoring namespaces beginning with:";
+      *(all.output_runtime.trace_message) << "ignoring namespaces beginning with:";
       for (size_t i = 0; i < VW::NUM_NAMESPACES; ++i)
       {
-        if (all.fc.ignore[i]) { *(all.trace_message) << " " << static_cast<unsigned char>(i); }
+        if (all.fc.ignore[i]) { *(all.output_runtime.trace_message) << " " << static_cast<unsigned char>(i); }
       }
-      *(all.trace_message) << endl;
+      *(all.output_runtime.trace_message) << endl;
     }
   }
 
@@ -831,14 +833,14 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
       for (auto j : i) { all.fc.ignore_linear[static_cast<size_t>(static_cast<unsigned char>(j))] = true; }
     }
 
-    if (!all.quiet)
+    if (!all.output_config.quiet)
     {
-      *(all.trace_message) << "ignoring linear terms for namespaces beginning with:";
+      *(all.output_runtime.trace_message) << "ignoring linear terms for namespaces beginning with:";
       for (size_t i = 0; i < VW::NUM_NAMESPACES; ++i)
       {
-        if (all.fc.ignore_linear[i]) { *(all.trace_message) << " " << static_cast<unsigned char>(i); }
+        if (all.fc.ignore_linear[i]) { *(all.output_runtime.trace_message) << " " << static_cast<unsigned char>(i); }
       }
-      *(all.trace_message) << endl;
+      *(all.output_runtime.trace_message) << endl;
     }
   }
 
@@ -872,14 +874,14 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
       for (const auto& j : i) { all.fc.ignore[static_cast<size_t>(static_cast<unsigned char>(j))] = false; }
     }
 
-    if (!all.quiet)
+    if (!all.output_config.quiet)
     {
-      *(all.trace_message) << "using namespaces beginning with:";
+      *(all.output_runtime.trace_message) << "using namespaces beginning with:";
       for (size_t i = 0; i < VW::NUM_NAMESPACES; ++i)
       {
-        if (!all.fc.ignore[i]) { *(all.trace_message) << " " << static_cast<unsigned char>(i); }
+        if (!all.fc.ignore[i]) { *(all.output_runtime.trace_message) << " " << static_cast<unsigned char>(i); }
       }
-      *(all.trace_message) << endl;
+      *(all.output_runtime.trace_message) << endl;
     }
   }
 
@@ -1065,7 +1067,7 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
 
   if (test_only || all.uc.eta == 0.)
   {
-    if (!all.quiet) { *(all.trace_message) << "only testing" << endl; }
+    if (!all.output_config.quiet) { *(all.output_runtime.trace_message) << "only testing" << endl; }
     all.runtime_config.training = false;
     if (all.reduction_state.lda > 0) { all.uc.eta = 0; }
   }
@@ -1085,7 +1087,10 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
   if (options.was_supplied("named_labels"))
   {
     all.sd->ldict = VW::make_unique<VW::named_labels>(named_labels);
-    if (!all.quiet) { *(all.trace_message) << "parsed " << all.sd->ldict->getK() << " named labels" << endl; }
+    if (!all.output_config.quiet)
+    {
+      *(all.output_runtime.trace_message) << "parsed " << all.sd->ldict->getK() << " named labels" << endl;
+    }
   }
 
   const std::vector<std::string> loss_functions_that_accept_quantile_tau = {"quantile", "pinball", "absolute"};
@@ -1139,23 +1144,28 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
 
   if (all.lc.l1_lambda < 0.f)
   {
-    *(all.trace_message) << "l1_lambda should be nonnegative: resetting from " << all.lc.l1_lambda << " to 0" << endl;
+    *(all.output_runtime.trace_message) << "l1_lambda should be nonnegative: resetting from " << all.lc.l1_lambda
+                                        << " to 0" << endl;
     all.lc.l1_lambda = 0.f;
   }
   if (all.lc.l2_lambda < 0.f)
   {
-    *(all.trace_message) << "l2_lambda should be nonnegative: resetting from " << all.lc.l2_lambda << " to 0" << endl;
+    *(all.output_runtime.trace_message) << "l2_lambda should be nonnegative: resetting from " << all.lc.l2_lambda
+                                        << " to 0" << endl;
     all.lc.l2_lambda = 0.f;
   }
   all.lc.reg_mode += (all.lc.l1_lambda > 0.) ? 1 : 0;
   all.lc.reg_mode += (all.lc.l2_lambda > 0.) ? 2 : 0;
-  if (!all.quiet)
+  if (!all.output_config.quiet)
   {
     if (all.lc.reg_mode % 2 && !options.was_supplied("bfgs"))
     {
-      *(all.trace_message) << "using l1 regularization = " << all.lc.l1_lambda << endl;
+      *(all.output_runtime.trace_message) << "using l1 regularization = " << all.lc.l1_lambda << endl;
     }
-    if (all.lc.reg_mode > 1) { *(all.trace_message) << "using l2 regularization = " << all.lc.l2_lambda << endl; }
+    if (all.lc.reg_mode > 1)
+    {
+      *(all.output_runtime.trace_message) << "using l2 regularization = " << all.lc.l2_lambda << endl;
+    }
   }
 }
 
@@ -1201,17 +1211,17 @@ void parse_output_preds(options_i& options, VW::workspace& all)
 
   if (options.was_supplied("predictions"))
   {
-    if (!all.quiet) { *(all.trace_message) << "predictions = " << predictions << endl; }
+    if (!all.output_config.quiet) { *(all.output_runtime.trace_message) << "predictions = " << predictions << endl; }
 
     if (predictions == "stdout")
     {
-      all.final_prediction_sink.push_back(VW::io::open_stdout());  // stdout
+      all.output_runtime.final_prediction_sink.push_back(VW::io::open_stdout());  // stdout
     }
     else
     {
       try
       {
-        all.final_prediction_sink.push_back(VW::io::open_file_writer(predictions));
+        all.output_runtime.final_prediction_sink.push_back(VW::io::open_file_writer(predictions));
       }
       catch (...)
       {
@@ -1222,16 +1232,16 @@ void parse_output_preds(options_i& options, VW::workspace& all)
 
   if (options.was_supplied("raw_predictions"))
   {
-    if (!all.quiet)
+    if (!all.output_config.quiet)
     {
-      *(all.trace_message) << "raw predictions = " << raw_predictions << endl;
+      *(all.output_runtime.trace_message) << "raw predictions = " << raw_predictions << endl;
       if (options.was_supplied("binary"))
       {
         all.logger.err_warn("--raw_predictions has no defined value when --binary specified, expect no output");
       }
     }
-    if (raw_predictions == "stdout") { all.raw_prediction = VW::io::open_stdout(); }
-    else { all.raw_prediction = VW::io::open_file_writer(raw_predictions); }
+    if (raw_predictions == "stdout") { all.output_runtime.raw_prediction = VW::io::open_stdout(); }
+    else { all.output_runtime.raw_prediction = VW::io::open_file_writer(raw_predictions); }
   }
 }
 
@@ -1247,7 +1257,7 @@ void parse_output_model(options_i& options, VW::workspace& all)
                .help("Output human-readable final regressor with numeric features"))
       .add(make_option("invert_hash", all.om.inv_hash_regressor_name)
                .help("Output human-readable final regressor with feature names.  Computationally expensive"))
-      .add(make_option("hexfloat_weights", all.hexfloat_weights)
+      .add(make_option("hexfloat_weights", all.output_config.hexfloat_weights)
                .help("Output hexfloat format for floats for human-readable final regressor. Useful for "
                      "debugging/comparing."))
       .add(make_option("dump_json_weights_experimental", all.om.json_weights_file_name)
@@ -1277,15 +1287,15 @@ void parse_output_model(options_i& options, VW::workspace& all)
       .add(make_option("id", all.id).help("User supplied ID embedded into the final regressor"));
   options.add_and_parse(output_model_options);
 
-  if (!all.om.final_regressor_name.empty() && !all.quiet)
+  if (!all.om.final_regressor_name.empty() && !all.output_config.quiet)
   {
-    *(all.trace_message) << "final_regressor = " << all.om.final_regressor_name << endl;
+    *(all.output_runtime.trace_message) << "final_regressor = " << all.om.final_regressor_name << endl;
   }
 
-  if (options.was_supplied("invert_hash")) { all.hash_inv = true; }
+  if (options.was_supplied("invert_hash")) { all.output_config.hash_inv = true; }
   if (options.was_supplied("dump_json_weights_experimental") && all.om.dump_json_weights_include_feature_names)
   {
-    all.hash_inv = true;
+    all.output_config.hash_inv = true;
   }
   if (save_resume)
   {
@@ -1397,14 +1407,14 @@ std::unique_ptr<VW::workspace> VW::details::parse_args(std::unique_ptr<options_i
 
   auto all = VW::make_unique<VW::workspace>(logger);
   all->options = std::move(options);
-  all->quiet = quiet;
+  all->output_config.quiet = quiet;
 
   if (driver_output_off)
   {
     // This is valid:
     // https://stackoverflow.com/questions/25690636/is-it-valid-to-construct-an-stdostream-from-a-null-buffer This
     // results in the ostream not outputting anything.
-    all->trace_message = VW::make_unique<std::ostream>(nullptr);
+    all->output_runtime.trace_message = VW::make_unique<std::ostream>(nullptr);
   }
   else
   {
@@ -1418,16 +1428,17 @@ std::unique_ptr<VW::workspace> VW::details::parse_args(std::unique_ptr<options_i
 
       // Since the trace_message_t interface uses a string and the writer interface uses a buffer we unfortunately
       // need to adapt between them here.
-      all->trace_message_wrapper_context =
+      all->output_runtime.trace_message_wrapper_context =
           std::make_shared<details::trace_message_wrapper>(trace_context, trace_listener);
-      all->trace_message = VW::make_unique<VW::io::owning_ostream>(VW::make_unique<VW::io::writer_stream_buf>(
-          VW::io::create_custom_writer(all->trace_message_wrapper_context.get(), trace_message_wrapper_adapter)));
+      all->output_runtime.trace_message = VW::make_unique<VW::io::owning_ostream>(
+          VW::make_unique<VW::io::writer_stream_buf>(VW::io::create_custom_writer(
+              all->output_runtime.trace_message_wrapper_context.get(), trace_message_wrapper_adapter)));
     }
     else if (driver_output_stream == "stdout")
     {
-      all->trace_message = VW::make_unique<std::ostream>(std::cout.rdbuf());
+      all->output_runtime.trace_message = VW::make_unique<std::ostream>(std::cout.rdbuf());
     }
-    else { all->trace_message = VW::make_unique<std::ostream>(std::cerr.rdbuf()); }
+    else { all->output_runtime.trace_message = VW::make_unique<std::ostream>(std::cerr.rdbuf()); }
   }
 
   bool strict_parse = false;
@@ -1505,9 +1516,10 @@ std::unique_ptr<VW::workspace> VW::details::parse_args(std::unique_ptr<options_i
   if (all->options->was_supplied("span_server"))
   {
     all->selected_all_reduce_type = VW::all_reduce_type::SOCKET;
-    all->all_reduce.reset(new VW::all_reduce_sockets(span_server_arg,
-        VW::cast_to_smaller_type<int>(span_server_port_arg), VW::cast_to_smaller_type<size_t>(unique_id_arg),
-        VW::cast_to_smaller_type<size_t>(total_arg), VW::cast_to_smaller_type<size_t>(node_arg), all->quiet));
+    all->all_reduce.reset(
+        new VW::all_reduce_sockets(span_server_arg, VW::cast_to_smaller_type<int>(span_server_port_arg),
+            VW::cast_to_smaller_type<size_t>(unique_id_arg), VW::cast_to_smaller_type<size_t>(total_arg),
+            VW::cast_to_smaller_type<size_t>(node_arg), all->output_config.quiet));
   }
 
   parse_diagnostics(*all->options, *all);
@@ -1651,7 +1663,7 @@ void VW::details::parse_sources(options_i& options, VW::workspace& all, VW::io_b
   else { model.close_file(); }
 
   auto parsed_source_options = parse_source(all, options);
-  enable_sources(all, all.quiet, all.runtime_config.numpasses, parsed_source_options);
+  enable_sources(all, all.output_config.quiet, all.runtime_config.numpasses, parsed_source_options);
 
   // force wpp to be a power of 2 to avoid 32-bit overflow
   uint32_t i = 0;
@@ -1663,14 +1675,15 @@ void VW::details::parse_sources(options_i& options, VW::workspace& all, VW::io_b
 void VW::details::print_enabled_learners(VW::workspace& all, std::vector<std::string>& enabled_learners)
 {
   // output list of enabled learners
-  if (!all.quiet && !all.options->was_supplied("audit_regressor") && !enabled_learners.empty())
+  if (!all.output_config.quiet && !all.options->was_supplied("audit_regressor") && !enabled_learners.empty())
   {
     const char* const delim = ", ";
     std::ostringstream imploded;
     std::copy(
         enabled_learners.begin(), enabled_learners.end() - 1, std::ostream_iterator<std::string>(imploded, delim));
 
-    *(all.trace_message) << "Enabled learners: " << imploded.str() << enabled_learners.back() << std::endl;
+    *(all.output_runtime.trace_message) << "Enabled learners: " << imploded.str() << enabled_learners.back()
+                                        << std::endl;
   }
 }
 

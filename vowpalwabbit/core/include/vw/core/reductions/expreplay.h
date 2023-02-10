@@ -125,10 +125,10 @@ std::shared_ptr<VW::LEARNER::learner> expreplay_setup(VW::setup_base_i& stack_bu
   }
   er->filled.resize(er->N, false);
 
-  if (!all.quiet)
+  if (!all.output_config.quiet)
   {
-    *(all.trace_message) << "experience replay level=" << er_level << ", buffer=" << er->N
-                         << ", replay count=" << er->replay_count << std::endl;
+    *(all.output_runtime.trace_message) << "experience replay level=" << er_level << ", buffer=" << er->N
+                                        << ", replay count=" << er->replay_count << std::endl;
   }
 
   auto base_learner = VW::LEARNER::require_singleline(stack_builder.setup_base_learner());

@@ -215,7 +215,8 @@ void predict(oaa& o, VW::LEARNER::learner& base, VW::example& ec)
     {
       for (uint32_t i = 1; i <= o.k; i++) { output_string_stream << ' ' << i << ':' << o.pred[i - 1].scalar; }
     }
-    o.all->print_text_by_ref(o.all->raw_prediction.get(), output_string_stream.str(), ec.tag, o.all->logger);
+    o.all->print_text_by_ref(
+        o.all->output_runtime.raw_prediction.get(), output_string_stream.str(), ec.tag, o.all->logger);
   }
 
   // The predictions are an array of scores (as opposed to a single index of a
@@ -318,7 +319,10 @@ void output_example_prediction_oaa(
     output_string_stream << ':' << ec.pred.scalars[i];
   }
   const auto ss_str = output_string_stream.str();
-  for (auto& sink : all.final_prediction_sink) { all.print_text_by_ref(sink.get(), ss_str, ec.tag, all.logger); }
+  for (auto& sink : all.output_runtime.final_prediction_sink)
+  {
+    all.print_text_by_ref(sink.get(), ss_str, ec.tag, all.logger);
+  }
 }
 }  // namespace
 
@@ -422,7 +426,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::oaa_setup(VW::setup_base_i
     update_stats_func = VW::details::update_stats_multiclass_label<oaa>;
     output_example_prediction_func = VW::details::output_example_prediction_multiclass_label<oaa>;
     print_update_func = VW::details::print_update_multiclass_label<oaa>;
-    if (all.raw_prediction != nullptr)
+    if (all.output_runtime.raw_prediction != nullptr)
     {
       learn_ptr = learn<PRINT_ALL, !SCORES, !PROBABILITIES>;
       pred_ptr = predict<PRINT_ALL, !SCORES, !PROBABILITIES>;

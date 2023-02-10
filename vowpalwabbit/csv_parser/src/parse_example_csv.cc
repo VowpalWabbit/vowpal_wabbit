@@ -346,7 +346,7 @@ private:
     if (_v == 0) { return; }
     fs.push_back(_v, word_hash);
 
-    if (_all->audit || _all->hash_inv)
+    if (_all->output_config.audit || _all->output_config.hash_inv)
     {
       if (!is_feature_float)
       {

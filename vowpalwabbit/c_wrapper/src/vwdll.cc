@@ -452,23 +452,23 @@ extern "C"
   VW_DLL_PUBLIC void VW_CALLING_CONV VW_CaptureAuditData(VW_HANDLE handle)
   {
     auto* all = static_cast<VW::workspace*>(handle);
-    all->audit_buffer = std::make_shared<std::vector<char>>();
-    all->audit_writer = VW::io::create_vector_writer(all->audit_buffer);
+    all->output_runtime.audit_buffer = std::make_shared<std::vector<char>>();
+    all->output_runtime.audit_writer = VW::io::create_vector_writer(all->output_runtime.audit_buffer);
   }
 
   VW_DLL_PUBLIC void VW_CALLING_CONV VW_ClearCapturedAuditData(VW_HANDLE handle)
   {
     auto* all = static_cast<VW::workspace*>(handle);
-    all->audit_buffer->clear();
+    all->output_runtime.audit_buffer->clear();
   }
 
   VW_DLL_PUBLIC char* VW_CALLING_CONV VW_GetAuditDataA(VW_HANDLE handle, size_t* size)
   {
     auto* all = static_cast<VW::workspace*>(handle);
-    const auto buffer_size = all->audit_buffer->size();
+    const auto buffer_size = all->output_runtime.audit_buffer->size();
     *size = buffer_size;
     char* data = new char[buffer_size];
-    memcpy(data, all->audit_buffer->data(), buffer_size);
+    memcpy(data, all->output_runtime.audit_buffer->data(), buffer_size);
     return data;
   }
 

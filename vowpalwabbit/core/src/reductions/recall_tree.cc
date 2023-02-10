@@ -537,14 +537,15 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::recall_tree_setup(VW::setu
 
   init_tree(*tree.get());
 
-  if (!all.quiet)
+  if (!all.output_config.quiet)
   {
-    *(all.trace_message) << "recall_tree:"
-                         << " node_only = " << tree->node_only << " bern_hyper = " << tree->bern_hyper
-                         << " max_depth = " << tree->max_depth << " routing = "
-                         << (all.runtime_config.training ? (tree->randomized_routing ? "randomized" : "deterministic")
-                                                         : "n/a testonly")
-                         << std::endl;
+    *(all.output_runtime.trace_message) << "recall_tree:"
+                                        << " node_only = " << tree->node_only << " bern_hyper = " << tree->bern_hyper
+                                        << " max_depth = " << tree->max_depth << " routing = "
+                                        << (all.runtime_config.training
+                                                   ? (tree->randomized_routing ? "randomized" : "deterministic")
+                                                   : "n/a testonly")
+                                        << std::endl;
   }
 
   size_t ws = tree->max_routers + tree->k;

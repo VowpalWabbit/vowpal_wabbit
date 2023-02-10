@@ -369,7 +369,7 @@ inline void audit_feature(audit_results& dat, const float ft_weight, const uint6
     tempstream << VW::to_string(dat.components[i]);
   }
 
-  if (dat.all.audit)
+  if (dat.all.output_config.audit)
   {
     tempstream << ':' << (index >> stride_shift) << ':' << ft_weight << ':'
                << VW::trunc_weight(weights[index], static_cast<float>(dat.all.sd->gravity)) *
@@ -384,16 +384,16 @@ inline void audit_feature(audit_results& dat, const float ft_weight, const uint6
     dat.results.push_back(sv);
   }
 
-  if ((dat.all.pc.current_pass == 0 || dat.all.runtime_config.training == false) && dat.all.hash_inv)
+  if ((dat.all.pc.current_pass == 0 || dat.all.runtime_config.training == false) && dat.all.output_config.hash_inv)
   {
     const auto strided_index = index >> stride_shift;
-    if (dat.all.index_name_map.count(strided_index) == 0)
+    if (dat.all.output_runtime.index_name_map.count(strided_index) == 0)
     {
       VW::details::invert_hash_info info;
       info.weight_components = dat.components;
       info.offset = dat.offset;
       info.stride_shift = stride_shift;
-      dat.all.index_name_map.insert(std::make_pair(strided_index, info));
+      dat.all.output_runtime.index_name_map.insert(std::make_pair(strided_index, info));
     }
   }
 }
@@ -445,21 +445,24 @@ void VW::details::print_features(VW::workspace& all, VW::example& ec)
         all, ec, dat, num_interacted_features);
 
     stable_sort(dat.results.begin(), dat.results.end());
-    if (all.audit)
+    if (all.output_config.audit)
     {
       for (string_value& sv : dat.results)
       {
-        all.audit_writer->write("\t", 1);
-        all.audit_writer->write(sv.s.data(), sv.s.size());
+        all.output_runtime.audit_writer->write("\t", 1);
+        all.output_runtime.audit_writer->write(sv.s.data(), sv.s.size());
       }
-      all.audit_writer->write("\n", 1);
+      all.output_runtime.audit_writer->write("\n", 1);
     }
   }
 }
 
 void VW::details::print_audit_features(VW::workspace& all, VW::example& ec)
 {
-  if (all.audit) { VW::details::print_result_by_ref(all.audit_writer.get(), ec.pred.scalar, -1, ec.tag, all.logger); }
+  if (all.output_config.audit)
+  {
+    VW::details::print_result_by_ref(all.output_runtime.audit_writer.get(), ec.pred.scalar, -1, ec.tag, all.logger);
+  }
   fflush(stdout);
   print_features(all, ec);
 }
@@ -877,7 +880,7 @@ void save_load_regressor(VW::workspace& all, VW::io_buf& model_file, bool read, 
 {
   size_t brw = 1;
 
-  if (all.print_invert)  // write readable model with feature names
+  if (all.output_config.print_invert)  // write readable model with feature names
   {
     std::stringstream msg;
 
@@ -888,8 +891,8 @@ void save_load_regressor(VW::workspace& all, VW::io_buf& model_file, bool read, 
       {
         const auto weight_index = it.index() >> weights.stride_shift();
 
-        const auto map_it = all.index_name_map.find(weight_index);
-        if (map_it != all.index_name_map.end())
+        const auto map_it = all.output_runtime.index_name_map.find(weight_index);
+        if (map_it != all.output_runtime.index_name_map.end())
         {
           msg << to_string(map_it->second);
           VW::details::bin_text_write_fixed(model_file, nullptr /*unused*/, 0 /*unused*/, msg, true);
@@ -1000,7 +1003,7 @@ void save_load_online_state_weights(VW::workspace& all, VW::io_buf& model_file, 
   }
   else
   {  // write binary or text
-    if (all.hexfloat_weights && (text || all.print_invert)) { msg << std::hexfloat; }
+    if (all.output_config.hexfloat_weights && (text || all.output_config.print_invert)) { msg << std::hexfloat; }
 
     for (typename T::iterator v = weights.begin(); v != weights.end(); ++v)
     {
@@ -1011,12 +1014,12 @@ void save_load_online_state_weights(VW::workspace& all, VW::io_buf& model_file, 
       bool ftrl6_write = ftrl_size == 6 &&
           (*v != 0.f || (&(*v))[1] != 0.f || (&(*v))[2] != 0.f || (&(*v))[3] != 0.f || (&(*v))[4] != 0.f ||
               (&(*v))[5] != 0.f);
-      if (all.print_invert)  // write readable model with feature names
+      if (all.output_config.print_invert)  // write readable model with feature names
       {
         if (gd_write || ftrl3_write || ftrl4_write || ftrl6_write)
         {
-          const auto map_it = all.index_name_map.find(i);
-          if (map_it != all.index_name_map.end()) { msg << to_string(map_it->second) << ":"; }
+          const auto map_it = all.output_runtime.index_name_map.find(i);
+          if (map_it != all.output_runtime.index_name_map.end()) { msg << to_string(map_it->second) << ":"; }
         }
       }
 
@@ -1474,7 +1477,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i&
 
   if (all.lc.reg_mode % 2)
   {
-    if (all.audit || all.hash_inv)
+    if (all.output_config.audit || all.output_config.hash_inv)
     {
       g->predict = ::predict<true, true>;
       g->multipredict = ::multipredict<true, true>;
@@ -1485,7 +1488,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i&
       g->multipredict = ::multipredict<true, false>;
     }
   }
-  else if (all.audit || all.hash_inv)
+  else if (all.output_config.audit || all.output_config.hash_inv)
   {
     g->predict = ::predict<false, true>;
     g->multipredict = ::multipredict<false, true>;

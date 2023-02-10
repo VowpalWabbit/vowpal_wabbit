@@ -555,12 +555,12 @@ void output_example_prediction_cbify_ldf(
     if (VW::example_is_newline(ec)) { continue; }
     if (VW::is_cs_example_header(ec)) { continue; }
 
-    for (const auto& sink : all.final_prediction_sink)
+    for (const auto& sink : all.output_runtime.final_prediction_sink)
     {
       all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag, logger);
     }
 
-    if (all.raw_prediction != nullptr)
+    if (all.output_runtime.raw_prediction != nullptr)
     {
       std::string output_string;
       std::stringstream output_string_stream(output_string);
@@ -569,15 +569,15 @@ void output_example_prediction_cbify_ldf(
         if (i > 0) { output_string_stream << ' '; }
         output_string_stream << costs[i].class_index << ':' << costs[i].partial_prediction;
       }
-      all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
+      all.print_text_by_ref(all.output_runtime.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
     }
   }
 
   // To output a newline.
-  if (all.raw_prediction != nullptr)
+  if (all.output_runtime.raw_prediction != nullptr)
   {
     VW::v_array<char> empty;
-    all.print_text_by_ref(all.raw_prediction.get(), "", empty, all.logger);
+    all.print_text_by_ref(all.output_runtime.raw_prediction.get(), "", empty, all.logger);
   }
 }
 
@@ -632,7 +632,7 @@ void output_example_prediction_cbify_reg_continuous(
     strm << "ERR Too many costs found. Expecting one." << std::endl;
   }
   const std::string str = strm.str();
-  for (auto& f : all.final_prediction_sink) { f->write(str.c_str(), str.size()); }
+  for (auto& f : all.output_runtime.final_prediction_sink) { f->write(str.c_str(), str.size()); }
 }
 
 void update_stats_cbify_reg_discrete(const VW::workspace& /* all */, VW::shared_data& sd, const cbify& data,

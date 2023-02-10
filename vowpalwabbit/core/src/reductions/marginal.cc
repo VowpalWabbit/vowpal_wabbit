@@ -127,7 +127,7 @@ void make_marginal(data& sm, VW::example& ec)
             expert e = {0, 0, 1.};
             sm.expert_state.insert(std::make_pair(key, std::make_pair(e, e)));
           }
-          if (sm.m_all->hash_inv)
+          if (sm.m_all->output_config.hash_inv)
           {
             std::ostringstream ss;
             std::vector<VW::audit_strings>& sn = sm.temp[n].space_names;
@@ -300,7 +300,7 @@ void save_load(data& sm, VW::io_buf& io, bool read, bool text)
     if (!read)
     {
       index = iter->first >> stride_shift;
-      if (sm.m_all->hash_inv) { msg << sm.inverse_hashes[iter->first]; }
+      if (sm.m_all->output_config.hash_inv) { msg << sm.inverse_hashes[iter->first]; }
       else { msg << index; }
       msg << ":";
     }

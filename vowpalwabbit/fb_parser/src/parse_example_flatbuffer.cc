@@ -200,7 +200,7 @@ void parser::parse_namespaces(VW::workspace* all, example* ae, const Namespace* 
   if (hash_found) { fs.start_ns_extent(hash); }
   for (const auto& feature : *(ns->features()))
   {
-    parse_features(all, fs, feature, (all->audit || all->hash_inv) ? ns->name() : nullptr);
+    parse_features(all, fs, feature, (all->output_config.audit || all->output_config.hash_inv) ? ns->name() : nullptr);
   }
   if (hash_found) { fs.end_ns_extent(); }
 }
@@ -212,7 +212,7 @@ void parser::parse_features(VW::workspace* all, features& fs, const Feature* fea
     uint64_t word_hash =
         all->parser_runtime.example_parser->hasher(feature->name()->c_str(), feature->name()->size(), _c_hash);
     fs.push_back(feature->value(), word_hash);
-    if ((all->audit || all->hash_inv) && ns != nullptr)
+    if ((all->output_config.audit || all->output_config.hash_inv) && ns != nullptr)
     {
       fs.space_names.push_back(audit_strings(ns->c_str(), feature->name()->c_str()));
     }

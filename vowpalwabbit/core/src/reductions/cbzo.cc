@@ -161,9 +161,9 @@ void set_minmax(VW::shared_data* sd, float label, bool min_fixed, bool max_fixed
 
 void print_audit_features(VW::workspace& all, VW::example& ec)
 {
-  if (all.audit)
+  if (all.output_config.audit)
   {
-    all.print_text_by_ref(all.stdout_adapter.get(),
+    all.print_text_by_ref(all.output_runtime.stdout_adapter.get(),
         VW::to_string(ec.pred.pdf, std::numeric_limits<float>::max_digits10), ec.tag, all.logger);
   }
 
@@ -261,16 +261,19 @@ void output_example_prediction_cbzo(
     VW::workspace& all, const cbzo& /* data */, const VW::example& ec, VW::io::logger& logger)
 {
   auto pred_repr = VW::to_string(ec.pred.pdf, std::numeric_limits<float>::max_digits10);
-  for (auto& sink : all.final_prediction_sink) { all.print_text_by_ref(sink.get(), pred_repr, ec.tag, logger); }
+  for (auto& sink : all.output_runtime.final_prediction_sink)
+  {
+    all.print_text_by_ref(sink.get(), pred_repr, ec.tag, logger);
+  }
 }
 
 void print_update_cbzo(VW::workspace& all, VW::shared_data& sd, const cbzo& /* data */, const VW::example& ec,
     VW::io::logger& /* unused */)
 {
-  if (sd.weighted_examples() >= sd.dump_interval && !all.quiet)
+  if (sd.weighted_examples() >= sd.dump_interval && !all.output_config.quiet)
   {
     const auto& costs = ec.l.cb_cont.costs;
-    sd.print_update(*all.trace_message, all.pc.holdout_set_off, all.pc.current_pass,
+    sd.print_update(*all.output_runtime.trace_message, all.pc.holdout_set_off, all.pc.current_pass,
         ec.test_only ? "unknown" : VW::to_string(costs[0]),
         VW::to_string(ec.pred.pdf, VW::details::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION), ec.get_num_features());
   }
@@ -282,20 +285,20 @@ void (*get_learn(VW::workspace& all, uint8_t policy, bool feature_mask_off))(cbz
   {
     if (feature_mask_off)
     {
-      if (all.audit || all.hash_inv) { return learn<CONSTANT_POLICY, true, true>; }
+      if (all.output_config.audit || all.output_config.hash_inv) { return learn<CONSTANT_POLICY, true, true>; }
       else { return learn<CONSTANT_POLICY, true, false>; }
     }
-    else if (all.audit || all.hash_inv) { return learn<CONSTANT_POLICY, false, true>; }
+    else if (all.output_config.audit || all.output_config.hash_inv) { return learn<CONSTANT_POLICY, false, true>; }
     else { return learn<CONSTANT_POLICY, false, false>; }
   }
   else if (policy == LINEAR_POLICY)
   {
     if (feature_mask_off)
     {
-      if (all.audit || all.hash_inv) { return learn<LINEAR_POLICY, true, true>; }
+      if (all.output_config.audit || all.output_config.hash_inv) { return learn<LINEAR_POLICY, true, true>; }
       else { return learn<LINEAR_POLICY, true, false>; }
     }
-    else if (all.audit || all.hash_inv) { return learn<LINEAR_POLICY, false, true>; }
+    else if (all.output_config.audit || all.output_config.hash_inv) { return learn<LINEAR_POLICY, false, true>; }
     else { return learn<LINEAR_POLICY, false, false>; }
   }
   else
@@ -306,12 +309,12 @@ void (*get_predict(VW::workspace& all, uint8_t policy))(cbzo&, VW::example&)
 {
   if (policy == CONSTANT_POLICY)
   {
-    if (all.audit || all.hash_inv) { return predict<CONSTANT_POLICY, true>; }
+    if (all.output_config.audit || all.output_config.hash_inv) { return predict<CONSTANT_POLICY, true>; }
     else { return predict<CONSTANT_POLICY, false>; }
   }
   else if (policy == LINEAR_POLICY)
   {
-    if (all.audit || all.hash_inv) { return predict<LINEAR_POLICY, true>; }
+    if (all.output_config.audit || all.output_config.hash_inv) { return predict<LINEAR_POLICY, true>; }
     else { return predict<LINEAR_POLICY, false>; }
   }
   else
