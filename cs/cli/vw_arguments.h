@@ -36,18 +36,17 @@ private:
   float m_power_t;
 
   internal : VowpalWabbitArguments(VW::workspace* vw)
-      : m_data(gcnew String(vw->data_filename.c_str()))
+      : m_data(gcnew String(vw->parser_runtime.data_filename.c_str()))
       , m_finalRegressor(gcnew String(vw->om.final_regressor_name.c_str()))
-      , m_testonly(!vw->training)
-      , m_passes((int)vw->numpasses)
+      , m_testonly(!vw->runtime_config.training)
+      , m_passes((int)vw->runtime_config.numpasses)
   {
     auto options = vw->options.get();
 
-    if (vw->initial_regressors.size() > 0)
+    if (vw->iwc.initial_regressors.size() > 0)
     { m_regressors = gcnew List<String^>;
 
-      for (auto& r : vw->initial_regressors)
-        m_regressors->Add(gcnew String(r.c_str()));
+      for (auto& r : vw->iwc.initial_regressors) m_regressors->Add(gcnew String(r.c_str()));
     }
 
     VW::config::cli_options_serializer serializer;
@@ -66,8 +65,8 @@ private:
       m_numberOfActions = (int)options->get_typed_option<uint32_t>("cb").value();
     }
 
-    m_learning_rate = vw->eta;
-    m_power_t = vw->power_t;
+    m_learning_rate = vw->uc.eta;
+    m_power_t = vw->uc.power_t;
   }
 
 public:

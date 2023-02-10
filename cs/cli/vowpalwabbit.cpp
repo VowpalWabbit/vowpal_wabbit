@@ -32,16 +32,16 @@ VowpalWabbit::VowpalWabbit(VowpalWabbitSettings^ settings)
   }
 
   if (settings->ParallelOptions != nullptr)
-  { m_vw->selected_all_reduce_type = all_reduce_type::THREAD;
+  { m_vw->runtime_config.selected_all_reduce_type = all_reduce_type::THREAD;
     auto total = settings->ParallelOptions->MaxDegreeOfParallelism;
 
     if (settings->Root == nullptr)
-    { m_vw->all_reduce.reset(new all_reduce_threads(total, settings->Node));
+    { m_vw->runtime_state.all_reduce.reset(new all_reduce_threads(total, settings->Node));
     }
     else
-    { auto parent_all_reduce = (all_reduce_threads*)settings->Root->m_vw->all_reduce.get();
+    { auto parent_all_reduce = (all_reduce_threads*)settings->Root->m_vw->runtime_state.all_reduce.get();
 
-      m_vw->all_reduce.reset(new all_reduce_threads(parent_all_reduce, total, settings->Node));
+      m_vw->runtime_state.all_reduce.reset(new all_reduce_threads(parent_all_reduce, total, settings->Node));
     }
   }
 
@@ -64,9 +64,9 @@ void VowpalWabbit::Driver()
 }
 
 void VowpalWabbit::RunMultiPass()
-{ if (m_vw->numpasses > 1)
+{ if (m_vw->runtime_config.numpasses > 1)
   { try
-    { m_vw->do_reset_source = true;
+    { m_vw->runtime_state.do_reset_source = true;
       VW::start_parser(*m_vw);
       LEARNER::generic_driver(*m_vw);
       VW::end_parser(*m_vw);
@@ -100,7 +100,7 @@ VowpalWabbitPerformanceStatistics^ VowpalWabbit::PerformanceStatistics::get()
 	  stats->AverageLoss = m_vw->sd->holdout_best_loss;
 
   float best_constant; float best_constant_loss;
-  if (get_best_constant(*m_vw->loss, *m_vw->sd, best_constant, best_constant_loss))
+  if (get_best_constant(*m_vw->lc.loss, *m_vw->sd, best_constant, best_constant_loss))
   { stats->BestConstant = best_constant;
     if (best_constant_loss != FLT_MIN)
     { stats->BestConstantLoss = best_constant_loss;
@@ -124,7 +124,7 @@ uint64_t VowpalWabbit::HashSpace(String^ s)
 }
 
 uint64_t VowpalWabbit::HashFeature(String^ s, size_t u)
-{ auto newHash = m_hasher(s, u) & m_vw->parse_mask;
+{ auto newHash = m_hasher(s, u) & m_vw->runtime_state.parse_mask;
 
 #ifdef _DEBUG
   auto oldHash = HashFeatureNative(s, u);
@@ -833,9 +833,9 @@ void VowpalWabbit::ReturnExampleToPool(VowpalWabbitExample^ ex)
 }
 
 cli::array<List<VowpalWabbitFeature^>^>^ VowpalWabbit::GetTopicAllocation(int top)
-{ uint64_t length = (uint64_t)1 << m_vw->num_bits;
+{ uint64_t length = (uint64_t)1 << m_vw->iwc.num_bits;
   // using jagged array to enable LINQ
-  auto K = (int)m_vw->lda;
+  auto K = (int)m_vw->reduction_state.lda;
   auto allocation = gcnew cli::array<List<VowpalWabbitFeature^>^>(K);
 
   // TODO: better way of peaking into lda?
@@ -858,10 +858,10 @@ cli::array<List<VowpalWabbitFeature^>^>^ VowpalWabbit::GetTopicAllocation(int to
 template<typename T>
 cli::array<cli::array<float>^>^ VowpalWabbit::FillTopicAllocation(T& weights)
 {
-	uint64_t length = (uint64_t)1 << m_vw->num_bits;
+	uint64_t length = (uint64_t)1 << m_vw->iwc.num_bits;
 
 	// using jagged array to enable LINQ
-	auto K = (int)m_vw->lda;
+	auto K = (int)m_vw->reduction_state.lda;
 	auto allocation = gcnew cli::array<cli::array<float>^>(K);
 	for (int k = 0; k < K; k++)
 		allocation[k] = gcnew cli::array<float>((int)length);

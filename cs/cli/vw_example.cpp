@@ -389,7 +389,7 @@ uint64_t VowpalWabbitFeature::WeightIndex::get()
     throw gcnew InvalidOperationException("VowpalWabbitFeature must be initialized with example");
 
   VW::workspace* vw = m_example->Owner->Native->m_vw;
-  return ((m_weight_index + m_example->m_example->ft_offset) >> vw->weights.stride_shift()) & vw->parse_mask;
+  return ((m_weight_index + m_example->m_example->ft_offset) >> vw->weights.stride_shift()) & vw->runtime_state.parse_mask;
 }
 
 float VowpalWabbitFeature::Weight::get()

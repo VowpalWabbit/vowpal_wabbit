@@ -29,7 +29,7 @@ std::shared_ptr<std::vector<char>> get_cache_buffer(const std::string& es)
 
   VW::parsers::cache::details::cache_temp_buffer temp_buf;
   VW::parsers::cache::write_example_to_cache(vw->parser_runtime.example_parser->output, ae,
-      vw->parser_runtime.example_parser->lbl_parser, vw->parse_mask, temp_buf);
+      vw->parser_runtime.example_parser->lbl_parser, vw->runtime_state.parse_mask, temp_buf);
   vw->parser_runtime.example_parser->output.flush();
   VW::finish_example(*vw, *ae);
 

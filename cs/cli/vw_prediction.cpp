@@ -155,8 +155,8 @@ cli::array<float>^ VowpalWabbitTopicPredictionFactory::Create(VW::workspace* vw,
 { if (ex == nullptr)
     throw gcnew ArgumentNullException("ex");
 
-  auto values = gcnew cli::array<float>(vw->lda);
-  Marshal::Copy(IntPtr(ex->pred.scalars.begin()), values, 0, vw->lda);
+  auto values = gcnew cli::array<float>(vw->reduction_state.lda);
+  Marshal::Copy(IntPtr(ex->pred.scalars.begin()), values, 0, vw->reduction_state.lda);
 
   return values;
 }

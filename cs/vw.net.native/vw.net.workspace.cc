@@ -103,7 +103,7 @@ API vw_net_native::ERROR_CODE WorkspaceReload(vw_net_native::workspace_context* 
   try
   {
     std::string arguments_str(arguments, arguments_size);
-    VW::details::reset_source(*workspace->vw, workspace->vw->num_bits);
+    VW::details::reset_source(*workspace->vw, workspace->vw->iwc.num_bits);
 
     auto buffer = std::make_shared<std::vector<char>>();
     {
@@ -181,7 +181,7 @@ API void WorkspaceGetPerformanceStatistics(
 
   float best_constant;
   float best_constant_loss;
-  if (get_best_constant(*workspace->vw->loss.get(), *workspace->vw->sd, best_constant, best_constant_loss))
+  if (get_best_constant(*workspace->vw->lc.loss.get(), *workspace->vw->sd, best_constant, best_constant_loss))
   {
     statistics->best_constant = best_constant;
     if (best_constant_loss != FLT_MIN) { statistics->best_constant_loss = best_constant_loss; }
@@ -205,26 +205,26 @@ API size_t WorkspaceHashFeature(
 
 API void WorkspaceSetUpAllReduceThreadsRoot(vw_net_native::workspace_context* workspace, size_t total, size_t node)
 {
-  workspace->vw->selected_all_reduce_type = VW::all_reduce_type::THREAD;
-  workspace->vw->all_reduce.reset(new VW::all_reduce_threads(total, node));
+  workspace->vw->runtime_config.selected_all_reduce_type = VW::all_reduce_type::THREAD;
+  workspace->vw->runtime_state.all_reduce.reset(new VW::all_reduce_threads(total, node));
 }
 
 API void WorkspaceSetUpAllReduceThreadsNode(vw_net_native::workspace_context* workspace, size_t total, size_t node,
     vw_net_native::workspace_context* root_workspace)
 {
-  workspace->vw->selected_all_reduce_type = VW::all_reduce_type::THREAD;
-  workspace->vw->all_reduce.reset(
-      new VW::all_reduce_threads((VW::all_reduce_threads*)root_workspace->vw->all_reduce.get(), total, node));
+  workspace->vw->runtime_config.selected_all_reduce_type = VW::all_reduce_type::THREAD;
+  workspace->vw->runtime_state.all_reduce.reset(new VW::all_reduce_threads(
+      (VW::all_reduce_threads*)root_workspace->vw->runtime_state.all_reduce.get(), total, node));
 }
 
 API vw_net_native::ERROR_CODE WorkspaceRunMultiPass(
     vw_net_native::workspace_context* workspace, VW::experimental::api_status* status)
 {
-  if (workspace->vw->numpasses > 1)
+  if (workspace->vw->runtime_config.numpasses > 1)
   {
     try
     {
-      workspace->vw->do_reset_source = true;
+      workspace->vw->runtime_state.do_reset_source = true;
       VW::start_parser(*workspace->vw);
       VW::LEARNER::generic_driver(*workspace->vw);
       VW::end_parser(*workspace->vw);

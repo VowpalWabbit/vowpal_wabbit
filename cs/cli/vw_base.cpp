@@ -150,7 +150,7 @@ void VowpalWabbitBase::InternalDispose()
   try
   { if (m_vw != nullptr)
     {
-      VW::details::reset_source(*m_vw, m_vw->num_bits);
+      VW::details::reset_source(*m_vw, m_vw->iwc.num_bits);
 
       // make sure don't try to free m_vw twice in case VW::finish throws.
       VW::workspace* vw_tmp = m_vw;
@@ -187,7 +187,7 @@ void VowpalWabbitBase::Reload([System::Runtime::InteropServices::Optional] Strin
 
   try
   {
-    VW::details::reset_source(*m_vw, m_vw->num_bits);
+    VW::details::reset_source(*m_vw, m_vw->iwc.num_bits);
 
     auto buffer = std::make_shared<std::vector<char>>();
     {

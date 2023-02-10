@@ -232,7 +232,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_performRem
   {
     if (all->runtime_config.numpasses > 1)
     {
-      all->do_reset_source = true;
+      all->runtime_state.do_reset_source = true;
       VW::start_parser(*all);
       VW::LEARNER::generic_driver(*all);
       VW::end_parser(*all);
@@ -293,7 +293,8 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getArgu
   jmethodID ctor = env->GetMethodID(clazz, "<init>", "(IILjava/lang/String;DD)V");
   CHECK_JNI_EXCEPTION(nullptr);
 
-  return env->NewObject(clazz, ctor, all->num_bits, all->hash_seed, args, all->uc.eta, all->uc.power_t);
+  return env->NewObject(
+      clazz, ctor, all->iwc.num_bits, all->runtime_config.hash_seed, args, all->uc.eta, all->uc.power_t);
 }
 
 JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getOutputPredictionType(
@@ -358,8 +359,8 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_endPass(JN
     // note: this code duplication seems bound for trouble
     // from parse_dispatch_loop.h:26
     // from learner.cc:41
-    VW::details::reset_source(*all, all->num_bits);
-    all->do_reset_source = false;
+    VW::details::reset_source(*all, all->iwc.num_bits);
+    all->runtime_state.do_reset_source = false;
     all->runtime_state.passes_complete++;
 
     all->pc.current_pass++;
@@ -479,7 +480,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_addToName
     double* values0 = (double*)valuesGuard.data();
 
     int size = env->GetArrayLength(values);
-    int mask = (1 << all->num_bits) - 1;
+    int mask = (1 << all->iwc.num_bits) - 1;
 
     // pre-allocate
     features->values.reserve(features->values.capacity() + size);
@@ -521,7 +522,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_addToName
     double* values0 = (double*)valuesGuard.data();
 
     int size = env->GetArrayLength(indices);
-    int mask = (1 << all->num_bits) - 1;
+    int mask = (1 << all->iwc.num_bits) - 1;
 
     // pre-allocate
     features->values.reserve(features->values.capacity() + size);
