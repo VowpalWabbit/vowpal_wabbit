@@ -23,7 +23,7 @@ namespace flatbuffer
 {
 int flatbuffer_to_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& examples)
 {
-  return static_cast<int>(all->flat_converter->parse_examples(all, buf, examples));
+  return static_cast<int>(all->parser_runtime.flat_converter->parse_examples(all, buf, examples));
 }
 
 const VW::parsers::flatbuffer::ExampleRoot* parser::data() { return _data; }
@@ -176,7 +176,8 @@ bool get_namespace_hash(VW::workspace* all, const Namespace* ns, uint64_t& hash)
 {
   if (flatbuffers::IsFieldPresent(ns, Namespace::VT_NAME))
   {
-    hash = all->parser_runtime.example_parser->hasher(ns->name()->c_str(), ns->name()->size(), all->hash_seed);
+    hash = all->parser_runtime.example_parser->hasher(
+        ns->name()->c_str(), ns->name()->size(), all->runtime_config.hash_seed);
     return true;
   }
   else if (flatbuffers::IsFieldPresent(ns, Namespace::VT_FULL_HASH))

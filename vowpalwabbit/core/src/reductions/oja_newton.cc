@@ -74,7 +74,7 @@ public:
 
   void initialize_Z(VW::parameters& weights)  // NOLINT
   {
-    uint32_t length = 1 << all->num_bits;
+    uint32_t length = 1 << all->iwc.num_bits;
     if (normalize)  // initialize normalization part
     {
       for (uint32_t i = 0; i < length; i++) { (&(weights.strided_index(i)))[NORM2] = 0.1f; }
@@ -296,7 +296,7 @@ public:
 
     // second step: w[0] <- w[0] + (DZ)'b, b <- 0.
 
-    uint32_t length = 1 << all->num_bits;
+    uint32_t length = 1 << all->iwc.num_bits;
     for (uint32_t i = 0; i < length; i++)
     {
       VW::weight& w = all->weights.strided_index(i);

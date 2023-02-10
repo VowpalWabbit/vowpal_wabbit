@@ -295,7 +295,7 @@ inline uint64_t hash_space_cstr(VW::workspace& all, const char* fstr)
 // Then use it as the seed for hashing features.
 inline uint64_t hash_feature(VW::workspace& all, const std::string& s, uint64_t u)
 {
-  return all.parser_runtime.example_parser->hasher(s.data(), s.length(), u) & all.parse_mask;
+  return all.parser_runtime.example_parser->hasher(s.data(), s.length(), u) & all.runtime_state.parse_mask;
 }
 inline uint64_t hash_feature_static(const std::string& s, uint64_t u, const std::string& h, uint32_t num_bits)
 {
@@ -305,7 +305,7 @@ inline uint64_t hash_feature_static(const std::string& s, uint64_t u, const std:
 
 inline uint64_t hash_feature_cstr(VW::workspace& all, const char* fstr, uint64_t u)
 {
-  return all.parser_runtime.example_parser->hasher(fstr, strlen(fstr), u) & all.parse_mask;
+  return all.parser_runtime.example_parser->hasher(fstr, strlen(fstr), u) & all.runtime_state.parse_mask;
 }
 
 inline uint64_t chain_hash(VW::workspace& all, const std::string& name, const std::string& value, uint64_t u)
@@ -313,7 +313,7 @@ inline uint64_t chain_hash(VW::workspace& all, const std::string& name, const st
   // chain hash is hash(feature_value, hash(feature_name, namespace_hash)) & parse_mask
   return all.parser_runtime.example_parser->hasher(
              value.data(), value.length(), all.parser_runtime.example_parser->hasher(name.data(), name.length(), u)) &
-      all.parse_mask;
+      all.runtime_state.parse_mask;
 }
 
 inline uint64_t chain_hash_static(

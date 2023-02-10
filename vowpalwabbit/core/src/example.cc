@@ -132,7 +132,7 @@ flat_example* flatten_example(VW::workspace& all, example* ec)
 flat_example* flatten_sort_example(VW::workspace& all, example* ec)
 {
   flat_example* fec = flatten_example(all, ec);
-  fec->fs.sort(all.parse_mask);
+  fec->fs.sort(all.runtime_state.parse_mask);
   fec->total_sum_feat_sq = collision_cleanup(fec->fs);
   return fec;
 }

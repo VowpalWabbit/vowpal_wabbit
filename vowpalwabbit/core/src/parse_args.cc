@@ -663,12 +663,12 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
 
   if (options.was_supplied("bit_precision"))
   {
-    if (all.runtime_config.default_bits == false && new_bits != all.num_bits)
-      THROW("Number of bits is set to " << new_bits << " and " << all.num_bits
+    if (all.runtime_config.default_bits == false && new_bits != all.iwc.num_bits)
+      THROW("Number of bits is set to " << new_bits << " and " << all.iwc.num_bits
                                         << " by argument and model.  That does not work.")
 
     all.runtime_config.default_bits = false;
-    all.num_bits = new_bits;
+    all.iwc.num_bits = new_bits;
 
     VW::validate_num_bits(all);
   }

@@ -765,7 +765,7 @@ public:
 void save_load(lda& l, VW::io_buf& model_file, bool read, bool text)
 {
   VW::workspace& all = *(l.all);
-  uint64_t length = static_cast<uint64_t>(1) << all.num_bits;
+  uint64_t length = static_cast<uint64_t>(1) << all.iwc.num_bits;
   if (read)
   {
     VW::details::initialize_regressor(all);
@@ -1039,7 +1039,7 @@ public:
 template <class T>
 void get_top_weights(VW::workspace* all, int top_words_count, int topic, std::vector<VW::feature>& output, T& weights)
 {
-  uint64_t length = static_cast<uint64_t>(1) << all->num_bits;
+  uint64_t length = static_cast<uint64_t>(1) << all->iwc.num_bits;
 
   // get top features for this topic
   auto cmp = [](VW::feature left, VW::feature right) { return left.x > right.x; };
@@ -1073,7 +1073,7 @@ void get_top_weights(VW::workspace* all, int top_words_count, int topic, std::ve
 template <class T>
 void compute_coherence_metrics(lda& l, T& weights)
 {
-  uint64_t length = static_cast<uint64_t>(1) << l.all->num_bits;
+  uint64_t length = static_cast<uint64_t>(1) << l.all->iwc.num_bits;
 
   std::vector<std::vector<feature_pair>> topics_word_pairs;
   topics_word_pairs.resize(l.topics);
@@ -1333,8 +1333,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::lda_setup(VW::setup_base_i
   ld->example_t = all.uc.initial_t;
   if (ld->compute_coherence_metrics)
   {
-    ld->feature_counts.resize(static_cast<uint32_t>(VW::details::UINT64_ONE << all.num_bits));
-    ld->feature_to_example_map.resize(static_cast<uint32_t>(VW::details::UINT64_ONE << all.num_bits));
+    ld->feature_counts.resize(static_cast<uint32_t>(VW::details::UINT64_ONE << all.iwc.num_bits));
+    ld->feature_to_example_map.resize(static_cast<uint32_t>(VW::details::UINT64_ONE << all.iwc.num_bits));
   }
 
   float temp = ceilf(logf(static_cast<float>(all.reduction_state.lda * 2 + 1)) / logf(2.f));

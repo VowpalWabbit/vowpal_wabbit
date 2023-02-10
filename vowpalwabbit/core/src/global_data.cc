@@ -322,7 +322,7 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   reduction_state.bfgs = false;
   lc.no_bias = false;
   reduction_state.active = false;
-  num_bits = 18;
+  iwc.num_bits = 18;
   runtime_config.default_bits = true;
   runtime_config.daemon = false;
   om.save_resume = true;

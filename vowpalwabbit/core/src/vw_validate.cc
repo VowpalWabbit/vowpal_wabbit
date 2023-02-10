@@ -27,13 +27,13 @@ void validate_min_max_label(VW::workspace& all)
 
 void validate_default_bits(VW::workspace& all, uint32_t local_num_bits)
 {
-  if (all.runtime_config.default_bits != true && all.num_bits != local_num_bits)
-    THROW("-b bits mismatch: command-line " << all.num_bits << " != " << local_num_bits << " stored in model");
+  if (all.runtime_config.default_bits != true && all.iwc.num_bits != local_num_bits)
+    THROW("-b bits mismatch: command-line " << all.iwc.num_bits << " != " << local_num_bits << " stored in model");
 }
 
 void validate_num_bits(VW::workspace& all)
 {
-  if (all.num_bits > sizeof(size_t) * 8 - 3)
+  if (all.iwc.num_bits > sizeof(size_t) * 8 - 3)
     THROW("Only " << sizeof(size_t) * 8 - 3 << " or fewer bits allowed.  If this is a serious limit, speak up.");
 }
 }  // namespace VW

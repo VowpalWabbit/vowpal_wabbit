@@ -261,7 +261,7 @@ void save_load_svm_model(svm_params& params, VW::io_buf& model_file, bool read, 
     else
     {
       VW::model_utils::write_model_field(model_file, model->support_vec[i]->ex, "_flat_example", false,
-          params.all->parser_runtime.example_parser->lbl_parser, params.all->parse_mask);
+          params.all->parser_runtime.example_parser->lbl_parser, params.all->runtime_state.parse_mask);
     }
   }
 
@@ -510,7 +510,7 @@ void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
 
     fec = &(params.pool[i]->ex);
     VW::model_utils::write_model_field(
-        *b, *fec, "_flat_example", false, all.parser_runtime.example_parser->lbl_parser, all.parse_mask);
+        *b, *fec, "_flat_example", false, all.parser_runtime.example_parser->lbl_parser, all.runtime_state.parse_mask);
     delete params.pool[i];
   }
 

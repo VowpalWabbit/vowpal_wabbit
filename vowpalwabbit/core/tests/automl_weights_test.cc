@@ -31,7 +31,7 @@ namespace vw_hash_helpers
 size_t get_hash_for_feature(VW::workspace& all, const std::string& ns, const std::string& feature)
 {
   std::uint64_t hash_ft = VW::hash_feature(all, feature, VW::hash_space(all, ns));
-  std::uint64_t ft = hash_ft & all.parse_mask;
+  std::uint64_t ft = hash_ft & all.runtime_state.parse_mask;
   // apply multiplier like setup_example
   ft *= (static_cast<uint64_t>(all.reduction_state.wpp) << all.weights.stride_shift());
 

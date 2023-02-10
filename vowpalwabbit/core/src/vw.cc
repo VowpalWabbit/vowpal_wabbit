@@ -68,7 +68,7 @@ std::unique_ptr<VW::workspace> initialize_internal(
 
   if (!all->output_config.quiet)
   {
-    *(all->output_runtime.trace_message) << "Num weight bits = " << all->num_bits << std::endl;
+    *(all->output_runtime.trace_message) << "Num weight bits = " << all->iwc.num_bits << std::endl;
     *(all->output_runtime.trace_message) << "learning rate = " << all->uc.eta << std::endl;
     *(all->output_runtime.trace_message) << "initial_t = " << all->sd->t << std::endl;
     *(all->output_runtime.trace_message) << "power_t = " << all->uc.power_t << std::endl;
@@ -493,7 +493,7 @@ const char* VW::are_features_compatible(const VW::workspace& vw1, const VW::work
 
   if (!std::equal(vw1.fc.limit.begin(), vw1.fc.limit.end(), vw2.fc.limit.begin())) { return "limit"; }
 
-  if (vw1.num_bits != vw2.num_bits) { return "num_bits"; }
+  if (vw1.iwc.num_bits != vw2.iwc.num_bits) { return "num_bits"; }
 
   if (vw1.fc.permutations != vw2.fc.permutations) { return "permutations"; }
 
@@ -669,7 +669,7 @@ void feature_limit(VW::workspace& all, VW::example* ex)
     if (all.fc.limit[index] < ex->feature_space[index].size())
     {
       auto& fs = ex->feature_space[index];
-      fs.sort(all.parse_mask);
+      fs.sort(all.runtime_state.parse_mask);
       VW::unique_features(fs, all.fc.limit[index]);
     }
   }
@@ -680,12 +680,15 @@ void feature_limit(VW::workspace& all, VW::example* ex)
 void VW::setup_example(VW::workspace& all, VW::example* ae)
 {
   assert(ae != nullptr);
-  if (all.parser_runtime.example_parser->sort_features && !ae->sorted) { unique_sort_features(all.parse_mask, *ae); }
+  if (all.parser_runtime.example_parser->sort_features && !ae->sorted)
+  {
+    unique_sort_features(all.runtime_state.parse_mask, *ae);
+  }
 
   if (all.parser_runtime.example_parser->write_cache)
   {
     VW::parsers::cache::write_example_to_cache(all.parser_runtime.example_parser->output, ae,
-        all.parser_runtime.example_parser->lbl_parser, all.parse_mask,
+        all.parser_runtime.example_parser->lbl_parser, all.runtime_state.parse_mask,
         all.parser_runtime.example_parser->cache_temp_buffer_obj);
   }
 

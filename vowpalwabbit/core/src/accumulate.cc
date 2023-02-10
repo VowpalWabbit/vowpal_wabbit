@@ -21,7 +21,7 @@ static void add_float(float& c1, const float& c2) { c1 += c2; }
 
 void VW::details::accumulate(VW::workspace& all, parameters& weights, size_t offset)
 {
-  uint64_t length = UINT64_ONE << all.num_bits;  // This is size of gradient
+  uint64_t length = UINT64_ONE << all.iwc.num_bits;  // This is size of gradient
   float* local_grad = new float[length];
 
   if (weights.sparse)
@@ -68,7 +68,7 @@ float VW::details::accumulate_scalar(VW::workspace& all, float local_sum)
 
 void VW::details::accumulate_avg(VW::workspace& all, parameters& weights, size_t offset)
 {
-  uint32_t length = 1 << all.num_bits;  // This is size of gradient
+  uint32_t length = 1 << all.iwc.num_bits;  // This is size of gradient
   float numnodes = static_cast<float>(all.runtime_state.all_reduce->total);
   float* local_grad = new float[length];
 
@@ -115,7 +115,7 @@ void VW::details::accumulate_weighted_avg(VW::workspace& all, parameters& weight
     return;
   }
 
-  uint32_t length = 1 << all.num_bits;  // This is the number of parameters
+  uint32_t length = 1 << all.iwc.num_bits;  // This is the number of parameters
   float* local_weights = new float[length];
 
   if (weights.sparse)

@@ -170,6 +170,7 @@ public:
 class initial_weights_config
 {
 public:
+  uint32_t num_bits;      // log_2 of the number of features.
   size_t normalized_idx;  // offset idx where the norm is stored (1 or 2 depending on whether adaptive is true)
   std::vector<std::string> initial_regressors;
   float initial_weight;
@@ -236,6 +237,7 @@ public:
   bool do_reset_source;
   std::unique_ptr<all_reduce_base> all_reduce;
   VW::details::generate_interactions_object_cache generate_interactions_object_cache_state;
+  uint64_t parse_mask;  // 1 << num_bits -1
 };
 
 class parser_runtime
@@ -338,9 +340,7 @@ public:
   std::string id;
   std::string feature_mask;
 
-  uint32_t num_bits;    // log_2 of the number of features.
-  uint64_t parse_mask;  // 1 << num_bits -1
-  size_t length() { return (static_cast<size_t>(1)) << num_bits; };
+  size_t length() { return (static_cast<size_t>(1)) << iwc.num_bits; };
 
   void (*print_by_ref)(VW::io::writer*, float, float, const v_array<char>&, VW::io::logger&);
   void (*print_text_by_ref)(VW::io::writer*, const std::string&, const v_array<char>&, VW::io::logger&);

@@ -557,7 +557,7 @@ void finalize_preconditioner(VW::workspace& all, bfgs& b, float regularization)
 template <class T>
 void preconditioner_to_regularizer(VW::workspace& all, bfgs& b, float regularization, T& weights)
 {
-  uint32_t length = 1 << all.num_bits;
+  uint32_t length = 1 << all.iwc.num_bits;
 
   if (b.regularizers == nullptr)
   {
@@ -1003,7 +1003,7 @@ void learn(bfgs& b, VW::example& ec)
 
 void save_load_regularizer(VW::workspace& all, bfgs& b, VW::io_buf& model_file, bool read, bool text)
 {
-  uint32_t length = 2 * (1 << all.num_bits);
+  uint32_t length = 2 * (1 << all.iwc.num_bits);
   uint32_t i = 0;
   size_t brw = 1;
 
@@ -1045,7 +1045,7 @@ void save_load(bfgs& b, VW::io_buf& model_file, bool read, bool text)
 {
   VW::workspace* all = b.all;
 
-  uint32_t length = 1 << all->num_bits;
+  uint32_t length = 1 << all->iwc.num_bits;
 
   if (read)
   {

@@ -115,8 +115,8 @@ void send_example(sender& s, VW::example& ec)
   }
 
   if (s.all->set_minmax) { s.all->set_minmax(ec.l.simple.label); }
-  VW::parsers::cache::write_example_to_cache(
-      s.socket_output_buffer, &ec, s.all->parser_runtime.example_parser->lbl_parser, s.all->parse_mask, s.cache_buffer);
+  VW::parsers::cache::write_example_to_cache(s.socket_output_buffer, &ec,
+      s.all->parser_runtime.example_parser->lbl_parser, s.all->runtime_state.parse_mask, s.cache_buffer);
   s.socket_output_buffer.flush();
   s.delay_ring[s.sent_index++ % s.all->parser_runtime.example_parser->example_queue_limit] =
       sent_example_info{ec.l.simple, ec.weight, ec.test_only, ec.get_num_features(), ec.tag};

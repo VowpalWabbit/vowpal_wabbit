@@ -330,14 +330,14 @@ private:
       word_hash =
           (_all->parser_runtime.example_parser->hasher(string_feature_value.data(), string_feature_value.length(),
                _all->parser_runtime.example_parser->hasher(feature_name.data(), feature_name.length(), _channel_hash)) &
-              _all->parse_mask);
+              _all->runtime_state.parse_mask);
     }
     // Case where feature value is float and feature name is not empty
     else if (!feature_name.empty())
     {
       word_hash =
           (_all->parser_runtime.example_parser->hasher(feature_name.data(), feature_name.length(), _channel_hash) &
-              _all->parse_mask);
+              _all->runtime_state.parse_mask);
     }
     // Case where feature value is float and feature name is empty
     else { word_hash = _channel_hash + _anon++; }

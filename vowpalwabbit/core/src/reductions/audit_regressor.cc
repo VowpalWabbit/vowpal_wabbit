@@ -106,7 +106,7 @@ void audit_regressor_lda(audit_regressor_data& rd, VW::LEARNER::learner& /* base
     for (size_t j = 0; j < fs.size(); ++j)
     {
       tempstream << '\t' << fs.space_names[j].ns << '^' << fs.space_names[j].name << ':'
-                 << ((fs.indices[j] >> weights.stride_shift()) & all.parse_mask);
+                 << ((fs.indices[j] >> weights.stride_shift()) & all.runtime_state.parse_mask);
       for (size_t k = 0; k < all.reduction_state.lda; k++)
       {
         VW::weight& w = weights[(fs.indices[j] + k)];

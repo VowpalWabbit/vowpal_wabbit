@@ -258,7 +258,7 @@ void initialize_weights(VW::weight* weights, uint64_t index, uint32_t stride)
 void save_load(gdmf& d, VW::io_buf& model_file, bool read, bool text)
 {
   VW::workspace& all = *d.all;
-  uint64_t length = static_cast<uint64_t>(1) << all.num_bits;
+  uint64_t length = static_cast<uint64_t>(1) << all.iwc.num_bits;
   if (read)
   {
     VW::details::initialize_regressor(all);

@@ -75,7 +75,7 @@ void initialize_regressor(VW::workspace& all, T& weights)
   // Regressor is already initialized.
   if (weights.not_null()) { return; }
 
-  size_t length = (static_cast<size_t>(1)) << all.num_bits;
+  size_t length = (static_cast<size_t>(1)) << all.iwc.num_bits;
   try
   {
     uint32_t ss = weights.stride_shift();
@@ -84,11 +84,11 @@ void initialize_regressor(VW::workspace& all, T& weights)
   }
   catch (const VW::vw_exception&)
   {
-    THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>");
+    THROW(" Failed to allocate weight array with " << all.iwc.num_bits << " bits: try decreasing -b <bits>");
   }
   if (weights.mask() == 0)
   {
-    THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>");
+    THROW(" Failed to allocate weight array with " << all.iwc.num_bits << " bits: try decreasing -b <bits>");
   }
   else if (all.iwc.initial_weight != 0.)
   {
@@ -186,8 +186,8 @@ void VW::details::save_load_header(VW::workspace& all, VW::io_buf& model_file, b
     bytes_read_write += VW::details::bin_text_read_write_fixed_validated(
         model_file, reinterpret_cast<char*>(&all.sd->max_label), sizeof(all.sd->max_label), read, msg, text);
 
-    msg << "bits:" << all.num_bits << "\n";
-    uint32_t local_num_bits = all.num_bits;
+    msg << "bits:" << all.iwc.num_bits << "\n";
+    uint32_t local_num_bits = all.iwc.num_bits;
     bytes_read_write += VW::details::bin_text_read_write_fixed_validated(
         model_file, reinterpret_cast<char*>(&local_num_bits), sizeof(local_num_bits), read, msg, text);
 
@@ -202,7 +202,7 @@ void VW::details::save_load_header(VW::workspace& all, VW::io_buf& model_file, b
     VW::validate_default_bits(all, local_num_bits);
 
     all.runtime_config.default_bits = false;
-    all.num_bits = local_num_bits;
+    all.iwc.num_bits = local_num_bits;
 
     VW::validate_num_bits(all);
 
