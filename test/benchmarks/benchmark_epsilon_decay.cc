@@ -1,21 +1,17 @@
+#include "../../vowpalwabbit/core/tests/simulator.h"
 #include "benchmarks_common.h"
 #include "vw/cache_parser/parse_example_cache.h"
 #include "vw/config/options_cli.h"
+#include "vw/core/learner.h"
+#include "vw/core/metric_sink.h"
 #include "vw/core/parser.h"
+#include "vw/core/reductions/epsilon_decay.h"
+#include "vw/core/setup_base.h"
 #include "vw/core/vw.h"
 #include "vw/io/io_adapter.h"
 #include "vw/text_parser/parse_example_text.h"
 
 #include <benchmark/benchmark.h>
-
-
-#include "vw/core/reductions/epsilon_decay.h"
-
-#include "../../vowpalwabbit/core/tests/simulator.h"
-#include "vw/core/learner.h"
-#include "vw/core/metric_sink.h"
-#include "vw/core/setup_base.h"
-
 
 template <class... ExtraArgs>
 static void bench_epsilon_decay(benchmark::State& state, ExtraArgs&&... extra_args)
@@ -26,7 +22,8 @@ static void bench_epsilon_decay(benchmark::State& state, ExtraArgs&&... extra_ar
   std::string bit_size = res[2];
   std::string tolerance = res[3];
 
-  using callback_map = typename std::map<size_t, std::function<bool(simulator::cb_sim&, VW::workspace&, VW::multi_ex&)>>;
+  using callback_map =
+      typename std::map<size_t, std::function<bool(simulator::cb_sim&, VW::workspace&, VW::multi_ex&)>>;
   callback_map test_hooks;
 
   for (auto _ : state)
@@ -36,11 +33,15 @@ static void bench_epsilon_decay(benchmark::State& state, ExtraArgs&&... extra_ar
     const std::vector<uint64_t> swap_after = {500};
     if (use_decay == "decay")
     {
-      simulator::_test_helper_hook(std::vector<std::string>{"-l", "1e-3", "--power_t", "0", "-q::", "--cb_explore_adf", "--epsilon_decay", "--model_count", model_count, "-b", bit_size, "--tol_x", tolerance}, test_hooks, num_iterations, seed, swap_after);
+      simulator::_test_helper_hook(
+          std::vector<std::string>{"-l", "1e-3", "--power_t", "0", "-q::", "--cb_explore_adf", "--epsilon_decay",
+              "--model_count", model_count, "-b", bit_size, "--tol_x", tolerance},
+          test_hooks, num_iterations, seed, swap_after);
     }
     else
     {
-      simulator::_test_helper_hook(std::vector<std::string>{"-l", "1e-3", "--power_t", "0", "-q::", "--cb_explore_adf"}, test_hooks, num_iterations, seed, swap_after);
+      simulator::_test_helper_hook(std::vector<std::string>{"-l", "1e-3", "--power_t", "0", "-q::", "--cb_explore_adf"},
+          test_hooks, num_iterations, seed, swap_after);
     }
     benchmark::ClobberMemory();
   }
