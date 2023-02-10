@@ -1168,7 +1168,8 @@ void VW::details::save_load_online_state_gd(VW::workspace& all, VW::io_buf& mode
     }
   }
 
-  if (!read || all.runtime_state.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_L1_AND_L2_STATE_IN_MODEL_DATA)
+  if (!read ||
+      all.runtime_state.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_L1_AND_L2_STATE_IN_MODEL_DATA)
   {
     msg << "l1_state " << all.sd->gravity << "\n";
     auto local_gravity = all.sd->gravity;

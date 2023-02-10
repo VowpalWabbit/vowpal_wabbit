@@ -633,7 +633,7 @@ void VW::details::enable_sources(
 #ifdef BUILD_FLATBUFFERS
       else if (input_options.flatbuffer)
       {
-        all.flat_converter = VW::make_unique<VW::parsers::flatbuffer::parser>();
+        all.parser_runtime.flat_converter = VW::make_unique<VW::parsers::flatbuffer::parser>();
         all.parser_runtime.example_parser->reader = VW::parsers::flatbuffer::flatbuffer_to_examples;
       }
 #endif

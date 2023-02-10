@@ -345,9 +345,9 @@ py::dict get_learner_metrics(vw_ptr all)
 {
   py::dict dictionary;
 
-  if (all->global_metrics.are_metrics_enabled())
+  if (all->output_runtime.global_metrics.are_metrics_enabled())
   {
-    auto metrics = all->global_metrics.collect_metrics(all->l.get());
+    auto metrics = all->output_runtime.global_metrics.collect_metrics(all->l.get());
 
     python_dict_writer writer(dictionary);
     metrics.visit(writer);
@@ -716,7 +716,8 @@ void ex_push_feature_dict(example_ptr ec, vw_ptr vw, unsigned char ns_first_lett
     {
       key_chars = (const char*)PyUnicode_1BYTE_DATA(key);
       key_size = PyUnicode_GET_LENGTH(key);
-      feat_index = vw->parser_runtime.example_parser->hasher(key_chars, key_size, ns_hash) & vw->parse_mask;
+      feat_index =
+          vw->parser_runtime.example_parser->hasher(key_chars, key_size, ns_hash) & vw->runtime_state.parse_mask;
     }
     else if (PyLong_Check(key)) { feat_index = (feature_index)PyLong_AsUnsignedLongLong(key); }
     else

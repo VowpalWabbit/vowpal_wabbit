@@ -19,7 +19,7 @@ namespace csv
 {
 int parse_csv_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& examples)
 {
-  bool keep_reading = all->custom_parser->next(*all, buf, examples);
+  bool keep_reading = all->parser_runtime.custom_parser->next(*all, buf, examples);
   return keep_reading ? 1 : 0;
 }
 
@@ -267,12 +267,14 @@ private:
       if (f.first.empty())
       {
         ns = " ";
-        _channel_hash = _all->hash_seed == 0 ? 0 : VW::uniform_hash("", 0, _all->hash_seed);
+        _channel_hash =
+            _all->runtime_config.hash_seed == 0 ? 0 : VW::uniform_hash("", 0, _all->runtime_config.hash_seed);
       }
       else
       {
         ns = f.first;
-        _channel_hash = _all->parser_runtime.example_parser->hasher(ns.data(), ns.length(), _all->hash_seed);
+        _channel_hash =
+            _all->parser_runtime.example_parser->hasher(ns.data(), ns.length(), _all->runtime_config.hash_seed);
       }
 
       unsigned char _index = static_cast<unsigned char>(ns[0]);
