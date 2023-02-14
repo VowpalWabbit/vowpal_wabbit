@@ -145,9 +145,6 @@ void update_stats_explore_eval(const VW::workspace& all, VW::shared_data& sd, co
   for (size_t i = 0; i < ec_seq.size(); i++) { holdout_example &= ec_seq[i]->test_only; }
 
   sd.update(holdout_example, labeled_example, loss, ec.weight, num_features);
-  sd.explore_eval_data.weighted_update_count = data.weighted_update_count;
-  sd.explore_eval_data.average_accepted_example_weight =
-      data.weighted_update_count / static_cast<float>(data.update_count);
 }
 
 void print_update_explore_eval(VW::workspace& all, VW::shared_data& /*sd*/, const explore_eval& data,
@@ -284,8 +281,8 @@ void do_actual_learning(explore_eval& data, learner& base, VW::multi_ex& ec_seq)
 
 void persist(explore_eval& data, VW::metric_sink& metrics)
 {
-  metrics.set_float("weighted_update_count", data.all->sd->explore_eval_data.weighted_update_count);
-  metrics.set_float("average_accepted_example_weight", data.all->sd->explore_eval_data.average_accepted_example_weight);
+  metrics.set_float("weighted_update_count", data.weighted_update_count);
+  metrics.set_float("average_accepted_example_weight", data.weighted_update_count / static_cast<float>(data.update_count));
 }
 }  // namespace
 
