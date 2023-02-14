@@ -284,7 +284,7 @@ void do_actual_learning(explore_eval& data, learner& base, VW::multi_ex& ec_seq)
 
 void persist(explore_eval& data, VW::metric_sink& metrics)
 {
-  metrics.set_uint("weighted_update_count", data.all->sd->explore_eval_data.weighted_update_count);
+  metrics.set_float("weighted_update_count", data.all->sd->explore_eval_data.weighted_update_count);
   metrics.set_float("average_accepted_example_weight", data.all->sd->explore_eval_data.average_accepted_example_weight);
 }
 }  // namespace
