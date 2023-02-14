@@ -22,13 +22,13 @@ namespace eigen_memory_tree_test
 emt_tree* get_emt_tree(VW::workspace& all)
 {
   std::vector<std::string> e_r;
-  all.l->get_enabled_reductions(e_r);
+  all.l->get_enabled_learners(e_r);
   if (std::find(e_r.begin(), e_r.end(), "emt") == e_r.end())
   {
-    ADD_FAILURE() << "Eigen memory tree not found in enabled reductions";
+    ADD_FAILURE() << "Eigen memory tree not found in enabled learners";
   }
 
-  VW::LEARNER::single_learner* emt = as_singleline(all.l->get_learner_by_name_prefix("emt"));
+  VW::LEARNER::learner* emt = require_singleline(all.l->get_learner_by_name_prefix("emt"));
 
   return (emt_tree*)emt->get_internal_type_erased_data_pointer_test_use_only();
 }

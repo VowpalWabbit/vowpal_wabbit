@@ -8,6 +8,8 @@
 #include "vw/core/multi_ex.h"
 #include "vw/core/vw_fwd.h"
 
+#include <memory>
+
 namespace VW
 {
 namespace reductions
@@ -28,7 +30,7 @@ public:
   ~cbify_adf_data();
 };
 
-VW::LEARNER::base_learner* cbify_setup(VW::setup_base_i& stack_builder);
-VW::LEARNER::base_learner* cbifyldf_setup(VW::setup_base_i& stack_builder);
+std::shared_ptr<VW::LEARNER::learner> cbify_setup(VW::setup_base_i& stack_builder);
+std::shared_ptr<VW::LEARNER::learner> cbifyldf_setup(VW::setup_base_i& stack_builder);
 }  // namespace reductions
 }  // namespace VW

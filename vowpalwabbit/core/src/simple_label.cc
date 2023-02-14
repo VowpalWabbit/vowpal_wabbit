@@ -33,7 +33,7 @@ void VW::details::print_update(VW::workspace& all, const VW::example& ec)
       !all.bfgs)
   {
     all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, ec.l.simple.label, ec.pred.scalar,
-        ec.get_num_features(), all.progress_add, all.progress_arg);
+        ec.get_num_features());
   }
 }
 
@@ -73,7 +73,7 @@ void VW::details::print_update_simple_label(
   if (should_print_driver_update)
   {
     sd.print_update(*all.trace_message, all.holdout_set_off, all.current_pass, ec.l.simple.label, ec.pred.scalar,
-        ec.get_num_features(), all.progress_add, all.progress_arg);
+        ec.get_num_features());
   }
 }
 

@@ -138,7 +138,7 @@ void VW::details::print_update_multilabel(VW::workspace& all, const VW::example&
     else { label_string << VW::to_string(ec.l.multilabels); }
 
     all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_string.str(),
-        VW::to_string(ec.pred.multilabels), ec.get_num_features(), all.progress_add, all.progress_arg);
+        VW::to_string(ec.pred.multilabels), ec.get_num_features());
   }
 }
 

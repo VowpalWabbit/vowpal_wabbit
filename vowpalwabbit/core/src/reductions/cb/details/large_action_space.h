@@ -72,6 +72,9 @@ public:
   // for testing purposes only
   void _test_only_set_rank(uint64_t rank);
   bool _set_testing_components = false;
+#ifdef BUILD_LAS_WITH_SIMD
+  bool _test_only_use_simd() { return _use_simd != simd_type::NO_SIMD; }
+#endif
 
 private:
   VW::workspace* _all;
@@ -157,8 +160,8 @@ public:
   ~cb_explore_adf_large_action_space() = default;
 
   void save_load(io_buf& io, bool read, bool text);
-  void predict(VW::LEARNER::multi_learner& base, multi_ex& examples);
-  void learn(VW::LEARNER::multi_learner& base, multi_ex& examples);
+  void predict(VW::LEARNER::learner& base, multi_ex& examples);
+  void learn(VW::LEARNER::learner& base, multi_ex& examples);
 
   void randomized_SVD(const multi_ex& examples);
 

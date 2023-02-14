@@ -5,11 +5,12 @@
 #pragma once
 #include "vw/core/learner.h"
 
+#include <memory>
+
 namespace VW
 {
 namespace reductions
 {
-LEARNER::base_learner* cats_pdf_setup(setup_base_i& stack_builder);
-
+std::shared_ptr<VW::LEARNER::learner> cats_pdf_setup(setup_base_i& stack_builder);
 }
 }  // namespace VW

@@ -8,6 +8,7 @@
 #include "vw/core/vw_fwd.h"
 #include "vw/core/vw_versions.h"
 
+#include <memory>
 #include <vector>
 
 namespace VW
@@ -16,15 +17,15 @@ VW::example* test_cb_adf_sequence(const VW::multi_ex& ec_seq);
 VW::cb_class get_observed_cost_or_default_cb_adf(const VW::multi_ex& examples);
 namespace reductions
 {
-VW::LEARNER::base_learner* cb_adf_setup(VW::setup_base_i& stack_builder);
+std::shared_ptr<VW::LEARNER::learner> cb_adf_setup(VW::setup_base_i& stack_builder);
 
 class cb_adf
 {
 public:
   VW::details::cb_to_cs_adf gen_cs;
 
-  void learn(VW::LEARNER::multi_learner& base, VW::multi_ex& ec_seq);
-  void predict(VW::LEARNER::multi_learner& base, VW::multi_ex& ec_seq);
+  void learn(VW::LEARNER::learner& base, VW::multi_ex& ec_seq);
+  void predict(VW::LEARNER::learner& base, VW::multi_ex& ec_seq);
   bool update_statistics(const VW::example& ec, const VW::multi_ex& ec_seq, VW::shared_data& sd) const;
 
   cb_adf(VW::cb_type_t cb_type, bool rank_all, float clip_p, bool no_predict, VW::workspace* all)
@@ -33,7 +34,7 @@ public:
     gen_cs.cb_type = cb_type;
   }
 
-  void set_scorer(VW::LEARNER::single_learner* scorer) { gen_cs.scorer = scorer; }
+  void set_scorer(VW::LEARNER::learner* scorer) { gen_cs.scorer = scorer; }
 
   bool get_rank_all() const { return _rank_all; }
 
@@ -53,12 +54,12 @@ public:
   const VW::cb_class* known_cost() const { return &gen_cs.known_cost; }
 
 private:
-  void learn_ips(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
-  void learn_dr(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
-  void learn_dm(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
-  void learn_sm(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
+  void learn_ips(VW::LEARNER::learner& base, VW::multi_ex& examples);
+  void learn_dr(VW::LEARNER::learner& base, VW::multi_ex& examples);
+  void learn_dm(VW::LEARNER::learner& base, VW::multi_ex& examples);
+  void learn_sm(VW::LEARNER::learner& base, VW::multi_ex& examples);
   template <bool predict>
-  void learn_mtr(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
+  void learn_mtr(VW::LEARNER::learner& base, VW::multi_ex& examples);
 
 private:
   std::vector<VW::cb_label> _cb_labels;

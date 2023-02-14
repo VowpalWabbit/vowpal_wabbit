@@ -189,7 +189,7 @@ void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::updat
 
 template <typename randomized_svd_impl, typename spanner_impl>
 void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::predict(
-    VW::LEARNER::multi_learner& base, multi_ex& examples)
+    VW::LEARNER::learner& base, multi_ex& examples)
 {
   base.predict(examples);
   update_example_prediction(examples);
@@ -197,7 +197,7 @@ void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::predi
 
 template <typename randomized_svd_impl, typename spanner_impl>
 void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::learn(
-    VW::LEARNER::multi_learner& base, multi_ex& examples)
+    VW::LEARNER::learner& base, multi_ex& examples)
 {
   VW::v_array<VW::action_score> preds = std::move(examples[0]->pred.a_s);
   auto restore_guard = VW::scope_exit([&preds, &examples] { examples[0]->pred.a_s = std::move(preds); });
@@ -273,21 +273,21 @@ void persist_metrics(cb_explore_adf_large_action_space<T, S>& data, VW::metric_s
 }
 
 template <typename T, typename S>
-void predict(cb_explore_adf_large_action_space<T, S>& data, VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
+void predict(cb_explore_adf_large_action_space<T, S>& data, VW::LEARNER::learner& base, VW::multi_ex& examples)
 {
   data.predict(base, examples);
 }
 
 template <typename T, typename S>
-void learn(cb_explore_adf_large_action_space<T, S>& data, VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
+void learn(cb_explore_adf_large_action_space<T, S>& data, VW::LEARNER::learner& base, VW::multi_ex& examples)
 {
   data.learn(base, examples);
 }
 
 template <typename T, typename S>
-VW::LEARNER::base_learner* make_las_with_impl(VW::setup_base_i& stack_builder, VW::LEARNER::multi_learner* base,
-    implementation_type& impl_type, VW::workspace& all, uint64_t d, float c, bool apply_shrink_factor,
-    size_t thread_pool_size, size_t block_size, bool use_explicit_simd)
+std::shared_ptr<VW::LEARNER::learner> make_las_with_impl(VW::setup_base_i& stack_builder,
+    std::shared_ptr<VW::LEARNER::learner> base, implementation_type& impl_type, VW::workspace& all, uint64_t d, float c,
+    bool apply_shrink_factor, size_t thread_pool_size, size_t block_size, bool use_explicit_simd)
 {
   size_t problem_multiplier = 1;
 
@@ -296,21 +296,22 @@ VW::LEARNER::base_learner* make_las_with_impl(VW::setup_base_i& stack_builder, V
   auto data = VW::make_unique<cb_explore_adf_large_action_space<T, S>>(d, c, apply_shrink_factor, &all, seed,
       1 << all.num_bits, thread_pool_size, block_size, use_explicit_simd, impl_type);
 
-  auto* l = make_reduction_learner(std::move(data), base, learn<T, S>, predict<T, S>,
+  auto l = make_reduction_learner(std::move(data), base, learn<T, S>, predict<T, S>,
       stack_builder.get_setupfn_name(VW::reductions::cb_explore_adf_large_action_space_setup))
-                .set_input_label_type(VW::label_type_t::CB)
-                .set_output_label_type(VW::label_type_t::CB)
-                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
-                .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
-                .set_params_per_weight(problem_multiplier)
-                .set_persist_metrics(persist_metrics<T, S>)
-                .set_learn_returns_prediction(false)
-                .build();
-  return VW::LEARNER::make_base(*l);
+               .set_input_label_type(VW::label_type_t::CB)
+               .set_output_label_type(VW::label_type_t::CB)
+               .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+               .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+               .set_params_per_weight(problem_multiplier)
+               .set_persist_metrics(persist_metrics<T, S>)
+               .set_learn_returns_prediction(false)
+               .build();
+  return l;
 }
 }  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_large_action_space_setup(
+    VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -383,7 +384,16 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
     }
   }
 
-  VW::LEARNER::multi_learner* base = as_multiline(stack_builder.setup_base_learner());
+  if (use_simd_in_one_pass_svd_impl &&
+      (options.was_supplied("cubic") || options.was_supplied("interactions") ||
+          options.was_supplied("experimental_full_name_interactions")))
+  {
+    all.logger.err_warn(
+        "Large action space with SIMD only supports quadratic interactions for now. Using scalar code path.");
+    use_simd_in_one_pass_svd_impl = false;
+  }
+
+  auto base = require_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   if (use_two_pass_svd_impl)
