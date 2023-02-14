@@ -281,6 +281,12 @@ void do_actual_learning(explore_eval& data, learner& base, VW::multi_ex& ec_seq)
     }
   }
 }
+
+void persist(explore_eval& data, VW::metric_sink& metrics)
+{
+  metrics.set_uint("weighted_update_count", data.all->sd->explore_eval_data.weighted_update_count);
+  metrics.set_float("average_accepted_example_weight", data.all->sd->explore_eval_data.average_accepted_example_weight);
+}
 }  // namespace
 
 std::shared_ptr<VW::LEARNER::learner> VW::reductions::explore_eval_setup(VW::setup_base_i& stack_builder)
@@ -327,6 +333,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::explore_eval_setup(VW::set
                .set_update_stats(update_stats_explore_eval)
                .set_output_example_prediction(output_example_prediction_explore_eval)
                .set_print_update(print_update_explore_eval)
+               .set_persist_metrics(::persist)
                .set_finish(::finish)
                .build();
 
