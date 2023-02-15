@@ -207,8 +207,8 @@ void prepare_reductions(std::vector<std::tuple<std::string, VW::reduction_setup_
   reductions.push_back(VW::reductions::cb_explore_adf_bag_setup);
   reductions.push_back(VW::reductions::cb_dro_setup);
   reductions.push_back(VW::reductions::cb_sample_setup);
-  reductions.push_back(VW::reductions::explore_eval_setup);
   reductions.push_back(VW::reductions::epsilon_decay_setup);
+  reductions.push_back(VW::reductions::explore_eval_setup);
   reductions.push_back(VW::reductions::cb_actions_mask_setup);
   reductions.push_back(VW::reductions::shared_feature_merger_setup);
   reductions.push_back(VW::reductions::ccb_explore_adf_setup);
