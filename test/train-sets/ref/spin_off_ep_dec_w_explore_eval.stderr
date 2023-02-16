@@ -1,0 +1,28 @@
+using no cache
+Reading datafile = train-sets/automl_spin_off.txt
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+cb_type = mtr
+Enabled learners: gd, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, epsilon_decay, explore_eval, shared_feature_merger
+Input label = CB
+Output pred = ACTION_PROBS
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+-0.33333 -0.33333            1            1.0          known         0:0.33      209
+-0.33333 -0.33333            2            2.0          known         0:0.33      294
+-0.36945 -0.40557            4            4.0          known         1:0.58      278
+-0.37846 -0.38748            8            8.0          known         1:0.61      253
+-0.33860 -0.29873           16           16.0          known         1:0.61      109
+
+finished run
+number of examples = 18
+weighted example sum = 18.000000
+weighted label sum = 0.000000
+average loss = -0.345065
+total feature number = 4724
+weighted update count = 5.000000
+average accepted example weight = 1.000000
+final multiplier = 1.000000
