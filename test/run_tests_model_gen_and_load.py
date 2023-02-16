@@ -356,7 +356,17 @@ def main():
         help=f"This should be set when running on a previous version of VW. If new arguments then initializing VW with them is expected to fail.",
     )
 
+    parser.add_argument(
+        "--skip_pr_tests",
+        type=str,
+        action="append",
+        help="Skip specific tests based on Pull Request description",
+    )
+
     args = parser.parse_args()
+    print("START HERE\n")
+    print(args.skip_pr_tests)
+    print("END HERE\n")
     color_enum = NoColor if args.no_color else Color
 
     temp_working_dir = Path.home() / default_working_dir_name
