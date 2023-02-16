@@ -193,6 +193,7 @@ def get_tests(
     explicit_tests: Optional[List[int]] = None,
     color_enum: Type[Union[Color, NoColor]] = Color,
     skip_missing_args: bool = False,
+    skip_pr_tests: List[int] = [],
 ) -> List[TestData]:
     test_ref_dir: Path = Path(__file__).resolve().parent
 
@@ -220,6 +221,7 @@ def get_tests(
             and not "--no_stdin" in test.command_line
             and not "--help" in test.command_line
             and not "--flatbuffer" in test.command_line
+            and not test.id in skip_pr_tests
         ):
             test.command_line = re.sub("-f [:a-zA-Z0-9_.\\-/]*", "", test.command_line)
             test.command_line = re.sub("-f=[:a-zA-Z0-9_.\\-/]*", "", test.command_line)
@@ -364,9 +366,8 @@ def main():
     )
 
     args = parser.parse_args()
-    print("START HERE\n")
-    print(args.skip_pr_tests)
-    print("END HERE\n")
+
+    skip_pr_tests = [int(x) for x in args.skip_pr_tests[0].split("skip:")[-1].strip().split(" ")]
     color_enum = NoColor if args.no_color else Color
 
     temp_working_dir = Path.home() / default_working_dir_name
@@ -390,6 +391,7 @@ def main():
             args.test,
             color_enum,
             args.skip_missing_args,
+            skip_pr_tests,
         )
 
         if args.generate_models:
