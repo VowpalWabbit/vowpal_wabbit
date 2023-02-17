@@ -366,10 +366,10 @@ def main():
     )
 
     args = parser.parse_args()
-
-    skip_pr_tests = [
-        int(x) for x in args.skip_pr_tests[0].split("skip:")[-1].strip().split(" ")
-    ]
+    if (args.skip_pr_tests):
+        skip_pr_tests = [int(x) for x in args.skip_pr_tests[0].split("skip:")[-1].strip().split(" ")]
+    else:
+        skip_pr_tests = []
     color_enum = NoColor if args.no_color else Color
 
     temp_working_dir = Path.home() / default_working_dir_name
