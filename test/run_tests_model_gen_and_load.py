@@ -366,7 +366,7 @@ def main():
     )
 
     args = parser.parse_args()
-    if args.skip_pr_tests:
+    if args.skip_pr_tests and "skip:" in args.skip_pr_tests[0]:
         skip_pr_tests = [
             int(x) for x in args.skip_pr_tests[0].split("skip:")[-1].strip().split(" ")
         ]
