@@ -133,9 +133,8 @@ void predict_or_learn(metrics_data& data, T& base, E& ec)
     base.predict(ec);
   }
 }
-}  // namespace
 
-void VW::reductions::additional_metrics(VW::workspace& all, VW::metric_sink& sink)
+void additional_metrics(VW::workspace& all, VW::metric_sink& sink)
 {
   sink.set_uint("total_log_calls", all.logger.get_log_count());
 
@@ -143,6 +142,7 @@ void VW::reductions::additional_metrics(VW::workspace& all, VW::metric_sink& sin
   if (all.l != nullptr) { all.l->get_enabled_learners(enabled_learners); }
   insert_dsjson_metrics(all.example_parser->metrics.get(), sink, enabled_learners);
 }
+}  // namespace
 
 void VW::reductions::output_metrics(VW::workspace& all)
 {
@@ -171,6 +171,10 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::metrics_setup(VW::setup_ba
 
   if (out_file.empty()) THROW("extra_metrics argument (output filename) is missing.");
   all.global_metrics = VW::metrics_collector(true);
+
+  auto* all_ptr = stack_builder.get_all_pointer();
+  all.global_metrics.register_metrics_callback(
+      [all_ptr](VW::metric_sink& sink) -> void { additional_metrics(*all_ptr, sink); });
 
   auto base = stack_builder.setup_base_learner();
 
