@@ -55,7 +55,7 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
 
   if (static_cast<Eigen::Index>(num_actions) != AOmega.rows() || static_cast<Eigen::Index>(p) != AOmega.cols())
   {
-    // we need to recompute the hash if the number of actions has changed
+    // we need to recompute the AOmega matrix if the number of actions has changed
     example_hashes.clear();
   }
 
