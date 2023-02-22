@@ -2,9 +2,6 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "vw/core/cb.h"
-#include "vw/core/cost_sensitive.h"
-#include "vw/core/reductions/conditional_contextual_bandit.h"
 #include "vw/core/vw.h"
 #include "vw/test_common/test_common.h"
 
