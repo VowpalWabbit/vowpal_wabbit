@@ -42,6 +42,8 @@ public:
   example_predict(example_predict&& other) = default;
   example_predict& operator=(example_predict&& other) = default;
 
+  void calculate_feature_space_hash();
+
   /// If indices is modified this iterator is invalidated.
   iterator begin();
   /// If indices is modified this iterator is invalidated.
@@ -50,6 +52,7 @@ public:
   VW::v_array<namespace_index> indices;
   std::array<features, NUM_NAMESPACES> feature_space;  // Groups of feature values.
   uint64_t ft_offset = 0;                              // An offset for all feature values.
+  uint64_t feature_space_hash = 0;  // A unique hash of the feature space and namespaces of the example.
 
   // Interactions are specified by this struct's interactions vector of vectors of unsigned characters, where each
   // vector is an interaction and each char is a namespace.

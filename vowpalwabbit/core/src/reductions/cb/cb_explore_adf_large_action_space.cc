@@ -370,6 +370,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_large_actio
   auto enabled = options.add_parse_and_check_necessary(new_options) && large_action_space;
   if (!enabled) { return nullptr; }
 
+  all.calculate_feature_space_hash = true;
+
   if (options.was_supplied("squarecb")) { apply_shrink_factor = true; }
 
   if (options.was_supplied("cb_type"))

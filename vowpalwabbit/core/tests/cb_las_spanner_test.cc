@@ -843,6 +843,19 @@ TEST(Las, CheckSingularValueSumDiffForDiffRanksIsSmall)
     }
 
     {
+      action_space->explore._test_only_set_rank(d);
+      VW::multi_ex examples;
+
+      for (const auto& ex : dexs) { examples.push_back(VW::read_example(*vw, ex)); }
+      for (const auto& ex : exs) { examples.push_back(VW::read_example(*vw, ex)); }
+
+      vw->predict(examples);
+
+      larger_rank_sum = action_space->explore.S.sum();
+      vw->finish_example(examples);
+    }
+
+    {
       action_space->explore._test_only_set_rank(d + 10);
       VW::multi_ex examples;
 

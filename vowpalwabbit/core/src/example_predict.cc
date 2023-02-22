@@ -26,3 +26,18 @@ bool VW::example_predict::iterator::operator!=(const iterator& rhs) const { retu
 
 VW::example_predict::iterator VW::example_predict::begin() { return {feature_space.data(), indices.begin()}; }
 VW::example_predict::iterator VW::example_predict::end() { return {feature_space.data(), indices.end()}; }
+
+void VW::example_predict::calculate_feature_space_hash()
+{
+  feature_space_hash = 0;
+
+  for (const auto ns : indices)
+  {
+    feature_space_hash += std::hash<namespace_index>()(ns);
+    for (const auto& f : feature_space[ns])
+    {
+      feature_space_hash += std::hash<feature_index>()(f.index());
+      feature_space_hash += std::hash<feature_value>()(f.value());
+    }
+  }
+}

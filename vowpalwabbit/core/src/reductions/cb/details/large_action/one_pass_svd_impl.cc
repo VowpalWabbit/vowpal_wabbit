@@ -52,7 +52,26 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
   // matrix
   const uint64_t sampling_slack = 10;
   auto p = std::min(num_actions, static_cast<size_t>(_d + sampling_slack));
+
+  if (static_cast<Eigen::Index>(num_actions) != AOmega.rows() || static_cast<Eigen::Index>(p) != AOmega.cols())
+  {
+    // we need to recompute the hash if the number of actions has changed
+    example_hashes.clear();
+  }
+
+  // example hash has been generated before shared feature merger, so each one should be a represenative of what the
+  // hash is without the shared features which will be removed anyway before calculating AOmega
+  for (size_t i = 0; i < examples.size(); ++i)
+  {
+    if (example_hashes.find(examples[i]->feature_space_hash) == example_hashes.end())
+    {
+      example_hashes.clear();
+      break;
+    }
+  }
+
   const float scaling_factor = 1.f / std::sqrt(p);
+  // resize is a no-op if size does not change
   AOmega.resize(num_actions, p);
 
   auto compute_dot_prod = compute_dot_prod_scalar;
@@ -70,26 +89,29 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
   }
 #endif
 
-  auto calculate_aomega_row = [compute_dot_prod](uint64_t row_index_begin, uint64_t row_index_end, uint64_t p,
-                                  VW::workspace* _all, uint64_t _seed, const multi_ex& examples,
-                                  Eigen::MatrixXf& AOmega, const std::vector<float>& shrink_factors,
-                                  float scaling_factor) -> void
+  auto calculate_aomega_row =
+      [compute_dot_prod](uint64_t row_index_begin, uint64_t row_index_end, uint64_t p, VW::workspace* _all,
+          uint64_t _seed, const multi_ex& examples, Eigen::MatrixXf& AOmega, const std::vector<float>& shrink_factors,
+          float scaling_factor, std::unordered_map<uint64_t, Eigen::VectorXf>& example_hashes) -> void
   {
     for (auto row_index = row_index_begin; row_index < row_index_end; ++row_index)
     {
       VW::example* ex = examples[row_index];
-
-      auto& red_features = ex->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
-      auto* shared_example = red_features.shared_example;
-      if (shared_example != nullptr) { VW::details::truncate_example_namespaces_from_example(*ex, *shared_example); }
-
-      for (uint64_t col = 0; col < p; ++col)
+      if (example_hashes.find(ex->feature_space_hash) == example_hashes.end())
       {
-        float final_dot_prod = compute_dot_prod(col, _all, _seed, ex);
-        AOmega(row_index, col) = final_dot_prod * shrink_factors[row_index] * scaling_factor;
-      }
+        auto& red_features = ex->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
+        auto* shared_example = red_features.shared_example;
+        if (shared_example != nullptr) { VW::details::truncate_example_namespaces_from_example(*ex, *shared_example); }
 
-      if (shared_example != nullptr) { VW::details::append_example_namespaces_from_example(*ex, *shared_example); }
+        for (uint64_t col = 0; col < p; ++col)
+        {
+          float final_dot_prod = compute_dot_prod(col, _all, _seed, ex);
+          AOmega(row_index, col) = final_dot_prod * shrink_factors[row_index] * scaling_factor;
+        }
+
+        if (shared_example != nullptr) { VW::details::append_example_namespaces_from_example(*ex, *shared_example); }
+      }
+      else { AOmega.row(row_index) = example_hashes[ex->feature_space_hash] * shrink_factors[row_index]; }
     }
   };
 
@@ -106,13 +128,22 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
     if ((row_index_end + _block_size) > examples.size()) { row_index_end = examples.size(); }
 
     _futures.emplace_back(_thread_pool.submit(calculate_aomega_row, row_index_begin, row_index_end, p, _all, _seed,
-        std::cref(examples), std::ref(AOmega), std::cref(shrink_factors), scaling_factor));
+        std::cref(examples), std::ref(AOmega), std::cref(shrink_factors), scaling_factor, std::ref(example_hashes)));
 
     row_index_begin = row_index_end;
   }
 
   for (auto& ft : _futures) { ft.get(); }
   _futures.clear();
+
+  for (size_t i = 0; i < examples.size(); i++)
+  {
+    auto ex = examples[i];
+    if (example_hashes.find(ex->feature_space_hash) == example_hashes.end() && ex->feature_space_hash != 0)
+    {
+      example_hashes.emplace(ex->feature_space_hash, AOmega.row(i) / shrink_factors[i]);
+    }
+  }
 }
 
 void one_pass_svd_impl::_test_only_set_rank(uint64_t rank) { _d = rank; }

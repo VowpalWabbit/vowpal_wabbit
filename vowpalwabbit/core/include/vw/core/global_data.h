@@ -116,6 +116,7 @@ public:
   std::unique_ptr<all_reduce_base> all_reduce;
 
   bool chain_hash_json = false;
+  bool calculate_feature_space_hash = false;
 
   std::shared_ptr<VW::LEARNER::learner> l;  // the top level learner
 

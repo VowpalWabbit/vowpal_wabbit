@@ -751,6 +751,11 @@ void VW::setup_example(VW::workspace& all, VW::example* ae)
   // Set the interactions for this example to the global set.
   ae->interactions = &all.interactions;
   ae->extent_interactions = &all.extent_interactions;
+
+  if (all.calculate_feature_space_hash)
+  {
+    ae->calculate_feature_space_hash();
+  }
 }
 
 VW::example* VW::new_unused_example(VW::workspace& all)
