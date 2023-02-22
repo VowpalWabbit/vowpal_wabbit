@@ -48,13 +48,9 @@ class object_pool_impl
 {
 public:
   object_pool_impl() = default;
-  object_pool_impl(size_t initial_size, TFactory factory = {})
-      : _factory(factory)
+  object_pool_impl(size_t initial_size, TFactory factory = {}) : _factory(factory)
   {
-    for (size_t i = 0; i < initial_size; ++i)
-    {
-      _pool.push(allocate_new());
-    }
+    for (size_t i = 0; i < initial_size; ++i) { _pool.push(allocate_new()); }
   }
 
   ~object_pool_impl() { assert(_pool.size() == size()); }
@@ -74,9 +70,7 @@ public:
   std::unique_ptr<T> get_object()
   {
     std::unique_lock<TMutex> lock(_lock);
-    if (_pool.empty()) {
-      return allocate_new();
-    }
+    if (_pool.empty()) { return allocate_new(); }
 
     auto obj = std::move(_pool.front());
     _pool.pop();
@@ -103,10 +97,7 @@ public:
   }
 
 private:
-  bool no_lock_is_from_pool(const T* obj) const
-  {
-    return _allocated_by_pool.find(obj) != _allocated_by_pool.end();
-  }
+  bool no_lock_is_from_pool(const T* obj) const { return _allocated_by_pool.find(obj) != _allocated_by_pool.end(); }
 
   std::unique_ptr<T> allocate_new()
   {
