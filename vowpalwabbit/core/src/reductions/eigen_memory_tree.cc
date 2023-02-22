@@ -11,6 +11,7 @@
 #include "vw/config/options.h"
 #include "vw/core/array_parameters.h"
 #include "vw/core/example.h"
+#include "vw/core/feature_group.h"
 #include "vw/core/learner.h"
 #include "vw/core/memory.h"
 #include "vw/core/model_utils.h"
@@ -75,14 +76,14 @@ emt_example::emt_example(VW::workspace& all, VW::example* ex)
   std::vector<std::vector<VW::namespace_index>> base_interactions;
 
   ex->interactions = &base_interactions;
-  auto* ex1 = VW::flatten_sort_example(all, ex);
-  for (auto& f : ex1->fs) { base.emplace_back(f.index(), f.value()); }
-  VW::free_flatten_example(ex1);
+  VW::features fs;
+  VW::flatten_features(all, *ex, fs);
+  for (auto& f : fs) { base.emplace_back(f.index(), f.value()); }
 
+  fs.clear();
   ex->interactions = full_interactions;
-  auto* ex2 = VW::flatten_sort_example(all, ex);
-  for (auto& f : ex2->fs) { full.emplace_back(f.index(), f.value()); }
-  VW::free_flatten_example(ex2);
+  VW::flatten_features(all, *ex, fs);
+  for (auto& f : fs) { full.emplace_back(f.index(), f.value()); }
 }
 
 emt_lru::emt_lru(uint64_t max_size) : max_size(max_size) {}
