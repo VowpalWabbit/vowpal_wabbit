@@ -138,6 +138,7 @@ one_pass_svd_impl::one_pass_svd_impl(VW::workspace* all, uint64_t d, uint64_t se
   {
     if (cpu_supports_avx512()) { _use_simd = simd_type::AVX512; }
     else if (cpu_supports_avx2()) { _use_simd = simd_type::AVX2; }
+    else { all->logger.err_warn("System does not support AVX512 or AVX2. Using scalar code path."); }
   }
 #else
   _UNUSED(use_explicit_simd);

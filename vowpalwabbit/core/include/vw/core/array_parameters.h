@@ -50,12 +50,6 @@ public:
     else { return dense_weights.mask(); }
   }
 
-  inline uint64_t seeded() const
-  {
-    if (sparse) { return sparse_weights.seeded(); }
-    else { return dense_weights.seeded(); }
-  }
-
   inline void shallow_copy(const parameters& input)
   {
     if (sparse) { sparse_weights.shallow_copy(input.sparse_weights); }

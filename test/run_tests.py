@@ -385,7 +385,6 @@ def run_command_line_test(
     valgrind=False,
     timeout=100,
 ) -> TestOutcome:
-
     if test.skip:
         completed_tests.report_completion(test.id, False)
         return TestOutcome(test.id, Result.SKIPPED, {}, skip_reason=test.skip_reason)
@@ -775,7 +774,7 @@ def convert_tests_for_flatbuffers(
         # they can be enabled if we ignore diffing the --extra_metrics
         # (324-326) deals with corrupted data, so cannot be translated to fb
         # pdrop is not supported in fb, so 327-331 are excluded
-        # 336, 337, 338 - the FB converter script seems to be affecting the invert_hash
+        # 336, 337, 338, 442, 444, 450, 452 - the FB converter script seems to be affecting the invert_hash
         # 423, 424, 425, 426 - FB converter removes feature names from invert_hash (probably the same issue as above)
         if str(test.id) in (
             "300",
@@ -804,12 +803,13 @@ def convert_tests_for_flatbuffers(
             "407",
             "411",
             "415",
-            "425",
             "426",
-            "427",
             "428",
-            "429",
             "438",
+            "442",
+            "444",
+            "450",
+            "452",
         ):
             test.skip = True
             test.skip_reason = "test skipped for automatic converted flatbuffer tests for unknown reason"

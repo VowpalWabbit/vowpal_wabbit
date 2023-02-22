@@ -5,6 +5,8 @@
 #pragma once
 #include "vw/core/vw_fwd.h"
 
+#include <memory>
+
 namespace VW
 {
 namespace reductions
@@ -14,8 +16,8 @@ namespace reductions
  * https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Interaction-Grounded-Learning
  *
  * @param stack_builder Stack builder to use for setup.
- * @return VW::LEARNER::base_learner* learner if this reduction is active, nullptr otherwise
+ * @return VW::LEARNER::learner* learner if this reduction is active, nullptr otherwise
  */
-VW::LEARNER::base_learner* interaction_ground_setup(VW::setup_base_i& stack_builder);
+std::shared_ptr<VW::LEARNER::learner> interaction_ground_setup(VW::setup_base_i& stack_builder);
 }  // namespace reductions
 }  // namespace VW

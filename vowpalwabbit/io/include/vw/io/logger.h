@@ -8,6 +8,7 @@
 
 #include <fmt/core.h>
 
+#include <functional>
 #include <memory>
 
 namespace VW

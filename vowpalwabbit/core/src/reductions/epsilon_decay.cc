@@ -39,8 +39,10 @@ float decayed_epsilon(float init_ep, uint64_t update_count)
 epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
     double epsilon_decay_significance_level, double epsilon_decay_estimator_decay, dense_parameters& weights,
     std::string epsilon_decay_audit_str, bool constant_epsilon, uint32_t& wpp, uint64_t min_champ_examples,
-    float initial_epsilon, uint64_t shift_model_bounds, bool reward_as_cost, double tol_x, bool is_brentq)
-    : _min_scope(min_scope)
+    float initial_epsilon, uint64_t shift_model_bounds, bool reward_as_cost, double tol_x, bool is_brentq,
+    bool predict_only_model)
+    : _model_count(model_count)
+    , _min_scope(min_scope)
     , _epsilon_decay_significance_level(epsilon_decay_significance_level)
     , _epsilon_decay_estimator_decay(epsilon_decay_estimator_decay)
     , _weights(weights)
@@ -51,6 +53,7 @@ epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
     , _initial_epsilon(initial_epsilon)
     , _shift_model_bounds(shift_model_bounds)
     , _reward_as_cost(reward_as_cost)
+    , _predict_only_model(predict_only_model)
 {
   _weight_indices.resize(model_count);
   conf_seq_estimators.reserve(model_count);
@@ -66,7 +69,7 @@ epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
   }
 }
 
-void epsilon_decay_data::update_weights(float init_ep, VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
+void epsilon_decay_data::update_weights(float init_ep, VW::LEARNER::learner& base, VW::multi_ex& examples)
 {
   auto model_count = static_cast<int64_t>(conf_seq_estimators.size());
   VW::cb_class logged{};
@@ -110,7 +113,6 @@ void epsilon_decay_data::update_weights(float init_ep, VW::LEARNER::multi_learne
         if (a_s.action == labelled_action)
         {
           float w = (logged.probability > 0) ? a_s.score / logged.probability : 0;
-          if (model_ind == model_count - 1) { assert(std::abs(w - 1) < 1e-6); }  // Check w = 1 for champ
           for (int64_t estimator_ind = 0; estimator_ind <= model_ind; ++estimator_ind)
           {
             conf_seq_estimators[model_ind][estimator_ind].update(w, r);
@@ -173,7 +175,7 @@ void epsilon_decay_data::clear_weights_and_estimators(int64_t swap_dist, int64_t
   }
   for (int64_t ind = 0; ind < swap_dist; ++ind)
   {
-    VW::reductions::multi_model::clear_offset(_weights, _weight_indices[ind], _wpp);
+    VW::reductions::multi_model::clear_innermost_offset(_weights, _weight_indices[ind], _wpp, _model_count);
   }
 }
 
@@ -251,7 +253,7 @@ size_t write_model_field(io_buf& io, const VW::reductions::epsilon_decay::epsilo
 namespace
 {
 void predict(
-    VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
+    VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::LEARNER::learner& base, VW::multi_ex& examples)
 {
   uint64_t final_model_idx = static_cast<uint64_t>(data.conf_seq_estimators.size()) - 1;
   if (!data._constant_epsilon)
@@ -264,8 +266,7 @@ void predict(
   base.predict(examples, data._weight_indices[final_model_idx]);
 }
 
-void learn(
-    VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
+void learn(VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::LEARNER::learner& base, VW::multi_ex& examples)
 {
   data.update_weights(data._initial_epsilon, base, examples);
   data.check_estimator_bounds();
@@ -277,7 +278,10 @@ void save_load_epsilon_decay(
 {
   if (io.num_files() == 0) { return; }
   if (read) { VW::model_utils::read_model_field(io, epsilon_decay); }
-  else { VW::model_utils::write_model_field(io, epsilon_decay, "_epsilon_decay", text); }
+  else if (!epsilon_decay._predict_only_model)
+  {
+    VW::model_utils::write_model_field(io, epsilon_decay, "_epsilon_decay", text);
+  }
 }
 
 void finish(VW::reductions::epsilon_decay::epsilon_decay_data& data)
@@ -292,9 +296,37 @@ void finish(VW::reductions::epsilon_decay::epsilon_decay_data& data)
   }
 }
 
+void pre_save_load_epsilon_decay(VW::workspace& all, VW::reductions::epsilon_decay::epsilon_decay_data& data)
+{
+  options_i& options = *all.options;
+  if (!data._predict_only_model) { return; }
+  // Clear non-champ weights first
+
+  std::swap(*data._gd_normalized, data.per_live_model_state_double[0]);
+  std::swap(*data._gd_total_weight, data.per_live_model_state_double[1]);
+  std::swap(*data._sd_gravity, data.per_live_model_state_double[2]);
+  std::swap(*data._cb_adf_event_sum, data.per_live_model_state_uint64[0]);
+  std::swap(*data._cb_adf_action_sum, data.per_live_model_state_uint64[1]);
+
+  // Adjust champ weights to new single-model space
+  VW::reductions::multi_model::reduce_innermost_model_weights(
+      data._weights, data._weight_indices[data.conf_seq_estimators.size() - 1], data._wpp, data._model_count);
+
+  for (auto& group : options.get_all_option_group_definitions())
+  {
+    if (group.m_name == "[Reduction] Epsilon-Decaying Exploration Options")
+    {
+      for (auto& opt : group.m_options) { opt->m_keep = false; }
+    }
+  }
+
+  all.num_bits = all.num_bits - static_cast<uint32_t>(std::log2(data._wpp));
+  options.get_typed_option<uint32_t>("bit_precision").value(all.num_bits);
+}
+
 }  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::epsilon_decay_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -375,7 +407,7 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
                .help("Treat rewards as cost (do not negate sign)")
                .experimental())
       .add(make_option("tol_x", tol_x)
-               .default_value(1e-6)
+               .default_value(1e-6f)
                .keep()
                .help("Tolerance for estimation optimization")
                .experimental())
@@ -392,22 +424,22 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
 
   if (!fixed_significance_level) { epsilon_decay_significance_level /= model_count; }
 
+  bool predict_only_model = options.was_supplied("predict_only_model");
   bool is_brentq = opt_func == "brentq";
 
   auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(model_count, min_scope,
       epsilon_decay_significance_level, epsilon_decay_estimator_decay, all.weights.dense_weights,
       epsilon_decay_audit_str, constant_epsilon, all.wpp, min_champ_examples, initial_epsilon, shift_model_bounds,
-      reward_as_cost, tol_x, is_brentq);
+      reward_as_cost, tol_x, is_brentq, predict_only_model);
 
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs
-  auto* base_learner = stack_builder.setup_base_learner();
+  auto base = stack_builder.setup_base_learner();
 
   VW::reductions::gd& gd = *static_cast<VW::reductions::gd*>(
-      base_learner->get_learner_by_name_prefix("gd")->get_internal_type_erased_data_pointer_test_use_only());
-  auto& adf_data =
-      *static_cast<VW::reductions::cb_adf*>(as_multiline(base_learner->get_learner_by_name_prefix("cb_adf"))
-                                                ->get_internal_type_erased_data_pointer_test_use_only());
+      base->get_learner_by_name_prefix("gd")->get_internal_type_erased_data_pointer_test_use_only());
+  auto& adf_data = *static_cast<VW::reductions::cb_adf*>(require_multiline(base->get_learner_by_name_prefix("cb_adf"))
+                                                             ->get_internal_type_erased_data_pointer_test_use_only());
   data->per_live_model_state_double = std::vector<double>(model_count * 3, 0.f);
   data->per_live_model_state_uint64 = std::vector<uint64_t>(model_count * 2, 0.f);
   data->_gd_normalized = &(gd.per_model_states[0].normalized_sum_norm_x);
@@ -416,20 +448,21 @@ VW::LEARNER::base_learner* VW::reductions::epsilon_decay_setup(VW::setup_base_i&
   data->_cb_adf_action_sum = &(adf_data.gen_cs.action_sum);
   data->_sd_gravity = &(all.sd->gravity);
 
-  if (base_learner->is_multiline())
+  if (base->is_multiline())
   {
-    auto* learner = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::as_multiline(base_learner), learn,
-        predict, stack_builder.get_setupfn_name(epsilon_decay_setup))
-                        .set_input_label_type(VW::label_type_t::CB)
-                        .set_output_label_type(VW::label_type_t::CB)
-                        .set_input_prediction_type(VW::prediction_type_t::ACTION_PROBS)
-                        .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
-                        .set_params_per_weight(model_count)
-                        .set_save_load(save_load_epsilon_decay)
-                        .set_finish(::finish)
-                        .build();
+    auto l = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::require_multiline(base), learn, predict,
+        stack_builder.get_setupfn_name(epsilon_decay_setup))
+                 .set_input_label_type(VW::label_type_t::CB)
+                 .set_output_label_type(VW::label_type_t::CB)
+                 .set_input_prediction_type(VW::prediction_type_t::ACTION_PROBS)
+                 .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
+                 .set_params_per_weight(model_count)
+                 .set_save_load(save_load_epsilon_decay)
+                 .set_finish(::finish)
+                 .set_pre_save_load(pre_save_load_epsilon_decay)
+                 .build();
 
-    return VW::LEARNER::make_base(*learner);
+    return l;
   }
   else
   {

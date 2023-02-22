@@ -363,7 +363,7 @@ void predict(svm_params& params, svm_example** ec_arr, float* scores, size_t n)
   }
 }
 
-void predict(svm_params& params, base_learner&, VW::example& ec)
+void predict(svm_params& params, VW::example& ec)
 {
   VW::flat_example* fec = VW::flatten_sort_example(*(params.all), &ec);
   if (fec)
@@ -670,7 +670,7 @@ void train(svm_params& params)
   free(train_pool);
 }
 
-void learn(svm_params& params, base_learner&, VW::example& ec)
+void learn(svm_params& params, VW::example& ec)
 {
   VW::flat_example* fec = VW::flatten_sort_example(*(params.all), &ec);
   if (fec)
@@ -714,7 +714,7 @@ void finish_kernel_svm(svm_params& params)
 }
 }  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::kernel_svm_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::kernel_svm_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -799,14 +799,14 @@ VW::LEARNER::base_learner* VW::reductions::kernel_svm_setup(VW::setup_base_i& st
 
   params->all->weights.stride_shift(0);
 
-  auto* l = make_base_learner(std::move(params), learn, predict, stack_builder.get_setupfn_name(kernel_svm_setup),
+  auto l = make_bottom_learner(std::move(params), learn, predict, stack_builder.get_setupfn_name(kernel_svm_setup),
       VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
-                .set_save_load(save_load)
-                .set_finish(finish_kernel_svm)
-                .set_output_example_prediction(VW::details::output_example_prediction_simple_label<svm_params>)
-                .set_update_stats(VW::details::update_stats_simple_label<svm_params>)
-                .set_print_update(VW::details::print_update_simple_label<svm_params>)
-                .build();
+               .set_save_load(save_load)
+               .set_finish(finish_kernel_svm)
+               .set_output_example_prediction(VW::details::output_example_prediction_simple_label<svm_params>)
+               .set_update_stats(VW::details::update_stats_simple_label<svm_params>)
+               .set_print_update(VW::details::print_update_simple_label<svm_params>)
+               .build();
 
-  return make_base(*l);
+  return l;
 }

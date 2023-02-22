@@ -90,10 +90,17 @@ void merge_weights_with_save_resume(size_t length,
 }
 
 template <typename WeightsT>
-void copy_weights(WeightsT& dest, const WeightsT& source, size_t length)
+void add_weights(WeightsT& dest, const WeightsT& lhs, const WeightsT& rhs, size_t length)
 {
   const size_t full_weights_size = length << dest.stride_shift();
-  for (size_t i = 0; i < full_weights_size; i++) { dest[i] = source[i]; }
+  for (size_t i = 0; i < full_weights_size; i++) { dest[i] = lhs[i] + rhs[i]; }
+}
+
+template <typename WeightsT>
+void subtract_weights(WeightsT& dest, const WeightsT& lhs, const WeightsT& rhs, size_t length)
+{
+  const size_t full_weights_size = length << dest.stride_shift();
+  for (size_t i = 0; i < full_weights_size; i++) { dest[i] = lhs[i] - rhs[i]; }
 }
 
 void sync_weights(VW::workspace& all)
@@ -235,7 +242,8 @@ void end_pass(VW::reductions::gd& g)
 }
 
 void merge(const std::vector<float>& per_model_weighting, const std::vector<const VW::workspace*>& all_workspaces,
-    const std::vector<VW::reductions::gd*>& all_data, VW::workspace& output_workspace, VW::reductions::gd& output_data)
+    const std::vector<const VW::reductions::gd*>& all_data, VW::workspace& output_workspace,
+    VW::reductions::gd& output_data)
 {
   const size_t length = static_cast<size_t>(1) << output_workspace.num_bits;
 
@@ -274,13 +282,15 @@ void merge(const std::vector<float>& per_model_weighting, const std::vector<cons
   }
 }
 
-void add(const VW::workspace& /* ws1 */, const VW::reductions::gd& data1, const VW::workspace& ws2,
-    VW::reductions::gd& data2, VW::workspace& ws_out, VW::reductions::gd& data_out)
+void add(const VW::workspace& ws1, const VW::reductions::gd& data1, const VW::workspace& ws2,
+    const VW::reductions::gd& data2, VW::workspace& ws_out, VW::reductions::gd& data_out)
 {
   const size_t length = static_cast<size_t>(1) << ws_out.num_bits;
-  // When adding, output the weights from the model delta (2nd arugment to addition)
-  if (ws_out.weights.sparse) { copy_weights(ws_out.weights.sparse_weights, ws2.weights.sparse_weights, length); }
-  else { copy_weights(ws_out.weights.dense_weights, ws2.weights.dense_weights, length); }
+  if (ws_out.weights.sparse)
+  {
+    add_weights(ws_out.weights.sparse_weights, ws1.weights.sparse_weights, ws2.weights.sparse_weights, length);
+  }
+  else { add_weights(ws_out.weights.dense_weights, ws1.weights.dense_weights, ws2.weights.dense_weights, length); }
 
   for (size_t i = 0; i < data_out.per_model_states.size(); i++)
   {
@@ -293,13 +303,15 @@ void add(const VW::workspace& /* ws1 */, const VW::reductions::gd& data1, const 
   }
 }
 
-void subtract(const VW::workspace& ws1, const VW::reductions::gd& data1, const VW::workspace& /* ws2 */,
-    VW::reductions::gd& data2, VW::workspace& ws_out, VW::reductions::gd& data_out)
+void subtract(const VW::workspace& ws1, const VW::reductions::gd& data1, const VW::workspace& ws2,
+    const VW::reductions::gd& data2, VW::workspace& ws_out, VW::reductions::gd& data_out)
 {
   const size_t length = static_cast<size_t>(1) << ws_out.num_bits;
-  // When subtracting, output the weights from the newer model (1st arugment to subtraction)
-  if (ws_out.weights.sparse) { copy_weights(ws_out.weights.sparse_weights, ws1.weights.sparse_weights, length); }
-  else { copy_weights(ws_out.weights.dense_weights, ws1.weights.dense_weights, length); }
+  if (ws_out.weights.sparse)
+  {
+    subtract_weights(ws_out.weights.sparse_weights, ws1.weights.sparse_weights, ws2.weights.sparse_weights, length);
+  }
+  else { subtract_weights(ws_out.weights.dense_weights, ws1.weights.dense_weights, ws2.weights.dense_weights, length); }
 
   for (size_t i = 0; i < data_out.per_model_states.size(); i++)
   {
@@ -451,16 +463,16 @@ void VW::details::print_audit_features(VW::workspace& all, VW::example& ec)
   print_features(all, ec);
 }
 
-float VW::details::finalize_prediction(VW::shared_data* sd, VW::io::logger& logger, float ret)
+float VW::details::finalize_prediction(VW::shared_data& sd, VW::io::logger& logger, float ret)
 {
   if (std::isnan(ret))
   {
     ret = 0.;
-    logger.err_warn("NAN prediction in example {0}, forcing {1}", sd->example_number + 1, ret);
+    logger.err_warn("NAN prediction in example {0}, forcing {1}", sd.example_number + 1, ret);
     return ret;
   }
-  if (ret > sd->max_label) { return sd->max_label; }
-  if (ret < sd->min_label) { return sd->min_label; }
+  if (ret > sd.max_label) { return sd.max_label; }
+  if (ret < sd.min_label) { return sd.min_label; }
   return ret;
 }
 
@@ -487,7 +499,7 @@ inline float trunc_predict(VW::workspace& all, VW::example& ec, double gravity, 
 }
 
 template <bool l1, bool audit>
-void predict(VW::reductions::gd& g, base_learner&, VW::example& ec)
+void predict(VW::reductions::gd& g, VW::example& ec)
 {
   VW_DBG(ec) << "gd.predict(): ex#=" << ec.example_counter << ", offset=" << ec.ft_offset << std::endl;
 
@@ -498,7 +510,7 @@ void predict(VW::reductions::gd& g, base_learner&, VW::example& ec)
 
   ec.num_features_from_interactions = num_interacted_features;
   ec.partial_prediction *= static_cast<float>(all.sd->contraction);
-  ec.pred.scalar = VW::details::finalize_prediction(all.sd, all.logger, ec.partial_prediction);
+  ec.pred.scalar = VW::details::finalize_prediction(*all.sd, all.logger, ec.partial_prediction);
 
   VW_DBG(ec) << "gd: predict() " << VW::debug::scalar_pred_to_string(ec) << VW::debug::features_to_string(ec)
              << std::endl;
@@ -517,8 +529,8 @@ inline void vec_add_trunc_multipredict(VW::details::multipredict_info<T>& mp, co
 }
 
 template <bool l1, bool audit>
-void multipredict(VW::reductions::gd& g, base_learner&, VW::example& ec, size_t count, size_t step,
-    VW::polyprediction* pred, bool finalize_predictions)
+void multipredict(VW::reductions::gd& g, VW::example& ec, size_t count, size_t step, VW::polyprediction* pred,
+    bool finalize_predictions)
 {
   VW::workspace& all = *g.all;
   for (size_t c = 0; c < count; c++)
@@ -568,7 +580,7 @@ void multipredict(VW::reductions::gd& g, base_learner&, VW::example& ec, size_t 
   {
     for (size_t c = 0; c < count; c++)
     {
-      pred[c].scalar = VW::details::finalize_prediction(all.sd, all.logger, pred[c].scalar);
+      pred[c].scalar = VW::details::finalize_prediction(*all.sd, all.logger, pred[c].scalar);
     }
   }
   if (audit)
@@ -751,7 +763,7 @@ float get_scale(VW::reductions::gd& g, VW::example& /* ec */, float weight)
 }
 
 template <bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive, size_t normalized, size_t spare>
-float sensitivity(VW::reductions::gd& g, base_learner& /* base */, VW::example& ec)
+float sensitivity(VW::reductions::gd& g, VW::example& ec)
 {
   return get_scale<adaptive>(g, ec, 1.) *
       sensitivity<sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, true>(g, ec);
@@ -767,7 +779,7 @@ float compute_update(VW::reductions::gd& g, VW::example& ec)
 
   float update = 0.;
   ec.updated_prediction = ec.pred.scalar;
-  if (all.loss->get_loss(all.sd, ec.pred.scalar, ld.label) > 0.)
+  if (all.loss->get_loss(all.sd.get(), ec.pred.scalar, ld.label) > 0.)
   {
     float pred_per_update = sensitivity<sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, false>(g, ec);
     float update_scale = get_scale<adaptive>(g, ec, ec.weight);
@@ -778,7 +790,7 @@ float compute_update(VW::reductions::gd& g, VW::example& ec)
 
     if (all.reg_mode && std::fabs(update) > 1e-8)
     {
-      double dev1 = all.loss->first_derivative(all.sd, ec.pred.scalar, ld.label);
+      double dev1 = all.loss->first_derivative(all.sd.get(), ec.pred.scalar, ld.label);
       double eta_bar = (fabs(dev1) > 1e-8) ? (-update / dev1) : 0.0;
       if (fabs(dev1) > 1e-8) { all.sd->contraction *= (1. - all.l2_lambda * eta_bar); }
       update /= static_cast<float>(all.sd->contraction);
@@ -799,7 +811,7 @@ float compute_update(VW::reductions::gd& g, VW::example& ec)
 
 template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive,
     size_t normalized, size_t spare>
-void update(VW::reductions::gd& g, base_learner&, VW::example& ec)
+void update(VW::reductions::gd& g, VW::example& ec)
 {
   // invariant: not a test label, importance weight > 0
   float update;
@@ -815,17 +827,15 @@ void update(VW::reductions::gd& g, base_learner&, VW::example& ec)
   }
 }
 
-// NO_SANITIZE_UNDEFINED needed in learn functions because
-// base_learner& base might be a reference created from nullptr
 template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive,
     size_t normalized, size_t spare>
-void NO_SANITIZE_UNDEFINED learn(VW::reductions::gd& g, base_learner& base, VW::example& ec)
+void learn(VW::reductions::gd& g, VW::example& ec)
 {
   // invariant: not a test label, importance weight > 0
   assert(ec.l.simple.label != FLT_MAX);
   assert(ec.weight > 0.);
-  g.predict(g, base, ec);
-  update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare>(g, base, ec);
+  g.predict(g, ec);
+  update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare>(g, ec);
 }
 
 size_t write_index(VW::io_buf& model_file, std::stringstream& msg, bool text, uint32_t num_bits, uint64_t i)
@@ -1349,7 +1359,7 @@ uint64_t ceil_log_2(uint64_t v)
 
 }  // namespace
 
-base_learner* VW::reductions::gd_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -1491,22 +1501,21 @@ base_learner* VW::reductions::gd_setup(VW::setup_base_i& stack_builder)
   all.weights.stride_shift(static_cast<uint32_t>(::ceil_log_2(stride - 1)));
 
   auto* bare = g.get();
-  learner<VW::reductions::gd, VW::example>* l =
-      make_base_learner(std::move(g), g->learn, bare->predict, stack_builder.get_setupfn_name(gd_setup),
-          VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
-          .set_learn_returns_prediction(true)
-          .set_params_per_weight(VW::details::UINT64_ONE << all.weights.stride_shift())
-          .set_sensitivity(bare->sensitivity)
-          .set_multipredict(bare->multipredict)
-          .set_update(bare->update)
-          .set_save_load(::save_load)
-          .set_end_pass(::end_pass)
-          .set_merge_with_all(::merge)
-          .set_add_with_all(::add)
-          .set_subtract_with_all(::subtract)
-          .set_output_example_prediction(VW::details::output_example_prediction_simple_label<VW::reductions::gd>)
-          .set_update_stats(VW::details::update_stats_simple_label<VW::reductions::gd>)
-          .set_print_update(VW::details::print_update_simple_label<VW::reductions::gd>)
-          .build();
-  return make_base(*l);
+  auto l = make_bottom_learner(std::move(g), g->learn, bare->predict, stack_builder.get_setupfn_name(gd_setup),
+      VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
+               .set_learn_returns_prediction(true)
+               .set_params_per_weight(VW::details::UINT64_ONE << all.weights.stride_shift())
+               .set_sensitivity(bare->sensitivity)
+               .set_multipredict(bare->multipredict)
+               .set_update(bare->update)
+               .set_save_load(::save_load)
+               .set_end_pass(::end_pass)
+               .set_merge_with_all(::merge)
+               .set_add_with_all(::add)
+               .set_subtract_with_all(::subtract)
+               .set_output_example_prediction(VW::details::output_example_prediction_simple_label<VW::reductions::gd>)
+               .set_update_stats(VW::details::update_stats_simple_label<VW::reductions::gd>)
+               .set_print_update(VW::details::print_update_simple_label<VW::reductions::gd>)
+               .build();
+  return l;
 }

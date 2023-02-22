@@ -1,5 +1,5 @@
 creating features for following interactions: AA AB AC AD AE AF BB BC BD BE BF CC CD CE CF DD DE DF EE EF FF
-final_regressor = models/aml_spin_off_cb.m
+final_regressor = models/cb_spin_off.m
 using no cache
 Reading datafile = train-sets/automl_spin_off.txt
 num sources = 1
@@ -8,7 +8,7 @@ learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 cb_type = mtr
-Enabled reductions: gd, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, shared_feature_merger
+Enabled learners: gd, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, shared_feature_merger
 Input label = CB
 Output pred = ACTION_PROBS
 average  since         example        example        current        current  current

@@ -356,7 +356,7 @@ extern "C"
   {
     auto* pointer = static_cast<VW::workspace*>(handle);
     auto* ex = static_cast<VW::example*>(e);
-    VW::LEARNER::as_singleline(pointer->l)->predict(*ex);
+    VW::LEARNER::require_singleline(pointer->l)->predict(*ex);
     // BUG: The below method may return garbage as it assumes a certain structure for ex->ld
     // which may not be the actual one used (e.g., for cost-sensitive multi-class learning)
     return VW::get_prediction(ex);
@@ -366,7 +366,7 @@ extern "C"
   {
     auto* pointer = static_cast<VW::workspace*>(handle);
     auto* ex = static_cast<VW::example*>(e);
-    VW::LEARNER::as_singleline(pointer->l)->predict(*ex);
+    VW::LEARNER::require_singleline(pointer->l)->predict(*ex);
     return VW::get_cost_sensitive_prediction(ex);
   }
 

@@ -16,6 +16,8 @@
 #include "vw/core/vw_fwd.h"
 #include "vw/test_common/test_common.h"
 
+#include <memory>
+
 // this file would live in toy_reduction.cc
 // toy_reduction.h would define test_reduction_setup(..) fn
 // see binary.h and binary.cc for contrast
@@ -30,7 +32,7 @@ bool called_learn_predict = false;
 
 // minimal predict/learn fn for test_reduction_setup
 template <bool is_learn>
-void predict_or_learn(char&, VW::LEARNER::single_learner& base, VW::example& ec)
+void predict_or_learn(VW::LEARNER::learner& base, VW::example& ec)
 {
   EXPECT_TRUE(added_to_learner);
   called_learn_predict = true;
@@ -46,7 +48,7 @@ void predict_or_learn(char&, VW::LEARNER::single_learner& base, VW::example& ec)
 
 // minimal setup function for reduction
 template <bool test_stack>
-VW::LEARNER::base_learner* test_reduction_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> test_reduction_setup(VW::setup_base_i& stack_builder)
 {
   EXPECT_TRUE(added_to_learner == false);
   EXPECT_TRUE(called_learn_predict == false);
@@ -60,7 +62,7 @@ VW::LEARNER::base_learner* test_reduction_setup(VW::setup_base_i& stack_builder)
   auto base = stack_builder.setup_base_learner();
   EXPECT_TRUE(base->is_multiline() == false);
 
-  auto ret = VW::LEARNER::make_no_data_reduction_learner(as_singleline(base), predict_or_learn<true>,
+  auto ret = VW::LEARNER::make_no_data_reduction_learner(require_singleline(base), predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(test_reduction_setup<test_stack>))
                  .set_learn_returns_prediction(base->learn_returns_prediction)
                  .build();
@@ -69,21 +71,21 @@ VW::LEARNER::base_learner* test_reduction_setup(VW::setup_base_i& stack_builder)
 
   if (test_stack)
   {
-    std::vector<std::string> enabled_reductions;
-    ret->get_enabled_reductions(enabled_reductions);
+    std::vector<std::string> enabled_learners;
+    ret->get_enabled_learners(enabled_learners);
 
     // this is the learner stack of instantiated reductions,
     // included itself "test_reduction_name"
-    EXPECT_EQ(enabled_reductions.size(), 4);
-    EXPECT_EQ(enabled_reductions[0], "gd");
-    EXPECT_EQ(enabled_reductions[1], "scorer-identity");
+    EXPECT_EQ(enabled_learners.size(), 4);
+    EXPECT_EQ(enabled_learners[0], "gd");
+    EXPECT_EQ(enabled_learners[1], "scorer-identity");
     // this matches string from custom_builder constructor auto-magically [sic]
-    EXPECT_EQ(enabled_reductions[2], "count_label");
-    EXPECT_EQ(enabled_reductions[3], "test_reduction_name");
+    EXPECT_EQ(enabled_learners[2], "count_label");
+    EXPECT_EQ(enabled_learners[3], "test_reduction_name");
   }
   else { EXPECT_TRUE(false); }
 
-  return make_base(*ret);
+  return ret;
 }
 
 void reset_test_state()

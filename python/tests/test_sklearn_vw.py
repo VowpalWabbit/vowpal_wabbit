@@ -303,7 +303,6 @@ class TestVWRegressor(BaseVWTest):
 
 
 class TestVWMultiClassifier(BaseVWTest):
-
     estimator = VWMultiClassifier
 
     def test_predict_proba(self, data):

@@ -63,7 +63,7 @@ void init_global(baseline_data& data)
 }
 
 template <bool is_learn>
-void predict_or_learn(baseline_data& data, single_learner& base, VW::example& ec)
+void predict_or_learn(baseline_data& data, learner& base, VW::example& ec)
 {
   // no baseline if check_enabled is true and example contains flag
   if (data.check_enabled && !VW::reductions::baseline::baseline_enabled(&ec))
@@ -133,7 +133,7 @@ void predict_or_learn(baseline_data& data, single_learner& base, VW::example& ec
   }
 }
 
-float sensitivity(baseline_data& data, base_learner& base, VW::example& ec)
+float sensitivity(baseline_data& data, learner& base, VW::example& ec)
 {
   // no baseline if check_enabled is true and example contains flag
   if (data.check_enabled && !VW::reductions::baseline::baseline_enabled(&ec)) { return base.sensitivity(ec); }
@@ -147,14 +147,14 @@ float sensitivity(baseline_data& data, base_learner& base, VW::example& ec)
   const float baseline_sens = base.sensitivity(data.ec);
 
   // sensitivity of residual
-  as_singleline(&base)->predict(data.ec);
+  require_singleline(&base)->predict(data.ec);
   auto& simple_red_features = ec.ex_reduction_features.template get<VW::simple_label_reduction_features>();
   simple_red_features.initial = data.ec.pred.scalar;
   const float sens = base.sensitivity(ec);
   return baseline_sens + sens;
 }
 
-base_learner* VW::reductions::baseline_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::baseline_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -188,15 +188,15 @@ base_learner* VW::reductions::baseline_setup(VW::setup_base_i& stack_builder)
   const auto loss_function_type = all.loss->get_type();
   if (loss_function_type != "logistic") { data->lr_scaling = true; }
 
-  auto base = as_singleline(stack_builder.setup_base_learner());
-  auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, predict_or_learn<true>, predict_or_learn<false>,
+  auto base = require_singleline(stack_builder.setup_base_learner());
+  auto l = make_reduction_learner(std::move(data), base, predict_or_learn<true>, predict_or_learn<false>,
       stack_builder.get_setupfn_name(VW::reductions::baseline_setup))
-                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
-                .set_output_prediction_type(VW::prediction_type_t::SCALAR)
-                .set_input_label_type(VW::label_type_t::SIMPLE)
-                .set_output_label_type(VW::label_type_t::SIMPLE)
-                .set_sensitivity(sensitivity)
-                .build();
+               .set_input_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_output_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_input_label_type(VW::label_type_t::SIMPLE)
+               .set_output_label_type(VW::label_type_t::SIMPLE)
+               .set_sensitivity(sensitivity)
+               .build();
 
-  return make_base(*l);
+  return l;
 }

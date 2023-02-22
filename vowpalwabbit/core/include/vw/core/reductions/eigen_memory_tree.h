@@ -10,6 +10,7 @@
 #include "vw/core/vw_fwd.h"
 
 #include <list>
+#include <memory>
 #include <unordered_map>
 #include <vector>
 
@@ -20,7 +21,7 @@ namespace VW
 {
 namespace reductions
 {
-VW::LEARNER::base_learner* eigen_memory_tree_setup(VW::setup_base_i& stack_builder);
+std::shared_ptr<VW::LEARNER::learner> eigen_memory_tree_setup(VW::setup_base_i& stack_builder);
 
 namespace eigen_memory_tree
 {
