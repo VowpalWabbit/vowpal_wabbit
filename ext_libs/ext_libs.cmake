@@ -101,7 +101,7 @@ if(VW_EIGEN_SYS_DEP)
   add_library(eigen INTERFACE)
   target_include_directories(eigen INTERFACE ${EIGEN3_INCLUDE_DIR})
 else()
-  if(NOT EXISTS ${CMAKE_CURRENT_LIST_DIR}/eigen)
+  if(NOT EXISTS ${CMAKE_CURRENT_LIST_DIR}/eigen/CMakeLists.txt)
   message(SEND_ERROR "The eigen git submodule is not available.\
   Please run `git submodule update --init --recursive` or set VW_EIGEN_SYS_DEP to ON if using a system dependency for eigen")
   endif()
