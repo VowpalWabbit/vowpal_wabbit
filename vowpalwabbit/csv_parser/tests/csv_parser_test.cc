@@ -620,6 +620,7 @@ TEST(CsvParser, MultilineExamples)
   EXPECT_FLOAT_EQ(examples[0]->feature_space[' '].values[0], 1);
   EXPECT_FLOAT_EQ(examples[0]->feature_space[' '].values[1], 0.5);
   VW::finish_example(*vw, *examples[0]);
+  examples.clear();
 
   examples.push_back(&VW::get_unused_example(vw.get()));
   EXPECT_EQ(vw->example_parser->reader(vw.get(), buffer, examples), 1);
@@ -632,6 +633,7 @@ TEST(CsvParser, MultilineExamples)
   EXPECT_FLOAT_EQ(examples[0]->feature_space[' '].values[1], 1);
   EXPECT_FLOAT_EQ(examples[0]->feature_space[' '].values[2], 2);
   VW::finish_example(*vw, *examples[0]);
+  examples.clear();
 
   examples.push_back(&VW::get_unused_example(vw.get()));
   EXPECT_EQ(vw->example_parser->reader(vw.get(), buffer, examples), 1);
@@ -640,6 +642,7 @@ TEST(CsvParser, MultilineExamples)
   EXPECT_FLOAT_EQ(examples[0]->feature_space[' '].values[0], 1);
   EXPECT_FLOAT_EQ(examples[0]->feature_space[' '].values[1], 3);
   VW::finish_example(*vw, *examples[0]);
+  examples.clear();
 
   examples.push_back(&VW::get_unused_example(vw.get()));
   EXPECT_EQ(vw->example_parser->reader(vw.get(), buffer, examples), 1);
@@ -655,6 +658,7 @@ TEST(CsvParser, MultilineExamples)
   EXPECT_FLOAT_EQ(examples[0]->feature_space[' '].values[0], 1);
   EXPECT_FLOAT_EQ(examples[0]->feature_space[' '].values[1], 1);
   VW::finish_example(*vw, *examples[0]);
+  examples.clear();
 
   examples.push_back(&VW::get_unused_example(vw.get()));
   EXPECT_EQ(vw->example_parser->reader(vw.get(), buffer, examples), 1);
@@ -667,6 +671,7 @@ TEST(CsvParser, MultilineExamples)
   EXPECT_FLOAT_EQ(examples[0]->feature_space[' '].values[1], 1);
   EXPECT_FLOAT_EQ(examples[0]->feature_space[' '].values[2], 1);
   VW::finish_example(*vw, *examples[0]);
+  examples.clear();
 
   examples.push_back(&VW::get_unused_example(vw.get()));
   EXPECT_EQ(vw->example_parser->reader(vw.get(), buffer, examples), 1);
@@ -676,9 +681,11 @@ TEST(CsvParser, MultilineExamples)
   EXPECT_FLOAT_EQ(examples[0]->feature_space[' '].values[1], 2);
   EXPECT_FLOAT_EQ(examples[0]->feature_space[' '].values[2], 1);
   VW::finish_example(*vw, *examples[0]);
+  examples.clear();
 
   examples.push_back(&VW::get_unused_example(vw.get()));
   EXPECT_EQ(vw->example_parser->reader(vw.get(), buffer, examples), 1);
   EXPECT_EQ(examples[0]->is_newline, true);
   VW::finish_example(*vw, *examples[0]);
+  examples.clear();
 }
