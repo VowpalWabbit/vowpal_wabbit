@@ -42,7 +42,7 @@ public:
   example_predict(example_predict&& other) = default;
   example_predict& operator=(example_predict&& other) = default;
 
-  void calculate_feature_space_hash();
+  uint64_t calculate_feature_space_hash();
 
   /// If indices is modified this iterator is invalidated.
   iterator begin();
