@@ -227,31 +227,6 @@ public:
   }
 };
 
-// float linear_kernel(const VW::flat_example* fec1, const VW::flat_example* fec2)
-// {
-//   float dotprod = 0;
-
-//   auto& fs_1 = const_cast<VW::features&>(fec1->fs);
-//   auto& fs_2 = const_cast<VW::features&>(fec2->fs);
-//   if (fs_2.indices.size() == 0) { return 0.f; }
-
-//   for (size_t idx1 = 0, idx2 = 0; idx1 < fs_1.size() && idx2 < fs_2.size(); idx1++)
-//   {
-//     uint64_t ec1pos = fs_1.indices[idx1];
-//     uint64_t ec2pos = fs_2.indices[idx2];
-//     if (ec1pos < ec2pos) { continue; }
-
-//     while (ec1pos > ec2pos && ++idx2 < fs_2.size()) { ec2pos = fs_2.indices[idx2]; }
-
-//     if (ec1pos == ec2pos)
-//     {
-//       dotprod += fs_1.values[idx1] * fs_2.values[idx2];
-//       ++idx2;
-//     }
-//   }
-//   return dotprod;
-// }
-
 float normalized_linear_prod(memory_tree& b, VW::example* ec1, VW::example* ec2)
 {
   VW::features fs1;
