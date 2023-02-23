@@ -193,15 +193,13 @@ TEST(Options, NameExtractionRecycle)
 
 TEST(Options, SetTags)
 {
-  base_option opt;
-  opt.set_tags(std::vector<std::string>{"tag1", "tag2", "tag3"});
-  ASSERT_THAT(opt.get_tags(), ElementsAre("tag1", "tag2", "tag3"));
+  typed_option<bool> opt("my_opt");
+  opt.set_tags(std::vector<std::string>{"tag1", "tag2", "tag0"});
+  ASSERT_THAT(opt.get_tags(), ::testing::ElementsAre("tag0", "tag1", "tag2"));
 }
 
 TEST(Options, SetTagsDuplicate)
 {
-}
-
-TEST(Options, SetTagsOnBuilder)
-{
+  typed_option<bool> opt("my_opt");
+  EXPECT_THROW(opt.set_tags(std::vector<std::string>{"tag1", "tag1", "tag3"}), VW::vw_exception);
 }
