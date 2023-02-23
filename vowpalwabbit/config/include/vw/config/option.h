@@ -56,6 +56,25 @@ public:
   virtual void accept(typed_option_visitor& handler) = 0;
 
   virtual ~base_option() = default;
+
+  VW_ATTR(nodiscard) const std::vector<std::string>& get_tags() const { return _tags; }
+  void set_tags(std::vector<std::string> tags) {
+    std::sort(tags.begin(), tags.end());
+    auto last = std::unique(tags.begin(), tags.end());
+    if (last != tags.end()) {
+      std::stringstream ss;
+      ss << "Duplicate tags found in option: " << m_name << ". Tags: ";
+      for (auto it = tags.begin(); it != last; ++it) {
+        ss << *it << ", ";
+      }
+      ss << *last;
+      THROW(ss.str());
+    }
+    _tags = std::move(tags);
+  }
+
+private:
+  std::vector<std::string> _tags;
 };
 
 template <typename T>

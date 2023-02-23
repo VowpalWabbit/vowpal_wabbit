@@ -4,6 +4,7 @@
 
 #include "vw/config/options.h"
 
+#include "vw/config/option.h"
 #include "vw/config/options_name_extractor.h"
 
 #include <gmock/gmock.h>
@@ -188,4 +189,19 @@ TEST(Options, NameExtractionRecycle)
 
   EXPECT_EQ(name_extractor.generated_name, "im_necessary_v2_opt2");
   EXPECT_EQ(result, false);
+}
+
+TEST(Options, SetTags)
+{
+  base_option opt;
+  opt.set_tags(std::vector<std::string>{"tag1", "tag2", "tag3"});
+  ASSERT_THAT(opt.get_tags(), ElementsAre("tag1", "tag2", "tag3"));
+}
+
+TEST(Options, SetTagsDuplicate)
+{
+}
+
+TEST(Options, SetTagsOnBuilder)
+{
 }

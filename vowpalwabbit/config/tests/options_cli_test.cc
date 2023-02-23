@@ -536,3 +536,7 @@ TEST(OptionsCli, CheckWasSuppliedCommonPrefixBefore)
   EXPECT_TRUE(!options->was_supplied("int_opt"));
   EXPECT_TRUE(options->was_supplied("int_opt_two"));
 }
+
+TEST(OptionsCli, CheckWasSuppliedCommonPrefixBefore)
+{
+}
