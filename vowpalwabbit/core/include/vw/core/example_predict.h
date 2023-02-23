@@ -42,7 +42,9 @@ public:
   example_predict(example_predict&& other) = default;
   example_predict& operator=(example_predict&& other) = default;
 
-  uint64_t calculate_feature_space_hash();
+  // this hashing function does not take into account the order of the features
+  // an example with the exact same namespaces / features-values but in a different order will have the same hash
+  uint64_t calculate_order_independent_feature_space_hash();
 
   /// If indices is modified this iterator is invalidated.
   iterator begin();
@@ -53,6 +55,7 @@ public:
   std::array<features, NUM_NAMESPACES> feature_space;  // Groups of feature values.
   uint64_t ft_offset = 0;                              // An offset for all feature values.
   uint64_t feature_space_hash = 0;  // A unique hash of the feature space and namespaces of the example.
+  bool is_set_feature_space_hash = false;
 
   // Interactions are specified by this struct's interactions vector of vectors of unsigned characters, where each
   // vector is an interaction and each char is a namespace.

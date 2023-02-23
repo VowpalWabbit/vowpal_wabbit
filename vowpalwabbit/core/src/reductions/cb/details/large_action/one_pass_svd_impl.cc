@@ -139,7 +139,7 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
   for (size_t i = 0; i < examples.size(); i++)
   {
     auto ex = examples[i];
-    if (example_hashes.find(ex->feature_space_hash) == example_hashes.end() && ex->feature_space_hash != 0)
+    if (example_hashes.find(ex->feature_space_hash) == example_hashes.end() && ex->is_set_feature_space_hash)
     {
       example_hashes.emplace(ex->feature_space_hash, AOmega.row(i) / shrink_factors[i]);
     }

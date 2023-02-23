@@ -752,7 +752,10 @@ void VW::setup_example(VW::workspace& all, VW::example* ae)
   ae->interactions = &all.interactions;
   ae->extent_interactions = &all.extent_interactions;
 
-  if (all.calculate_feature_space_hash) { ae->feature_space_hash = ae->calculate_feature_space_hash(); }
+  if (all.calculate_feature_space_hash)
+  {
+    ae->feature_space_hash = ae->calculate_order_independent_feature_space_hash();
+  }
 }
 
 VW::example* VW::new_unused_example(VW::workspace& all)
@@ -898,6 +901,7 @@ void VW::empty_example(VW::workspace& /*all*/, example& ec)
   ec.ex_reduction_features.clear();
   ec.num_features_from_interactions = 0;
   ec.feature_space_hash = 0;
+  ec.is_set_feature_space_hash = false;
 }
 
 void VW::move_feature_namespace(example* dst, example* src, namespace_index c)
