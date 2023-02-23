@@ -46,8 +46,6 @@ namespace cb_explore_adf
 
 void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vector<float>& shrink_factors)
 {
-  for (auto* ex : examples) { ex->feature_space_hash = ex->calculate_order_independent_feature_space_hash(); }
-
   auto num_actions = examples[0]->pred.a_s.size();
   // one pass SVD is going to be less accurate than two pass SVD so we need to over-sample
   // this constant factor should be enough, we need a higher probability that we get a fair coin flip in the Omega
@@ -65,7 +63,8 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
   // hash is without the shared features which will be removed anyway before calculating AOmega
   for (size_t i = 0; i < examples.size(); ++i)
   {
-    if (cached_example_hashes.find(examples[i]->feature_space_hash) == cached_example_hashes.end())
+    if (cached_example_hashes.find(examples[i]->get_or_calculate_order_independent_feature_space_hash()) ==
+        cached_example_hashes.end())
     {
       cached_example_hashes.clear();
       break;
@@ -99,7 +98,8 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
     for (auto row_index = row_index_begin; row_index < row_index_end; ++row_index)
     {
       VW::example* ex = examples[row_index];
-      if (cached_example_hashes.find(ex->feature_space_hash) == cached_example_hashes.end())
+      if (cached_example_hashes.find(ex->get_or_calculate_order_independent_feature_space_hash()) ==
+          cached_example_hashes.end())
       {
         auto& red_features = ex->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
         auto* shared_example = red_features.shared_example;
@@ -113,7 +113,11 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
 
         if (shared_example != nullptr) { VW::details::append_example_namespaces_from_example(*ex, *shared_example); }
       }
-      else { AOmega.row(row_index) = cached_example_hashes[ex->feature_space_hash] * shrink_factors[row_index]; }
+      else
+      {
+        AOmega.row(row_index) = cached_example_hashes[ex->get_or_calculate_order_independent_feature_space_hash()] *
+            shrink_factors[row_index];
+      }
     }
   };
 

@@ -44,7 +44,7 @@ public:
 
   // this hashing function does not take into account the order of the features
   // an example with the exact same namespaces / features-values but in a different order will have the same hash
-  uint64_t calculate_order_independent_feature_space_hash();
+  uint64_t get_or_calculate_order_independent_feature_space_hash();
 
   /// If indices is modified this iterator is invalidated.
   iterator begin();
