@@ -194,12 +194,21 @@ TEST(Options, NameExtractionRecycle)
 TEST(Options, SetTags)
 {
   typed_option<bool> opt("my_opt");
-  opt.set_tags(std::vector<std::string>{"tag1", "tag2", "tag0"});
-  ASSERT_THAT(opt.get_tags(), ::testing::ElementsAre("tag0", "tag1", "tag2"));
+  opt.set_tags(std::vector<std::string>{"tagb", "taga", "tagc"});
+  ASSERT_THAT(opt.get_tags(), ::testing::ElementsAre("taga", "tagb", "tagc"));
 }
 
 TEST(Options, SetTagsDuplicate)
 {
   typed_option<bool> opt("my_opt");
-  EXPECT_THROW(opt.set_tags(std::vector<std::string>{"tag1", "tag1", "tag3"}), VW::vw_exception);
+  EXPECT_THROW(opt.set_tags(std::vector<std::string>{"taga", "tagb", "tagb"}), VW::vw_exception);
+}
+
+TEST(Options, SetTagsInvalidName)
+{
+  typed_option<bool> opt("my_opt");
+  EXPECT_THROW(opt.set_tags(std::vector<std::string>{"tag1"}), VW::vw_exception);
+  EXPECT_THROW(opt.set_tags(std::vector<std::string>{"Tag"}), VW::vw_exception);
+  EXPECT_THROW(opt.set_tags(std::vector<std::string>{"a b"}), VW::vw_exception);
+  EXPECT_THROW(opt.set_tags(std::vector<std::string>{"t-a-g"}), VW::vw_exception);
 }

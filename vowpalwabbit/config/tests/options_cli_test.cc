@@ -542,8 +542,9 @@ TEST(OptionsCli, MakeOptionTags)
 {
   int int_opt{};
   option_group_definition arg_group("group1");
-  arg_group.add(make_option("int_opt", int_opt).tags({"tag1"}));
+  arg_group.add(make_option("int_opt", int_opt).tags({"taga"}));
+  ASSERT_THAT(arg_group.m_options.back()->get_tags(), ::testing::ElementsAre("taga"));
 
   int int_opt2{};
-  EXPECT_THROW(arg_group.add(make_option("int_opt2", int_opt2).tags({"tag1", "tag1"})), VW::vw_exception);
+  EXPECT_THROW(arg_group.add(make_option("int_opt2", int_opt2).tags({"taga", "taga"})), VW::vw_exception);
 }
