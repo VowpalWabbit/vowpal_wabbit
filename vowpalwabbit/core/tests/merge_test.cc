@@ -41,8 +41,8 @@ TEST(Merge, AddSubtractModelDelta)
   // Test that (base + (new - base)) == new
   auto delta = *vw_new - *vw_base;
   auto base_plus_delta = *vw_base + delta;
-  const auto* sd1 = vw_new->sd;
-  const auto* sd2 = base_plus_delta->sd;
+  const auto sd1 = vw_new->sd;
+  const auto sd2 = base_plus_delta->sd;
   EXPECT_FLOAT_EQ(sd1->weighted_labeled_examples, sd2->weighted_labeled_examples);
   EXPECT_FLOAT_EQ(sd1->weighted_unlabeled_examples, sd2->weighted_unlabeled_examples);
   EXPECT_FLOAT_EQ(sd1->weighted_labels, sd2->weighted_labels);
@@ -355,8 +355,8 @@ TEST(Merge, SerializeDeserializeDelta)
   // Test that (base + (new - base)) == new
   auto delta = *vw_new - *vw_base;
   auto base_plus_delta = *vw_base + delta;
-  const auto* sd1 = vw_new->sd;
-  const auto* sd2 = base_plus_delta->sd;
+  const auto sd1 = vw_new->sd;
+  const auto sd2 = base_plus_delta->sd;
   EXPECT_FLOAT_EQ(sd1->weighted_labeled_examples, sd2->weighted_labeled_examples);
   EXPECT_FLOAT_EQ(sd1->weighted_unlabeled_examples, sd2->weighted_unlabeled_examples);
   EXPECT_FLOAT_EQ(sd1->weighted_labels, sd2->weighted_labels);

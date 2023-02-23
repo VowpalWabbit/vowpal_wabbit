@@ -481,11 +481,12 @@ void VW::details::enable_sources(
       all.weights.share(all.length());
 
       // learning state to be shared across children
+      size_t mmap_length = sizeof(VW::shared_data);
       VW::shared_data* sd = static_cast<VW::shared_data*>(
-          mmap(nullptr, sizeof(VW::shared_data), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0));
+          mmap(nullptr, mmap_length, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0));
+      // copy construct with placement new
       new (sd) VW::shared_data(*all.sd);
-      delete all.sd;
-      all.sd = sd;
+      all.sd = std::shared_ptr<VW::shared_data>(sd, [sd, mmap_length](void*) { munmap(sd, mmap_length); });
 
       // create children
       const auto num_children = VW::cast_to_smaller_type<size_t>(input_options.num_children);
@@ -672,7 +673,7 @@ namespace VW
 VW::example& get_unused_example(VW::workspace* all)
 {
   auto& p = *all->example_parser;
-  auto* ex = p.example_pool.get_object();
+  auto* ex = p.example_pool.get_object().release();
   ex->example_counter = static_cast<size_t>(p.num_examples_taken_from_pool.fetch_add(1, std::memory_order_relaxed));
   return *ex;
 }

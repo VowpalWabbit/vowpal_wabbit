@@ -10,7 +10,9 @@
 
 #include <cstddef>
 #include <functional>
+#include <memory>
 #include <unordered_map>
+
 namespace VW
 {
 
@@ -18,7 +20,7 @@ class sparse_parameters;
 namespace details
 {
 
-using weight_map = std::unordered_map<uint64_t, VW::weight*>;
+using weight_map = std::unordered_map<uint64_t, std::shared_ptr<VW::weight>>;
 
 template <typename T>
 class sparse_iterator
@@ -62,7 +64,6 @@ public:
 
   sparse_parameters(size_t length, uint32_t stride_shift = 0);
   sparse_parameters();
-  ~sparse_parameters();
 
   sparse_parameters(const sparse_parameters& other) = delete;
   sparse_parameters& operator=(const sparse_parameters& other) = delete;
@@ -98,8 +99,6 @@ public:
   void set_zero(size_t offset);
   uint64_t mask() const { return _weight_mask; }
 
-  uint64_t seeded() const { return _seeded; }
-
   uint64_t stride() const { return static_cast<uint64_t>(1) << _stride_shift; }
 
   uint32_t stride_shift() const { return _stride_shift; }
@@ -115,8 +114,6 @@ private:
   mutable details::weight_map _map;
   uint64_t _weight_mask;  // (stride*(1 << num_bits) -1)
   uint32_t _stride_shift;
-  bool _seeded;  // whether the instance is sharing model state with others
-  bool _delete;
   std::function<void(VW::weight*, uint64_t)> _default_func;
 
   // It is marked const so it can be used from both const and non const operator[]

@@ -165,13 +165,13 @@ float mf_predict(gdmf& d, VW::example& ec, T& weights)
 
   ec.partial_prediction = prediction;
 
-  all.set_minmax(all.sd, ec.l.simple.label);
+  if (all.set_minmax) { all.set_minmax(ec.l.simple.label); }
 
-  ec.pred.scalar = VW::details::finalize_prediction(all.sd, all.logger, ec.partial_prediction);
+  ec.pred.scalar = VW::details::finalize_prediction(*all.sd, all.logger, ec.partial_prediction);
 
   if (ec.l.simple.label != FLT_MAX)
   {
-    ec.loss = all.loss->get_loss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
+    ec.loss = all.loss->get_loss(all.sd.get(), ec.pred.scalar, ec.l.simple.label) * ec.weight;
   }
 
   if (all.audit) { mf_print_audit_features(d, ec, 0); }
@@ -329,9 +329,9 @@ void end_pass(gdmf& d)
   }
 }
 
-void predict(gdmf& d, base_learner&, VW::example& ec) { mf_predict(d, ec); }
+void predict(gdmf& d, VW::example& ec) { mf_predict(d, ec); }
 
-void learn(gdmf& d, base_learner&, VW::example& ec)
+void learn(gdmf& d, VW::example& ec)
 {
   VW::workspace& all = *d.all;
 
@@ -340,7 +340,7 @@ void learn(gdmf& d, base_learner&, VW::example& ec)
 }
 
 }  // namespace
-base_learner* VW::reductions::gd_mf_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_mf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -389,16 +389,16 @@ base_learner* VW::reductions::gd_mf_setup(VW::setup_base_i& stack_builder)
   }
   all.eta *= powf(static_cast<float>(all.sd->t), all.power_t);
 
-  auto* l = make_base_learner(std::move(data), learn, predict, stack_builder.get_setupfn_name(gd_mf_setup),
+  auto l = make_bottom_learner(std::move(data), learn, predict, stack_builder.get_setupfn_name(gd_mf_setup),
       VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
-                .set_params_per_weight(VW::details::UINT64_ONE << all.weights.stride_shift())
-                .set_learn_returns_prediction(true)
-                .set_save_load(save_load)
-                .set_end_pass(end_pass)
-                .set_output_example_prediction(VW::details::output_example_prediction_simple_label<gdmf>)
-                .set_update_stats(VW::details::update_stats_simple_label<gdmf>)
-                .set_print_update(VW::details::print_update_simple_label<gdmf>)
-                .build();
+               .set_params_per_weight(VW::details::UINT64_ONE << all.weights.stride_shift())
+               .set_learn_returns_prediction(true)
+               .set_save_load(save_load)
+               .set_end_pass(end_pass)
+               .set_output_example_prediction(VW::details::output_example_prediction_simple_label<gdmf>)
+               .set_update_stats(VW::details::update_stats_simple_label<gdmf>)
+               .set_print_update(VW::details::print_update_simple_label<gdmf>)
+               .build();
 
-  return make_base(*l);
+  return l;
 }

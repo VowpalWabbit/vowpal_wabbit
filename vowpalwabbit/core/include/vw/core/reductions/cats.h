@@ -9,11 +9,13 @@
 #include "vw/core/learner_fwd.h"
 #include "vw/core/vw_fwd.h"
 
+#include <memory>
+
 namespace VW
 {
 namespace reductions
 {
-LEARNER::base_learner* cats_setup(setup_base_i& stack_builder);
+std::shared_ptr<VW::LEARNER::learner> cats_setup(setup_base_i& stack_builder);
 
 namespace cats
 {
@@ -25,14 +27,14 @@ public:
   float min_value = 0.f;
   float max_value = 0.f;
 
-  cats(LEARNER::single_learner* p_base);
+  cats(LEARNER::learner* p_base);
 
   int learn(example& ec, experimental::api_status* status);
   int predict(example& ec, experimental::api_status* status);
   float get_loss(const VW::cb_continuous::continuous_label& cb_cont_costs, float predicted_action) const;
 
 private:
-  LEARNER::single_learner* _base = nullptr;
+  LEARNER::learner* _base = nullptr;
 };
 }  // namespace cats
 }  // namespace reductions

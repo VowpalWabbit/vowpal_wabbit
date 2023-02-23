@@ -42,7 +42,7 @@ void negate_cost(VW::multi_ex& ec_seq)
   }
 }
 
-void learn(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
+void learn(interaction_ground& ig, learner& base, VW::multi_ex& ec_seq)
 {
   // find reward of sequence
   VW::cb_class label = VW::get_observed_cost_or_default_cb_adf(ec_seq);
@@ -65,7 +65,7 @@ void learn(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
   negate_cost(ec_seq);
 }
 
-void predict(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
+void predict(interaction_ground& ig, learner& base, VW::multi_ex& ec_seq)
 {
   // figure out which is better by our current estimate.
   if (ig.total_uniform_cost - ig.total_importance_weighted_cost >
@@ -77,7 +77,7 @@ void predict(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
 }
 }  // namespace
 
-base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   bool igl_option = false;
@@ -98,15 +98,15 @@ base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_b
   // Ensure cb_adf so we are reducing to something useful.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
 
-  auto* base = as_multiline(stack_builder.setup_base_learner());
-  auto* l = make_reduction_learner(
+  auto base = require_multiline(stack_builder.setup_base_learner());
+  auto l = make_reduction_learner(
       std::move(ld), base, learn, predict, stack_builder.get_setupfn_name(interaction_ground_setup))
-                .set_params_per_weight(problem_multiplier)
-                .set_input_label_type(label_type_t::CB)
-                .set_output_label_type(label_type_t::CB)
-                .set_output_prediction_type(prediction_type_t::ACTION_SCORES)
-                .set_input_prediction_type(prediction_type_t::ACTION_SCORES)
-                .build();
+               .set_params_per_weight(problem_multiplier)
+               .set_input_label_type(label_type_t::CB)
+               .set_output_label_type(label_type_t::CB)
+               .set_output_prediction_type(prediction_type_t::ACTION_SCORES)
+               .set_input_prediction_type(prediction_type_t::ACTION_SCORES)
+               .build();
 
-  return make_base(*l);
+  return l;
 }

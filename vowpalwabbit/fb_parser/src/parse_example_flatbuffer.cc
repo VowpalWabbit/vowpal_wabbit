@@ -136,7 +136,7 @@ void parser::parse_example(VW::workspace* all, example* ae, const Example* eg)
 {
   all->example_parser->lbl_parser.default_label(ae->l);
   ae->is_newline = eg->is_newline();
-  parse_flat_label(all->sd, ae, eg, all->logger);
+  parse_flat_label(all->sd.get(), ae, eg, all->logger);
 
   if (flatbuffers::IsFieldPresent(eg, Example::VT_TAG))
   {

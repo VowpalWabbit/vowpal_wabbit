@@ -21,6 +21,7 @@
 #include <vector>
 
 using namespace VW::config;
+using namespace VW::LEARNER;
 
 namespace
 {
@@ -82,8 +83,8 @@ void print_update_sender(VW::workspace& all, VW::shared_data& sd, const sent_exa
 
   if (should_print_driver_update)
   {
-    sd.print_update(*all.trace_message, all.holdout_set_off, all.current_pass, info.label.label, prediction,
-        info.num_features, all.progress_add, all.progress_arg);
+    sd.print_update(
+        *all.trace_message, all.holdout_set_off, all.current_pass, info.label.label, prediction, info.num_features);
   }
 }
 
@@ -96,18 +97,18 @@ void receive_result(sender& s)
   const auto& sent_info = s.delay_ring[s.received_index++ % s.all->example_parser->example_queue_limit];
 
   const auto& ld = sent_info.label;
-  const auto loss = s.all->loss->get_loss(s.all->sd, prediction, ld.label) * sent_info.weight;
+  const auto loss = s.all->loss->get_loss(s.all->sd.get(), prediction, ld.label) * sent_info.weight;
 
   update_stats_sender(*(s.all->sd), sent_info, loss);
   output_example_prediction_sender(*s.all, sent_info, prediction, s.all->logger);
   print_update_sender(*s.all, *(s.all->sd), sent_info, prediction);
 }
 
-void send_example(sender& s, VW::LEARNER::base_learner& /* non_existent_base */, VW::example& ec)
+void send_example(sender& s, VW::example& ec)
 {
   if (s.received_index + s.all->example_parser->example_queue_limit / 2 - 1 == s.sent_index) { receive_result(s); }
 
-  s.all->set_minmax(s.all->sd, ec.l.simple.label);
+  if (s.all->set_minmax) { s.all->set_minmax(ec.l.simple.label); }
   VW::parsers::cache::write_example_to_cache(
       s.socket_output_buffer, &ec, s.all->example_parser->lbl_parser, s.all->parse_mask, s.cache_buffer);
   s.socket_output_buffer.flush();
@@ -125,7 +126,7 @@ void end_examples(sender& s)
 
 // This reduction does not actually produce a prediction despite claiming it
 // does, since it waits to receive the result and then outputs it.
-VW::LEARNER::base_learner* VW::reductions::sender_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::sender_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -144,13 +145,13 @@ VW::LEARNER::base_learner* VW::reductions::sender_setup(VW::setup_base_i& stack_
   s->delay_ring.resize(all.example_parser->example_queue_limit);
   open_sockets(*s, host);
 
-  auto* l = VW::LEARNER::make_base_learner(std::move(s), send_example, send_example,
-      stack_builder.get_setupfn_name(sender_setup), VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
-                // Set at least one of update_stats, output_example_prediction or print_update so that the old finish
-                // has an implementation.
-                .set_update_stats(
-                    [](const VW::workspace&, VW::shared_data&, const sender&, const VW::example&, VW::io::logger&) {})
-                .set_end_examples(end_examples)
-                .build();
-  return make_base(*l);
+  auto l = make_bottom_learner(std::move(s), send_example, send_example, stack_builder.get_setupfn_name(sender_setup),
+      VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
+               // Set at least one of update_stats, output_example_prediction or print_update so that the old finish
+               // has an implementation.
+               .set_update_stats(
+                   [](const VW::workspace&, VW::shared_data&, const sender&, const VW::example&, VW::io::logger&) {})
+               .set_end_examples(end_examples)
+               .build();
+  return l;
 }

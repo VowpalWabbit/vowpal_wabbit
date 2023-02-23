@@ -22,7 +22,7 @@ using VW::cb_continuous::continuous_label_elm;
 using VW::config::make_option;
 using VW::config::option_group_definition;
 using VW::config::options_i;
-using VW::LEARNER::single_learner;
+using VW::LEARNER::learner;
 
 // Enable/Disable indented debug statements
 #undef VW_DEBUG_LOG
@@ -38,12 +38,12 @@ public:
   int learn(VW::example& ec, VW::experimental::api_status* status);
   int predict(VW::example& ec, VW::experimental::api_status* status);
 
-  void init(single_learner* p_base, std::shared_ptr<VW::rand_state> random_state);
+  void init(learner* p_base, std::shared_ptr<VW::rand_state> random_state);
 
 private:
   std::shared_ptr<VW::rand_state> _p_random_state;
   VW::continuous_actions::probability_density_function _pred_pdf;
-  single_learner* _base = nullptr;
+  learner* _base = nullptr;
 };
 
 int sample_pdf::learn(VW::example& ec, VW::experimental::api_status*)
@@ -77,7 +77,7 @@ int sample_pdf::predict(VW::example& ec, VW::experimental::api_status*)
   return VW::experimental::error_code::success;
 }
 
-void sample_pdf::init(single_learner* p_base, std::shared_ptr<VW::rand_state> random_state)
+void sample_pdf::init(learner* p_base, std::shared_ptr<VW::rand_state> random_state)
 {
   _base = p_base;
   _p_random_state = std::move(random_state);
@@ -86,7 +86,7 @@ void sample_pdf::init(single_learner* p_base, std::shared_ptr<VW::rand_state> ra
 
 // Free function to tie function pointers to reduction class methods
 template <bool is_learn>
-void predict_or_learn(sample_pdf& reduction, single_learner&, VW::example& ec)
+void predict_or_learn(sample_pdf& reduction, learner&, VW::example& ec)
 {
   VW::experimental::api_status status;
   if (is_learn) { reduction.learn(ec, &status); }
@@ -106,7 +106,7 @@ void predict_or_learn(sample_pdf& reduction, single_learner&, VW::example& ec)
 // END sample_pdf reduction and reduction methods
 ////////////////////////////////////////////////////
 
-VW::LEARNER::base_learner* VW::reductions::sample_pdf_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::sample_pdf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -119,15 +119,15 @@ VW::LEARNER::base_learner* VW::reductions::sample_pdf_setup(VW::setup_base_i& st
   // to the reduction stack;
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  LEARNER::base_learner* p_base = stack_builder.setup_base_learner();
+  auto p_base = stack_builder.setup_base_learner();
   auto p_reduction = VW::make_unique<sample_pdf>();
-  p_reduction->init(as_singleline(p_base), all.get_random_state());
+  p_reduction->init(require_singleline(p_base).get(), all.get_random_state());
 
   // This learner will assume the label type from base, so should not call set_input_label_type
-  auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
+  auto l = make_reduction_learner(std::move(p_reduction), require_singleline(p_base), predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(sample_pdf_setup))
-                .set_output_prediction_type(VW::prediction_type_t::ACTION_PDF_VALUE)
-                .build();
+               .set_output_prediction_type(VW::prediction_type_t::ACTION_PDF_VALUE)
+               .build();
 
-  return VW::LEARNER::make_base(*l);
+  return l;
 }

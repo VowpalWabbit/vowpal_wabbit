@@ -86,13 +86,13 @@ VW::example* VW::test_cb_adf_sequence(const VW::multi_ex& ec_seq)
 
 const VW::version_struct* VW::reductions::cb_adf::get_model_file_ver() const { return &_all->model_file_ver; }
 
-void VW::reductions::cb_adf::learn_ips(multi_learner& base, VW::multi_ex& examples)
+void VW::reductions::cb_adf::learn_ips(learner& base, VW::multi_ex& examples)
 {
   details::gen_cs_example_ips(examples, _cs_labels, _all->logger, _clip_p);
   details::cs_ldf_learn_or_predict<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, true, _offset);
 }
 
-void VW::reductions::cb_adf::learn_sm(multi_learner& base, VW::multi_ex& examples)
+void VW::reductions::cb_adf::learn_sm(learner& base, VW::multi_ex& examples)
 {
   details::gen_cs_test_example(examples, _cs_labels);  // create test labels.
   details::cs_ldf_learn_or_predict<false>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
@@ -182,20 +182,20 @@ void VW::reductions::cb_adf::learn_sm(multi_learner& base, VW::multi_ex& example
   }
 }
 
-void VW::reductions::cb_adf::learn_dr(multi_learner& base, VW::multi_ex& examples)
+void VW::reductions::cb_adf::learn_dr(learner& base, VW::multi_ex& examples)
 {
   details::gen_cs_example_dr<true>(gen_cs, examples, _cs_labels, _clip_p);
   details::cs_ldf_learn_or_predict<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, true, _offset);
 }
 
-void VW::reductions::cb_adf::learn_dm(multi_learner& base, VW::multi_ex& examples)
+void VW::reductions::cb_adf::learn_dm(learner& base, VW::multi_ex& examples)
 {
   details::gen_cs_example_dm(examples, _cs_labels);
   details::cs_ldf_learn_or_predict<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, true, _offset);
 }
 
 template <bool PREDICT>
-void VW::reductions::cb_adf::learn_mtr(multi_learner& base, VW::multi_ex& examples)
+void VW::reductions::cb_adf::learn_mtr(learner& base, VW::multi_ex& examples)
 {
   if (PREDICT)  // first get the prediction to return
   {
@@ -229,7 +229,7 @@ void VW::reductions::cb_adf::learn_mtr(multi_learner& base, VW::multi_ex& exampl
   }
 }
 
-void VW::reductions::cb_adf::learn(multi_learner& base, VW::multi_ex& ec_seq)
+void VW::reductions::cb_adf::learn(learner& base, VW::multi_ex& ec_seq)
 {
   if (VW::test_cb_adf_sequence(ec_seq) != nullptr)
   {
@@ -258,7 +258,7 @@ void VW::reductions::cb_adf::learn(multi_learner& base, VW::multi_ex& ec_seq)
   else if (learn_returns_prediction()) { predict(base, ec_seq); }
 }
 
-void VW::reductions::cb_adf::predict(multi_learner& base, VW::multi_ex& ec_seq)
+void VW::reductions::cb_adf::predict(learner& base, VW::multi_ex& ec_seq)
 {
   _offset = ec_seq[0]->ft_offset;
   gen_cs.known_cost = VW::get_observed_cost_or_default_cb_adf(ec_seq);  // need to set for test case
@@ -370,12 +370,12 @@ void cb_adf_subtract(
   data_out.get_gen_cs().action_sum = data1.get_gen_cs().action_sum - data2.get_gen_cs().action_sum;
 }
 
-void learn(VW::reductions::cb_adf& c, multi_learner& base, VW::multi_ex& ec_seq) { c.learn(base, ec_seq); }
+void learn(VW::reductions::cb_adf& c, learner& base, VW::multi_ex& ec_seq) { c.learn(base, ec_seq); }
 
-void predict(VW::reductions::cb_adf& c, multi_learner& base, VW::multi_ex& ec_seq) { c.predict(base, ec_seq); }
+void predict(VW::reductions::cb_adf& c, learner& base, VW::multi_ex& ec_seq) { c.predict(base, ec_seq); }
 
 }  // namespace
-VW::LEARNER::base_learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_adf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -459,28 +459,28 @@ VW::LEARNER::base_learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_
 
   auto ld = VW::make_unique<VW::reductions::cb_adf>(cb_type, rank_all, clip_p, no_predict, &all);
 
-  auto base = as_multiline(stack_builder.setup_base_learner());
+  auto base = require_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   VW::reductions::cb_adf* bare = ld.get();
   bool lrp = ld->learn_returns_prediction();
-  auto* l = make_reduction_learner(std::move(ld), base, learn, predict, stack_builder.get_setupfn_name(cb_adf_setup))
-                .set_input_label_type(VW::label_type_t::CB)
-                .set_output_label_type(VW::label_type_t::CS)
-                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
-                .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
-                .set_learn_returns_prediction(lrp)
-                .set_params_per_weight(problem_multiplier)
-                .set_save_load(::save_load)
-                .set_merge(::cb_adf_merge)
-                .set_add(::cb_adf_add)
-                .set_subtract(::cb_adf_subtract)
-                .set_output_example_prediction(::output_example_prediction_cb_adf)
-                .set_print_update(::print_update_cb_adf)
-                .set_update_stats(::update_stats_cb_adf)
-                .build();
+  auto l = make_reduction_learner(std::move(ld), base, learn, predict, stack_builder.get_setupfn_name(cb_adf_setup))
+               .set_input_label_type(VW::label_type_t::CB)
+               .set_output_label_type(VW::label_type_t::CS)
+               .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+               .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+               .set_learn_returns_prediction(lrp)
+               .set_params_per_weight(problem_multiplier)
+               .set_save_load(::save_load)
+               .set_merge(::cb_adf_merge)
+               .set_add(::cb_adf_add)
+               .set_subtract(::cb_adf_subtract)
+               .set_output_example_prediction(::output_example_prediction_cb_adf)
+               .set_print_update(::print_update_cb_adf)
+               .set_update_stats(::update_stats_cb_adf)
+               .build();
 
-  bare->set_scorer(VW::LEARNER::as_singleline(base->get_learner_by_name_prefix("scorer")));
+  bare->set_scorer(VW::LEARNER::require_singleline(base->get_learner_by_name_prefix("scorer")));
 
-  return make_base(*l);
+  return l;
 }
