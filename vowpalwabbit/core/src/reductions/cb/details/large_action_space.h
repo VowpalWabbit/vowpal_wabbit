@@ -62,7 +62,7 @@ class one_pass_svd_impl
 {
 public:
   Eigen::MatrixXf AOmega;
-  std::unordered_map<uint64_t, Eigen::VectorXf> example_hashes;
+  std::unordered_map<uint64_t, Eigen::VectorXf> cached_example_hashes;
 
   one_pass_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size, size_t thread_pool_size,
       size_t block_size, bool use_explicit_simd);

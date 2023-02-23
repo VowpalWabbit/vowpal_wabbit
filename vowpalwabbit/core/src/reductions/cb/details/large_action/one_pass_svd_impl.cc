@@ -46,6 +46,8 @@ namespace cb_explore_adf
 
 void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vector<float>& shrink_factors)
 {
+  for (auto* ex : examples) { ex->feature_space_hash = ex->calculate_order_independent_feature_space_hash(); }
+
   auto num_actions = examples[0]->pred.a_s.size();
   // one pass SVD is going to be less accurate than two pass SVD so we need to over-sample
   // this constant factor should be enough, we need a higher probability that we get a fair coin flip in the Omega
@@ -56,16 +58,16 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
   if (static_cast<Eigen::Index>(num_actions) != AOmega.rows() || static_cast<Eigen::Index>(p) != AOmega.cols())
   {
     // we need to recompute the AOmega matrix if the number of actions has changed
-    example_hashes.clear();
+    cached_example_hashes.clear();
   }
 
   // example hash has been generated before shared feature merger, so each one should be a represenative of what the
   // hash is without the shared features which will be removed anyway before calculating AOmega
   for (size_t i = 0; i < examples.size(); ++i)
   {
-    if (example_hashes.find(examples[i]->feature_space_hash) == example_hashes.end())
+    if (cached_example_hashes.find(examples[i]->feature_space_hash) == cached_example_hashes.end())
     {
-      example_hashes.clear();
+      cached_example_hashes.clear();
       break;
     }
   }
@@ -92,12 +94,12 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
   auto calculate_aomega_row =
       [compute_dot_prod](uint64_t row_index_begin, uint64_t row_index_end, uint64_t p, VW::workspace* _all,
           uint64_t _seed, const multi_ex& examples, Eigen::MatrixXf& AOmega, const std::vector<float>& shrink_factors,
-          float scaling_factor, std::unordered_map<uint64_t, Eigen::VectorXf>& example_hashes) -> void
+          float scaling_factor, std::unordered_map<uint64_t, Eigen::VectorXf>& cached_example_hashes) -> void
   {
     for (auto row_index = row_index_begin; row_index < row_index_end; ++row_index)
     {
       VW::example* ex = examples[row_index];
-      if (example_hashes.find(ex->feature_space_hash) == example_hashes.end())
+      if (cached_example_hashes.find(ex->feature_space_hash) == cached_example_hashes.end())
       {
         auto& red_features = ex->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
         auto* shared_example = red_features.shared_example;
@@ -111,7 +113,7 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
 
         if (shared_example != nullptr) { VW::details::append_example_namespaces_from_example(*ex, *shared_example); }
       }
-      else { AOmega.row(row_index) = example_hashes[ex->feature_space_hash] * shrink_factors[row_index]; }
+      else { AOmega.row(row_index) = cached_example_hashes[ex->feature_space_hash] * shrink_factors[row_index]; }
     }
   };
 
@@ -127,8 +129,9 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
     size_t row_index_end = row_index_begin + _block_size;
     if ((row_index_end + _block_size) > examples.size()) { row_index_end = examples.size(); }
 
-    _futures.emplace_back(_thread_pool.submit(calculate_aomega_row, row_index_begin, row_index_end, p, _all, _seed,
-        std::cref(examples), std::ref(AOmega), std::cref(shrink_factors), scaling_factor, std::ref(example_hashes)));
+    _futures.emplace_back(
+        _thread_pool.submit(calculate_aomega_row, row_index_begin, row_index_end, p, _all, _seed, std::cref(examples),
+            std::ref(AOmega), std::cref(shrink_factors), scaling_factor, std::ref(cached_example_hashes)));
 
     row_index_begin = row_index_end;
   }
@@ -139,9 +142,10 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
   for (size_t i = 0; i < examples.size(); i++)
   {
     auto ex = examples[i];
-    if (example_hashes.find(ex->feature_space_hash) == example_hashes.end() && ex->is_set_feature_space_hash)
+    if (cached_example_hashes.find(ex->feature_space_hash) == cached_example_hashes.end() &&
+        ex->is_set_feature_space_hash)
     {
-      example_hashes.emplace(ex->feature_space_hash, AOmega.row(i) / shrink_factors[i]);
+      cached_example_hashes.emplace(ex->feature_space_hash, AOmega.row(i) / shrink_factors[i]);
     }
   }
 }
