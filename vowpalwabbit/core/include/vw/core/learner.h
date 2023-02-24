@@ -98,7 +98,6 @@ void debug_increment_depth(polymorphic_ex ex);
 void debug_decrement_depth(polymorphic_ex ex);
 void increment_offset(polymorphic_ex ex, const size_t increment, const size_t i);
 void decrement_offset(polymorphic_ex ex, const size_t increment, const size_t i);
-size_t get_offset(polymorphic_ex ex);
 
 void learner_build_diagnostic(VW::string_view this_name, VW::string_view base_name, prediction_type_t in_pred_type,
     prediction_type_t base_out_pred_type, label_type_t out_label_type, label_type_t base_in_label_type,

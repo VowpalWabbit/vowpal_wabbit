@@ -188,7 +188,6 @@ public:
   void* /*Search::search*/ searchstr;
 
   uint32_t wpp;
-  std::vector<std::pair<uint32_t, size_t>> wpp_innermost_removals;
 
   std::unique_ptr<VW::io::writer> stdout_adapter;
 

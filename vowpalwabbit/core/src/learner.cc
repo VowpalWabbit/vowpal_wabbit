@@ -756,9 +756,3 @@ void VW::LEARNER::details::decrement_offset(polymorphic_ex ex, const size_t incr
   }
   debug_decrement_depth(ex);
 }
-
-size_t VW::LEARNER::details::get_offset(polymorphic_ex ex)
-{
-  if (ex.is_multiline()) { return static_cast<VW::multi_ex&>(ex)[0]->ft_offset; }
-  return static_cast<VW::example&>(ex).ft_offset;
-}

@@ -1240,16 +1240,6 @@ void VW::details::save_load_online_state_gd(VW::workspace& all, VW::io_buf& mode
     }
   }
 
-  /*if (!read || all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_GD_PPW_STATE)
-  {
-    if (read)
-    {
-      //pms.clear();
-      VW::model_utils::read_model_field(model_file, pms[0]);
-    }
-    else { VW::model_utils::write_model_field(model_file, pms[0], "gd_ppw_state", text); }
-  }*/
-
   if (read &&
       (!all.training ||
           !all.preserve_performance_counters))  // reset various things so that we report test set performance properly
@@ -1321,28 +1311,6 @@ void save_load(VW::reductions::gd& g, VW::io_buf& model_file, bool read, bool te
     }
     else
     {
-      /* ppw state needs to be saved for consistent predictions
-      if (!read || all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_GD_PPW_STATE)
-      {
-      if (read)
-      {
-        g.per_model_states.clear();
-        VW::model_utils::read_model_field(model_file, g.per_model_states[0]);
-      }
-      else
-      {
-        for (auto removals : all.wpp_innermost_removals)
-        {
-          std::vector<VW::reductions::details::per_model_state> new_pms;
-          for (auto idx = 0; idx < all.wpp; idx += removals.first)
-          {
-            new_pms.push_back(g.per_model_states[idx + removals.second]);
-          }
-          g.per_model_states = std::move(new_pms);
-        }
-        VW::model_utils::write_model_field(model_file, g.per_model_states[0], "_gd_ppw_state", text);
-      }*/
-
       if (!all.weights.not_null()) { THROW("Model weights not initialized."); }
       VW::details::save_load_regressor_gd(all, model_file, read, text);
     }

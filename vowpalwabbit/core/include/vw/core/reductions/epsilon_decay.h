@@ -57,7 +57,6 @@ public:
   bool _predict_only_model;
 
   // TODO: delete all this, gd and cb_adf must respect ft_offset, see header import of automl.cc
-  LEARNER::learner* adf_learner = nullptr;  //  re-use print from cb_explore_adf
   std::vector<uint64_t> per_live_model_state_uint64;
   uint64_t* _cb_adf_event_sum = nullptr;
   uint64_t* _cb_adf_action_sum = nullptr;

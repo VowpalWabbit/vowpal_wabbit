@@ -63,9 +63,6 @@ constexpr VW::version_struct VERSION_FILE_WITH_ACTIVE_SEEN_LABELS{9, 0, 0};
 /// Moved option values from command line to model data
 constexpr VW::version_struct VERSION_FILE_WITH_L1_AND_L2_STATE_IN_MODEL_DATA{9, 0, 0};
 
-/// GD, freegrad, ftrl are able to persist the correct state if ppw is higher than 1
-constexpr VW::version_struct VERSION_FILE_WITH_GD_PPW_STATE{9, 7, 0};
-
 /// Moved option values from command line to model data
 constexpr VW::version_struct VERSION_FILE_WITH_FLAT_EXAMPLE_TAG_FIX{9, 6, 0};
 

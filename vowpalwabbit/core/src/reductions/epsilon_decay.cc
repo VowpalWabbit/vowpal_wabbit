@@ -318,8 +318,6 @@ void pre_save_load_epsilon_decay(VW::workspace& all, VW::reductions::epsilon_dec
 
   all.num_bits = all.num_bits - static_cast<uint32_t>(std::log2(data._wpp));
   options.get_typed_option<uint32_t>("bit_precision").value(all.num_bits);
-  all.wpp_innermost_removals.push_back(
-      std::make_pair(data._model_count, data._weight_indices[data.conf_seq_estimators.size() - 1]));
 }
 
 }  // namespace
