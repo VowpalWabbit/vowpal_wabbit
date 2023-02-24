@@ -6,6 +6,7 @@
 
 #include "option.h"
 
+#include <initializer_list>
 #include <memory>
 #include <set>
 #include <string>
@@ -123,6 +124,12 @@ public:
   static std::shared_ptr<base_option> finalize(option_builder&& option)
   {
     return std::make_shared<T>(std::move(option._option_obj));
+  }
+
+  option_builder& tags(std::initializer_list<std::string> input_tags)
+  {
+    _option_obj.set_tags(input_tags);
+    return *this;
   }
 
 private:
