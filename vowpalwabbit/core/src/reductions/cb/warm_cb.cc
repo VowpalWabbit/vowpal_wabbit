@@ -588,7 +588,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::warm_cb_setup(VW::setup_ba
     ss << std::max(std::abs(data->loss0), std::abs(data->loss1)) / (data->loss1 - data->loss0);
     options.insert("lr_multiplier", ss.str());
   }
-  
+
   size_t ws = data->choices_lambda;
   auto base = require_multiline(stack_builder.setup_base_learner(ws));
   // Note: the current version of warm start CB can only support epsilon-greedy exploration

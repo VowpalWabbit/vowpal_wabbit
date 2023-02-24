@@ -289,7 +289,6 @@ std::shared_ptr<VW::LEARNER::learner> make_las_with_impl(VW::setup_base_i& stack
     std::shared_ptr<VW::LEARNER::learner> base, implementation_type& impl_type, VW::workspace& all, uint64_t d, float c,
     bool apply_shrink_factor, size_t thread_pool_size, size_t block_size, bool use_explicit_simd)
 {
-
   float seed = (all.get_random_state()->get_random() + 1) * 10.f;
 
   auto data = VW::make_unique<cb_explore_adf_large_action_space<T, S>>(d, c, apply_shrink_factor, &all, seed,

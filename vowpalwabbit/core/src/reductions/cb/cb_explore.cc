@@ -372,21 +372,15 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_setup(VW::setup
   data->model_file_version = all.model_file_ver;
 
   size_t params_per_weight = 1;
-  if (options.was_supplied("cover"))
-  {
-    params_per_weight = data->cover_size + 1;
-  }
-  else if (options.was_supplied("bag"))
-  {
-    params_per_weight = data->bag_size;
-  }
+  if (options.was_supplied("cover")) { params_per_weight = data->cover_size + 1; }
+  else if (options.was_supplied("bag")) { params_per_weight = data->bag_size; }
 
   auto base = require_singleline(stack_builder.setup_base_learner(params_per_weight));
   data->cbcs.scorer = VW::LEARNER::require_singleline(base->get_learner_by_name_prefix("scorer"));
 
   void (*learn_ptr)(cb_explore&, learner&, VW::example&);
   void (*predict_ptr)(cb_explore&, learner&, VW::example&);
-  
+
   std::string name_addition;
 
   if (options.was_supplied("cover"))

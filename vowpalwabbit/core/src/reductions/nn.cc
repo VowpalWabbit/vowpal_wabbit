@@ -484,7 +484,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::nn_setup(VW::setup_base_i&
   n->increment = base->increment;  // Indexing of output layer is odd.
   nn& nv = *n.get();
 
-
   auto builder = make_reduction_learner(std::move(n), base, predict_or_learn_multi<true, true>,
       predict_or_learn_multi<false, true>, stack_builder.get_setupfn_name(nn_setup))
                      .set_params_per_weight(ws)

@@ -1291,8 +1291,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::memory_tree_setup(VW::setu
     label_type = VW::label_type_t::MULTILABEL;
   }
 
-  auto l = make_reduction_learner(std::move(tree), require_singleline(stack_builder.setup_base_learner(num_learners)), learn,
-      predict, stack_builder.get_setupfn_name(memory_tree_setup))
+  auto l = make_reduction_learner(std::move(tree), require_singleline(stack_builder.setup_base_learner(num_learners)),
+      learn, predict, stack_builder.get_setupfn_name(memory_tree_setup))
                .set_params_per_weight(num_learners)
                .set_end_pass(end_pass)
                .set_save_load(save_load_memory_tree)
