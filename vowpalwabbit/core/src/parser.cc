@@ -686,7 +686,7 @@ namespace VW
 VW::example& get_unused_example(VW::workspace* all)
 {
   auto& p = *all->parser_runtime.example_parser;
-  auto* ex = p.example_pool.get_object();
+  auto* ex = p.example_pool.get_object().release();
   ex->example_counter = static_cast<size_t>(p.num_examples_taken_from_pool.fetch_add(1, std::memory_order_relaxed));
   return *ex;
 }
