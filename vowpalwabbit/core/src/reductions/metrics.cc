@@ -173,7 +173,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::metrics_setup(VW::setup_ba
   all.output_runtime.global_metrics = VW::metrics_collector(true);
 
   auto* all_ptr = stack_builder.get_all_pointer();
-  all.global_metrics.register_metrics_callback(
+  all.output_runtime.global_metrics.register_metrics_callback(
       [all_ptr](VW::metric_sink& sink) -> void { additional_metrics(*all_ptr, sink); });
 
   auto base = stack_builder.setup_base_learner();
