@@ -28,6 +28,21 @@ VW::dense_parameters::dense_parameters(size_t length, uint32_t stride_shift)
 }
 
 VW::dense_parameters::dense_parameters() : _begin(nullptr), _weight_mask(0), _stride_shift(0) {}
+
+VW::dense_parameters& VW::dense_parameters::operator=(dense_parameters&& other) noexcept
+{
+  _begin = std::move(other._begin);
+  _weight_mask = other._weight_mask;
+  _stride_shift = other._stride_shift;
+  return *this;
+}
+
+VW::dense_parameters::dense_parameters(dense_parameters&& other) noexcept
+{
+  _begin = std::move(other._begin);
+  _weight_mask = other._weight_mask;
+  _stride_shift = other._stride_shift;
+}
 bool VW::dense_parameters::not_null() { return (_weight_mask > 0 && _begin != nullptr); }
 
 void VW::dense_parameters::shallow_copy(const dense_parameters& input)

@@ -98,8 +98,8 @@ public:
 
   dense_parameters(const dense_parameters& other) = delete;
   dense_parameters& operator=(const dense_parameters& other) = delete;
-  dense_parameters& operator=(dense_parameters&&) noexcept = delete;
-  dense_parameters(dense_parameters&&) noexcept = delete;
+  dense_parameters& operator=(dense_parameters&&) noexcept;
+  dense_parameters(dense_parameters&&) noexcept;
 
   bool not_null();
   VW::weight* first()
