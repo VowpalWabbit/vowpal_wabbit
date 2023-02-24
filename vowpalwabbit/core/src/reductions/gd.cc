@@ -74,15 +74,18 @@ void merge_weights_with_save_resume(size_t length,
     for (size_t i = 0; i < length; i++) { adaptive_totals[i] += (&(this_model[i << weights.stride_shift()]))[1]; }
   }
 
-  for (size_t i = 0; i < source.size(); i++)
+  std::vector<VW::dense_parameters> weight_copies;
+  weight_copies.reserve(source.size());
+  for (auto i : source)
   {
-    VW::details::do_weighting(output_workspace.normalized_idx, length, adaptive_totals.data(), weights);
+    // There is no copy constructor for weights, so we have to copy manually.
+    weight_copies.emplace_back(VW::dense_parameters::deep_copy(i));
+    VW::details::do_weighting(output_workspace.normalized_idx, length, adaptive_totals.data(), weight_copies.back());
   }
 
   // Weights have already been reweighted, so just accumulate.
-  for (const auto& model_num : source)
+  for (const auto& this_source : weight_copies)
   {
-    const auto& this_source = model_num.get();
     // Intentionally add irrespective of stride.
     const auto full_weights_size = length << weights.stride_shift();
     for (uint64_t i = 0; i < full_weights_size; i++) { weights[i] += this_source[i]; }
