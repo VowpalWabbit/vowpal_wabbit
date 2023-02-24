@@ -98,15 +98,20 @@ public:
 
   dense_parameters(const dense_parameters& other) = delete;
   dense_parameters& operator=(const dense_parameters& other) = delete;
-  dense_parameters& operator=(dense_parameters&&) noexcept = delete;
-  dense_parameters(dense_parameters&&) noexcept = delete;
+  dense_parameters& operator=(dense_parameters&&) noexcept;
+  dense_parameters(dense_parameters&&) noexcept;
 
   bool not_null();
   VW::weight* first()
   {
     return _begin.get();
   }  // TODO: Temporary fix for allreduce.
-     // iterator with stride
+
+  VW::weight* data() { return _begin.get(); }
+
+  const VW::weight* data() const { return _begin.get(); }
+
+  // iterator with stride
   iterator begin() { return iterator(_begin.get(), _begin.get(), stride_shift()); }
   iterator end() { return iterator(_begin.get() + _weight_mask + 1, _begin.get(), stride_shift()); }
 
@@ -117,7 +122,8 @@ public:
   inline const VW::weight& operator[](size_t i) const { return _begin.get()[i & _weight_mask]; }
   inline VW::weight& operator[](size_t i) { return _begin.get()[i & _weight_mask]; }
 
-  void shallow_copy(const dense_parameters& input);
+  VW_ATTR(nodiscard) static dense_parameters shallow_copy(const dense_parameters& input);
+  VW_ATTR(nodiscard) static dense_parameters deep_copy(const dense_parameters& input);
 
   inline VW::weight& strided_index(size_t index) { return operator[](index << _stride_shift); }
   inline const VW::weight& strided_index(size_t index) const { return operator[](index << _stride_shift); }
@@ -139,6 +145,8 @@ public:
   void set_zero(size_t offset);
 
   uint64_t mask() const { return _weight_mask; }
+
+  uint64_t raw_length() const { return _weight_mask + 1; }
 
   uint64_t stride() const { return static_cast<uint64_t>(1) << _stride_shift; }
 
