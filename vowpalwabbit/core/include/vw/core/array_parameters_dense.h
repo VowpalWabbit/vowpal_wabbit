@@ -106,7 +106,12 @@ public:
   {
     return _begin.get();
   }  // TODO: Temporary fix for allreduce.
-     // iterator with stride
+
+  VW::weight* data() { return _begin.get(); }
+
+  const VW::weight* data() const { return _begin.get(); }
+
+  // iterator with stride
   iterator begin() { return iterator(_begin.get(), _begin.get(), stride_shift()); }
   iterator end() { return iterator(_begin.get() + _weight_mask + 1, _begin.get(), stride_shift()); }
 
@@ -139,6 +144,8 @@ public:
   void set_zero(size_t offset);
 
   uint64_t mask() const { return _weight_mask; }
+
+  uint64_t raw_length() const { return _weight_mask + 1; }
 
   uint64_t stride() const { return static_cast<uint64_t>(1) << _stride_shift; }
 
