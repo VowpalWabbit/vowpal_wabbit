@@ -937,6 +937,7 @@ TEST(ParseDsjson, CbWithObservations)
 }
 )";
 
+  // --cb_adf
   auto vw = VW::initialize(vwtest::make_args("--dsjson", "--experimental_igl", "--chain_hash", "--coin", "--cb_adf", "--no_stdin", "--quiet"));
   auto examples = vwtest::parse_dsjson(*vw, json_text);
 

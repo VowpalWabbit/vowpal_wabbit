@@ -18,6 +18,7 @@
 #include "vw/core/simple_label.h"
 #include "vw/core/constant.h"
 #include "vw/core/parse_primitives.h"
+#include "vw/core/reductions/cb/cb_adf.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -40,7 +41,7 @@ public:
     }
   }
 
-  std::shared_ptr<learner> setup_base_learner() override {
+  std::shared_ptr<VW::LEARNER::learner> setup_base_learner(size_t increment = 1) override {
     if (_reduction_stack.size() == 0) {
       return _ik_base;
     }
@@ -49,7 +50,7 @@ public:
   }
 
 private:
-  std::shared_ptr<learner> _ik_base;
+  std::shared_ptr<VW::LEARNER::learner> _ik_base;
 };
 
 std::vector<std::vector<VW::namespace_index>> get_ik_interactions(std::vector<std::vector<VW::namespace_index>> interactions, VW::example* observation_ex) {
@@ -82,8 +83,6 @@ void add_obs_features_to_ik_ex(VW::example* ik_ex, VW::example* obs_ex) {
 
       ik_ex->feature_space[obs_ns].indices.push_back(feature_hash);
       ik_ex->feature_space[obs_ns].values.push_back(feature_val);
-
-      // ik_ex->num_features++;
     }
   }
 }
@@ -94,19 +93,14 @@ public:
   std::shared_ptr<learner> ik_learner = nullptr;
   VW::example ik_ex;
 
+  VW::cb_class known_cost; // for update stats
+
   std::vector<std::vector<VW::namespace_index>> interactions;
   std::vector<std::vector<VW::extent_term>>* extent_interactions;
 
   std::unique_ptr<VW::workspace> ik_all;
   ftrl* ik_ftrl; // automatically save resume
   std::unique_ptr<ftrl> pi_ftrl; // TODO: add save resume
-  // ~interaction_ground() {
-    // auto scorer_stack = ik_learner->get_learner_by_name_prefix("scorer");
-    // scorer_stack->_finisher_fd.base = nullptr;
-    // delete ik_learner;
-  // }
-
-  // TODO: rule of 5
 };
 
 void learn(interaction_ground& igl, learner& base, VW::multi_ex& ec_seq)
@@ -145,16 +139,14 @@ void learn(interaction_ground& igl, learner& base, VW::multi_ex& ec_seq)
 
     add_obs_features_to_ik_ex(&igl.ik_ex, observation_ex);
     // 1. set up ik ex
-    float ik_label = -1.f;
-    if (!action_ex->l.cb_with_observations.event.costs.empty()) {
-      ik_label = 1.f;
-    }
-    igl.ik_ex.l.simple.label = ik_label;
+    igl.ik_ex.l.simple.label = i == chosen_action_idx ? 1.f : -1.f;
+
+    float pa = action_scores[i].score;
 
     if (i == chosen_action_idx) {
-      igl.ik_ex.weight = 1/4.f / action_scores[i].score;
+      igl.ik_ex.weight = 1/4.f / pa;
     } else {
-      igl.ik_ex.weight = 3/4.f / (1 - action_scores[i].score);
+      igl.ik_ex.weight = 3/4.f / (1 - pa);
     }
 
     igl.ik_ex.interactions = &ik_interactions;
@@ -163,33 +155,43 @@ void learn(interaction_ground& igl, learner& base, VW::multi_ex& ec_seq)
     // 2. ik learn
     igl.ik_learner->learn(igl.ik_ex, 0);
 
-    if (!action_ex->l.cb_with_observations.event.costs.empty()) {
+    if (i == chosen_action_idx) {
       ik_pred = igl.ik_ex.pred.scalar;
     }
-    // TODO: shared data print needs to be fixed
 
     action_ex->l.cb = action_ex->l.cb_with_observations.event;
+    action_ex->l.cb_with_observations.event.reset_to_default();
   }
 
   std::swap(igl.ik_ftrl->all->loss, igl.ik_all->loss);
   std::swap(igl.ik_ftrl->all->sd, igl.ik_all->sd);
 
-  float fake_cost = 0.f;
+  float predicted_cost = 0.f;
   // 4. update multi line ex label
-  if (ik_pred * 2 > 1) {
+  if (ik_pred * 2 > 1.f) {
     bool is_definitely_bad = observation_ex->l.cb_with_observations.is_definitely_bad;
-    fake_cost = -p_unlabeled_prior + is_definitely_bad * (1 + p_unlabeled_prior);
+    predicted_cost = -1.f + is_definitely_bad * (1.f + 1.f / p_unlabeled_prior);
   }
 
   // 5. Train pi policy
-  ec_seq[chosen_action_idx]->l.cb.costs[0].cost = fake_cost;
+  ec_seq[chosen_action_idx]->l.cb.costs[0].cost = predicted_cost;
 
   std::swap(*igl.pi_ftrl.get(), *igl.ik_ftrl);
 
-  // reset the first_observed label for cb_adf reduction
+  // TODO: switch the label parser type to CB for text format
+
+  // reset the first_observed label for cb_explore_adf reduction
   (*igl.ik_ftrl).all->sd->first_observed_label = FLT_MAX;
   base.learn(ec_seq, 1);
+  igl.known_cost = VW::get_observed_cost_or_default_cb_adf(ec_seq);
+
   std::swap(*igl.pi_ftrl.get(), *igl.ik_ftrl);
+
+  for (auto& ex : ec_seq) {
+    ex->l.cb_with_observations.event = ex->l.cb;
+    ex->l.cb.reset_to_default();
+  }
+
   ec_seq.push_back(observation_ex);
 }
 
@@ -197,14 +199,26 @@ void predict(interaction_ground& igl, learner& base, VW::multi_ex& ec_seq)
 {
   VW::example* observation_ex = nullptr;
 
+  // TODO: check is_observation
   if (ec_seq.size() > 0) {
     observation_ex = ec_seq.back();
     ec_seq.pop_back();
   }
 
   std::swap(*igl.pi_ftrl.get(), *igl.ik_ftrl);
+
+  for (auto& ex : ec_seq) {
+    ex->l.cb = ex->l.cb_with_observations.event;
+    ex->l.cb_with_observations.event.reset_to_default();
+  }
+
   base.predict(ec_seq, 1);
   std::swap(*igl.pi_ftrl.get(), *igl.ik_ftrl);
+
+  for (auto& ex : ec_seq) {
+    ex->l.cb_with_observations.event = ex->l.cb;
+    ex->l.cb.reset_to_default();
+  }
 
   if (observation_ex != nullptr) {
     ec_seq.push_back(observation_ex);
@@ -214,6 +228,66 @@ void predict(interaction_ground& igl, learner& base, VW::multi_ex& ec_seq)
 
 void copy_ftrl(ftrl* source, ftrl* destination) {
   *destination = *source;
+}
+
+void print_update_igl(VW::workspace& all, VW::shared_data& sd, const interaction_ground& data, const VW::multi_ex& ec_seq,
+    VW::io::logger& logger)
+{
+  if (ec_seq.empty()) { return; }
+  const auto& ec = **(ec_seq.begin());
+  if (example_is_newline_not_header_cb(ec)) { return; }
+
+  bool labeled_example = true;
+  if (data.known_cost.probability <= 0) { labeled_example = false; }
+
+  VW::details::print_update_cb(all, !labeled_example, ec, &ec_seq, true, &data.known_cost);
+}
+
+void update_stats_igl(const VW::workspace& /* all */, VW::shared_data& sd, const interaction_ground& data, const VW::multi_ex& ec_seq,
+    VW::io::logger& logger)
+{
+  if (ec_seq.size() <= 0) { return; }
+
+  size_t num_features = 0;
+  size_t num_namespaces = 0;
+
+  float loss = 0.;
+
+  auto& ec = *ec_seq[0];
+  const auto& preds = ec.pred.a_s;
+
+  for (const auto& example : ec_seq)
+  {
+    if (VW::ec_is_example_header_cb(*example))
+    {
+      num_features += (ec_seq.size() - 1) *
+          (example->get_num_features() - example->feature_space[VW::details::CONSTANT_NAMESPACE].size());
+      num_namespaces += (ec_seq.size() - 1) * example->indices.size();
+    }
+    else
+    {
+      num_features += example->get_num_features();
+      num_namespaces += example->indices.size();
+    }
+  }
+
+  // TODO: _metrics?
+
+  bool labeled_example = true;
+  if (data.known_cost.probability > 0)
+  {
+    for (uint32_t i = 0; i < preds.size(); i++)
+    {
+      float l = VW::get_cost_estimate(data.known_cost, preds[i].action);
+      loss += l * preds[i].score * ec_seq[ec_seq.size() - preds.size() + i]->weight;
+    }
+  }
+  else { labeled_example = false; }
+
+  bool holdout_example = labeled_example;
+  for (size_t i = 0; i < ec_seq.size(); i++) { holdout_example &= ec_seq[i]->test_only; }
+
+  sd.update(holdout_example, labeled_example, loss, ec.weight, num_features);
 }
 
 std::shared_ptr<VW::LEARNER::learner> VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_builder)
@@ -234,7 +308,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::interaction_ground_setup(V
   size_t feature_width = 2;  // One for reward and one for loss
   auto ld = VW::make_unique<interaction_ground>();
 
-  if (!pi_options.was_supplied("cb_explore_adf")) {
+  if (!pi_options.was_supplied("cb_explore_adf") && !pi_options.was_supplied("cb_adf")) {
     pi_options.insert("cb_explore_adf", "");
   }
 
@@ -249,7 +323,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::interaction_ground_setup(V
     new config::options_cli(VW::split_command_line(ik_args)),
     [](VW::config::options_i* ptr) { delete ptr; });
 
-  assert(ik_options->was_supplied("cb_explore_adf") == false);
+  assert(ik_options->was_supplied("cb_explore_adf") == false || ik_options->was_supplied("cb_adf") == false);
   assert(ik_options->was_supplied("loss_function") == true);
 
   ld->ik_all = VW::initialize_experimental(VW::make_unique<VW::config::options_cli>(VW::split_command_line(ik_args)));
@@ -266,13 +340,27 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::interaction_ground_setup(V
   ld->interactions = all->interactions;
   ld->extent_interactions = &all->extent_interactions;
 
+  VW::prediction_type_t pred_type;
+
+  if (pi_learner->get_output_prediction_type() == prediction_type_t::ACTION_SCORES) {
+    pred_type = prediction_type_t::ACTION_SCORES;
+  }
+  else if (pi_learner->get_output_prediction_type() == prediction_type_t::ACTION_PROBS) {
+    pred_type = prediction_type_t::ACTION_PROBS;
+  }
+  else {
+    THROW("--classweight not implemented for this type of prediction");
+  }
+
   auto l = make_reduction_learner(
       std::move(ld), pi_learner, learn, predict, stack_builder.get_setupfn_name(interaction_ground_setup))
                ..set_feature_width(feature_width)
                .set_input_label_type(label_type_t::CB_WITH_OBSERVATIONS)
                .set_output_label_type(label_type_t::CB)
-               .set_output_prediction_type(prediction_type_t::ACTION_SCORES)
-               .set_input_prediction_type(prediction_type_t::ACTION_SCORES)
+               .set_input_prediction_type(pred_type)
+               .set_output_prediction_type(pred_type)
+               .set_update_stats(update_stats_igl)
+               .set_print_update(print_update_igl)
                .build();
 
   // TODO: assert ftrl is the base, fail otherwise

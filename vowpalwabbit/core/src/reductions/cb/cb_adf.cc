@@ -24,7 +24,7 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 
-VW::cb_class VW::get_observed_cost_or_default_cb_adf(const VW::multi_ex& examples, VW::label_type_t label_type)
+VW::cb_class VW::get_observed_cost_or_default_cb_adf(const VW::multi_ex& examples)
 {
   bool found = false;
   uint32_t found_index = 0;
@@ -34,11 +34,7 @@ VW::cb_class VW::get_observed_cost_or_default_cb_adf(const VW::multi_ex& example
   for (const auto* example_ptr : examples)
   {
     std::vector<VW::cb_class> costs;
-    if (label_type == VW::label_type_t::CB_WITH_OBSERVATIONS) {
-      costs = example_ptr->l.cb_with_observations.event.costs;
-    } else {
-      costs = example_ptr->l.cb.costs;
-    }
+    costs = example_ptr->l.cb.costs;
 
     for (const auto& cost : costs)
     {
@@ -62,7 +58,7 @@ VW::cb_class VW::get_observed_cost_or_default_cb_adf(const VW::multi_ex& example
   return known_cost;
 }
 // Validates a multiline example collection as a valid sequence for action dependent features format.
-VW::example* VW::test_cb_adf_sequence(const VW::multi_ex& ec_seq, VW::label_type_t label_type)
+VW::example* VW::test_cb_adf_sequence(const VW::multi_ex& ec_seq)
 {
   if (ec_seq.empty()) THROW("cb_adf: At least one action must be provided for an example to be valid.");
 
@@ -71,11 +67,7 @@ VW::example* VW::test_cb_adf_sequence(const VW::multi_ex& ec_seq, VW::label_type
   for (auto* ec : ec_seq)
   {
     std::vector<cb_class> costs;
-    if (label_type == VW::label_type_t::CB_WITH_OBSERVATIONS) {
-      costs = ec->l.cb_with_observations.event.costs;
-    } else {
-      costs = ec->l.cb.costs;
-    }
+    costs = ec->l.cb.costs;
 
     // Check if there is more than one cost for this example.
     if (costs.size() > 1)
@@ -91,7 +83,9 @@ VW::example* VW::test_cb_adf_sequence(const VW::multi_ex& ec_seq, VW::label_type
     {
       ret = ec;
       count += 1;
-      if (count > 1) THROW("cb_adf: badly formatted example, only one line can have a cost");
+      if (count > 1) {
+        THROW("cb_adf: badly formatted example, only one line can have a cost");
+      }
     }
   }
 
