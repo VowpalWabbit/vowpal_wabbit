@@ -11,7 +11,7 @@ namespace VW
 class cached_learner : public setup_base_i
 {
 public:
-  std::shared_ptr<VW::LEARNER::learner> setup_base_learner(size_t increment = 1) override { return _cached; }
+  std::shared_ptr<VW::LEARNER::learner> setup_base_learner(size_t increment) override { return _cached; }
 
   operator bool() const { return !(_cached == nullptr); }
 
