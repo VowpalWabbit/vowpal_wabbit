@@ -326,7 +326,7 @@ void subtract(const VW::workspace& ws1, const VW::reductions::gd& data1, const V
   }
 }
 
-void resize_ppw_state(VW::reductions::gd& g, size_t& factor, size_t& /* max_ft_offset */)
+void resize_ppw_state(VW::reductions::gd& g, size_t factor)
 {
   assert(g.per_model_states.size() >= 1);
 
@@ -1457,6 +1457,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i&
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
+  size_t ppw = stack_builder.get_ppw();
 
   auto g = VW::make_unique<VW::reductions::gd>();
 
@@ -1594,6 +1595,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i&
 
   all.weights.stride_shift(static_cast<uint32_t>(::ceil_log_2(stride - 1)));
 
+  resize_ppw_state(*g, ppw);
+
   auto* bare = g.get();
   auto l = make_bottom_learner(std::move(g), g->learn, bare->predict, stack_builder.get_setupfn_name(gd_setup),
       VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
@@ -1607,7 +1610,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i&
                .set_merge_with_all(::merge)
                .set_add_with_all(::add)
                .set_subtract_with_all(::subtract)
-               .set_resize_ppw_state(::resize_ppw_state)
                .set_output_example_prediction(VW::details::output_example_prediction_simple_label<VW::reductions::gd>)
                .set_update_stats(VW::details::update_stats_simple_label<VW::reductions::gd>)
                .set_print_update(VW::details::print_update_simple_label<VW::reductions::gd>)

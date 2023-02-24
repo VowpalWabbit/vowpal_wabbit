@@ -158,7 +158,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::multilabel_oaa_setup(VW::s
     pred_type = VW::prediction_type_t::MULTILABELS;
   }
 
-  auto l = make_reduction_learner(std::move(data), require_singleline(stack_builder.setup_base_learner()),
+  auto l = make_reduction_learner(std::move(data), require_singleline(stack_builder.setup_base_learner(ws)),
       predict_or_learn<true>, predict_or_learn<false>,
       stack_builder.get_setupfn_name(multilabel_oaa_setup) + name_addition)
                .set_params_per_weight(ws)

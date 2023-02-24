@@ -83,7 +83,6 @@ void predict_test_helper(const predictions_t& bottom_learner_predictions, const 
   VW::reductions::offset_tree::offset_tree tree(static_cast<uint32_t>(expected_scores.size()));
   tree.init();
   VW::example ec;
-  test_base->max_ft_offset = tree.learner_count();
   auto& ret_val = tree.predict(*test_base, ec);
   EXPECT_THAT(ret_val, ContainerEq(expected_scores));
 }
@@ -99,7 +98,6 @@ TEST(OffsetTree, OffsetTreeLearnBasic)
   VW::example ec;
   ec.l.cb.costs.push_back(VW::cb_class{-1.0f, 1, 0.5f});
 
-  test_harness->max_ft_offset = tree.learner_count();
   tree.learn(*test_harness, ec);
 }
 

@@ -448,12 +448,6 @@ void learner::save_load(io_buf& io, const bool read, const bool text)
   if (_base_learner) { _base_learner->save_load(io, read, text); }
 }
 
-void learner::resize_ppw(size_t& factor, size_t& mfo)
-{
-  if (_resize_ppw_f) { _resize_ppw_f(factor, mfo); }
-  if (_base_learner) { _base_learner->resize_ppw(factor, mfo); }
-}
-
 void learner::pre_save_load(VW::workspace& all)
 {
   if (_pre_save_load_f) { _pre_save_load_f(all); }
@@ -663,7 +657,6 @@ std::shared_ptr<learner> learner::create_learner_above_this()
   l->_multipredict_f = nullptr;
   l->_save_load_f = nullptr;
   l->_pre_save_load_f = nullptr;
-  l->_resize_ppw_f = nullptr;
   l->_end_pass_f = nullptr;
   l->_end_examples_f = nullptr;
   l->_persist_metrics_f = nullptr;

@@ -69,7 +69,6 @@ using multipredict_func =
     std::function<void(polymorphic_ex ex, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)>;
 
 using sensitivity_func = std::function<float(example& ex)>;
-using resize_ppw_func = std::function<void(size_t& factor, size_t& mfo)>;
 using save_load_func = std::function<void(io_buf&, bool read, bool text)>;
 using pre_save_load_func = std::function<void(VW::workspace& all)>;
 using save_metric_func = std::function<void(metric_sink& metrics)>;
@@ -138,7 +137,6 @@ private:
 public:
   size_t weights;  // this stores the number of "weight vectors" required by the learner.
   size_t increment;
-  size_t max_ft_offset = 1;
 
   // If true, learn will return a prediction. The framework should
   // not call predict before learn
@@ -172,8 +170,6 @@ public:
   void update(polymorphic_ex ec, size_t i = 0);
 
   float sensitivity(example& ec, size_t i = 0);
-
-  void resize_ppw(size_t& factor, size_t& mfo);
 
   // Called anytime saving or loading needs to happen. Autorecursive.
   void save_load(io_buf& io, const bool read, const bool text);
@@ -273,7 +269,6 @@ private:
   details::example_func _update_f;
   details::multipredict_func _multipredict_f;
   details::sensitivity_func _sensitivity_f;
-  details::resize_ppw_func _resize_ppw_f;
 
   details::finish_example_func _finish_example_f;
   details::update_stats_func _update_stats_f;
@@ -494,12 +489,6 @@ public:
     this->learner_ptr->_persist_metrics_f = [fn_ptr, data](metric_sink& metrics) { fn_ptr(*data, metrics); };
   )
 
-  LEARNER_BUILDER_DEFINE(set_resize_ppw_state(void (*fn_ptr)(DataT&, size_t& factor, size_t& mfo)),
-    assert(fn_ptr != nullptr);
-    DataT* data = this->learner_data.get();
-    this->learner_ptr->_resize_ppw_f = [fn_ptr, data](size_t& factor, size_t& mfo) { fn_ptr(*data, factor, mfo); };
-  )
-
   LEARNER_BUILDER_DEFINE(set_pre_save_load(void (*fn_ptr)(VW::workspace& all, DataT&)),
     assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
@@ -604,11 +593,6 @@ public:
   LEARNER_BUILDER_DEFINE(set_params_per_weight(size_t params_per_weight),
     this->learner_ptr->weights = params_per_weight;
     this->learner_ptr->increment = this->learner_ptr->_base_learner->increment * this->learner_ptr->weights;
-    if (params_per_weight > 1)
-    {
-      this->learner_ptr->resize_ppw(params_per_weight, this->learner_ptr->increment);
-      this->learner_ptr->max_ft_offset = this->learner_ptr->increment;
-    }
   )
 
   LEARNER_BUILDER_DEFINE(set_merge(void (*fn_ptr)(const std::vector<float>&, const std::vector<const DataT*>&, DataT&)),
@@ -713,11 +697,6 @@ public:
   LEARNER_BUILDER_DEFINE(set_params_per_weight(size_t params_per_weight),
     this->learner_ptr->weights = params_per_weight;
     this->learner_ptr->increment = this->learner_ptr->_base_learner->increment * this->learner_ptr->weights;
-    if (params_per_weight > 1)
-    {
-      this->learner_ptr->resize_ppw(params_per_weight, this->learner_ptr->increment);
-      this->learner_ptr->max_ft_offset = this->learner_ptr->increment;
-    }
   )
   // clang-format on
 
@@ -785,11 +764,6 @@ public:
   LEARNER_BUILDER_DEFINE(set_params_per_weight(size_t params_per_weight),
     this->learner_ptr->weights = 1;
     this->learner_ptr->increment = params_per_weight;
-    if (params_per_weight > 1)
-    {
-      this->learner_ptr->resize_ppw(params_per_weight, this->learner_ptr->increment);
-      this->learner_ptr->max_ft_offset = this->learner_ptr->increment;
-    }
   )
 
   LEARNER_BUILDER_DEFINE(set_merge_with_all(void (*fn_ptr)(const std::vector<float>&,

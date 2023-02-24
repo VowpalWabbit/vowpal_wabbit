@@ -289,7 +289,6 @@ std::shared_ptr<VW::LEARNER::learner> make_las_with_impl(VW::setup_base_i& stack
     std::shared_ptr<VW::LEARNER::learner> base, implementation_type& impl_type, VW::workspace& all, uint64_t d, float c,
     bool apply_shrink_factor, size_t thread_pool_size, size_t block_size, bool use_explicit_simd)
 {
-  size_t problem_multiplier = 1;
 
   float seed = (all.get_random_state()->get_random() + 1) * 10.f;
 
@@ -302,7 +301,6 @@ std::shared_ptr<VW::LEARNER::learner> make_las_with_impl(VW::setup_base_i& stack
                .set_output_label_type(VW::label_type_t::CB)
                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
-               .set_params_per_weight(problem_multiplier)
                .set_persist_metrics(persist_metrics<T, S>)
                .set_learn_returns_prediction(false)
                .build();

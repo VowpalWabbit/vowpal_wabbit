@@ -3332,13 +3332,16 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::search_setup(VW::setup_bas
 
   cdbg << "active_csoaa = " << priv.active_csoaa << ", active_csoaa_verify = " << priv.active_csoaa_verify << endl;
 
-  auto base = stack_builder.setup_base_learner();
+  if (priv.task && priv.task->initialize) { priv.task->initialize(*sch.get(), priv.A, options); }
+  if (priv.metatask && priv.metatask->initialize) { priv.metatask->initialize(*sch.get(), priv.A, options); }
+
+  auto ppw = priv.total_number_of_policies * priv.num_learners;
+  if (priv.xv) { ppw *= 3; }
+  auto base = stack_builder.setup_base_learner(priv.total_number_of_policies * priv.num_learners);
 
   // default to OAA labels unless the task wants to override this (which they can do in initialize)
   all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
 
-  if (priv.task && priv.task->initialize) { priv.task->initialize(*sch.get(), priv.A, options); }
-  if (priv.metatask && priv.metatask->initialize) { priv.metatask->initialize(*sch.get(), priv.A, options); }
   priv.meta_t = 0;
 
   VW::label_type_t expected_label_type = all.example_parser->lbl_parser.label_type;

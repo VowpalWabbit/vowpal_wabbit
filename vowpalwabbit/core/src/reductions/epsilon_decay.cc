@@ -432,7 +432,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::epsilon_decay_setup(VW::se
 
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs
-  auto base = stack_builder.setup_base_learner();
+  auto base = stack_builder.setup_base_learner(model_count);
 
   auto& adf_data = *static_cast<VW::reductions::cb_adf*>(require_multiline(base->get_learner_by_name_prefix("cb_adf"))
                                                              ->get_internal_type_erased_data_pointer_test_use_only());

@@ -319,7 +319,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::automl_setup(VW::setup_bas
 
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs
-  auto learner = stack_builder.setup_base_learner();
+  auto learner = stack_builder.setup_base_learner(max_live_configs);
 
   assert(all.interactions.empty() == true);
 
