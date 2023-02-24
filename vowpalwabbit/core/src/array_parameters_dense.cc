@@ -45,11 +45,24 @@ VW::dense_parameters::dense_parameters(dense_parameters&& other) noexcept
 }
 bool VW::dense_parameters::not_null() { return (_weight_mask > 0 && _begin != nullptr); }
 
-void VW::dense_parameters::shallow_copy(const dense_parameters& input)
+VW::dense_parameters VW::dense_parameters::shallow_copy(const dense_parameters& input)
 {
-  _begin = input._begin;
-  _weight_mask = input._weight_mask;
-  _stride_shift = input._stride_shift;
+  dense_parameters return_val;
+  return_val._begin = input._begin;
+  return_val._weight_mask = input._weight_mask;
+  return_val._stride_shift = input._stride_shift;
+  return return_val;
+}
+
+VW::dense_parameters VW::dense_parameters::deep_copy(const dense_parameters& input)
+{
+  dense_parameters return_val;
+  auto length = input._weight_mask + 1;
+  return_val._begin.reset(VW::details::calloc_mergable_or_throw<VW::weight>(length), free);
+  return_val._weight_mask = input._weight_mask;
+  return_val._stride_shift = input._stride_shift;
+  std::memcpy(return_val._begin.get(), input._begin.get(), length * sizeof(VW::weight));
+  return return_val;
 }
 
 void VW::dense_parameters::set_zero(size_t offset)

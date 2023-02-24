@@ -79,8 +79,7 @@ void merge_weights_with_save_resume(size_t length,
   for (auto i : source)
   {
     // There is no copy constructor for weights, so we have to copy manually.
-    weight_copies.emplace_back(length, weights.stride_shift());
-    std::memcpy(weight_copies.back().data(), i.get().data(), i.get().raw_length());
+    weight_copies.emplace_back(VW::dense_parameters::deep_copy(i));
     VW::details::do_weighting(output_workspace.normalized_idx, length, adaptive_totals.data(), weight_copies.back());
   }
 

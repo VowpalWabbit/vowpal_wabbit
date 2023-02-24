@@ -122,7 +122,8 @@ public:
   inline const VW::weight& operator[](size_t i) const { return _begin.get()[i & _weight_mask]; }
   inline VW::weight& operator[](size_t i) { return _begin.get()[i & _weight_mask]; }
 
-  void shallow_copy(const dense_parameters& input);
+  VW_ATTR(nodiscard) static dense_parameters shallow_copy(const dense_parameters& input);
+  VW_ATTR(nodiscard) static dense_parameters deep_copy(const dense_parameters& input);
 
   inline VW::weight& strided_index(size_t index) { return operator[](index << _stride_shift); }
   inline const VW::weight& strided_index(size_t index) const { return operator[](index << _stride_shift); }
