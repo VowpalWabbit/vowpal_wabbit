@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <cfloat>
+#include <algorithm>
 
 #if !defined(VW_NO_INLINE_SIMD)
 #  if !defined(__SSE2__) && (defined(_M_AMD64) || defined(_M_X64))
@@ -328,21 +329,6 @@ void subtract(const VW::workspace& ws1, const VW::reductions::gd& data1, const V
         data1.per_model_states[i].total_weight - data2.per_model_states[i].total_weight;
   }
 }
-
-void resize_ppw_state(VW::reductions::gd& g, size_t factor)
-{
-  assert(g.per_model_states.size() >= 1);
-
-  if (factor == 1) { return; }
-
-  auto initial_size = g.per_model_states.size();
-  for (size_t i = 0; i < factor - 1; i++)
-  {
-    for (size_t y = 0; y < initial_size; y++) { g.per_model_states.emplace_back(g.per_model_states[y]); }
-  }
-}
-
-#include <algorithm>
 
 class string_value
 {
@@ -1561,7 +1547,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i&
 
   all.weights.stride_shift(static_cast<uint32_t>(::ceil_log_2(stride - 1)));
 
-  resize_ppw_state(*g, ppw);
+  g->per_model_states.resize(ppw);
 
   auto* bare = g.get();
   auto l = make_bottom_learner(std::move(g), g->learn, bare->predict, stack_builder.get_setupfn_name(gd_setup),
