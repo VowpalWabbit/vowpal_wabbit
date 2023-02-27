@@ -198,7 +198,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::csoaa_setup(VW::setup_base
 
   c->pred = VW::details::calloc_or_throw<VW::polyprediction>(c->num_classes);
   size_t ws = c->num_classes;
-  auto l = make_reduction_learner(std::move(c), require_singleline(stack_builder.setup_base_learner()),
+  auto l = make_reduction_learner(std::move(c), require_singleline(stack_builder.setup_base_learner(ws)),
       predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(csoaa_setup))
                .set_learn_returns_prediction(
                    true) /* csoaa.learn calls gd.learn. nothing to be gained by calling csoaa.predict first */

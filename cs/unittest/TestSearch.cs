@@ -146,7 +146,7 @@ namespace cs_unittest
 
                     rawvw.EndOfPass();
                     driver.Reset();
-                } while (remainingPasses-- > 0);
+                } while (--remainingPasses > 0);
 
                 driver.Reset();
 

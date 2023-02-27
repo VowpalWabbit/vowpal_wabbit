@@ -459,7 +459,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_adf_setup(VW::setup_bas
 
   auto ld = VW::make_unique<VW::reductions::cb_adf>(cb_type, rank_all, clip_p, no_predict, &all);
 
-  auto base = require_multiline(stack_builder.setup_base_learner());
+  auto base = require_multiline(stack_builder.setup_base_learner(problem_multiplier));
   all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   VW::reductions::cb_adf* bare = ld.get();
