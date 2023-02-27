@@ -745,6 +745,8 @@ public:
     { fn_ptr(*data, ex, count, step, pred, finalize_predictions); };
   )
 
+
+
   LEARNER_BUILDER_DEFINE(set_update(void (*fn_ptr)(DataT& data, ExampleT&)),
     assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();

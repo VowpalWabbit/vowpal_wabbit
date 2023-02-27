@@ -191,7 +191,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
       Search::AUTO_HAMMING_LOSS |     // please just use hamming loss on individual predictions -- we won't declare loss
       Search::EXAMPLES_DONT_CHANGE |  // we don't do any internal example munging
       0);
-  sch.set_num_learners(data->multipass);
+  sch.set_num_learners(num_actions);
   sch.set_task_data<task_data>(data.release());
 }
 

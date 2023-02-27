@@ -2,6 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "vw/core/reductions/gd.h"
+
 #include "vw/core/array_parameters.h"
 #include "vw/core/array_parameters_dense.h"
 #include "vw/core/crossplat_compat.h"
@@ -30,8 +32,8 @@
 #include "vw/core/accumulate.h"
 #include "vw/core/debug_log.h"
 #include "vw/core/label_parser.h"
+#include "vw/core/model_utils.h"
 #include "vw/core/parse_regressor.h"
-#include "vw/core/reductions/gd.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
 #include "vw/core/vw_versions.h"
@@ -719,16 +721,16 @@ float get_pred_per_update(VW::reductions::gd& g, VW::example& ec)
   {
     if (!stateless)
     {
-      g.per_model_states[0].normalized_sum_norm_x += (static_cast<double>(ec.weight)) * nd.norm_x;
-      g.per_model_states[0].total_weight += ec.weight;
+      g.current_model_state->normalized_sum_norm_x += (static_cast<double>(ec.weight)) * nd.norm_x;
+      g.current_model_state->total_weight += ec.weight;
       g.update_multiplier =
-          average_update<sqrt_rate, adaptive, normalized>(static_cast<float>(g.per_model_states[0].total_weight),
-              static_cast<float>(g.per_model_states[0].normalized_sum_norm_x), g.neg_norm_power);
+          average_update<sqrt_rate, adaptive, normalized>(static_cast<float>(g.current_model_state->total_weight),
+              static_cast<float>(g.current_model_state->normalized_sum_norm_x), g.neg_norm_power);
     }
     else
     {
-      float nsnx = (static_cast<float>(g.per_model_states[0].normalized_sum_norm_x)) + ec.weight * nd.norm_x;
-      float tw = static_cast<float>(g.per_model_states[0].total_weight) + ec.weight;
+      float nsnx = (static_cast<float>(g.current_model_state->normalized_sum_norm_x)) + ec.weight * nd.norm_x;
+      float tw = static_cast<float>(g.current_model_state->total_weight) + ec.weight;
       g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(tw, nsnx, g.neg_norm_power);
     }
     nd.pred_per_update *= g.update_multiplier;
@@ -768,8 +770,13 @@ float get_scale(VW::reductions::gd& g, VW::example& /* ec */, float weight)
 template <bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive, size_t normalized, size_t spare>
 float sensitivity(VW::reductions::gd& g, VW::example& ec)
 {
+  if (g.current_model_state == nullptr)
+  {
+    g.current_model_state = &(g.per_model_states[ec.ft_offset / g.all->weights.stride()]);
+  }
   return get_scale<adaptive>(g, ec, 1.) *
       sensitivity<sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, true>(g, ec);
+  g.current_model_state = nullptr;
 }
 
 template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive,
@@ -816,6 +823,10 @@ template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off,
     size_t normalized, size_t spare>
 void update(VW::reductions::gd& g, VW::example& ec)
 {
+  if (g.current_model_state == nullptr)
+  {
+    g.current_model_state = &(g.per_model_states[ec.ft_offset / g.all->weights.stride()]);
+  }
   // invariant: not a test label, importance weight > 0
   float update;
   if ((update = compute_update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare>(
@@ -828,6 +839,7 @@ void update(VW::reductions::gd& g, VW::example& ec)
   {  // updating weights now to avoid numerical instability
     sync_weights(*g.all);
   }
+  g.current_model_state = nullptr;
 }
 
 template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive,
@@ -838,7 +850,13 @@ void learn(VW::reductions::gd& g, VW::example& ec)
   assert(ec.l.simple.label != FLT_MAX);
   assert(ec.weight > 0.);
   g.predict(g, ec);
+  g.current_model_state = &(g.per_model_states[ec.ft_offset / g.all->weights.stride()]);
   update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare>(g, ec);
+  assert(g.current_model_state == nullptr);  // update clears this pointer
+  // this state should only matter on learn and not predict
+  // assert(g.current_model_state == nullptr);
+  // Guard example state restore against throws
+  auto restore_guard = VW::scope_exit([&g] { g.current_model_state = nullptr; });
 }
 
 size_t write_index(VW::io_buf& model_file, std::stringstream& msg, bool text, uint32_t num_bits, uint64_t i)
@@ -1076,7 +1094,7 @@ void save_load_online_state_weights(VW::workspace& all, VW::io_buf& model_file, 
 }  // namespace
 
 void VW::details::save_load_online_state_gd(VW::workspace& all, VW::io_buf& model_file, bool read, bool text,
-    double& total_weight, double& normalized_sum_norm_x, VW::reductions::gd* g, uint32_t ftrl_size)
+    std::vector<VW::reductions::details::per_model_state>& pms, VW::reductions::gd* g, uint32_t ftrl_size)
 {
   std::stringstream msg;
 
@@ -1084,9 +1102,10 @@ void VW::details::save_load_online_state_gd(VW::workspace& all, VW::io_buf& mode
   VW::details::bin_text_read_write_fixed(
       model_file, reinterpret_cast<char*>(&all.initial_t), sizeof(all.initial_t), read, msg, text);
 
-  msg << "norm normalizer " << normalized_sum_norm_x << "\n";
-  VW::details::bin_text_read_write_fixed(
-      model_file, reinterpret_cast<char*>(&normalized_sum_norm_x), sizeof(normalized_sum_norm_x), read, msg, text);
+  assert(pms.size() >= 1);
+  msg << "norm normalizer " << pms[0].normalized_sum_norm_x << "\n";
+  VW::details::bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&pms[0].normalized_sum_norm_x),
+      sizeof(pms[0].normalized_sum_norm_x), read, msg, text);
 
   msg << "t " << all.sd->t << "\n";
   VW::details::bin_text_read_write_fixed(
@@ -1139,12 +1158,13 @@ void VW::details::save_load_online_state_gd(VW::workspace& all, VW::io_buf& mode
 
   if (!read || all.model_file_ver >= VW::version_definitions::VERSION_SAVE_RESUME_FIX)
   {
+    assert(pms.size() >= 1);
     // restore some data to allow save_resume work more accurate
 
     // fix average loss
-    msg << "total_weight " << total_weight << "\n";
+    msg << "total_weight " << pms[0].total_weight << "\n";
     VW::details::bin_text_read_write_fixed(
-        model_file, reinterpret_cast<char*>(&total_weight), sizeof(total_weight), read, msg, text);
+        model_file, reinterpret_cast<char*>(&pms[0].total_weight), sizeof(pms[0].total_weight), read, msg, text);
 
     // fix "loss since last" for first printed out example details
     msg << "sd::oec.weighted_labeled_examples " << all.sd->old_weighted_labeled_examples << "\n";
@@ -1267,8 +1287,7 @@ void save_load(VW::reductions::gd& g, VW::io_buf& model_file, bool read, bool te
             "save_resume functionality is known to have inaccuracy in model files version less than '{}'",
             VW::version_definitions::VERSION_SAVE_RESUME_FIX.to_string());
       }
-      VW::details::save_load_online_state_gd(all, model_file, read, text, g.per_model_states[0].total_weight,
-          g.per_model_states[0].normalized_sum_norm_x, &g);
+      VW::details::save_load_online_state_gd(all, model_file, read, text, g.per_model_states, &g);
     }
     else
     {
@@ -1362,10 +1381,34 @@ uint64_t ceil_log_2(uint64_t v)
 
 }  // namespace
 
+namespace VW
+{
+namespace model_utils
+{
+size_t read_model_field(io_buf& model, VW::reductions::details::per_model_state& pms)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(model, pms.normalized_sum_norm_x);
+  bytes += read_model_field(model, pms.total_weight);
+  return bytes;
+}
+
+size_t write_model_field(
+    io_buf& model, const VW::reductions::details::per_model_state& pms, const std::string& name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(model, pms.normalized_sum_norm_x, name + "_normalized_sum_norm_x", text);
+  bytes += write_model_field(model, pms.total_weight, name + "_total_weight", text);
+  return bytes;
+}
+}  // namespace model_utils
+}  // namespace VW
+
 std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
+  size_t ppw = stack_builder.get_ppw();
 
   auto g = VW::make_unique<VW::reductions::gd>();
 
@@ -1502,6 +1545,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i&
   else { stride = ::set_learn<false>(all, feature_mask_off, *g.get()); }
 
   all.weights.stride_shift(static_cast<uint32_t>(::ceil_log_2(stride - 1)));
+
+  g->per_model_states.resize(ppw);
 
   auto* bare = g.get();
   auto l = make_bottom_learner(std::move(g), g->learn, bare->predict, stack_builder.get_setupfn_name(gd_setup),

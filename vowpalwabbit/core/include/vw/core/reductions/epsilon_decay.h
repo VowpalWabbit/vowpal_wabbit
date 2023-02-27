@@ -57,11 +57,7 @@ public:
   bool _predict_only_model;
 
   // TODO: delete all this, gd and cb_adf must respect ft_offset, see header import of automl.cc
-  std::vector<double> per_live_model_state_double;
   std::vector<uint64_t> per_live_model_state_uint64;
-  double* _gd_normalized = nullptr;
-  double* _gd_total_weight = nullptr;
-  double* _sd_gravity = nullptr;
   uint64_t* _cb_adf_event_sum = nullptr;
   uint64_t* _cb_adf_action_sum = nullptr;
 };
