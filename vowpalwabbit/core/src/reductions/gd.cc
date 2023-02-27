@@ -16,7 +16,6 @@
 
 #include <algorithm>
 #include <cfloat>
-#include <algorithm>
 
 #if !defined(VW_NO_INLINE_SIMD)
 #  if !defined(__SSE2__) && (defined(_M_AMD64) || defined(_M_X64))
