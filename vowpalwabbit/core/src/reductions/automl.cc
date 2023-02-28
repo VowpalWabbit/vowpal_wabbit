@@ -183,8 +183,8 @@ std::shared_ptr<VW::LEARNER::learner> make_automl_with_impl(VW::setup_base_i& st
 
   auto& adf_data =
       *static_cast<VW::reductions::cb_adf*>(data->adf_learner->get_internal_type_erased_data_pointer_test_use_only());
-  data->cm->_cb_adf_event_sum = &(adf_data.gen_cs.event_sum);
-  data->cm->_cb_adf_action_sum = &(adf_data.gen_cs.action_sum);
+  data->cm->_cb_adf_event_sum = &(adf_data.gen_cs.per_model_state[0].event_sum);
+  data->cm->_cb_adf_action_sum = &(adf_data.gen_cs.per_model_state[0].action_sum);
 
   auto l = make_reduction_learner(std::move(data), require_multiline(base_learner),
       learn_automl<config_manager_type, true>, predict_automl<config_manager_type, true>,

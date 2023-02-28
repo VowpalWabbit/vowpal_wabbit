@@ -73,6 +73,7 @@ private:
   VW::v_array<float> _backup_weights;  // temporary storage for sm; backup for weights in examples
 
   uint64_t _offset = 0;
+  uint64_t _offset_index = 0;
   const bool _no_predict;
   const bool _rank_all;
   const float _clip_p;

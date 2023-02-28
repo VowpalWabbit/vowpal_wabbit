@@ -434,8 +434,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::epsilon_decay_setup(VW::se
 
   auto& adf_data = *static_cast<VW::reductions::cb_adf*>(require_multiline(base->get_learner_by_name_prefix("cb_adf"))
                                                              ->get_internal_type_erased_data_pointer_test_use_only());
-  data->_cb_adf_event_sum = &(adf_data.gen_cs.event_sum);
-  data->_cb_adf_action_sum = &(adf_data.gen_cs.action_sum);
+  data->_cb_adf_event_sum = &(adf_data.gen_cs.per_model_state[0].event_sum);
+  data->_cb_adf_action_sum = &(adf_data.gen_cs.per_model_state[0].action_sum);
   data->per_live_model_state_uint64 = std::vector<uint64_t>(model_count * 2, 0.f);
 
   if (base->is_multiline())

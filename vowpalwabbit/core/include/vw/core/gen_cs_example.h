@@ -12,6 +12,12 @@ namespace VW
 {
 namespace details
 {
+class cb_to_cs_per_model_state
+{
+public:
+  uint64_t action_sum = 0;
+  uint64_t event_sum = 0;
+};
 
 class cb_to_cs
 {
@@ -34,8 +40,7 @@ public:
   VW::cb_type_t cb_type = VW::cb_type_t::DM;
 
   // for MTR
-  uint64_t action_sum = 0;
-  uint64_t event_sum = 0;
+  std::vector<cb_to_cs_per_model_state> per_model_state;
   uint32_t mtr_example = 0;
   VW::multi_ex mtr_ec_seq;  // shared + the one example.
 
