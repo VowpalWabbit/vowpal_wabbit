@@ -79,8 +79,8 @@ cb_explore_adf_cover::cb_explore_adf_cover(size_t cover_size, float psi, bool no
     , _epsilon_decay(epsilon_decay)
     , _first_only(first_only)
     , _counter(0)
-    , _cs_ldf_learner(cs_ldf_learner)
     , _stride(stride)
+    , _cs_ldf_learner(cs_ldf_learner)
     , _model_file_version(model_file_version)
     , _logger(std::move(logger))
 {
