@@ -334,17 +334,11 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::do_learning
 {
   assert(live_slot < max_live_configs);
   // TODO: what to do if that slot is switched with a new config?
-  std::swap(*_gd_normalized, per_live_model_state_double[live_slot * 3]);
-  std::swap(*_gd_total_weight, per_live_model_state_double[live_slot * 3 + 1]);
-  std::swap(*_sd_gravity, per_live_model_state_double[live_slot * 3 + 2]);
   std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[live_slot * 2]);
   std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[live_slot * 2 + 1]);
   for (example* ex : ec) { apply_config(ex, &estimators[live_slot].first.live_interactions); }
   if (!base.learn_returns_prediction) { base.predict(ec, live_slot); }
   base.learn(ec, live_slot);
-  std::swap(*_gd_normalized, per_live_model_state_double[live_slot * 3]);
-  std::swap(*_gd_total_weight, per_live_model_state_double[live_slot * 3 + 1]);
-  std::swap(*_sd_gravity, per_live_model_state_double[live_slot * 3 + 2]);
   std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[live_slot * 2]);
   std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[live_slot * 2 + 1]);
 }

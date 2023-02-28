@@ -9,13 +9,13 @@
 #include "vw/core/automl_impl.h"
 #include "vw/core/estimators/confidence_sequence_robust.h"
 #include "vw/core/multi_model_utils.h"
+#include "vw/core/shared_data.h"
+#include "vw/core/vw.h"
 
 // TODO: delete this three includes
 #include "vw/core/reductions/cb/cb_adf.h"
 #include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
-#include "vw/core/shared_data.h"
-#include "vw/core/vw.h"
 
 #include <cfloat>
 #include <iomanip>
@@ -79,11 +79,7 @@ void pre_save_load_automl(VW::workspace& all, automl<CMType>& data)
 {
   options_i& options = *all.options;
   if (!data.should_save_predict_only_model) { return; }
-  // Clear non-champ weights first
 
-  std::swap(*data.cm->_gd_normalized, data.cm->per_live_model_state_double[0]);
-  std::swap(*data.cm->_gd_total_weight, data.cm->per_live_model_state_double[1]);
-  std::swap(*data.cm->_sd_gravity, data.cm->per_live_model_state_double[2]);
   std::swap(*data.cm->_cb_adf_event_sum, data.cm->per_live_model_state_uint64[0]);
   std::swap(*data.cm->_cb_adf_action_sum, data.cm->per_live_model_state_uint64[1]);
 
@@ -179,21 +175,16 @@ std::shared_ptr<VW::LEARNER::learner> make_automl_with_impl(VW::setup_base_i& st
   auto data = VW::make_unique<automl<config_manager_type>>(
       std::move(cm), &all.logger, predict_only_model, trace_file_name_prefix);
   data->debug_reverse_learning_order = reversed_learning_order;
-  data->cm->per_live_model_state_double = std::vector<double>(max_live_configs * 3, 0.f);
   data->cm->per_live_model_state_uint64 = std::vector<uint64_t>(max_live_configs * 2, 0.f);
 
   auto ppw = max_live_configs;
   auto* persist_ptr = verbose_metrics ? persist<config_manager_type, true> : persist<config_manager_type, false>;
   data->adf_learner = require_multiline(base_learner->get_learner_by_name_prefix("cb_adf"));
-  VW::reductions::gd& gd = *static_cast<VW::reductions::gd*>(
-      base_learner->get_learner_by_name_prefix("gd")->get_internal_type_erased_data_pointer_test_use_only());
+
   auto& adf_data =
       *static_cast<VW::reductions::cb_adf*>(data->adf_learner->get_internal_type_erased_data_pointer_test_use_only());
-  data->cm->_gd_normalized = &(gd.per_model_states[0].normalized_sum_norm_x);
-  data->cm->_gd_total_weight = &(gd.per_model_states[0].total_weight);
   data->cm->_cb_adf_event_sum = &(adf_data.gen_cs.event_sum);
   data->cm->_cb_adf_action_sum = &(adf_data.gen_cs.action_sum);
-  data->cm->_sd_gravity = &(all.sd->gravity);
 
   auto l = make_reduction_learner(std::move(data), require_multiline(base_learner),
       learn_automl<config_manager_type, true>, predict_automl<config_manager_type, true>,
@@ -327,7 +318,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::automl_setup(VW::setup_bas
 
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs
-  auto learner = stack_builder.setup_base_learner();
+  auto learner = stack_builder.setup_base_learner(max_live_configs);
 
   assert(all.interactions.empty() == true);
 
