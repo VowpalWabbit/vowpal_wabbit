@@ -70,8 +70,8 @@ private:
 };
 
 cb_explore_adf_cover::cb_explore_adf_cover(size_t cover_size, float psi, bool nounif, float epsilon, bool epsilon_decay,
-    bool first_only, VW::LEARNER::learner* cs_ldf_learner, VW::LEARNER::learner* scorer, VW::cb_type_t cb_type, size_t stride,
-    VW::version_struct model_file_version, VW::io::logger logger)
+    bool first_only, VW::LEARNER::learner* cs_ldf_learner, VW::LEARNER::learner* scorer, VW::cb_type_t cb_type,
+    size_t stride, VW::version_struct model_file_version, VW::io::logger logger)
     : _cover_size(cover_size)
     , _psi(psi)
     , _nounif(nounif)
@@ -103,7 +103,10 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::learner& base, VW:
     {  // use DR estimates for non-ERM policies in MTR
       VW::details::gen_cs_example_dr<true>(gen_cs, examples, _cs_labels);
     }
-    else { VW::details::gen_cs_example<false>(gen_cs, examples, _cs_labels, _logger, examples[0]->ft_offset / _stride); }
+    else
+    {
+      VW::details::gen_cs_example<false>(gen_cs, examples, _cs_labels, _logger, examples[0]->ft_offset / _stride);
+    }
 
     if (base.learn_returns_prediction)
     {

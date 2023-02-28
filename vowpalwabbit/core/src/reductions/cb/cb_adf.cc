@@ -211,8 +211,9 @@ void VW::reductions::cb_adf::learn_mtr(learner& base, VW::multi_ex& examples)
   uint32_t nf = static_cast<uint32_t>(examples[gen_cs.mtr_example]->num_features);
   float old_weight = examples[gen_cs.mtr_example]->weight;
   const float clipped_p = std::max(examples[gen_cs.mtr_example]->l.cb.costs[0].probability, _clip_p);
-  examples[gen_cs.mtr_example]->weight *=
-      1.f / clipped_p * (static_cast<float>(gen_cs.per_model_state[_offset_index].event_sum) / static_cast<float>(gen_cs.per_model_state[_offset_index].action_sum));
+  examples[gen_cs.mtr_example]->weight *= 1.f / clipped_p *
+      (static_cast<float>(gen_cs.per_model_state[_offset_index].event_sum) /
+          static_cast<float>(gen_cs.per_model_state[_offset_index].action_sum));
 
   std::swap(gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
   // TODO!!! cb_labels are not getting properly restored (empty costs are
@@ -340,12 +341,12 @@ void save_load(VW::reductions::cb_adf& c, VW::io_buf& model_file, bool read, boo
 
   std::stringstream msg;
   msg << "event_sum " << c.get_gen_cs().per_model_state[0].event_sum << "\n";
-  VW::details::bin_text_read_write_fixed(
-      model_file, (char*)&c.get_gen_cs().per_model_state[0].event_sum, sizeof(c.get_gen_cs().per_model_state[0].event_sum), read, msg, text);
+  VW::details::bin_text_read_write_fixed(model_file, (char*)&c.get_gen_cs().per_model_state[0].event_sum,
+      sizeof(c.get_gen_cs().per_model_state[0].event_sum), read, msg, text);
 
   msg << "action_sum " << c.get_gen_cs().per_model_state[0].action_sum << "\n";
-  VW::details::bin_text_read_write_fixed(
-      model_file, (char*)&c.get_gen_cs().per_model_state[0].action_sum, sizeof(c.get_gen_cs().per_model_state[0].action_sum), read, msg, text);
+  VW::details::bin_text_read_write_fixed(model_file, (char*)&c.get_gen_cs().per_model_state[0].action_sum,
+      sizeof(c.get_gen_cs().per_model_state[0].action_sum), read, msg, text);
 }
 
 void cb_adf_merge(const std::vector<float>& /* per_model_weights */,
@@ -366,8 +367,10 @@ void cb_adf_add(
 {
   for (size_t i = 0; i < data1.get_gen_cs().per_model_state.size(); i++)
   {
-    data_out.get_gen_cs().per_model_state[i].event_sum = data1.get_gen_cs().per_model_state[i].event_sum + data2.get_gen_cs().per_model_state[i].event_sum;
-    data_out.get_gen_cs().per_model_state[i].action_sum = data1.get_gen_cs().per_model_state[i].action_sum + data2.get_gen_cs().per_model_state[i].action_sum;
+    data_out.get_gen_cs().per_model_state[i].event_sum =
+        data1.get_gen_cs().per_model_state[i].event_sum + data2.get_gen_cs().per_model_state[i].event_sum;
+    data_out.get_gen_cs().per_model_state[i].action_sum =
+        data1.get_gen_cs().per_model_state[i].action_sum + data2.get_gen_cs().per_model_state[i].action_sum;
   }
 }
 
@@ -376,8 +379,10 @@ void cb_adf_subtract(
 {
   for (size_t i = 0; i < data1.get_gen_cs().per_model_state.size(); i++)
   {
-    data_out.get_gen_cs().per_model_state[i].event_sum = data1.get_gen_cs().per_model_state[i].event_sum - data2.get_gen_cs().per_model_state[i].event_sum;
-    data_out.get_gen_cs().per_model_state[i].action_sum = data1.get_gen_cs().per_model_state[i].action_sum - data2.get_gen_cs().per_model_state[i].action_sum;
+    data_out.get_gen_cs().per_model_state[i].event_sum =
+        data1.get_gen_cs().per_model_state[i].event_sum - data2.get_gen_cs().per_model_state[i].event_sum;
+    data_out.get_gen_cs().per_model_state[i].action_sum =
+        data1.get_gen_cs().per_model_state[i].action_sum - data2.get_gen_cs().per_model_state[i].action_sum;
   }
 }
 

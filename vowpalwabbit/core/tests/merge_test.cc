@@ -199,7 +199,8 @@ TEST(Merge, MergeCbModel)
     EXPECT_EQ(vw_merged_cb_adf->get_gen_cs().per_model_state[i].event_sum,
         vw1_cb_adf->get_gen_cs().per_model_state[i].event_sum + vw2_cb_adf->get_gen_cs().per_model_state[i].event_sum);
     EXPECT_EQ(vw_merged_cb_adf->get_gen_cs().per_model_state[i].action_sum,
-        vw1_cb_adf->get_gen_cs().per_model_state[i].action_sum + vw2_cb_adf->get_gen_cs().per_model_state[i].action_sum);
+        vw1_cb_adf->get_gen_cs().per_model_state[i].action_sum +
+            vw2_cb_adf->get_gen_cs().per_model_state[i].action_sum);
   }
 }
 
@@ -318,7 +319,8 @@ TEST(Merge, MergeCbModelDelta)
         vw1_cb_adf->get_gen_cs().per_model_state[i].event_sum + vw2_cb_adf->get_gen_cs().per_model_state[i].event_sum -
             vw_base_cb_adf->get_gen_cs().per_model_state[i].event_sum);
     EXPECT_EQ(delta_merged_cb_adf->get_gen_cs().per_model_state[i].action_sum,
-        vw1_cb_adf->get_gen_cs().per_model_state[i].action_sum + vw2_cb_adf->get_gen_cs().per_model_state[i].action_sum -
+        vw1_cb_adf->get_gen_cs().per_model_state[i].action_sum +
+            vw2_cb_adf->get_gen_cs().per_model_state[i].action_sum -
             vw_base_cb_adf->get_gen_cs().per_model_state[i].action_sum);
   }
 
@@ -332,8 +334,10 @@ TEST(Merge, MergeCbModelDelta)
   EXPECT_FLOAT_EQ(result_delta_merge->sd->weighted_labeled_examples, result_model_merge->sd->weighted_labeled_examples);
   for (size_t i = 0; i < vw_base_cb_adf->get_gen_cs().per_model_state.size(); i++)
   {
-    EXPECT_EQ(delta_merged_cb_adf->get_gen_cs().per_model_state[i].event_sum, model_merged_cb_adf->get_gen_cs().per_model_state[i].event_sum);
-    EXPECT_EQ(delta_merged_cb_adf->get_gen_cs().per_model_state[i].action_sum, model_merged_cb_adf->get_gen_cs().per_model_state[i].action_sum);
+    EXPECT_EQ(delta_merged_cb_adf->get_gen_cs().per_model_state[i].event_sum,
+        model_merged_cb_adf->get_gen_cs().per_model_state[i].event_sum);
+    EXPECT_EQ(delta_merged_cb_adf->get_gen_cs().per_model_state[i].action_sum,
+        model_merged_cb_adf->get_gen_cs().per_model_state[i].action_sum);
   }
 }
 

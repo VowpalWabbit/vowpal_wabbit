@@ -259,8 +259,8 @@ void coin_betting_predict(ftrl& b, VW::example& ec)
 
   b.gd_per_model_states[0].normalized_sum_norm_x += (static_cast<double>(ec.weight)) * b.data.normalized_squared_norm_x;
   b.gd_per_model_states[0].total_weight += ec.weight;
-  b.data.average_squared_norm_x =
-      (static_cast<float>((b.gd_per_model_states[0].normalized_sum_norm_x + 1e-6) / b.gd_per_model_states[0].total_weight));
+  b.data.average_squared_norm_x = (static_cast<float>(
+      (b.gd_per_model_states[0].normalized_sum_norm_x + 1e-6) / b.gd_per_model_states[0].total_weight));
 
   ec.partial_prediction = b.data.predict / b.data.average_squared_norm_x;
 

@@ -245,7 +245,8 @@ void gen_cs_example_dr(cb_to_cs_adf& c, VW::multi_ex& examples, VW::cs_label& cs
 }
 
 template <bool is_learn>
-void gen_cs_example(cb_to_cs_adf& c, VW::multi_ex& ec_seq, VW::cs_label& cs_labels, VW::io::logger& logger, uint64_t offset_index)
+void gen_cs_example(
+    cb_to_cs_adf& c, VW::multi_ex& ec_seq, VW::cs_label& cs_labels, VW::io::logger& logger, uint64_t offset_index)
 {
   VW_DBG(*ec_seq[0]) << "gen_cs_example:" << is_learn << std::endl;
   switch (c.cb_type)
