@@ -96,12 +96,8 @@ void epsilon_decay_data::update_weights(float init_ep, VW::LEARNER::learner& bas
         ep_fts.epsilon = VW::reductions::epsilon_decay::decayed_epsilon(
             init_ep, conf_seq_estimators[model_ind][model_ind].update_count);
       }
-      std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[model_ind * 2]);
-      std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[model_ind * 2 + 1]);
       if (!base.learn_returns_prediction) { base.predict(examples, _weight_indices[model_ind]); }
       base.learn(examples, _weight_indices[model_ind]);
-      std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[model_ind * 2]);
-      std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[model_ind * 2 + 1]);
 
       for (const auto& a_s : examples[0]->pred.a_s)
       {
@@ -229,10 +225,8 @@ size_t read_model_field(io_buf& io, VW::reductions::epsilon_decay::epsilon_decay
 {
   size_t bytes = 0;
   epsilon_decay.conf_seq_estimators.clear();
-  epsilon_decay.per_live_model_state_uint64.clear();
   bytes += read_model_field(io, epsilon_decay.conf_seq_estimators);
   bytes += read_model_field(io, epsilon_decay._global_counter);
-  bytes += read_model_field(io, epsilon_decay.per_live_model_state_uint64);
   return bytes;
 }
 
@@ -242,8 +236,6 @@ size_t write_model_field(io_buf& io, const VW::reductions::epsilon_decay::epsilo
   size_t bytes = 0;
   bytes += write_model_field(io, epsilon_decay.conf_seq_estimators, upstream_name + "conf_seq_estimators", text);
   bytes += write_model_field(io, epsilon_decay._global_counter, upstream_name + "_global_counter", text);
-  bytes += write_model_field(
-      io, epsilon_decay.per_live_model_state_uint64, upstream_name + "_per_live_model_state_uint64", text);
   return bytes;
 }
 }  // namespace model_utils
@@ -299,10 +291,6 @@ void pre_save_load_epsilon_decay(VW::workspace& all, VW::reductions::epsilon_dec
 {
   options_i& options = *all.options;
   if (!data._predict_only_model) { return; }
-  // Clear non-champ weights first
-
-  std::swap(*data._cb_adf_event_sum, data.per_live_model_state_uint64[0]);
-  std::swap(*data._cb_adf_action_sum, data.per_live_model_state_uint64[1]);
 
   // Adjust champ weights to new single-model space
   VW::reductions::multi_model::reduce_innermost_model_weights(
@@ -431,12 +419,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::epsilon_decay_setup(VW::se
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs
   auto base = stack_builder.setup_base_learner(model_count);
-
-  auto& adf_data = *static_cast<VW::reductions::cb_adf*>(require_multiline(base->get_learner_by_name_prefix("cb_adf"))
-                                                             ->get_internal_type_erased_data_pointer_test_use_only());
-  data->_cb_adf_event_sum = &(adf_data.gen_cs.per_model_state[0].event_sum);
-  data->_cb_adf_action_sum = &(adf_data.gen_cs.per_model_state[0].action_sum);
-  data->per_live_model_state_uint64 = std::vector<uint64_t>(model_count * 2, 0.f);
 
   if (base->is_multiline())
   {

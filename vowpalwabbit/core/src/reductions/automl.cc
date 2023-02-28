@@ -80,9 +80,6 @@ void pre_save_load_automl(VW::workspace& all, automl<CMType>& data)
   options_i& options = *all.options;
   if (!data.should_save_predict_only_model) { return; }
 
-  std::swap(*data.cm->_cb_adf_event_sum, data.cm->per_live_model_state_uint64[0]);
-  std::swap(*data.cm->_cb_adf_action_sum, data.cm->per_live_model_state_uint64[1]);
-
   // Adjust champ weights to new single-model space
   VW::reductions::multi_model::reduce_innermost_model_weights(
       data.cm->weights, 0, data.cm->wpp, data.cm->max_live_configs);
@@ -175,16 +172,9 @@ std::shared_ptr<VW::LEARNER::learner> make_automl_with_impl(VW::setup_base_i& st
   auto data = VW::make_unique<automl<config_manager_type>>(
       std::move(cm), &all.logger, predict_only_model, trace_file_name_prefix);
   data->debug_reverse_learning_order = reversed_learning_order;
-  data->cm->per_live_model_state_uint64 = std::vector<uint64_t>(max_live_configs * 2, 0.f);
 
   auto ppw = max_live_configs;
   auto* persist_ptr = verbose_metrics ? persist<config_manager_type, true> : persist<config_manager_type, false>;
-  data->adf_learner = require_multiline(base_learner->get_learner_by_name_prefix("cb_adf"));
-
-  auto& adf_data =
-      *static_cast<VW::reductions::cb_adf*>(data->adf_learner->get_internal_type_erased_data_pointer_test_use_only());
-  data->cm->_cb_adf_event_sum = &(adf_data.gen_cs.per_model_state[0].event_sum);
-  data->cm->_cb_adf_action_sum = &(adf_data.gen_cs.per_model_state[0].action_sum);
 
   auto l = make_reduction_learner(std::move(data), require_multiline(base_learner),
       learn_automl<config_manager_type, true>, predict_automl<config_manager_type, true>,

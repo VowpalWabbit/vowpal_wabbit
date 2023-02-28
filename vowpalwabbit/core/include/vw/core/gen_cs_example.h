@@ -203,7 +203,7 @@ void gen_cs_example_ips(
 
 void gen_cs_example_dm(const VW::multi_ex& examples, VW::cs_label& cs_labels);
 
-void gen_cs_example_mtr(cb_to_cs_adf& c, VW::multi_ex& ec_seq, VW::cs_label& cs_labels);
+void gen_cs_example_mtr(cb_to_cs_adf& c, VW::multi_ex& ec_seq, VW::cs_label& cs_labels, uint64_t offset_index);
 
 void gen_cs_example_sm(VW::multi_ex& examples, uint32_t chosen_action, float sign_offset,
     const VW::action_scores& action_vals, VW::cs_label& cs_labels);
@@ -245,7 +245,7 @@ void gen_cs_example_dr(cb_to_cs_adf& c, VW::multi_ex& examples, VW::cs_label& cs
 }
 
 template <bool is_learn>
-void gen_cs_example(cb_to_cs_adf& c, VW::multi_ex& ec_seq, VW::cs_label& cs_labels, VW::io::logger& logger)
+void gen_cs_example(cb_to_cs_adf& c, VW::multi_ex& ec_seq, VW::cs_label& cs_labels, VW::io::logger& logger, uint64_t offset_index)
 {
   VW_DBG(*ec_seq[0]) << "gen_cs_example:" << is_learn << std::endl;
   switch (c.cb_type)
@@ -257,7 +257,7 @@ void gen_cs_example(cb_to_cs_adf& c, VW::multi_ex& ec_seq, VW::cs_label& cs_labe
       gen_cs_example_dr<is_learn>(c, ec_seq, cs_labels);
       break;
     case VW::cb_type_t::MTR:
-      gen_cs_example_mtr(c, ec_seq, cs_labels);
+      gen_cs_example_mtr(c, ec_seq, cs_labels, offset_index);
       break;
     default:
       THROW("Unknown cb_type specified for contextual bandit learning: " << VW::to_string(c.cb_type));

@@ -207,12 +207,12 @@ void VW::reductions::cb_adf::learn_mtr(learner& base, VW::multi_ex& examples)
   // Train on _one_ action (which requires up to 3 examples).
   // We must go through the cost sensitive classifier layer to get
   // proper feature handling.
-  gen_cs_example_mtr(gen_cs, examples, _cs_labels);
+  gen_cs_example_mtr(gen_cs, examples, _cs_labels, _offset_index);
   uint32_t nf = static_cast<uint32_t>(examples[gen_cs.mtr_example]->num_features);
   float old_weight = examples[gen_cs.mtr_example]->weight;
   const float clipped_p = std::max(examples[gen_cs.mtr_example]->l.cb.costs[0].probability, _clip_p);
   examples[gen_cs.mtr_example]->weight *=
-      1.f / clipped_p * (static_cast<float>(gen_cs.per_model_state[0].event_sum) / static_cast<float>(gen_cs.per_model_state[0].action_sum));
+      1.f / clipped_p * (static_cast<float>(gen_cs.per_model_state[_offset_index].event_sum) / static_cast<float>(gen_cs.per_model_state[_offset_index].action_sum));
 
   std::swap(gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
   // TODO!!! cb_labels are not getting properly restored (empty costs are
@@ -353,23 +353,32 @@ void cb_adf_merge(const std::vector<float>& /* per_model_weights */,
 {
   for (const auto* source : sources)
   {
-    output_data.get_gen_cs().per_model_state[0].event_sum += source->get_gen_cs().per_model_state[0].event_sum;
-    output_data.get_gen_cs().per_model_state[0].action_sum += source->get_gen_cs().per_model_state[0].action_sum;
+    for (size_t i = 0; i < output_data.get_gen_cs().per_model_state.size(); i++)
+    {
+      output_data.get_gen_cs().per_model_state[i].event_sum += source->get_gen_cs().per_model_state[i].event_sum;
+      output_data.get_gen_cs().per_model_state[i].action_sum += source->get_gen_cs().per_model_state[i].action_sum;
+    }
   }
 }
 
 void cb_adf_add(
     const VW::reductions::cb_adf& data1, const VW::reductions::cb_adf& data2, VW::reductions::cb_adf& data_out)
 {
-  data_out.get_gen_cs().per_model_state[0].event_sum = data1.get_gen_cs().per_model_state[0].event_sum + data2.get_gen_cs().per_model_state[0].event_sum;
-  data_out.get_gen_cs().per_model_state[0].action_sum = data1.get_gen_cs().per_model_state[0].action_sum + data2.get_gen_cs().per_model_state[0].action_sum;
+  for (size_t i = 0; i < data1.get_gen_cs().per_model_state.size(); i++)
+  {
+    data_out.get_gen_cs().per_model_state[i].event_sum = data1.get_gen_cs().per_model_state[i].event_sum + data2.get_gen_cs().per_model_state[i].event_sum;
+    data_out.get_gen_cs().per_model_state[i].action_sum = data1.get_gen_cs().per_model_state[i].action_sum + data2.get_gen_cs().per_model_state[i].action_sum;
+  }
 }
 
 void cb_adf_subtract(
     const VW::reductions::cb_adf& data1, const VW::reductions::cb_adf& data2, VW::reductions::cb_adf& data_out)
 {
-  data_out.get_gen_cs().per_model_state[0].event_sum = data1.get_gen_cs().per_model_state[0].event_sum - data2.get_gen_cs().per_model_state[0].event_sum;
-  data_out.get_gen_cs().per_model_state[0].action_sum = data1.get_gen_cs().per_model_state[0].action_sum - data2.get_gen_cs().per_model_state[0].action_sum;
+  for (size_t i = 0; i < data1.get_gen_cs().per_model_state.size(); i++)
+  {
+    data_out.get_gen_cs().per_model_state[i].event_sum = data1.get_gen_cs().per_model_state[i].event_sum - data2.get_gen_cs().per_model_state[i].event_sum;
+    data_out.get_gen_cs().per_model_state[i].action_sum = data1.get_gen_cs().per_model_state[i].action_sum - data2.get_gen_cs().per_model_state[i].action_sum;
+  }
 }
 
 void learn(VW::reductions::cb_adf& c, learner& base, VW::multi_ex& ec_seq) { c.learn(base, ec_seq); }
