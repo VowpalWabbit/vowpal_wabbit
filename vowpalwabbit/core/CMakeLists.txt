@@ -446,6 +446,7 @@ vw_add_test_executable(
       tests/eigen_memory_tree_test.cc
       tests/epsilon_decay_test.cc
       tests/epsilon_test.cc
+      tests/example_ft_hash_test.cc
       tests/example_header_test.cc
       tests/example_test.cc
       tests/feature_group_test.cc
