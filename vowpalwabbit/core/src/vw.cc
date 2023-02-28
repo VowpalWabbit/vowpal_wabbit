@@ -897,6 +897,8 @@ void VW::empty_example(VW::workspace& /*all*/, example& ec)
   ec.is_newline = false;
   ec.ex_reduction_features.clear();
   ec.num_features_from_interactions = 0;
+  ec.feature_space_hash = 0;
+  ec.is_set_feature_space_hash = false;
 }
 
 void VW::move_feature_namespace(example* dst, example* src, namespace_index c)
