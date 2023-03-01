@@ -258,7 +258,7 @@ void update_stats_igl(const VW::workspace& /* all */, VW::shared_data& sd, const
 
   for (const auto& example : ec_seq)
   {
-    if (VW::ec_is_example_header_cb(*example))
+    if (VW::ec_is_example_header_cb_with_observations(*example))
     {
       num_features += (ec_seq.size() - 1) *
           (example->get_num_features() - example->feature_space[VW::details::CONSTANT_NAMESPACE].size());

@@ -210,7 +210,7 @@ void ::VW::details::print_update_cb(VW::workspace& all, bool is_test, const VW::
       // TODO: code duplication csoaa.cc LabelDict::ec_is_example_header
       for (size_t i = 0; i < (*ec_seq).size(); i++)
       {
-        if (VW::ec_is_example_header_cb(*(*ec_seq)[i]) || VW::ec_is_example_header_cb_with_observations(*(*ec_seq)[i]))
+        if (VW::ec_is_example_header_cb(*(*ec_seq)[i]))
         {
           num_features += (ec_seq->size() - 1) *
               ((*ec_seq)[i]->get_num_features() - (*ec_seq)[i]->feature_space[VW::details::CONSTANT_NAMESPACE].size());
@@ -276,8 +276,8 @@ void parse_label_cb_eval(VW::cb_eval_label& ld, VW::reduction_features& red_feat
   ::parse_label_cb(ld.event, red_features, reuse_mem, rest_of_tokens, logger);
 }
 
-void parse_label_cb_with_observations(VW::cb_with_observations_label& ld, VW::reduction_features& red_features,
-    VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words, VW::io::logger& logger) {
+void parse_label_cb_with_observations(VW::cb_with_observations_label& /*ld*/, VW::reduction_features& /*red_features*/,
+    VW::label_parser_reuse_mem& /*reuse_mem*/, const std::vector<VW::string_view>& /*words*/, VW::io::logger& /*logger*/) {
   // TODO: implement text format parsing for cb with observations
 }
 }  // namespace
@@ -314,10 +314,10 @@ VW::label_parser VW::cb_with_observations_global = {
   // cache_label
   [](const VW::polylabel& label, const VW::reduction_features& /*red_features*/, io_buf& cache,
       const std::string& upstream_name, bool text)
-  { return VW::model_utils::write_model_field(cache, label.cb, upstream_name, text); },
+  { return VW::model_utils::write_model_field(cache, label.cb, upstream_name, text); }, // TODO: implement this for cb_with_observations
   // read_cached_label
   [](VW::polylabel& label, VW::reduction_features& /*red_features*/, io_buf& cache)
-  { return VW::model_utils::read_model_field(cache, label.cb); },
+  { return VW::model_utils::read_model_field(cache, label.cb); }, // TODO: implement this for cb_with_observations
   // get_weight
   [](const VW::polylabel& /*label*/, const VW::reduction_features& /*red_features*/) { return 1.f; },
   // test_label

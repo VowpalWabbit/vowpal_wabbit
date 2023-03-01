@@ -129,6 +129,7 @@ inline void cb_explore_adf_base<ExploreType>::predict(
 
   if (label_example != nullptr)
   {
+    // predict path, replace the label example with an empty one
     data._action_label = std::move(label_example->l.cb);
     label_example->l.cb = std::move(data._empty_label);
   }
@@ -137,6 +138,7 @@ inline void cb_explore_adf_base<ExploreType>::predict(
 
   if (label_example != nullptr)
   {
+    // predict path, restore label
     label_example->l.cb = std::move(data._action_label);
     data._empty_label.costs.clear();
     data._empty_label.weight = 1.f;
@@ -214,7 +216,7 @@ void cb_explore_adf_base<ExploreType>::_update_stats(
 
   for (const auto& example : ec_seq)
   {
-    if (VW::ec_is_example_header_cb(*example) || VW::ec_is_example_header_cb_with_observations(*example))
+    if (VW::ec_is_example_header_cb(*example))
     {
       num_features += (ec_seq.size() - 1) *
           (example->get_num_features() - example->feature_space[VW::details::CONSTANT_NAMESPACE].size());

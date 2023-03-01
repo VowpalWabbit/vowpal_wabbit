@@ -33,10 +33,7 @@ VW::cb_class VW::get_observed_cost_or_default_cb_adf(const VW::multi_ex& example
 
   for (const auto* example_ptr : examples)
   {
-    std::vector<VW::cb_class> costs;
-    costs = example_ptr->l.cb.costs;
-
-    for (const auto& cost : costs)
+    for (const auto& cost : example_ptr->l.cb.costs)
     {
       if (cost.has_observed_cost())
       {
@@ -66,26 +63,21 @@ VW::example* VW::test_cb_adf_sequence(const VW::multi_ex& ec_seq)
   VW::example* ret = nullptr;
   for (auto* ec : ec_seq)
   {
-    std::vector<cb_class> costs;
-    costs = ec->l.cb.costs;
-
     // Check if there is more than one cost for this example.
-    if (costs.size() > 1)
+    if (ec->l.cb.costs.size() > 1)
     {
       auto message = fmt::format(
           "cb_adf: badly formatted example, only one cost can be known but found {}. Example number={}, tag={}",
-          costs.size(), ec->example_counter, VW::string_view{ec->tag.data(), ec->tag.size()});
+          ec->l.cb.costs.size(), ec->example_counter, VW::string_view{ec->tag.data(), ec->tag.size()});
       THROW(message);
     }
 
     // Check whether the cost was initialized to a value.
-    if (costs.size() == 1 && costs[0].cost != FLT_MAX)
+    if (ec->l.cb.costs.size() == 1 && ec->l.cb.costs[0].cost != FLT_MAX)
     {
       ret = ec;
       count += 1;
-      if (count > 1) {
-        THROW("cb_adf: badly formatted example, only one line can have a cost");
-      }
+      if (count > 1) THROW("cb_adf: badly formatted example, only one line can have a cost");
     }
   }
 
