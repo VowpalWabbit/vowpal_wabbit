@@ -123,11 +123,11 @@ void epsilon_decay_data::update_weights(float init_ep, VW::LEARNER::learner& bas
                        << " lb: " << conf_seq_estimators[model_ind][model_ind].lower_bound()
                        << " champ_ub: " << conf_seq_estimators[model_count - 1][model_ind].upper_bound()
                        << " p_pred: " << a_s.score << "\n";
-            if (model_ind == model_count - 1) { champ_a_s = examples[0]->pred.a_s; }
           }
           break;
         }
       }
+      if (model_ind == model_count - 1) { champ_a_s = examples[0]->pred.a_s; }
     }
     examples[0]->pred.a_s = champ_a_s;
   }
