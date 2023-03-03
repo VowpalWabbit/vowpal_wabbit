@@ -8,6 +8,7 @@
 #include "vw/common/random.h"
 #include "vw/config/options.h"
 #include "vw/core/example.h"
+#include "vw/core/feature_group.h"
 #include "vw/core/learner.h"
 #include "vw/core/multiclass.h"
 #include "vw/core/multilabel.h"
@@ -226,39 +227,14 @@ public:
   }
 };
 
-float linear_kernel(const VW::flat_example* fec1, const VW::flat_example* fec2)
-{
-  float dotprod = 0;
-
-  auto& fs_1 = const_cast<VW::features&>(fec1->fs);
-  auto& fs_2 = const_cast<VW::features&>(fec2->fs);
-  if (fs_2.indices.size() == 0) { return 0.f; }
-
-  for (size_t idx1 = 0, idx2 = 0; idx1 < fs_1.size() && idx2 < fs_2.size(); idx1++)
-  {
-    uint64_t ec1pos = fs_1.indices[idx1];
-    uint64_t ec2pos = fs_2.indices[idx2];
-    if (ec1pos < ec2pos) { continue; }
-
-    while (ec1pos > ec2pos && ++idx2 < fs_2.size()) { ec2pos = fs_2.indices[idx2]; }
-
-    if (ec1pos == ec2pos)
-    {
-      dotprod += fs_1.values[idx1] * fs_2.values[idx2];
-      ++idx2;
-    }
-  }
-  return dotprod;
-}
-
 float normalized_linear_prod(memory_tree& b, VW::example* ec1, VW::example* ec2)
 {
-  VW::flat_example* fec1 = VW::flatten_sort_example(*b.all, ec1);
-  VW::flat_example* fec2 = VW::flatten_sort_example(*b.all, ec2);
-  float norm_sqrt = std::pow(fec1->total_sum_feat_sq * fec2->total_sum_feat_sq, 0.5f);
-  float linear_prod = linear_kernel(fec1, fec2);
-  VW::free_flatten_example(fec1);
-  VW::free_flatten_example(fec2);
+  VW::features fs1;
+  VW::features fs2;
+  flatten_features(*b.all, *ec1, fs1);
+  flatten_features(*b.all, *ec2, fs2);
+  float norm_sqrt = std::pow(fs1.sum_feat_sq * fs2.sum_feat_sq, 0.5f);
+  float linear_prod = VW::features_dot_product(fs1, fs2);
   return linear_prod / norm_sqrt;
 }
 
