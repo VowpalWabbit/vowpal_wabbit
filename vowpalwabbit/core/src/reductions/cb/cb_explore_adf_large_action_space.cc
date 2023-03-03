@@ -371,18 +371,6 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_large_action_space_set
 
   if (options.was_supplied("squarecb")) { apply_shrink_factor = true; }
 
-  if (options.was_supplied("cb_type"))
-  {
-    auto cb_type = options.get_typed_option<std::string>("cb_type").value();
-    if (cb_type != "mtr")
-    {
-      all.logger.err_warn(
-          "Only cb_type 'mtr' is currently supported with large action spaces, resetting to mtr. Input was: '{}'",
-          cb_type);
-      options.replace("cb_type", "mtr");
-    }
-  }
-
   if (use_simd_in_one_pass_svd_impl &&
       (options.was_supplied("cubic") || options.was_supplied("interactions") ||
           options.was_supplied("experimental_full_name_interactions")))
