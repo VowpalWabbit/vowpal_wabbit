@@ -57,8 +57,6 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
       examples[0]->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
   auto* shared_example = red_features.shared_example;
 
-  // std::cout << "cached size: " << cached_example_hashes.size() << " num actions: " << num_actions
-  //           << "slack: " << _action_cache_slack << std::endl;
   if (static_cast<Eigen::Index>(p) != AOmega.cols() ||
       cached_example_hashes.size() > (num_actions + _action_cache_slack))
   {
