@@ -422,8 +422,7 @@ int select_learner(search_private& priv, int policy, size_t learner_id, bool is_
       learner_id *= 3;
       if (!is_local) { learner_id += 1 + static_cast<size_t>(is_training ^ (priv.all->sd->example_number % 2 == 1)); }
     }
-    int p = static_cast<int>(policy * priv.num_learners + learner_id);
-    return p;
+    return static_cast<int>(policy * priv.num_learners + learner_id);
   }
 }
 
@@ -3333,8 +3332,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::search_setup(VW::setup_bas
 
   cdbg << "active_csoaa = " << priv.active_csoaa << ", active_csoaa_verify = " << priv.active_csoaa_verify << endl;
 
-  auto base = stack_builder.setup_base_learner();
-
   // default to OAA labels unless the task wants to override this (which they can do in initialize)
   all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
 
@@ -3343,6 +3340,11 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::search_setup(VW::setup_bas
   priv.meta_t = 0;
 
   VW::label_type_t expected_label_type = all.example_parser->lbl_parser.label_type;
+
+  auto stash_lbl_parser = all.example_parser->lbl_parser;
+  if (priv.xv) { priv.num_learners *= 3; }
+  auto base = stack_builder.setup_base_learner(priv.total_number_of_policies * priv.num_learners);
+  all.example_parser->lbl_parser = stash_lbl_parser;
 
   if (options.was_supplied("search_allowed_transitions"))
   {
@@ -3360,8 +3362,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::search_setup(VW::setup_bas
   all.searchstr = sch.get();
 
   priv.start_clock_time = clock();
-
-  if (priv.xv) { priv.num_learners *= 3; }
 
   cdbg << "num_learners = " << priv.num_learners << endl;
 

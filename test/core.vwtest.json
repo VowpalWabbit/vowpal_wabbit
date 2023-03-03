@@ -5874,6 +5874,30 @@
   },
   {
     "id": 454,
+    "desc": "Evaluate exploration on contextal bandit data with epsilon decay",
+    "vw_command": "--explore_eval --epsilon_decay --model_count 4 -d train-sets/automl_spin_off.txt --noconstant -p explore_eval_decay.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/explore_eval_decay.stderr",
+      "explore_eval_decay.predict": "pred-sets/ref/explore_eval_decay.predict",
+      "stdout": "train-sets/ref/explore_eval_decay.stdout"
+    },
+    "input_files": [
+      "train-sets/automl_spin_off.txt"
+    ]
+  },
+  {
+    "id": 455,
+    "desc": "large action spaces with cb_explore_adf epsilon greedy and ips",
+    "vw_command": "--cb_explore_adf -d train-sets/las_100_actions.txt --noconstant --large_action_space --cb_type ips",
+    "diff_files": {
+      "stderr": "train-sets/ref/las_egreedy_ips.stderr"    
+    },
+    "input_files": [
+      "train-sets/las_100_actions.txt"
+    ]
+  },
+  {
+    "id": 456,
     "desc": "Spin off epsilon decay model to lower bitsize to cb_explore with explore eval",
     "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -b 18 --predict_only_model --epsilon_decay --model_count 2 --explore_eval",
     "diff_files": {

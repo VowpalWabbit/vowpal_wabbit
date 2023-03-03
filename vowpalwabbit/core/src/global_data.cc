@@ -413,8 +413,6 @@ void workspace::finish()
     auto writer = VW::io::open_file_writer(json_weights_file_name);
     writer->write(content.c_str(), content.length());
   }
-  global_metrics.register_metrics_callback(
-      [this](VW::metric_sink& sink) -> void { VW::reductions::additional_metrics(*this, sink); });
   VW::reductions::output_metrics(*this);
   logger.log_summary();
 

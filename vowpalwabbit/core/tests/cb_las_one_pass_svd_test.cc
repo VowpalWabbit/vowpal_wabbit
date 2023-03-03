@@ -21,7 +21,7 @@ using internal_action_space_op =
     VW::cb_explore_adf::cb_explore_adf_base<VW::cb_explore_adf::cb_explore_adf_large_action_space<
         VW::cb_explore_adf::one_pass_svd_impl, VW::cb_explore_adf::one_rank_spanner_state>>;
 
-TEST(Las, CheckMatricsWithLASRunsOK)
+TEST(Las, CheckMetricsWithLASRunsOK)
 {
   auto d = 3;
   std::vector<std::string> args{"--cb_explore_adf", "--large_action_space", "--max_actions", std::to_string(d),

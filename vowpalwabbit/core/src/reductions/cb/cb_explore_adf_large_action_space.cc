@@ -289,8 +289,6 @@ std::shared_ptr<VW::LEARNER::learner> make_las_with_impl(VW::setup_base_i& stack
     std::shared_ptr<VW::LEARNER::learner> base, implementation_type& impl_type, VW::workspace& all, uint64_t d, float c,
     bool apply_shrink_factor, size_t thread_pool_size, size_t block_size, bool use_explicit_simd)
 {
-  size_t problem_multiplier = 1;
-
   float seed = (all.get_random_state()->get_random() + 1) * 10.f;
 
   auto data = VW::make_unique<cb_explore_adf_large_action_space<T, S>>(d, c, apply_shrink_factor, &all, seed,
@@ -302,7 +300,6 @@ std::shared_ptr<VW::LEARNER::learner> make_las_with_impl(VW::setup_base_i& stack
                .set_output_label_type(VW::label_type_t::CB)
                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
-               .set_params_per_weight(problem_multiplier)
                .set_persist_metrics(persist_metrics<T, S>)
                .set_learn_returns_prediction(false)
                .build();
@@ -371,18 +368,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_large_actio
   if (!enabled) { return nullptr; }
 
   if (options.was_supplied("squarecb")) { apply_shrink_factor = true; }
-
-  if (options.was_supplied("cb_type"))
-  {
-    auto cb_type = options.get_typed_option<std::string>("cb_type").value();
-    if (cb_type != "mtr")
-    {
-      all.logger.err_warn(
-          "Only cb_type 'mtr' is currently supported with large action spaces, resetting to mtr. Input was: '{}'",
-          cb_type);
-      options.replace("cb_type", "mtr");
-    }
-  }
 
   if (use_simd_in_one_pass_svd_impl &&
       (options.was_supplied("cubic") || options.was_supplied("interactions") ||

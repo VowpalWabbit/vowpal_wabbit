@@ -548,7 +548,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::recall_tree_setup(VW::setu
   }
 
   size_t ws = tree->max_routers + tree->k;
-  auto l = make_reduction_learner(std::move(tree), require_singleline(stack_builder.setup_base_learner()), learn,
+  auto l = make_reduction_learner(std::move(tree), require_singleline(stack_builder.setup_base_learner(ws)), learn,
       predict, stack_builder.get_setupfn_name(recall_tree_setup))
                .set_params_per_weight(ws)
                .set_update_stats(VW::details::update_stats_multiclass_label<recall_tree>)
