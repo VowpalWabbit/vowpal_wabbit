@@ -231,14 +231,14 @@ void generate_Z(const multi_ex& examples, Eigen::MatrixXf& Z, Eigen::MatrixXf& B
 template <typename T, typename S>
 cb_explore_adf_large_action_space<T, S>::cb_explore_adf_large_action_space(uint64_t d, float c,
     bool apply_shrink_factor, VW::workspace* all, uint64_t seed, size_t total_size, size_t thread_pool_size,
-    size_t block_size, bool use_explicit_simd, implementation_type impl_type)
+    size_t block_size, size_t action_cache_slack, bool use_explicit_simd, implementation_type impl_type)
     : _d(d)
     , _all(all)
     , _seed(seed)
     , _impl_type(impl_type)
     , spanner_state(c, d)
     , shrink_fact_config(apply_shrink_factor)
-    , impl(all, d, _seed, total_size, thread_pool_size, block_size, use_explicit_simd)
+    , impl(all, d, _seed, total_size, thread_pool_size, block_size, action_cache_slack, use_explicit_simd)
 {
 }
 
@@ -287,12 +287,13 @@ void learn(cb_explore_adf_large_action_space<T, S>& data, VW::LEARNER::learner& 
 template <typename T, typename S>
 std::shared_ptr<VW::LEARNER::learner> make_las_with_impl(VW::setup_base_i& stack_builder,
     std::shared_ptr<VW::LEARNER::learner> base, implementation_type& impl_type, VW::workspace& all, uint64_t d, float c,
-    bool apply_shrink_factor, size_t thread_pool_size, size_t block_size, bool use_explicit_simd)
+    bool apply_shrink_factor, size_t thread_pool_size, size_t block_size, size_t action_cache_slack,
+    bool use_explicit_simd)
 {
   float seed = (all.get_random_state()->get_random() + 1) * 10.f;
 
   auto data = VW::make_unique<cb_explore_adf_large_action_space<T, S>>(d, c, apply_shrink_factor, &all, seed,
-      1 << all.num_bits, thread_pool_size, block_size, use_explicit_simd, impl_type);
+      1 << all.num_bits, thread_pool_size, block_size, action_cache_slack, use_explicit_simd, impl_type);
 
   auto l = make_reduction_learner(std::move(data), base, learn<T, S>, predict<T, S>,
       stack_builder.get_setupfn_name(VW::reductions::cb_explore_adf_large_action_space_setup))
@@ -323,6 +324,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_large_actio
   // leave some resources available in the case of few core's (for parser)
   uint64_t thread_pool_size = (std::thread::hardware_concurrency() - 1) / 2;
   uint64_t block_size = 0;
+  uint64_t action_cache_slack = 50;
 
   config::option_group_definition new_options(
       "[Reduction] Experimental: Contextual Bandit Exploration with ADF with large action space filtering");
@@ -362,7 +364,14 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_large_actio
                      "(x86 Linux only)"))
       .add(make_option("two_pass_svd", use_two_pass_svd_impl)
                .experimental()
-               .help("A more accurate svd that is much slower than the default (one pass svd)"));
+               .help("A more accurate svd that is much slower than the default (one pass svd)"))
+      .add(make_option("action_cache_slack", action_cache_slack)
+               .keep()
+               .allow_override()
+               .default_value(50)
+               .help(
+                   "If action cache size exceeds the number of active actions plue this value, then it will be cleared")
+               .experimental());
 
   auto enabled = options.add_parse_and_check_necessary(new_options) && large_action_space;
   if (!enabled) { return nullptr; }
@@ -397,13 +406,13 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_large_actio
   {
     auto impl_type = implementation_type::two_pass_svd;
     return make_las_with_impl<two_pass_svd_impl, one_rank_spanner_state>(stack_builder, base, impl_type, all, d, c,
-        apply_shrink_factor, thread_pool_size, block_size,
+        apply_shrink_factor, thread_pool_size, block_size, action_cache_slack,
         /*use_explicit_simd=*/false);
   }
   else
   {
     auto impl_type = implementation_type::one_pass_svd;
     return make_las_with_impl<one_pass_svd_impl, one_rank_spanner_state>(stack_builder, base, impl_type, all, d, c,
-        apply_shrink_factor, thread_pool_size, block_size, use_simd_in_one_pass_svd_impl);
+        apply_shrink_factor, thread_pool_size, block_size, action_cache_slack, use_simd_in_one_pass_svd_impl);
   }
 }
