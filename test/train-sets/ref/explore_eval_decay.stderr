@@ -12,17 +12,17 @@ Input label = CB
 Output pred = ACTION_PROBS
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
--0.33333 -0.33333            1            1.0          known         0:0.33      209
--0.33333 -0.33333            2            2.0          known         0:0.33      294
--0.36945 -0.40557            4            4.0          known         1:0.58      278
--0.37846 -0.38748            8            8.0          known         1:0.61      253
--0.33860 -0.29873           16           16.0          known         1:0.61      109
+0.000000 0.000000            1            1.0          known      no action      209
+0.000000 0.000000            2            2.0          known      no action      294
+-0.14500 -0.29001            4            4.0          known         1:0.58      278
+-0.19374 -0.24247            8            8.0          known         1:0.61      253
+-0.24623 -0.29873           16           16.0          known         1:0.61      109
 
 finished run
 number of examples = 18
 weighted example sum = 18.000000
 weighted label sum = 0.000000
-average loss = -0.345065
+average loss = -0.229068
 total feature number = 4724
 weighted update count = 5.000000
 average accepted example weight = 1.000000
