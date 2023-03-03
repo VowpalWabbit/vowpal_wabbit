@@ -5884,5 +5884,16 @@
     "input_files": [
       "train-sets/automl_spin_off.txt"
     ]
+  },
+  {
+    "id": 455,
+    "desc": "large action spaces with cb_explore_adf epsilon greedy and ips",
+    "vw_command": "--cb_explore_adf -d train-sets/las_100_actions.txt --noconstant --large_action_space --cb_type ips",
+    "diff_files": {
+      "stderr": "train-sets/ref/las_egreedy_ips.stderr"    
+    },
+    "input_files": [
+      "train-sets/las_100_actions.txt"
+    ]
   }
 ]

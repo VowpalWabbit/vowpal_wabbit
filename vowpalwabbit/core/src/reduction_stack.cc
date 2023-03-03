@@ -265,7 +265,7 @@ std::string default_reduction_stack_setup::get_setupfn_name(reduction_setup_fn s
 
 // this function consumes all the _reduction_stack until it's able to construct a learner
 // same signature/code as the old setup_base(...) from parse_args.cc
-std::shared_ptr<VW::LEARNER::learner> default_reduction_stack_setup::setup_base_learner()
+std::shared_ptr<VW::LEARNER::learner> default_reduction_stack_setup::setup_base_learner(size_t increment)
 {
   if (!_reduction_stack.empty())
   {
@@ -274,6 +274,7 @@ std::shared_ptr<VW::LEARNER::learner> default_reduction_stack_setup::setup_base_
     std::string setup_func_name = std::get<0>(func_map);
     _reduction_stack.pop_back();
 
+    _ppw *= increment;
     // 'hacky' way of keeping track of the option group created by the setup_func about to be created
     _options_impl->tint(setup_func_name);
     std::shared_ptr<VW::LEARNER::learner> result = setup_func(*this);
