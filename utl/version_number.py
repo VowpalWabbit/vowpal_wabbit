@@ -27,6 +27,10 @@ r = re.compile(
 )
 m = r.match(git_describe)
 
+if m is None:
+    debug_print("Error: 'git describe' output did not match regex!")
+    sys.exit(1)
+
 major = m.group("major")
 minor = m.group("minor")
 patch = m.group("patch")
