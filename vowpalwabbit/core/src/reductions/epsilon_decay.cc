@@ -88,6 +88,9 @@ void epsilon_decay_data::update_weights(float init_ep, VW::LEARNER::learner& bas
       ++_global_counter;
     }
     auto& ep_fts = examples[0]->ex_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
+
+    VW::action_scores champ_a_s;
+
     // Process each model, then update the upper/lower bounds for each model
     for (int64_t model_ind = model_count - 1; model_ind >= 0; --model_ind)
     {
@@ -124,7 +127,9 @@ void epsilon_decay_data::update_weights(float init_ep, VW::LEARNER::learner& bas
           break;
         }
       }
+      if (model_ind == model_count - 1) { champ_a_s = examples[0]->pred.a_s; }
     }
+    examples[0]->pred.a_s = champ_a_s;
   }
 }
 
