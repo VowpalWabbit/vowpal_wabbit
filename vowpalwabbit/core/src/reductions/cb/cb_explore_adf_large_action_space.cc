@@ -369,8 +369,9 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_large_actio
                .keep()
                .allow_override()
                .default_value(50)
-               .help(
-                   "If action cache size exceeds the number of active actions plue this value, then it will be cleared")
+               .help("If actions do not change between example calls then some calculations for this algorithm are "
+                     "cached. If action cache size exceeds the number of active actions plus action_cache_slack, then "
+                     "the cache will be cleared. Setting this to -1 disables any caching")
                .experimental());
 
   auto enabled = options.add_parse_and_check_necessary(new_options) && large_action_space;
