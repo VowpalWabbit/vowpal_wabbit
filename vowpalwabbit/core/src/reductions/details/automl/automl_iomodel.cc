@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "vw/core/automl_impl.h"
-#include "vw/core/confidence_sequence_robust.h"
+#include "vw/core/estimators/confidence_sequence_robust.h"
 #include "vw/core/model_utils.h"
 
 namespace VW
@@ -124,7 +124,6 @@ size_t read_model_field(
 {
   cm.estimators.clear();
   cm._config_oracle.configs.clear();
-  cm.per_live_model_state_double.clear();
   cm.per_live_model_state_uint64.clear();
   size_t bytes = 0;
   uint64_t current_champ = 0;
@@ -135,7 +134,6 @@ size_t read_model_field(
   bytes += read_model_field(io, cm._config_oracle.configs);
   bytes += read_model_field(io, cm.estimators);
   bytes += read_model_field(io, cm._config_oracle.index_queue);
-  bytes += read_model_field(io, cm.per_live_model_state_double);
   bytes += read_model_field(io, cm.per_live_model_state_uint64);
   for (uint64_t live_slot = 0; live_slot < cm.estimators.size(); ++live_slot)
   {
@@ -161,7 +159,6 @@ size_t write_model_field(io_buf& io,
   bytes += write_model_field(io, cm._config_oracle.configs, upstream_name + "_configs", text);
   bytes += write_model_field(io, cm.estimators, upstream_name + "_estimators", text);
   bytes += write_model_field(io, cm._config_oracle.index_queue, upstream_name + "_index_queue", text);
-  bytes += write_model_field(io, cm.per_live_model_state_double, upstream_name + "_per_live_model_state_double", text);
   bytes += write_model_field(io, cm.per_live_model_state_uint64, upstream_name + "_per_live_model_state_uint64", text);
   return bytes;
 }

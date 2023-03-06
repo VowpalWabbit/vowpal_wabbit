@@ -21,13 +21,13 @@ namespace epsilon_decay_test
 epsilon_decay_data* get_epsilon_decay_data(VW::workspace& all)
 {
   std::vector<std::string> e_r;
-  all.l->get_enabled_reductions(e_r);
+  all.l->get_enabled_learners(e_r);
   if (std::find(e_r.begin(), e_r.end(), "epsilon_decay") == e_r.end())
   {
-    THROW("Epsilon decay not found in enabled reductions");
+    THROW("Epsilon decay not found in enabled learners");
   }
 
-  VW::LEARNER::multi_learner* epsilon_decay_learner = as_multiline(all.l->get_learner_by_name_prefix("epsilon_decay"));
+  VW::LEARNER::learner* epsilon_decay_learner = require_multiline(all.l->get_learner_by_name_prefix("epsilon_decay"));
 
   return (epsilon_decay_data*)epsilon_decay_learner->get_internal_type_erased_data_pointer_test_use_only();
 }
@@ -44,8 +44,8 @@ TEST(EpsilonDecay, ThrowIfNoExplore)
         catch (const VW::vw_exception& e)
         {
           EXPECT_STREQ(
-              "Input prediction type: prediction_type_t::ACTION_PROBS of reduction: epsilon_decay does not match "
-              "output prediction type: prediction_type_t::ACTION_SCORES of base reduction: cb_adf.",
+              "Input prediction type: prediction_type_t::ACTION_PROBS of learner: epsilon_decay does not match "
+              "output prediction type: prediction_type_t::ACTION_SCORES of base learner: cb_adf.",
               e.what());
           throw;
         }
@@ -60,29 +60,28 @@ TEST(EpsilonDecay, InitWIterations)
       "--epsilon_decay", "--model_count=3", "--cb_explore_adf", "--quiet", "--epsilon=0.2", "--random_seed=5"});
 }
 
-#if !defined(__APPLE__) && !defined(_WIN32)
 TEST(EpsilonDecay, ChampChangeWIterations)
 {
   const size_t num_iterations = 610;
-  const size_t seed = 4;
+  const size_t seed = 36;
   const std::vector<uint64_t> swap_after = {500};
-  const size_t deterministic_champ_switch = 601;
+  const size_t deterministic_champ_switch = 600;
   callback_map test_hooks;
 
   test_hooks.emplace(deterministic_champ_switch - 1,
       [&](cb_sim&, VW::workspace& all, VW::multi_ex&)
       {
         epsilon_decay_data* epsilon_decay = epsilon_decay_test::get_epsilon_decay_data(all);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[0][0].update_count, 88);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[1][0].update_count, 88);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[2][0].update_count, 88);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][0].update_count, 88);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[1][1].update_count, 93);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[2][1].update_count, 93);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][1].update_count, 93);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[2][2].update_count, 94);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][2].update_count, 94);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][3].update_count, 600);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[0][0].update_count, 87);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[1][0].update_count, 87);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[2][0].update_count, 87);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][0].update_count, 87);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[1][1].update_count, 92);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[2][1].update_count, 92);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][1].update_count, 92);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[2][2].update_count, 93);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][2].update_count, 93);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][3].update_count, 599);
         return true;
       });
 
@@ -94,12 +93,12 @@ TEST(EpsilonDecay, ChampChangeWIterations)
         EXPECT_EQ(epsilon_decay->conf_seq_estimators[1][0].update_count, 0);
         EXPECT_EQ(epsilon_decay->conf_seq_estimators[2][0].update_count, 0);
         EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][0].update_count, 0);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[1][1].update_count, 0);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[2][1].update_count, 0);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][1].update_count, 0);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[2][2].update_count, 0);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][2].update_count, 0);
-        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][3].update_count, 89);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[1][1].update_count, 88);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[2][1].update_count, 88);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][1].update_count, 88);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[2][2].update_count, 93);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][2].update_count, 93);
+        EXPECT_EQ(epsilon_decay->conf_seq_estimators[3][3].update_count, 94);
         return true;
       });
 
@@ -110,7 +109,6 @@ TEST(EpsilonDecay, ChampChangeWIterations)
 
   EXPECT_GT(ctr.back(), 0.4f);
 }
-#endif
 
 TEST(EpsilonDecay, UpdateCountWIterations)
 {
@@ -256,7 +254,8 @@ TEST(EpsilonDecay, ScoreBoundsUnit)
   uint64_t num_models = 5;
   uint32_t wpp = 8;
   VW::dense_parameters dense_weights(num_models);
-  epsilon_decay_data ep_data(num_models, 100, .05, .1, dense_weights, "", false, wpp, 0, 1.f, 0, false);
+  epsilon_decay_data ep_data(
+      num_models, 100, .05, .1, dense_weights, "", false, wpp, 0, 1.f, 0, false, 1e-6, "bisect", false);
 
   // Set update counts to fixed values with expected horizon bound violation
   size_t score_idx = 0;
@@ -341,7 +340,8 @@ TEST(EpsilonDecay, HorizonBoundsUnit)
   uint64_t num_models = 5;
   uint32_t wpp = 8;
   VW::dense_parameters dense_weights(num_models);
-  epsilon_decay_data ep_data(num_models, 100, .05, .1, dense_weights, "", false, wpp, 0, 1.f, 0, false);
+  epsilon_decay_data ep_data(
+      num_models, 100, .05, .1, dense_weights, "", false, wpp, 0, 1.f, 0, false, 1e-6, "bisect", false);
 
   // Set update counts to fixed values with expected horizon bound violation
   size_t score_idx = 0;

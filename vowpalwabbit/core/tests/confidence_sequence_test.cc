@@ -2,7 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "vw/core/confidence_sequence.h"
+#include "vw/core/estimators/confidence_sequence.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>

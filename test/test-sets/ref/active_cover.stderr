@@ -5,9 +5,9 @@ Reading datafile = test-sets/rcv1_small_test.data
 num sources = 1
 Num weight bits = 18
 learning rate = 0.5
-initial_t = 217.709
+initial_t = 222.626
 power_t = 0.5
-Enabled reductions: gd, active_cover, scorer-identity, binary, count_label
+Enabled learners: gd, active_cover, scorer-identity, binary, count_label
 Input label = SIMPLE
 Output pred = SCALAR
 average  since         example        example        current        current  current
@@ -16,11 +16,11 @@ loss     last          counter         weight          label        predict feat
 0.500000 1.000000            2            2.0         1.0000        -1.0000      147
 0.250000 0.000000            4            4.0        -1.0000        -1.0000      142
 0.250000 0.250000            8            8.0         1.0000         1.0000       22
-0.125000 0.000000           16           16.0        -1.0000        -1.0000       50
-0.156250 0.187500           32           32.0         1.0000         1.0000       85
-0.140625 0.125000           64           64.0         1.0000        -1.0000      190
-0.140625 0.140625          128          128.0         1.0000         1.0000      134
-0.156250 0.171875          256          256.0         1.0000         1.0000       54
+0.187500 0.125000           16           16.0        -1.0000        -1.0000       50
+0.125000 0.062500           32           32.0         1.0000         1.0000       85
+0.109375 0.093750           64           64.0         1.0000        -1.0000      190
+0.132812 0.156250          128          128.0         1.0000         1.0000      134
+0.160156 0.187500          256          256.0         1.0000         1.0000       54
 
 finished run
 number of examples = 500

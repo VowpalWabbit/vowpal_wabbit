@@ -83,8 +83,8 @@ std::unique_ptr<VW::workspace> initialize_internal(
   // we must delay so parse_mask is fully defined.
   for (const auto& name_space : dictionary_namespaces) { VW::details::parse_dictionary_argument(*all, name_space); }
 
-  std::vector<std::string> enabled_reductions;
-  if (all->l != nullptr) { all->l->get_enabled_reductions(enabled_reductions); }
+  std::vector<std::string> enabled_learners;
+  if (all->l != nullptr) { all->l->get_enabled_learners(enabled_learners); }
 
   // upon direct query for help -- spit it out to stdout;
   if (all->options->get_typed_option<bool>("help").value())
@@ -120,7 +120,7 @@ std::unique_ptr<VW::workspace> initialize_internal(
     std::exit(0);
   }
 
-  VW::details::print_enabled_reductions(*all, enabled_reductions);
+  VW::details::print_enabled_learners(*all, enabled_learners);
 
   if (!all->quiet)
   {
@@ -219,7 +219,6 @@ VW::workspace* VW::seed_vw_model(
   VW::workspace* new_model =
       VW::initialize(serialized_options, nullptr, true /* skip_model_load */, trace_listener, trace_context);
   VW_WARNING_STATE_POP
-  delete new_model->sd;
 
   // reference model states stored in the specified VW instance
   new_model->weights.shallow_copy(vw_model->weights);  // regressor
@@ -328,7 +327,6 @@ std::unique_ptr<VW::workspace> VW::seed_vw_model(VW::workspace& vw_model, const 
 
   auto new_model = initialize_internal(std::move(options_custom_deleter), nullptr, false /* skip model load */,
       driver_output_func, driver_output_func_context, custom_logger, nullptr);
-  delete new_model->sd;
 
   // reference model states stored in the specified VW instance
   new_model->weights.shallow_copy(vw_model.weights);  // regressor
@@ -844,7 +842,7 @@ VW::feature* VW::get_features(VW::workspace& all, example* ec, size_t& feature_n
 
 void VW::return_features(feature* f) { delete[] f; }
 
-void VW::add_constant_feature(VW::workspace& all, VW::example* ec)
+void VW::add_constant_feature(const VW::workspace& all, VW::example* ec)
 {
   ec->indices.push_back(VW::details::CONSTANT_NAMESPACE);
   ec->feature_space[VW::details::CONSTANT_NAMESPACE].push_back(
@@ -897,6 +895,8 @@ void VW::empty_example(VW::workspace& /*all*/, example& ec)
   ec.is_newline = false;
   ec.ex_reduction_features.clear();
   ec.num_features_from_interactions = 0;
+  ec.feature_space_hash = 0;
+  ec.is_set_feature_space_hash = false;
 }
 
 void VW::move_feature_namespace(example* dst, example* src, namespace_index c)

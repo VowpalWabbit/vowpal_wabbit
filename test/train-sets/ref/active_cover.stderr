@@ -6,7 +6,7 @@ Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
-Enabled reductions: gd, active_cover, scorer-identity, binary, count_label
+Enabled learners: gd, active_cover, scorer-identity, binary, count_label
 Input label = SIMPLE
 Output pred = SCALAR
 average  since         example        example        current        current  current
@@ -17,15 +17,15 @@ loss     last          counter         weight          label        predict feat
 0.322371 0.442694            6           10.3        -1.0000        -1.0000      140
 0.280696 0.240000           28           20.8         1.0000        -1.0000       76
 0.289183 0.297097           56           43.1        -1.0000        -1.0000       25
-0.342784 0.395369          124           87.0         1.0000         1.0000       22
-0.287217 0.232000          213          174.5        -1.0000         1.0000       34
+0.360856 0.431588          124           86.7         1.0000         1.0000       22
+0.281479 0.203259          211          174.7        -1.0000        -1.0000      119
 
 finished run
 number of examples = 250
-weighted example sum = 217.709346
-weighted label sum = 15.483050
-average loss = 0.264386
-best constant = 0.142477
-best constant's loss = 0.690616
+weighted example sum = 222.625671
+weighted label sum = 8.451557
+average loss = 0.244591
+best constant = 0.075963
+best constant's loss = 0.692426
 total feature number = 19393
-total queries = 98
+total queries = 95

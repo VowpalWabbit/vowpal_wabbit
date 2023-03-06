@@ -40,7 +40,6 @@ class EvaluatorOnline:
         self.quiet = quiet
 
     def eval(self):
-
         data_file = open(self.file_name, "r")
         line = data_file.readline()
 

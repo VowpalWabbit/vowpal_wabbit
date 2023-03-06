@@ -63,7 +63,6 @@ def _get_getch_impl_win() -> Optional[Callable[[], str]]:
 # The MacOS Carbon API was removed in 10.15, however the
 # standard unix approach should work and so should be tried first.
 def _get_getch_impl_macos() -> Optional[Callable[[], str]]:
-
     try:
         # try OS/X API
         import Carbon  # type: ignore

@@ -7,7 +7,7 @@ learning rate = 10
 initial_t = 1
 power_t = 0.5
 decay_learning_rate = 1
-Enabled reductions: gd, scorer-identity, csoaa_ldf, shared_feature_merger
+Enabled learners: gd, scorer-identity, csoaa_ldf, shared_feature_merger
 Input label = CS
 Output pred = MULTICLASS
 average  since         example        example        current        current  current

@@ -206,15 +206,15 @@ API size_t WorkspaceHashFeature(
 API void WorkspaceSetUpAllReduceThreadsRoot(vw_net_native::workspace_context* workspace, size_t total, size_t node)
 {
   workspace->vw->selected_all_reduce_type = VW::all_reduce_type::THREAD;
-  workspace->vw->all_reduce = new VW::all_reduce_threads(total, node);
+  workspace->vw->all_reduce.reset(new VW::all_reduce_threads(total, node));
 }
 
 API void WorkspaceSetUpAllReduceThreadsNode(vw_net_native::workspace_context* workspace, size_t total, size_t node,
     vw_net_native::workspace_context* root_workspace)
 {
   workspace->vw->selected_all_reduce_type = VW::all_reduce_type::THREAD;
-  workspace->vw->all_reduce =
-      new VW::all_reduce_threads((VW::all_reduce_threads*)root_workspace->vw->all_reduce, total, node);
+  workspace->vw->all_reduce.reset(
+      new VW::all_reduce_threads((VW::all_reduce_threads*)root_workspace->vw->all_reduce.get(), total, node));
 }
 
 API vw_net_native::ERROR_CODE WorkspaceRunMultiPass(
@@ -269,11 +269,11 @@ API vw_net_native::ERROR_CODE WorkspacePredict(vw_net_native::workspace_context*
 {
   try
   {
-    as_singleline(workspace->vw->l)->predict(*ex);
+    require_singleline(workspace->vw->l)->predict(*ex);
 
     if (create_prediction != nullptr) { create_prediction(); }
 
-    as_singleline(workspace->vw->l)->finish_example(*workspace->vw, *ex);
+    require_singleline(workspace->vw->l)->finish_example(*workspace->vw, *ex);
 
     return VW::experimental::error_code::success;
   }
@@ -289,7 +289,7 @@ API vw_net_native::ERROR_CODE WorkspaceLearn(vw_net_native::workspace_context* w
 
     if (create_prediction != nullptr) { create_prediction(); }
 
-    as_singleline(workspace->vw->l)->finish_example(*workspace->vw, *ex);
+    require_singleline(workspace->vw->l)->finish_example(*workspace->vw, *ex);
 
     return VW::experimental::error_code::success;
   }
@@ -301,11 +301,11 @@ API vw_net_native::ERROR_CODE WorkspacePredictMulti(vw_net_native::workspace_con
 {
   try
   {
-    as_multiline(workspace->vw->l)->predict(*ex_coll);
+    require_multiline(workspace->vw->l)->predict(*ex_coll);
 
     if (create_prediction != nullptr) { create_prediction(); }
 
-    as_multiline(workspace->vw->l)->finish_example(*workspace->vw, *ex_coll);
+    require_multiline(workspace->vw->l)->finish_example(*workspace->vw, *ex_coll);
 
     return VW::experimental::error_code::success;
   }
@@ -321,7 +321,7 @@ API vw_net_native::ERROR_CODE WorkspaceLearnMulti(vw_net_native::workspace_conte
 
     if (create_prediction != nullptr) { create_prediction(); }
 
-    as_multiline(workspace->vw->l)->finish_example(*workspace->vw, *ex_coll);
+    require_multiline(workspace->vw->l)->finish_example(*workspace->vw, *ex_coll);
 
     return VW::experimental::error_code::success;
   }

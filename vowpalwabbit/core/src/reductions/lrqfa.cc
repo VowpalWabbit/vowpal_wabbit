@@ -47,7 +47,7 @@ inline float cheesyrand(uint64_t x)
 constexpr inline bool example_is_test(VW::example& ec) { return ec.l.simple.label == FLT_MAX; }
 
 template <bool is_learn>
-void predict_or_learn(lrqfa_state& lrq, single_learner& base, VW::example& ec)
+void predict_or_learn(lrqfa_state& lrq, learner& base, VW::example& ec)
 {
   VW::workspace& all = *lrq.all;
 
@@ -140,7 +140,7 @@ void predict_or_learn(lrqfa_state& lrq, single_learner& base, VW::example& ec)
 }
 }  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::lrqfa_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::lrqfa_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -165,14 +165,14 @@ VW::LEARNER::base_learner* VW::reductions::lrqfa_setup(VW::setup_base_i& stack_b
   for (char i : lrq->field_name) { lrq->field_id[static_cast<int>(i)] = fd_id++; }
 
   all.wpp = all.wpp * static_cast<uint64_t>(1 + lrq->k);
-  auto base = stack_builder.setup_base_learner();
   size_t ws = 1 + lrq->field_name.size() * lrq->k;
+  auto base = stack_builder.setup_base_learner(ws);
 
-  auto* l = make_reduction_learner(std::move(lrq), as_singleline(base), predict_or_learn<true>, predict_or_learn<false>,
-      stack_builder.get_setupfn_name(lrqfa_setup))
-                .set_params_per_weight(ws)
-                .set_learn_returns_prediction(base->learn_returns_prediction)
-                .build();
+  auto l = make_reduction_learner(std::move(lrq), require_singleline(base), predict_or_learn<true>,
+      predict_or_learn<false>, stack_builder.get_setupfn_name(lrqfa_setup))
+               .set_params_per_weight(ws)
+               .set_learn_returns_prediction(base->learn_returns_prediction)
+               .build();
 
-  return make_base(*l);
+  return l;
 }

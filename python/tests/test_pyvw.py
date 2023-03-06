@@ -9,6 +9,7 @@ import filecmp
 
 BIT_SIZE = 18
 
+
 # Since these tests still run with Python 2, this is required.
 # Otherwise we could use math.isclose
 def isclose(a, b, rel_tol=1e-05, abs_tol=0.0):
@@ -16,7 +17,6 @@ def isclose(a, b, rel_tol=1e-05, abs_tol=0.0):
 
 
 class TestVW:
-
     model = Workspace(quiet=True, b=BIT_SIZE)
 
     def test_constructor(self):
@@ -540,14 +540,22 @@ def test_example_features():
 def test_example_features_dict():
     vw = Workspace(quiet=True)
     ex = vw.example(
-        {"a": {"two": 1, "features": 1.0}, "b": {"more": 1, "features": 1, 5: 1.5}}
+        {
+            "a": {"two": 1, "features": 1.0},
+            "namespace": {"more": 1, "feature": 1, 5: 1.5},
+        }
     )
     fs = list(ex.iter_features())
+    fs_keys = [f[0] for f in fs]
+
+    expected = [53373, 165129, 24716, 242309, 5]
+
+    assert set(fs_keys) == set(expected)
 
     assert (ex.get_feature_id("a", "two"), 1) in fs
     assert (ex.get_feature_id("a", "features"), 1) in fs
-    assert (ex.get_feature_id("b", "more"), 1) in fs
-    assert (ex.get_feature_id("b", "features"), 1) in fs
+    assert (ex.get_feature_id("namespace", "more"), 1) in fs
+    assert (ex.get_feature_id("namespace", "feature"), 1) in fs
     assert (5, 1.5) in fs
 
 
@@ -653,7 +661,7 @@ def test_dsjson_with_metrics():
         assert isclose(a, b)
 
     learner_metric_dict = vw.get_learner_metrics()
-    assert len(vw.get_learner_metrics()) == 17
+    assert len(vw.get_learner_metrics()) == 27
 
     assert learner_metric_dict["total_predict_calls"] == 2
     assert learner_metric_dict["total_learn_calls"] == 1

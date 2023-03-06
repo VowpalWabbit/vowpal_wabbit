@@ -29,9 +29,7 @@ using namespace_index = unsigned char;
 
 namespace LEARNER
 {
-template <class T, class E>
 class learner;
-using base_learner = learner<char, char>;
 }  // namespace LEARNER
 
 namespace config

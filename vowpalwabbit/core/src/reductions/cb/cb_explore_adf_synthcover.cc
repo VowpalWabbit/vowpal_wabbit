@@ -37,11 +37,8 @@ public:
       std::shared_ptr<VW::rand_state> random_state, VW::version_struct model_file_version);
 
   // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
-  {
-    predict_or_learn_impl<false>(base, examples);
-  }
-  void learn(VW::LEARNER::multi_learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
+  void predict(VW::LEARNER::learner& base, VW::multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
+  void learn(VW::LEARNER::learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
   void save_load(VW::io_buf& model_file, bool read, bool text);
 
 private:
@@ -56,7 +53,7 @@ private:
   float _min_cost;
   float _max_cost;
   template <bool is_learn>
-  void predict_or_learn_impl(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
+  void predict_or_learn_impl(VW::LEARNER::learner& base, VW::multi_ex& examples);
 };
 
 cb_explore_adf_synthcover::cb_explore_adf_synthcover(float epsilon, float psi, size_t synthcoversize,
@@ -72,7 +69,7 @@ cb_explore_adf_synthcover::cb_explore_adf_synthcover(float epsilon, float psi, s
 }
 
 template <bool is_learn>
-void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
+void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::learner& base, VW::multi_ex& examples)
 {
   VW::LEARNER::multiline_learn_or_predict<is_learn>(base, examples, examples[0]->ft_offset);
 
@@ -147,7 +144,7 @@ void cb_explore_adf_synthcover::save_load(VW::io_buf& model_file, bool read, boo
 }
 }  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_synthcover_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_synthcover_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -195,23 +192,23 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_synthcover_setup(VW::s
   }
 
   size_t problem_multiplier = 1;
-  VW::LEARNER::multi_learner* base = as_multiline(stack_builder.setup_base_learner());
+  auto base = require_multiline(stack_builder.setup_base_learner(problem_multiplier));
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_synthcover>;
   auto data = VW::make_unique<explore_type>(all.global_metrics.are_metrics_enabled(), epsilon, psi,
       VW::cast_to_smaller_type<size_t>(synthcoversize), all.get_random_state(), all.model_file_ver);
-  auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
+  auto l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_synthcover_setup))
-                .set_input_label_type(VW::label_type_t::CB)
-                .set_output_label_type(VW::label_type_t::CB)
-                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
-                .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
-                .set_params_per_weight(problem_multiplier)
-                .set_output_example_prediction(explore_type::output_example_prediction)
-                .set_update_stats(explore_type::update_stats)
-                .set_print_update(explore_type::print_update)
-                .set_save_load(explore_type::save_load)
-                .set_persist_metrics(explore_type::persist_metrics)
-                .build();
-  return make_base(*l);
+               .set_input_label_type(VW::label_type_t::CB)
+               .set_output_label_type(VW::label_type_t::CB)
+               .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+               .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
+               .set_params_per_weight(problem_multiplier)
+               .set_output_example_prediction(explore_type::output_example_prediction)
+               .set_update_stats(explore_type::update_stats)
+               .set_print_update(explore_type::print_update)
+               .set_save_load(explore_type::save_load)
+               .set_persist_metrics(explore_type::persist_metrics)
+               .build();
+  return l;
 }

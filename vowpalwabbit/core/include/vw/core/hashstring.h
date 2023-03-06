@@ -41,12 +41,14 @@ VW_STD14_CONSTEXPR inline uint32_t hashstring(const char* s, size_t len, uint32_
 }
 }  // namespace details
 
+// hash_func_t is always either hashall or hashstring as defined above
+// so we will use a raw function pointer here instead of std::function
 using hash_func_t = uint32_t (*)(const char*, size_t, uint32_t);
 
 hash_func_t get_hasher(const std::string& s);
 
 }  // namespace VW
-using hash_func_t VW_DEPRECATED("Moved into VW namespace") = uint32_t (*)(const char*, size_t, uint32_t);
+using hash_func_t VW_DEPRECATED("Moved into VW namespace") = VW::hash_func_t;
 
 VW_DEPRECATED("Moved into VW namespace")
 VW::hash_func_t get_hasher(const std::string& s);

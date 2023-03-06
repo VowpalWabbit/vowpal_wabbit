@@ -28,6 +28,7 @@
 
 #include "vw/common/future_compat.h"
 #include "vw/common/hash.h"
+#include "vw/core/error_reporting.h"
 #include "vw/core/global_data.h"
 #include "vw/core/hashstring.h"
 #include "vw/core/parser.h"
@@ -38,7 +39,7 @@
 
 namespace VW
 {
-using driver_output_func_t = void (*)(void*, const std::string&);
+using driver_output_func_t = VW::trace_message_t;
 
 /*    Caveats:
     (1) Some commandline parameters do not make sense as a library.
@@ -126,7 +127,7 @@ std::unique_ptr<VW::workspace> initialize(std::unique_ptr<config::options_i> opt
 /// to be used with caution. Reduction data is not shared, therefore this
 /// function is unsafe to use for situations where reduction state is required
 /// for proper operation such as marginal and cb_adf. Learn on a seeded instance
-/// is unsafe, and prediction is also potentiaslly unsafe.
+/// is unsafe, and prediction is also potentially unsafe.
 std::unique_ptr<VW::workspace> seed_vw_model(VW::workspace& vw_model, const std::vector<std::string>& extra_args,
     driver_output_func_t driver_output_func = nullptr, void* driver_output_func_context = nullptr,
     VW::io::logger* custom_logger = nullptr);
@@ -250,7 +251,7 @@ float get_confidence(example* ec);
 feature* get_features(VW::workspace& all, example* ec, size_t& feature_number);
 void return_features(feature* f);
 
-void add_constant_feature(VW::workspace& all, example* ec);
+void add_constant_feature(const VW::workspace& all, example* ec);
 void add_label(example* ec, float label, float weight = 1, float base = 0);
 
 // notify VW that you are done with the example.

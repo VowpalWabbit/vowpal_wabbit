@@ -336,30 +336,30 @@ void parse_diagnostics(options_i& options, VW::workspace& all)
 
   if (options.was_supplied("progress") && !all.quiet)
   {
-    all.progress_arg = static_cast<float>(::atof(progress_arg.c_str()));
+    all.sd->progress_arg = static_cast<float>(::atof(progress_arg.c_str()));
     // --progress interval is dual: either integer or floating-point
     if (progress_arg.find_first_of('.') == std::string::npos)
     {
       // No "." in arg: assume integer -> additive
-      all.progress_add = true;
-      if (all.progress_arg < 1)
+      all.sd->progress_add = true;
+      if (all.sd->progress_arg < 1)
       {
         all.logger.err_warn("Additive --progress <int> can't be < 1: forcing to 1");
-        all.progress_arg = 1;
+        all.sd->progress_arg = 1;
       }
-      all.sd->dump_interval = all.progress_arg;
+      all.sd->dump_interval = all.sd->progress_arg;
     }
     else
     {
       // A "." in arg: assume floating-point -> multiplicative
-      all.progress_add = false;
+      all.sd->progress_add = false;
 
-      if (all.progress_arg <= 1.f)
+      if (all.sd->progress_arg <= 1.f)
       {
         all.logger.err_warn("Multiplicative --progress <float> '{}' is <= 1.0: adding 1.0", progress_arg);
-        all.progress_arg += 1.f;
+        all.sd->progress_arg += 1.f;
       }
-      else if (all.progress_arg > 9.f)
+      else if (all.sd->progress_arg > 9.f)
       {
         all.logger.err_warn(
             "Multiplicative --progress <float> '' is > 9.0: Did you mean mean to use an integer?", progress_arg);
@@ -1078,7 +1078,7 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
 
   if (options.was_supplied("min_prediction") || options.was_supplied("max_prediction") || test_only)
   {
-    all.set_minmax = VW::details::noop_mm;
+    all.set_minmax = nullptr;
   }
 
   if (options.was_supplied("named_labels"))
@@ -1499,9 +1499,9 @@ std::unique_ptr<VW::workspace> VW::details::parse_args(std::unique_ptr<options_i
   if (all->options->was_supplied("span_server"))
   {
     all->selected_all_reduce_type = VW::all_reduce_type::SOCKET;
-    all->all_reduce = new VW::all_reduce_sockets(span_server_arg, VW::cast_to_smaller_type<int>(span_server_port_arg),
-        VW::cast_to_smaller_type<size_t>(unique_id_arg), VW::cast_to_smaller_type<size_t>(total_arg),
-        VW::cast_to_smaller_type<size_t>(node_arg), all->quiet);
+    all->all_reduce.reset(new VW::all_reduce_sockets(span_server_arg,
+        VW::cast_to_smaller_type<int>(span_server_port_arg), VW::cast_to_smaller_type<size_t>(unique_id_arg),
+        VW::cast_to_smaller_type<size_t>(total_arg), VW::cast_to_smaller_type<size_t>(node_arg), all->quiet));
   }
 
   parse_diagnostics(*all->options, *all);
@@ -1628,7 +1628,9 @@ void VW::details::instantiate_learner(VW::workspace& all, std::unique_ptr<VW::se
   }
   else { learner_builder->delayed_state_attach(all, *all.options.get()); }
 
-  // kick-off reduction setup functions
+  // Workspace holds shared_ptr to learner at the top of the stack.
+  // setup_base_learner() will recurse down the stack and create all enabled
+  // learners starting from the bottom learner.
   all.l = learner_builder->setup_base_learner();
 
   // Setup label parser based on the stack which was just created.
@@ -1655,17 +1657,17 @@ void VW::details::parse_sources(options_i& options, VW::workspace& all, VW::io_b
   all.wpp = (1 << i) >> all.weights.stride_shift();
 }
 
-void VW::details::print_enabled_reductions(VW::workspace& all, std::vector<std::string>& enabled_reductions)
+void VW::details::print_enabled_learners(VW::workspace& all, std::vector<std::string>& enabled_learners)
 {
-  // output list of enabled reductions
-  if (!all.quiet && !all.options->was_supplied("audit_regressor") && !enabled_reductions.empty())
+  // output list of enabled learners
+  if (!all.quiet && !all.options->was_supplied("audit_regressor") && !enabled_learners.empty())
   {
     const char* const delim = ", ";
     std::ostringstream imploded;
     std::copy(
-        enabled_reductions.begin(), enabled_reductions.end() - 1, std::ostream_iterator<std::string>(imploded, delim));
+        enabled_learners.begin(), enabled_learners.end() - 1, std::ostream_iterator<std::string>(imploded, delim));
 
-    *(all.trace_message) << "Enabled reductions: " << imploded.str() << enabled_reductions.back() << std::endl;
+    *(all.trace_message) << "Enabled learners: " << imploded.str() << enabled_learners.back() << std::endl;
   }
 }
 

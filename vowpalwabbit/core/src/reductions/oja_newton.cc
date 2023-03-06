@@ -344,13 +344,13 @@ void make_pred(oja_n_update_data& data, float x, float& wref)
   for (int i = 1; i <= m; i++) { data.prediction += w[i] * x * data.oja_newton_ptr->D[i] * data.oja_newton_ptr->b[i]; }
 }
 
-void predict(OjaNewton& oja_newton_ptr, base_learner&, VW::example& ec)
+void predict(OjaNewton& oja_newton_ptr, VW::example& ec)
 {
   oja_newton_ptr.data.prediction = 0;
   VW::foreach_feature<oja_n_update_data, make_pred>(*oja_newton_ptr.all, ec, oja_newton_ptr.data);
   ec.partial_prediction = oja_newton_ptr.data.prediction;
   ec.pred.scalar =
-      VW::details::finalize_prediction(oja_newton_ptr.all->sd, oja_newton_ptr.all->logger, ec.partial_prediction);
+      VW::details::finalize_prediction(*oja_newton_ptr.all->sd, oja_newton_ptr.all->logger, ec.partial_prediction);
 }
 
 void update_Z_and_wbar(oja_n_update_data& data, float x, float& wref)  // NOLINT
@@ -394,16 +394,14 @@ void update_normalization(oja_n_update_data& data, float x, float& wref)
   w[NORM2] += x * x * data.g * data.g;
 }
 
-// NO_SANITIZE_UNDEFINED needed in learn functions because
-// base_learner& base might be a reference created from nullptr
-void NO_SANITIZE_UNDEFINED learn(OjaNewton& oja_newton_ptr, base_learner& base, VW::example& ec)
+void learn(OjaNewton& oja_newton_ptr, VW::example& ec)
 {
   // predict
-  predict(oja_newton_ptr, base, ec);
+  predict(oja_newton_ptr, ec);
 
   oja_n_update_data& data = oja_newton_ptr.data;
-  data.g =
-      oja_newton_ptr.all->loss->first_derivative(oja_newton_ptr.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
+  data.g = oja_newton_ptr.all->loss->first_derivative(oja_newton_ptr.all->sd.get(), ec.pred.scalar, ec.l.simple.label) *
+      ec.weight;
   data.g /= 2;  // for half square loss
 
   if (oja_newton_ptr.normalize)
@@ -483,18 +481,14 @@ void save_load(OjaNewton& oja_newton_ptr, VW::io_buf& model_file, bool read, boo
     VW::details::bin_text_read_write_fixed(
         model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
 
-    double temp = 0.;
-    double temp_normalized_sum_norm_x = 0.;
-    if (resume)
-    {
-      VW::details::save_load_online_state_gd(all, model_file, read, text, temp, temp_normalized_sum_norm_x);
-    }
+    std::vector<VW::reductions::details::per_model_state> temp_pms = {VW::reductions::details::per_model_state()};
+    if (resume) { VW::details::save_load_online_state_gd(all, model_file, read, text, temp_pms); }
     else { VW::details::save_load_regressor_gd(all, model_file, read, text); }
   }
 }
 }  // namespace
 
-base_learner* VW::reductions::oja_newton_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::oja_newton_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -568,14 +562,14 @@ base_learner* VW::reductions::oja_newton_setup(VW::setup_base_i& stack_builder)
 
   all.weights.stride_shift(static_cast<uint32_t>(std::ceil(std::log2(oja_newton_ptr->m + 2))));
 
-  auto* l = make_base_learner(std::move(oja_newton_ptr), learn, predict,
+  auto l = make_bottom_learner(std::move(oja_newton_ptr), learn, predict,
       stack_builder.get_setupfn_name(oja_newton_setup), VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
-                .set_params_per_weight(all.weights.stride())
-                .set_save_load(save_load)
-                .set_output_example_prediction(VW::details::output_example_prediction_simple_label<OjaNewton>)
-                .set_update_stats(VW::details::update_stats_simple_label<OjaNewton>)
-                .set_print_update(VW::details::print_update_simple_label<OjaNewton>)
-                .build();
+               .set_params_per_weight(all.weights.stride())
+               .set_save_load(save_load)
+               .set_output_example_prediction(VW::details::output_example_prediction_simple_label<OjaNewton>)
+               .set_update_stats(VW::details::update_stats_simple_label<OjaNewton>)
+               .set_print_update(VW::details::print_update_simple_label<OjaNewton>)
+               .build();
 
-  return make_base(*l);
+  return l;
 }

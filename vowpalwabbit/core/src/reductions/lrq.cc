@@ -67,7 +67,7 @@ void reset_seed(lrq_state& lrq)
 }
 
 template <bool is_learn>
-void predict_or_learn(lrq_state& lrq, single_learner& base, VW::example& ec)
+void predict_or_learn(lrq_state& lrq, learner& base, VW::example& ec)
 {
   VW::workspace& all = *lrq.all;
 
@@ -171,7 +171,7 @@ void predict_or_learn(lrq_state& lrq, single_learner& base, VW::example& ec)
 }
 }  // namespace
 
-base_learner* VW::reductions::lrq_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::lrq_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -225,15 +225,15 @@ base_learner* VW::reductions::lrq_setup(VW::setup_base_i& stack_builder)
   if (!all.quiet) { *(all.trace_message) << std::endl; }
 
   all.wpp = all.wpp * static_cast<uint64_t>(1 + maxk);
-  auto base = stack_builder.setup_base_learner();
+  auto base = stack_builder.setup_base_learner(1 + maxk);
 
-  auto* l = make_reduction_learner(std::move(lrq), as_singleline(base), predict_or_learn<true>, predict_or_learn<false>,
-      stack_builder.get_setupfn_name(lrq_setup))
-                .set_params_per_weight(1 + maxk)
-                .set_learn_returns_prediction(base->learn_returns_prediction)
-                .set_end_pass(reset_seed)
-                .build();
+  auto l = make_reduction_learner(std::move(lrq), require_singleline(base), predict_or_learn<true>,
+      predict_or_learn<false>, stack_builder.get_setupfn_name(lrq_setup))
+               .set_params_per_weight(1 + maxk)
+               .set_learn_returns_prediction(base->learn_returns_prediction)
+               .set_end_pass(reset_seed)
+               .build();
 
   // TODO: leaks memory ?
-  return make_base(*l);
+  return l;
 }

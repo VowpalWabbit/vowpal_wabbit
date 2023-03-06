@@ -33,7 +33,7 @@ public:
 };
 
 template <bool is_learn>
-void predict_or_learn(multi_oaa& o, VW::LEARNER::single_learner& base, VW::example& ec)
+void predict_or_learn(multi_oaa& o, VW::LEARNER::learner& base, VW::example& ec)
 {
   auto multilabels = ec.l.multilabels;
   auto preds = ec.pred.multilabels;
@@ -110,7 +110,7 @@ void print_update_multilabel_oaa(
 
 }  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::multilabel_oaa_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::multilabel_oaa_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -158,19 +158,19 @@ VW::LEARNER::base_learner* VW::reductions::multilabel_oaa_setup(VW::setup_base_i
     pred_type = VW::prediction_type_t::MULTILABELS;
   }
 
-  auto* l =
-      make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()), predict_or_learn<true>,
-          predict_or_learn<false>, stack_builder.get_setupfn_name(multilabel_oaa_setup) + name_addition)
-          .set_params_per_weight(ws)
-          .set_learn_returns_prediction(true)
-          .set_input_label_type(VW::label_type_t::MULTILABEL)
-          .set_output_label_type(VW::label_type_t::SIMPLE)
-          .set_input_prediction_type(VW::prediction_type_t::SCALAR)
-          .set_output_prediction_type(pred_type)
-          .set_update_stats(update_stats_multilabel_oaa)
-          .set_output_example_prediction(output_example_prediction_multilabel_oaa)
-          .set_print_update(print_update_multilabel_oaa)
-          .build();
+  auto l = make_reduction_learner(std::move(data), require_singleline(stack_builder.setup_base_learner(ws)),
+      predict_or_learn<true>, predict_or_learn<false>,
+      stack_builder.get_setupfn_name(multilabel_oaa_setup) + name_addition)
+               .set_params_per_weight(ws)
+               .set_learn_returns_prediction(true)
+               .set_input_label_type(VW::label_type_t::MULTILABEL)
+               .set_output_label_type(VW::label_type_t::SIMPLE)
+               .set_input_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_output_prediction_type(pred_type)
+               .set_update_stats(update_stats_multilabel_oaa)
+               .set_output_example_prediction(output_example_prediction_multilabel_oaa)
+               .set_print_update(print_update_multilabel_oaa)
+               .build();
 
-  return make_base(*l);
+  return l;
 }

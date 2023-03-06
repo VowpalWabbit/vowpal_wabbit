@@ -8,6 +8,7 @@
 #include "vw/common/random.h"
 #include "vw/config/options.h"
 #include "vw/core/example.h"
+#include "vw/core/feature_group.h"
 #include "vw/core/learner.h"
 #include "vw/core/multiclass.h"
 #include "vw/core/multilabel.h"
@@ -226,39 +227,14 @@ public:
   }
 };
 
-float linear_kernel(const VW::flat_example* fec1, const VW::flat_example* fec2)
-{
-  float dotprod = 0;
-
-  auto& fs_1 = const_cast<VW::features&>(fec1->fs);
-  auto& fs_2 = const_cast<VW::features&>(fec2->fs);
-  if (fs_2.indices.size() == 0) { return 0.f; }
-
-  for (size_t idx1 = 0, idx2 = 0; idx1 < fs_1.size() && idx2 < fs_2.size(); idx1++)
-  {
-    uint64_t ec1pos = fs_1.indices[idx1];
-    uint64_t ec2pos = fs_2.indices[idx2];
-    if (ec1pos < ec2pos) { continue; }
-
-    while (ec1pos > ec2pos && ++idx2 < fs_2.size()) { ec2pos = fs_2.indices[idx2]; }
-
-    if (ec1pos == ec2pos)
-    {
-      dotprod += fs_1.values[idx1] * fs_2.values[idx2];
-      ++idx2;
-    }
-  }
-  return dotprod;
-}
-
 float normalized_linear_prod(memory_tree& b, VW::example* ec1, VW::example* ec2)
 {
-  VW::flat_example* fec1 = VW::flatten_sort_example(*b.all, ec1);
-  VW::flat_example* fec2 = VW::flatten_sort_example(*b.all, ec2);
-  float norm_sqrt = std::pow(fec1->total_sum_feat_sq * fec2->total_sum_feat_sq, 0.5f);
-  float linear_prod = linear_kernel(fec1, fec2);
-  VW::free_flatten_example(fec1);
-  VW::free_flatten_example(fec2);
+  VW::features fs1;
+  VW::features fs2;
+  flatten_features(*b.all, *ec1, fs1);
+  flatten_features(*b.all, *ec2, fs2);
+  float norm_sqrt = std::pow(fs1.sum_feat_sq * fs2.sum_feat_sq, 0.5f);
+  float linear_prod = VW::features_dot_product(fs1, fs2);
   return linear_prod / norm_sqrt;
 }
 
@@ -363,7 +339,7 @@ inline int random_sample_example_pop(memory_tree& b, uint64_t& cn)
 
 // train the node with id cn, using the statistics stored in the node to
 // formulate a binary classificaiton example.
-float train_node(memory_tree& b, single_learner& base, VW::example& ec, const uint64_t cn)
+float train_node(memory_tree& b, learner& base, VW::example& ec, const uint64_t cn)
 {
   // predict, learn and predict
   // note: here we first train the router and then predict.
@@ -421,7 +397,7 @@ float train_node(memory_tree& b, single_learner& base, VW::example& ec, const ui
 
 // turn a leaf into an internal node, and create two children
 // when the number of examples is too big
-void split_leaf(memory_tree& b, single_learner& base, const uint64_t cn)
+void split_leaf(memory_tree& b, learner& base, const uint64_t cn)
 {
   // create two children
   b.nodes[cn].internal = 1;  // swith to internal node.
@@ -558,7 +534,7 @@ void collect_labels_from_leaf(memory_tree& b, const uint64_t cn, VW::v_array<uin
   }
 }
 
-inline void train_one_against_some_at_leaf(memory_tree& b, single_learner& base, const uint64_t cn, VW::example& ec)
+inline void train_one_against_some_at_leaf(memory_tree& b, learner& base, const uint64_t cn, VW::example& ec)
 {
   VW::v_array<uint32_t> leaf_labs;
   collect_labels_from_leaf(b, cn, leaf_labs);  // unique labels from the leaf.
@@ -580,7 +556,7 @@ inline void train_one_against_some_at_leaf(memory_tree& b, single_learner& base,
 }
 
 inline uint32_t compute_hamming_loss_via_oas(
-    memory_tree& b, single_learner& base, const uint64_t cn, VW::example& ec, VW::v_array<uint32_t>& selected_labs)
+    memory_tree& b, learner& base, const uint64_t cn, VW::example& ec, VW::v_array<uint32_t>& selected_labs)
 {
   selected_labs.clear();
   VW::v_array<uint32_t> leaf_labs;
@@ -602,7 +578,7 @@ inline uint32_t compute_hamming_loss_via_oas(
 }
 
 // pick up the "closest" example in the leaf using the score function.
-int64_t pick_nearest(memory_tree& b, single_learner& base, const uint64_t cn, VW::example& ec)
+int64_t pick_nearest(memory_tree& b, learner& base, const uint64_t cn, VW::example& ec)
 {
   if (b.nodes[cn].examples_index.size() > 0)
   {
@@ -658,7 +634,7 @@ float f1_score_for_two_examples(VW::example& ec1, VW::example& ec2)
     return 2.f * (v1 * v2 / (v1 + v2));
   }
 }
-void predict(memory_tree& b, single_learner& base, VW::example& ec)
+void predict(memory_tree& b, learner& base, VW::example& ec)
 {
   VW::multiclass_label mc{0, 0};
   uint32_t save_multi_pred = 0;
@@ -724,7 +700,7 @@ void predict(memory_tree& b, single_learner& base, VW::example& ec)
   }
 }
 
-float return_reward_from_node(memory_tree& b, single_learner& base, uint64_t cn, VW::example& ec, float weight = 1.f)
+float return_reward_from_node(memory_tree& b, learner& base, uint64_t cn, VW::example& ec, float weight = 1.f)
 {
   VW::multiclass_label mc{0, 0};
   uint32_t save_multi_pred = 0;
@@ -793,8 +769,7 @@ float return_reward_from_node(memory_tree& b, single_learner& base, uint64_t cn,
   return reward;
 }
 
-void learn_at_leaf_random(
-    memory_tree& b, single_learner& base, const uint64_t& leaf_id, VW::example& ec, const float& weight)
+void learn_at_leaf_random(memory_tree& b, learner& base, const uint64_t& leaf_id, VW::example& ec, const float& weight)
 {
   b.total_num_queries++;
   int32_t ec_id = -1;
@@ -819,7 +794,7 @@ void learn_at_leaf_random(
   return;
 }
 
-void route_to_leaf(memory_tree& b, single_learner& base, const uint32_t& ec_array_index, uint64_t cn,
+void route_to_leaf(memory_tree& b, learner& base, const uint32_t& ec_array_index, uint64_t cn,
     VW::v_array<uint64_t>& path, bool insertion)
 {
   VW::example& ec = *b.examples[ec_array_index];
@@ -874,7 +849,7 @@ void route_to_leaf(memory_tree& b, single_learner& base, const uint32_t& ec_arra
 }
 
 // we roll in, then stop at a random step, do exploration. //no real insertion happens in the function.
-void single_query_and_learn(memory_tree& b, single_learner& base, const uint32_t& ec_array_index, VW::example& ec)
+void single_query_and_learn(memory_tree& b, learner& base, const uint32_t& ec_array_index, VW::example& ec)
 {
   VW::v_array<uint64_t> path_to_leaf;
   route_to_leaf(b, base, ec_array_index, 0, path_to_leaf, false);  // no insertion happens here.
@@ -950,14 +925,14 @@ void single_query_and_learn(memory_tree& b, single_learner& base, const uint32_t
 }
 
 // using reward signals
-void update_rew(memory_tree& b, single_learner& base, const uint32_t& ec_array_index, VW::example& ec)
+void update_rew(memory_tree& b, learner& base, const uint32_t& ec_array_index, VW::example& ec)
 {
   single_query_and_learn(b, base, ec_array_index, ec);
 }
 
 // node here the ec is already stored in the b.examples, the task here is to rout it to the leaf,
 // and insert the ec_array_index to the leaf.
-void insert_example(memory_tree& b, single_learner& base, const uint32_t& ec_array_index, bool fake_insert = false)
+void insert_example(memory_tree& b, learner& base, const uint32_t& ec_array_index, bool fake_insert = false)
 {
   uint64_t cn = 0;                   // start from the root.
   while (b.nodes[cn].internal == 1)  // if it's internal node:
@@ -989,7 +964,7 @@ void insert_example(memory_tree& b, single_learner& base, const uint32_t& ec_arr
   }
 }
 
-void experience_replay(memory_tree& b, single_learner& base)
+void experience_replay(memory_tree& b, learner& base)
 {
   uint64_t cn = 0;  // start from root, randomly descent down!
   int ec_id = random_sample_example_pop(b, cn);
@@ -1013,7 +988,7 @@ void experience_replay(memory_tree& b, single_learner& base)
 
 // learn: descent the example from the root while generating binary training
 // example for each node, including the leaf, and store the example at the leaf.
-void learn(memory_tree& b, single_learner& base, VW::example& ec)
+void learn(memory_tree& b, learner& base, VW::example& ec)
 {
   // Assume predict is called before learn is called
   if (b.test_mode == false)
@@ -1214,7 +1189,7 @@ void save_load_memory_tree(memory_tree& b, VW::io_buf& model_file, bool read, bo
 //////////////////////////////End of Save & Load///////////////////////////////
 }  // namespace
 
-base_learner* VW::reductions::memory_tree_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::memory_tree_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -1290,8 +1265,8 @@ base_learner* VW::reductions::memory_tree_setup(VW::setup_base_i& stack_builder)
     label_type = VW::label_type_t::MULTILABEL;
   }
 
-  auto l = make_reduction_learner(std::move(tree), as_singleline(stack_builder.setup_base_learner()), learn, predict,
-      stack_builder.get_setupfn_name(memory_tree_setup))
+  auto l = make_reduction_learner(std::move(tree), require_singleline(stack_builder.setup_base_learner(num_learners)),
+      learn, predict, stack_builder.get_setupfn_name(memory_tree_setup))
                .set_params_per_weight(num_learners)
                .set_end_pass(end_pass)
                .set_save_load(save_load_memory_tree)
@@ -1308,5 +1283,5 @@ base_learner* VW::reductions::memory_tree_setup(VW::setup_base_i& stack_builder)
     l.set_print_update(VW::details::print_update_multiclass_label<memory_tree>);
   }
 
-  return make_base(*l.build());
+  return l.build();
 }

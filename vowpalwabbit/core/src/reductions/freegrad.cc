@@ -61,17 +61,16 @@ public:
   size_t no_win_counter;
   size_t early_stop_thres;
   uint32_t freegrad_size;
-  double total_weight = 0.0;
-  double normalized_sum_norm_x = 0.0;
+  std::vector<VW::reductions::details::per_model_state> per_model_states;
 };
 
 template <bool audit>
-void predict(freegrad& b, base_learner& /* base */, VW::example& ec)
+void predict(freegrad& b, VW::example& ec)
 {
   size_t num_features_from_interactions = 0;
   ec.partial_prediction = VW::inline_predict(*b.all, ec, num_features_from_interactions);
   ec.num_features_from_interactions = num_features_from_interactions;
-  ec.pred.scalar = VW::details::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
+  ec.pred.scalar = VW::details::finalize_prediction(*b.all->sd, b.all->logger, ec.partial_prediction);
   if (audit) { VW::details::print_audit_features(*(b.all), ec); }
 }
 
@@ -104,7 +103,7 @@ void freegrad_predict(freegrad& fg, VW::example& ec)
   fg.update_data.predict = 0.;
   fg.update_data.squared_norm_prediction = 0.;
   size_t num_features_from_interactions = 0;
-  fg.total_weight += ec.weight;
+  fg.per_model_states[0].total_weight += ec.weight;
   float norm_w_pred;
   float projection_radius;
 
@@ -124,7 +123,7 @@ void freegrad_predict(freegrad& fg, VW::example& ec)
   ec.partial_prediction = fg.update_data.predict;
 
   ec.num_features_from_interactions = num_features_from_interactions;
-  ec.pred.scalar = VW::details::finalize_prediction(fg.all->sd, fg.all->logger, ec.partial_prediction);
+  ec.pred.scalar = VW::details::finalize_prediction(*fg.all->sd, fg.all->logger, ec.partial_prediction);
 }
 
 void gradient_dot_w(freegrad_update_data& d, float x, float& wref)
@@ -250,7 +249,7 @@ void freegrad_update_after_prediction(freegrad& fg, VW::example& ec)
 
   // Partial derivative of loss (Note that the weight of the examples ec is not accounted for at this stage. This is
   // done in inner_freegrad_update_after_prediction)
-  fg.update_data.update = fg.all->loss->first_derivative(fg.all->sd, ec.pred.scalar, ec.l.simple.label);
+  fg.update_data.update = fg.all->loss->first_derivative(fg.all->sd.get(), ec.pred.scalar, ec.l.simple.label);
 
   // Compute gradient norm
   VW::foreach_feature<freegrad_update_data, gradient_dot_w>(*fg.all, ec, fg.update_data);
@@ -273,7 +272,7 @@ void freegrad_update_after_prediction(freegrad& fg, VW::example& ec)
 }
 
 template <bool audit>
-void learn_freegrad(freegrad& a, base_learner& /* base */, VW::example& ec)
+void learn_freegrad(freegrad& a, VW::example& ec)
 {
   // update state based on the example and predict
   freegrad_predict(a, ec);
@@ -299,7 +298,7 @@ void save_load(freegrad& fg, VW::io_buf& model_file, bool read, bool text)
     if (resume)
     {
       VW::details::save_load_online_state_gd(
-          *all, model_file, read, text, fg.total_weight, fg.normalized_sum_norm_x, nullptr, fg.freegrad_size);
+          *all, model_file, read, text, fg.per_model_states, nullptr, fg.freegrad_size);
     }
     else { VW::details::save_load_regressor_gd(*all, model_file, read, text); }
   }
@@ -324,7 +323,7 @@ void end_pass(freegrad& fg)
 }
 }  // namespace
 
-base_learner* VW::reductions::freegrad_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::freegrad_setup(VW::setup_base_i& stack_builder)
 {
   auto& options = *stack_builder.get_options();
   bool freegrad_enabled;
@@ -366,8 +365,10 @@ base_learner* VW::reductions::freegrad_setup(VW::setup_base_i& stack_builder)
   fg_ptr->project = project;
   fg_ptr->adaptiveradius = adaptiveradius;
   fg_ptr->no_win_counter = 0;
-  fg_ptr->total_weight = 0;
-  fg_ptr->normalized_sum_norm_x = 0;
+  auto single_model_state = VW::reductions::details::per_model_state();
+  single_model_state.normalized_sum_norm_x = 0;
+  single_model_state.total_weight = 0.;
+  fg_ptr->per_model_states.emplace_back(single_model_state);
   fg_ptr->epsilon = fepsilon;
   fg_ptr->lipschitz_const = flipschitz_const;
 
@@ -390,8 +391,8 @@ base_learner* VW::reductions::freegrad_setup(VW::setup_base_i& stack_builder)
 
   auto predict_ptr = (fg_ptr->all->audit || fg_ptr->all->hash_inv) ? predict<true> : predict<false>;
   auto learn_ptr = (fg_ptr->all->audit || fg_ptr->all->hash_inv) ? learn_freegrad<true> : learn_freegrad<false>;
-  auto* l =
-      VW::LEARNER::make_base_learner(std::move(fg_ptr), learn_ptr, predict_ptr,
+  auto l =
+      VW::LEARNER::make_bottom_learner(std::move(fg_ptr), learn_ptr, predict_ptr,
           stack_builder.get_setupfn_name(freegrad_setup), VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
           .set_learn_returns_prediction(true)
           .set_params_per_weight(VW::details::UINT64_ONE << stack_builder.get_all_pointer()->weights.stride_shift())
@@ -402,5 +403,5 @@ base_learner* VW::reductions::freegrad_setup(VW::setup_base_i& stack_builder)
           .set_print_update(VW::details::print_update_simple_label<freegrad>)
           .build();
 
-  return make_base(*l);
+  return l;
 }

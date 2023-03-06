@@ -4,6 +4,7 @@
 
 #include "vw/config/options_cli.h"
 
+#include "vw/common/vw_exception.h"
 #include "vw/config/cli_options_serializer.h"
 #include "vw/test_common/test_common.h"
 
@@ -535,4 +536,15 @@ TEST(OptionsCli, CheckWasSuppliedCommonPrefixBefore)
   EXPECT_NO_THROW(options->add_and_parse(arg_group));
   EXPECT_TRUE(!options->was_supplied("int_opt"));
   EXPECT_TRUE(options->was_supplied("int_opt_two"));
+}
+
+TEST(OptionsCli, MakeOptionTags)
+{
+  int int_opt{};
+  option_group_definition arg_group("group1");
+  arg_group.add(make_option("int_opt", int_opt).tags({"taga"}));
+  ASSERT_THAT(arg_group.m_options.back()->get_tags(), ::testing::ElementsAre("taga"));
+
+  int int_opt2{};
+  EXPECT_THROW(arg_group.add(make_option("int_opt2", int_opt2).tags({"taga", "taga"})), VW::vw_exception);
 }

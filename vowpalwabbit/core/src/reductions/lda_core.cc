@@ -953,7 +953,7 @@ void learn_batch(lda& l, std::vector<example*>& batch)
   l.doc_lengths.clear();
 }
 
-void learn(lda& l, base_learner&, VW::example& ec)
+void learn(lda& l, VW::example& ec)
 {
   // Test if there was a completed batch that now needs to be cleared before we start the next one.
   if (l.batch_buffer.size() == l.minibatch) { l.batch_buffer.clear(); }
@@ -985,7 +985,7 @@ void learn(lda& l, base_learner&, VW::example& ec)
   if ((new_example_batch_index + 1) == l.minibatch) { learn_batch(l, l.batch_buffer); }
 }
 
-void learn_with_metrics(lda& l, base_learner& base, VW::example& ec)
+void learn_with_metrics(lda& l, VW::example& ec)
 {
   if (l.all->passes_complete == 0)
   {
@@ -1004,12 +1004,12 @@ void learn_with_metrics(lda& l, base_learner& base, VW::example& ec)
     }
   }
 
-  learn(l, base, ec);
+  learn(l, ec);
 }
 
 // placeholder
-void predict(lda& l, base_learner& base, VW::example& ec) { learn(l, base, ec); }
-void predict_with_metrics(lda& l, base_learner& base, VW::example& ec) { learn_with_metrics(l, base, ec); }
+void predict(lda& l, VW::example& ec) { learn(l, ec); }
+void predict_with_metrics(lda& l, VW::example& ec) { learn_with_metrics(l, ec); }
 
 class word_doc_frequency
 {
@@ -1271,7 +1271,7 @@ void print_update_lda(VW::workspace& all, VW::shared_data& sd, const lda& data, 
     if (sd.weighted_examples() >= sd.dump_interval && !all.quiet)
     {
       sd.print_update(*all.trace_message, all.holdout_set_off, all.current_pass, "none", 0,
-          data.batch_buffer.at(0)->get_num_features(), all.progress_add, all.progress_arg);
+          data.batch_buffer.at(0)->get_num_features());
     }
   }
 }
@@ -1284,7 +1284,7 @@ void VW::reductions::lda::get_top_weights(
   else { ::get_top_weights(all, top_words_count, topic, output, all->weights.dense_weights); }
 }
 
-base_learner* VW::reductions::lda_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::lda_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -1366,18 +1366,18 @@ base_learner* VW::reductions::lda_setup(VW::setup_base_i& stack_builder)
   const auto pred_type = ld->minibatch > 1 ? VW::prediction_type_t::NOPRED : VW::prediction_type_t::SCALARS;
 
   // FIXME: lda with batch size > 1 doesnt produce predictions.
-  auto* l = make_base_learner(std::move(ld), ld->compute_coherence_metrics ? learn_with_metrics : learn,
+  auto l = make_bottom_learner(std::move(ld), ld->compute_coherence_metrics ? learn_with_metrics : learn,
       ld->compute_coherence_metrics ? predict_with_metrics : predict, stack_builder.get_setupfn_name(lda_setup),
       pred_type, VW::label_type_t::NOLABEL)
-                .set_params_per_weight(VW::details::UINT64_ONE << all.weights.stride_shift())
-                .set_learn_returns_prediction(true)
-                .set_save_load(save_load)
-                .set_end_examples(end_examples)
-                .set_end_pass(end_pass)
-                .set_output_example_prediction(output_example_prediction_lda)
-                .set_print_update(print_update_lda)
-                .set_update_stats(update_stats_lda)
-                .build();
+               .set_params_per_weight(VW::details::UINT64_ONE << all.weights.stride_shift())
+               .set_learn_returns_prediction(true)
+               .set_save_load(save_load)
+               .set_end_examples(end_examples)
+               .set_end_pass(end_pass)
+               .set_output_example_prediction(output_example_prediction_lda)
+               .set_print_update(print_update_lda)
+               .set_update_stats(update_stats_lda)
+               .build();
 
-  return make_base(*l);
+  return l;
 }

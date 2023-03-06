@@ -1,0 +1,22 @@
+using no cache
+Reading datafile = train-sets/las_100_actions.txt
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+cb_type = mtr
+Enabled learners: gd, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_large_action_space, cb_explore_adf_greedy, cb_actions_mask, shared_feature_merger, extra_metrics
+Input label = CB
+Output pred = ACTION_PROBS
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.000000 0.000000            1            1.0     47:-1:0.17         0:0.06     4761
+-0.00153 -0.00306            2            2.0     14:-1:0.96        65:0.95     4761
+
+finished run
+number of examples = 2
+weighted example sum = 2.000000
+weighted label sum = 0.000000
+average loss = -0.001535
+total feature number = 9522

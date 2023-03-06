@@ -843,7 +843,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_learn(JNI
     all->learn(*ex);
 
     // as this is not a ring-based example it is not free'd
-    VW::LEARNER::as_singleline(all->l)->finish_example(*all, *ex);
+    all->l->finish_example(*all, *ex);
   }
   catch (...)
   {
@@ -862,7 +862,7 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_predic
     all->predict(*ex);
 
     // as this is not a ring-based example it is not free'd
-    VW::LEARNER::as_singleline(all->l)->finish_example(*all, *ex);
+    all->l->finish_example(*all, *ex);
 
     return getJavaPrediction(env, all, ex);
   }

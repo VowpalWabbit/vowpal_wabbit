@@ -7,7 +7,7 @@ learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 cb_type = dr
-Enabled reductions: gd, scorer-identity, csoaa, cb, cb_explore-cover
+Enabled learners: gd, scorer-identity, csoaa, cb, cb_explore-cover
 Input label = CB
 Output pred = ACTION_PROBS
 average  since         example        example        current        current  current
@@ -15,11 +15,11 @@ loss     last          counter         weight          label        predict feat
 0.000000 0.000000            1            1.0        1:0:0.5     1:0.500000        3
 0.323483 0.646967            2            2.0        2:1:0.5     1:0.500000        3
 0.456686 0.589888            4            4.0        1:2:0.5     2:0.591752        3
-0.542755 0.628824            8            8.0        2:1:0.5     2:0.732739        3
+0.541718 0.626750            8            8.0        2:1:0.5     2:0.732739        3
 
 finished run
 number of examples = 8
 weighted example sum = 8.000000
 weighted label sum = 0.000000
-average loss = 0.542755
+average loss = 0.541718
 total feature number = 25

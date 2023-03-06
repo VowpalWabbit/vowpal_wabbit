@@ -17,6 +17,8 @@
 #include "vw/json_parser/parse_example_json.h"
 #include "vw/core/shared_data.h"
 
+#include <functional>
+
 using namespace System;
 using namespace System::Collections::Generic;
 using namespace System::Text;
@@ -34,12 +36,12 @@ VowpalWabbit::VowpalWabbit(VowpalWabbitSettings^ settings)
     auto total = settings->ParallelOptions->MaxDegreeOfParallelism;
 
     if (settings->Root == nullptr)
-    { m_vw->all_reduce = new all_reduce_threads(total, settings->Node);
+    { m_vw->all_reduce.reset(new all_reduce_threads(total, settings->Node));
     }
     else
-    { auto parent_all_reduce = (all_reduce_threads*)settings->Root->m_vw->all_reduce;
+    { auto parent_all_reduce = (all_reduce_threads*)settings->Root->m_vw->all_reduce.get();
 
-      m_vw->all_reduce = new all_reduce_threads(parent_all_reduce, total, settings->Node);
+      m_vw->all_reduce.reset(new all_reduce_threads(parent_all_reduce, total, settings->Node));
     }
   }
 
@@ -172,7 +174,7 @@ void VowpalWabbit::Learn(List<VowpalWabbitExample^>^ examples)
     m_vw->learn(ex_coll);
 
     // as this is not a ring-based example it is not freed
-    as_multiline(m_vw->l)->finish_example(*m_vw, ex_coll);
+    require_multiline(m_vw->l)->finish_example(*m_vw, ex_coll);
   }
   CATCHRETHROW
   finally{ }
@@ -189,10 +191,10 @@ void VowpalWabbit::Predict(List<VowpalWabbitExample^>^ examples)
       ex_coll.push_back(pex);
     }
 
-    as_multiline(m_vw->l)->predict(ex_coll);
+    require_multiline(m_vw->l)->predict(ex_coll);
 
     // as this is not a ring-based example it is not freed
-    as_multiline(m_vw->l)->finish_example(*m_vw, ex_coll);
+    require_multiline(m_vw->l)->finish_example(*m_vw, ex_coll);
   }
   CATCHRETHROW
     finally{ }
@@ -210,7 +212,7 @@ void VowpalWabbit::Learn(VowpalWabbitExample^ ex)
   { m_vw->learn(*ex->m_example);
 
     // as this is not a ring-based example it is not free'd
-    as_singleline(m_vw->l)->finish_example(*m_vw, *ex->m_example);
+    require_singleline(m_vw->l)->finish_example(*m_vw, *ex->m_example);
   }
   CATCHRETHROW
 }
@@ -231,7 +233,7 @@ generic<typename T> T VowpalWabbit::Learn(VowpalWabbitExample^ ex, IVowpalWabbit
     auto prediction = predictionFactory->Create(m_vw, ex->m_example);
 
     // as this is not a ring-based example it is not free'd
-    as_singleline(m_vw->l)->finish_example(*m_vw, *ex->m_example);
+    require_singleline(m_vw->l)->finish_example(*m_vw, *ex->m_example);
 
     return prediction;
   }
@@ -246,10 +248,10 @@ void VowpalWabbit::Predict(VowpalWabbitExample^ ex)
 #endif
 
   try
-  { as_singleline(m_vw->l)->predict(*ex->m_example);
+  { require_singleline(m_vw->l)->predict(*ex->m_example);
 
     // as this is not a ring-based example it is not free'd
-  as_singleline(m_vw->l)->finish_example(*m_vw, *ex->m_example);
+  require_singleline(m_vw->l)->finish_example(*m_vw, *ex->m_example);
   }
   CATCHRETHROW
 }
@@ -262,12 +264,12 @@ generic<typename T> T VowpalWabbit::Predict(VowpalWabbitExample^ ex, IVowpalWabb
 #endif
 
   try
-  { as_singleline(m_vw->l)->predict(*ex->m_example);
+  { require_singleline(m_vw->l)->predict(*ex->m_example);
 
     auto prediction = predictionFactory->Create(m_vw, ex->m_example);
 
     // as this is not a ring-based example it is not free'd
-    as_singleline(m_vw->l)->finish_example(*m_vw, *ex->m_example);
+    require_singleline(m_vw->l)->finish_example(*m_vw, *ex->m_example);
 
     return prediction;
   }
@@ -320,9 +322,9 @@ List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<By
 			VW::parsers::json::decision_service_interaction interaction;
 
 			if (m_vw->audit)
-				VW::parsers::json::read_line_decision_service_json<true>(*m_vw, examples, reinterpret_cast<char*>(data), length, copyJson, get_example_from_pool, &state, &interaction);
+				VW::parsers::json::read_line_decision_service_json<true>(*m_vw, examples, reinterpret_cast<char*>(data), length, copyJson, std::bind(get_example_from_pool, &state), &interaction);
 			else
-				VW::parsers::json::read_line_decision_service_json<false>(*m_vw, examples, reinterpret_cast<char*>(data), length, copyJson, get_example_from_pool, &state, &interaction);
+				VW::parsers::json::read_line_decision_service_json<false>(*m_vw, examples, reinterpret_cast<char*>(data), length, copyJson, std::bind(get_example_from_pool, &state), &interaction);
 
 			// finalize example
 			VW::setup_examples(*m_vw, examples);
@@ -384,9 +386,9 @@ List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<By
 			  interior_ptr<ParseJsonState^> state_ptr = &state;
 
 			  if (m_vw->audit)
-				VW::parsers::json::read_line_json<true>(*m_vw, examples, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()), (size_t)bytes->Length, get_example_from_pool, &state);
+				VW::parsers::json::read_line_json<true>(*m_vw, examples, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()), (size_t)bytes->Length, std::bind(get_example_from_pool, &state));
 			  else
-				VW::parsers::json::read_line_json<false>(*m_vw, examples, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()), (size_t)bytes->Length, get_example_from_pool, &state);
+				VW::parsers::json::read_line_json<false>(*m_vw, examples, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()), (size_t)bytes->Length, std::bind(get_example_from_pool, &state));
 
 			  // finalize example
 			  VW::setup_examples(*m_vw, examples);

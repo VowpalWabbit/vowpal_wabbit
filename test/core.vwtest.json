@@ -5503,7 +5503,7 @@
   {
     "id": 427,
     "desc": "Generate similar model to spun off automl using standard cb_explore_adf",
-    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -f models/aml_spin_off_cb.m -b 17 --predict_only_model --interactions AA --interactions AB --interactions AC --interactions AD --interactions AE --interactions AF --interactions BB --interactions BC --interactions BD --interactions BE --interactions BF --interactions CC --interactions CD --interactions CE --interactions CF --interactions DD --interactions DE --interactions DF --interactions EE --interactions EF --interactions FF",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -f models/cb_spin_off.m -b 17 --predict_only_model --interactions AA --interactions AB --interactions AC --interactions AD --interactions AE --interactions AF --interactions BB --interactions BC --interactions BD --interactions BE --interactions BF --interactions CC --interactions CD --interactions CE --interactions CF --interactions DD --interactions DE --interactions DF --interactions EE --interactions EF --interactions FF",
     "diff_files": {
       "stderr": "train-sets/ref/cb_similar_aml_spinoff_save.stderr"
     },
@@ -5514,14 +5514,14 @@
   {
     "id": 428,
     "desc": "Check that standard cb_explore_adf model has same invert hash as automl spinoff",
-    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -i models/aml_spin_off_cb.m -b 17 --invert_hash aml_spinoff_cb.inv --predict_only_model",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -i models/cb_spin_off.m -b 17 --invert_hash aml_spinoff_cb.inv --predict_only_model",
     "diff_files": {
       "stderr": "train-sets/ref/spin_off_aml_load.stderr",
       "aml_spinoff_cb.inv": "pred-sets/ref/aml_spinoff.inv"
     },
     "input_files": [
       "train-sets/automl_spin_off.txt",
-      "models/aml_spin_off_cb.m"
+      "models/cb_spin_off.m"
     ],
     "depends_on": [
       427
@@ -5530,10 +5530,10 @@
   {
     "id": 429,
     "desc": "Check that binary model files are identical between standard cb_explore_adf and automl spinoff",
-    "bash_command": "diff models/aml_spin_off.m models/aml_spin_off_cb.m",
+    "bash_command": "diff models/aml_spin_off.m models/cb_spin_off.m",
     "input_files": [
       "models/aml_spin_off.m",
-      "models/aml_spin_off_cb.m"
+      "models/cb_spin_off.m"
     ],
     "depends_on": [
       425, 427
@@ -5699,6 +5699,201 @@
       "../utl/active_interactor.py",
       "train-sets/0001_active.dat",
       "train-sets/0001_active_input.dat"
+    ]
+  },
+  {
+    "id": 441,
+    "desc": "Spin off automl model to lower bitsize to cb_explore with bag",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off_small.txt --noconstant -f models/aml_spin_off_bag.m -b 18 --predict_only_model --automl 2 --bag 4",
+    "diff_files": {
+      "stderr": "train-sets/ref/spin_off_aml_save_bag.stderr"
+    },
+    "input_files": [
+      "train-sets/automl_spin_off_small.txt"
+    ]
+  },
+  {
+    "id": 442,
+    "desc": "Load spun off automl model and output invert hash with bag",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off_small.txt --noconstant -i models/aml_spin_off_bag.m -b 17 --predict_only_model --invert_hash aml_spinoff_bag.inv",
+    "diff_files": {
+      "stderr": "train-sets/ref/spin_off_aml_load_bag.stderr",
+      "aml_spinoff_bag.inv": "pred-sets/ref/aml_spinoff_bag.inv"
+    },
+    "input_files": [
+      "train-sets/automl_spin_off_small.txt",
+      "models/aml_spin_off_bag.m"
+    ],
+    "depends_on": [
+      441
+    ]
+  },
+  {
+    "id": 443,
+    "desc": "Generate similar model to spun off automl using standard cb_explore_adf with bag",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off_small.txt --noconstant -f models/cb_spin_off_bag.m -b 17 --bag 4 --predict_only_model --interactions AA --interactions AB --interactions AC --interactions AD --interactions AE --interactions AF --interactions BB --interactions BC --interactions BD --interactions BE --interactions BF --interactions CC --interactions CD --interactions CE --interactions CF --interactions DD --interactions DE --interactions DF --interactions EE --interactions EF --interactions FF",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_similar_aml_spinoff_save_bag.stderr"
+    },
+    "input_files": [
+      "train-sets/automl_spin_off_small.txt"
+    ]
+  },
+  {
+    "id": 444,
+    "desc": "Check that standard cb_explore_adf model has same invert hash as automl spinoff with bag",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off_small.txt --noconstant -i models/cb_spin_off_bag.m -b 17 --predict_only_model --invert_hash aml_spinoff_bag_cb.inv",
+    "diff_files": {
+      "stderr": "train-sets/ref/spin_off_aml_load_bag.stderr",
+      "aml_spinoff_bag_cb.inv": "pred-sets/ref/aml_spinoff_bag.inv"
+    },
+    "input_files": [
+      "train-sets/automl_spin_off_small.txt",
+      "models/cb_spin_off_bag.m"
+    ],
+    "depends_on": [
+      443
+    ]
+  },
+  {
+    "id": 445,
+    "desc": "Check that binary model files are identical between standard cb_explore_adf and automl spinoff with bag",
+    "bash_command": "diff models/aml_spin_off_bag.m models/cb_spin_off_bag.m",
+    "input_files": [
+      "models/aml_spin_off_bag.m",
+      "models/cb_spin_off_bag.m"
+    ],
+    "depends_on": [
+      441, 443
+    ]
+  },
+  {
+    "id": 446,
+    "desc": "large action spaces with cb_explore_adf epsilon greedy",
+    "vw_command": "--cb_explore_adf -d train-sets/las_100_actions.txt --noconstant --large_action_space --extra_metrics metrics_las_e.json",
+    "diff_files": {
+      "stderr": "train-sets/ref/las_egreedy.stderr",
+      "metrics_las_e.json": "test-sets/ref/metrics_las_e.json"
+    },
+    "input_files": [
+      "train-sets/las_100_actions.txt"
+    ]
+  },
+  {
+    "id": 447,
+    "desc": "large action spaces with cb_explore_adf squarecb",
+    "vw_command": "--cb_explore_adf -d train-sets/las_100_actions.txt --squarecb --noconstant --large_action_space --extra_metrics metrics_las_sqcb.json",
+    "diff_files": {
+      "stderr": "train-sets/ref/las_sqcb.stderr",
+      "metrics_las_sqcb.json": "test-sets/ref/metrics_las_sqcb.json"
+    },
+    "input_files": [
+      "train-sets/las_100_actions.txt"
+    ]
+  },
+  {
+    "id": 448,
+    "desc": "transition from squarecb model to las + squarecb",
+    "vw_command": "-d train-sets/cb_load.dat --cb_explore_adf -q UA --squarecb -i models/sqcb_ld.model --large_action_space --max_actions 2",
+    "diff_files": {
+      "stderr": "train-sets/ref/sqcb_to_las.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_load.dat",
+      "models/sqcb_ld.model"
+    ],
+    "depends_on": [
+      314
+    ]
+  },
+  {
+    "id": 449,
+    "desc": "Spin off epsilon decay model to lower bitsize to cb_explore",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -f models/ep_dec_spin_off.m -b 18 --predict_only_model --epsilon_decay --model_count 2",
+    "diff_files": {
+      "stderr": "train-sets/ref/spin_off_ep_dec_save.stderr"
+    },
+    "input_files": [
+      "train-sets/automl_spin_off.txt"
+    ]
+  },
+  {
+    "id": 450,
+    "desc": "Load spun off epsilon decay model and output invert hash",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -i models/ep_dec_spin_off.m -b 17 --invert_hash ep_dec_spinoff.inv --predict_only_model",
+    "diff_files": {
+      "stderr": "train-sets/ref/spin_off_ep_dec_load.stderr",
+      "ep_dec_spinoff.inv": "pred-sets/ref/ep_dec_spinoff.inv"
+    },
+    "input_files": [
+      "train-sets/automl_spin_off.txt",
+      "models/ep_dec_spin_off.m"
+    ],
+    "depends_on": [
+      449
+    ]
+  },
+  {
+    "id": 451,
+    "desc": "Generate similar model to spun off epsilon decay using standard cb_explore_adf",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -f models/ep_dec_spin_off_cb.m -b 17 --predict_only_model",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_similar_ep_decay_spinoff_save.stderr"
+    },
+    "input_files": [
+      "train-sets/automl_spin_off.txt"
+    ]
+  },
+  {
+    "id": 452,
+    "desc": "Check that standard cb_explore_adf model has same invert hash as epsilon decay spinoff",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -i models/ep_dec_spin_off_cb.m -b 17 --invert_hash ep_dec_spinoff_cb.inv --predict_only_model",
+    "diff_files": {
+      "stderr": "train-sets/ref/spin_off_ep_dec_load.stderr",
+      "ep_dec_spinoff_cb.inv": "pred-sets/ref/ep_dec_spinoff.inv"
+    },
+    "input_files": [
+      "train-sets/automl_spin_off.txt",
+      "models/ep_dec_spin_off_cb.m"
+    ],
+    "depends_on": [
+      451
+    ]
+  },
+  {
+    "id": 453,
+    "desc": "Check that binary model files are identical between standard cb_explore_adf and epsilon decay spinoff",
+    "bash_command": "diff models/ep_dec_spin_off.m models/ep_dec_spin_off_cb.m",
+    "input_files": [
+      "models/ep_dec_spin_off.m",
+      "models/ep_dec_spin_off_cb.m"
+    ],
+    "depends_on": [
+      449, 451
+    ]
+  },
+  {
+    "id": 454,
+    "desc": "Evaluate exploration on contextal bandit data with epsilon decay",
+    "vw_command": "--explore_eval --epsilon_decay --model_count 4 -d train-sets/automl_spin_off.txt --noconstant -p explore_eval_decay.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/explore_eval_decay.stderr",
+      "explore_eval_decay.predict": "pred-sets/ref/explore_eval_decay.predict",
+      "stdout": "train-sets/ref/explore_eval_decay.stdout"
+    },
+    "input_files": [
+      "train-sets/automl_spin_off.txt"
+    ]
+  },
+  {
+    "id": 455,
+    "desc": "large action spaces with cb_explore_adf epsilon greedy and ips",
+    "vw_command": "--cb_explore_adf -d train-sets/las_100_actions.txt --noconstant --large_action_space --cb_type ips",
+    "diff_files": {
+      "stderr": "train-sets/ref/las_egreedy_ips.stderr"    
+    },
+    "input_files": [
+      "train-sets/las_100_actions.txt"
     ]
   }
 ]

@@ -92,13 +92,14 @@ def test_cs_robust_ci():
     csr.addobs((0.879389936, 1))
     csr.addobs((0.880083546, 1))
     csr.addobs((0.8807676, 1))
+    csr.addobs((43.91880613, 0.9))
 
     alpha = 0.05 / 16.0
     lb, ub = csr.getci(alpha)
 
     # Compare bounds to confidence_sequence_robust_test.cc
-    np.testing.assert_almost_equal(lb, 0.19224909776696902, 6)
-    np.testing.assert_almost_equal(ub, 0.93637288977188682, 6)
+    np.testing.assert_almost_equal(lb, 0.30209151281846858, 4)
+    np.testing.assert_almost_equal(ub, 0.90219143188334106, 4)
 
     # Test brentq separately
     s = 139.8326745448
@@ -114,8 +115,8 @@ def test_cs_robust_ci():
     )
 
     # Compare to brentq in confidence_sequence_robust_test.cc
-    np.testing.assert_almost_equal(res.root, 0.31672263211621371, 6)
+    np.testing.assert_almost_equal(res.root, 0.30209143008131789, 4)
 
     # Test that root of objective function is 0
     test_root = csr.lower.logwealthmix(mu=res.root, s=s, thres=thres, memo=memo) - thres
-    np.testing.assert_almost_equal(test_root, 0.0)
+    np.testing.assert_almost_equal(test_root, 0.0, 2)

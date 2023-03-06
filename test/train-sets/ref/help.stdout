@@ -263,6 +263,10 @@ Weight Options:
                                             (bonferroni correction) (type: bool, keep, experimental)
     --reward_as_cost                        Treat rewards as cost (do not negate sign) (type: bool, keep,
                                             experimental)
+    --tol_x arg                             Tolerance for estimation optimization (type: float, default:
+                                            1e-06, keep, experimental)
+    --opt_func arg                          Optimization function for estimation) (type: str, default: bisect,
+                                            choices {bisect, brentq}, keep, experimental)
 [Reduction] Baseline Options:
     --baseline                              Learn an additive baseline (from constant features) and a residual
                                             separately in regression (type: bool, keep, necessary)
@@ -588,6 +592,10 @@ Weight Options:
                                             + shift)) (type: uint, default: 0, keep, experimental)
     --reward_as_cost                        Treat rewards as cost (do not negate sign) (type: bool, keep,
                                             experimental)
+    --tol_x arg                             Tolerance for estimation optimization (type: float, default:
+                                            1e-06, keep, experimental)
+    --opt_func arg                          Optimization function for estimation) (type: str, default: bisect,
+                                            choices {bisect, brentq}, keep, experimental)
 [Reduction] Error Correcting Tournament Options:
     --ect arg                               Error correcting tournament with <k> labels (type: uint, keep,
                                             necessary)
@@ -631,6 +639,11 @@ Weight Options:
                                             with quadratic interactions. (x86 Linux only) (type: bool, experimental)
     --two_pass_svd                          A more accurate svd that is much slower than the default (one
                                             pass svd) (type: bool, experimental)
+    --action_cache_slack arg                If actions do not change between example calls then some calculations
+                                            for this algorithm are cached. If action cache size exceeds the
+                                            number of active actions plus action_cache_slack, then the cache
+                                            will be cleared. Setting this to -1 disables any caching (type:
+                                            uint, default: 50, keep, experimental)
 [Reduction] Explore Evaluation Options:
     --explore_eval                          Evaluate explore_eval adf policies (type: bool, keep, necessary)
     --multiplier arg                        Multiplier used to make all rejection sample probabilities <=

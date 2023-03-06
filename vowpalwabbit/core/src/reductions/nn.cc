@@ -151,7 +151,7 @@ void end_pass(nn& n)
 }
 
 template <bool is_learn, bool recompute_hidden>
-void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
+void predict_or_learn_multi(nn& n, learner& base, VW::example& ec)
 {
   bool should_output = n.all->raw_prediction != nullptr;
   if (!n.finished_setup) { finish_setup(n, *(n.all)); }
@@ -159,10 +159,11 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
   VW::shared_data sd{*n.all->sd};
   {
     // guard for all.sd as it is modified - this will restore the state at the end of the scope.
-    auto swap_guard = VW::swap_guard(n.all->sd, &sd);
+    VW::shared_data* original_sd = n.all->sd.get();
+    auto swap_guard = VW::swap_guard(original_sd, &sd);
 
     VW::simple_label ld = ec.l.simple;
-    void (*save_set_minmax)(VW::shared_data*, float) = n.all->set_minmax;
+    auto save_set_minmax = n.all->set_minmax;
     float save_min_label;
     float save_max_label;
     float dropscale = n.dropout ? 2.0f : 1.0f;
@@ -174,7 +175,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
 
     std::ostringstream output_string_stream;
 
-    n.all->set_minmax = VW::details::noop_mm;
+    n.all->set_minmax = nullptr;
     save_min_label = n.all->sd->min_label;
     n.all->sd->min_label = HIDDEN_MIN_ACTIVATION;
     save_max_label = n.all->sd->max_label;
@@ -243,7 +244,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
 
     n.outputweight.ft_offset = ec.ft_offset;
 
-    n.all->set_minmax = VW::details::noop_mm;
+    n.all->set_minmax = nullptr;
     auto loss_function_swap_guard_converse_block = VW::swap_guard(n.all->loss, n.squared_loss);
     save_min_label = n.all->sd->min_label;
     n.all->sd->min_label = -1;
@@ -316,7 +317,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
       else { base.predict(n.output_layer, n.k); }
     }
 
-    n.prediction = VW::details::finalize_prediction(n.all->sd, n.all->logger, n.output_layer.partial_prediction);
+    n.prediction = VW::details::finalize_prediction(*n.all->sd, n.all->logger, n.output_layer.partial_prediction);
 
     if (should_output)
     {
@@ -328,12 +329,12 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
     {
       if (n.all->training && ld.label != FLT_MAX)
       {
-        float gradient = n.all->loss->first_derivative(n.all->sd, n.prediction, ld.label);
+        float gradient = n.all->loss->first_derivative(n.all->sd.get(), n.prediction, ld.label);
 
         if (std::fabs(gradient) > 0)
         {
           auto loss_function_swap_guard_learn_block = VW::swap_guard(n.all->loss, n.squared_loss);
-          n.all->set_minmax = VW::details::noop_mm;
+          n.all->set_minmax = nullptr;
           save_min_label = n.all->sd->min_label;
           n.all->sd->min_label = HIDDEN_MIN_ACTIVATION;
           save_max_label = n.all->sd->max_label;
@@ -355,7 +356,7 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
               float gradhw = 0.5f * nu * gradient * sigmahprime;
 
               ec.l.simple.label =
-                  VW::details::finalize_prediction(n.all->sd, n.all->logger, hidden_units[i].scalar - gradhw);
+                  VW::details::finalize_prediction(*n.all->sd, n.all->logger, hidden_units[i].scalar - gradhw);
               ec.pred.scalar = hidden_units[i].scalar;
               if (ec.l.simple.label != hidden_units[i].scalar) { base.update(ec, i); }
             }
@@ -391,11 +392,14 @@ void predict_or_learn_multi(nn& n, single_learner& base, VW::example& ec)
     ec.pred.scalar = save_final_prediction;
     ec.loss = save_ec_loss;
   }
-  n.all->set_minmax(n.all->sd, sd.min_label);
-  n.all->set_minmax(n.all->sd, sd.max_label);
+  if (n.all->set_minmax)
+  {
+    n.all->set_minmax(sd.min_label);
+    n.all->set_minmax(sd.max_label);
+  }
 }
 
-void multipredict(nn& n, single_learner& base, VW::example& ec, size_t count, size_t step, VW::polyprediction* pred,
+void multipredict(nn& n, learner& base, VW::example& ec, size_t count, size_t step, VW::polyprediction* pred,
     bool finalize_predictions)
 {
   for (size_t c = 0; c < count; c++)
@@ -421,7 +425,7 @@ void output_example_prediction_nn(
 }
 }  // namespace
 
-base_learner* VW::reductions::nn_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::nn_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -475,29 +479,27 @@ base_learner* VW::reductions::nn_setup(VW::setup_base_i& stack_builder)
   n->hidden_units_pred = VW::details::calloc_or_throw<VW::polyprediction>(n->k);
   n->hiddenbias_pred = VW::details::calloc_or_throw<VW::polyprediction>(n->k);
 
-  auto base = as_singleline(stack_builder.setup_base_learner());
+  size_t ws = n->k + 1;
+  auto base = require_singleline(stack_builder.setup_base_learner(ws));
   n->increment = base->increment;  // Indexing of output layer is odd.
   nn& nv = *n.get();
 
-  size_t ws = n->k + 1;
-  auto* multipredict_f = (nv.multitask) ? multipredict : nullptr;
-
-  auto* l = make_reduction_learner(std::move(n), base, predict_or_learn_multi<true, true>,
+  auto builder = make_reduction_learner(std::move(n), base, predict_or_learn_multi<true, true>,
       predict_or_learn_multi<false, true>, stack_builder.get_setupfn_name(nn_setup))
-                .set_params_per_weight(ws)
-                .set_learn_returns_prediction(true)
-                .set_multipredict(multipredict_f)
-                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
-                .set_output_prediction_type(VW::prediction_type_t::SCALAR)
-                .set_input_label_type(VW::label_type_t::SIMPLE)
-                .set_output_label_type(VW::label_type_t::SIMPLE)
-                .set_output_example_prediction(output_example_prediction_nn)
-                .set_print_update(VW::details::print_update_simple_label<nn>)
-                .set_update_stats(VW::details::update_stats_simple_label<nn>)
-                .set_end_pass(end_pass)
-                .build();
+                     .set_params_per_weight(ws)
+                     .set_learn_returns_prediction(true)
+                     .set_input_prediction_type(VW::prediction_type_t::SCALAR)
+                     .set_output_prediction_type(VW::prediction_type_t::SCALAR)
+                     .set_input_label_type(VW::label_type_t::SIMPLE)
+                     .set_output_label_type(VW::label_type_t::SIMPLE)
+                     .set_output_example_prediction(output_example_prediction_nn)
+                     .set_print_update(VW::details::print_update_simple_label<nn>)
+                     .set_update_stats(VW::details::update_stats_simple_label<nn>)
+                     .set_end_pass(end_pass);
 
-  return make_base(*l);
+  if (nv.multitask) { builder.set_multipredict(multipredict); }
+
+  return builder.build();
 }
 
 /*

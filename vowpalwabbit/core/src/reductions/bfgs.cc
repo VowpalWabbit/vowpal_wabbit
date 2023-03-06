@@ -163,7 +163,7 @@ constexpr bool test_example(VW::example& ec) noexcept { return ec.l.simple.label
 float bfgs_predict(VW::workspace& all, VW::example& ec)
 {
   ec.partial_prediction = VW::inline_predict(all, ec);
-  return VW::details::finalize_prediction(all.sd, all.logger, ec.partial_prediction);
+  return VW::details::finalize_prediction(*all.sd, all.logger, ec.partial_prediction);
 }
 
 inline void add_grad(float& d, float f, float& fw) { (&fw)[W_GT] += d * f; }
@@ -172,9 +172,9 @@ float predict_and_gradient(VW::workspace& all, VW::example& ec)
 {
   float fp = bfgs_predict(all, ec);
   auto& ld = ec.l.simple;
-  all.set_minmax(all.sd, ld.label);
+  if (all.set_minmax) { all.set_minmax(ld.label); }
 
-  float loss_grad = all.loss->first_derivative(all.sd, fp, ld.label) * ec.weight;
+  float loss_grad = all.loss->first_derivative(all.sd.get(), fp, ld.label) * ec.weight;
   VW::foreach_feature<float, add_grad>(all, ec, loss_grad);
 
   return fp;
@@ -184,7 +184,7 @@ inline void add_precond(float& d, float f, float& fw) { (&fw)[W_COND] += d * f *
 
 void update_preconditioner(VW::workspace& all, VW::example& ec)
 {
-  float curvature = all.loss->second_derivative(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
+  float curvature = all.loss->second_derivative(all.sd.get(), ec.pred.scalar, ec.l.simple.label) * ec.weight;
   VW::foreach_feature<float, add_precond>(all, ec, curvature);
 }
 
@@ -888,7 +888,7 @@ void process_example(VW::workspace& all, bfgs& b, VW::example& ec)
   if (b.gradient_pass)
   {
     ec.pred.scalar = predict_and_gradient(all, ec);  // w[0] & w[1]
-    ec.loss = all.loss->get_loss(all.sd, ec.pred.scalar, ld.label) * ec.weight;
+    ec.loss = all.loss->get_loss(all.sd.get(), ec.pred.scalar, ld.label) * ec.weight;
     b.loss_sum += ec.loss;
     b.predictions.push_back(ec.pred.scalar);
   }
@@ -904,8 +904,8 @@ void process_example(VW::workspace& all, bfgs& b, VW::example& ec)
     }
     ec.pred.scalar = b.predictions[b.example_number];
     ec.partial_prediction = b.predictions[b.example_number];
-    ec.loss = all.loss->get_loss(all.sd, ec.pred.scalar, ld.label) * ec.weight;
-    float sd = all.loss->second_derivative(all.sd, b.predictions[b.example_number++], ld.label);
+    ec.loss = all.loss->get_loss(all.sd.get(), ec.pred.scalar, ld.label) * ec.weight;
+    float sd = all.loss->second_derivative(all.sd.get(), b.predictions[b.example_number++], ld.label);
     b.curvature += (static_cast<double>(d_dot_x)) * d_dot_x * sd * ec.weight;
   }
   ec.updated_prediction = ec.pred.scalar;
@@ -978,7 +978,7 @@ void end_pass(bfgs& b)
 
 // placeholder
 template <bool audit>
-void predict(bfgs& b, base_learner&, VW::example& ec)
+void predict(bfgs& b, VW::example& ec)
 {
   VW::workspace* all = b.all;
   ec.pred.scalar = bfgs_predict(*all, ec);
@@ -986,13 +986,13 @@ void predict(bfgs& b, base_learner&, VW::example& ec)
 }
 
 template <bool audit>
-void learn(bfgs& b, base_learner& base, VW::example& ec)
+void learn(bfgs& b, VW::example& ec)
 {
   VW::workspace* all = b.all;
 
   if (b.current_pass <= b.final_pass)
   {
-    if (test_example(ec)) { predict<audit>(b, base, ec); }
+    if (test_example(ec)) { predict<audit>(b, ec); }
     else { process_example(*all, b, ec); }
   }
 }
@@ -1109,7 +1109,7 @@ void save_load(bfgs& b, VW::io_buf& model_file, bool read, bool text)
 
 void init_driver(bfgs& b) { b.backstep_on = true; }
 
-base_learner* VW::reductions::bfgs_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::bfgs_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -1177,8 +1177,8 @@ base_learner* VW::reductions::bfgs_setup(VW::setup_base_i& stack_builder)
   all.bfgs = true;
   all.weights.stride_shift(2);
 
-  void (*learn_ptr)(bfgs&, base_learner&, VW::example&) = nullptr;
-  void (*predict_ptr)(bfgs&, base_learner&, VW::example&) = nullptr;
+  void (*learn_ptr)(bfgs&, VW::example&) = nullptr;
+  void (*predict_ptr)(bfgs&, VW::example&) = nullptr;
   std::string learner_name;
   if (all.audit || all.hash_inv)
   {
@@ -1193,14 +1193,14 @@ base_learner* VW::reductions::bfgs_setup(VW::setup_base_i& stack_builder)
     learner_name = stack_builder.get_setupfn_name(bfgs_setup);
   }
 
-  return make_base(*make_base_learner(
+  return make_bottom_learner(
       std::move(b), learn_ptr, predict_ptr, learner_name, VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
-                        .set_params_per_weight(all.weights.stride())
-                        .set_save_load(save_load)
-                        .set_init_driver(init_driver)
-                        .set_end_pass(end_pass)
-                        .set_output_example_prediction(VW::details::output_example_prediction_simple_label<bfgs>)
-                        .set_update_stats(VW::details::update_stats_simple_label<bfgs>)
-                        .set_print_update(VW::details::print_update_simple_label<bfgs>)
-                        .build());
+      .set_params_per_weight(all.weights.stride())
+      .set_save_load(save_load)
+      .set_init_driver(init_driver)
+      .set_end_pass(end_pass)
+      .set_output_example_prediction(VW::details::output_example_prediction_simple_label<bfgs>)
+      .set_update_stats(VW::details::update_stats_simple_label<bfgs>)
+      .set_print_update(VW::details::print_update_simple_label<bfgs>)
+      .build();
 }

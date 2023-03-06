@@ -6,7 +6,7 @@ learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 cb_type = dr
-Enabled reductions: gd, scorer-identity, csoaa, cb, cb_explore-greedy, cbify
+Enabled learners: gd, scorer-identity, csoaa, cb, cb_explore-greedy, cbify
 Input label = MULTICLASS
 Output pred = MULTICLASS
 average  since         example        example        current        current  current
@@ -20,7 +20,7 @@ loss     last          counter         weight          label        predict feat
 0.265625 0.250000           64           64.0              1              1       54
 0.296875 0.328125          128          128.0              2              2       67
 0.277344 0.257812          256          256.0              1              1       86
-0.255859 0.234375          512          512.0              2              2      104
+0.253906 0.230469          512          512.0              2              2      104
 
 finished run
 number of examples = 1000

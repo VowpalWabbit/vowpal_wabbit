@@ -5,7 +5,8 @@
 #include "vw/core/automl_impl.h"
 
 #include "vw/common/vw_exception.h"
-#include "vw/core/confidence_sequence_robust.h"
+#include "vw/core/estimators/confidence_sequence_robust.h"
+#include "vw/core/multi_model_utils.h"
 
 /*
 This reduction implements the ChaCha algorithm from page 5 of the following paper:
@@ -58,13 +59,13 @@ namespace automl
 {
 // config_manager is a state machine (config_manager_state) 'time' moves forward after a call into one_step()
 // this can also be interpreted as a pre-learn() hook since it gets called by a learn() right before calling
-// into its own base_learner.learn(). see learn_automl(...)
+// into its own learner.learn(). see learn_automl(...)
 template <typename config_oracle_impl, typename estimator_impl>
 interaction_config_manager<config_oracle_impl, estimator_impl>::interaction_config_manager(uint64_t default_lease,
     uint64_t max_live_configs, std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers,
     const std::string& interaction_type, const std::string& oracle_type, dense_parameters& weights,
-    priority_func* calc_priority, double automl_significance_level, VW::io::logger* logger, uint32_t& wpp, bool ccb_on,
-    config_type conf_type, std::string trace_prefix, bool reward_as_cost)
+    priority_func calc_priority, double automl_significance_level, VW::io::logger* logger, uint32_t& wpp, bool ccb_on,
+    config_type conf_type, std::string trace_prefix, bool reward_as_cost, double tol_x, bool is_brentq)
     : default_lease(default_lease)
     , max_live_configs(max_live_configs)
     , priority_challengers(priority_challengers)
@@ -73,9 +74,11 @@ interaction_config_manager<config_oracle_impl, estimator_impl>::interaction_conf
     , logger(logger)
     , wpp(wpp)
     , _ccb_on(ccb_on)
-    , _config_oracle(
-          config_oracle_impl(default_lease, calc_priority, interaction_type, oracle_type, rand_state, conf_type))
+    , _config_oracle(config_oracle_impl(
+          default_lease, std::move(calc_priority), interaction_type, oracle_type, rand_state, conf_type))
     , reward_as_cost(reward_as_cost)
+    , tol_x(tol_x)
+    , is_brentq(is_brentq)
 {
   if (trace_prefix != "")
   {
@@ -84,12 +87,13 @@ interaction_config_manager<config_oracle_impl, estimator_impl>::interaction_conf
     inputlabel_log_file = VW::make_unique<std::ofstream>(trace_prefix + "input_examples.csv");
     *inputlabel_log_file << "example_count, logged_action, logged_probability, weight, reward" << std::endl;
   }
-  insert_starting_configuration(estimators, _config_oracle, automl_significance_level);
+  insert_starting_configuration(estimators, _config_oracle, automl_significance_level, tol_x, is_brentq);
 }
 
 template <typename config_oracle_impl, typename estimator_impl>
 void interaction_config_manager<config_oracle_impl, estimator_impl>::insert_starting_configuration(
-    estimator_vec_t<estimator_impl>& estimators, config_oracle_impl& config_oracle, const double sig_level)
+    estimator_vec_t<estimator_impl>& estimators, config_oracle_impl& config_oracle, const double sig_level,
+    const double tol_x, bool is_brentq)
 {
   assert(config_oracle.index_queue.size() == 0);
   assert(config_oracle.configs.size() == 0);
@@ -100,7 +104,8 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::insert_star
   assert(config_oracle.configs.size() >= 1);
 
   config_oracle.configs[0].state = VW::reductions::automl::config_state::New;
-  estimators.emplace_back(std::make_pair(aml_estimator<estimator_impl>(sig_level), estimator_impl(sig_level)));
+  estimators.emplace_back(std::make_pair(
+      aml_estimator<estimator_impl>(tol_x, is_brentq, sig_level), estimator_impl(tol_x, is_brentq, sig_level)));
 }
 
 template <typename config_oracle_impl, typename estimator_impl>
@@ -176,7 +181,8 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::schedule()
       assert(live_slot < max_live_configs);
       // fetch config from the queue, and apply it current live slot
       apply_config_at_slot(estimators, _config_oracle.configs, live_slot,
-          config_oracle_impl::choose(_config_oracle.index_queue), automl_significance_level, priority_challengers);
+          config_oracle_impl::choose(_config_oracle.index_queue), automl_significance_level, tol_x, is_brentq,
+          priority_challengers);
       if (champ_log_file)
       {
         *champ_log_file << "APPLY_CONFIG," << total_learn_count << "," << live_slot << ","
@@ -187,7 +193,7 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::schedule()
       }
 
       // copy the weights of the champ to the new slot
-      weights.move_offsets(current_champ, live_slot, wpp);
+      VW::reductions::multi_model::move_innermost_offsets(weights, current_champ, live_slot, wpp, max_live_configs);
       // Regenerate interactions each time an exclusion is swapped in
       ns_based_config::apply_config_to_interactions(_ccb_on, ns_counter, _config_oracle._interaction_type,
           _config_oracle.configs[estimators[live_slot].first.config_index],
@@ -199,12 +205,14 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::schedule()
 template <typename config_oracle_impl, typename estimator_impl>
 void interaction_config_manager<config_oracle_impl, estimator_impl>::apply_config_at_slot(
     estimator_vec_t<estimator_impl>& estimators, std::vector<ns_based_config>& configs, const uint64_t live_slot,
-    const uint64_t config_index, const double sig_level, const uint64_t priority_challengers)
+    const uint64_t config_index, const double sig_level, const double tol_x, bool is_brentq,
+    const uint64_t priority_challengers)
 {
   // Allocate new estimator if we haven't reached maximum yet
   if (estimators.size() <= live_slot)
   {
-    estimators.emplace_back(std::make_pair(aml_estimator<estimator_impl>(sig_level), estimator_impl(sig_level)));
+    estimators.emplace_back(std::make_pair(
+        aml_estimator<estimator_impl>(tol_x, is_brentq, sig_level), estimator_impl(tol_x, is_brentq, sig_level)));
     if (live_slot > priority_challengers) { estimators.back().first.eligible_to_inactivate = true; }
   }
   assert(estimators.size() > live_slot);
@@ -258,9 +266,14 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::check_for_n
      * w3 w0 w2 w0 w4 // w0 are the old champ's weights and place in slot 1, other weights are irrelevant
      */
 
-    // this is a swap, see last bool argument in move_offsets
-    weights.move_offsets(winning_challenger_slot, old_champ_slot, wpp, true);
-    if (winning_challenger_slot != 1) { weights.move_offsets(winning_challenger_slot, 1, wpp, false); }
+    // this is a swap, see last bool argument in move_innermost_offsets
+    VW::reductions::multi_model::move_innermost_offsets(
+        weights, winning_challenger_slot, old_champ_slot, wpp, max_live_configs, true);
+    if (winning_challenger_slot != 1)
+    {
+      VW::reductions::multi_model::move_innermost_offsets(
+          weights, winning_challenger_slot, 1, wpp, max_live_configs, false);
+    }
 
     apply_new_champ(_config_oracle, winning_challenger_slot, estimators, priority_challengers, ns_counter);
     if (champ_log_file)
@@ -317,21 +330,15 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::apply_new_c
 
 template <typename config_oracle_impl, typename estimator_impl>
 void interaction_config_manager<config_oracle_impl, estimator_impl>::do_learning(
-    LEARNER::multi_learner& base, multi_ex& ec, uint64_t live_slot)
+    LEARNER::learner& base, multi_ex& ec, uint64_t live_slot)
 {
   assert(live_slot < max_live_configs);
   // TODO: what to do if that slot is switched with a new config?
-  std::swap(*_gd_normalized, per_live_model_state_double[live_slot * 3]);
-  std::swap(*_gd_total_weight, per_live_model_state_double[live_slot * 3 + 1]);
-  std::swap(*_sd_gravity, per_live_model_state_double[live_slot * 3 + 2]);
   std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[live_slot * 2]);
   std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[live_slot * 2 + 1]);
   for (example* ex : ec) { apply_config(ex, &estimators[live_slot].first.live_interactions); }
   if (!base.learn_returns_prediction) { base.predict(ec, live_slot); }
   base.learn(ec, live_slot);
-  std::swap(*_gd_normalized, per_live_model_state_double[live_slot * 3]);
-  std::swap(*_gd_total_weight, per_live_model_state_double[live_slot * 3 + 1]);
-  std::swap(*_sd_gravity, per_live_model_state_double[live_slot * 3 + 2]);
   std::swap(*_cb_adf_event_sum, per_live_model_state_uint64[live_slot * 2]);
   std::swap(*_cb_adf_action_sum, per_live_model_state_uint64[live_slot * 2 + 1]);
 }
@@ -367,8 +374,7 @@ template class interaction_config_manager<config_oracle<one_diff_inclusion_impl>
 template class interaction_config_manager<config_oracle<qbase_cubic>, VW::estimators::confidence_sequence_robust>;
 
 template <typename CMType>
-void automl<CMType>::one_step(
-    LEARNER::multi_learner& base, multi_ex& ec, VW::cb_class& logged, uint64_t labelled_action)
+void automl<CMType>::one_step(LEARNER::learner& base, multi_ex& ec, VW::cb_class& logged, uint64_t labelled_action)
 {
   cm->total_learn_count++;
   cm->process_example(ec);
@@ -378,8 +384,7 @@ void automl<CMType>::one_step(
 }
 
 template <typename CMType>
-void automl<CMType>::offset_learn(
-    LEARNER::multi_learner& base, multi_ex& ec, VW::cb_class& logged, uint64_t labelled_action)
+void automl<CMType>::offset_learn(LEARNER::learner& base, multi_ex& ec, VW::cb_class& logged, uint64_t labelled_action)
 {
   interaction_vec_t* incoming_interactions = ec[0]->interactions;
   for (VW::example* ex : ec)
