@@ -127,10 +127,10 @@ TEST(IGL, ModelWeightsEqualToSeparateModelWeights) {
 
   // two vw instance
   auto sl_vw = VW::initialize(vwtest::make_args("--link=logistic", "--loss_function=logistic", "--coin", "--cubic", "cav", "--noconstant", "--quiet"));
-  auto multi_vw = VW::initialize(vwtest::make_args("--cb_explore_adf", "--coin", "--noconstant", "--dsjson", "-q", "ca")); // --quiet
+  auto multi_vw = VW::initialize(vwtest::make_args("--cb_explore_adf", "--coin", "--noconstant", "--dsjson", "-q", "ca", "--quiet"));
 
   // IGL instance
-  auto igl_vw = VW::initialize(vwtest::make_args("--cb_explore_adf", "--coin", "--experimental_igl", "--noconstant", "--dsjson", "-b", "19", "-q", "ca")); //, "--quiet"
+  auto igl_vw = VW::initialize(vwtest::make_args("--cb_explore_adf", "--coin", "--experimental_igl", "--noconstant", "--dsjson", "-b", "19", "-q", "ca", "--quiet"));
 
   // train separately
   for (size_t i = 0; i < sl_vector.size(); i++) {
@@ -176,4 +176,27 @@ TEST(IGL, ModelWeightsEqualToSeparateModelWeights) {
 
   EXPECT_GT(multi_weights.size(), 0);
   EXPECT_EQ(multi_weights, igl_weights[1]);
+}
+
+TEST(IGL, VerifyRewardModelWeightsWithLabelAndWeight) {
+  std::string sl_ex_str = "1 0.25 |User user=Anna time_of_day=afternoon |Action action=politics |v v=none";
+  auto sl_vw = VW::initialize(vwtest::make_args("--link=logistic", "--loss_function=logistic", "--coin", "--cubic", "UAv", "--noconstant", "--quiet"));
+
+  VW::example* sl_ex = VW::read_example(*sl_vw, sl_ex_str);
+  sl_vw->learn(*sl_ex);
+  sl_vw->finish_example(*sl_ex);
+
+  std::string igl_ex_str = R"({"_label_cost": 0, "_label_probability": 1.0, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v=none": 1}, "_definitely_bad": false}], "a": [0], "c": {"User": {"user=Anna": 1, "time_of_day=afternoon": 1}, "_multi": [{"Action": {"action=politics": 1}}]}, "p": [1.0]})";
+  auto igl_vw = VW::initialize(vwtest::make_args("--cb_explore_adf", "--coin", "--experimental_igl", "--noconstant", "--dsjson", "-b", "19", "-q", "UA", "--quiet"));
+
+  auto igl_ex = vwtest::parse_dsjson(*igl_vw, igl_ex_str);
+  VW::setup_examples(*igl_vw, igl_ex);
+  igl_vw->learn(igl_ex);
+  igl_vw->finish_example(igl_ex);
+
+  separate_weights_vector sl_weights = get_separate_weights(std::move(sl_vw));
+  std::vector<separate_weights_vector> igl_weights = split_weights(std::move(igl_vw));
+
+  EXPECT_GT(sl_weights.size(), 0);
+  EXPECT_EQ(sl_weights, igl_weights[0]);
 }

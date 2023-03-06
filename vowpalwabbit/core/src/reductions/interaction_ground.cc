@@ -199,8 +199,7 @@ void predict(interaction_ground& igl, learner& base, VW::multi_ex& ec_seq)
 {
   VW::example* observation_ex = nullptr;
 
-  // TODO: check is_observation
-  if (ec_seq.size() > 0) {
+  if (ec_seq.size() > 0 && ec_seq.back()->l.cb_with_observations.is_observation) {
     observation_ex = ec_seq.back();
     ec_seq.pop_back();
   }
@@ -235,7 +234,7 @@ void print_update_igl(VW::workspace& all, VW::shared_data& sd, const interaction
 {
   if (ec_seq.empty()) { return; }
   const auto& ec = **(ec_seq.begin());
-  if (example_is_newline_not_header_cb(ec)) { return; }
+  if (VW::example_is_newline(ec) && !VW::ec_is_example_header_cb_with_observations(ec)) { return; }
 
   bool labeled_example = true;
   if (data.known_cost.probability <= 0) { labeled_example = false; }
@@ -308,7 +307,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::interaction_ground_setup(V
   size_t feature_width = 2;  // One for reward and one for loss
   auto ld = VW::make_unique<interaction_ground>();
 
-  if (!pi_options.was_supplied("cb_explore_adf") && !pi_options.was_supplied("cb_adf")) {
+  if (!pi_options.was_supplied("cb_explore_adf")) {
     pi_options.insert("cb_explore_adf", "");
   }
 
@@ -349,7 +348,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::interaction_ground_setup(V
     pred_type = prediction_type_t::ACTION_PROBS;
   }
   else {
-    THROW("--classweight not implemented for this type of prediction");
+    THROW("--experimental_igl not implemented for this type of prediction");
   }
 
   auto l = make_reduction_learner(

@@ -246,7 +246,7 @@ namespace
 {
 float weight_cb_eval(const VW::cb_eval_label& ld) { return ld.event.weight; }
 
-float weight_cb_with_observations(const VW::cb_eval_label& ld) { return ld.event.weight; }
+float weight_cb_with_observations(const VW::cb_with_observations_label& ld) { return ld.event.weight; }
 
 void default_label_cb_eval(VW::cb_eval_label& ld)
 {
@@ -319,7 +319,9 @@ VW::label_parser VW::cb_with_observations_global = {
   [](VW::polylabel& label, VW::reduction_features& /*red_features*/, io_buf& cache)
   { return VW::model_utils::read_model_field(cache, label.cb); }, // TODO: implement this for cb_with_observations
   // get_weight
-  [](const VW::polylabel& /*label*/, const VW::reduction_features& /*red_features*/) { return 1.f; },
+  [](const VW::polylabel& label, const VW::reduction_features& /*red_features*/) {
+    return weight_cb_with_observations(label.cb_with_observations);
+  },
   // test_label
   [](const VW::polylabel& label) { return test_label_cb_with_observations(label.cb_with_observations); },
   // Label type
