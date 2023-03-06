@@ -1246,7 +1246,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::memory_tree_setup(VW::setu
                          << "online =" << tree->online << " " << std::endl;
   }
 
-  size_t num_learners;
+  size_t num_interleaves;
   VW::prediction_type_t pred_type;
   VW::label_type_t label_type;
   bool oas = tree->oas;
@@ -1254,22 +1254,22 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::memory_tree_setup(VW::setu
   // multi-class classification
   if (!oas)
   {
-    num_learners = tree->max_nodes + 1;
+    num_interleaves = tree->max_nodes + 1;
     all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
     pred_type = VW::prediction_type_t::MULTICLASS;
     label_type = VW::label_type_t::MULTICLASS;
   }  // multi-label classification
   else
   {
-    num_learners = tree->max_nodes + 1 + tree->max_num_labels;
+    num_interleaves = tree->max_nodes + 1 + tree->max_num_labels;
     all.example_parser->lbl_parser = VW::multilabel_label_parser_global;
     pred_type = VW::prediction_type_t::MULTILABELS;
     label_type = VW::label_type_t::MULTILABEL;
   }
 
-  auto l = make_reduction_learner(std::move(tree), require_singleline(stack_builder.setup_base_learner(num_learners)),
+  auto l = make_reduction_learner(std::move(tree), require_singleline(stack_builder.setup_base_learner(num_interleaves)),
       learn, predict, stack_builder.get_setupfn_name(memory_tree_setup))
-               .set_params_per_weight(num_learners)
+               .set_num_interleaves(num_interleaves)
                .set_end_pass(end_pass)
                .set_save_load(save_load_memory_tree)
                .set_input_label_type(label_type)

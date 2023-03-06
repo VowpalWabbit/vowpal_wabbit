@@ -452,7 +452,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::plt_setup(VW::setup_base_i
 
   tree->model_file_version = all.model_file_ver;
 
-  size_t ws = tree->t;
+  size_t num_interleaves = tree->t;
   std::string name_addition = "";
   VW::prediction_type_t pred_type;
   void (*pred_ptr)(plt&, learner&, VW::example&);
@@ -471,9 +471,9 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::plt_setup(VW::setup_base_i
   }
   else { pred_type = VW::prediction_type_t::MULTILABELS; }
 
-  auto l = make_reduction_learner(std::move(tree), require_singleline(stack_builder.setup_base_learner(ws)), learn,
+  auto l = make_reduction_learner(std::move(tree), require_singleline(stack_builder.setup_base_learner(num_interleaves)), learn,
       pred_ptr, stack_builder.get_setupfn_name(plt_setup) + name_addition)
-               .set_params_per_weight(ws)
+               .set_num_interleaves(num_interleaves)
                .set_learn_returns_prediction(false)
                .set_input_label_type(VW::label_type_t::MULTILABEL)
                .set_output_label_type(VW::label_type_t::SIMPLE)

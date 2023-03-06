@@ -420,7 +420,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_adf_setup(VW::setup_bas
   }
 
   // number of weight vectors needed
-  size_t problem_multiplier = 1;  // default for IPS
+  size_t num_interleaves = 1;  // default for IPS
   bool check_baseline_enabled = false;
 
   try
@@ -436,7 +436,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_adf_setup(VW::setup_bas
 
   if (cb_type == VW::cb_type_t::DR)
   {
-    problem_multiplier = 2;
+    num_interleaves = 2;
     // only use baseline when manually enabled for loss estimation
     check_baseline_enabled = true;
   }
@@ -459,7 +459,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_adf_setup(VW::setup_bas
 
   auto ld = VW::make_unique<VW::reductions::cb_adf>(cb_type, rank_all, clip_p, no_predict, &all);
 
-  auto base = require_multiline(stack_builder.setup_base_learner(problem_multiplier));
+  auto base = require_multiline(stack_builder.setup_base_learner(num_interleaves));
   all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   VW::reductions::cb_adf* bare = ld.get();
@@ -470,7 +470,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_adf_setup(VW::setup_bas
                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                .set_learn_returns_prediction(lrp)
-               .set_params_per_weight(problem_multiplier)
+               .set_num_interleaves(num_interleaves)
                .set_save_load(::save_load)
                .set_merge(::cb_adf_merge)
                .set_add(::cb_adf_add)

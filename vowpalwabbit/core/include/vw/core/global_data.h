@@ -187,7 +187,7 @@ public:
 
   void* /*Search::search*/ searchstr;
 
-  uint32_t wpp;
+  uint32_t total_interleaves;
 
   std::unique_ptr<VW::io::writer> stdout_adapter;
 

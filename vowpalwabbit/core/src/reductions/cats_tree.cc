@@ -362,11 +362,11 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cats_tree_setup(VW::setup_
   tree->init(num_actions, bandwidth);
   tree->set_trace_message(all.trace_message, all.quiet);
 
-  int32_t params_per_weight = tree->learner_count();
-  auto base = stack_builder.setup_base_learner(params_per_weight);
+  int32_t num_interleaves = tree->learner_count();
+  auto base = stack_builder.setup_base_learner(num_interleaves);
   auto l = make_reduction_learner(
       std::move(tree), require_singleline(base), learn, predict, stack_builder.get_setupfn_name(cats_tree_setup))
-               .set_params_per_weight(params_per_weight)
+               .set_num_interleaves(num_interleaves)
                .set_input_label_type(VW::label_type_t::CB)
                .set_output_label_type(VW::label_type_t::SIMPLE)
                .set_input_prediction_type(VW::prediction_type_t::SCALAR)

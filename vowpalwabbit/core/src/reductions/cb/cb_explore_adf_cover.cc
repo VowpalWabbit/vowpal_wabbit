@@ -299,12 +299,12 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_cover_setup
   }
 
   // Set explore_type
-  size_t problem_multiplier = cover_size + 1;
+  size_t num_interleaves = cover_size + 1;
 
   // Cover is using doubly robust without the cooperation of the base reduction
-  if (cb_type == VW::cb_type_t::MTR) { problem_multiplier *= 2; }
+  if (cb_type == VW::cb_type_t::MTR) { num_interleaves *= 2; }
 
-  auto base = VW::LEARNER::require_multiline(stack_builder.setup_base_learner(problem_multiplier));
+  auto base = VW::LEARNER::require_multiline(stack_builder.setup_base_learner(num_interleaves));
   all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   bool epsilon_decay;
@@ -333,7 +333,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_cover_setup
                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                .set_learn_returns_prediction(true)
-               .set_params_per_weight(problem_multiplier)
+               .set_num_interleaves(num_interleaves)
                .set_output_example_prediction(explore_type::output_example_prediction)
                .set_update_stats(explore_type::update_stats)
                .set_print_update(explore_type::print_update)

@@ -369,7 +369,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cbzo_setup(VW::setup_base_
 
   auto l = make_bottom_learner(std::move(data), get_learn(all, policy, feature_mask_off), get_predict(all, policy),
       stack_builder.get_setupfn_name(cbzo_setup), prediction_type_t::PDF, label_type_t::CONTINUOUS)
-               .set_params_per_weight(0)
+               .set_bottom_interleaves(0)
                .set_save_load(save_load)
                .set_output_example_prediction(output_example_prediction_cbzo)
                .set_print_update(print_update_cbzo)

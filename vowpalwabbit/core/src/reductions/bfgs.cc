@@ -1195,7 +1195,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::bfgs_setup(VW::setup_base_
 
   return make_bottom_learner(
       std::move(b), learn_ptr, predict_ptr, learner_name, VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
-      .set_params_per_weight(all.weights.stride())
+      .set_bottom_interleaves(all.weights.stride())
       .set_save_load(save_load)
       .set_init_driver(init_driver)
       .set_end_pass(end_pass)

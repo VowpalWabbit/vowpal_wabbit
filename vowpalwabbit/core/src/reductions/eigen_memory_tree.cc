@@ -427,7 +427,7 @@ void scorer_example(emt_tree& b, const emt_example& ex1, const emt_example& ex2)
   // a model weight w[i] then we may also store information about our confidence in
   // w[i] at w[i+1] and information about the scale of feature f[i] at w[i+2] and so on.
   // This variable indicates how many such meta-data places we need to save in between actual weights.
-  uint64_t floats_per_feature_index = static_cast<uint64_t>(b.all->wpp) << b.all->weights.stride_shift();
+  uint64_t floats_per_feature_index = static_cast<uint64_t>(b.all->total_interleaves) << b.all->weights.stride_shift();
 
   // In both of the example_types above we construct our scorer_example from flat_examples. The VW routine
   // which creates flat_examples removes the floats_per_feature_index from the when flattening. Therefore,

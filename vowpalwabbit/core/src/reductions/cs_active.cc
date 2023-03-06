@@ -459,10 +459,10 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cs_active_setup(VW::setup_
     name_addition = "";
   }
 
-  size_t ws = data->num_classes;
-  auto l = make_reduction_learner(std::move(data), require_singleline(stack_builder.setup_base_learner(ws)), learn_ptr,
+  size_t num_interleaves = data->num_classes;
+  auto l = make_reduction_learner(std::move(data), require_singleline(stack_builder.setup_base_learner(num_interleaves)), learn_ptr,
       predict_ptr, stack_builder.get_setupfn_name(cs_active_setup) + name_addition)
-               .set_params_per_weight(ws)
+               .set_num_interleaves(num_interleaves)
                .set_learn_returns_prediction(true)
                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
                .set_output_prediction_type(VW::prediction_type_t::ACTIVE_MULTICLASS)

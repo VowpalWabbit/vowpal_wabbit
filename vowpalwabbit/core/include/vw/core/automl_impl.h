@@ -211,7 +211,7 @@ public:
   dense_parameters& weights;
   double automl_significance_level;
   VW::io::logger* logger;
-  uint32_t& wpp;
+  uint32_t& num_interleaves;
   const bool _ccb_on;
   config_oracle_impl _config_oracle;
   bool reward_as_cost;
@@ -236,7 +236,7 @@ public:
   interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs,
       std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers, const std::string& interaction_type,
       const std::string& oracle_type, dense_parameters& weights, priority_func calc_priority,
-      double automl_significance_level, VW::io::logger* logger, uint32_t& wpp, bool ccb_on, config_type conf_type,
+      double automl_significance_level, VW::io::logger* logger, uint32_t& num_interleaves, bool ccb_on, config_type conf_type,
       std::string trace_prefix, bool reward_as_cost, double tol_x, bool is_brentq);
 
   void do_learning(VW::LEARNER::learner& base, multi_ex& ec, uint64_t live_slot);
@@ -262,7 +262,7 @@ private:
 bool count_namespaces(const multi_ex& ecs, std::map<namespace_index, uint64_t>& ns_counter);
 void apply_config(example* ec, interaction_vec_t* live_interactions);
 bool is_allowed_to_remove(const namespace_index ns);
-void clear_non_champ_weights(dense_parameters& weights, uint32_t total, uint32_t& wpp);
+void clear_non_champ_weights(dense_parameters& weights, uint32_t total, uint32_t& num_interleaves);
 bool worse();
 
 // all possible states of automl

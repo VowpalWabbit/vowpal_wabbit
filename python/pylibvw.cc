@@ -840,7 +840,7 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
     }
   }
 
-  uint32_t multiplier = all.wpp << all.weights.stride_shift();
+  uint32_t multiplier = all.total_interleaves << all.weights.stride_shift();
   if (multiplier != 1)  // make room for per-feature information.
     for (auto ns : ae->indices)
       for (auto& idx : ae->feature_space[ns].indices) idx /= multiplier;
@@ -1656,7 +1656,7 @@ BOOST_PYTHON_MODULE(pylibvw)
 
   py::class_<Search::search, search_ptr>("search")
       .def("set_options", &Search::search::set_options, "Set global search options (auto conditioning, etc.)")
-      //.def("set_num_learners", &Search::search::set_num_learners, "Set the total number of learners you want to
+      //.def("set_num_interleaves", &Search::search::set_num_interleaves, "Set the total number of learners you want to
       // train")
       .def("get_history_length", &Search::search::get_history_length,
           "Get the value specified by --search_history_length")

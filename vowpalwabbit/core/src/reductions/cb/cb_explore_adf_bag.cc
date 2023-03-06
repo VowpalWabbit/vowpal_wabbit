@@ -193,8 +193,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_bag_setup(V
   // predict before training is called.
   if (!options.was_supplied("no_predict")) { options.insert("no_predict", ""); }
 
-  size_t problem_multiplier = VW::cast_to_smaller_type<size_t>(bag_size);
-  auto base = require_multiline(stack_builder.setup_base_learner(problem_multiplier));
+  size_t num_interleaves = VW::cast_to_smaller_type<size_t>(bag_size);
+  auto base = require_multiline(stack_builder.setup_base_learner(num_interleaves));
   all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_bag>;
@@ -206,7 +206,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_bag_setup(V
                .set_output_label_type(VW::label_type_t::CB)
                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
-               .set_params_per_weight(problem_multiplier)
+               .set_num_interleaves(num_interleaves)
                .set_output_example_prediction(::output_example_prediction_bag)
                .set_update_stats(::update_stats_bag)
                .set_print_update(::print_update_bag)

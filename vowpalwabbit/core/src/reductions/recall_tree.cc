@@ -547,10 +547,10 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::recall_tree_setup(VW::setu
                          << std::endl;
   }
 
-  size_t ws = tree->max_routers + tree->k;
-  auto l = make_reduction_learner(std::move(tree), require_singleline(stack_builder.setup_base_learner(ws)), learn,
+  size_t num_interleaves = tree->max_routers + tree->k;
+  auto l = make_reduction_learner(std::move(tree), require_singleline(stack_builder.setup_base_learner(num_interleaves)), learn,
       predict, stack_builder.get_setupfn_name(recall_tree_setup))
-               .set_params_per_weight(ws)
+               .set_num_interleaves(num_interleaves)
                .set_update_stats(VW::details::update_stats_multiclass_label<recall_tree>)
                .set_output_example_prediction(VW::details::output_example_prediction_multiclass_label<recall_tree>)
                .set_print_update(VW::details::print_update_multiclass_label<recall_tree>)

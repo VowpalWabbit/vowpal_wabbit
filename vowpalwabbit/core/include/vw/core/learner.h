@@ -96,8 +96,8 @@ using add_subtract_with_all_func = std::function<void(const VW::workspace& ws1, 
 
 void debug_increment_depth(polymorphic_ex ex);
 void debug_decrement_depth(polymorphic_ex ex);
-void increment_offset(polymorphic_ex ex, const size_t increment, const size_t i);
-void decrement_offset(polymorphic_ex ex, const size_t increment, const size_t i);
+void increment_offset(polymorphic_ex ex, const size_t interleave_product_below, const size_t i);
+void decrement_offset(polymorphic_ex ex, const size_t interleave_product_below, const size_t i);
 
 void learner_build_diagnostic(VW::string_view this_name, VW::string_view base_name, prediction_type_t in_pred_type,
     prediction_type_t base_out_pred_type, label_type_t out_label_type, label_type_t base_in_label_type,
@@ -134,8 +134,8 @@ private:
   void debug_log_message(polymorphic_ex ex, const std::string& msg);
 
 public:
-  size_t weights;  // this stores the number of "weight vectors" required by the learner.
-  size_t increment;
+  size_t num_interleaves;  // This stores the number of "weight vectors" required by the learner.
+  size_t interleave_product_below;  // This stores the incremental product of interleaves for this learner and below in the stack
 
   // If true, learn will return a prediction. The framework should
   // not call predict before learn
@@ -147,8 +147,8 @@ public:
   /// \param ec The ::example object or ::multi_ex to be operated on. This
   /// object **must** have a valid label set for every ::example in the field
   /// example::l that corresponds to the type this learner expects.
-  /// \param i This is the offset used for the weights in this call. If using
-  /// multiple regressors/learners you can increment this value for each call.
+  /// \param i This is the offset used for the num_interleaves in this call. If using
+  /// multiple regressors/learners you can interleave_product_below this value for each call.
   /// \returns While some learner may fill the example::pred, this is not
   /// guaranteed and is undefined behavior if accessed.
   void learn(polymorphic_ex ec, size_t i = 0);
@@ -157,8 +157,8 @@ public:
   /// \param ec The ::example object or ::multi_ex to be operated on. This
   /// object **must** have a valid prediction allocated in the field
   /// example::pred that corresponds to this learner type.
-  /// \param i This is the offset used for the weights in this call. If using
-  /// multiple regressors/learners you can increment this value for each call.
+  /// \param i This is the offset used for the num_interleaves in this call. If using
+  /// multiple regressors/learners you can interleave_product_below this value for each call.
   /// \returns The prediction calculated by this learner be set on
   /// example::pred. If the polymorphic_ex is ::multi_ex then the prediction is
   /// set on the 0th item in the list.
@@ -540,7 +540,7 @@ public:
     // Default sensitivity calls the base learner's sensitivity recursively
     this->set_sensitivity(details::recur_sensitivity<DataT>);
 
-    set_params_per_weight(1);
+    set_num_interleaves(1);
     this->set_learn_returns_prediction(false);
 
     // By default, will produce what the base learner expects
@@ -589,9 +589,9 @@ public:
     this->learner_ptr->_sensitivity_f = [fn_ptr, data, base](example& ex) { return fn_ptr(*data, *base, ex); };
   )
 
-  LEARNER_BUILDER_DEFINE(set_params_per_weight(size_t params_per_weight),
-    this->learner_ptr->weights = params_per_weight;
-    this->learner_ptr->increment = this->learner_ptr->_base_learner->increment * this->learner_ptr->weights;
+  LEARNER_BUILDER_DEFINE(set_num_interleaves(size_t num_interleaves),
+    this->learner_ptr->num_interleaves = num_interleaves;
+    this->learner_ptr->interleave_product_below = this->learner_ptr->_base_learner->interleave_product_below * this->learner_ptr->num_interleaves;
   )
 
   LEARNER_BUILDER_DEFINE(set_merge(void (*fn_ptr)(const std::vector<float>&, const std::vector<const DataT*>&, DataT&)),
@@ -651,7 +651,7 @@ public:
     // Default sensitivity calls base learner's sensitivity recursively
     this->set_sensitivity(details::recur_sensitivity);
 
-    set_params_per_weight(1);
+    set_num_interleaves(1);
     // By default, will produce what the base learner expects
     super::set_input_label_type(base->get_input_label_type());
     super::set_output_label_type(base->get_input_label_type());
@@ -693,9 +693,9 @@ public:
     this->learner_ptr->_sensitivity_f = [fn_ptr, base](example& ex) { return fn_ptr(*base, ex); };
   )
 
-  LEARNER_BUILDER_DEFINE(set_params_per_weight(size_t params_per_weight),
-    this->learner_ptr->weights = params_per_weight;
-    this->learner_ptr->increment = this->learner_ptr->_base_learner->increment * this->learner_ptr->weights;
+  LEARNER_BUILDER_DEFINE(set_num_interleaves(size_t num_interleaves),
+    this->learner_ptr->num_interleaves = num_interleaves;
+    this->learner_ptr->interleave_product_below = this->learner_ptr->_base_learner->interleave_product_below * this->learner_ptr->num_interleaves;
   )
   // clang-format on
 
@@ -721,7 +721,7 @@ public:
     super::set_input_prediction_type(prediction_type_t::NOPRED);
     super::set_output_prediction_type(out_pred_type);
 
-    set_params_per_weight(1);
+    set_bottom_interleaves(1);
   }
 
   // clang-format off
@@ -760,9 +760,9 @@ public:
     this->learner_ptr->_sensitivity_f = [fn_ptr, data](example& ex) { return fn_ptr(*data, ex); };
   )
 
-  LEARNER_BUILDER_DEFINE(set_params_per_weight(size_t params_per_weight),
-    this->learner_ptr->weights = 1;
-    this->learner_ptr->increment = params_per_weight;
+  LEARNER_BUILDER_DEFINE(set_bottom_interleaves(size_t num_interleaves),
+    this->learner_ptr->num_interleaves = 1;
+    this->learner_ptr->interleave_product_below = num_interleaves;
   )
 
   LEARNER_BUILDER_DEFINE(set_merge_with_all(void (*fn_ptr)(const std::vector<float>&,

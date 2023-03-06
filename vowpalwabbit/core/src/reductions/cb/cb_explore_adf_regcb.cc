@@ -297,9 +297,9 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_regcb_setup
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
 
   // Set explore_type
-  size_t problem_multiplier = 1;
+  size_t num_interleaves = 1;
 
-  auto base = require_multiline(stack_builder.setup_base_learner(problem_multiplier));
+  auto base = require_multiline(stack_builder.setup_base_learner(num_interleaves));
   all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_regcb>;
@@ -311,7 +311,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_regcb_setup
                .set_output_label_type(VW::label_type_t::CB)
                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
-               .set_params_per_weight(problem_multiplier)
+               .set_num_interleaves(num_interleaves)
                .set_output_example_prediction(explore_type::output_example_prediction)
                .set_update_stats(explore_type::update_stats)
                .set_print_update(explore_type::print_update)

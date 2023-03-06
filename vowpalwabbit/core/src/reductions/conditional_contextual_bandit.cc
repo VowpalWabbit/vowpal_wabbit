@@ -249,7 +249,7 @@ void inject_slot_id(ccb_data& data, VW::example* shared, size_t id)
     index = VW::hash_feature(*data.all, current_index_str, data.id_namespace_hash);
 
     // To maintain indices consistent with what the parser does we must scale.
-    index *= static_cast<uint64_t>(data.all->wpp) << data.base_learner_stride_shift;
+    index *= static_cast<uint64_t>(data.all->total_interleaves) << data.base_learner_stride_shift;
     data.slot_id_hashes[id] = index;
   }
   else { index = data.slot_id_hashes[id]; }
