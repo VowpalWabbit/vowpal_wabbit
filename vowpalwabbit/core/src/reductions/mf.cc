@@ -208,11 +208,12 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::mf_setup(VW::setup_base_i&
 
   size_t num_interleaves = 2 * data->rank + 1;
 
-  auto l = make_reduction_learner(std::move(data), require_singleline(stack_builder.setup_base_learner(num_interleaves)), learn,
-      predict<false>, stack_builder.get_setupfn_name(mf_setup))
-               .set_num_interleaves(num_interleaves)
-               .set_output_prediction_type(VW::prediction_type_t::SCALAR)
-               .build();
+  auto l =
+      make_reduction_learner(std::move(data), require_singleline(stack_builder.setup_base_learner(num_interleaves)),
+          learn, predict<false>, stack_builder.get_setupfn_name(mf_setup))
+          .set_num_interleaves(num_interleaves)
+          .set_output_prediction_type(VW::prediction_type_t::SCALAR)
+          .build();
 
   return l;
 }

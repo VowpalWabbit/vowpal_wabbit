@@ -236,8 +236,8 @@ public:
   interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs,
       std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers, const std::string& interaction_type,
       const std::string& oracle_type, dense_parameters& weights, priority_func calc_priority,
-      double automl_significance_level, VW::io::logger* logger, uint32_t& num_interleaves, bool ccb_on, config_type conf_type,
-      std::string trace_prefix, bool reward_as_cost, double tol_x, bool is_brentq);
+      double automl_significance_level, VW::io::logger* logger, uint32_t& num_interleaves, bool ccb_on,
+      config_type conf_type, std::string trace_prefix, bool reward_as_cost, double tol_x, bool is_brentq);
 
   void do_learning(VW::LEARNER::learner& base, multi_ex& ec, uint64_t live_slot);
   void persist(metric_sink& metrics, bool verbose);

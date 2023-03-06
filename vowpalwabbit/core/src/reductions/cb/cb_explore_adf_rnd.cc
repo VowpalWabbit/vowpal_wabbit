@@ -41,8 +41,8 @@ namespace
 class cb_explore_adf_rnd
 {
 public:
-  cb_explore_adf_rnd(
-      float _epsilon, float _alpha, float _invlambda, uint32_t _numrnd, size_t _interleave_product_below, VW::workspace* _all)
+  cb_explore_adf_rnd(float _epsilon, float _alpha, float _invlambda, uint32_t _numrnd, size_t _interleave_product_below,
+      VW::workspace* _all)
       : _epsilon(_epsilon)
       , _alpha(_alpha)
       , _sqrtinvlambda(std::sqrt(_invlambda))

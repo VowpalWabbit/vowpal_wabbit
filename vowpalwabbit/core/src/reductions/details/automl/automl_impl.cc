@@ -64,8 +64,8 @@ template <typename config_oracle_impl, typename estimator_impl>
 interaction_config_manager<config_oracle_impl, estimator_impl>::interaction_config_manager(uint64_t default_lease,
     uint64_t max_live_configs, std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers,
     const std::string& interaction_type, const std::string& oracle_type, dense_parameters& weights,
-    priority_func calc_priority, double automl_significance_level, VW::io::logger* logger, uint32_t& num_interleaves, bool ccb_on,
-    config_type conf_type, std::string trace_prefix, bool reward_as_cost, double tol_x, bool is_brentq)
+    priority_func calc_priority, double automl_significance_level, VW::io::logger* logger, uint32_t& num_interleaves,
+    bool ccb_on, config_type conf_type, std::string trace_prefix, bool reward_as_cost, double tol_x, bool is_brentq)
     : default_lease(default_lease)
     , max_live_configs(max_live_configs)
     , priority_challengers(priority_challengers)
@@ -193,7 +193,8 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::schedule()
       }
 
       // copy the weights of the champ to the new slot
-      VW::reductions::multi_model::move_innermost_offsets(weights, current_champ, live_slot, num_interleaves, max_live_configs);
+      VW::reductions::multi_model::move_innermost_offsets(
+          weights, current_champ, live_slot, num_interleaves, max_live_configs);
       // Regenerate interactions each time an exclusion is swapped in
       ns_based_config::apply_config_to_interactions(_ccb_on, ns_counter, _config_oracle._interaction_type,
           _config_oracle.configs[estimators[live_slot].first.config_index],

@@ -310,8 +310,8 @@ void pre_save_load_epsilon_decay(VW::workspace& all, VW::reductions::epsilon_dec
   std::swap(*data._cb_adf_action_sum, data.per_live_model_state_uint64[1]);
 
   // Adjust champ weights to new single-model space
-  VW::reductions::multi_model::reduce_innermost_model_weights(
-      data._weights, data._weight_indices[data.conf_seq_estimators.size() - 1], data._num_interleaves, data._model_count);
+  VW::reductions::multi_model::reduce_innermost_model_weights(data._weights,
+      data._weight_indices[data.conf_seq_estimators.size() - 1], data._num_interleaves, data._model_count);
 
   for (auto& group : options.get_all_option_group_definitions())
   {
@@ -430,8 +430,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::epsilon_decay_setup(VW::se
 
   auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(model_count, min_scope,
       epsilon_decay_significance_level, epsilon_decay_estimator_decay, all.weights.dense_weights,
-      epsilon_decay_audit_str, constant_epsilon, all.total_interleaves, min_champ_examples, initial_epsilon, shift_model_bounds,
-      reward_as_cost, tol_x, is_brentq, predict_only_model);
+      epsilon_decay_audit_str, constant_epsilon, all.total_interleaves, min_champ_examples, initial_epsilon,
+      shift_model_bounds, reward_as_cost, tol_x, is_brentq, predict_only_model);
 
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs

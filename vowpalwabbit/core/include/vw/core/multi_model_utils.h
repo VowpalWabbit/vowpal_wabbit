@@ -17,8 +17,9 @@ namespace multi_model
 ***** NOTE: total_interleaves must be of form 2^n for all functions *****
 These functions are used to maniputate the weights of a multi-model learner. As an example of what each variable
 is, consider a learner with the command line "--bag 4 --automl 2". In this scenario 'automl' is above 'bag' in the
-stack, and would be considered to have the innermost interleaves. Thus innermost_interleave_size = 2. The total_interleaves = 8
-here as it is the product of all interleave's in the stack (4 * 2). The actual weights here will look like this:
+stack, and would be considered to have the innermost interleaves. Thus innermost_interleave_size = 2. The
+total_interleaves = 8 here as it is the product of all interleave's in the stack (4 * 2). The actual weights here will
+look like this:
 
 0     1     2     3      4      5      6      7       -- Indices as printed using --invert_hash
 0     4     8     12     16     20     24     28      -- Actual weight indices included stride size of 4
@@ -27,8 +28,8 @@ aml0  aml1  aml0  aml1   aml0   aml1   aml0   aml1    -- Shows how weights are g
 */
 
 // This function is used to clear the weights of a specific offset in the innermost interleave.
-inline void clear_innermost_offset(
-    dense_parameters& weights, const size_t offset, const size_t total_interleaves, const size_t innermost_interleave_size)
+inline void clear_innermost_offset(dense_parameters& weights, const size_t offset, const size_t total_interleaves,
+    const size_t innermost_interleave_size)
 {
   VW::weight* weights_arr = weights.first();
   const size_t overall_without_innermost_interleave_size = total_interleaves / innermost_interleave_size;
@@ -82,8 +83,8 @@ inline void move_innermost_offsets(dense_parameters& weights, const size_t from,
 }
 
 /* This function is used to select one sub-offset within the innermost interleave and remove all others. For instance
- if this called with "--bag 4 --automl 2" using offset = 1 (we will have innermost_interleave_size = 2 and total_interleaves
- = 8) then this will remove all weights with automl = 0. The set of weights referenced above:
+ if this called with "--bag 4 --automl 2" using offset = 1 (we will have innermost_interleave_size = 2 and
+ total_interleaves = 8) then this will remove all weights with automl = 0. The set of weights referenced above:
 
   0     1     2     3      4      5      6      7
   0     4     8     12     16     20     24     28
@@ -97,14 +98,17 @@ inline void move_innermost_offsets(dense_parameters& weights, const size_t from,
   bag0  bag1  bag2  bag3
   aml1  aml1  aml1  aml1
 */
-inline void reduce_innermost_model_weights(
-    dense_parameters& weights, const size_t offset, const size_t total_interleaves, const size_t innermost_interleave_size)
+inline void reduce_innermost_model_weights(dense_parameters& weights, const size_t offset,
+    const size_t total_interleaves, const size_t innermost_interleave_size)
 {
   VW::weight* weights_arr = weights.first();
   const size_t overall_without_innermost_interleave_size = total_interleaves / innermost_interleave_size;
   for (size_t inner_interleaves = 0; inner_interleaves < innermost_interleave_size; ++inner_interleaves)
   {
-    if (inner_interleaves != offset) { clear_innermost_offset(weights, inner_interleaves, total_interleaves, innermost_interleave_size); }
+    if (inner_interleaves != offset)
+    {
+      clear_innermost_offset(weights, inner_interleaves, total_interleaves, innermost_interleave_size);
+    }
   }
   for (auto weights_it = weights.begin(); weights_it < weights.end(); weights_it += total_interleaves)
   {

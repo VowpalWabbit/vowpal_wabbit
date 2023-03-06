@@ -733,7 +733,10 @@ void VW::LEARNER::details::increment_offset(polymorphic_ex ex, const size_t inte
 {
   if (ex.is_multiline())
   {
-    for (auto& ec : static_cast<VW::multi_ex&>(ex)) { ec->ft_offset += static_cast<uint32_t>(interleave_product_below * i); }
+    for (auto& ec : static_cast<VW::multi_ex&>(ex))
+    {
+      ec->ft_offset += static_cast<uint32_t>(interleave_product_below * i);
+    }
   }
   else { static_cast<VW::example&>(ex).ft_offset += static_cast<uint32_t>(interleave_product_below * i); }
   debug_increment_depth(ex);

@@ -460,18 +460,19 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cs_active_setup(VW::setup_
   }
 
   size_t num_interleaves = data->num_classes;
-  auto l = make_reduction_learner(std::move(data), require_singleline(stack_builder.setup_base_learner(num_interleaves)), learn_ptr,
-      predict_ptr, stack_builder.get_setupfn_name(cs_active_setup) + name_addition)
-               .set_num_interleaves(num_interleaves)
-               .set_learn_returns_prediction(true)
-               .set_input_prediction_type(VW::prediction_type_t::SCALAR)
-               .set_output_prediction_type(VW::prediction_type_t::ACTIVE_MULTICLASS)
-               .set_input_label_type(VW::label_type_t::CS)
-               .set_output_label_type(VW::label_type_t::SIMPLE)
-               .set_output_example_prediction(output_example_prediction_cs_active)
-               .set_print_update(print_update_cs_active)
-               .set_update_stats(update_stats_cs_active)
-               .build();
+  auto l =
+      make_reduction_learner(std::move(data), require_singleline(stack_builder.setup_base_learner(num_interleaves)),
+          learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cs_active_setup) + name_addition)
+          .set_num_interleaves(num_interleaves)
+          .set_learn_returns_prediction(true)
+          .set_input_prediction_type(VW::prediction_type_t::SCALAR)
+          .set_output_prediction_type(VW::prediction_type_t::ACTIVE_MULTICLASS)
+          .set_input_label_type(VW::label_type_t::CS)
+          .set_output_label_type(VW::label_type_t::SIMPLE)
+          .set_output_example_prediction(output_example_prediction_cs_active)
+          .set_print_update(print_update_cs_active)
+          .set_update_stats(update_stats_cs_active)
+          .build();
 
   // Label parser set to cost sensitive label parser
   all.example_parser->lbl_parser = VW::cs_label_parser_global;

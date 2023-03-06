@@ -1267,15 +1267,16 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::memory_tree_setup(VW::setu
     label_type = VW::label_type_t::MULTILABEL;
   }
 
-  auto l = make_reduction_learner(std::move(tree), require_singleline(stack_builder.setup_base_learner(num_interleaves)),
-      learn, predict, stack_builder.get_setupfn_name(memory_tree_setup))
-               .set_num_interleaves(num_interleaves)
-               .set_end_pass(end_pass)
-               .set_save_load(save_load_memory_tree)
-               .set_input_label_type(label_type)
-               .set_output_label_type(VW::label_type_t::SIMPLE)
-               .set_input_prediction_type(VW::prediction_type_t::SCALAR)
-               .set_output_prediction_type(pred_type);
+  auto l =
+      make_reduction_learner(std::move(tree), require_singleline(stack_builder.setup_base_learner(num_interleaves)),
+          learn, predict, stack_builder.get_setupfn_name(memory_tree_setup))
+          .set_num_interleaves(num_interleaves)
+          .set_end_pass(end_pass)
+          .set_save_load(save_load_memory_tree)
+          .set_input_label_type(label_type)
+          .set_output_label_type(VW::label_type_t::SIMPLE)
+          .set_input_prediction_type(VW::prediction_type_t::SCALAR)
+          .set_output_prediction_type(pred_type);
 
   // memory_tree doesn't work correctly in oas mode as it just delegates to GD's stats and reporting implementation
   if (!oas)
