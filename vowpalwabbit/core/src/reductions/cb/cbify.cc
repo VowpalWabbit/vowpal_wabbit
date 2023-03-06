@@ -931,14 +931,14 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cbifyldf_setup(VW::setup_b
   auto base = require_multiline(stack_builder.setup_base_learner());
   auto l = make_reduction_learner(std::move(data), base, do_actual_learning_ldf, do_actual_predict_ldf,
       stack_builder.get_setupfn_name(cbifyldf_setup))
-                .set_input_label_type(VW::label_type_t::CS)
-                .set_output_label_type(VW::label_type_t::CB)
-                .set_input_prediction_type(VW::prediction_type_t::ACTION_PROBS)
-                .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
-                .set_output_example_prediction(output_example_prediction_cbify_ldf)
-                .set_print_update(print_update_cbify_ldf)
-                .set_update_stats(update_stats_cbify_ldf)
-                .build();
+               .set_input_label_type(VW::label_type_t::CS)
+               .set_output_label_type(VW::label_type_t::CB)
+               .set_input_prediction_type(VW::prediction_type_t::ACTION_PROBS)
+               .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
+               .set_output_example_prediction(output_example_prediction_cbify_ldf)
+               .set_print_update(print_update_cbify_ldf)
+               .set_update_stats(update_stats_cbify_ldf)
+               .build();
 
   return l;
 }
