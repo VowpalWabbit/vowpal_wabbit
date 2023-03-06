@@ -60,6 +60,7 @@ void predict_or_learn(sfm_data& data, VW::LEARNER::learner& base, VW::multi_ex& 
 
     std::swap(ec_seq[0]->pred, shared_example->pred);
     std::swap(ec_seq[0]->tag, shared_example->tag);
+    std::swap(ec_seq[0]->ex_reduction_features, shared_example->ex_reduction_features);
   }
 
   // Guard example state restore against throws
@@ -81,6 +82,7 @@ void predict_or_learn(sfm_data& data, VW::LEARNER::learner& base, VW::multi_ex& 
           }
           std::swap(shared_example->pred, ec_seq[0]->pred);
           std::swap(shared_example->tag, ec_seq[0]->tag);
+          std::swap(shared_example->ex_reduction_features, ec_seq[0]->ex_reduction_features);
           ec_seq.insert(ec_seq.begin(), shared_example);
         }
       });

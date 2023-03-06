@@ -105,6 +105,7 @@ set(vw_core_headers
   include/vw/core/reductions/cb/cb_explore_adf_common.h
   include/vw/core/reductions/cb/cb_explore_adf_cover.h
   include/vw/core/reductions/cb/cb_explore_adf_first.h
+  include/vw/core/reductions/cb/cb_explore_adf_graph_feedback.h
   include/vw/core/reductions/cb/cb_explore_adf_greedy.h
   include/vw/core/reductions/cb/cb_explore_adf_large_action_space.h
   include/vw/core/reductions/cb/cb_explore_adf_regcb.h
@@ -273,6 +274,7 @@ set(vw_core_sources
   src/reductions/cb/cb_explore_adf_bag.cc
   src/reductions/cb/cb_explore_adf_cover.cc
   src/reductions/cb/cb_explore_adf_first.cc
+  src/reductions/cb/cb_explore_adf_graph_feedback.cc
   src/reductions/cb/cb_explore_adf_greedy.cc
   src/reductions/cb/cb_explore_adf_large_action_space.cc
   src/reductions/cb/cb_explore_adf_regcb.cc
@@ -369,7 +371,7 @@ vw_add_library(
         # Use BUILD_INTERFACE to prevent them from being exported, i.e. treat them as PRIVATE
         # https://gitlab.kitware.com/cmake/cmake/issues/15415
         ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io $<BUILD_INTERFACE:${boost_math_target}> $<BUILD_INTERFACE:RapidJSON>
-        $<BUILD_INTERFACE:eigen> $<BUILD_INTERFACE:sse2neon>
+        $<BUILD_INTERFACE:eigen> $<BUILD_INTERFACE:sse2neon> $<BUILD_INTERFACE:arm>
     DESCRIPTION "This contains all remaining VW code, all reduction implementations, driver, option handling"
     EXCEPTION_DESCRIPTION "Yes"
     ENABLE_INSTALL
