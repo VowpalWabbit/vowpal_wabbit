@@ -134,9 +134,9 @@ private:
   void debug_log_message(polymorphic_ex ex, const std::string& msg);
 
 public:
-  size_t num_interleaves;           // This stores the number of "weight vectors" required by the learner.
-  size_t interleave_product_below;  // This stores the incremental product of interleaves for this learner and below in
-                                    // the stack
+  size_t num_interleaves = 1;           // This stores the number of "weight vectors" required by the learner.
+  size_t interleave_product_below = 1;  // This stores the incremental product of interleaves for this learner and below
+                                        // in the stack
 
   // If true, learn will return a prediction. The framework should
   // not call predict before learn
