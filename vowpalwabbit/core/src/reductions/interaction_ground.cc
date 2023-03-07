@@ -34,19 +34,19 @@ public:
   {
     std::set<std::string> keep = {"scorer", "count_label"};
 
-    for (int i = _reduction_stack.size() - 1; i >= 0; i--) {
-      if (keep.count(std::get<0>(_reduction_stack.at(i))) == 0) {
-        _reduction_stack.erase(_reduction_stack.begin() + i);
+    for (size_t i = _reduction_stack.size(); i > 0; i--) {
+      if (keep.count(std::get<0>(_reduction_stack.at(i - 1))) == 0) {
+        _reduction_stack.erase(_reduction_stack.begin() + i - 1);
       }
     }
   }
 
-  std::shared_ptr<VW::LEARNER::learner> setup_base_learner(size_t increment = 1) override {
+  std::shared_ptr<VW::LEARNER::learner> setup_base_learner(size_t increment=1) override {
     if (_reduction_stack.size() == 0) {
       return _ik_base;
     }
 
-    return VW::default_reduction_stack_setup::setup_base_learner();
+    return VW::default_reduction_stack_setup::setup_base_learner(increment);
   }
 
 private:
@@ -111,7 +111,7 @@ void learn(interaction_ground& igl, learner& base, VW::multi_ex& ec_seq)
   std::swap(igl.ik_ftrl->all->sd, igl.ik_all->sd);
 
   float ik_pred = 0.f;
-  int chosen_action_idx = 0;
+  size_t chosen_action_idx = 0;
 
   const auto it = std::find_if(ec_seq.begin(), ec_seq.end(), [](VW::example* item) {
     return !item->l.cb_with_observations.event.costs.empty();
@@ -229,8 +229,8 @@ void copy_ftrl(ftrl* source, ftrl* destination) {
   *destination = *source;
 }
 
-void print_update_igl(VW::workspace& all, VW::shared_data& sd, const interaction_ground& data, const VW::multi_ex& ec_seq,
-    VW::io::logger& logger)
+void print_update_igl(VW::workspace& all, VW::shared_data& /*sd*/, const interaction_ground& data, const VW::multi_ex& ec_seq,
+    VW::io::logger& /*logger*/)
 {
   if (ec_seq.empty()) { return; }
   const auto& ec = **(ec_seq.begin());
@@ -243,7 +243,7 @@ void print_update_igl(VW::workspace& all, VW::shared_data& sd, const interaction
 }
 
 void update_stats_igl(const VW::workspace& /* all */, VW::shared_data& sd, const interaction_ground& data, const VW::multi_ex& ec_seq,
-    VW::io::logger& logger)
+    VW::io::logger& /*logger*/)
 {
   if (ec_seq.size() <= 0) { return; }
 
@@ -311,6 +311,9 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::interaction_ground_setup(V
     pi_options.insert("cb_explore_adf", "");
   }
 
+  if (!pi_options.was_supplied("coin")) {
+    THROW("--experimental_igl needs to use --coin");
+  }
   auto pi_learner = require_multiline(stack_builder.setup_base_learner(feature_width));
 
   // 1. fetch already allocated coin reduction
@@ -353,7 +356,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::interaction_ground_setup(V
 
   auto l = make_reduction_learner(
       std::move(ld), pi_learner, learn, predict, stack_builder.get_setupfn_name(interaction_ground_setup))
-               ..set_feature_width(feature_width)
+               .set_feature_width(feature_width)
                .set_input_label_type(label_type_t::CB_WITH_OBSERVATIONS)
                .set_output_label_type(label_type_t::CB)
                .set_input_prediction_type(pred_type)
