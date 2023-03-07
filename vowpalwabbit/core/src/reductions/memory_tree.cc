@@ -1255,14 +1255,12 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::memory_tree_setup(VW::setu
   if (!oas)
   {
     num_interleaves = tree->max_nodes + 1;
-    all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
     pred_type = VW::prediction_type_t::MULTICLASS;
     label_type = VW::label_type_t::MULTICLASS;
   }  // multi-label classification
   else
   {
     num_interleaves = tree->max_nodes + 1 + tree->max_num_labels;
-    all.example_parser->lbl_parser = VW::multilabel_label_parser_global;
     pred_type = VW::prediction_type_t::MULTILABELS;
     label_type = VW::label_type_t::MULTILABEL;
   }

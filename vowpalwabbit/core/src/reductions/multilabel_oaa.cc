@@ -172,7 +172,5 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::multilabel_oaa_setup(VW::s
                .set_print_update(print_update_multilabel_oaa)
                .build();
 
-  all.example_parser->lbl_parser = VW::multilabel_label_parser_global;
-
   return l;
 }

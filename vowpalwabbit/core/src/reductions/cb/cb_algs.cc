@@ -195,8 +195,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_algs_setup(VW::setup_ba
   }
 
   auto base = require_singleline(stack_builder.setup_base_learner(num_interleaves));
-  if (eval) { all.example_parser->lbl_parser = VW::cb_eval_label_parser_global; }
-  else { all.example_parser->lbl_parser = VW::cb_label_parser_global; }
   c.scorer = VW::LEARNER::require_singleline(base->get_learner_by_name_prefix("scorer"));
 
   std::string name_addition = eval ? "-eval" : "";

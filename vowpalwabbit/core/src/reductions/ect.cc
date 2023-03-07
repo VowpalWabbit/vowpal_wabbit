@@ -337,8 +337,5 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::ect_setup(VW::setup_base_i
                .set_output_example_prediction(VW::details::output_example_prediction_multiclass_label<ect>)
                .set_print_update(VW::details::print_update_multiclass_label<ect>)
                .build();
-
-  all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
-
   return l;
 }

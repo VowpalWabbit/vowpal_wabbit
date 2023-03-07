@@ -433,8 +433,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::oaa_setup(VW::setup_base_i
     }
   }
 
-  all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
-
   if (data_ptr->num_subsample > 0)
   {
     learn_ptr = learn_randomized;

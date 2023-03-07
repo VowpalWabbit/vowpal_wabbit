@@ -391,7 +391,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_squarecb_se
   size_t num_interleaves = 1;
 
   auto base = require_multiline(stack_builder.setup_base_learner(num_interleaves));
-  all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
 

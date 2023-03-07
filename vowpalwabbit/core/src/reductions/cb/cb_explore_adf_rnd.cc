@@ -301,7 +301,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_rnd_setup(V
   size_t num_interleaves = 1 + numrnd;
 
   auto base = require_multiline(stack_builder.setup_base_learner(num_interleaves));
-  all.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_rnd>;
   auto data = VW::make_unique<explore_type>(all.global_metrics.are_metrics_enabled(), epsilon, alpha, invlambda, numrnd,
