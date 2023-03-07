@@ -792,9 +792,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::eigen_memory_tree_setup(VW
   auto t = VW::make_unique<VW::reductions::eigen_memory_tree::emt_tree>(&all, all.get_random_state(), leaf_split,
       emt_scorer_type_from_string(scorer_type), emt_router_type_from_string(router_type), tree_bound);
 
-  // multi-class classification
-  all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
-
   auto l =
       make_reduction_learner(std::move(t), require_singleline(stack_builder.setup_base_learner()), emt_learn,
           emt_predict,

@@ -211,8 +211,5 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::csoaa_setup(VW::setup_base
                .set_output_example_prediction(VW::details::output_example_prediction_cs_label<csoaa>)
                .set_print_update(VW::details::print_update_cs_label<csoaa>)
                .build();
-
-  all.example_parser->lbl_parser = VW::cs_label_parser_global;
-
   return l;
 }

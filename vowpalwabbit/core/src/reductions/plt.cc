@@ -486,8 +486,5 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::plt_setup(VW::setup_base_i
                .set_finish(::finish)
                .set_save_load(::save_load_tree)
                .build();
-
-  all.example_parser->lbl_parser = VW::multilabel_label_parser_global;
-
   return l;
 }
