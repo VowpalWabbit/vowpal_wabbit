@@ -6,9 +6,5 @@
             ],
             "url": "./test/vwtest.schema.json"
         }
-    ],
-    "files.associations": {
-        "*.ipp": "cpp",
-        "*.tcc": "cpp"
-    }
+    ]
 }
