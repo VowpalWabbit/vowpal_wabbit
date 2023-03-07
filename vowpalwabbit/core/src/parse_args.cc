@@ -18,6 +18,7 @@
 #include "vw/core/global_data.h"
 #include "vw/core/interactions.h"
 #include "vw/core/kskip_ngram_transformer.h"
+#include "vw/core/label_parser.h"
 #include "vw/core/label_type.h"
 #include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
@@ -1631,6 +1632,9 @@ void VW::details::instantiate_learner(VW::workspace& all, std::unique_ptr<VW::se
   // setup_base_learner() will recurse down the stack and create all enabled
   // learners starting from the bottom learner.
   all.l = learner_builder->setup_base_learner();
+
+  // Setup label parser based on the stack which was just created.
+  all.example_parser->lbl_parser = VW::get_label_parser(all.l->get_input_label_type());
 
   // explicit destroy of learner_builder state
   // avoids misuse of this interface:

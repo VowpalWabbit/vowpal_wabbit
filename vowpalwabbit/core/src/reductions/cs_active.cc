@@ -472,9 +472,5 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cs_active_setup(VW::setup_
                .set_print_update(print_update_cs_active)
                .set_update_stats(update_stats_cs_active)
                .build();
-
-  // Label parser set to cost sensitive label parser
-  all.example_parser->lbl_parser = VW::cs_label_parser_global;
-
   return l;
 }
