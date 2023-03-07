@@ -1552,7 +1552,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i&
   auto l = make_bottom_learner(std::move(g), g->learn, bare->predict, stack_builder.get_setupfn_name(gd_setup),
       VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
                .set_learn_returns_prediction(true)
-               .set_bottom_interleaves(VW::details::UINT64_ONE << all.weights.stride_shift())
+               .set_num_interleaves(stack_builder.get_all_pointer()->weights.stride())
                .set_sensitivity(bare->sensitivity)
                .set_multipredict(bare->multipredict)
                .set_update(bare->update)

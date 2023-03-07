@@ -1369,7 +1369,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::lda_setup(VW::setup_base_i
   auto l = make_bottom_learner(std::move(ld), ld->compute_coherence_metrics ? learn_with_metrics : learn,
       ld->compute_coherence_metrics ? predict_with_metrics : predict, stack_builder.get_setupfn_name(lda_setup),
       pred_type, VW::label_type_t::NOLABEL)
-               .set_bottom_interleaves(VW::details::UINT64_ONE << all.weights.stride_shift())
+               .set_num_interleaves(stack_builder.get_all_pointer()->weights.stride())
                .set_learn_returns_prediction(true)
                .set_save_load(save_load)
                .set_end_examples(end_examples)

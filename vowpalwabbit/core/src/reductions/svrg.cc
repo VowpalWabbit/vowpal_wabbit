@@ -192,7 +192,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::svrg_setup(VW::setup_base_
   all.weights.stride_shift(2);
   auto l = make_bottom_learner(std::move(s), learn, predict, stack_builder.get_setupfn_name(svrg_setup),
       VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
-               .set_bottom_interleaves(VW::details::UINT64_ONE << all.weights.stride_shift())
+               .set_num_interleaves(stack_builder.get_all_pointer()->weights.stride())
                .set_output_example_prediction(VW::details::output_example_prediction_simple_label<svrg>)
                .set_update_stats(VW::details::update_stats_simple_label<svrg>)
                .set_print_update(VW::details::print_update_simple_label<svrg>)

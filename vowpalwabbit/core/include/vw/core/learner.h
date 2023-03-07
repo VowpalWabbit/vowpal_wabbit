@@ -722,7 +722,7 @@ public:
     super::set_input_prediction_type(prediction_type_t::NOPRED);
     super::set_output_prediction_type(out_pred_type);
 
-    set_bottom_interleaves(1);
+    set_num_interleaves(1);
   }
 
   // clang-format off
@@ -761,8 +761,8 @@ public:
     this->learner_ptr->_sensitivity_f = [fn_ptr, data](example& ex) { return fn_ptr(*data, ex); };
   )
 
-  LEARNER_BUILDER_DEFINE(set_bottom_interleaves(size_t num_interleaves),
-    this->learner_ptr->num_interleaves = 1;
+  LEARNER_BUILDER_DEFINE(set_num_interleaves(size_t num_interleaves),
+    this->learner_ptr->num_interleaves = num_interleaves;
     this->learner_ptr->interleave_product_below = num_interleaves;
   )
 

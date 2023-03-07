@@ -391,17 +391,16 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::freegrad_setup(VW::setup_b
 
   auto predict_ptr = (fg_ptr->all->audit || fg_ptr->all->hash_inv) ? predict<true> : predict<false>;
   auto learn_ptr = (fg_ptr->all->audit || fg_ptr->all->hash_inv) ? learn_freegrad<true> : learn_freegrad<false>;
-  auto l =
-      VW::LEARNER::make_bottom_learner(std::move(fg_ptr), learn_ptr, predict_ptr,
-          stack_builder.get_setupfn_name(freegrad_setup), VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
-          .set_learn_returns_prediction(true)
-          .set_bottom_interleaves(VW::details::UINT64_ONE << stack_builder.get_all_pointer()->weights.stride_shift())
-          .set_save_load(save_load)
-          .set_end_pass(end_pass)
-          .set_output_example_prediction(VW::details::output_example_prediction_simple_label<freegrad>)
-          .set_update_stats(VW::details::update_stats_simple_label<freegrad>)
-          .set_print_update(VW::details::print_update_simple_label<freegrad>)
-          .build();
+  auto l = VW::LEARNER::make_bottom_learner(std::move(fg_ptr), learn_ptr, predict_ptr,
+      stack_builder.get_setupfn_name(freegrad_setup), VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
+               .set_learn_returns_prediction(true)
+               .set_num_interleaves(stack_builder.get_all_pointer()->weights.stride())
+               .set_save_load(save_load)
+               .set_end_pass(end_pass)
+               .set_output_example_prediction(VW::details::output_example_prediction_simple_label<freegrad>)
+               .set_update_stats(VW::details::update_stats_simple_label<freegrad>)
+               .set_print_update(VW::details::print_update_simple_label<freegrad>)
+               .build();
 
   return l;
 }
