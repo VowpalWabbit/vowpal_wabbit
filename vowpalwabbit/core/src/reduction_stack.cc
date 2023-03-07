@@ -286,6 +286,11 @@ std::shared_ptr<VW::LEARNER::learner> default_reduction_stack_setup::setup_base_
     if (result == nullptr) { return this->setup_base_learner(); }
     else
     {
+      if (result->get_base_learner() == nullptr)
+      {
+        result->num_interleaves = get_all_pointer()->weights.stride();
+        result->interleave_product_below = result->num_interleaves;
+      }
       _reduction_stack.clear();
       return result;
     }

@@ -721,8 +721,6 @@ public:
     super::set_output_label_type(label_type_t::NOLABEL);
     super::set_input_prediction_type(prediction_type_t::NOPRED);
     super::set_output_prediction_type(out_pred_type);
-
-    set_num_interleaves(1);
   }
 
   // clang-format off
@@ -759,11 +757,6 @@ public:
     assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
     this->learner_ptr->_sensitivity_f = [fn_ptr, data](example& ex) { return fn_ptr(*data, ex); };
-  )
-
-  LEARNER_BUILDER_DEFINE(set_num_interleaves(size_t num_interleaves),
-    this->learner_ptr->num_interleaves = num_interleaves;
-    this->learner_ptr->interleave_product_below = num_interleaves;
   )
 
   LEARNER_BUILDER_DEFINE(set_merge_with_all(void (*fn_ptr)(const std::vector<float>&,

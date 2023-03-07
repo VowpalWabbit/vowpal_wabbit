@@ -391,7 +391,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_mf_setup(VW::setup_base
 
   auto l = make_bottom_learner(std::move(data), learn, predict, stack_builder.get_setupfn_name(gd_mf_setup),
       VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
-               .set_num_interleaves(stack_builder.get_all_pointer()->weights.stride())
                .set_learn_returns_prediction(true)
                .set_save_load(save_load)
                .set_end_pass(end_pass)

@@ -29,7 +29,7 @@ public:
 
   std::string get_setupfn_name(reduction_setup_fn setup) override;
 
-  size_t get_interleave_product_ablove() override { return _interleave_product_above; }
+  size_t get_interleave_product_above() override { return _interleave_product_above; }
 
 private:
   VW::config::options_i* _options_impl = nullptr;
