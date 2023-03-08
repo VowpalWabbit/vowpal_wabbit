@@ -23,20 +23,19 @@ using namespace VW::config;
 namespace
 {
 template <bool is_learn, VW::generate_func_t<VW::namespace_index> generate_func, bool leave_duplicate_interactions>
-void transform_single_ex(std::vector<VW::interactions_generator>& datas, VW::LEARNER::learner& base, VW::example& ec)
+void transform_single_ex(VW::interactions_generator& data, VW::LEARNER::learner& base, VW::example& ec)
 {
-  auto data = datas[ec.ft_offset / 4];  // hard coded 4 should be _all->weights.stride();
   // We pass *ec.interactions here BUT the contract is that this does not change...
   data.update_interactions_if_new_namespace_seen<generate_func, leave_duplicate_interactions>(
-      *ec.interactions, ec.indices);
+      ec.ft_offset, *ec.interactions, ec.indices);
 
   auto* saved_interactions = ec.interactions;
-  ec.interactions = &data.generated_interactions;
+  ec.interactions = &data.get_generated_interactions(ec.ft_offset);
 
   if (data.store_in_reduction_features)
   {
     auto& red_features = ec.ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
-    red_features.generated_interactions = &data.generated_interactions;
+    red_features.generated_interactions = &data.get_generated_interactions(ec.ft_offset);
   }
 
   if (is_learn) { base.learn(ec); }
@@ -46,27 +45,26 @@ void transform_single_ex(std::vector<VW::interactions_generator>& datas, VW::LEA
 
 template <bool is_learn, VW::generate_func_t<VW::namespace_index> generate_func,
     VW::generate_func_t<VW::extent_term> generate_func_extents, bool leave_duplicate_interactions>
-void transform_single_ex(std::vector<VW::interactions_generator>& datas, VW::LEARNER::learner& base, VW::example& ec)
+void transform_single_ex(VW::interactions_generator& data, VW::LEARNER::learner& base, VW::example& ec)
 {
-  auto data = datas[ec.ft_offset / 4];
   // We pass *ec.interactions here BUT the contract is that this does not change...
   data.update_interactions_if_new_namespace_seen<generate_func, leave_duplicate_interactions>(
-      *ec.interactions, ec.indices);
+      ec.ft_offset, *ec.interactions, ec.indices);
 
   auto* saved_interactions = ec.interactions;
-  ec.interactions = &data.generated_interactions;
+  ec.interactions = &data.get_generated_interactions(ec.ft_offset);
 
   data.update_extent_interactions_if_new_namespace_seen<generate_func_extents, leave_duplicate_interactions>(
-      *ec.extent_interactions, ec.indices, ec.feature_space);
+      ec.ft_offset, *ec.extent_interactions, ec.indices, ec.feature_space);
 
   auto* saved_extent_interactions = ec.extent_interactions;
-  ec.extent_interactions = &data.generated_extent_interactions;
+  ec.extent_interactions = &data.get_generated_extent_interactions(ec.ft_offset);
 
   if (data.store_in_reduction_features)
   {
     auto& red_features = ec.ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
-    red_features.generated_interactions = &data.generated_interactions;
-    red_features.generated_extent_interactions = &data.generated_extent_interactions;
+    red_features.generated_interactions = &data.get_generated_interactions(ec.ft_offset);
+    red_features.generated_extent_interactions = &data.get_generated_extent_interactions(ec.ft_offset);
   }
 
   if (is_learn) { base.learn(ec); }
@@ -77,27 +75,26 @@ void transform_single_ex(std::vector<VW::interactions_generator>& datas, VW::LEA
 
 template <VW::generate_func_t<VW::namespace_index> generate_func,
     VW::generate_func_t<VW::extent_term> generate_func_extents, bool leave_duplicate_interactions>
-void update(std::vector<VW::interactions_generator>& datas, VW::LEARNER::learner& base, VW::example& ec)
+void update(VW::interactions_generator& data, VW::LEARNER::learner& base, VW::example& ec)
 {
-  auto data = datas[ec.ft_offset / 4];
   // We pass *ec.interactions here BUT the contract is that this does not change...
   data.update_interactions_if_new_namespace_seen<generate_func, leave_duplicate_interactions>(
-      *ec.interactions, ec.indices);
+      ec.ft_offset, *ec.interactions, ec.indices);
 
   data.update_extent_interactions_if_new_namespace_seen<generate_func_extents, leave_duplicate_interactions>(
-      *ec.extent_interactions, ec.indices, ec.feature_space);
+      ec.ft_offset, *ec.extent_interactions, ec.indices, ec.feature_space);
 
   auto* saved_extent_interactions = ec.extent_interactions;
-  ec.extent_interactions = &data.generated_extent_interactions;
+  ec.extent_interactions = &data.get_generated_extent_interactions(ec.ft_offset);
 
   auto* saved_interactions = ec.interactions;
-  ec.interactions = &data.generated_interactions;
+  ec.interactions = &data.get_generated_interactions(ec.ft_offset);
 
   if (data.store_in_reduction_features)
   {
     auto& red_features = ec.ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
-    red_features.generated_interactions = &data.generated_interactions;
-    red_features.generated_extent_interactions = &data.generated_extent_interactions;
+    red_features.generated_interactions = &data.get_generated_interactions(ec.ft_offset);
+    red_features.generated_extent_interactions = &data.get_generated_extent_interactions(ec.ft_offset);
   }
 
   base.update(ec);
@@ -106,20 +103,19 @@ void update(std::vector<VW::interactions_generator>& datas, VW::LEARNER::learner
 }
 
 template <VW::generate_func_t<VW::namespace_index> generate_func, bool leave_duplicate_interactions>
-void update(std::vector<VW::interactions_generator>& datas, VW::LEARNER::learner& base, VW::example& ec)
+void update(VW::interactions_generator& data, VW::LEARNER::learner& base, VW::example& ec)
 {
-  auto data = datas[ec.ft_offset / 4];
   // We pass *ec.interactions here BUT the contract is that this does not change...
   data.update_interactions_if_new_namespace_seen<generate_func, leave_duplicate_interactions>(
-      *ec.interactions, ec.indices);
+      ec.ft_offset, *ec.interactions, ec.indices);
 
   auto* saved_interactions = ec.interactions;
-  ec.interactions = &data.generated_interactions;
+  ec.interactions = &data.get_generated_interactions(ec.ft_offset);
 
   if (data.store_in_reduction_features)
   {
     auto& red_features = ec.ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
-    red_features.generated_interactions = &data.generated_interactions;
+    red_features.generated_interactions = &data.get_generated_interactions(ec.ft_offset);
   }
 
   base.update(ec);
@@ -127,21 +123,20 @@ void update(std::vector<VW::interactions_generator>& datas, VW::LEARNER::learner
 }
 
 template <VW::generate_func_t<VW::namespace_index> generate_func, bool leave_duplicate_interactions>
-inline void multipredict(std::vector<VW::interactions_generator>& datas, VW::LEARNER::learner& base, VW::example& ec,
-    size_t count, size_t, VW::polyprediction* pred, bool finalize_predictions)
+inline void multipredict(VW::interactions_generator& data, VW::LEARNER::learner& base, VW::example& ec, size_t count,
+    size_t, VW::polyprediction* pred, bool finalize_predictions)
 {
-  auto data = datas[ec.ft_offset / 4];
   // We pass *ec.interactions here BUT the contract is that this does not change...
   data.update_interactions_if_new_namespace_seen<generate_func, leave_duplicate_interactions>(
-      *ec.interactions, ec.indices);
+      ec.ft_offset, *ec.interactions, ec.indices);
 
   auto* saved_interactions = ec.interactions;
-  ec.interactions = &data.generated_interactions;
+  ec.interactions = &data.get_generated_interactions(ec.ft_offset);
 
   if (data.store_in_reduction_features)
   {
     auto& red_features = ec.ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
-    red_features.generated_interactions = &data.generated_interactions;
+    red_features.generated_interactions = &data.get_generated_interactions(ec.ft_offset);
   }
 
   base.multipredict(ec, 0, count, pred, finalize_predictions);
@@ -150,28 +145,27 @@ inline void multipredict(std::vector<VW::interactions_generator>& datas, VW::LEA
 
 template <VW::generate_func_t<VW::namespace_index> generate_func,
     VW::generate_func_t<VW::extent_term> generate_func_extents, bool leave_duplicate_interactions>
-inline void multipredict(std::vector<VW::interactions_generator>& datas, VW::LEARNER::learner& base, VW::example& ec,
-    size_t count, size_t, VW::polyprediction* pred, bool finalize_predictions)
+inline void multipredict(VW::interactions_generator& data, VW::LEARNER::learner& base, VW::example& ec, size_t count,
+    size_t, VW::polyprediction* pred, bool finalize_predictions)
 {
-  auto data = datas[ec.ft_offset / 4];
   // We pass *ec.interactions here BUT the contract is that this does not change...
   data.update_interactions_if_new_namespace_seen<generate_func, leave_duplicate_interactions>(
-      *ec.interactions, ec.indices);
+      ec.ft_offset, *ec.interactions, ec.indices);
 
   data.update_extent_interactions_if_new_namespace_seen<generate_func_extents, leave_duplicate_interactions>(
-      *ec.extent_interactions, ec.indices, ec.feature_space);
+      ec.ft_offset, *ec.extent_interactions, ec.indices, ec.feature_space);
 
   auto* saved_extent_interactions = ec.extent_interactions;
-  ec.extent_interactions = &data.generated_extent_interactions;
+  ec.extent_interactions = &data.get_generated_extent_interactions(ec.ft_offset);
 
   auto* saved_interactions = ec.interactions;
-  ec.interactions = &data.generated_interactions;
+  ec.interactions = &data.get_generated_interactions(ec.ft_offset);
 
   if (data.store_in_reduction_features)
   {
     auto& red_features = ec.ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
-    red_features.generated_interactions = &data.generated_interactions;
-    red_features.generated_extent_interactions = &data.generated_extent_interactions;
+    red_features.generated_interactions = &data.get_generated_interactions(ec.ft_offset);
+    red_features.generated_extent_interactions = &data.get_generated_extent_interactions(ec.ft_offset);
   }
 
   base.multipredict(ec, 0, count, pred, finalize_predictions);
@@ -222,9 +216,9 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::generate_interactions_setu
 
   if (options.was_supplied("large_action_space")) { store_in_reduction_features = true; }
 
-  using learn_pred_func_t = void (*)(std::vector<VW::interactions_generator>&, VW::LEARNER::learner&, VW::example&);
-  using multipredict_func_t = void (*)(std::vector<VW::interactions_generator>&, VW::LEARNER::learner&, VW::example&,
-      size_t, size_t, VW::polyprediction*, bool);
+  using learn_pred_func_t = void (*)(VW::interactions_generator&, VW::LEARNER::learner&, VW::example&);
+  using multipredict_func_t = void (*)(
+      VW::interactions_generator&, VW::LEARNER::learner&, VW::example&, size_t, size_t, VW::polyprediction*, bool);
   learn_pred_func_t learn_func;
   learn_pred_func_t pred_func;
   learn_pred_func_t update_func;
@@ -326,11 +320,11 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::generate_interactions_setu
           >;
     }
   }
-  auto data_array = VW::make_unique<std::vector<VW::interactions_generator>>(stack_builder.get_ppw());
-  for (auto data : *data_array) { data.store_in_reduction_features = store_in_reduction_features; }
   auto base = require_singleline(stack_builder.setup_base_learner());
+  auto data = VW::make_unique<VW::interactions_generator>(
+      stack_builder.get_ppw(), store_in_reduction_features, all.weights.stride());
   auto l = make_reduction_learner(
-      std::move(data_array), base, learn_func, pred_func, stack_builder.get_setupfn_name(generate_interactions_setup))
+      std::move(data), base, learn_func, pred_func, stack_builder.get_setupfn_name(generate_interactions_setup))
                .set_learn_returns_prediction(base->learn_returns_prediction)
                .set_update(update_func)
                .set_multipredict(multipredict_func)

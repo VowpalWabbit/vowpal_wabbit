@@ -368,15 +368,27 @@ std::vector<std::vector<VW::extent_term>> compile_extent_interactions(
 
 class interactions_generator
 {
+  using gen_interactions_vec = std::vector<std::vector<VW::namespace_index>>;
+  using gen_extent_interactions_vec = std::vector<std::vector<VW::extent_term>>;
+
 public:
-  std::vector<std::vector<VW::namespace_index>> generated_interactions;
-  std::vector<std::vector<VW::extent_term>> generated_extent_interactions;
+  interactions_generator(size_t interleave_model_count, bool store_in_reduction_features, size_t stride)
+      : store_in_reduction_features(store_in_reduction_features)
+      , per_model_interactions(interleave_model_count)
+      , per_model_extent_interactions(interleave_model_count)
+      , _stride(stride)
+  {
+  }
+
   bool store_in_reduction_features = false;
 
   template <generate_func_t<VW::namespace_index> generate_func, bool leave_duplicate_interactions>
-  void update_interactions_if_new_namespace_seen(const std::vector<std::vector<VW::namespace_index>>& interactions,
+  void update_interactions_if_new_namespace_seen(const size_t offset,
+      const std::vector<std::vector<VW::namespace_index>>& interactions,
       const VW::v_array<VW::namespace_index>& new_example_indices)
   {
+    gen_interactions_vec& generated_interactions = per_model_interactions[offset / _stride];
+
     auto prev_count = _all_seen_namespaces.size();
     _all_seen_namespaces.insert(new_example_indices.begin(), new_example_indices.end());
 
@@ -401,10 +413,13 @@ public:
   }
 
   template <generate_func_t<VW::extent_term> generate_func, bool leave_duplicate_interactions>
-  void update_extent_interactions_if_new_namespace_seen(const std::vector<std::vector<VW::extent_term>>& interactions,
-      const VW::v_array<VW::namespace_index>& indices,
+  void update_extent_interactions_if_new_namespace_seen(const size_t offset,
+      const std::vector<std::vector<VW::extent_term>>& interactions, const VW::v_array<VW::namespace_index>& indices,
       const std::array<VW::features, VW::NUM_NAMESPACES>& feature_space)
   {
+    gen_interactions_vec& generated_interactions = per_model_interactions[offset / _stride];
+    gen_extent_interactions_vec& generated_extent_interactions = per_model_extent_interactions[offset / _stride];
+
     auto prev_count = _all_seen_extents.size();
     for (auto ns_index : indices)
     {
@@ -437,9 +452,22 @@ public:
     }
   }
 
+  gen_interactions_vec& get_generated_interactions(const size_t offset)
+  {
+    return per_model_interactions[offset / _stride];
+  }
+
+  gen_extent_interactions_vec& get_generated_extent_interactions(const size_t offset)
+  {
+    return per_model_extent_interactions[offset / _stride];
+  }
+
 private:
+  std::vector<gen_interactions_vec> per_model_interactions;
+  std::vector<gen_extent_interactions_vec> per_model_extent_interactions;
   std::set<VW::namespace_index> _all_seen_namespaces;
   std::set<VW::extent_term> _all_seen_extents;
+  size_t _stride;
 };
 
 }  // namespace VW
