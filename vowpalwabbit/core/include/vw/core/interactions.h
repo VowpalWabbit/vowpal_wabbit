@@ -372,6 +372,15 @@ class interactions_generator
   using gen_extent_interactions_vec = std::vector<std::vector<VW::extent_term>>;
 
 public:
+  // default constructor for vw_slim_predict.h
+  interactions_generator()
+      : per_model_interactions(1)
+      , per_model_extent_interactions(1)
+      , _stride(1)
+      , _count_when_last_generated(1)
+  {
+  }
+
   interactions_generator(size_t interleave_model_count, bool store_in_reduction_features, size_t stride)
       : store_in_reduction_features(store_in_reduction_features)
       , per_model_interactions(interleave_model_count)
@@ -388,6 +397,7 @@ public:
       const std::vector<std::vector<VW::namespace_index>>& interactions,
       const VW::v_array<VW::namespace_index>& new_example_indices)
   {
+    assert(offset / _stride < per_model_interactions.size());
     gen_interactions_vec& generated_interactions = per_model_interactions[offset / _stride];
 
     _all_seen_namespaces.insert(new_example_indices.begin(), new_example_indices.end());
@@ -418,6 +428,8 @@ public:
       const std::vector<std::vector<VW::extent_term>>& interactions, const VW::v_array<VW::namespace_index>& indices,
       const std::array<VW::features, VW::NUM_NAMESPACES>& feature_space)
   {
+    assert(offset / _stride < per_model_interactions.size());
+    assert(offset / _stride < per_model_extent_interactions.size());
     gen_interactions_vec& generated_interactions = per_model_interactions[offset / _stride];
     gen_extent_interactions_vec& generated_extent_interactions = per_model_extent_interactions[offset / _stride];
 
@@ -455,12 +467,23 @@ public:
 
   gen_interactions_vec& get_generated_interactions(const size_t offset)
   {
+    assert(offset / _stride < per_model_interactions.size());
     return per_model_interactions[offset / _stride];
   }
 
   gen_extent_interactions_vec& get_generated_extent_interactions(const size_t offset)
   {
+    assert(offset / _stride < per_model_extent_interactions.size());
     return per_model_extent_interactions[offset / _stride];
+  }
+
+  void clear_state_for_offset(size_t offset, bool adjust_stride = true)
+  {
+    if (adjust_stride) { offset /= _stride; }
+    
+    per_model_interactions[offset].clear();
+    per_model_extent_interactions[offset].clear();
+    _count_when_last_generated[offset] = {0, 0};
   }
 
 private:
