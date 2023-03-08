@@ -5,6 +5,7 @@
 
 #include "vw/common/random.h"
 #include "vw/core/array_parameters_dense.h"
+#include "vw/core/interactions.h"
 #include "vw/core/learner.h"
 
 #include <fstream>
@@ -217,6 +218,7 @@ public:
   bool reward_as_cost;
   double tol_x;
   bool is_brentq;
+  VW::interactions_generator _interactions_cache;
 
   // TODO: delete all this, gd and cb_adf must respect ft_offset, see header import of automl.cc
   std::vector<uint64_t> per_live_model_state_uint64;
@@ -237,7 +239,8 @@ public:
       std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers, const std::string& interaction_type,
       const std::string& oracle_type, dense_parameters& weights, priority_func calc_priority,
       double automl_significance_level, VW::io::logger* logger, uint32_t& wpp, bool ccb_on, config_type conf_type,
-      std::string trace_prefix, bool reward_as_cost, double tol_x, bool is_brentq);
+      std::string trace_prefix, bool reward_as_cost, double tol_x, bool is_brentq,
+      VW::interactions_generator& interactions_cache);
 
   void do_learning(VW::LEARNER::learner& base, multi_ex& ec, uint64_t live_slot);
   void persist(metric_sink& metrics, bool verbose);
@@ -248,7 +251,7 @@ public:
   void process_example(const multi_ex& ec);
   static void apply_config_at_slot(estimator_vec_t<estimator_impl>& estimators, std::vector<ns_based_config>& configs,
       const uint64_t live_slot, const uint64_t config_index, const double sig_level, const double tol_x, bool is_brentq,
-      const uint64_t priority_challengers);
+      const uint64_t priority_challengers, VW::interactions_generator& interactions_cache);
   static void apply_new_champ(config_oracle_impl& config_oracle, const uint64_t winning_challenger_slot,
       estimator_vec_t<estimator_impl>& estimators, const uint64_t priority_challengers,
       const std::map<namespace_index, uint64_t>& ns_counter);

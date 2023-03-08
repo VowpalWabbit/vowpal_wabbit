@@ -477,13 +477,26 @@ public:
     return per_model_extent_interactions[offset / _stride];
   }
 
-  void clear_state_for_offset(size_t offset, bool adjust_stride = true)
+  void clear_state_at_offset(size_t offset, bool adjust_stride = true)
   {
     if (adjust_stride) { offset /= _stride; }
 
     per_model_interactions[offset].clear();
     per_model_extent_interactions[offset].clear();
     _count_when_last_generated[offset] = {0, 0};
+  }
+
+  void swap_two_offsets(size_t offset_1, size_t offset_2, bool adjust_stride = true)
+  {
+    if (adjust_stride)
+    {
+      offset_1 /= _stride;
+      offset_2 /= _stride;
+    }
+
+    std::swap(per_model_interactions[offset_1], per_model_interactions[offset_2]);
+    std::swap(per_model_extent_interactions[offset_1], per_model_extent_interactions[offset_2]);
+    std::swap(_count_when_last_generated[offset_1], _count_when_last_generated[offset_2]);
   }
 
 private:

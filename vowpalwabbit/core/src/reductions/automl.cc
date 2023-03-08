@@ -168,10 +168,14 @@ std::shared_ptr<VW::LEARNER::learner> make_automl_with_impl(VW::setup_base_i& st
     trace_file_name_prefix = oss.str();
   }
 
+  auto& interactions_cache =
+      *static_cast<VW::interactions_generator*>(base_learner->get_learner_by_name_prefix("generate_interactions")
+                                                    ->get_internal_type_erased_data_pointer_test_use_only());
+
   auto cm = VW::make_unique<config_manager_type>(default_lease, max_live_configs, all.get_random_state(),
       static_cast<uint64_t>(priority_challengers), interaction_type, oracle_type, all.weights.dense_weights,
       calc_priority, automl_significance_level, &all.logger, all.wpp, ccb_on, conf_type, trace_file_name_prefix,
-      reward_as_cost, tol_x, is_brentq);
+      reward_as_cost, tol_x, is_brentq, interactions_cache);
   auto data = VW::make_unique<automl<config_manager_type>>(
       std::move(cm), &all.logger, predict_only_model, trace_file_name_prefix);
   data->debug_reverse_learning_order = reversed_learning_order;
