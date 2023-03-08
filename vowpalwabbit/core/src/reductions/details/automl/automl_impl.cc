@@ -66,7 +66,7 @@ interaction_config_manager<config_oracle_impl, estimator_impl>::interaction_conf
     const std::string& interaction_type, const std::string& oracle_type, dense_parameters& weights,
     priority_func calc_priority, double automl_significance_level, VW::io::logger* logger, uint32_t& wpp, bool ccb_on,
     config_type conf_type, std::string trace_prefix, bool reward_as_cost, double tol_x, bool is_brentq,
-    VW::interactions_generator& interactions_cache)
+    VW::interactions_generator* interactions_cache)
     : default_lease(default_lease)
     , max_live_configs(max_live_configs)
     , priority_challengers(priority_challengers)
@@ -184,7 +184,7 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::schedule()
       // fetch config from the queue, and apply it current live slot
       apply_config_at_slot(estimators, _config_oracle.configs, live_slot,
           config_oracle_impl::choose(_config_oracle.index_queue), automl_significance_level, tol_x, is_brentq,
-          priority_challengers, _interactions_cache);
+          priority_challengers, *_interactions_cache);
       if (champ_log_file)
       {
         *champ_log_file << "APPLY_CONFIG," << total_learn_count << "," << live_slot << ","
@@ -273,14 +273,14 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::check_for_n
     VW::reductions::multi_model::move_innermost_offsets(
         weights, winning_challenger_slot, old_champ_slot, wpp, max_live_configs, true);
 
-    _interactions_cache.swap_two_offsets(winning_challenger_slot, old_champ_slot, false);
+    _interactions_cache->swap_two_offsets(winning_challenger_slot, old_champ_slot, false);
 
     // move last champ to position 1, which now is at "winning_challenger_slot"
     if (winning_challenger_slot != 1)
     {
       VW::reductions::multi_model::move_innermost_offsets(
           weights, winning_challenger_slot, 1, wpp, max_live_configs, false);
-      _interactions_cache.swap_two_offsets(1, winning_challenger_slot, false);
+      _interactions_cache->swap_two_offsets(1, winning_challenger_slot, false);
     }
 
     apply_new_champ(_config_oracle, winning_challenger_slot, estimators, priority_challengers, ns_counter);

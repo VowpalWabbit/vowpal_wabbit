@@ -218,7 +218,7 @@ public:
   bool reward_as_cost;
   double tol_x;
   bool is_brentq;
-  VW::interactions_generator _interactions_cache;
+  VW::interactions_generator* _interactions_cache;
 
   // TODO: delete all this, gd and cb_adf must respect ft_offset, see header import of automl.cc
   std::vector<uint64_t> per_live_model_state_uint64;
@@ -240,7 +240,7 @@ public:
       const std::string& oracle_type, dense_parameters& weights, priority_func calc_priority,
       double automl_significance_level, VW::io::logger* logger, uint32_t& wpp, bool ccb_on, config_type conf_type,
       std::string trace_prefix, bool reward_as_cost, double tol_x, bool is_brentq,
-      VW::interactions_generator& interactions_cache);
+      VW::interactions_generator* interactions_cache);
 
   void do_learning(VW::LEARNER::learner& base, multi_ex& ec, uint64_t live_slot);
   void persist(metric_sink& metrics, bool verbose);

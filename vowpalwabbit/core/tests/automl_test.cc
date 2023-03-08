@@ -541,7 +541,7 @@ TEST(Automl, OneDiffImplUnittestWIterations)
           interaction_config_manager<config_oracle<one_diff_impl>,
               VW::estimators::confidence_sequence_robust>::apply_config_at_slot(estimators, oracle.configs, i,
               config_oracle<one_diff_impl>::choose(oracle.index_queue), aml->cm->automl_significance_level,
-              aml->cm->tol_x, aml->cm->is_brentq, 1, aml->cm->_interactions_cache);
+              aml->cm->tol_x, aml->cm->is_brentq, 1, *aml->cm->_interactions_cache);
           auto& temp_exclusions = oracle.configs[estimators[i].first.config_index];
           auto& temp_interactions = estimators[i].first.live_interactions;
           ns_based_config::apply_config_to_interactions(
@@ -574,7 +574,7 @@ TEST(Automl, OneDiffImplUnittestWIterations)
           interaction_config_manager<config_oracle<one_diff_impl>,
               VW::estimators::confidence_sequence_robust>::apply_config_at_slot(estimators, oracle.configs, i,
               config_oracle<one_diff_impl>::choose(oracle.index_queue), aml->cm->automl_significance_level,
-              aml->cm->tol_x, aml->cm->is_brentq, 1, aml->cm->_interactions_cache);
+              aml->cm->tol_x, aml->cm->is_brentq, 1, *aml->cm->_interactions_cache);
           auto& temp_config = oracle.configs[estimators[i].first.config_index];
           auto& temp_interactions = estimators[i].first.live_interactions;
           ns_based_config::apply_config_to_interactions(
@@ -688,7 +688,7 @@ TEST(Automl, QbaseUnittestWIterations)
           interaction_config_manager<config_oracle<qbase_cubic>,
               VW::estimators::confidence_sequence_robust>::apply_config_at_slot(estimators, oracle.configs, i,
               config_oracle<qbase_cubic>::choose(oracle.index_queue), aml->cm->automl_significance_level,
-              aml->cm->tol_x, aml->cm->is_brentq, 1, aml->cm->_interactions_cache);
+              aml->cm->tol_x, aml->cm->is_brentq, 1, *aml->cm->_interactions_cache);
           auto& temp_exclusions = oracle.configs[estimators[i].first.config_index];
           auto& temp_interactions = estimators[i].first.live_interactions;
           ns_based_config::apply_config_to_interactions(
@@ -732,7 +732,7 @@ TEST(Automl, QbaseUnittestWIterations)
           interaction_config_manager<config_oracle<qbase_cubic>,
               VW::estimators::confidence_sequence_robust>::apply_config_at_slot(estimators, oracle.configs, i,
               config_oracle<qbase_cubic>::choose(oracle.index_queue), aml->cm->automl_significance_level,
-              aml->cm->tol_x, aml->cm->is_brentq, 1, aml->cm->_interactions_cache);
+              aml->cm->tol_x, aml->cm->is_brentq, 1, *aml->cm->_interactions_cache);
           auto& temp_config = oracle.configs[estimators[i].first.config_index];
           auto& temp_interactions = estimators[i].first.live_interactions;
           ns_based_config::apply_config_to_interactions(
