@@ -377,6 +377,7 @@ public:
       , per_model_interactions(interleave_model_count)
       , per_model_extent_interactions(interleave_model_count)
       , _stride(stride)
+      , _count_when_last_generated(interleave_model_count)
   {
   }
 
@@ -389,11 +390,11 @@ public:
   {
     gen_interactions_vec& generated_interactions = per_model_interactions[offset / _stride];
 
-    auto prev_count = _all_seen_namespaces.size();
     _all_seen_namespaces.insert(new_example_indices.begin(), new_example_indices.end());
 
-    if (prev_count != _all_seen_namespaces.size())
+    if (_count_when_last_generated[offset / _stride].first != _all_seen_namespaces.size())
     {
+      _count_when_last_generated[offset / _stride].first = _all_seen_namespaces.size();
       // We do not generate interactions for reserved namespaces as
       // generally they are used for implementation details and special behavior
       // and not user inputted features. The two exceptions are default_namespace
@@ -420,7 +421,6 @@ public:
     gen_interactions_vec& generated_interactions = per_model_interactions[offset / _stride];
     gen_extent_interactions_vec& generated_extent_interactions = per_model_extent_interactions[offset / _stride];
 
-    auto prev_count = _all_seen_extents.size();
     for (auto ns_index : indices)
     {
       for (const auto& extent : feature_space[ns_index].namespace_extents)
@@ -440,8 +440,9 @@ public:
       }
     }
 
-    if (prev_count != _all_seen_extents.size())
+    if (_count_when_last_generated[offset / _stride].second != _all_seen_extents.size())
     {
+      _count_when_last_generated[offset / _stride].second = _all_seen_extents.size();
       generated_interactions.clear();
       if (!_all_seen_extents.empty())
       {
@@ -463,6 +464,7 @@ public:
   }
 
 private:
+  std::vector<std::pair<size_t, size_t>> _count_when_last_generated;
   std::vector<gen_interactions_vec> per_model_interactions;
   std::vector<gen_extent_interactions_vec> per_model_extent_interactions;
   std::set<VW::namespace_index> _all_seen_namespaces;
