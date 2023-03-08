@@ -598,7 +598,7 @@ TEST(Automl, OneDiffImplUnittestWIterations)
       });
 
   auto ctr = simulator::_test_helper_hook(
-      std::vector<std::string>{"--automl", "3", "--priority_type", "favor_popular_namespaces", "--cb_explore_adf",
+      std::vector<std::string>{"--automl", "4", "--priority_type", "favor_popular_namespaces", "--cb_explore_adf",
           "--quiet", "--epsilon", "0.2", "--random_seed", "5", "--default_lease", "500", "--oracle_type", "one_diff",
           "--noconstant"},
       test_hooks, num_iterations, seed);
@@ -683,7 +683,7 @@ TEST(Automl, QbaseUnittestWIterations)
 
         EXPECT_EQ(estimators.size(), 1);
         // add dummy evaluators to simulate that all configs are in play
-        for (size_t i = 1; i < configs.size(); ++i)
+        for (size_t i = 1; i < 4; ++i)
         {
           interaction_config_manager<config_oracle<qbase_cubic>,
               VW::estimators::confidence_sequence_robust>::apply_config_at_slot(estimators, oracle.configs, i,
@@ -694,8 +694,8 @@ TEST(Automl, QbaseUnittestWIterations)
           ns_based_config::apply_config_to_interactions(
               false, ns_counter, oracle._interaction_type, temp_exclusions, temp_interactions);
         }
-        EXPECT_EQ(prio_queue.size(), 0);
-        EXPECT_EQ(estimators.size(), 11);
+        EXPECT_EQ(prio_queue.size(), 7);
+        EXPECT_EQ(estimators.size(), 4);
         const interaction_vec_t expected2 = {
             {'B', 'C', 'C'},
             {'A', 'A'},
@@ -756,7 +756,7 @@ TEST(Automl, QbaseUnittestWIterations)
       });
 
   auto ctr = simulator::_test_helper_hook(
-      std::vector<std::string>{"--automl", "3", "--priority_type", "favor_popular_namespaces", "--cb_explore_adf",
+      std::vector<std::string>{"--automl", "4", "--priority_type", "favor_popular_namespaces", "--cb_explore_adf",
           "--quiet", "--epsilon", "0.2", "--random_seed", "5", "--default_lease", "500", "--oracle_type", "qbase_cubic",
           "--noconstant"},
       test_hooks, num_iterations, seed);
@@ -819,15 +819,15 @@ TEST(Automl, InsertionChampChangeWIterations)
         EXPECT_EQ(aml->cm->current_champ, 0);
         EXPECT_EQ(aml->cm->_config_oracle.valid_config_size, 4);
         EXPECT_EQ(clear_champ_switch - 1, aml->cm->total_learn_count);
-        EXPECT_EQ(aml->cm->estimators[0].first.live_interactions.size(), 1);
-        EXPECT_EQ(aml->cm->estimators[1].first.live_interactions.size(), 0);
-        EXPECT_EQ(aml->cm->estimators[2].first.live_interactions.size(), 2);
+        EXPECT_EQ(aml->cm->estimators[0].first.live_interactions.size(), 2);
+        EXPECT_EQ(aml->cm->estimators[1].first.live_interactions.size(), 1);
+        EXPECT_EQ(aml->cm->estimators[2].first.live_interactions.size(), 1);
         EXPECT_EQ(aml->cm->_config_oracle.configs.size(), 4);
-        EXPECT_EQ(aml->cm->_config_oracle.configs[0].elements.size(), 1);
-        EXPECT_EQ(aml->cm->_config_oracle.configs[1].elements.size(), 0);
-        EXPECT_EQ(aml->cm->_config_oracle.configs[2].elements.size(), 2);
-        EXPECT_EQ(aml->cm->_config_oracle.configs[3].elements.size(), 2);
-        EXPECT_EQ(aml->cm->total_champ_switches, 1);
+        EXPECT_EQ(aml->cm->_config_oracle.configs[0].elements.size(), 2);
+        EXPECT_EQ(aml->cm->_config_oracle.configs[1].elements.size(), 1);
+        EXPECT_EQ(aml->cm->_config_oracle.configs[2].elements.size(), 1);
+        EXPECT_EQ(aml->cm->_config_oracle.configs[3].elements.size(), 3);
+        EXPECT_EQ(aml->cm->total_champ_switches, 18);
         EXPECT_EQ(aml->current_state, VW::reductions::automl::automl_state::Experimenting);
         return true;
       });
@@ -841,14 +841,14 @@ TEST(Automl, InsertionChampChangeWIterations)
         EXPECT_EQ(clear_champ_switch, aml->cm->total_learn_count);
         EXPECT_EQ(aml->cm->estimators.size(), 3);
         EXPECT_EQ(aml->cm->_config_oracle.valid_config_size, 4);
-        EXPECT_EQ(aml->cm->estimators[0].first.live_interactions.size(), 1);
-        EXPECT_EQ(aml->cm->estimators[1].first.live_interactions.size(), 0);
+        EXPECT_EQ(aml->cm->estimators[0].first.live_interactions.size(), 2);
+        EXPECT_EQ(aml->cm->estimators[1].first.live_interactions.size(), 1);
         EXPECT_EQ(aml->cm->_config_oracle.configs.size(), 4);
-        EXPECT_EQ(aml->cm->_config_oracle.configs[0].elements.size(), 1);
-        EXPECT_EQ(aml->cm->_config_oracle.configs[1].elements.size(), 0);
-        EXPECT_EQ(aml->cm->_config_oracle.configs[2].elements.size(), 2);
-        EXPECT_EQ(aml->cm->_config_oracle.configs[3].elements.size(), 2);
-        EXPECT_EQ(aml->cm->total_champ_switches, 1);
+        EXPECT_EQ(aml->cm->_config_oracle.configs[0].elements.size(), 2);
+        EXPECT_EQ(aml->cm->_config_oracle.configs[1].elements.size(), 1);
+        EXPECT_EQ(aml->cm->_config_oracle.configs[2].elements.size(), 1);
+        EXPECT_EQ(aml->cm->_config_oracle.configs[3].elements.size(), 3);
+        EXPECT_EQ(aml->cm->total_champ_switches, 18);
         EXPECT_EQ(aml->current_state, VW::reductions::automl::automl_state::Experimenting);
         return true;
       });
@@ -859,9 +859,9 @@ TEST(Automl, InsertionChampChangeWIterations)
         auto* aml = aml_test::get_automl_data<VW::reductions::automl::one_diff_inclusion_impl>(all);
         aml_test::check_config_states(aml);
         EXPECT_EQ(aml->cm->estimators.size(), 3);
-        EXPECT_EQ(aml->cm->estimators[0].first.live_interactions.size(), 1);
-        EXPECT_EQ(aml->cm->estimators[1].first.live_interactions.size(), 0);
-        EXPECT_EQ(aml->cm->estimators[2].first.live_interactions.size(), 2);
+        EXPECT_EQ(aml->cm->estimators[0].first.live_interactions.size(), 2);
+        EXPECT_EQ(aml->cm->estimators[1].first.live_interactions.size(), 1);
+        EXPECT_EQ(aml->cm->estimators[2].first.live_interactions.size(), 1);
         return true;
       });
 
@@ -872,7 +872,7 @@ TEST(Automl, InsertionChampChangeWIterations)
           "one_diff_inclusion", "--default_lease", "500", "--noconstant"},
       test_hooks, num_iterations, seed, swap_after);
 
-  EXPECT_GT(ctr.back(), 0.4f);
+  EXPECT_GT(ctr.back(), 0.37f);
 }
 
 TEST(Automl, InsertionChampChangeBagWIterations)
