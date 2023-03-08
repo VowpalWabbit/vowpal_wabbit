@@ -373,11 +373,11 @@ class interactions_generator
 
 public:
   // default constructor for vw_slim_predict.h
-  interactions_generator()
-      : per_model_interactions(1)
-      , per_model_extent_interactions(1)
-      , _stride(1)
-      , _count_when_last_generated(1)
+  interactions_generator(size_t interleave_model_count = 1, size_t stride = 1)
+      : per_model_interactions(interleave_model_count)
+      , per_model_extent_interactions(interleave_model_count)
+      , _stride(stride)
+      , _count_when_last_generated(interleave_model_count)
   {
   }
 
@@ -480,19 +480,19 @@ public:
   void clear_state_for_offset(size_t offset, bool adjust_stride = true)
   {
     if (adjust_stride) { offset /= _stride; }
-    
+
     per_model_interactions[offset].clear();
     per_model_extent_interactions[offset].clear();
     _count_when_last_generated[offset] = {0, 0};
   }
 
 private:
-  std::vector<std::pair<size_t, size_t>> _count_when_last_generated;
   std::vector<gen_interactions_vec> per_model_interactions;
   std::vector<gen_extent_interactions_vec> per_model_extent_interactions;
+  size_t _stride;
+  std::vector<std::pair<size_t, size_t>> _count_when_last_generated;
   std::set<VW::namespace_index> _all_seen_namespaces;
   std::set<VW::extent_term> _all_seen_extents;
-  size_t _stride;
 };
 
 }  // namespace VW
