@@ -226,6 +226,7 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::apply_confi
 
   // We may also want to 0 out weights here? Currently keep all same in live_slot position
   // TODO: reset stats of gd, cb_adf, sd patch , to default.. what is default?
+  // TODO: reset cache of generate_interactions
 }
 
 template <typename config_oracle_impl, typename estimator_impl>
@@ -274,6 +275,7 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::check_for_n
       VW::reductions::multi_model::move_innermost_offsets(
           weights, winning_challenger_slot, 1, wpp, max_live_configs, false);
     }
+    // TODO: swap or invalidate generate interaction cache
 
     apply_new_champ(_config_oracle, winning_challenger_slot, estimators, priority_challengers, ns_counter);
     if (champ_log_file)
