@@ -143,6 +143,8 @@ public:
 
   void* get_internal_type_erased_data_pointer_test_use_only() { return _learner_data.get(); }
 
+  std::shared_ptr<void> get_internal_type_erased_data_pointer_test_use_only_shared() { return _learner_data; }
+
   // This is very dangerous to use.
   // This will not override the data object passed to functions, just the data object returned by
   // get_internal_type_erased_data_pointer_test_use_only
