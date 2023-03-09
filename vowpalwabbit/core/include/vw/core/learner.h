@@ -143,6 +143,16 @@ public:
 
   void* get_internal_type_erased_data_pointer_test_use_only() { return _learner_data.get(); }
 
+  std::shared_ptr<void> get_internal_type_erased_data_pointer_test_use_only_shared() { return _learner_data; }
+
+  // This is very dangerous to use.
+  // This will not override the data object passed to functions, just the data object returned by
+  // get_internal_type_erased_data_pointer_test_use_only
+  void set_internal_type_erased_data_pointer_does_not_override_funcs(std::shared_ptr<void> data)
+  {
+    _learner_data = std::move(data);
+  }
+
   /// \brief Will update the model according to the labels and examples supplied.
   /// \param ec The ::example object or ::multi_ex to be operated on. This
   /// object **must** have a valid label set for every ::example in the field
