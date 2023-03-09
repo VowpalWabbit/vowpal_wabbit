@@ -206,6 +206,11 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::generate_interactions_setu
     }
   }
 
+  if (options.was_supplied("automl"))
+  {
+    return nullptr;
+  }
+
   // If there are no wildcards, then no expansion is required.
   // ccb_explore_adf adds a wildcard post setup and so this reduction must be turned on.
   if (!(interactions_spec_contains_wildcards || interactions_spec_contains_extent_wildcards ||
