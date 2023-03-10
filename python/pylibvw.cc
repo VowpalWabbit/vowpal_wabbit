@@ -1657,7 +1657,7 @@ BOOST_PYTHON_MODULE(pylibvw)
   py::class_<Search::search, search_ptr>("search")
       .def("set_options", &Search::search::set_options, "Set global search options (auto conditioning, etc.)")
       //.def("set_total_feature_width", &Search::search::set_total_feature_width, "Set the total number of learners you
-      //want to
+      // want to
       // train")
       .def("get_history_length", &Search::search::get_history_length,
           "Get the value specified by --search_history_length")
