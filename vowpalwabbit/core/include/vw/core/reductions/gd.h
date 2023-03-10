@@ -37,6 +37,7 @@ public:
 class gd
 {
 public:
+  gd(size_t feature_width_above = 1) : gd_per_model_states(feature_width_above) {}
   std::vector<VW::reductions::details::gd_per_model_state> gd_per_model_states;
   VW::reductions::details::gd_per_model_state* current_model_state = nullptr;
   size_t no_win_counter = 0;
