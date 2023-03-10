@@ -547,10 +547,10 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::recall_tree_setup(VW::setu
                          << std::endl;
   }
 
-  size_t ws = tree->max_routers + tree->k;
-  auto l = make_reduction_learner(std::move(tree), require_singleline(stack_builder.setup_base_learner(ws)), learn,
-      predict, stack_builder.get_setupfn_name(recall_tree_setup))
-               .set_params_per_weight(ws)
+  size_t feature_width = tree->max_routers + tree->k;
+  auto l = make_reduction_learner(std::move(tree), require_singleline(stack_builder.setup_base_learner(feature_width)),
+      learn, predict, stack_builder.get_setupfn_name(recall_tree_setup))
+               .set_feature_width(feature_width)
                .set_update_stats(VW::details::update_stats_multiclass_label<recall_tree>)
                .set_output_example_prediction(VW::details::output_example_prediction_multiclass_label<recall_tree>)
                .set_print_update(VW::details::print_update_multiclass_label<recall_tree>)
@@ -560,8 +560,5 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::recall_tree_setup(VW::setu
                .set_input_label_type(VW::label_type_t::MULTICLASS)
                .set_output_label_type(VW::label_type_t::SIMPLE)
                .build();
-
-  all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
-
   return l;
 }

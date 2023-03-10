@@ -318,9 +318,9 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::ect_setup(VW::setup_base_i
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  size_t wpp = create_circuit(*data.get(), data->k, data->errors + 1);
+  size_t feature_width = create_circuit(*data.get(), data->k, data->errors + 1);
 
-  auto base = stack_builder.setup_base_learner(wpp);
+  auto base = stack_builder.setup_base_learner(feature_width);
   if (link == "logistic")
   {
     data->class_boundary = 0.5;  // as --link=logistic maps predictions in [0;1]
@@ -328,7 +328,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::ect_setup(VW::setup_base_i
 
   auto l = make_reduction_learner(
       std::move(data), require_singleline(base), learn, predict, stack_builder.get_setupfn_name(ect_setup))
-               .set_params_per_weight(wpp)
+               .set_feature_width(feature_width)
                .set_input_label_type(VW::label_type_t::MULTICLASS)
                .set_output_label_type(VW::label_type_t::SIMPLE)
                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
@@ -337,8 +337,5 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::ect_setup(VW::setup_base_i
                .set_output_example_prediction(VW::details::output_example_prediction_multiclass_label<ect>)
                .set_print_update(VW::details::print_update_multiclass_label<ect>)
                .build();
-
-  all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
-
   return l;
 }

@@ -190,7 +190,7 @@ public:
   size_t history_length = 0;               // value of --search_history_length, used by some tasks, default 1
 
   size_t A = 0;             // NOLINT total number of actions, [1..A]; 0 means ldf
-  size_t num_learners = 0;  // total number of learners;
+  size_t feature_width = 0;  // total number of learners;
   bool cb_learner = false;  // do contextual bandit learning on action (was "! rollout_all_actions" which was confusing)
   search_state state;       // current state of learning
   size_t learn_learner_id = 0;   // we allow user to use different learners for different states
@@ -422,7 +422,7 @@ int select_learner(search_private& priv, int policy, size_t learner_id, bool is_
       learner_id *= 3;
       if (!is_local) { learner_id += 1 + static_cast<size_t>(is_training ^ (priv.all->sd->example_number % 2 == 1)); }
     }
-    return static_cast<int>(policy * priv.num_learners + learner_id);
+    return static_cast<int>(policy * priv.feature_width + learner_id);
   }
 }
 
@@ -2469,7 +2469,7 @@ void search_initialize(VW::workspace* all, search& sch)
   priv.active_csoaa = false;
   priv.label_is_test = mc_label_is_test;
 
-  priv.num_learners = 1;
+  priv.feature_width = 1;
   priv.state = search_state::INITIALIZE;
   priv.mix_per_roll_policy = -2;
 
@@ -2775,6 +2775,13 @@ void search::set_label_parser(VW::label_parser& lp, bool (*is_test)(const VW::po
   {
     priv->all->logger.err_warn("Task should not set label parser except in initialize function.");
   }
+
+  // This will override the label parser object passed in, and it will persist.
+  // I don't know why Search needs to override is_test, and if it didn't then this would not be necessary.
+  // Remove the overriding of is_test breaks the unit tests.
+  // TODO: figure out why Search needs to override is_test and remove this.
+  lp.test_label = is_test;
+
   this->priv->all->example_parser->lbl_parser = lp;
   this->priv->all->example_parser->lbl_parser.test_label = is_test;
   this->priv->label_is_test = is_test;
@@ -2789,7 +2796,7 @@ void search::get_test_action_sequence(std::vector<action>& V)
   }
 }
 
-void search::set_num_learners(size_t num_learners) { this->priv->num_learners = num_learners; }
+void search::set_feature_width(size_t feature_width) { this->priv->feature_width = feature_width; }
 
 uint64_t search::get_mask() { return this->priv->all->weights.mask(); }
 size_t search::get_stride_shift() { return this->priv->all->weights.stride_shift(); }
@@ -3342,8 +3349,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::search_setup(VW::setup_bas
   VW::label_type_t expected_label_type = all.example_parser->lbl_parser.label_type;
 
   auto stash_lbl_parser = all.example_parser->lbl_parser;
-  if (priv.xv) { priv.num_learners *= 3; }
-  auto base = stack_builder.setup_base_learner(priv.total_number_of_policies * priv.num_learners);
+  if (priv.xv) { priv.feature_width *= 3; }
+  auto base = stack_builder.setup_base_learner(priv.total_number_of_policies * priv.feature_width);
   all.example_parser->lbl_parser = stash_lbl_parser;
 
   if (options.was_supplied("search_allowed_transitions"))
@@ -3363,7 +3370,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::search_setup(VW::setup_bas
 
   priv.start_clock_time = clock();
 
-  cdbg << "num_learners = " << priv.num_learners << endl;
+  cdbg << "feature_width = " << priv.feature_width << endl;
 
   // No normal prediction is produced so the base prediction type is used. That type is unlikely to be accessible
   // though. TODO: either let search return a prediction or add a NO_PRED type.
@@ -3373,7 +3380,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::search_setup(VW::setup_bas
       VW::LEARNER::make_reduction_learner(std::move(sch), base, do_actual_learning<true>, do_actual_learning<false>,
           stack_builder.get_setupfn_name(search_setup))
           .set_learn_returns_prediction(true)
-          .set_params_per_weight(priv.total_number_of_policies * priv.num_learners)
+          .set_feature_width(priv.total_number_of_policies * priv.feature_width)
           .set_print_update(print_update_search)
           .set_end_examples(end_examples)
           .set_finish(search_finish)

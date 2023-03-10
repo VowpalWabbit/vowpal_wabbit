@@ -93,8 +93,8 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
     sch.set_options(Search::IS_LDF);
   }
 
-  sch.set_num_learners(2);
-  if (my_task_data->search_order == 4) { sch.set_num_learners(3); }
+  sch.set_feature_width(2);
+  if (my_task_data->search_order == 4) { sch.set_feature_width(3); }
 }
 
 bool check_constraints(size_t ent1_id, size_t ent2_id, size_t rel_id)

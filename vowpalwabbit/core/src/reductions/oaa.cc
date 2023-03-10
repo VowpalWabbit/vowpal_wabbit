@@ -433,8 +433,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::oaa_setup(VW::setup_base_i
     }
   }
 
-  all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
-
   if (data_ptr->num_subsample > 0)
   {
     learn_ptr = learn_randomized;
@@ -455,7 +453,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::oaa_setup(VW::setup_base_i
 
   auto l = make_reduction_learner(
       std::move(data), base, learn_ptr, pred_ptr, stack_builder.get_setupfn_name(oaa_setup) + name_addition)
-               .set_params_per_weight(k_value)
+               .set_feature_width(k_value)
                .set_input_label_type(VW::label_type_t::MULTICLASS)
                .set_output_label_type(VW::label_type_t::SIMPLE)
                .set_input_prediction_type(VW::prediction_type_t::SCALAR)

@@ -418,7 +418,7 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
         break;
     }
 
-    uint64_t multiplier = (uint64_t)all.wpp << all.weights.stride_shift();
+    uint64_t multiplier = (uint64_t)all.total_feature_width << all.weights.stride_shift();
     if (multiplier != 1)
     {
       for (VW::features& fs : *ae)

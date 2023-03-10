@@ -37,6 +37,7 @@ public:
 class cb_to_cs_adf
 {
 public:
+  cb_to_cs_adf(size_t feature_width = 1) : per_model_state(feature_width) {}
   VW::cb_type_t cb_type = VW::cb_type_t::DM;
 
   // for MTR

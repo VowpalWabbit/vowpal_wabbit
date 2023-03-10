@@ -38,7 +38,7 @@ float decayed_epsilon(float init_ep, uint64_t update_count)
 
 epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
     double epsilon_decay_significance_level, double epsilon_decay_estimator_decay, dense_parameters& weights,
-    std::string epsilon_decay_audit_str, bool constant_epsilon, uint32_t& wpp, uint64_t min_champ_examples,
+    std::string epsilon_decay_audit_str, bool constant_epsilon, uint32_t& feature_width, uint64_t min_champ_examples,
     float initial_epsilon, uint64_t shift_model_bounds, bool reward_as_cost, double tol_x, bool is_brentq,
     bool predict_only_model)
     : _model_count(model_count)
@@ -48,7 +48,7 @@ epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
     , _weights(weights)
     , _epsilon_decay_audit_str(std::move(epsilon_decay_audit_str))
     , _constant_epsilon(constant_epsilon)
-    , _wpp(wpp)
+    , _feature_width(feature_width)
     , _min_champ_examples(min_champ_examples)
     , _initial_epsilon(initial_epsilon)
     , _shift_model_bounds(shift_model_bounds)
@@ -88,6 +88,9 @@ void epsilon_decay_data::update_weights(float init_ep, VW::LEARNER::learner& bas
       ++_global_counter;
     }
     auto& ep_fts = examples[0]->ex_reduction_features.template get<VW::cb_explore_adf::greedy::reduction_features>();
+
+    VW::action_scores champ_a_s;
+
     // Process each model, then update the upper/lower bounds for each model
     for (int64_t model_ind = model_count - 1; model_ind >= 0; --model_ind)
     {
@@ -120,7 +123,9 @@ void epsilon_decay_data::update_weights(float init_ep, VW::LEARNER::learner& bas
           break;
         }
       }
+      if (model_ind == model_count - 1) { champ_a_s = examples[0]->pred.a_s; }
     }
+    examples[0]->pred.a_s = champ_a_s;
   }
 }
 
@@ -166,7 +171,7 @@ void epsilon_decay_data::clear_weights_and_estimators(int64_t swap_dist, int64_t
   }
   for (int64_t ind = 0; ind < swap_dist; ++ind)
   {
-    VW::reductions::multi_model::clear_innermost_offset(_weights, _weight_indices[ind], _wpp, _model_count);
+    VW::reductions::multi_model::clear_innermost_offset(_weights, _weight_indices[ind], _feature_width, _model_count);
   }
 }
 
@@ -294,7 +299,7 @@ void pre_save_load_epsilon_decay(VW::workspace& all, VW::reductions::epsilon_dec
 
   // Adjust champ weights to new single-model space
   VW::reductions::multi_model::reduce_innermost_model_weights(
-      data._weights, data._weight_indices[data.conf_seq_estimators.size() - 1], data._wpp, data._model_count);
+      data._weights, data._weight_indices[data.conf_seq_estimators.size() - 1], data._feature_width, data._model_count);
 
   for (auto& group : options.get_all_option_group_definitions())
   {
@@ -304,7 +309,7 @@ void pre_save_load_epsilon_decay(VW::workspace& all, VW::reductions::epsilon_dec
     }
   }
 
-  all.num_bits = all.num_bits - static_cast<uint32_t>(std::log2(data._wpp));
+  all.num_bits = all.num_bits - static_cast<uint32_t>(std::log2(data._feature_width));
   options.get_typed_option<uint32_t>("bit_precision").value(all.num_bits);
 }
 
@@ -413,8 +418,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::epsilon_decay_setup(VW::se
 
   auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(model_count, min_scope,
       epsilon_decay_significance_level, epsilon_decay_estimator_decay, all.weights.dense_weights,
-      epsilon_decay_audit_str, constant_epsilon, all.wpp, min_champ_examples, initial_epsilon, shift_model_bounds,
-      reward_as_cost, tol_x, is_brentq, predict_only_model);
+      epsilon_decay_audit_str, constant_epsilon, all.total_feature_width, min_champ_examples, initial_epsilon,
+      shift_model_bounds, reward_as_cost, tol_x, is_brentq, predict_only_model);
 
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs
@@ -428,7 +433,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::epsilon_decay_setup(VW::se
                  .set_output_label_type(VW::label_type_t::CB)
                  .set_input_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                  .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
-                 .set_params_per_weight(model_count)
+                 .set_feature_width(model_count)
                  .set_save_load(save_load_epsilon_decay)
                  .set_finish(::finish)
                  .set_pre_save_load(pre_save_load_epsilon_decay)

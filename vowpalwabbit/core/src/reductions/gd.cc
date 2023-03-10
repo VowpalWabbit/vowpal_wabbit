@@ -1408,7 +1408,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i&
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  size_t ppw = stack_builder.get_ppw();
+  size_t feature_width_above = stack_builder.get_feature_width_above();
 
   auto g = VW::make_unique<VW::reductions::gd>();
 
@@ -1546,13 +1546,12 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i&
 
   all.weights.stride_shift(static_cast<uint32_t>(::ceil_log_2(stride - 1)));
 
-  g->gd_per_model_states.resize(ppw);
+  g->gd_per_model_states.resize(feature_width_above);
 
   auto* bare = g.get();
   auto l = make_bottom_learner(std::move(g), g->learn, bare->predict, stack_builder.get_setupfn_name(gd_setup),
       VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
                .set_learn_returns_prediction(true)
-               .set_params_per_weight(VW::details::UINT64_ONE << all.weights.stride_shift())
                .set_sensitivity(bare->sensitivity)
                .set_multipredict(bare->multipredict)
                .set_update(bare->update)

@@ -247,7 +247,6 @@ void learn_or_predict(VW::reductions::slates_data& data, VW::LEARNER::learner& b
 std::shared_ptr<VW::LEARNER::learner> VW::reductions::slates_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = VW::make_unique<slates_data>();
   bool slates_option = false;
   option_group_definition new_options("[Reduction] Slates");
@@ -262,7 +261,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::slates_setup(VW::setup_bas
   }
 
   auto base = require_multiline(stack_builder.setup_base_learner());
-  all.example_parser->lbl_parser = VW::slates::slates_label_parser;
   auto l = make_reduction_learner(std::move(data), base, learn_or_predict<true>, learn_or_predict<false>,
       stack_builder.get_setupfn_name(slates_setup))
                .set_learn_returns_prediction(base->learn_returns_prediction)

@@ -33,7 +33,7 @@ public:
 
   virtual std::string get_setupfn_name(reduction_setup_fn setup) = 0;
 
-  virtual size_t get_ppw() = 0;
+  virtual size_t get_feature_width_above() = 0;
 
   virtual ~setup_base_i() = default;
 };

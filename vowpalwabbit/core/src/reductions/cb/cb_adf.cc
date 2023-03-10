@@ -184,7 +184,7 @@ void VW::reductions::cb_adf::learn_sm(learner& base, VW::multi_ex& examples)
 
 void VW::reductions::cb_adf::learn_dr(learner& base, VW::multi_ex& examples)
 {
-  details::gen_cs_example_dr<true>(gen_cs, examples, _cs_labels, _clip_p);
+  details::gen_cs_example_dr<true>(_gen_cs, examples, _cs_labels, _clip_p);
   details::cs_ldf_learn_or_predict<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, true, _offset);
 }
 
@@ -207,22 +207,22 @@ void VW::reductions::cb_adf::learn_mtr(learner& base, VW::multi_ex& examples)
   // Train on _one_ action (which requires up to 3 examples).
   // We must go through the cost sensitive classifier layer to get
   // proper feature handling.
-  gen_cs_example_mtr(gen_cs, examples, _cs_labels, _offset_index);
-  uint32_t nf = static_cast<uint32_t>(examples[gen_cs.mtr_example]->num_features);
-  float old_weight = examples[gen_cs.mtr_example]->weight;
-  const float clipped_p = std::max(examples[gen_cs.mtr_example]->l.cb.costs[0].probability, _clip_p);
-  examples[gen_cs.mtr_example]->weight *= 1.f / clipped_p *
-      (static_cast<float>(gen_cs.per_model_state[_offset_index].event_sum) /
-          static_cast<float>(gen_cs.per_model_state[_offset_index].action_sum));
+  gen_cs_example_mtr(_gen_cs, examples, _cs_labels, _offset_index);
+  uint32_t nf = static_cast<uint32_t>(examples[_gen_cs.mtr_example]->num_features);
+  float old_weight = examples[_gen_cs.mtr_example]->weight;
+  const float clipped_p = std::max(examples[_gen_cs.mtr_example]->l.cb.costs[0].probability, _clip_p);
+  examples[_gen_cs.mtr_example]->weight *= 1.f / clipped_p *
+      (static_cast<float>(_gen_cs.per_model_state[_offset_index].event_sum) /
+          static_cast<float>(_gen_cs.per_model_state[_offset_index].action_sum));
 
-  std::swap(gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
+  std::swap(_gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
   // TODO!!! cb_labels are not getting properly restored (empty costs are
   // dropped)
   details::cs_ldf_learn_or_predict<true>(
-      base, gen_cs.mtr_ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
-  examples[gen_cs.mtr_example]->num_features = nf;
-  examples[gen_cs.mtr_example]->weight = old_weight;
-  std::swap(gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
+      base, _gen_cs.mtr_ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
+  examples[_gen_cs.mtr_example]->num_features = nf;
+  examples[_gen_cs.mtr_example]->weight = old_weight;
+  std::swap(_gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
 
   if (PREDICT)
   {  // Return the saved prediction
@@ -236,8 +236,8 @@ void VW::reductions::cb_adf::learn(learner& base, VW::multi_ex& ec_seq)
   {
     _offset = ec_seq[0]->ft_offset;
     _offset_index = _offset / _all->weights.stride();
-    gen_cs.known_cost = VW::get_observed_cost_or_default_cb_adf(ec_seq);  // need to set for test case
-    switch (gen_cs.cb_type)
+    _gen_cs.known_cost = VW::get_observed_cost_or_default_cb_adf(ec_seq);  // need to set for test case
+    switch (_gen_cs.cb_type)
     {
       case VW::cb_type_t::DR:
         learn_dr(base, ec_seq);
@@ -264,7 +264,7 @@ void VW::reductions::cb_adf::predict(learner& base, VW::multi_ex& ec_seq)
 {
   _offset = ec_seq[0]->ft_offset;
   _offset_index = _offset / _all->weights.stride();
-  gen_cs.known_cost = VW::get_observed_cost_or_default_cb_adf(ec_seq);  // need to set for test case
+  _gen_cs.known_cost = VW::get_observed_cost_or_default_cb_adf(ec_seq);  // need to set for test case
   details::gen_cs_test_example(ec_seq, _cs_labels);                     // create test labels.
   details::cs_ldf_learn_or_predict<false>(base, ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
 }
@@ -282,7 +282,7 @@ bool VW::reductions::cb_adf::update_statistics(
   float loss = 0.;
 
   bool labeled_example = true;
-  if (gen_cs.known_cost.probability > 0) { loss = get_cost_estimate(gen_cs.known_cost, gen_cs.pred_scores, action); }
+  if (_gen_cs.known_cost.probability > 0) { loss = get_cost_estimate(_gen_cs.known_cost, _gen_cs.pred_scores, action); }
   else { labeled_example = false; }
 
   bool holdout_example = labeled_example;
@@ -325,7 +325,7 @@ void print_update_cb_adf(VW::workspace& all, VW::shared_data& /* sd */, const VW
 {
   if (ec_seq.empty()) { return; }
 
-  const bool labeled_example = data.gen_cs.known_cost.probability > 0;
+  const bool labeled_example = data.get_gen_cs().known_cost.probability > 0;
   const auto& ec = *ec_seq.front();
   if (labeled_example) { VW::details::print_update_cb(all, !labeled_example, ec, &ec_seq, true, data.known_cost()); }
   else { VW::details::print_update_cb(all, !labeled_example, ec, &ec_seq, true, nullptr); }
@@ -395,7 +395,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_adf_setup(VW::setup_bas
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  size_t ppw = stack_builder.get_ppw();
+  size_t feature_width_above = stack_builder.get_feature_width_above();
   bool cb_adf_option = false;
   std::string type_string = "mtr";
 
@@ -437,7 +437,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_adf_setup(VW::setup_bas
   }
 
   // number of weight vectors needed
-  size_t problem_multiplier = 1;  // default for IPS
+  size_t feature_width = 1;  // default for IPS
   bool check_baseline_enabled = false;
 
   try
@@ -453,7 +453,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_adf_setup(VW::setup_bas
 
   if (cb_type == VW::cb_type_t::DR)
   {
-    problem_multiplier = 2;
+    feature_width = 2;
     // only use baseline when manually enabled for loss estimation
     check_baseline_enabled = true;
   }
@@ -474,11 +474,9 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_adf_setup(VW::setup_bas
 
   if (options.was_supplied("baseline") && check_baseline_enabled) { options.insert("check_enabled", ""); }
 
-  auto ld = VW::make_unique<VW::reductions::cb_adf>(cb_type, rank_all, clip_p, no_predict, &all);
-  ld->gen_cs.per_model_state.resize(ppw);
+  auto ld = VW::make_unique<VW::reductions::cb_adf>(cb_type, rank_all, clip_p, no_predict, feature_width_above, &all);
 
-  auto base = require_multiline(stack_builder.setup_base_learner(problem_multiplier));
-  all.example_parser->lbl_parser = VW::cb_label_parser_global;
+  auto base = require_multiline(stack_builder.setup_base_learner(feature_width));
 
   VW::reductions::cb_adf* bare = ld.get();
   bool lrp = ld->learn_returns_prediction();
@@ -488,7 +486,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_adf_setup(VW::setup_bas
                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                .set_learn_returns_prediction(lrp)
-               .set_params_per_weight(problem_multiplier)
+               .set_feature_width(feature_width)
                .set_save_load(::save_load)
                .set_merge(::cb_adf_merge)
                .set_add(::cb_adf_add)
