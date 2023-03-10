@@ -41,9 +41,11 @@ extern template void parse_slates_example_json<false>(const VW::label_parser& lb
     VW::example_factory_t example_factory, const std::unordered_map<uint64_t, VW::example*>* dedup_examples);
 
 extern template void parse_slates_example_json<true>(const VW::workspace& all, VW::multi_ex& examples, char* line,
-    size_t length, VW::example_factory_t example_factory, const std::unordered_map<uint64_t, VW::example*>* dedup_examples);
+    size_t length, VW::example_factory_t example_factory,
+    const std::unordered_map<uint64_t, VW::example*>* dedup_examples);
 extern template void parse_slates_example_json<false>(const VW::workspace& all, VW::multi_ex& examples, char* line,
-    size_t length, VW::example_factory_t example_factory, const std::unordered_map<uint64_t, VW::example*>* dedup_examples);
+    size_t length, VW::example_factory_t example_factory,
+    const std::unordered_map<uint64_t, VW::example*>* dedup_examples);
 
 extern template void parse_slates_example_dsjson<true>(VW::workspace& all, VW::multi_ex& examples, char* line,
     size_t length, VW::example_factory_t example_factory, VW::parsers::json::decision_service_interaction* data,
