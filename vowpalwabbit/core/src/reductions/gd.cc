@@ -1451,7 +1451,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i&
   g->no_win_counter = 0;
   g->neg_norm_power = (all.weights.adaptive ? (all.power_t - 1.f) : -1.f);
   g->neg_power_t = -all.power_t;
-  g->per_model_states.resize(feature_width_above);
   g->sparse_l2 = sparse_l2;
 
   if (all.initial_t > 0)  // for the normalized update: if initial_t is bigger than 1 we interpret this as if we had
