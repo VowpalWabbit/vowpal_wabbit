@@ -180,10 +180,33 @@ void ns_based_config::apply_config_to_interactions(const bool ccb_on,
     }
   }
 
+  //   2. wildcard_namespace + VW::details::CCB_ID_NAMESPACE
+  // and maybe some undocumented ones
   if (ccb_on)
   {
-    std::vector<std::vector<extent_term>> empty;
-    ccb::insert_ccb_interactions(interactions, empty);
+    auto total = interactions.size();
+    interactions.reserve(3 * total);
+    for (size_t i = 0; i < total; ++i)
+    {
+      auto copy = interactions[i];
+      copy.push_back(VW::details::CCB_ID_NAMESPACE);
+      interactions.emplace_back(std::move(copy));
+    }
+
+    for (auto it = ns_counter.begin(); it != ns_counter.end(); ++it)
+    {
+      interactions.emplace_back(std::vector<namespace_index>{(*it).first, VW::details::CCB_ID_NAMESPACE});
+      interactions.emplace_back(std::vector<namespace_index>{(*it).first, VW::details::CCB_SLOT_NAMESPACE});
+      interactions.emplace_back(
+          std::vector<namespace_index>{(*it).first, VW::details::CCB_SLOT_NAMESPACE, VW::details::CCB_ID_NAMESPACE});
+    }
+
+    interactions.emplace_back(
+        std::vector<namespace_index>{VW::details::CCB_SLOT_NAMESPACE, VW::details::CCB_SLOT_NAMESPACE});
+    interactions.emplace_back(
+        std::vector<namespace_index>{VW::details::CCB_SLOT_NAMESPACE, VW::details::CCB_ID_NAMESPACE});
+    interactions.emplace_back(std::vector<namespace_index>{
+        VW::details::CCB_SLOT_NAMESPACE, VW::details::CCB_SLOT_NAMESPACE, VW::details::CCB_ID_NAMESPACE});
   }
 }
 
