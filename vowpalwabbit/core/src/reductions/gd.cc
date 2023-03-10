@@ -6,6 +6,7 @@
 
 #include "vw/core/array_parameters.h"
 #include "vw/core/array_parameters_dense.h"
+#include "vw/core/automl_impl.h"
 #include "vw/core/crossplat_compat.h"
 #include "vw/core/feature_group.h"
 #include "vw/core/global_data.h"
@@ -846,6 +847,7 @@ template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off,
     size_t normalized, size_t spare>
 void learn(VW::reductions::gd& g, VW::example& ec)
 {
+  std::cout << "gd" << VW::reductions::util::interaction_vec_t_to_string(*ec.interactions) << std::endl;
   // invariant: not a test label, importance weight > 0
   assert(ec.l.simple.label != FLT_MAX);
   assert(ec.weight > 0.);
