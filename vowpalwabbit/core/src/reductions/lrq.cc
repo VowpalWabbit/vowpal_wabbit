@@ -224,12 +224,12 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::lrq_setup(VW::setup_base_i
 
   if (!all.quiet) { *(all.trace_message) << std::endl; }
 
-  all.total_interleaves = all.total_interleaves * static_cast<uint64_t>(1 + maxk);
+  all.total_feature_width = all.total_feature_width * static_cast<uint64_t>(1 + maxk);
   auto base = stack_builder.setup_base_learner(1 + maxk);
 
   auto l = make_reduction_learner(std::move(lrq), require_singleline(base), predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(lrq_setup))
-               .set_num_interleaves(1 + maxk)
+               .set_feature_width(1 + maxk)
                .set_learn_returns_prediction(base->learn_returns_prediction)
                .set_end_pass(reset_seed)
                .build();

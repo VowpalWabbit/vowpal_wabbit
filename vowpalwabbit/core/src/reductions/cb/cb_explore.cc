@@ -429,7 +429,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_setup(VW::setup
                .set_output_label_type(VW::label_type_t::CB)
                .set_input_prediction_type(VW::prediction_type_t::MULTICLASS)
                .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
-               .set_num_interleaves(params_per_weight)
+               .set_feature_width(params_per_weight)
                .set_update_stats(::update_stats_cb_explore)
                .set_output_example_prediction(::output_example_prediction_cb_explore)
                .set_print_update(::print_update_cb_explore)

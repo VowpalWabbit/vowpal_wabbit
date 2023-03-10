@@ -217,7 +217,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_to_cb_adf_setup(VW::set
 
   if (num_actions <= 0) { THROW("cb num actions must be positive"); }
 
-  data->adf_data.init_adf_data(num_actions, base->interleave_product_below, all.interactions, all.extent_interactions);
+  data->adf_data.init_adf_data(num_actions, base->feature_width_below, all.interactions, all.extent_interactions);
 
   // see csoaa.cc ~ line 894 / setup for csldf_setup
   all.example_parser->emptylines_separate_examples = false;

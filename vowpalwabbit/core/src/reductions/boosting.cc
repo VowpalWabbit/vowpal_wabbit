@@ -391,7 +391,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::boosting_setup(VW::setup_b
   data->alpha = std::vector<float>(data->N, 0);
   data->v = std::vector<float>(data->N, 1);
 
-  size_t num_interleaves = data->N;
+  size_t feature_width = data->N;
   std::string name_addition;
   void (*learn_ptr)(boosting&, VW::LEARNER::learner&, VW::example&);
   void (*pred_ptr)(boosting&, VW::LEARNER::learner&, VW::example&);
@@ -420,19 +420,18 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::boosting_setup(VW::setup_b
   }
   else { THROW("Unrecognized boosting algorithm: \'" << data->alg << "\'."); }
 
-  auto l =
-      make_reduction_learner(std::move(data), require_singleline(stack_builder.setup_base_learner(num_interleaves)),
-          learn_ptr, pred_ptr, stack_builder.get_setupfn_name(boosting_setup) + name_addition)
-          .set_num_interleaves(num_interleaves)
-          .set_input_prediction_type(VW::prediction_type_t::SCALAR)
-          .set_output_prediction_type(VW::prediction_type_t::SCALAR)
-          .set_input_label_type(VW::label_type_t::SIMPLE)
-          .set_output_label_type(VW::label_type_t::SIMPLE)
-          .set_save_load(save_load_fn)
-          .set_output_example_prediction(VW::details::output_example_prediction_simple_label<boosting>)
-          .set_update_stats(VW::details::update_stats_simple_label<boosting>)
-          .set_print_update(VW::details::print_update_simple_label<boosting>)
-          .build();
+  auto l = make_reduction_learner(std::move(data), require_singleline(stack_builder.setup_base_learner(feature_width)),
+      learn_ptr, pred_ptr, stack_builder.get_setupfn_name(boosting_setup) + name_addition)
+               .set_feature_width(feature_width)
+               .set_input_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_output_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_input_label_type(VW::label_type_t::SIMPLE)
+               .set_output_label_type(VW::label_type_t::SIMPLE)
+               .set_save_load(save_load_fn)
+               .set_output_example_prediction(VW::details::output_example_prediction_simple_label<boosting>)
+               .set_update_stats(VW::details::update_stats_simple_label<boosting>)
+               .set_print_update(VW::details::print_update_simple_label<boosting>)
+               .build();
 
   return l;
 }

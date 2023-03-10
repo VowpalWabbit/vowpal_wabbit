@@ -38,7 +38,7 @@ public:
   }
 
   VW::workspace* all;
-  size_t interleave_product_below = 0;
+  size_t feature_width_below = 0;
   size_t cur_class = 0;
   size_t total_class_cnt = 0;
   std::vector<std::string> ns_pre;
@@ -172,7 +172,7 @@ void audit_regressor(audit_regressor_data& rd, VW::LEARNER::learner& base, VW::e
             rd.all->generate_interactions_object_cache_state);
       }
 
-      ec.ft_offset += rd.interleave_product_below;
+      ec.ft_offset += rd.feature_width_below;
       ++rd.cur_class;
     }
 
@@ -238,8 +238,8 @@ void init_driver(audit_regressor_data& dat)
   dat.all->sd->dump_interval = 1.;  // regressor could initialize these if saved without --predict_only_model
   dat.all->sd->example_number = 0;
 
-  dat.interleave_product_below = dat.all->l->interleave_product_below / dat.all->l->num_interleaves;
-  dat.total_class_cnt = dat.all->l->num_interleaves;
+  dat.feature_width_below = dat.all->l->feature_width_below / dat.all->l->feature_width;
+  dat.total_class_cnt = dat.all->l->feature_width;
 
   if (dat.all->options->was_supplied("csoaa"))
   {
@@ -247,7 +247,7 @@ void init_driver(audit_regressor_data& dat)
     if (n != dat.total_class_cnt)
     {
       dat.total_class_cnt = n;
-      dat.interleave_product_below = dat.all->l->interleave_product_below / n;
+      dat.feature_width_below = dat.all->l->feature_width_below / n;
     }
   }
 

@@ -1650,10 +1650,10 @@ void VW::details::parse_sources(options_i& options, VW::workspace& all, VW::io_b
   auto parsed_source_options = parse_source(all, options);
   enable_sources(all, all.quiet, all.numpasses, parsed_source_options);
 
-  // force num_interleaves to be a power of 2 to avoid 32-bit overflow
+  // force feature_width to be a power of 2 to avoid 32-bit overflow
   uint32_t interleave_shifts = 0;
-  while (all.l->interleave_product_below > (static_cast<uint64_t>(1) << interleave_shifts)) { interleave_shifts++; }
-  all.total_interleaves = (1 << interleave_shifts) >> all.weights.stride_shift();
+  while (all.l->feature_width_below > (static_cast<uint64_t>(1) << interleave_shifts)) { interleave_shifts++; }
+  all.total_feature_width = (1 << interleave_shifts) >> all.weights.stride_shift();
 }
 
 void VW::details::print_enabled_learners(VW::workspace& all, std::vector<std::string>& enabled_learners)

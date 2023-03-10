@@ -1408,7 +1408,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i&
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  size_t interleave_product_above = stack_builder.get_interleave_product_above();
+  size_t feature_width_above = stack_builder.get_feature_width_above();
 
   auto g = VW::make_unique<VW::reductions::gd>();
 
@@ -1546,7 +1546,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i&
 
   all.weights.stride_shift(static_cast<uint32_t>(::ceil_log_2(stride - 1)));
 
-  g->per_model_states.resize(interleave_product_above);
+  g->per_model_states.resize(feature_width_above);
 
   auto* bare = g.get();
   auto l = make_bottom_learner(std::move(g), g->learn, bare->predict, stack_builder.get_setupfn_name(gd_setup),

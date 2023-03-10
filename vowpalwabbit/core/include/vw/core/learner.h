@@ -96,8 +96,8 @@ using add_subtract_with_all_func = std::function<void(const VW::workspace& ws1, 
 
 void debug_increment_depth(polymorphic_ex ex);
 void debug_decrement_depth(polymorphic_ex ex);
-void increment_offset(polymorphic_ex ex, const size_t interleave_product_below, const size_t i);
-void decrement_offset(polymorphic_ex ex, const size_t interleave_product_below, const size_t i);
+void increment_offset(polymorphic_ex ex, const size_t feature_width_below, const size_t i);
+void decrement_offset(polymorphic_ex ex, const size_t feature_width_below, const size_t i);
 
 void learner_build_diagnostic(VW::string_view this_name, VW::string_view base_name, prediction_type_t in_pred_type,
     prediction_type_t base_out_pred_type, label_type_t out_label_type, label_type_t base_in_label_type,
@@ -134,9 +134,9 @@ private:
   void debug_log_message(polymorphic_ex ex, const std::string& msg);
 
 public:
-  size_t num_interleaves = 1;           // This stores the number of "weight vectors" required by the learner.
-  size_t interleave_product_below = 1;  // This stores the incremental product of interleaves for this learner and below
-                                        // in the stack
+  size_t feature_width = 1;        // This stores the number of "weight vectors" required by the learner.
+  size_t feature_width_below = 1;  // This stores the incremental product of feature widths for this learner and below
+                                   // in the stack
 
   // If true, learn will return a prediction. The framework should
   // not call predict before learn
@@ -158,8 +158,8 @@ public:
   /// \param ec The ::example object or ::multi_ex to be operated on. This
   /// object **must** have a valid label set for every ::example in the field
   /// example::l that corresponds to the type this learner expects.
-  /// \param i This is the offset used for the num_interleaves in this call. If using
-  /// multiple regressors/learners you can interleave_product_below this value for each call.
+  /// \param i This is the offset used for the feature_width in this call. If using
+  /// multiple regressors/learners you can feature_width_below this value for each call.
   /// \returns While some learner may fill the example::pred, this is not
   /// guaranteed and is undefined behavior if accessed.
   void learn(polymorphic_ex ec, size_t i = 0);
@@ -168,8 +168,8 @@ public:
   /// \param ec The ::example object or ::multi_ex to be operated on. This
   /// object **must** have a valid prediction allocated in the field
   /// example::pred that corresponds to this learner type.
-  /// \param i This is the offset used for the num_interleaves in this call. If using
-  /// multiple regressors/learners you can interleave_product_below this value for each call.
+  /// \param i This is the offset used for the feature_width in this call. If using
+  /// multiple regressors/learners you can feature_width_below this value for each call.
   /// \returns The prediction calculated by this learner be set on
   /// example::pred. If the polymorphic_ex is ::multi_ex then the prediction is
   /// set on the 0th item in the list.
@@ -551,7 +551,7 @@ public:
     // Default sensitivity calls the base learner's sensitivity recursively
     this->set_sensitivity(details::recur_sensitivity<DataT>);
 
-    set_num_interleaves(1);
+    set_feature_width(1);
     this->set_learn_returns_prediction(false);
 
     // By default, will produce what the base learner expects
@@ -600,9 +600,9 @@ public:
     this->learner_ptr->_sensitivity_f = [fn_ptr, data, base](example& ex) { return fn_ptr(*data, *base, ex); };
   )
 
-  LEARNER_BUILDER_DEFINE(set_num_interleaves(size_t num_interleaves),
-    this->learner_ptr->num_interleaves = num_interleaves;
-    this->learner_ptr->interleave_product_below = this->learner_ptr->_base_learner->interleave_product_below * this->learner_ptr->num_interleaves;
+  LEARNER_BUILDER_DEFINE(set_feature_width(size_t feature_width),
+    this->learner_ptr->feature_width = feature_width;
+    this->learner_ptr->feature_width_below = this->learner_ptr->_base_learner->feature_width_below * this->learner_ptr->feature_width;
   )
 
   LEARNER_BUILDER_DEFINE(set_merge(void (*fn_ptr)(const std::vector<float>&, const std::vector<const DataT*>&, DataT&)),
@@ -662,7 +662,7 @@ public:
     // Default sensitivity calls base learner's sensitivity recursively
     this->set_sensitivity(details::recur_sensitivity);
 
-    set_num_interleaves(1);
+    set_feature_width(1);
     // By default, will produce what the base learner expects
     super::set_input_label_type(base->get_input_label_type());
     super::set_output_label_type(base->get_input_label_type());
@@ -704,9 +704,9 @@ public:
     this->learner_ptr->_sensitivity_f = [fn_ptr, base](example& ex) { return fn_ptr(*base, ex); };
   )
 
-  LEARNER_BUILDER_DEFINE(set_num_interleaves(size_t num_interleaves),
-    this->learner_ptr->num_interleaves = num_interleaves;
-    this->learner_ptr->interleave_product_below = this->learner_ptr->_base_learner->interleave_product_below * this->learner_ptr->num_interleaves;
+  LEARNER_BUILDER_DEFINE(set_feature_width(size_t feature_width),
+    this->learner_ptr->feature_width = feature_width;
+    this->learner_ptr->feature_width_below = this->learner_ptr->_base_learner->feature_width_below * this->learner_ptr->feature_width;
   )
   // clang-format on
 

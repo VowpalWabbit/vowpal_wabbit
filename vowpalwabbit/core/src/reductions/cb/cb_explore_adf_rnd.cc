@@ -41,13 +41,13 @@ namespace
 class cb_explore_adf_rnd
 {
 public:
-  cb_explore_adf_rnd(float _epsilon, float _alpha, float _invlambda, uint32_t _numrnd, size_t _interleave_product_below,
+  cb_explore_adf_rnd(float _epsilon, float _alpha, float _invlambda, uint32_t _numrnd, size_t _feature_width_below,
       VW::workspace* _all)
       : _epsilon(_epsilon)
       , _alpha(_alpha)
       , _sqrtinvlambda(std::sqrt(_invlambda))
       , _numrnd(_numrnd)
-      , _interleave_product_below(_interleave_product_below)
+      , _feature_width_below(_feature_width_below)
       , _all(_all)
   {
   }
@@ -63,7 +63,7 @@ private:
   float _sqrtinvlambda;
   uint32_t _numrnd;
 
-  size_t _interleave_product_below;
+  size_t _feature_width_below;
   VW::workspace* _all;
 
   std::vector<float> _bonuses;
@@ -175,9 +175,9 @@ void cb_explore_adf_rnd::get_initial_predictions(VW::multi_ex& examples, uint32_
   {
     auto* ec = examples[i];
 
-    VW::LEARNER::details::increment_offset(*ec, _interleave_product_below, id);
+    VW::LEARNER::details::increment_offset(*ec, _feature_width_below, id);
     _initials.push_back(get_initial_prediction(ec));
-    VW::LEARNER::details::decrement_offset(*ec, _interleave_product_below, id);
+    VW::LEARNER::details::decrement_offset(*ec, _feature_width_below, id);
   }
 }
 
@@ -298,13 +298,13 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_rnd_setup(V
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
 
-  size_t num_interleaves = 1 + numrnd;
+  size_t feature_width = 1 + numrnd;
 
-  auto base = require_multiline(stack_builder.setup_base_learner(num_interleaves));
+  auto base = require_multiline(stack_builder.setup_base_learner(feature_width));
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_rnd>;
   auto data = VW::make_unique<explore_type>(all.global_metrics.are_metrics_enabled(), epsilon, alpha, invlambda, numrnd,
-      base->interleave_product_below * num_interleaves, &all);
+      base->feature_width_below * feature_width, &all);
 
   if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
   auto l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
@@ -313,7 +313,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_rnd_setup(V
                .set_output_label_type(VW::label_type_t::CB)
                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
-               .set_num_interleaves(num_interleaves)
+               .set_feature_width(feature_width)
                .set_output_example_prediction(explore_type::output_example_prediction)
                .set_update_stats(explore_type::update_stats)
                .set_print_update(explore_type::print_update)

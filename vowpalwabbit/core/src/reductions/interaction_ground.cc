@@ -92,16 +92,16 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::interaction_ground_setup(V
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   // number of weight vectors needed
-  size_t num_interleaves = 2;  // One for reward and one for loss
+  size_t feature_width = 2;  // One for reward and one for loss
   auto ld = VW::make_unique<interaction_ground>();
 
   // Ensure cb_adf so we are reducing to something useful.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
 
-  auto base = require_multiline(stack_builder.setup_base_learner(num_interleaves));
+  auto base = require_multiline(stack_builder.setup_base_learner(feature_width));
   auto l = make_reduction_learner(
       std::move(ld), base, learn, predict, stack_builder.get_setupfn_name(interaction_ground_setup))
-               .set_num_interleaves(num_interleaves)
+               .set_feature_width(feature_width)
                .set_input_label_type(label_type_t::CB)
                .set_output_label_type(label_type_t::CB)
                .set_output_prediction_type(prediction_type_t::ACTION_SCORES)

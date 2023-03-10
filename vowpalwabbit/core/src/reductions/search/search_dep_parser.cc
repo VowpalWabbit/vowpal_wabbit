@@ -99,8 +99,8 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
   data->ex.interactions = &sch.get_vw_pointer_unsafe().interactions;
   data->ex.extent_interactions = &sch.get_vw_pointer_unsafe().extent_interactions;
 
-  if (data->one_learner) { sch.set_num_interleaves(1); }
-  else { sch.set_num_interleaves(3); }
+  if (data->one_learner) { sch.set_feature_width(1); }
+  else { sch.set_feature_width(3); }
 
   std::vector<std::vector<VW::namespace_index>> newpairs{{'B', 'C'}, {'B', 'E'}, {'B', 'B'}, {'C', 'C'}, {'D', 'D'},
       {'E', 'E'}, {'F', 'F'}, {'G', 'G'}, {'E', 'F'}, {'B', 'H'}, {'B', 'J'}, {'E', 'L'}, {'d', 'B'}, {'d', 'C'},
@@ -251,7 +251,7 @@ void extract_features(Search::search& sch, uint32_t idx, VW::multi_ex& ec)
   task_data* data = sch.get_task_data<task_data>();
   reset_ex(data->ex);
   uint64_t mask = sch.get_mask();
-  uint64_t multiplier = static_cast<uint64_t>(all.total_interleaves) << all.weights.stride_shift();
+  uint64_t multiplier = static_cast<uint64_t>(all.total_feature_width) << all.weights.stride_shift();
 
   auto& stack = data->stack;
   auto& tags = data->tags;

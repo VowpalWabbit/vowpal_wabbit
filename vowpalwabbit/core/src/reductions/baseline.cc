@@ -56,7 +56,7 @@ void init_global(baseline_data& data)
   data.ec.indices.push_back(VW::details::CONSTANT_NAMESPACE);
   // different index from constant to avoid conflicts
   data.ec.feature_space[VW::details::CONSTANT_NAMESPACE].push_back(1,
-      ((VW::details::CONSTANT - 17) * data.all->total_interleaves) << data.all->weights.stride_shift(),
+      ((VW::details::CONSTANT - 17) * data.all->total_feature_width) << data.all->weights.stride_shift(),
       VW::details::CONSTANT_NAMESPACE);
   data.ec.reset_total_sum_feat_sq();
   data.ec.num_features++;

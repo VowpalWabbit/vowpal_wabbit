@@ -589,8 +589,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::warm_cb_setup(VW::setup_ba
     options.insert("lr_multiplier", ss.str());
   }
 
-  size_t num_interleaves = data->choices_lambda;
-  auto base = require_multiline(stack_builder.setup_base_learner(num_interleaves));
+  size_t feature_width = data->choices_lambda;
+  auto base = require_multiline(stack_builder.setup_base_learner(feature_width));
   // Note: the current version of warm start CB can only support epsilon-greedy exploration
   // We need to wait for the epsilon value to be passed from the base
   // cb_explore learner, if there is one
@@ -635,7 +635,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::warm_cb_setup(VW::setup_ba
                .set_output_label_type(VW::label_type_t::CB)
                .set_input_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
-               .set_num_interleaves(num_interleaves)
+               .set_feature_width(feature_width)
                .set_learn_returns_prediction(true)
                .set_update_stats(update_stats_func)
                .set_output_example_prediction(output_example_prediction_func)

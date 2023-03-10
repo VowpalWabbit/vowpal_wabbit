@@ -41,7 +41,7 @@ public:
   VW::example hiddenbias;
   VW::example outputweight;
   float prediction = 0.f;
-  size_t interleave_product_below = 0;
+  size_t feature_width_below = 0;
   bool dropout = false;
   uint64_t xsubi = 0;
   uint64_t save_xsubi = 0;
@@ -105,7 +105,7 @@ void finish_setup(nn& n, VW::workspace& all)
       ss << "OutputLayer" << i;
       fs.space_names.emplace_back("", ss.str());
     }
-    nn_index += static_cast<uint64_t>(n.interleave_product_below);
+    nn_index += static_cast<uint64_t>(n.feature_width_below);
   }
   n.output_layer.num_features += n.k;
 
@@ -479,14 +479,14 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::nn_setup(VW::setup_base_i&
   n->hidden_units_pred = VW::details::calloc_or_throw<VW::polyprediction>(n->k);
   n->hiddenbias_pred = VW::details::calloc_or_throw<VW::polyprediction>(n->k);
 
-  size_t num_interleaves = n->k + 1;
-  auto base = require_singleline(stack_builder.setup_base_learner(num_interleaves));
-  n->interleave_product_below = base->interleave_product_below;  // Indexing of output layer is odd.
+  size_t feature_width = n->k + 1;
+  auto base = require_singleline(stack_builder.setup_base_learner(feature_width));
+  n->feature_width_below = base->feature_width_below;  // Indexing of output layer is odd.
   nn& nv = *n.get();
 
   auto builder = make_reduction_learner(std::move(n), base, predict_or_learn_multi<true, true>,
       predict_or_learn_multi<false, true>, stack_builder.get_setupfn_name(nn_setup))
-                     .set_num_interleaves(num_interleaves)
+                     .set_feature_width(feature_width)
                      .set_learn_returns_prediction(true)
                      .set_input_prediction_type(VW::prediction_type_t::SCALAR)
                      .set_output_prediction_type(VW::prediction_type_t::SCALAR)

@@ -166,7 +166,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_algs_setup(VW::setup_ba
 
   VW::details::cb_to_cs& c = data->cbcs;
 
-  size_t num_interleaves = 2;  // default for DR
+  size_t feature_width = 2;  // default for DR
   c.cb_type = VW::cb_type_from_string(type_string);
   switch (c.cb_type)
   {
@@ -174,10 +174,10 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_algs_setup(VW::setup_ba
       break;
     case VW::cb_type_t::DM:
       if (eval) THROW("direct method can not be used for evaluation --- it is biased.");
-      num_interleaves = 1;
+      feature_width = 1;
       break;
     case VW::cb_type_t::IPS:
-      num_interleaves = 1;
+      feature_width = 1;
       break;
     case VW::cb_type_t::MTR:
     case VW::cb_type_t::SM:
@@ -194,7 +194,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_algs_setup(VW::setup_ba
     options.insert("csoaa", ss.str());
   }
 
-  auto base = require_singleline(stack_builder.setup_base_learner(num_interleaves));
+  auto base = require_singleline(stack_builder.setup_base_learner(feature_width));
   c.scorer = VW::LEARNER::require_singleline(base->get_learner_by_name_prefix("scorer"));
 
   std::string name_addition = eval ? "-eval" : "";
@@ -214,7 +214,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_algs_setup(VW::setup_ba
                .set_output_label_type(VW::label_type_t::CS)
                .set_input_prediction_type(VW::prediction_type_t::MULTICLASS)
                .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
-               .set_num_interleaves(num_interleaves)
+               .set_feature_width(feature_width)
                .set_learn_returns_prediction(eval)
                .set_update_stats(update_stats_func)
                .set_output_example_prediction(output_example_prediction_func)
