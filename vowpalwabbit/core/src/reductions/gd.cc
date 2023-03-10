@@ -274,15 +274,15 @@ void merge(const std::vector<float>& per_model_weighting, const std::vector<cons
     else { merge_weights_simple(length, source, per_model_weighting, output_workspace.weights.dense_weights); }
   }
 
-  for (size_t i = 0; i < output_data.per_model_states.size(); i++)
+  for (size_t i = 0; i < output_data.gd_per_model_states.size(); i++)
   {
     for (const auto* source_data_obj : all_data)
     {
       // normalized_sum_norm_x is additive
-      output_data.per_model_states[i].normalized_sum_norm_x +=
-          source_data_obj->per_model_states[i].normalized_sum_norm_x;
+      output_data.gd_per_model_states[i].normalized_sum_norm_x +=
+          source_data_obj->gd_per_model_states[i].normalized_sum_norm_x;
       // total_weight is additive
-      output_data.per_model_states[i].total_weight += source_data_obj->per_model_states[i].total_weight;
+      output_data.gd_per_model_states[i].total_weight += source_data_obj->gd_per_model_states[i].total_weight;
     }
   }
 }
@@ -297,14 +297,14 @@ void add(const VW::workspace& ws1, const VW::reductions::gd& data1, const VW::wo
   }
   else { add_weights(ws_out.weights.dense_weights, ws1.weights.dense_weights, ws2.weights.dense_weights, length); }
 
-  for (size_t i = 0; i < data_out.per_model_states.size(); i++)
+  for (size_t i = 0; i < data_out.gd_per_model_states.size(); i++)
   {
     // normalized_sum_norm_x is additive
-    data_out.per_model_states[i].normalized_sum_norm_x =
-        data1.per_model_states[i].normalized_sum_norm_x + data2.per_model_states[i].normalized_sum_norm_x;
+    data_out.gd_per_model_states[i].normalized_sum_norm_x =
+        data1.gd_per_model_states[i].normalized_sum_norm_x + data2.gd_per_model_states[i].normalized_sum_norm_x;
     // total_weight is additive
-    data_out.per_model_states[i].total_weight =
-        data1.per_model_states[i].total_weight + data2.per_model_states[i].total_weight;
+    data_out.gd_per_model_states[i].total_weight =
+        data1.gd_per_model_states[i].total_weight + data2.gd_per_model_states[i].total_weight;
   }
 }
 
@@ -318,14 +318,14 @@ void subtract(const VW::workspace& ws1, const VW::reductions::gd& data1, const V
   }
   else { subtract_weights(ws_out.weights.dense_weights, ws1.weights.dense_weights, ws2.weights.dense_weights, length); }
 
-  for (size_t i = 0; i < data_out.per_model_states.size(); i++)
+  for (size_t i = 0; i < data_out.gd_per_model_states.size(); i++)
   {
     // normalized_sum_norm_x is additive
-    data_out.per_model_states[i].normalized_sum_norm_x =
-        data1.per_model_states[i].normalized_sum_norm_x - data2.per_model_states[i].normalized_sum_norm_x;
+    data_out.gd_per_model_states[i].normalized_sum_norm_x =
+        data1.gd_per_model_states[i].normalized_sum_norm_x - data2.gd_per_model_states[i].normalized_sum_norm_x;
     // total_weight is additive
-    data_out.per_model_states[i].total_weight =
-        data1.per_model_states[i].total_weight - data2.per_model_states[i].total_weight;
+    data_out.gd_per_model_states[i].total_weight =
+        data1.gd_per_model_states[i].total_weight - data2.gd_per_model_states[i].total_weight;
   }
 }
 
@@ -772,7 +772,7 @@ float sensitivity(VW::reductions::gd& g, VW::example& ec)
 {
   if (g.current_model_state == nullptr)
   {
-    g.current_model_state = &(g.per_model_states[ec.ft_offset / g.all->weights.stride()]);
+    g.current_model_state = &(g.gd_per_model_states[ec.ft_offset / g.all->weights.stride()]);
   }
   return get_scale<adaptive>(g, ec, 1.) *
       sensitivity<sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, true>(g, ec);
@@ -825,7 +825,7 @@ void update(VW::reductions::gd& g, VW::example& ec)
 {
   if (g.current_model_state == nullptr)
   {
-    g.current_model_state = &(g.per_model_states[ec.ft_offset / g.all->weights.stride()]);
+    g.current_model_state = &(g.gd_per_model_states[ec.ft_offset / g.all->weights.stride()]);
   }
   // invariant: not a test label, importance weight > 0
   float update;
@@ -850,7 +850,7 @@ void learn(VW::reductions::gd& g, VW::example& ec)
   assert(ec.l.simple.label != FLT_MAX);
   assert(ec.weight > 0.);
   g.predict(g, ec);
-  g.current_model_state = &(g.per_model_states[ec.ft_offset / g.all->weights.stride()]);
+  g.current_model_state = &(g.gd_per_model_states[ec.ft_offset / g.all->weights.stride()]);
   update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare>(g, ec);
   assert(g.current_model_state == nullptr);  // update clears this pointer
   // this state should only matter on learn and not predict
@@ -1094,7 +1094,7 @@ void save_load_online_state_weights(VW::workspace& all, VW::io_buf& model_file, 
 }  // namespace
 
 void VW::details::save_load_online_state_gd(VW::workspace& all, VW::io_buf& model_file, bool read, bool text,
-    std::vector<VW::reductions::details::per_model_state>& pms, VW::reductions::gd* g, uint32_t ftrl_size)
+    std::vector<VW::reductions::details::gd_per_model_state>& pms, VW::reductions::gd* g, uint32_t ftrl_size)
 {
   std::stringstream msg;
 
@@ -1287,7 +1287,7 @@ void save_load(VW::reductions::gd& g, VW::io_buf& model_file, bool read, bool te
             "save_resume functionality is known to have inaccuracy in model files version less than '{}'",
             VW::version_definitions::VERSION_SAVE_RESUME_FIX.to_string());
       }
-      VW::details::save_load_online_state_gd(all, model_file, read, text, g.per_model_states, &g);
+      VW::details::save_load_online_state_gd(all, model_file, read, text, g.gd_per_model_states, &g);
     }
     else
     {
@@ -1385,7 +1385,7 @@ namespace VW
 {
 namespace model_utils
 {
-size_t read_model_field(io_buf& model, VW::reductions::details::per_model_state& pms)
+size_t read_model_field(io_buf& model, VW::reductions::details::gd_per_model_state& pms)
 {
   size_t bytes = 0;
   bytes += read_model_field(model, pms.normalized_sum_norm_x);
@@ -1394,7 +1394,7 @@ size_t read_model_field(io_buf& model, VW::reductions::details::per_model_state&
 }
 
 size_t write_model_field(
-    io_buf& model, const VW::reductions::details::per_model_state& pms, const std::string& name, bool text)
+    io_buf& model, const VW::reductions::details::gd_per_model_state& pms, const std::string& name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(model, pms.normalized_sum_norm_x, name + "_normalized_sum_norm_x", text);
@@ -1446,10 +1446,10 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i&
   if (options.was_supplied("l2_state")) { all.sd->contraction = local_contraction; }
 
   g->all = &all;
-  auto single_model_state = details::per_model_state();
+  auto single_model_state = details::gd_per_model_state();
   single_model_state.normalized_sum_norm_x = 0;
   single_model_state.total_weight = 0.;
-  g->per_model_states.emplace_back(single_model_state);
+  g->gd_per_model_states.emplace_back(single_model_state);
   g->no_win_counter = 0;
   all.weights.adaptive = true;
   all.weights.normalized = true;
@@ -1459,8 +1459,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i&
   if (all.initial_t > 0)  // for the normalized update: if initial_t is bigger than 1 we interpret this as if we had
                           // seen (all.initial_t) previous fake datapoints all with norm 1
   {
-    g->per_model_states[0].normalized_sum_norm_x = all.initial_t;
-    g->per_model_states[0].total_weight = all.initial_t;
+    g->gd_per_model_states[0].normalized_sum_norm_x = all.initial_t;
+    g->gd_per_model_states[0].total_weight = all.initial_t;
   }
 
   bool feature_mask_off = true;
@@ -1546,7 +1546,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i&
 
   all.weights.stride_shift(static_cast<uint32_t>(::ceil_log_2(stride - 1)));
 
-  g->per_model_states.resize(feature_width_above);
+  g->gd_per_model_states.resize(feature_width_above);
 
   auto* bare = g.get();
   auto l = make_bottom_learner(std::move(g), g->learn, bare->predict, stack_builder.get_setupfn_name(gd_setup),

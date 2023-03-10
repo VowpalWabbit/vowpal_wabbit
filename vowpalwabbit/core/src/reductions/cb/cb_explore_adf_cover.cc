@@ -35,7 +35,7 @@ class cb_explore_adf_cover
 {
 public:
   cb_explore_adf_cover(size_t cover_size, float psi, bool nounif, float epsilon, bool epsilon_decay, bool first_only,
-      VW::LEARNER::learner* cs_ldf_learner, VW::LEARNER::learner* scorer, VW::cb_type_t cb_type,
+      VW::LEARNER::learner* cs_ldf_learner, VW::LEARNER::learner* scorer, VW::cb_type_t cb_type, size_t stride,
       VW::version_struct model_file_version, VW::io::logger logger);
 
   // Should be called through cb_explore_adf_base for pre/post-processing
@@ -51,6 +51,7 @@ private:
   bool _epsilon_decay;
   bool _first_only;
   size_t _counter;
+  size_t _stride;
 
   VW::LEARNER::learner* _cs_ldf_learner;
   VW::details::cb_to_cs_adf gen_cs;
@@ -70,7 +71,7 @@ private:
 
 cb_explore_adf_cover::cb_explore_adf_cover(size_t cover_size, float psi, bool nounif, float epsilon, bool epsilon_decay,
     bool first_only, VW::LEARNER::learner* cs_ldf_learner, VW::LEARNER::learner* scorer, VW::cb_type_t cb_type,
-    VW::version_struct model_file_version, VW::io::logger logger)
+    size_t stride, VW::version_struct model_file_version, VW::io::logger logger)
     : _cover_size(cover_size)
     , _psi(psi)
     , _nounif(nounif)
@@ -78,6 +79,7 @@ cb_explore_adf_cover::cb_explore_adf_cover(size_t cover_size, float psi, bool no
     , _epsilon_decay(epsilon_decay)
     , _first_only(first_only)
     , _counter(0)
+    , _stride(stride)
     , _cs_ldf_learner(cs_ldf_learner)
     , _model_file_version(model_file_version)
     , _logger(std::move(logger))
@@ -101,7 +103,10 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::learner& base, VW:
     {  // use DR estimates for non-ERM policies in MTR
       VW::details::gen_cs_example_dr<true>(gen_cs, examples, _cs_labels);
     }
-    else { VW::details::gen_cs_example<false>(gen_cs, examples, _cs_labels, _logger); }
+    else
+    {
+      VW::details::gen_cs_example<false>(gen_cs, examples, _cs_labels, _logger, examples[0]->ft_offset / _stride);
+    }
 
     if (base.learn_returns_prediction)
     {
@@ -324,7 +329,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_cover_setup
   using explore_type = cb_explore_adf_base<cb_explore_adf_cover>;
   auto data = VW::make_unique<explore_type>(all.global_metrics.are_metrics_enabled(),
       VW::cast_to_smaller_type<size_t>(cover_size), psi, nounif, epsilon, epsilon_decay, first_only, cost_sensitive,
-      scorer, cb_type, all.model_file_ver, all.logger);
+      scorer, cb_type, all.weights.stride(), all.model_file_ver, all.logger);
   auto l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_cover_setup))
                .set_input_label_type(VW::label_type_t::CB)
