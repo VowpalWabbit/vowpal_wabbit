@@ -60,7 +60,6 @@ private:
   template <bool predict>
   void learn_mtr(VW::LEARNER::learner& base, VW::multi_ex& examples);
 
-  VW::details::cb_to_cs_adf _gen_cs;
   std::vector<VW::cb_label> _cb_labels;
   VW::cs_label _cs_labels;
   std::vector<VW::cs_label> _prepped_cs_labels;
@@ -76,6 +75,7 @@ private:
   const bool _no_predict;
   const bool _rank_all;
   const float _clip_p;
+  VW::details::cb_to_cs_adf _gen_cs;
 
   VW::workspace* _all = nullptr;
 };
