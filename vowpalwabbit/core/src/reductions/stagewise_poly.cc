@@ -129,7 +129,7 @@ inline uint64_t wid_mask_un_shifted(const stagewise_poly& poly, uint64_t wid)
 
 inline uint64_t constant_feat(const stagewise_poly& poly)
 {
-  return stride_shift(poly, VW::details::CONSTANT * poly.all->wpp);
+  return stride_shift(poly, VW::details::CONSTANT * poly.all->total_feature_width);
 }
 
 inline uint64_t constant_feat_masked(const stagewise_poly& poly) { return wid_mask(poly, constant_feat(poly)); }

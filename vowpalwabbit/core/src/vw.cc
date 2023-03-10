@@ -736,7 +736,7 @@ void VW::setup_example(VW::workspace& all, VW::example* ae)
 
   if (!all.limit_strings.empty()) { feature_limit(all, ae); }
 
-  uint64_t multiplier = static_cast<uint64_t>(all.wpp) << all.weights.stride_shift();
+  uint64_t multiplier = static_cast<uint64_t>(all.total_feature_width) << all.weights.stride_shift();
 
   if (multiplier != 1)
   {  // make room for per-feature information.
