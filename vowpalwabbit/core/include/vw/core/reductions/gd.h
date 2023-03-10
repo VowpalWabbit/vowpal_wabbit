@@ -26,7 +26,7 @@ std::shared_ptr<VW::LEARNER::learner> gd_setup(VW::setup_base_i& stack_builder);
 namespace details
 {
 
-class per_model_state
+class gd_per_model_state
 {
 public:
   double normalized_sum_norm_x = 0.0;
@@ -37,9 +37,9 @@ public:
 class gd
 {
 public:
-  gd(size_t feature_width_above = 1) : per_model_states(feature_width_above) {}
-  std::vector<VW::reductions::details::per_model_state> per_model_states;
-  VW::reductions::details::per_model_state* current_model_state = nullptr;
+  gd(size_t feature_width_above = 1) : gd_per_model_states(feature_width_above) {}
+  std::vector<VW::reductions::details::gd_per_model_state> gd_per_model_states;
+  VW::reductions::details::gd_per_model_state* current_model_state = nullptr;
   size_t no_win_counter = 0;
   size_t early_stop_thres = 0;
   float initial_constant = 0.f;
@@ -67,7 +67,7 @@ void print_features(VW::workspace& all, VW::example& ec);
 void print_audit_features(VW::workspace&, VW::example& ec);
 void save_load_regressor_gd(VW::workspace& all, VW::io_buf& model_file, bool read, bool text);
 void save_load_online_state_gd(VW::workspace& all, VW::io_buf& model_file, bool read, bool text,
-    std::vector<VW::reductions::details::per_model_state>& pms, VW::reductions::gd* g = nullptr,
+    std::vector<VW::reductions::details::gd_per_model_state>& pms, VW::reductions::gd* g = nullptr,
     uint32_t ftrl_size = 0);
 
 template <class T>
@@ -197,8 +197,8 @@ namespace VW
 {
 namespace model_utils
 {
-size_t read_model_field(io_buf&, VW::reductions::details::per_model_state&);
-size_t write_model_field(io_buf&, const VW::reductions::details::per_model_state&, const std::string&, bool);
+size_t read_model_field(io_buf&, VW::reductions::details::gd_per_model_state&);
+size_t write_model_field(io_buf&, const VW::reductions::details::gd_per_model_state&, const std::string&, bool);
 }  // namespace model_utils
 }  // namespace VW
 
