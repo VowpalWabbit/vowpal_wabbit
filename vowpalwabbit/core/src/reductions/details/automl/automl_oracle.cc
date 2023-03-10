@@ -185,7 +185,8 @@ void ns_based_config::apply_config_to_interactions(const bool ccb_on,
   if (ccb_on)
   {
     auto total = interactions.size();
-    interactions.reserve(3 * total);
+    auto reserve_size = 2 * total + 3 * ns_counter.size() + 3;
+    interactions.reserve(reserve_size);
     for (size_t i = 0; i < total; ++i)
     {
       auto copy = interactions[i];
@@ -207,6 +208,7 @@ void ns_based_config::apply_config_to_interactions(const bool ccb_on,
         std::vector<namespace_index>{VW::details::CCB_SLOT_NAMESPACE, VW::details::CCB_ID_NAMESPACE});
     interactions.emplace_back(std::vector<namespace_index>{
         VW::details::CCB_SLOT_NAMESPACE, VW::details::CCB_SLOT_NAMESPACE, VW::details::CCB_ID_NAMESPACE});
+    assert(interactions.size() == reserve_size);
   }
 }
 
