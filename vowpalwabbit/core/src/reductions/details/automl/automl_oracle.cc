@@ -3,7 +3,6 @@
 // license as described in the file LICENSE.
 
 #include "vw/core/automl_impl.h"
-#include "vw/core/reductions/conditional_contextual_bandit.h"
 
 namespace VW
 {
@@ -180,8 +179,11 @@ void ns_based_config::apply_config_to_interactions(const bool ccb_on,
     }
   }
 
+  // expanded version/equivalent of ccb::insert_ccb_interactions(interactions, ...);
+  // CCB adds the following interactions:
+  //   1. Every existing interaction + VW::details::CCB_ID_NAMESPACE
   //   2. wildcard_namespace + VW::details::CCB_ID_NAMESPACE
-  // and maybe some undocumented ones
+  //   ... and some extra (side-effect ones) caused by :: expansion
   if (ccb_on)
   {
     auto total = interactions.size();
