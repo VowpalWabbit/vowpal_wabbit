@@ -1410,13 +1410,12 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i&
   VW::workspace& all = *stack_builder.get_all_pointer();
   size_t feature_width_above = stack_builder.get_feature_width_above();
 
-  auto g = VW::make_unique<VW::reductions::gd>();
-
   bool sgd = false;
   bool adaptive = false;
   bool adax = false;
   bool invariant = false;
   bool normalized = false;
+  float sparse_l2 = 0.f;
 
   all.sd->gravity = L1_STATE_DEFAULT;
   all.sd->contraction = L2_STATE_DEFAULT;
@@ -1429,7 +1428,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i&
       .add(make_option("adax", adax).help("Use adaptive learning rates with x^2 instead of g^2x^2"))
       .add(make_option("invariant", invariant).help("Use safe/importance aware updates").keep(all.save_resume))
       .add(make_option("normalized", normalized).help("Use per feature normalized updates").keep(all.save_resume))
-      .add(make_option("sparse_l2", g->sparse_l2)
+      .add(make_option("sparse_l2", sparse_l2)
                .default_value(0.f)
                .help("Degree of l2 regularization applied to activated sparse parameters"))
       .add(make_option("l1_state", local_gravity)
@@ -1444,17 +1443,16 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i&
 
   if (options.was_supplied("l1_state")) { all.sd->gravity = local_gravity; }
   if (options.was_supplied("l2_state")) { all.sd->contraction = local_contraction; }
-
-  g->all = &all;
-  auto single_model_state = details::per_model_state();
-  single_model_state.normalized_sum_norm_x = 0;
-  single_model_state.total_weight = 0.;
-  g->per_model_states.emplace_back(single_model_state);
-  g->no_win_counter = 0;
   all.weights.adaptive = true;
   all.weights.normalized = true;
+
+  auto g = VW::make_unique<VW::reductions::gd>(feature_width_above);
+  g->all = &all;
+  g->no_win_counter = 0;
   g->neg_norm_power = (all.weights.adaptive ? (all.power_t - 1.f) : -1.f);
   g->neg_power_t = -all.power_t;
+  g->per_model_states.resize(feature_width_above);
+  g->sparse_l2 = sparse_l2;
 
   if (all.initial_t > 0)  // for the normalized update: if initial_t is bigger than 1 we interpret this as if we had
                           // seen (all.initial_t) previous fake datapoints all with norm 1
@@ -1545,8 +1543,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i&
   else { stride = ::set_learn<false>(all, feature_mask_off, *g.get()); }
 
   all.weights.stride_shift(static_cast<uint32_t>(::ceil_log_2(stride - 1)));
-
-  g->per_model_states.resize(feature_width_above);
 
   auto* bare = g.get();
   auto l = make_bottom_learner(std::move(g), g->learn, bare->predict, stack_builder.get_setupfn_name(gd_setup),
