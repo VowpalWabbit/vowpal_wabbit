@@ -70,7 +70,7 @@ jobs:
         shell: bash
         run: |
           pip install -r requirements.txt
-          pip install pytest twine
+          pip install pytest vw-executor twine
           pip install built_wheel/*.whl
           twine check built_wheel/*.whl
           python -m pytest ./python/tests/
@@ -133,7 +133,7 @@ jobs:
         shell: bash
         run: |
           pip install -r requirements.txt
-          pip install pytest
+          pip install pytest vw-executor
       - name: Run unit tests
         shell: bash
         run: |
@@ -212,7 +212,7 @@ jobs:
             source .env/bin/activate && \
             pip install --upgrade pip && \
             pip install -r requirements.txt && \
-            pip install pytest twine && \
+            pip install pytest vw-executor twine && \
             pip install built_wheel/*.whl && \
             twine check built_wheel/*.whl && \
             python --version && \
@@ -272,7 +272,7 @@ jobs:
         shell: bash
         run: |
           pip install -r requirements.txt
-          pip install pytest twine
+          pip install pytest vw-executor twine
           pip install built_wheel/*.whl
           twine check built_wheel/*.whl
           python -m pytest ./python/tests/
@@ -361,7 +361,7 @@ jobs:
           export wheel_file="${wheel_files[0]}"
           echo Installing ${wheel_file}...
           pip install -r requirements.txt
-          pip install pytest twine
+          pip install pytest vw-executor twine
           pip install ${wheel_file}
           twine check ${wheel_file}
           python -m pytest .\\python\\tests\\
