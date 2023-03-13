@@ -227,6 +227,12 @@ def test_ccb_and_automl():
         ["--invert_hash", "--extra_metrics"],
     )
 
+    automl_metrics = json.load(open(automl.outputs["--extra_metrics"][0]))
+
+    # we need champ switches to be zero for this to work
+    assert "total_champ_switches" in automl_metrics
+    assert automl_metrics["total_champ_switches"] == 0
+
     fts_names_q = set([n for n in q[0].model9("--invert_hash").weights.index])
     fts_names_automl = set(
         [n for n in automl[0].model9("--invert_hash").weights.index if "[" not in n]
