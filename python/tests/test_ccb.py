@@ -172,7 +172,7 @@ def test_ccb_and_automl():
             for i in range(len(rewards)):
                 rewards[i] += np.random.normal(0.5, variance)
 
-            temp = {
+            current = {
                 "c": {
                     "shared": {"name": people_ccb[person]},
                     "_multi": [{"a": {"topic": topics_ccb[i]}} for i in range(2)],
@@ -188,21 +188,24 @@ def test_ccb_and_automl():
                 ],
             }
 
-            temp["c"]["shared"][random.choice(animals)] = random.random()
-            temp["c"]["shared"][random.choice(animals)] = random.random()
+            current["c"]["shared"][random.choice(animals)] = random.random()
+            current["c"]["shared"][random.choice(animals)] = random.random()
 
-            temp["c"]["_multi"][random.choice(range(len(temp["c"]["_multi"])))][
+            current["c"]["_multi"][random.choice(range(len(current["c"]["_multi"])))][
                 random.choice(colors)
             ] = random.random()
-            temp["c"]["_multi"][random.choice(range(len(temp["c"]["_multi"])))][
-                random.choice(colors)
-            ] = random.random()
-
-            temp["c"]["_slots"][random.choice(range(len(temp["c"]["_slots"])))][
+            current["c"]["_multi"][random.choice(range(len(current["c"]["_multi"])))][
                 random.choice(colors)
             ] = random.random()
 
-            yield temp
+            current["c"]["_slots"][random.choice(range(len(current["c"]["_slots"])))][
+                random.choice(colors)
+            ] = random.random()
+            current["c"]["_slots"][random.choice(range(len(current["c"]["_slots"])))][
+                random.choice(colors)
+            ] = random.random()
+
+            yield current
 
     def save_examples(examples, path):
         with open(path, "w") as f:
@@ -239,8 +242,8 @@ def test_ccb_and_automl():
     )
 
     # current impl is broken - they should have same feature count
-    assert len(fts_names_q) == 330
-    assert len(fts_names_automl) == 200
+    assert len(fts_names_q) == 450
+    assert len(fts_names_automl) == 234
 
     os.remove(input_file)
     shutil.rmtree(cache_dir)
