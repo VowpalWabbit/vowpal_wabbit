@@ -847,7 +847,8 @@ template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off,
     size_t normalized, size_t spare>
 void learn(VW::reductions::gd& g, VW::example& ec)
 {
-  std::cout << "gd" << VW::reductions::util::interaction_vec_t_to_string(*ec.interactions) << std::endl;
+  std::cout << "gd" << ec.ft_offset << ":" << VW::reductions::util::interaction_vec_t_to_string(*ec.interactions)
+            << std::endl;
   // invariant: not a test label, importance weight > 0
   assert(ec.l.simple.label != FLT_MAX);
   assert(ec.weight > 0.);
