@@ -188,7 +188,7 @@ void ns_based_config::apply_config_to_interactions(const bool ccb_on,
   if (ccb_on)
   {
     auto total = interactions.size();
-    auto reserve_size = 2 * total + 3 * ns_counter.size() + 3;
+    auto reserve_size = 2 * total + 1 * ns_counter.size() + 0;
     interactions.reserve(reserve_size);
     for (size_t i = 0; i < total; ++i)
     {
@@ -200,17 +200,17 @@ void ns_based_config::apply_config_to_interactions(const bool ccb_on,
     for (auto it = ns_counter.begin(); it != ns_counter.end(); ++it)
     {
       interactions.emplace_back(std::vector<namespace_index>{(*it).first, VW::details::CCB_ID_NAMESPACE});
-      interactions.emplace_back(std::vector<namespace_index>{(*it).first, VW::details::CCB_SLOT_NAMESPACE});
-      interactions.emplace_back(
-          std::vector<namespace_index>{(*it).first, VW::details::CCB_SLOT_NAMESPACE, VW::details::CCB_ID_NAMESPACE});
+      // interactions.emplace_back(std::vector<namespace_index>{(*it).first, VW::details::CCB_SLOT_NAMESPACE});
+      // interactions.emplace_back(
+      // std::vector<namespace_index>{(*it).first, VW::details::CCB_SLOT_NAMESPACE, VW::details::CCB_ID_NAMESPACE});
     }
 
-    interactions.emplace_back(
-        std::vector<namespace_index>{VW::details::CCB_SLOT_NAMESPACE, VW::details::CCB_SLOT_NAMESPACE});
-    interactions.emplace_back(
-        std::vector<namespace_index>{VW::details::CCB_SLOT_NAMESPACE, VW::details::CCB_ID_NAMESPACE});
-    interactions.emplace_back(std::vector<namespace_index>{
-        VW::details::CCB_SLOT_NAMESPACE, VW::details::CCB_SLOT_NAMESPACE, VW::details::CCB_ID_NAMESPACE});
+    // interactions.emplace_back(
+    //     std::vector<namespace_index>{VW::details::CCB_SLOT_NAMESPACE, VW::details::CCB_SLOT_NAMESPACE});
+    // interactions.emplace_back(
+    //     std::vector<namespace_index>{VW::details::CCB_SLOT_NAMESPACE, VW::details::CCB_ID_NAMESPACE});
+    // interactions.emplace_back(std::vector<namespace_index>{
+    //     VW::details::CCB_SLOT_NAMESPACE, VW::details::CCB_SLOT_NAMESPACE, VW::details::CCB_ID_NAMESPACE});
     assert(interactions.size() == reserve_size);
   }
 
