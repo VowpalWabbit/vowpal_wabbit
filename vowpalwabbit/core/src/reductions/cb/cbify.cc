@@ -33,12 +33,12 @@ namespace VW
 {
 namespace reductions
 {
-void cbify_adf_data::init_adf_data(std::size_t num_actions_, std::size_t increment_,
+void cbify_adf_data::init_adf_data(std::size_t num_actions_, std::size_t feature_width_below_,
     std::vector<std::vector<VW::namespace_index>>& interactions,
     std::vector<std::vector<extent_term>>& extent_interactions)
 {
   this->num_actions = num_actions_;
-  this->increment = increment_;
+  this->feature_width_below = feature_width_below_;
 
   ecs.resize(num_actions_);
   for (size_t a = 0; a < num_actions_; ++a)
@@ -51,7 +51,7 @@ void cbify_adf_data::init_adf_data(std::size_t num_actions_, std::size_t increme
   }
 
   // cache mask for copy routine
-  uint64_t total = num_actions_ * increment_;
+  uint64_t total = num_actions_ * feature_width_below_;
   uint64_t power_2 = 0;
 
   while (total > 0)
@@ -89,7 +89,7 @@ void cbify_adf_data::copy_example_to_adf(parameters& weights, VW::example& ec)
       {
         auto rawidx = idx;
         rawidx -= rawidx & custom_index_mask;
-        rawidx += a * increment;
+        rawidx += a * feature_width_below;
         idx = rawidx & mask;
       }
     }
@@ -778,7 +778,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cbify_setup(VW::setup_base
 
     if (data->use_adf)
     {
-      data->adf_data.init_adf_data(num_actions, base->increment, all.interactions, all.extent_interactions);
+      data->adf_data.init_adf_data(num_actions, base->feature_width_below, all.interactions, all.extent_interactions);
     }
 
     if (use_cs)

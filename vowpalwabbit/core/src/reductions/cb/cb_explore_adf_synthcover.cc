@@ -191,8 +191,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_synthcover_
     *(all.trace_message) << "synthcoverpsi = " << psi << std::endl;
   }
 
-  size_t problem_multiplier = 1;
-  auto base = require_multiline(stack_builder.setup_base_learner(problem_multiplier));
+  size_t feature_width = 1;
+  auto base = require_multiline(stack_builder.setup_base_learner(feature_width));
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_synthcover>;
   auto data = VW::make_unique<explore_type>(all.global_metrics.are_metrics_enabled(), epsilon, psi,
@@ -203,7 +203,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_synthcover_
                .set_output_label_type(VW::label_type_t::CB)
                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
-               .set_params_per_weight(problem_multiplier)
+               .set_feature_width(feature_width)
                .set_output_example_prediction(explore_type::output_example_prediction)
                .set_update_stats(explore_type::update_stats)
                .set_print_update(explore_type::print_update)

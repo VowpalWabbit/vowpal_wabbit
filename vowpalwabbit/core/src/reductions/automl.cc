@@ -80,12 +80,9 @@ void pre_save_load_automl(VW::workspace& all, automl<CMType>& data)
   options_i& options = *all.options;
   if (!data.should_save_predict_only_model) { return; }
 
-  std::swap(*data.cm->_cb_adf_event_sum, data.cm->per_live_model_state_uint64[0]);
-  std::swap(*data.cm->_cb_adf_action_sum, data.cm->per_live_model_state_uint64[1]);
-
   // Adjust champ weights to new single-model space
   VW::reductions::multi_model::reduce_innermost_model_weights(
-      data.cm->weights, 0, data.cm->wpp, data.cm->max_live_configs);
+      data.cm->weights, 0, data.cm->feature_width, data.cm->max_live_configs);
 
   for (auto& group : options.get_all_option_group_definitions())
   {
@@ -153,7 +150,7 @@ std::shared_ptr<VW::LEARNER::learner> make_automl_with_impl(VW::setup_base_i& st
   else if (priority_type == "favor_popular_namespaces") { calc_priority = &calc_priority_favor_popular_namespaces; }
   else { THROW("Invalid priority function provided"); }
 
-  // Note that all.wpp will not be set correctly until after setup
+  // Note that all.total_feature_width will not be set correctly until after setup
   assert(oracle_type == "one_diff" || oracle_type == "rand" || oracle_type == "champdupe" ||
       oracle_type == "one_diff_inclusion" || oracle_type == "qbase_cubic");
 
@@ -170,35 +167,28 @@ std::shared_ptr<VW::LEARNER::learner> make_automl_with_impl(VW::setup_base_i& st
 
   auto cm = VW::make_unique<config_manager_type>(default_lease, max_live_configs, all.get_random_state(),
       static_cast<uint64_t>(priority_challengers), interaction_type, oracle_type, all.weights.dense_weights,
-      calc_priority, automl_significance_level, &all.logger, all.wpp, ccb_on, conf_type, trace_file_name_prefix,
-      reward_as_cost, tol_x, is_brentq);
+      calc_priority, automl_significance_level, &all.logger, all.total_feature_width, ccb_on, conf_type,
+      trace_file_name_prefix, reward_as_cost, tol_x, is_brentq);
   auto data = VW::make_unique<automl<config_manager_type>>(
       std::move(cm), &all.logger, predict_only_model, trace_file_name_prefix);
   data->debug_reverse_learning_order = reversed_learning_order;
-  data->cm->per_live_model_state_uint64 = std::vector<uint64_t>(max_live_configs * 2, 0.f);
 
-  auto ppw = max_live_configs;
+  auto feature_width = max_live_configs;
   auto* persist_ptr = verbose_metrics ? persist<config_manager_type, true> : persist<config_manager_type, false>;
-  data->adf_learner = require_multiline(base_learner->get_learner_by_name_prefix("cb_adf"));
 
-  auto& adf_data =
-      *static_cast<VW::reductions::cb_adf*>(data->adf_learner->get_internal_type_erased_data_pointer_test_use_only());
-  data->cm->_cb_adf_event_sum = &(adf_data.gen_cs.event_sum);
-  data->cm->_cb_adf_action_sum = &(adf_data.gen_cs.action_sum);
-
-  auto l = make_reduction_learner(std::move(data), require_multiline(base_learner),
-      learn_automl<config_manager_type, true>, predict_automl<config_manager_type, true>,
-      stack_builder.get_setupfn_name(VW::reductions::automl_setup))
-               .set_params_per_weight(ppw)  // refactor pm
-               .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
-               .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
-               .set_input_label_type(VW::label_type_t::CB)
-               .set_output_label_type(VW::label_type_t::CB)
-               .set_save_load(save_load_automl)
-               .set_persist_metrics(persist_ptr)
-               .set_learn_returns_prediction(true)
-               .set_pre_save_load(pre_save_load_automl)
-               .build();
+  auto l =
+      make_reduction_learner(std::move(data), require_multiline(base_learner), learn_automl<config_manager_type, true>,
+          predict_automl<config_manager_type, true>, stack_builder.get_setupfn_name(VW::reductions::automl_setup))
+          .set_feature_width(feature_width)
+          .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+          .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+          .set_input_label_type(VW::label_type_t::CB)
+          .set_output_label_type(VW::label_type_t::CB)
+          .set_save_load(save_load_automl)
+          .set_persist_metrics(persist_ptr)
+          .set_learn_returns_prediction(true)
+          .set_pre_save_load(pre_save_load_automl)
+          .build();
   return l;
 }
 
