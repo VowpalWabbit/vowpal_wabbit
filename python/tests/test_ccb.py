@@ -153,7 +153,11 @@ def test_ccb_and_automl():
                     "_slots": [{"_id": i} for i in range(2)],
                 },
                 "_outcomes": [
-                    {"_label_cost": -min(rewards[i], 1), "_a": chosen[i:], "_p": [1.0 / (2 - i)] * (2 - i)}
+                    {
+                        "_label_cost": -min(rewards[i], 1),
+                        "_a": chosen[i:],
+                        "_p": [1.0 / (2 - i)] * (2 - i),
+                    }
                     for i in range(2)
                 ],
             }
@@ -165,12 +169,16 @@ def test_ccb_and_automl():
 
     input_file = "ccb.json"
     cache_dir = ".cache"
-    save_examples(my_ccb_simulation(n=1000, variance=0.1, bad_features=1, seed=0), input_file)
+    save_examples(
+        my_ccb_simulation(n=1000, variance=0.1, bad_features=1, seed=0), input_file
+    )
 
     assert os.path.exists(input_file)
 
-    vw = Vw(cache_dir, "/root/vowpal_wabbit/build/vowpalwabbit/cli/vw")
-    q = vw.train(input_file, "-b 18 -q :: --ccb_explore_adf --dsjson", ["--invert_hash"])
+    vw = Vw(cache_dir, "/root/vowpal_wabbit/build/vowpalwabbit/cli/vw", handler=None)
+    q = vw.train(
+        input_file, "-b 18 -q :: --ccb_explore_adf --dsjson", ["--invert_hash"]
+    )
     fts_names_q = set([n for n in q[0].model9("--invert_hash").weights.index])
 
     assert len(fts_names_q) == 39
