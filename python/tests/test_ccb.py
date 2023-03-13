@@ -236,14 +236,17 @@ def test_ccb_and_automl():
     assert "total_champ_switches" in automl_metrics
     assert automl_metrics["total_champ_switches"] == 0
 
-    fts_names_q = set([n for n in q[0].model9("--invert_hash").weights.index])
-    fts_names_automl = set(
-        [n for n in automl[0].model9("--invert_hash").weights.index if "[" not in n]
-    )
+    q_weights = q[0].model9("--invert_hash").weights.sort_index()
+    automl_weights = automl[0].model9("--invert_hash").weights.sort_index()
+    automl_champ_weights = automl_weights[~automl_weights.index.str.contains("\[")]
 
-    # current impl is broken - they should have same feature count
-    assert len(fts_names_q) == 450
-    assert len(fts_names_automl) == 234
+    fts_names_q = set([n for n in q_weights])
+    fts_names_automl = set([n for n in automl_weights if "[" not in n])
+
+    assert len(fts_names_q) == len(fts_names_automl)
+    assert fts_names_q == fts_names_automl
+    # since there is no champ switch automl_champ should be q:: and be equal to the non-automl q:: instance
+    assert q_weights.equals(automl_champ_weights)
 
     os.remove(input_file)
     shutil.rmtree(cache_dir)
