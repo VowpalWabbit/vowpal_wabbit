@@ -181,10 +181,12 @@ void ns_based_config::apply_config_to_interactions(const bool ccb_on,
   }
 
   // expanded version/equivalent of ccb::insert_ccb_interactions(interactions, ...);
+  // we cannot use that function since it relies on WILDCARD_NAMESPACE and on generate_interactions reduction
+  // which we don't use in automl stack
+  //
   // CCB adds the following interactions:
   //   1. Every existing interaction + VW::details::CCB_ID_NAMESPACE
   //   2. wildcard_namespace + VW::details::CCB_ID_NAMESPACE
-  //   ... and some extra (side-effect ones) caused by :: expansion
   if (ccb_on)
   {
     auto total = interactions.size();
@@ -200,17 +202,8 @@ void ns_based_config::apply_config_to_interactions(const bool ccb_on,
     for (auto it = ns_counter.begin(); it != ns_counter.end(); ++it)
     {
       interactions.emplace_back(std::vector<namespace_index>{(*it).first, VW::details::CCB_ID_NAMESPACE});
-      // interactions.emplace_back(std::vector<namespace_index>{(*it).first, VW::details::CCB_SLOT_NAMESPACE});
-      // interactions.emplace_back(
-      // std::vector<namespace_index>{(*it).first, VW::details::CCB_SLOT_NAMESPACE, VW::details::CCB_ID_NAMESPACE});
     }
 
-    // interactions.emplace_back(
-    //     std::vector<namespace_index>{VW::details::CCB_SLOT_NAMESPACE, VW::details::CCB_SLOT_NAMESPACE});
-    // interactions.emplace_back(
-    //     std::vector<namespace_index>{VW::details::CCB_SLOT_NAMESPACE, VW::details::CCB_ID_NAMESPACE});
-    // interactions.emplace_back(std::vector<namespace_index>{
-    //     VW::details::CCB_SLOT_NAMESPACE, VW::details::CCB_SLOT_NAMESPACE, VW::details::CCB_ID_NAMESPACE});
     assert(interactions.size() == reserve_size);
   }
 
