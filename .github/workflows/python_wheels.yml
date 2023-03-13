@@ -71,7 +71,7 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install pytest vw-executor twine
-          pip install built_wheel/*.whl
+          pip install --force-reinstall built_wheel/*.whl
           twine check built_wheel/*.whl
           python -m pytest ./python/tests/
           python ./python/tests/run_doctest.py
@@ -213,7 +213,7 @@ jobs:
             pip install --upgrade pip && \
             pip install -r requirements.txt && \
             pip install pytest vw-executor twine && \
-            pip install built_wheel/*.whl && \
+            pip install --force-reinstall built_wheel/*.whl && \
             twine check built_wheel/*.whl && \
             python --version && \
             python -m pytest ./python/tests/ && \
@@ -273,7 +273,7 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install pytest vw-executor twine
-          pip install built_wheel/*.whl
+          pip install --force-reinstall built_wheel/*.whl
           twine check built_wheel/*.whl
           python -m pytest ./python/tests/
           python ./python/tests/run_doctest.py
@@ -362,7 +362,7 @@ jobs:
           echo Installing ${wheel_file}...
           pip install -r requirements.txt
           pip install pytest vw-executor twine
-          pip install ${wheel_file}
+          pip install --force-reinstall ${wheel_file}
           twine check ${wheel_file}
           python -m pytest .\\python\\tests\\
           python .\\python\\tests\\run_doctest.py
