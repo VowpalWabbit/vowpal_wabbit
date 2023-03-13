@@ -3,7 +3,6 @@
 // license as described in the file LICENSE.
 
 #include "vw/core/reductions/conditional_contextual_bandit.h"
-#include "vw/core/automl_impl.h"
 
 #include "vw/config/options.h"
 #include "vw/core/ccb_label.h"
@@ -431,8 +430,6 @@ void learn_or_predict(ccb_data& data, learner& base, VW::multi_ex& examples)
   {
     insert_ccb_interactions(data.all->interactions, data.all->extent_interactions);
   }
-
-  std::cout <<"ccb"<< VW::reductions::util::interaction_vec_t_to_string(data.all->interactions) << std::endl;
 
   // This will overwrite the labels with CB.
   create_cb_labels(data);
