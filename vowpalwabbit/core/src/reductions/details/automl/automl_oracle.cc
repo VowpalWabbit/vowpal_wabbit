@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "vw/core/automl_impl.h"
+#include "vw/core/interactions.h"
 
 namespace VW
 {
@@ -212,6 +213,8 @@ void ns_based_config::apply_config_to_interactions(const bool ccb_on,
         VW::details::CCB_SLOT_NAMESPACE, VW::details::CCB_SLOT_NAMESPACE, VW::details::CCB_ID_NAMESPACE});
     assert(interactions.size() == reserve_size);
   }
+
+  std::sort(interactions.begin(), interactions.end(), VW::details::sort_interactions_comparator);
 }
 
 // Helper function to insert new configs from oracle into map of configs as well as index_queue.
