@@ -417,38 +417,38 @@ public:
 
   LEARNER_BUILDER_DEFINE(set_save_load(void (*fn_ptr)(DataT&, io_buf&, bool, bool)),
     assert(fn_ptr != nullptr);
-    auto learner_ptr = this->learner_ptr;
+    auto* learner_ptr = this->learner_ptr.get();
     this->learner_ptr->_save_load_f = [fn_ptr, learner_ptr](io_buf& buf, bool read, bool text)
     { fn_ptr(*(DataT*)learner_ptr->_learner_data.get(), buf, read, text); };
   )
 
   LEARNER_BUILDER_DEFINE(set_finish(void (*fn_ptr)(DataT&)),
     assert(fn_ptr != nullptr);
-    auto learner_ptr = this->learner_ptr;
+    auto* learner_ptr = this->learner_ptr.get();
     this->learner_ptr->_finisher_f = [fn_ptr, learner_ptr]() { fn_ptr(*(DataT*)learner_ptr->_learner_data.get()); };
   )
 
   LEARNER_BUILDER_DEFINE(set_end_pass(void (*fn_ptr)(DataT&)),
     assert(fn_ptr != nullptr);
-    auto learner_ptr = this->learner_ptr;
+    auto* learner_ptr = this->learner_ptr.get();
     this->learner_ptr->_end_pass_f = [fn_ptr, learner_ptr]() { fn_ptr(*(DataT*)learner_ptr->_learner_data.get()); };
   )
 
   LEARNER_BUILDER_DEFINE(set_end_examples(void (*fn_ptr)(DataT&)),
     assert(fn_ptr != nullptr);
-    auto learner_ptr = this->learner_ptr;
+    auto* learner_ptr = this->learner_ptr.get();
     this->learner_ptr->_end_examples_f = [fn_ptr, learner_ptr]() { fn_ptr(*(DataT*)learner_ptr->_learner_data.get()); };
   )
 
   LEARNER_BUILDER_DEFINE(set_init_driver(void (*fn_ptr)(DataT&)),
     assert(fn_ptr != nullptr);
-    auto learner_ptr = this->learner_ptr;
+    auto* learner_ptr = this->learner_ptr.get();
     this->learner_ptr->_init_f = [fn_ptr, learner_ptr]() { fn_ptr(*(DataT*)learner_ptr->_learner_data.get()); };
   )
 
   LEARNER_BUILDER_DEFINE(set_finish_example(void (*fn_ptr)(VW::workspace& all, DataT&, ExampleT&)),
     assert(fn_ptr != nullptr);
-    auto learner_ptr = this->learner_ptr;
+    auto* learner_ptr = this->learner_ptr.get();
     this->learner_ptr->_finish_example_f = [fn_ptr, learner_ptr](VW::workspace& all, polymorphic_ex ex)
     { fn_ptr(all, *(DataT*)learner_ptr->_learner_data.get(), ex); };
   )
@@ -457,7 +457,7 @@ public:
   // - Call shared_data::update
   LEARNER_BUILDER_DEFINE(set_update_stats(learner_update_stats_func<DataT, ExampleT>* fn_ptr),
     assert(fn_ptr != nullptr);
-    auto learner_ptr = this->learner_ptr;
+    auto* learner_ptr = this->learner_ptr.get();
     this->learner_ptr->_update_stats_f =
         [fn_ptr, learner_ptr](const VW::workspace& all, VW::shared_data& sd, const polymorphic_ex ex, VW::io::logger& logger)
     { fn_ptr(all, sd, *(DataT*)learner_ptr->_learner_data.get(), ex, logger); };
@@ -467,7 +467,7 @@ public:
   // - Output predictions
   LEARNER_BUILDER_DEFINE(set_output_example_prediction(learner_output_example_prediction_func<DataT, ExampleT>* fn_ptr),
     assert(fn_ptr != nullptr);
-    auto learner_ptr = this->learner_ptr;
+    auto* learner_ptr = this->learner_ptr.get();
     this->learner_ptr->_output_example_prediction_f = [fn_ptr, learner_ptr](VW::workspace& all, const polymorphic_ex ex,
         VW::io::logger& logger) { fn_ptr(all, *(DataT*)learner_ptr->_learner_data.get(), ex, logger); };
   )
@@ -477,7 +477,7 @@ public:
   // Note this is only called when required based on the user specified backoff and logging settings.
   LEARNER_BUILDER_DEFINE(set_print_update(learner_print_update_func<DataT, ExampleT>* fn_ptr),
     assert(fn_ptr != nullptr);
-    auto learner_ptr = this->learner_ptr;
+    auto* learner_ptr = this->learner_ptr.get();
     this->learner_ptr->_print_update_f =
         [fn_ptr, learner_ptr](VW::workspace& all, VW::shared_data& sd, const polymorphic_ex ex, VW::io::logger& logger)
     { fn_ptr(all, sd, *(DataT*)learner_ptr->_learner_data.get(), ex, logger); };
@@ -487,19 +487,19 @@ public:
   // However, it can be used to optimistically reuse memory.
   LEARNER_BUILDER_DEFINE(set_cleanup_example(learner_cleanup_example_func<DataT, ExampleT>* fn_ptr),
     assert(fn_ptr != nullptr);
-    auto learner_ptr = this->learner_ptr;
+    auto* learner_ptr = this->learner_ptr.get();
     this->learner_ptr->_cleanup_example_f = [fn_ptr, learner_ptr](polymorphic_ex ex) { fn_ptr(*(DataT*)learner_ptr->_learner_data.get(), ex); };
   )
 
   LEARNER_BUILDER_DEFINE(set_persist_metrics(void (*fn_ptr)(DataT&, metric_sink&)),
     assert(fn_ptr != nullptr);
-    auto learner_ptr = this->learner_ptr;
+    auto* learner_ptr = this->learner_ptr.get();
     this->learner_ptr->_persist_metrics_f = [fn_ptr, learner_ptr](metric_sink& metrics) { fn_ptr(*(DataT*)learner_ptr->_learner_data.get(), metrics); };
   )
 
   LEARNER_BUILDER_DEFINE(set_pre_save_load(void (*fn_ptr)(VW::workspace& all, DataT&)),
     assert(fn_ptr != nullptr);
-    auto learner_ptr = this->learner_ptr;
+    auto* learner_ptr = this->learner_ptr.get();
     this->learner_ptr->_pre_save_load_f = [fn_ptr, learner_ptr](VW::workspace& all) { fn_ptr(all, *(DataT*)learner_ptr->_learner_data.get()); };
   )
 
@@ -734,19 +734,19 @@ public:
   // clang-format off
   LEARNER_BUILDER_DEFINE(set_predict(void (*fn_ptr)(DataT&, ExampleT&)),
     assert(fn_ptr != nullptr);
-    auto learner_ptr = this->learner_ptr;
+    auto* learner_ptr = this->learner_ptr.get();
     this->learner_ptr->_predict_f = [fn_ptr, learner_ptr](polymorphic_ex ex) { fn_ptr(*(DataT*)learner_ptr->_learner_data.get(), ex); };
   )
 
   LEARNER_BUILDER_DEFINE(set_learn(void (*fn_ptr)(DataT&, ExampleT&)),
     assert(fn_ptr != nullptr);
-    auto learner_ptr = this->learner_ptr;
+    auto* learner_ptr = this->learner_ptr.get();
     this->learner_ptr->_learn_f = [fn_ptr, learner_ptr](polymorphic_ex ex) { fn_ptr(*(DataT*)learner_ptr->_learner_data.get(), ex); };
   )
 
   LEARNER_BUILDER_DEFINE(set_multipredict( void (*fn_ptr)(DataT&, ExampleT&, size_t, size_t, polyprediction*, bool)),
     assert(fn_ptr != nullptr);
-    auto learner_ptr = this->learner_ptr;
+    auto* learner_ptr = this->learner_ptr.get();
     this->learner_ptr->_multipredict_f =
         [fn_ptr, learner_ptr](polymorphic_ex ex, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)
     { fn_ptr(*(DataT*)learner_ptr->_learner_data.get(), ex, count, step, pred, finalize_predictions); };
@@ -756,14 +756,14 @@ public:
 
   LEARNER_BUILDER_DEFINE(set_update(void (*fn_ptr)(DataT& data, ExampleT&)),
     assert(fn_ptr != nullptr);
-    auto learner_ptr = this->learner_ptr;
+    auto* learner_ptr = this->learner_ptr.get();
     this->learner_ptr->_update_f = [fn_ptr, learner_ptr](polymorphic_ex ex) { fn_ptr(*(DataT*)learner_ptr->_learner_data.get(), ex); };
   )
 
   // used for active learning and confidence to determine how easily predictions are changed
   LEARNER_BUILDER_DEFINE(set_sensitivity(float (*fn_ptr)(DataT& data, example&)),
     assert(fn_ptr != nullptr);
-    auto learner_ptr = this->learner_ptr;
+    auto* learner_ptr = this->learner_ptr.get();
     this->learner_ptr->_sensitivity_f = [fn_ptr, learner_ptr](example& ex) { return fn_ptr(*(DataT*)learner_ptr->_learner_data.get(), ex); };
   )
 
