@@ -147,8 +147,6 @@ public:
   std::shared_ptr<void> get_internal_type_erased_data_pointer_test_use_only_shared() { return _learner_data; }
 
   // This is very dangerous to use.
-  // This will not override the data object passed to functions, just the data object returned by
-  // get_internal_type_erased_data_pointer_test_use_only
   void set_internal_type_erased_data_pointer_does_not_override_funcs(std::shared_ptr<void> data)
   {
     _learner_data = std::move(data);
@@ -419,59 +417,59 @@ public:
 
   LEARNER_BUILDER_DEFINE(set_save_load(void (*fn_ptr)(DataT&, io_buf&, bool, bool)),
     assert(fn_ptr != nullptr);
-    DataT* data = this->learner_data.get();
-    this->learner_ptr->_save_load_f = [fn_ptr, data](io_buf& buf, bool read, bool text)
-    { fn_ptr(*data, buf, read, text); };
+    auto learner_ptr = this->learner_ptr;
+    this->learner_ptr->_save_load_f = [fn_ptr, learner_ptr](io_buf& buf, bool read, bool text)
+    { fn_ptr(*(DataT*)learner_ptr->get_internal_type_erased_data_pointer_test_use_only_shared().get(), buf, read, text); };
   )
 
   LEARNER_BUILDER_DEFINE(set_finish(void (*fn_ptr)(DataT&)),
     assert(fn_ptr != nullptr);
-    DataT* data = this->learner_data.get();
-    this->learner_ptr->_finisher_f = [fn_ptr, data]() { fn_ptr(*data); };
+    auto learner_ptr = this->learner_ptr;
+    this->learner_ptr->_finisher_f = [fn_ptr, learner_ptr]() { fn_ptr(*(DataT*)learner_ptr->get_internal_type_erased_data_pointer_test_use_only_shared().get()); };
   )
 
   LEARNER_BUILDER_DEFINE(set_end_pass(void (*fn_ptr)(DataT&)),
     assert(fn_ptr != nullptr);
-    DataT* data = this->learner_data.get();
-    this->learner_ptr->_end_pass_f = [fn_ptr, data]() { fn_ptr(*data); };
+    auto learner_ptr = this->learner_ptr;
+    this->learner_ptr->_end_pass_f = [fn_ptr, learner_ptr]() { fn_ptr(*(DataT*)learner_ptr->get_internal_type_erased_data_pointer_test_use_only_shared().get()); };
   )
 
   LEARNER_BUILDER_DEFINE(set_end_examples(void (*fn_ptr)(DataT&)),
     assert(fn_ptr != nullptr);
-    DataT* data = this->learner_data.get();
-    this->learner_ptr->_end_examples_f = [fn_ptr, data]() { fn_ptr(*data); };
+    auto learner_ptr = this->learner_ptr;
+    this->learner_ptr->_end_examples_f = [fn_ptr, learner_ptr]() { fn_ptr(*(DataT*)learner_ptr->get_internal_type_erased_data_pointer_test_use_only_shared().get()); };
   )
 
   LEARNER_BUILDER_DEFINE(set_init_driver(void (*fn_ptr)(DataT&)),
     assert(fn_ptr != nullptr);
-    DataT* data = this->learner_data.get();
-    this->learner_ptr->_init_f = [fn_ptr, data]() { fn_ptr(*data); };
+    auto learner_ptr = this->learner_ptr;
+    this->learner_ptr->_init_f = [fn_ptr, learner_ptr]() { fn_ptr(*(DataT*)learner_ptr->get_internal_type_erased_data_pointer_test_use_only_shared().get()); };
   )
 
   LEARNER_BUILDER_DEFINE(set_finish_example(void (*fn_ptr)(VW::workspace& all, DataT&, ExampleT&)),
     assert(fn_ptr != nullptr);
-    DataT* data = this->learner_data.get();
-    this->learner_ptr->_finish_example_f = [fn_ptr, data](VW::workspace& all, polymorphic_ex ex)
-    { fn_ptr(all, *data, ex); };
+    auto learner_ptr = this->learner_ptr;
+    this->learner_ptr->_finish_example_f = [fn_ptr, learner_ptr](VW::workspace& all, polymorphic_ex ex)
+    { fn_ptr(all, *(DataT*)learner_ptr->get_internal_type_erased_data_pointer_test_use_only_shared().get(), ex); };
   )
 
   // Responsibilities of update stats:
   // - Call shared_data::update
   LEARNER_BUILDER_DEFINE(set_update_stats(learner_update_stats_func<DataT, ExampleT>* fn_ptr),
     assert(fn_ptr != nullptr);
-    DataT* data = this->learner_data.get();
+    auto learner_ptr = this->learner_ptr;
     this->learner_ptr->_update_stats_f =
-        [fn_ptr, data](const VW::workspace& all, VW::shared_data& sd, const polymorphic_ex ex, VW::io::logger& logger)
-    { fn_ptr(all, sd, *data, ex, logger); };
+        [fn_ptr, learner_ptr](const VW::workspace& all, VW::shared_data& sd, const polymorphic_ex ex, VW::io::logger& logger)
+    { fn_ptr(all, sd, *(DataT*)learner_ptr->get_internal_type_erased_data_pointer_test_use_only_shared().get(), ex, logger); };
   )
 
   // Responsibilities of output example prediction:
   // - Output predictions
   LEARNER_BUILDER_DEFINE(set_output_example_prediction(learner_output_example_prediction_func<DataT, ExampleT>* fn_ptr),
     assert(fn_ptr != nullptr);
-    DataT* data = this->learner_data.get();
-    this->learner_ptr->_output_example_prediction_f = [fn_ptr, data](VW::workspace& all, const polymorphic_ex ex,
-        VW::io::logger& logger) { fn_ptr(all, *data, ex, logger); };
+    auto learner_ptr = this->learner_ptr;
+    this->learner_ptr->_output_example_prediction_f = [fn_ptr, learner_ptr](VW::workspace& all, const polymorphic_ex ex,
+        VW::io::logger& logger) { fn_ptr(all, *(DataT*)learner_ptr->get_internal_type_erased_data_pointer_test_use_only_shared().get(), ex, logger); };
   )
 
   // Responsibilities of output example prediction:
@@ -479,30 +477,30 @@ public:
   // Note this is only called when required based on the user specified backoff and logging settings.
   LEARNER_BUILDER_DEFINE(set_print_update(learner_print_update_func<DataT, ExampleT>* fn_ptr),
     assert(fn_ptr != nullptr);
-    DataT* data = this->learner_data.get();
+    auto learner_ptr = this->learner_ptr;
     this->learner_ptr->_print_update_f =
-        [fn_ptr, data](VW::workspace& all, VW::shared_data& sd, const polymorphic_ex ex, VW::io::logger& logger)
-    { fn_ptr(all, sd, *data, ex, logger); };
+        [fn_ptr, learner_ptr](VW::workspace& all, VW::shared_data& sd, const polymorphic_ex ex, VW::io::logger& logger)
+    { fn_ptr(all, sd, *(DataT*)learner_ptr->get_internal_type_erased_data_pointer_test_use_only_shared().get(), ex, logger); };
   )
 
   // This call is **optional**, correctness cannot depend on it.
   // However, it can be used to optimistically reuse memory.
   LEARNER_BUILDER_DEFINE(set_cleanup_example(learner_cleanup_example_func<DataT, ExampleT>* fn_ptr),
     assert(fn_ptr != nullptr);
-    DataT* data = this->learner_data.get();
-    this->learner_ptr->_cleanup_example_f = [fn_ptr, data](polymorphic_ex ex) { fn_ptr(*data, ex); };
+    auto learner_ptr = this->learner_ptr;
+    this->learner_ptr->_cleanup_example_f = [fn_ptr, learner_ptr](polymorphic_ex ex) { fn_ptr(*(DataT*)learner_ptr->get_internal_type_erased_data_pointer_test_use_only_shared().get(), ex); };
   )
 
   LEARNER_BUILDER_DEFINE(set_persist_metrics(void (*fn_ptr)(DataT&, metric_sink&)),
     assert(fn_ptr != nullptr);
-    DataT* data = this->learner_data.get();
-    this->learner_ptr->_persist_metrics_f = [fn_ptr, data](metric_sink& metrics) { fn_ptr(*data, metrics); };
+    auto learner_ptr = this->learner_ptr;
+    this->learner_ptr->_persist_metrics_f = [fn_ptr, learner_ptr](metric_sink& metrics) { fn_ptr(*(DataT*)learner_ptr->get_internal_type_erased_data_pointer_test_use_only_shared().get(), metrics); };
   )
 
   LEARNER_BUILDER_DEFINE(set_pre_save_load(void (*fn_ptr)(VW::workspace& all, DataT&)),
     assert(fn_ptr != nullptr);
-    DataT* data = this->learner_data.get();
-    this->learner_ptr->_pre_save_load_f = [fn_ptr, data](VW::workspace& all) { fn_ptr(all, *data); };
+    auto learner_ptr = this->learner_ptr;
+    this->learner_ptr->_pre_save_load_f = [fn_ptr, learner_ptr](VW::workspace& all) { fn_ptr(all, *(DataT*)learner_ptr->get_internal_type_erased_data_pointer_test_use_only_shared().get()); };
   )
 
   // This is the label type of the example passed into the learn function. This
@@ -736,37 +734,37 @@ public:
   // clang-format off
   LEARNER_BUILDER_DEFINE(set_predict(void (*fn_ptr)(DataT&, ExampleT&)),
     assert(fn_ptr != nullptr);
-    DataT* data = this->learner_data.get();
-    this->learner_ptr->_predict_f = [fn_ptr, data](polymorphic_ex ex) { fn_ptr(*data, ex); };
+    auto learner_ptr = this->learner_ptr;
+    this->learner_ptr->_predict_f = [fn_ptr, learner_ptr](polymorphic_ex ex) { fn_ptr(*(DataT*)learner_ptr->get_internal_type_erased_data_pointer_test_use_only_shared().get(), ex); };
   )
 
   LEARNER_BUILDER_DEFINE(set_learn(void (*fn_ptr)(DataT&, ExampleT&)),
     assert(fn_ptr != nullptr);
-    DataT* data = this->learner_data.get();
-    this->learner_ptr->_learn_f = [fn_ptr, data](polymorphic_ex ex) { fn_ptr(*data, ex); };
+    auto learner_ptr = this->learner_ptr;
+    this->learner_ptr->_learn_f = [fn_ptr, learner_ptr](polymorphic_ex ex) { fn_ptr(*(DataT*)learner_ptr->get_internal_type_erased_data_pointer_test_use_only_shared().get(), ex); };
   )
 
   LEARNER_BUILDER_DEFINE(set_multipredict( void (*fn_ptr)(DataT&, ExampleT&, size_t, size_t, polyprediction*, bool)),
     assert(fn_ptr != nullptr);
-    DataT* data = this->learner_data.get();
+    auto learner_ptr = this->learner_ptr;
     this->learner_ptr->_multipredict_f =
-        [fn_ptr, data](polymorphic_ex ex, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)
-    { fn_ptr(*data, ex, count, step, pred, finalize_predictions); };
+        [fn_ptr, learner_ptr](polymorphic_ex ex, size_t count, size_t step, polyprediction* pred, bool finalize_predictions)
+    { fn_ptr(*(DataT*)learner_ptr->get_internal_type_erased_data_pointer_test_use_only_shared().get(), ex, count, step, pred, finalize_predictions); };
   )
 
 
 
   LEARNER_BUILDER_DEFINE(set_update(void (*fn_ptr)(DataT& data, ExampleT&)),
     assert(fn_ptr != nullptr);
-    DataT* data = this->learner_data.get();
-    this->learner_ptr->_update_f = [fn_ptr, data](polymorphic_ex ex) { fn_ptr(*data, ex); };
+    auto learner_ptr = this->learner_ptr;
+    this->learner_ptr->_update_f = [fn_ptr, learner_ptr](polymorphic_ex ex) { fn_ptr(*(DataT*)learner_ptr->get_internal_type_erased_data_pointer_test_use_only_shared().get(), ex); };
   )
 
   // used for active learning and confidence to determine how easily predictions are changed
   LEARNER_BUILDER_DEFINE(set_sensitivity(float (*fn_ptr)(DataT& data, example&)),
     assert(fn_ptr != nullptr);
-    DataT* data = this->learner_data.get();
-    this->learner_ptr->_sensitivity_f = [fn_ptr, data](example& ex) { return fn_ptr(*data, ex); };
+    auto learner_ptr = this->learner_ptr;
+    this->learner_ptr->_sensitivity_f = [fn_ptr, learner_ptr](example& ex) { return fn_ptr(*(DataT*)learner_ptr->get_internal_type_erased_data_pointer_test_use_only_shared().get(), ex); };
   )
 
   LEARNER_BUILDER_DEFINE(set_merge_with_all(void (*fn_ptr)(const std::vector<float>&,
