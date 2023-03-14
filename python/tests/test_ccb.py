@@ -237,6 +237,8 @@ def test_ccb_and_automl():
     assert automl_metrics["total_champ_switches"] == 0
 
     fts_names_q = set([n for n in q[0].model9("--invert_hash").weights.index])
+
+    # invert hash feature names that do not contain '[' correspond to index 0 - the champ's weights
     fts_names_automl = set(
         [n for n in automl[0].model9("--invert_hash").weights.index if "[" not in n]
     )
