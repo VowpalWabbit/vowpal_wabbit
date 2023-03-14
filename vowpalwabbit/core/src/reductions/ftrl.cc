@@ -57,8 +57,7 @@ public:
   size_t no_win_counter = 0;
   size_t early_stop_thres = 0;
   uint32_t ftrl_size = 0;
-  double total_weight = 0.0;
-  double normalized_sum_norm_x = 0.0;
+  std::vector<VW::reductions::details::gd_per_model_state> gd_per_model_states;
 };
 
 class uncertainty
@@ -258,9 +257,10 @@ void coin_betting_predict(ftrl& b, VW::example& ec)
   VW::foreach_feature<ftrl_update_data, inner_coin_betting_predict>(*b.all, ec, b.data, num_features_from_interactions);
   ec.num_features_from_interactions = num_features_from_interactions;
 
-  b.normalized_sum_norm_x += (static_cast<double>(ec.weight)) * b.data.normalized_squared_norm_x;
-  b.total_weight += ec.weight;
-  b.data.average_squared_norm_x = (static_cast<float>((b.normalized_sum_norm_x + 1e-6) / b.total_weight));
+  b.gd_per_model_states[0].normalized_sum_norm_x += (static_cast<double>(ec.weight)) * b.data.normalized_squared_norm_x;
+  b.gd_per_model_states[0].total_weight += ec.weight;
+  b.data.average_squared_norm_x = (static_cast<float>(
+      (b.gd_per_model_states[0].normalized_sum_norm_x + 1e-6) / b.gd_per_model_states[0].total_weight));
 
   ec.partial_prediction = b.data.predict / b.data.average_squared_norm_x;
 
@@ -343,8 +343,7 @@ void save_load(ftrl& b, VW::io_buf& model_file, bool read, bool text)
 
     if (resume)
     {
-      VW::details::save_load_online_state_gd(
-          *all, model_file, read, text, b.total_weight, b.normalized_sum_norm_x, nullptr, b.ftrl_size);
+      VW::details::save_load_online_state_gd(*all, model_file, read, text, b.gd_per_model_states, nullptr, b.ftrl_size);
     }
     else { VW::details::save_load_regressor_gd(*all, model_file, read, text); }
   }
@@ -416,8 +415,10 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::ftrl_setup(VW::setup_base_
 
   b->all = &all;
   b->no_win_counter = 0;
-  b->normalized_sum_norm_x = 0;
-  b->total_weight = 0;
+  auto single_model_state = VW::reductions::details::gd_per_model_state();
+  single_model_state.normalized_sum_norm_x = 0;
+  single_model_state.total_weight = 0.;
+  b->gd_per_model_states.emplace_back(single_model_state);
 
   std::string algorithm_name;
   void (*learn_ptr)(ftrl&, VW::example&) = nullptr;
@@ -481,7 +482,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::ftrl_setup(VW::setup_base_
       stack_builder.get_setupfn_name(ftrl_setup) + "-" + algorithm_name + name_addition, VW::prediction_type_t::SCALAR,
       VW::label_type_t::SIMPLE)
                .set_learn_returns_prediction(learn_returns_prediction)
-               .set_params_per_weight(VW::details::UINT64_ONE << all.weights.stride_shift())
                .set_sensitivity(sensitivity)
                .set_multipredict(multipredict_ptr)
                .set_save_load(save_load)

@@ -248,7 +248,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::active_cover_setup(VW::set
 
   if (options.was_supplied("active")) THROW("--active_cover cannot be combined with --active");
 
-  auto base = require_singleline(stack_builder.setup_base_learner());
+  auto base = require_singleline(stack_builder.setup_base_learner(data->cover_size + 1));
 
   data->lambda_n = new float[data->cover_size];
   data->lambda_d = new float[data->cover_size];
@@ -262,7 +262,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::active_cover_setup(VW::set
   const auto saved_cover_size = data->cover_size;
   auto l = make_reduction_learner(std::move(data), base, predict_or_learn_active_cover<true>,
       predict_or_learn_active_cover<false>, stack_builder.get_setupfn_name(active_cover_setup))
-               .set_params_per_weight(saved_cover_size + 1)
+               .set_feature_width(saved_cover_size + 1)
                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
                .set_output_prediction_type(VW::prediction_type_t::SCALAR)
                .set_input_label_type(VW::label_type_t::SIMPLE)

@@ -11,6 +11,7 @@
 #include "vw/config/options.h"
 #include "vw/core/array_parameters.h"
 #include "vw/core/example.h"
+#include "vw/core/feature_group.h"
 #include "vw/core/learner.h"
 #include "vw/core/memory.h"
 #include "vw/core/model_utils.h"
@@ -75,14 +76,14 @@ emt_example::emt_example(VW::workspace& all, VW::example* ex)
   std::vector<std::vector<VW::namespace_index>> base_interactions;
 
   ex->interactions = &base_interactions;
-  auto* ex1 = VW::flatten_sort_example(all, ex);
-  for (auto& f : ex1->fs) { base.emplace_back(f.index(), f.value()); }
-  VW::free_flatten_example(ex1);
+  VW::features fs;
+  VW::flatten_features(all, *ex, fs);
+  for (auto& f : fs) { base.emplace_back(f.index(), f.value()); }
 
+  fs.clear();
   ex->interactions = full_interactions;
-  auto* ex2 = VW::flatten_sort_example(all, ex);
-  for (auto& f : ex2->fs) { full.emplace_back(f.index(), f.value()); }
-  VW::free_flatten_example(ex2);
+  VW::flatten_features(all, *ex, fs);
+  for (auto& f : fs) { full.emplace_back(f.index(), f.value()); }
 }
 
 emt_lru::emt_lru(uint64_t max_size) : max_size(max_size) {}
@@ -426,7 +427,8 @@ void scorer_example(emt_tree& b, const emt_example& ex1, const emt_example& ex2)
   // a model weight w[i] then we may also store information about our confidence in
   // w[i] at w[i+1] and information about the scale of feature f[i] at w[i+2] and so on.
   // This variable indicates how many such meta-data places we need to save in between actual weights.
-  uint64_t floats_per_feature_index = static_cast<uint64_t>(b.all->wpp) << b.all->weights.stride_shift();
+  uint64_t floats_per_feature_index = static_cast<uint64_t>(b.all->total_feature_width)
+      << b.all->weights.stride_shift();
 
   // In both of the example_types above we construct our scorer_example from flat_examples. The VW routine
   // which creates flat_examples removes the floats_per_feature_index from the when flattening. Therefore,
@@ -790,9 +792,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::eigen_memory_tree_setup(VW
 
   auto t = VW::make_unique<VW::reductions::eigen_memory_tree::emt_tree>(&all, all.get_random_state(), leaf_split,
       emt_scorer_type_from_string(scorer_type), emt_router_type_from_string(router_type), tree_bound);
-
-  // multi-class classification
-  all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
 
   auto l =
       make_reduction_learner(std::move(t), require_singleline(stack_builder.setup_base_learner()), emt_learn,

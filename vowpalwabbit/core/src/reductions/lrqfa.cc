@@ -164,13 +164,13 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::lrqfa_setup(VW::setup_base
   int fd_id = 0;
   for (char i : lrq->field_name) { lrq->field_id[static_cast<int>(i)] = fd_id++; }
 
-  all.wpp = all.wpp * static_cast<uint64_t>(1 + lrq->k);
-  auto base = stack_builder.setup_base_learner();
-  size_t ws = 1 + lrq->field_name.size() * lrq->k;
+  all.total_feature_width = all.total_feature_width * static_cast<uint64_t>(1 + lrq->k);
+  size_t feature_width = 1 + lrq->field_name.size() * lrq->k;
+  auto base = stack_builder.setup_base_learner(feature_width);
 
   auto l = make_reduction_learner(std::move(lrq), require_singleline(base), predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(lrqfa_setup))
-               .set_params_per_weight(ws)
+               .set_feature_width(feature_width)
                .set_learn_returns_prediction(base->learn_returns_prediction)
                .build();
 

@@ -388,10 +388,9 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_squarecb_se
   if (options.was_supplied("large_action_space")) { store_gamma_in_reduction_features = true; }
 
   // Set explore_type
-  size_t problem_multiplier = 1;
+  size_t feature_width = 1;
 
-  auto base = require_multiline(stack_builder.setup_base_learner());
-  all.example_parser->lbl_parser = VW::cb_label_parser_global;
+  auto base = require_multiline(stack_builder.setup_base_learner(feature_width));
 
   if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
 
@@ -404,7 +403,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_squarecb_se
                .set_output_label_type(VW::label_type_t::CB)
                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
-               .set_params_per_weight(problem_multiplier)
+               .set_feature_width(feature_width)
                .set_output_example_prediction(explore_type::output_example_prediction)
                .set_update_stats(explore_type::update_stats)
                .set_print_update(explore_type::print_update)

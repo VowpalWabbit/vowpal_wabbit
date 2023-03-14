@@ -11,7 +11,7 @@ namespace VW
 class cached_learner : public setup_base_i
 {
 public:
-  std::shared_ptr<VW::LEARNER::learner> setup_base_learner() override { return _cached; }
+  std::shared_ptr<VW::LEARNER::learner> setup_base_learner(size_t) override { return _cached; }
 
   operator bool() const { return !(_cached == nullptr); }
 
@@ -36,6 +36,8 @@ public:
   VW::workspace* get_all_pointer() override { return _all_ptr; }
 
   std::string get_setupfn_name(reduction_setup_fn) override { return ""; }
+
+  size_t get_feature_width_above() override { return 1; }
 
 private:
   std::shared_ptr<VW::LEARNER::learner> _cached;

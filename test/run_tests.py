@@ -926,10 +926,11 @@ def get_test(test_number: int, tests: List[TestData]) -> Optional[TestData]:
 def interpret_test_arg(arg: str, *, num_tests: int) -> List[int]:
     single_number_pattern = re.compile(r"^\d+$")
     range_pattern = re.compile(r"^(\d+)?\.\.(\d+)?$")
+    range_pattern_match = range_pattern.match(arg)
     if single_number_pattern.match(arg):
         return [int(arg)]
-    elif range_pattern.match(arg):
-        start, end = range_pattern.match(arg).groups()
+    elif range_pattern_match:
+        start, end = range_pattern_match.groups()
         start = int(start) if start else 1
         end = int(end) if end else num_tests
         if start > end:

@@ -12,6 +12,12 @@ namespace VW
 {
 namespace details
 {
+class cb_to_cs_per_model_state
+{
+public:
+  uint64_t action_sum = 0;
+  uint64_t event_sum = 0;
+};
 
 class cb_to_cs
 {
@@ -31,11 +37,11 @@ public:
 class cb_to_cs_adf
 {
 public:
+  cb_to_cs_adf(size_t feature_width = 1) : per_model_state(feature_width) {}
   VW::cb_type_t cb_type = VW::cb_type_t::DM;
 
   // for MTR
-  uint64_t action_sum = 0;
-  uint64_t event_sum = 0;
+  std::vector<cb_to_cs_per_model_state> per_model_state;
   uint32_t mtr_example = 0;
   VW::multi_ex mtr_ec_seq;  // shared + the one example.
 
@@ -198,7 +204,7 @@ void gen_cs_example_ips(
 
 void gen_cs_example_dm(const VW::multi_ex& examples, VW::cs_label& cs_labels);
 
-void gen_cs_example_mtr(cb_to_cs_adf& c, VW::multi_ex& ec_seq, VW::cs_label& cs_labels);
+void gen_cs_example_mtr(cb_to_cs_adf& c, VW::multi_ex& ec_seq, VW::cs_label& cs_labels, uint64_t offset_index);
 
 void gen_cs_example_sm(VW::multi_ex& examples, uint32_t chosen_action, float sign_offset,
     const VW::action_scores& action_vals, VW::cs_label& cs_labels);
@@ -240,7 +246,8 @@ void gen_cs_example_dr(cb_to_cs_adf& c, VW::multi_ex& examples, VW::cs_label& cs
 }
 
 template <bool is_learn>
-void gen_cs_example(cb_to_cs_adf& c, VW::multi_ex& ec_seq, VW::cs_label& cs_labels, VW::io::logger& logger)
+void gen_cs_example(
+    cb_to_cs_adf& c, VW::multi_ex& ec_seq, VW::cs_label& cs_labels, VW::io::logger& logger, uint64_t offset_index)
 {
   VW_DBG(*ec_seq[0]) << "gen_cs_example:" << is_learn << std::endl;
   switch (c.cb_type)
@@ -252,7 +259,7 @@ void gen_cs_example(cb_to_cs_adf& c, VW::multi_ex& ec_seq, VW::cs_label& cs_labe
       gen_cs_example_dr<is_learn>(c, ec_seq, cs_labels);
       break;
     case VW::cb_type_t::MTR:
-      gen_cs_example_mtr(c, ec_seq, cs_labels);
+      gen_cs_example_mtr(c, ec_seq, cs_labels, offset_index);
       break;
     default:
       THROW("Unknown cb_type specified for contextual bandit learning: " << VW::to_string(c.cb_type));

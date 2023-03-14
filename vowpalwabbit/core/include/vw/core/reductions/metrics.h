@@ -13,6 +13,5 @@ namespace reductions
 {
 std::shared_ptr<VW::LEARNER::learner> metrics_setup(VW::setup_base_i& stack_builder);
 void output_metrics(VW::workspace& all);
-void additional_metrics(VW::workspace& all, VW::metric_sink& sink);
 }  // namespace reductions
 }  // namespace VW

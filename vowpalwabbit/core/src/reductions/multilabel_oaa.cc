@@ -131,7 +131,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::multilabel_oaa_setup(VW::s
   data->k = VW::cast_to_smaller_type<size_t>(k);
   std::string name_addition;
   VW::prediction_type_t pred_type;
-  size_t ws = data->k;
+  size_t feature_width = data->k;
 
   if (data->probabilities)
   {
@@ -158,10 +158,10 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::multilabel_oaa_setup(VW::s
     pred_type = VW::prediction_type_t::MULTILABELS;
   }
 
-  auto l = make_reduction_learner(std::move(data), require_singleline(stack_builder.setup_base_learner()),
+  auto l = make_reduction_learner(std::move(data), require_singleline(stack_builder.setup_base_learner(feature_width)),
       predict_or_learn<true>, predict_or_learn<false>,
       stack_builder.get_setupfn_name(multilabel_oaa_setup) + name_addition)
-               .set_params_per_weight(ws)
+               .set_feature_width(feature_width)
                .set_learn_returns_prediction(true)
                .set_input_label_type(VW::label_type_t::MULTILABEL)
                .set_output_label_type(VW::label_type_t::SIMPLE)
@@ -171,8 +171,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::multilabel_oaa_setup(VW::s
                .set_output_example_prediction(output_example_prediction_multilabel_oaa)
                .set_print_update(print_update_multilabel_oaa)
                .build();
-
-  all.example_parser->lbl_parser = VW::multilabel_label_parser_global;
 
   return l;
 }
