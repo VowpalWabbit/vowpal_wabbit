@@ -190,7 +190,7 @@ void ns_based_config::apply_config_to_interactions(const bool ccb_on,
   if (ccb_on)
   {
     auto total = interactions.size();
-    auto reserve_size = 2 * total + 1 * ns_counter.size() + 0;
+    auto reserve_size = 2 * total + ns_counter.size();
     interactions.reserve(reserve_size);
     for (size_t i = 0; i < total; ++i)
     {
