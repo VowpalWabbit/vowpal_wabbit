@@ -7,6 +7,7 @@
 #include "vw/core/action_score.h"
 #include "vw/core/active_multiclass_prediction.h"
 #include "vw/core/cb.h"
+#include "vw/core/cb_with_observations_label.h"
 #include "vw/core/cb_continuous_label.h"
 #include "vw/core/ccb_label.h"
 #include "vw/core/constant.h"

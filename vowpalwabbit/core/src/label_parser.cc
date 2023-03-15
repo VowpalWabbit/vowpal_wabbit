@@ -6,6 +6,7 @@
 
 #include "vw/common/vw_exception.h"
 #include "vw/core/cb.h"
+#include "vw/core/cb_with_observations_label.h"
 #include "vw/core/cb_continuous_label.h"
 #include "vw/core/ccb_label.h"
 #include "vw/core/cost_sensitive.h"

@@ -17,6 +17,7 @@ set(vw_core_headers
   include/vw/core/daemon_utils.h
   include/vw/core/cb_type.h
   include/vw/core/cb.h
+  include/vw/core/cb_with_observations_label.h
   include/vw/core/ccb_label.h
   include/vw/core/ccb_reduction_features.h
   include/vw/core/estimators/confidence_sequence.h
@@ -203,6 +204,7 @@ set(vw_core_sources
   src/cb_continuous_label.cc
   src/cb_type.cc
   src/cb.cc
+  src/cb_with_observations_label.cc
   src/ccb_label.cc
   src/ccb_reduction_features.cc
   src/confidence_sequence.cc
