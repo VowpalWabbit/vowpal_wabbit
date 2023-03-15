@@ -770,7 +770,7 @@ def convert_tests_for_flatbuffers(
             )
             continue
         # todo: 300 understand why is it failing
-        # test 189, 312, 316, 318, 351, 438 and 319 depend on dsjson parser behaviour
+        # test 189, 312, 316, 318, 351, 438, 394 and 319 depend on dsjson parser behaviour
         # they can be enabled if we ignore diffing the --extra_metrics
         # (324-326) deals with corrupted data, so cannot be translated to fb
         # pdrop is not supported in fb, so 327-331 are excluded
@@ -795,6 +795,7 @@ def convert_tests_for_flatbuffers(
             "337",
             "338",
             "351",
+            "394",
             "399",
             "400",
             "404",

@@ -198,6 +198,11 @@ def test_ccb_and_automl():
                 random.choice(colors)
             ] = random.random()
 
+            if random.random() < 0.50:
+                current["c"]["_multi"].append(
+                    {random.choice(colors): {random.choice(animals): 0.6666}}
+                )
+
             current["c"]["_slots"][random.choice(range(len(current["c"]["_slots"])))][
                 random.choice(colors)
             ] = random.random()
@@ -240,8 +245,8 @@ def test_ccb_and_automl():
     automl_weights = automl[0].model9("--invert_hash").weights.sort_index()
     automl_champ_weights = automl_weights[~automl_weights.index.str.contains("\[")]
 
-    fts_names_q = set([n for n in q_weights])
-    fts_names_automl = set([n for n in automl_weights if "[" not in n])
+    fts_names_q = set([n for n in q_weights.index])
+    fts_names_automl = set([n for n in automl_weights.index if "[" not in n])
 
     assert len(fts_names_q) == len(fts_names_automl)
     assert fts_names_q == fts_names_automl
