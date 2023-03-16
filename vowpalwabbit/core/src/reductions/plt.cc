@@ -90,15 +90,8 @@ inline float learn_node(plt& p, uint32_t n, learner& base, VW::example& ec)
   return ec.loss;
 }
 
-void learn(plt& p, learner& base, VW::example& ec)
+void get_nodes_to_update(plt& p, VW::multilabel_label& multilabels)
 {
-  auto multilabels = std::move(ec.l.multilabels);
-  VW::polyprediction pred = std::move(ec.pred);
-
-  double t = p.all->sd->t;
-  double weighted_holdout_examples = p.all->sd->weighted_holdout_examples;
-  p.all->sd->weighted_holdout_examples = 0;
-
   p.positive_nodes.clear();
   p.negative_nodes.clear();
 
@@ -139,6 +132,18 @@ void learn(plt& p, learner& base, VW::example& ec)
     }
   }
   else { p.negative_nodes.insert(0); }
+}
+
+void learn(plt& p, learner& base, VW::example& ec)
+{
+  auto multilabels = std::move(ec.l.multilabels);
+  VW::polyprediction pred = std::move(ec.pred);
+
+  double t = p.all->sd->t;
+  double weighted_holdout_examples = p.all->sd->weighted_holdout_examples;
+  p.all->sd->weighted_holdout_examples = 0;
+
+  get_nodes_to_update(p, multilabels);
 
   float loss = 0;
   ec.l.simple = {1.f};
@@ -166,12 +171,37 @@ inline float predict_node(uint32_t n, learner& base, VW::example& ec)
   return sigmoid(ec.partial_prediction);
 }
 
+inline float evaluate_node(uint32_t n, learner& base, VW::example& ec)
+{
+  base.predict(ec, n);
+  return ec.loss;
+}
+
 template <bool threshold>
 void predict(plt& p, learner& base, VW::example& ec)
 {
   auto multilabels = std::move(ec.l.multilabels);
   VW::polyprediction pred = std::move(ec.pred);
 
+  // if true labels are present (predicting on holdout set), calculate training loss without updating base
+  // learner/weights
+  if (multilabels.label_v.size() > 0)
+  {
+    get_nodes_to_update(p, multilabels);
+
+    float loss = 0;
+    ec.l.simple = {1.f};
+    ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
+    for (auto& n : p.positive_nodes) { loss += evaluate_node(n, base, ec); }
+
+    ec.l.simple.label = -1.f;
+    for (auto& n : p.negative_nodes) { loss += evaluate_node(n, base, ec); }
+
+    ec.loss = loss;
+  }
+  else { ec.loss = 0; }
+
+  // start real prediction
   if (p.probabilities) { pred.a_s.clear(); }
   pred.multilabels.label_v.clear();
 
@@ -284,7 +314,6 @@ void predict(plt& p, learner& base, VW::example& ec)
   ++p.ec_count;
   p.node_queue.clear();
 
-  ec.loss = 0;
   ec.pred = std::move(pred);
   ec.l.multilabels = std::move(multilabels);
 }
