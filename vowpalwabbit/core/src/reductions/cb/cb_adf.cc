@@ -282,7 +282,10 @@ bool VW::reductions::cb_adf::update_statistics(
   float loss = 0.;
 
   bool labeled_example = true;
-  if (_gen_cs_dr.known_cost.probability > 0) { loss = get_cost_estimate(_gen_cs_dr.known_cost, _gen_cs_dr.pred_scores, action); }
+  if (_gen_cs_dr.known_cost.probability > 0)
+  {
+    loss = get_cost_estimate(_gen_cs_dr.known_cost, _gen_cs_dr.pred_scores, action);
+  }
   else { labeled_example = false; }
 
   bool holdout_example = labeled_example;
@@ -356,8 +359,10 @@ void cb_adf_merge(const std::vector<float>& /* per_model_weights */,
   {
     for (size_t i = 0; i < output_data.get_gen_cs_mtr().per_model_state.size(); i++)
     {
-      output_data.get_gen_cs_mtr().per_model_state[i].event_sum += source->get_gen_cs_mtr().per_model_state[i].event_sum;
-      output_data.get_gen_cs_mtr().per_model_state[i].action_sum += source->get_gen_cs_mtr().per_model_state[i].action_sum;
+      output_data.get_gen_cs_mtr().per_model_state[i].event_sum +=
+          source->get_gen_cs_mtr().per_model_state[i].event_sum;
+      output_data.get_gen_cs_mtr().per_model_state[i].action_sum +=
+          source->get_gen_cs_mtr().per_model_state[i].action_sum;
     }
   }
 }

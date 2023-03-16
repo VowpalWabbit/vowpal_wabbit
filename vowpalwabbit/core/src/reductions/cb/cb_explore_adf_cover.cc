@@ -105,14 +105,8 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::learner& base, VW:
     {  // use DR estimates for non-ERM policies in MTR
       VW::details::gen_cs_example_dr<true>(_gen_cs_dr, examples, _cs_labels);
     }
-    else if (_cb_type == VW::cb_type_t::DR)
-    {
-      VW::details::gen_cs_example_dr<false>(_gen_cs_dr, examples, _cs_labels);
-    }
-    else
-    {
-      VW::details::gen_cs_example_ips(examples, _cs_labels, _logger);
-    }
+    else if (_cb_type == VW::cb_type_t::DR) { VW::details::gen_cs_example_dr<false>(_gen_cs_dr, examples, _cs_labels); }
+    else { VW::details::gen_cs_example_ips(examples, _cs_labels, _logger); }
 
     if (base.learn_returns_prediction)
     {

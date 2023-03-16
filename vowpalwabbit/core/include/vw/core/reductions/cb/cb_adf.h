@@ -28,7 +28,12 @@ public:
 
   cb_adf(VW::cb_type_t cb_type, bool rank_all, float clip_p, bool no_predict, size_t feature_width_above,
       VW::workspace* all)
-      : _no_predict(no_predict), _rank_all(rank_all), _clip_p(clip_p), _gen_cs_mtr(feature_width_above),  _cb_type(cb_type), _all(all)
+      : _no_predict(no_predict)
+      , _rank_all(rank_all)
+      , _clip_p(clip_p)
+      , _gen_cs_mtr(feature_width_above)
+      , _cb_type(cb_type)
+      , _all(all)
   {
   }
 
@@ -47,8 +52,7 @@ public:
   bool learn_returns_prediction() const
   {
     return ((_cb_type == VW::cb_type_t::MTR) && !_no_predict) || _cb_type == VW::cb_type_t::IPS ||
-        _cb_type == VW::cb_type_t::DR || _cb_type == VW::cb_type_t::DM ||
-        _cb_type == VW::cb_type_t::SM;
+        _cb_type == VW::cb_type_t::DR || _cb_type == VW::cb_type_t::DM || _cb_type == VW::cb_type_t::SM;
   }
 
   VW::cb_class* known_cost() { return &_gen_cs_dr.known_cost; }

@@ -197,7 +197,8 @@ TEST(Merge, MergeCbModel)
   for (size_t i = 0; i < vw1_cb_adf->get_gen_cs_mtr().per_model_state.size(); i++)
   {
     EXPECT_EQ(vw_merged_cb_adf->get_gen_cs_mtr().per_model_state[i].event_sum,
-        vw1_cb_adf->get_gen_cs_mtr().per_model_state[i].event_sum + vw2_cb_adf->get_gen_cs_mtr().per_model_state[i].event_sum);
+        vw1_cb_adf->get_gen_cs_mtr().per_model_state[i].event_sum +
+            vw2_cb_adf->get_gen_cs_mtr().per_model_state[i].event_sum);
     EXPECT_EQ(vw_merged_cb_adf->get_gen_cs_mtr().per_model_state[i].action_sum,
         vw1_cb_adf->get_gen_cs_mtr().per_model_state[i].action_sum +
             vw2_cb_adf->get_gen_cs_mtr().per_model_state[i].action_sum);
@@ -316,7 +317,8 @@ TEST(Merge, MergeCbModelDelta)
   for (size_t i = 0; i < vw_base_cb_adf->get_gen_cs_mtr().per_model_state.size(); i++)
   {
     EXPECT_EQ(delta_merged_cb_adf->get_gen_cs_mtr().per_model_state[i].event_sum,
-        vw1_cb_adf->get_gen_cs_mtr().per_model_state[i].event_sum + vw2_cb_adf->get_gen_cs_mtr().per_model_state[i].event_sum -
+        vw1_cb_adf->get_gen_cs_mtr().per_model_state[i].event_sum +
+            vw2_cb_adf->get_gen_cs_mtr().per_model_state[i].event_sum -
             vw_base_cb_adf->get_gen_cs_mtr().per_model_state[i].event_sum);
     EXPECT_EQ(delta_merged_cb_adf->get_gen_cs_mtr().per_model_state[i].action_sum,
         vw1_cb_adf->get_gen_cs_mtr().per_model_state[i].action_sum +
