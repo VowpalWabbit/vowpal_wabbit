@@ -53,7 +53,6 @@ private:
   size_t _counter;
 
   VW::LEARNER::learner* _cs_ldf_learner;
-  VW::details::cb_to_cs_adf_mtr _gen_cs_mtr;
   VW::details::cb_to_cs_adf_dr _gen_cs_dr;
   VW::cb_type_t _cb_type = VW::cb_type_t::DM;
 
@@ -81,10 +80,10 @@ cb_explore_adf_cover::cb_explore_adf_cover(size_t cover_size, float psi, bool no
     , _first_only(first_only)
     , _counter(0)
     , _cs_ldf_learner(cs_ldf_learner)
+    , _cb_type(cb_type)
     , _model_file_version(model_file_version)
     , _logger(std::move(logger))
 {
-  _cb_type = cb_type;
   _gen_cs_dr.scorer = scorer;
 }
 
