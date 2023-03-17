@@ -15,16 +15,16 @@ Input label = MULTILABEL
 Output pred = MULTILABELS
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
-0.000000 0.000000            1            1.0            0,1            0,1        2
-0.000000 0.000000            2            2.0            1,2          2,1,8        2
-0.000000 0.000000            4            4.0            3,4              8        2
-0.000000 0.000000            8            8.0              8            1,8        2
+0.249245 0.249245            1            1.0            0,1            0,1        2
+2.069833 3.890422            2            2.0            1,2          2,1,8        2
+3.383714 4.697595            4            4.0            3,4              8        2
+3.461616 3.539518            8            8.0              8            1,8        2
 
 finished run
 number of examples = 10
 weighted example sum = 10.000000
 weighted label sum = 0.000000
-average loss = 0.000000
+average loss = 2.905217
 total feature number = 20
 hamming loss = 1.700000
 micro-precision = 0.562500
