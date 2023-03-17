@@ -1,5 +1,5 @@
 Probabilistic Label Tree demo
--------------------------------
+-----------------------------
 
 This demo presents PLT for applications of logarithmic time multilabel classification.
 It uses Mediamill dataset from the [LIBLINEAR datasets repository](https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multilabel.html)
@@ -12,10 +12,12 @@ The datasets and paremeters can be easliy edited in the script. The script requi
 ## PLT options
 ```
 --plt                       Probabilistic Label Tree with <k> labels
---kary_tree                 use <k>-ary tree. By default = 2 (binary tree)
---threshold                 predict labels with conditional marginal probability greater than <thr> threshold"     
+--kary_tree                 use <k>-ary tree. By default = 2 (binary tree), 
+                            higher values usually give better results, but increase training time
+--threshold                 predict labels with conditional marginal probability greater than <thr> threshold     
 --top_k                     predict top-<k> labels instead of labels above threshold                 
 ```
+
 
 ## Tips for using PLT
 PLT accelerates training and prediction for a large number of classes, 
@@ -24,7 +26,8 @@ If you have a huge number of labels and features at the same time,
 you will need as many bits (`-b`) as can afford computationally for the best performance.
 You may also consider using `--sgd` instead of default adaptive, normalized, and invariant updates to 
 gain more memory for feature weights what may lead to better performance.
-You may also consider using `--holdout_off` if you have many rare labels in your data. 
+If you have many rare labels in your data, you should train with `--holdout_off`, that disables usage of holdout (validation) dataset for early stopping.
+
 
 ## References
 
