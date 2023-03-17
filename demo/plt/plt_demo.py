@@ -79,7 +79,9 @@ print(f"threshold test time (s) = {thr_test_time:.3f}")
 if reduction == "plt":
     print("\nTesting with top-5 prediction\n")
     start = time.time()
-    test_topk_cmd = f"vw {test_data} -i {output_model} --loss_function logistic --top_k 5 -t"
+    test_topk_cmd = (
+        f"vw {test_data} -i {output_model} --loss_function logistic --top_k 5 -t"
+    )
     print(test_topk_cmd)
     os.system(test_topk_cmd)
     topk_test_time = time.time() - start
