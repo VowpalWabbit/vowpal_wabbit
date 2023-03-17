@@ -2,6 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#define EIGEN_MPL2_ONLY
+
 #include "vw/core/reductions/cb/cb_explore_adf_graph_feedback.h"
 
 #include "vw/common/random.h"
@@ -19,12 +21,18 @@
 #include "vw/core/vw_math.h"
 #include "vw/explore/explore.h"
 
+#include <Eigen/Core>
+#include <Eigen/Dense>
 #include <algorithm>
 #include <armadillo>
 #include <cmath>
 #include <ensmallen.hpp>
 #include <functional>
+#include <unsupported/Eigen/NonLinearOptimization>
+#include <unsupported/Eigen/NumericalDiff>
 #include <vector>
+
+using namespace Eigen;
 
 using namespace VW::cb_explore_adf;
 
@@ -51,46 +59,46 @@ private:
 class ConstrainedFunctionType
 {
   const arma::vec& _fhat;
-  const arma::sp_mat& _Z;
+  const arma::sp_mat& _G;
   const float _gamma;
 
 public:
-  ConstrainedFunctionType(const arma::vec& scores, const arma::sp_mat& Z, const float gamma)
-      : _fhat(scores), _Z(Z), _gamma(gamma)
+  ConstrainedFunctionType(const arma::vec& scores, const arma::sp_mat& G, const float gamma)
+      : _fhat(scores), _G(G), _gamma(gamma)
   {
   }
 
   // Return the objective function f(x) for the given x.
   double Evaluate(const arma::mat& x)
   {
-    arma::vec p(x.n_rows - 1);
-    for (size_t i = 0; i < p.n_rows; ++i) { p(i) = x(i); }
+    arma::mat p(x.n_rows - 1, 1);
+    for (size_t i = 0; i < p.n_rows; ++i) { p[i] = x[i]; }
 
-    float C = x(x.n_rows - 1);
+    float z = x[x.n_rows - 1];
 
     std::cout << "Evaluate:" << std::endl;
 
     p.print("p: ");
-    _fhat.print("fhat: ");
-    auto r = arma::dot(_fhat, p) + C;
-    r = r / _gamma;
-    std::cout << "C: " << C << std::endl;
-    std::cout << "result: " << r << std::endl;
+    auto r = (arma::dot(_fhat, p) + z) / _gamma;
+    // auto r = (arma::dot(_fhat, p) + z);
     return r;
   }
 
   // Compute the gradient of f(x) for the given x and store the result in g.
-  void Gradient(const arma::mat&, arma::mat& g)
+  void Gradient(const arma::mat& x, arma::mat& g)
   {
     std::cout << "Gradient:" << std::endl;
-    g = arma::vec(_fhat.n_rows + 1);
-    for (size_t i = 0; i < _fhat.n_rows; ++i) { g(i) = _fhat(i); }
-    g(_fhat.n_rows) = -1.f;
+    float z = x[x.n_rows - 1];
+    g.set_size(_fhat.n_rows + 1, 1);
+    for (size_t i = 0; i < _fhat.n_rows; ++i) { g[i] = _fhat(i) / _gamma; }
+    // for (size_t i = 0; i < _fhat.n_rows; ++i) { g[i] = _fhat(i); }
+    g[_fhat.n_rows] = 1.f;//z > 0.f ? 1.f : (z < 0.f ? -1.f : 0.f);
+    g[_fhat.n_rows] = g[_fhat.n_rows] / _gamma;
     g.print("g: ");
   }
 
   // Get the number of constraints on the objective function.
-  size_t NumConstraints() { return _fhat.size() + 3; }
+  size_t NumConstraints() { return _fhat.size() + 4; }
 
   // Evaluate constraint i at the parameters x.  If the constraint is
   // unsatisfied, a value greater than 0 should be returned.  If the constraint
@@ -99,73 +107,59 @@ public:
   double EvaluateConstraint(const size_t i, const arma::mat& x)
   {
     std::cout << "Evaluate Constraint: " << i << std::endl;
-    _Z.print("Z: ");
 
     arma::vec p(x.n_rows - 1);
-    for (size_t i = 0; i < p.n_rows; ++i) { p(i) = x(i); }
+    for (size_t i = 0; i < p.n_rows; ++i) { p(i) = x[i]; }
     p.print("p: ");
 
-    float C = x(x.n_rows - 1);
+    float z = x[x.n_rows - 1];
 
     if (i < _fhat.size())
     {
       arma::vec eyea = arma::zeros<arma::vec>(p.n_rows);
       eyea(i) = 1.f;
 
-      eyea.print("eyea: ");
-
       auto fhata = _fhat(i);
-      std::cout << "fhat: " << fhata << " C: " << C << std::endl;
 
       double sum = 0.f;
-      std::stringstream ss;
-      ss << "sum: (";
       for (size_t index = 0; index < p.n_rows; index++)
       {
-        ss << "index: " << index << " quad_over_lin(";
-        arma::vec gammaGa(_Z.row(index).n_cols);
-        for (size_t j = 0; j < _Z.row(index).n_cols; j++) { gammaGa(j) = _Z.row(index)(j); }
-        gammaGa.print("gammaGa: " + std::to_string(index) + ": ");
+        arma::vec gammaGa(_G.row(index).n_cols);
+        for (size_t j = 0; j < _G.row(index).n_cols; j++) { gammaGa(j) = _G.row(index)(j); }
 
         auto gammaGa_times_p = arma::dot(gammaGa, p);
 
-        float denominator = gammaGa_times_p;  // _Z.row(index)(index) * p(index);
+        float denominator = gammaGa_times_p;
         auto nominator = (eyea(index) - p(index)) * (eyea(index) - p(index));
-        sum += nominator / denominator;
-        ss << eyea(index) << " - " << p(index) << ")^2 / " << denominator;
-        ss << ") + ";
+        sum += (nominator / denominator);
       }
-      ss << ")" << std::endl;
-      std::cout << ss.str() << std::endl;
 
-      std::cout << "sum: " << sum << " fhata + C: " << fhata + C << std::endl;
+      std::cout << "sum: " << sum << " fhata + z: " << fhata + z << std::endl;
 
-      if (sum <= (fhata + C)) { return 0.f; }
-      else
-      {
-        std::cout << "CONSTRAINT: " << i << " NOT MET, diff is: " << (sum - (fhata + C)) << std::endl;
-        return (sum - (fhata + C));
-      }
+      if (sum <= (fhata + z)) { return 0.f; }
+      else { return 1.f * std::abs(sum - (fhata + z)); }
     }
     else if (i == _fhat.size())
     {
       std::cout << "sum: " << arma::sum(p) << std::endl;
       if (VW::math::are_same(static_cast<float>(arma::sum(p)), 1.f)) { return 0.f; }
-      std::cout << "SUM CONSTRAINT NOT 1 but: " << std::abs(arma::sum(p) - 1.f) << std::endl;
       return 1.f * std::abs(arma::sum(p) - 1.f);
     }
     else if (i == _fhat.size() + 1)
     {
       if (arma::all(p >= 0.f)) { return 0.f; }
-
-      std::cout << "SUMS NOT NONEG but: " << -1.f * arma::min(p) << std::endl;
-
       return -1.f * arma::min(p);
     }
     else if (i == _fhat.size() + 2)
     {
-      if (C > 1.f) { return 0.f; }
-      return std::abs(C);
+      if (arma::all(p <= 1.f)) { return 0.f; }
+
+      return arma::max(p);
+    }
+    else if (i == _fhat.size() + 3)
+    {
+      if ((z / _gamma) > 1.f) { return 0.f; }
+      return std::abs(z / _gamma);
     }
     return 0.f;
   }
@@ -179,85 +173,143 @@ public:
     std::cout << "Gradient constraint: " << i << std::endl;
 
     arma::vec p(x.n_rows - 1);
-    for (size_t i = 0; i < p.n_rows; ++i) { p(i) = x(i); }
+    for (size_t i = 0; i < p.n_rows; ++i) { p(i) = x[i]; }
 
-    float C = x(x.n_rows - 1);
+    float z = x[x.n_rows - 1];
 
     if (i < _fhat.size())
     {
-      g = arma::vec(_fhat.size() + 1);
+      g.set_size(_fhat.n_rows + 1, 1);
       g.zeros();
+      g[_fhat.size()] = -1.f;// TODO is this correct?
+
       arma::vec eyea = arma::zeros<arma::vec>(p.n_rows);
       eyea(i) = 1.f;
-
-      _fhat.print("fhat: ");
-      eyea.print("eyea: ");
 
       for (size_t coord_i = 0; coord_i < _fhat.size(); coord_i++)
       {
         double sum = 0.f;
-        std::stringstream ss;
-        ss << "sum: (";
         for (size_t index = 0; index < p.n_rows; index++)
         {
-          arma::vec gammaGa(_Z.row(index).n_cols);
-          for (size_t j = 0; j < _Z.row(index).n_cols; j++) { gammaGa(j) = _Z.row(index)(j); }
+          arma::vec gammaGa(_G.row(index).n_cols);
+          for (size_t j = 0; j < _G.row(index).n_cols; j++) { gammaGa(j) = _G.row(index)(j); }
           auto gammaGa_times_p = arma::dot(gammaGa, p);
 
           if (index == coord_i)
           {
-            ss << "index: " << index << " quad_over_lin(";
-            gammaGa.print("gammaGa: " + std::to_string(index) + ": ");
+            float denominator = gammaGa_times_p * gammaGa_times_p;
 
-            float denominator = gammaGa_times_p;
-
-            auto b = _Z.row(index)(index);
-            auto c = gammaGa_times_p - _Z.row(index)(index) * p(index);
+            auto b = _G.row(index)(index);
+            auto c = gammaGa_times_p - b * p(index);
             auto nominator = -1.f * ((eyea(index) - p(index)) * (eyea(index) * b + b * p(index) + 2.f * c));
 
-            sum += (nominator / (denominator * denominator));
-            ss << eyea(index) << " - " << p(index) << ")^2 / " << denominator;
-            ss << ") + ";
+            sum += (nominator / denominator);
           }
           else
           {
             auto a = (eyea(index) - p(index)) * (eyea(index) - p(index));
-            auto b = _Z.row(index)(coord_i);
-            // auto c = gammaGa_times_p - b * p(coord_i);
+            auto b = _G.row(index)(coord_i);
+
             auto nominator = -1.f * ((a * b));
-            auto denominator = gammaGa_times_p;
-            sum += nominator / (denominator * denominator);
+            auto denominator = gammaGa_times_p * gammaGa_times_p;
+            sum += nominator / denominator;
           }
         }
 
         std::cout << coord_i << " : " << sum << std::endl;
 
-        g(coord_i) = sum;
+        g[coord_i] = sum;
       }
     }
-    else if (i == _fhat.size())
+    else if (i == _fhat.size() || i == _fhat.size() + 1 || i == _fhat.size() + 2)
     {
-      g = arma::vec(_fhat.size() + 1);
-      g.ones();
-      g(_fhat.size()) = 0.f;
+      g.set_size(_fhat.n_rows + 1, 1);
+      for (size_t i = 0; i < _fhat.size(); i++) { g[i] = 1.f;} // p(i) > 0.f ? 1.f : (p(i) < 0.f ? -1.f : 0.f); 
+      // g.ones();
+      g[_fhat.size()] = 0.f;
     }
-    else if (i == _fhat.size() + 1)
+    else if (i == _fhat.size() + 3)
     {
-      g.ones();
-      g = arma::vec(_fhat.size() + 1);
-      g(_fhat.size()) = 0.f;
-    }
-    else if (i == _fhat.size() + 2)
-    {
+      g.set_size(_fhat.n_rows + 1, 1);
       g.zeros();
-      g(_fhat.size()) = C > 0.f ? 1.f : (C < 0.f ? -1.f : 0.f);
+      g[_fhat.size()] = 1.f;//z > 0.f ? 1.f : (z < 0.f ? -1.f : 0.f);
+    }
+  }
+};
+
+class CTest
+{
+public:
+  CTest() = default;
+
+  // Return the objective function f(x) for the given x.
+  double Evaluate(const arma::mat& x) { return x[0] * x[0] + x[1]; }
+  // Compute the gradient of f(x) for the given x and store the result in g.
+  void Gradient(const arma::mat& x, arma::mat& g)
+  {
+    g.set_size(2, 1);
+    g[0] = 2 * x[0];
+    g[1] = 1.f;  // x[1] > 0.f ? 1.f : (x[1] < 0.f ? -1.f : 0.f);
+  }
+
+  // Get the number of constraints on the objective function.
+  size_t NumConstraints() { return 2; }
+
+  // Evaluate constraint i at the parameters x.  If the constraint is
+  // unsatisfied, a value greater than 0 should be returned.  If the constraint
+  // is satisfied, 0 should be returned.  The optimizer will add this value to
+  // its overall objective that it is trying to minimize.
+  double EvaluateConstraint(const size_t i, const arma::mat& x)
+  {
+    if (i == 0)
+    {
+      // x.print("EVALUATE CONSTRAINT X:");
+      if (x[0] >= 2.f) { return 0.f; }
+      return 1.f * (2.f - x[0]);
+    }
+    else if (i == 1)
+    {
+      x.print("x and y are:");
+      if (x[1] >= 3.f) { return 0.f; }
+      return 10.f * (3.f - x[1]);
+    }
+    return 0.f;
+  }
+
+  // Evaluate the gradient of constraint i at the parameters x, storing the
+  // result in the given matrix g.  If the constraint is not satisfied, the
+  // gradient should be set in such a way that the gradient points in the
+  // direction where the constraint would be satisfied.
+  void GradientConstraint(const size_t i, const arma::mat& x, arma::mat& g)
+  {
+    g.set_size(2, 1);
+    if (i == 0)
+    {
+      g[0] = 1.f;  // x[0] > 0.f ? 1.f : x[0] < 0.f ? -1.f : 0.f;
+      g[1] = 0.f;
+    }
+    else if (i == 1)
+    {
+      g[0] = 0.f;
+      g[0] = 1.f;  // x[1] > 0.f ? 1.f : x[1] < 0.f ? -1.f : 0.f;
     }
   }
 };
 
 void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples)
 {
-  // TODO store Z in reduction data and only update when new Z is provided
+  CTest ftest;
+  ens::AugLagrangian optimizerr;
+  arma::mat coordinatess(2, 1);
+  coordinatess[0] = 10.f;
+  coordinatess[1] = 10.f;
+
+  optimizerr.MaxIterations() = 0;
+  optimizerr.Optimize(ftest, coordinatess);
+
+  coordinatess.print("BETTER BE: ");
+
+  // // TODO store G in reduction data and only update when new G is provided
 
   // get fhat
   // using action_scores = VW::v_array<action_score>;
@@ -271,29 +323,30 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
 
   for (auto& as : a_s) { fhat(as.action) = as.score - fhat_min; }
 
-  auto _gamma_scale = 10.f;
+  auto _gamma_scale = 1.f;
   auto _gamma_exponent = 0.5f;
-  const float gamma = _gamma_scale * static_cast<float>(std::pow(_counter, _gamma_exponent));
+  const float gamma = 10.f;//_gamma_scale * static_cast<float>(std::pow(_counter, _gamma_exponent));
 
-  // for (size_t i = 0; i < fhat.n_rows; i++) { fhat(i) = fhat(i) * gamma; }
+  for (size_t i = 0; i < fhat.n_rows; i++) { fhat(i) = fhat(i) * gamma; }
   fhat.print("fhat after: ");
 
-  float C = 1.f + fhat_min;
-  // C = gamma * C;
-  std::cout << "fhat_min: " << fhat_min << " C: " << C << std::endl;
+  float z = 1.f - fhat_min;
+  z = z * gamma;
+  std::cout << "fhat_min: " << fhat_min << " z: " << z << std::endl;
 
   // initial p can be uniform random
-  arma::vec coordinates(fhat.size() + 1);
-  for (size_t i = 0; i < fhat.size(); i++) { coordinates(i) = 1.f / fhat.size(); }
-  coordinates(fhat.size()) = C;
+  arma::mat coordinates(fhat.size() + 1, 1);
+  for (size_t i = 0; i < fhat.size(); i++) { coordinates[i] = 1.f / fhat.size(); }
+  
+  coordinates[fhat.size()] = z;
 
-  // get Z
+  // get G
   auto& graph_reduction_features =
       examples[0]->ex_reduction_features.template get<VW::cb_graph_feedback::reduction_features>();
 
   if (graph_reduction_features.triplets.size() == 0)
   {
-    std::cout << "do something when there is no Z defined!" << std::endl;
+    std::cout << "do something when there is no G defined!" << std::endl;
   }
 
   arma::umat locations(2, graph_reduction_features.triplets.size());
@@ -308,13 +361,13 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
     values(i) = triplet.val;
   }
 
-  arma::sp_mat Z(true, locations, values, a_s.size(), a_s.size());
+  arma::sp_mat G(true, locations, values, a_s.size(), a_s.size());
 
-  Z.print("Z: ");
+  G.print("G: ");
 
   coordinates.print("coords ur: ");
 
-  ConstrainedFunctionType f(fhat, Z, gamma);
+  ConstrainedFunctionType f(fhat, G, gamma);
 
   std::cout << "new optimizer" << std::endl;
   ens::AugLagrangian optimizer;
@@ -322,7 +375,34 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
   std::cout << "MAX ITERS: " << optimizer.MaxIterations() << std::endl;
   optimizer.Optimize(f, coordinates);
   std::cout << "gamma: " << gamma << std::endl;
+
+  float p_sum = 0;
+  for (size_t i = 0; i < a_s.size(); i++) { p_sum += coordinates[i]; }
+  std::cout << "SUM: " << p_sum << " sum each: " << (1.f - p_sum) / a_s.size() << std::endl;
+
+  // coordinates.print("coords before balancing: ");
+
+  // if (!VW::math::are_same(p_sum, 1.f))
+  // {
+  //   float rest = 1.f - p_sum;
+  //   float rest_each = rest / (a_s.size());
+  //   for (size_t i = 0; i < a_s.size(); i++) { coordinates[i] = coordinates[i] + rest_each; }
+  // }
+
   coordinates.print("coords: ");
+
+  {
+    arma::vec probs(coordinates.n_rows - 1);
+    for (size_t i = 0; i < probs.n_rows; ++i)
+    {
+      probs(i) = coordinates[i];
+      if (std::isnan(probs(i))) { return; }
+    }
+    probs.print("p: ");
+
+    float z = coordinates[coordinates.n_rows - 1];
+    std::cout << "VALUE IS: " << arma::dot(fhat, probs) + z << std::endl;
+  }
 }
 
 template <bool is_learn>
