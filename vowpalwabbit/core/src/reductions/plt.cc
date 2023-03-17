@@ -139,12 +139,9 @@ void learn(plt& p, learner& base, VW::example& ec)
   auto multilabels = std::move(ec.l.multilabels);
   VW::polyprediction pred = std::move(ec.pred);
 
-  double t = p.all->sd->t;
-  double weighted_holdout_examples = p.all->sd->weighted_holdout_examples;
-  p.all->sd->weighted_holdout_examples = 0;
-
   get_nodes_to_update(p, multilabels);
 
+  double t = p.all->sd->t;
   float loss = 0;
   ec.l.simple = {1.f};
   ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
@@ -154,8 +151,6 @@ void learn(plt& p, learner& base, VW::example& ec)
   for (auto& n : p.negative_nodes) { loss += learn_node(p, n, base, ec); }
 
   p.all->sd->t = t;
-  p.all->sd->weighted_holdout_examples = weighted_holdout_examples;
-
   ec.loss = loss;
   ec.pred = std::move(pred);
   ec.l.multilabels = std::move(multilabels);
