@@ -35,7 +35,7 @@ class cb_explore_adf_cover
 {
 public:
   cb_explore_adf_cover(size_t cover_size, float psi, bool nounif, float epsilon, bool epsilon_decay, bool first_only,
-      VW::LEARNER::learner* cs_ldf_learner, VW::LEARNER::learner* scorer, VW::cb_type_t cb_type, size_t stride,
+      VW::LEARNER::learner* cs_ldf_learner, VW::LEARNER::learner* scorer, VW::cb_type_t cb_type,
       VW::version_struct model_file_version, VW::io::logger logger);
 
   // Should be called through cb_explore_adf_base for pre/post-processing
@@ -51,10 +51,10 @@ private:
   bool _epsilon_decay;
   bool _first_only;
   size_t _counter;
-  size_t _stride;
 
   VW::LEARNER::learner* _cs_ldf_learner;
-  VW::details::cb_to_cs_adf gen_cs;
+  VW::details::cb_to_cs_adf_dr _gen_cs_dr;
+  VW::cb_type_t _cb_type = VW::cb_type_t::DM;
 
   VW::version_struct _model_file_version;
   VW::io::logger _logger;
@@ -71,7 +71,7 @@ private:
 
 cb_explore_adf_cover::cb_explore_adf_cover(size_t cover_size, float psi, bool nounif, float epsilon, bool epsilon_decay,
     bool first_only, VW::LEARNER::learner* cs_ldf_learner, VW::LEARNER::learner* scorer, VW::cb_type_t cb_type,
-    size_t stride, VW::version_struct model_file_version, VW::io::logger logger)
+    VW::version_struct model_file_version, VW::io::logger logger)
     : _cover_size(cover_size)
     , _psi(psi)
     , _nounif(nounif)
@@ -79,34 +79,31 @@ cb_explore_adf_cover::cb_explore_adf_cover(size_t cover_size, float psi, bool no
     , _epsilon_decay(epsilon_decay)
     , _first_only(first_only)
     , _counter(0)
-    , _stride(stride)
     , _cs_ldf_learner(cs_ldf_learner)
+    , _cb_type(cb_type)
     , _model_file_version(model_file_version)
     , _logger(std::move(logger))
 {
-  gen_cs.cb_type = cb_type;
-  gen_cs.scorer = scorer;
+  _gen_cs_dr.scorer = scorer;
 }
 
 template <bool is_learn>
 void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::learner& base, VW::multi_ex& examples)
 {
   // Redundant with the call in cb_explore_adf_base, but encapsulation means we need to do this again here
-  gen_cs.known_cost = VW::get_observed_cost_or_default_cb_adf(examples);
+  _gen_cs_dr.known_cost = VW::get_observed_cost_or_default_cb_adf(examples);
 
   // Randomize over predictions from a base set of predictors
   // Use cost sensitive oracle to cover actions to form distribution.
-  const bool is_mtr = gen_cs.cb_type == VW::cb_type_t::MTR;
   if (is_learn)
   {
-    if (is_mtr)
+    VW_DBG(*examples[0]) << "gen_cs_example:" << is_learn << std::endl;
+    if (_cb_type == VW::cb_type_t::MTR)
     {  // use DR estimates for non-ERM policies in MTR
-      VW::details::gen_cs_example_dr<true>(gen_cs, examples, _cs_labels);
+      VW::details::gen_cs_example_dr<true>(_gen_cs_dr, examples, _cs_labels);
     }
-    else
-    {
-      VW::details::gen_cs_example<false>(gen_cs, examples, _cs_labels, _logger, examples[0]->ft_offset / _stride);
-    }
+    else if (_cb_type == VW::cb_type_t::DR) { VW::details::gen_cs_example_dr<false>(_gen_cs_dr, examples, _cs_labels); }
+    else { VW::details::gen_cs_example_ips(examples, _cs_labels, _logger); }
 
     if (base.learn_returns_prediction)
     {
@@ -329,7 +326,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_cover_setup
   using explore_type = cb_explore_adf_base<cb_explore_adf_cover>;
   auto data = VW::make_unique<explore_type>(all.global_metrics.are_metrics_enabled(),
       VW::cast_to_smaller_type<size_t>(cover_size), psi, nounif, epsilon, epsilon_decay, first_only, cost_sensitive,
-      scorer, cb_type, all.weights.stride(), all.model_file_ver, all.logger);
+      scorer, cb_type, all.model_file_ver, all.logger);
   auto l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_cover_setup))
                .set_input_label_type(VW::label_type_t::CB)
