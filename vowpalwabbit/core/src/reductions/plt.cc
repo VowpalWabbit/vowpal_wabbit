@@ -183,8 +183,8 @@ void predict(plt& p, learner& base, VW::example& ec)
   auto multilabels = std::move(ec.l.multilabels);
   VW::polyprediction pred = std::move(ec.pred);
 
-  // if true labels are present (predicting on holdout set), calculate training loss without updating base
-  // learner/weights
+  // if true labels are present (e.g., predicting on holdout set),
+  // calculate training loss without updating base learner/weights
   if (multilabels.label_v.size() > 0)
   {
     get_nodes_to_update(p, multilabels);
@@ -250,18 +250,21 @@ void predict(plt& p, learner& base, VW::example& ec)
       }
     }
 
-    // calculate evaluation measures
-    uint32_t tp = 0;
-    uint32_t pred_size = pred.multilabels.label_v.size();
-
-    for (uint32_t i = 0; i < pred_size; ++i)
+    // if there are true labels, calculate evaluation measures
+    if (p.true_labels.size() > 0)
     {
-      uint32_t pred_label = pred.multilabels.label_v[i];
-      if (p.true_labels.count(pred_label)) { ++tp; }
+      uint32_t tp = 0;
+      uint32_t pred_size = pred.multilabels.label_v.size();
+
+      for (uint32_t i = 0; i < pred_size; ++i)
+      {
+        uint32_t pred_label = pred.multilabels.label_v[i];
+        if (p.true_labels.count(pred_label)) { ++tp; }
+      }
+      p.tp += tp;
+      p.fp += static_cast<uint32_t>(pred_size) - tp;
+      p.fn += static_cast<uint32_t>(p.true_labels.size()) - tp;
     }
-    p.tp += tp;
-    p.fp += static_cast<uint32_t>(pred_size) - tp;
-    p.fn += static_cast<uint32_t>(p.true_labels.size()) - tp;
   }
 
   // top-k prediction
@@ -300,14 +303,17 @@ void predict(plt& p, learner& base, VW::example& ec)
       }
     }
 
-    // calculate precision and recall at
-    float tp_at = 0;
-    for (size_t i = 0; i < p.top_k; ++i)
+    // if there are true labels, calculate precision and recall at k
+    if (p.true_labels.size() > 0)
     {
-      uint32_t pred_label = pred.multilabels.label_v[i];
-      if (p.true_labels.count(pred_label)) { tp_at += 1; }
-      p.p_at[i] += tp_at / (i + 1);
-      if (p.true_labels.size() > 0) { p.r_at[i] += tp_at / p.true_labels.size(); }
+      float tp_at = 0;
+      for (size_t i = 0; i < p.top_k; ++i)
+      {
+        uint32_t pred_label = pred.multilabels.label_v[i];
+        if (p.true_labels.count(pred_label)) { tp_at += 1; }
+        p.p_at[i] += tp_at / (i + 1);
+        if (p.true_labels.size() > 0) { p.r_at[i] += tp_at / p.true_labels.size(); }
+      }
     }
   }
 
