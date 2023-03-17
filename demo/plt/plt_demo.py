@@ -56,7 +56,7 @@ if not os.path.exists(test_data):
 
 print(f"\nTraining Vowpal Wabbit {reduction} on {dataset} dataset:\n")
 start = time.time()
-train_cmd = f"../../build/vowpalwabbit/cli/vw {train_data} -c --{reduction} {k} --loss_function logistic -l {l} --passes {passes} -b {b} -f {output_model} {other_training_params}"
+train_cmd = f"vw {train_data} -c --{reduction} {k} --loss_function logistic -l {l} --passes {passes} -b {b} -f {output_model} {other_training_params}"
 if reduction == "plt":
     train_cmd += f" --kary_tree {kary_tree}"
 print(train_cmd)
@@ -67,7 +67,7 @@ print(f"train time (s) = {train_time:.3f}")
 
 print("\nTesting with probability threshold = 0.5 (default prediction mode)\n")
 start = time.time()
-test_threshold_cmd = f"../../build/vowpalwabbit/cli/vw {test_data} -i {output_model} --loss_function logistic -t"
+test_threshold_cmd = f"vw {test_data} -i {output_model} --loss_function logistic -t"
 if reduction == "plt":
     test_threshold_cmd += " --threshold 0.5"
 print(test_threshold_cmd)
@@ -79,7 +79,7 @@ print(f"threshold test time (s) = {thr_test_time:.3f}")
 if reduction == "plt":
     print("\nTesting with top-5 prediction\n")
     start = time.time()
-    test_topk_cmd = f"../../build/vowpalwabbit/cli/vw {test_data} -i {output_model} --loss_function logistic --top_k 5 -t"
+    test_topk_cmd = f"vw {test_data} -i {output_model} --loss_function logistic --top_k 5 -t"
     print(test_topk_cmd)
     os.system(test_topk_cmd)
     topk_test_time = time.time() - start
