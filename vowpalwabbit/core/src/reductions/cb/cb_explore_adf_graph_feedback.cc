@@ -6,8 +6,6 @@
 
 #include "vw/core/reductions/cb/cb_explore_adf_graph_feedback.h"
 
-#include "epigraph.hpp"
-#include "problem.hpp"
 #include "vw/common/random.h"
 #include "vw/config/options.h"
 #include "vw/core/gd_predict.h"
@@ -22,7 +20,6 @@
 #include "vw/core/setup_base.h"
 #include "vw/core/vw_math.h"
 #include "vw/explore/explore.h"
-#include "wrappers/osqpWrapper.hpp"
 
 #include <Eigen/Core>
 #include <Eigen/Dense>
@@ -31,8 +28,6 @@
 #include <cmath>
 #include <ensmallen.hpp>
 #include <functional>
-#include <unsupported/Eigen/NonLinearOptimization>
-#include <unsupported/Eigen/NumericalDiff>
 #include <vector>
 
 using namespace Eigen;
@@ -168,7 +163,7 @@ public:
     {
       if (arma::all(p >= 0.f)) { return 0.f; }
       std::cout << "min: " << arma::min(p) << " negative w penalty:" << -10. * arma::min(p) << std::endl;
-      return -100.f * arma::min(p);
+      return 10.f;// * arma::min(p);
     }
     // else if (i == _fhat.size() + 2)
     // {
@@ -179,7 +174,7 @@ public:
     else if (i == _fhat.size() + 2)
     {
       if ((z) > 1.f) { return 0.f; }
-      return std::abs(z);
+      return 5.f * std::abs(z);
     }
     return 0.;
   }
@@ -390,38 +385,6 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
 
   coordinatess.print("BETTER BE: ");
 
-  // // Formulate QP.
-  // OptimizationProblem qp;
-
-  // Eigen::Matrix<cvx::Scalar, Eigen::Dynamic, 1> x = qp.addVariable("x", 1);
-  // Eigen::Matrix<cvx::Scalar, Eigen::Dynamic, 1> y = qp.addVariable("y", 1);
-
-  // // Available constraint types are equalTo(), lessThan(), greaterThan() and box()
-  // qp.addConstraint(greaterThan(x, 2.));
-  // qp.addConstraint(greaterThan(y, 3.));
-
-  // // Make mu dynamic in the cost function so we can change it later
-  // qp.addCostTerm(x.transpose() * x - y(0));
-
-  // // Print the problem formulation for inspection
-  // std::cout << qp << "\n";
-
-  // // Create and initialize the solver instance.
-  // osqp::OSQPSolver solver(qp);
-
-  // // Print the canonical problem formulation for inspection
-  // std::cout << solver << "\n";
-
-  // // Solve problem and show solver output
-  // const bool verbose = true;
-  // solver.solve(verbose);
-
-  // std::cout << "Solver message:  " << solver.getResultString() << "\n";
-  // std::cout << "Solver exitcode: " << solver.getExitCode() << "\n";
-
-  // // Call eval() to get the variable values
-  // std::cout << "Solution:\n" << eval(x) << "\n";
-
   // // TODO store G in reduction data and only update when new G is provided
 
   // get fhat
@@ -443,14 +406,14 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
   for (size_t i = 0; i < fhat.n_rows; i++) { fhat(i) = fhat(i) * gamma; }
   fhat.print("fhat after: ");
 
-  float z = 1.f;  // - fhat_min;
+  float z = 1.f - fhat_min;
   z = z * gamma;
   std::cout << "fhat_min: " << fhat_min << " z: " << z << std::endl;
 
   // initial p can be uniform random
   arma::mat coordinates(fhat.size() + 1, 1);
-  // for (size_t i = 0; i < fhat.size(); i++) { coordinates[i] = 1.f / fhat.size(); }
-  for (size_t i = 0; i < fhat.size(); i++) { coordinates[i] = fhat(i); }
+  for (size_t i = 0; i < fhat.size(); i++) { coordinates[i] = 1.f / fhat.size(); }
+  // for (size_t i = 0; i < fhat.size(); i++) { coordinates[i] = fhat(i); }
 
   coordinates[fhat.size()] = z;
 
@@ -475,7 +438,11 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
     // values(i) = triplet.val * gamma;
     values(i) = triplet.val * 10.f;
     // values(i) = triplet.val;
+
+    // TODO try addign gamma to fhat etc
   }
+
+  // TODO check with gammas, check with multipying the gamma with fhat, and check different p starting points
 
   arma::sp_mat G(true, locations, values, a_s.size(), a_s.size());
 
