@@ -34,8 +34,6 @@ using namespace Eigen;
 
 using namespace VW::cb_explore_adf;
 
-using namespace cvx;
-
 namespace VW
 {
 namespace cb_explore_adf
@@ -43,11 +41,16 @@ namespace cb_explore_adf
 class cb_explore_adf_graph_feedback
 {
 public:
+  cb_explore_adf_graph_feedback(float gamma) : _gamma(gamma) {
+
+    std::cout << "gamma in constructor: " << gamma << std::endl;
+  }
   // Should be called through cb_explore_adf_base for pre/post-processing
   void predict(VW::LEARNER::learner& base, multi_ex& examples);
   void learn(VW::LEARNER::learner& base, multi_ex& examples);
   void save_load(io_buf& io, bool read, bool text);
   size_t _counter = 0;
+  float _gamma;
 
 private:
   template <bool is_learn>
@@ -82,10 +85,7 @@ public:
 
     // auto r = (arma::dot(_fhat, p) + z) / _gamma;
     float r = 0.f;
-    for (size_t i = 0; i < p.n_rows; i++)
-    {
-      r += p(i) * _fhat(i);
-    }
+    for (size_t i = 0; i < p.n_rows; i++) { r += p(i) * _fhat(i); }
     r += z;
     // auto r = (arma::dot(p, _fhat) + z);
     std::cout << "is r getting smaller?: " << r << " : " << (_fhat.size() + 3) * r << std::endl;
@@ -163,7 +163,7 @@ public:
     {
       if (arma::all(p >= 0.f)) { return 0.f; }
       std::cout << "min: " << arma::min(p) << " negative w penalty:" << -10. * arma::min(p) << std::endl;
-      return 10.f;// * arma::min(p);
+      return 10.f;  // * arma::min(p);
     }
     // else if (i == _fhat.size() + 2)
     // {
@@ -174,7 +174,7 @@ public:
     else if (i == _fhat.size() + 2)
     {
       if ((z) > 1.f) { return 0.f; }
-      return 5.f * std::abs(z);
+      return 2.f * std::abs(z);
     }
     return 0.;
   }
@@ -378,7 +378,7 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
   ens::AugLagrangian optimizerr;
   arma::mat coordinatess(2, 1);
   coordinatess[0] = 10.f;
-  coordinatess[1] = 0.f;
+  coordinatess[1] = 10.f;
 
   optimizerr.MaxIterations() = 0;
   optimizerr.Optimize(ftest, coordinatess);
@@ -399,15 +399,12 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
 
   // for (auto& as : a_s) { fhat(as.action) = as.score - fhat_min; }
 
-  auto _gamma_scale = 1.f;
-  auto _gamma_exponent = 0.5f;
-  const float gamma = 1.f;  //_gamma_scale * static_cast<float>(std::pow(_counter, _gamma_exponent));
-
-  for (size_t i = 0; i < fhat.n_rows; i++) { fhat(i) = fhat(i) * gamma; }
+  // float gamma = 1.f;
+  // for (size_t i = 0; i < fhat.n_rows; i++) { fhat(i) = fhat(i) * gamma; }
   fhat.print("fhat after: ");
 
   float z = 1.f - fhat_min;
-  z = z * gamma;
+  // z = z * gamma;
   std::cout << "fhat_min: " << fhat_min << " z: " << z << std::endl;
 
   // initial p can be uniform random
@@ -435,14 +432,11 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
     const auto& triplet = graph_reduction_features.triplets[i];
     locations(0, i) = triplet.row;
     locations(1, i) = triplet.col;
-    // values(i) = triplet.val * gamma;
-    values(i) = triplet.val * 10.f;
+    values(i) = triplet.val * _gamma;
     // values(i) = triplet.val;
-
-    // TODO try addign gamma to fhat etc
   }
 
-  // TODO check with gammas, check with multipying the gamma with fhat, and check different p starting points
+  // TODO check with gammas, check different p starting points
 
   arma::sp_mat G(true, locations, values, a_s.size(), a_s.size());
 
@@ -450,14 +444,13 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
 
   coordinates.print("coords ur: ");
 
-  ConstrainedFunctionType f(fhat, G, gamma);
+  ConstrainedFunctionType f(fhat, G, _gamma);
 
   std::cout << "new optimizer" << std::endl;
-  ens::AugLagrangian optimizer;//(0, 0.25f);
+  ens::AugLagrangian optimizer;  //(0, 0.25f);
   optimizer.MaxIterations() = 2000;
   // std::cout << "MAX ITERS: " << optimizer.MaxIterations() << std::endl;
   optimizer.Optimize(f, coordinates);
-  std::cout << "gamma: " << gamma << std::endl;
 
   float p_sum = 0;
   for (size_t i = 0; i < a_s.size(); i++) { p_sum += coordinates[i]; }
@@ -524,6 +517,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_graph_feedb
   using config::make_option;
   bool cb_explore_adf_option = false;
   bool graph_feedback = false;
+  float gamma = 0.f;
 
   config::option_group_definition new_options(
       "[Reduction] Experimental: Contextual Bandit Exploration with ADF with graph feedback");
@@ -532,6 +526,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_graph_feedb
                .keep()
                .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
+      .add(make_option("gamma", gamma).keep().default_value(10.f))
       .add(make_option("graph_feedback", graph_feedback).necessary().keep().help("Graph feedback pdf").experimental());
 
   auto enabled = options.add_parse_and_check_necessary(new_options) && graph_feedback;
@@ -556,7 +551,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_graph_feedb
   size_t problem_multiplier = 1;
   bool with_metrics = options.was_supplied("extra_metrics");
 
-  auto data = VW::make_unique<explore_type>(with_metrics);
+  auto data = VW::make_unique<explore_type>(with_metrics, gamma);
 
   auto l = VW::LEARNER::make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(VW::reductions::cb_explore_adf_graph_feedback_setup))
