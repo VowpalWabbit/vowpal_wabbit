@@ -86,7 +86,7 @@ public:
     auto r = (arma::dot(p, _fhat) + z);
     std::cout << "is r getting smaller?: " << r << " : " << (_fhat.size() + 3) * r << std::endl;
     // return (_fhat.size() + 3) * r * 2.f;
-    return r / _gamma;
+    return r;
   }
 
   // Compute the gradient of f(x) for the given x and store the result in g.
@@ -96,8 +96,8 @@ public:
 
     float z = x[x.n_rows - 1];
     g.set_size(_fhat.n_rows + 1, 1);
-    for (size_t i = 0; i < _fhat.n_rows; ++i) { g[i] = _fhat(i) / _gamma; }
-    g[_fhat.n_rows] = 1.f / _gamma;
+    for (size_t i = 0; i < _fhat.n_rows; ++i) { g[i] = _fhat(i); }
+    g[_fhat.n_rows] = 1.f;
   }
 
   // Get the number of constraints on the objective function.
@@ -125,12 +125,12 @@ public:
       double sum = 0.f;
       for (size_t index = 0; index < p.n_rows; index++)
       {
-        arma::vec gammaGa(_G.row(index).n_cols);
-        for (size_t j = 0; j < _G.row(index).n_cols; j++) { gammaGa(j) = _G.row(index)(j); }
+        arma::vec Ga(_G.row(index).n_cols);
+        for (size_t j = 0; j < _G.row(index).n_cols; j++) { Ga(j) = _G.row(index)(j); }
 
-        auto gammaGa_times_p = arma::dot(gammaGa, p);
+        auto Ga_times_p = arma::dot(Ga, p);
 
-        float denominator = gammaGa_times_p;
+        float denominator = Ga_times_p;
         auto nominator = (eyea(index) - p(index)) * (eyea(index) - p(index));
         sum += (nominator / denominator);
       }
@@ -143,32 +143,28 @@ public:
     }
     else if (i == _fhat.size())
     {
-      if (arma::all(p > 0.f)) { return 0.f; }
+      if (arma::all(p >= 0.f)) { return 0.f; }
       std::cout << "min: " << arma::min(p) << " negative w penalty:" << arma::min(p) << std::endl;
       double neg_sum = 0.;
       for (size_t i = 0; i < p.n_rows; i++)
       {
         if (p(i) < 0) { neg_sum += p(i); }
       }
-      return -1.f * neg_sum;  // _gamma;  //-1.f * _gamma * arma::min(p);
+      return -1.f * _gamma * neg_sum;
     }
     else if (i == _fhat.size() + 1)
     {
       if (arma::sum(p) <= 1.f) { return 0.f; }
       return arma::sum(p) - 1.f;
-      // if (VW::math::are_same(static_cast<float>(arma::sum(p)), 1.f)) { return 0.f; }
-      // return 1.f * (1.f - arma::sum(p));
     }
     else if (i == _fhat.size() + 2)
     {
       if (arma::sum(p) >= 1.f) { return 0.f; }
       return 1.f - arma::sum(p);
-      // if (VW::math::are_same(static_cast<float>(arma::sum(p)), 1.f)) { return 0.f; }
-      // return 1.f * (1.f - arma::sum(p));
     }
     else if (i == _fhat.size() + 3)
     {
-      if ((z) > 1.f) { return 0.f; }
+      if (z > 1.f) { return 0.f; }
       std::cout << "z is: " << z << " z penalty: " << 1.f - z << std::endl;
       return 1.f - z;
     }
@@ -203,16 +199,16 @@ public:
         double sum = 0.f;
         for (size_t index = 0; index < p.n_rows; index++)
         {
-          arma::vec gammaGa(_G.row(index).n_cols);
-          for (size_t j = 0; j < _G.row(index).n_cols; j++) { gammaGa(j) = _G.row(index)(j); }
-          auto gammaGa_times_p = arma::dot(gammaGa, p);
+          arma::vec Ga(_G.row(index).n_cols);
+          for (size_t j = 0; j < _G.row(index).n_cols; j++) { Ga(j) = _G.row(index)(j); }
+          auto Ga_times_p = arma::dot(Ga, p);
 
           if (index == coord_i)
           {
-            float denominator = gammaGa_times_p * gammaGa_times_p;
+            float denominator = Ga_times_p * Ga_times_p;
 
             auto b = _G.row(index)(index);
-            auto c = gammaGa_times_p - b * p(index);
+            auto c = Ga_times_p - b * p(index);
             auto nominator = -1.f * ((eyea(index) - p(index)) * (eyea(index) * b + b * p(index) + 2.f * c));
 
             sum += (nominator / denominator);
@@ -223,7 +219,7 @@ public:
             auto b = _G.row(index)(coord_i);
 
             auto nominator = -1.f * ((a * b));
-            auto denominator = gammaGa_times_p * gammaGa_times_p;
+            auto denominator = Ga_times_p * Ga_times_p;
             sum += nominator / denominator;
           }
         }
@@ -377,11 +373,11 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
   // for (auto& as : a_s) { fhat(as.action) = as.score - fhat_min; }
 
   float gamma = _gamma;
-  for (size_t i = 0; i < fhat.n_rows; i++) { fhat(i) = fhat(i) * gamma; }
+  // for (size_t i = 0; i < fhat.n_rows; i++) { fhat(i) = fhat(i) * gamma; }
   fhat.print("fhat after: ");
 
-  float z = 1.f;  // - fhat_min;
-  z = z * gamma;
+  float z = 1.f;// - fhat_min;
+  // z = z * gamma;
   std::cout << "fhat_min: " << fhat_min << " z: " << z << std::endl;
 
   // initial p can be uniform random
@@ -409,8 +405,8 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
     const auto& triplet = graph_reduction_features.triplets[i];
     locations(0, i) = triplet.row;
     locations(1, i) = triplet.col;
-    values(i) = triplet.val;
     // values(i) = triplet.val;
+    values(i) = triplet.val * gamma;
   }
 
   // TODO check with gammas, check different p starting points
