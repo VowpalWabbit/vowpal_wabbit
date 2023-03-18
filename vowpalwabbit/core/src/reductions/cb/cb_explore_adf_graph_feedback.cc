@@ -41,8 +41,8 @@ namespace cb_explore_adf
 class cb_explore_adf_graph_feedback
 {
 public:
-  cb_explore_adf_graph_feedback(float gamma) : _gamma(gamma) {
-
+  cb_explore_adf_graph_feedback(float gamma) : _gamma(gamma)
+  {
     std::cout << "gamma in constructor: " << gamma << std::endl;
   }
   // Should be called through cb_explore_adf_base for pre/post-processing
@@ -83,13 +83,10 @@ public:
 
     float z = x[x.n_rows - 1];
 
-    // auto r = (arma::dot(_fhat, p) + z) / _gamma;
-    float r = 0.f;
-    for (size_t i = 0; i < p.n_rows; i++) { r += p(i) * _fhat(i); }
-    r += z;
-    // auto r = (arma::dot(p, _fhat) + z);
+    auto r = (arma::dot(p, _fhat) + z);
     std::cout << "is r getting smaller?: " << r << " : " << (_fhat.size() + 3) * r << std::endl;
-    return (_fhat.size() + 3) * r * 2.f;
+    // return (_fhat.size() + 3) * r * 2.f;
+    return r / _gamma;
   }
 
   // Compute the gradient of f(x) for the given x and store the result in g.
@@ -99,14 +96,12 @@ public:
 
     float z = x[x.n_rows - 1];
     g.set_size(_fhat.n_rows + 1, 1);
-    // for (size_t i = 0; i < _fhat.n_rows; ++i) { g[i] = _fhat(i) / _gamma; }
-    for (size_t i = 0; i < _fhat.n_rows; ++i) { g[i] = _fhat(i); }
-    g[_fhat.n_rows] = 1.f;
-    // g[_fhat.n_rows] = 1.f / _gamma;
+    for (size_t i = 0; i < _fhat.n_rows; ++i) { g[i] = _fhat(i) / _gamma; }
+    g[_fhat.n_rows] = 1.f / _gamma;
   }
 
   // Get the number of constraints on the objective function.
-  size_t NumConstraints() { return _fhat.size() + 3; }
+  size_t NumConstraints() { return _fhat.size() + 4; }
 
   // Evaluate constraint i at the parameters x.  If the constraint is
   // unsatisfied, a value greater than 0 should be returned.  If the constraint
@@ -140,41 +135,42 @@ public:
         sum += (nominator / denominator);
       }
 
+      std::cout << "sum: " << sum << " fhata: " << fhata << " z: " << z << " returning: " << sum - (fhata + z)
+                << std::endl;
+
       if (sum <= (fhata + z)) { return 0.f; }
-      else
-      {
-        std::cout << "sum: " << sum << " fhata: " << fhata << " z: " << z << " returning: " << sum - (fhata + z)
-                  << std::endl;
-        return sum - (fhata + z);
-      }
+      else { return sum - (fhata + z); }
     }
     else if (i == _fhat.size())
     {
-      p.print("p is:");
-      std::cout << "z is: " << z << std::endl;
-
-      // if (arma::sum(p) >= 0.9f && arma::sum(p) <= 1.f) { return 0.f; }
-      if (VW::math::are_same(static_cast<float>(arma::sum(p)), 1.f)) { return 0.f; }
-      std::cout << "p sum is: " << arma::sum(p) << std::endl;
-      if (arma::sum(p) > 1.) { return 1.f * arma::sum(p); }
-      return 1.f * std::abs(1.f - arma::sum(p));
+      if (arma::all(p > 0.f)) { return 0.f; }
+      std::cout << "min: " << arma::min(p) << " negative w penalty:" << arma::min(p) << std::endl;
+      double neg_sum = 0.;
+      for (size_t i = 0; i < p.n_rows; i++)
+      {
+        if (p(i) < 0) { neg_sum += p(i); }
+      }
+      return -1.f * neg_sum;  // _gamma;  //-1.f * _gamma * arma::min(p);
     }
     else if (i == _fhat.size() + 1)
     {
-      if (arma::all(p >= 0.f)) { return 0.f; }
-      std::cout << "min: " << arma::min(p) << " negative w penalty:" << -10. * arma::min(p) << std::endl;
-      return 10.f;  // * arma::min(p);
+      if (arma::sum(p) <= 1.f) { return 0.f; }
+      return arma::sum(p) - 1.f;
+      // if (VW::math::are_same(static_cast<float>(arma::sum(p)), 1.f)) { return 0.f; }
+      // return 1.f * (1.f - arma::sum(p));
     }
-    // else if (i == _fhat.size() + 2)
-    // {
-    //   if (arma::all(p <= 1.f)) { return 0.f; }
-
-    //   return arma::max(p);
-    // }
     else if (i == _fhat.size() + 2)
     {
+      if (arma::sum(p) >= 1.f) { return 0.f; }
+      return 1.f - arma::sum(p);
+      // if (VW::math::are_same(static_cast<float>(arma::sum(p)), 1.f)) { return 0.f; }
+      // return 1.f * (1.f - arma::sum(p));
+    }
+    else if (i == _fhat.size() + 3)
+    {
       if ((z) > 1.f) { return 0.f; }
-      return 2.f * std::abs(z);
+      std::cout << "z is: " << z << " z penalty: " << 1.f - z << std::endl;
+      return 1.f - z;
     }
     return 0.;
   }
@@ -197,7 +193,7 @@ public:
       g.set_size(_fhat.n_rows + 1, 1);
       g.zeros();
 
-      g[_fhat.size()] = -1.f;
+      g[_fhat.size()] = 1.f;
 
       arma::vec eyea = arma::zeros<arma::vec>(p.n_rows);
       eyea(i) = 1.f;
@@ -235,76 +231,57 @@ public:
         g[coord_i] = sum;
       }
 
-      // if (constraint != 0.f)
-      // {
-      //   std::cout << "constraint for i: " << i << " is: " << constraint << " going the other way of gradient"
-      //             << std::endl;
-      //   g = -1.f * g;
-      //   // restore original point not concerned with the constraint
-      //   g[_fhat.size()] = -1.f;
-      // }
-      // else
-      // {
-      //   std::cout << "sum < fhat + c constraint satisfied" << std::endl;
-      // }
+      if (constraint == 0.f)
+      {
+        std::cout << "constraint for i: " << i << " is: " << constraint << " going the other way of gradient"
+                  << std::endl;
+        g = -1.f * g;
+        // restore original point not concerned with the constraint
+        g[_fhat.size()] = 1.f;
+      }
     }
     else if (i == _fhat.size())
     {
-      // sum
+      // all positives
       g.set_size(_fhat.n_rows + 1, 1);
-      g.zeros();
+      g.ones();
 
-      float sum = arma::sum(p);
-
-      if (constraint != 0. && sum < 1.f)
+      for (size_t i = 0; i < p.n_rows; ++i)
       {
-        std::cout << "sum constraint not satisfied sum is: " << sum << " BUT is smaller than one so keep going?"
-                  << std::endl;
-        for (size_t i = 0; i < _fhat.size(); i++) { g[i] = -1.f; }
-      }
-      else if (constraint != 0. && sum > 1.f)
-      {
-        g[i] = 1.f;
-        std::cout << "sum constraint not satisfied sum is: " << sum << " so going other way" << std::endl;
+        if (p(i) < 0.f)
+        {
+          for (size_t i = 0; i < _fhat.size(); i++) { g[i] = -1.f; }
+        }
       }
 
       g[_fhat.size()] = 0.f;
     }
     else if (i == _fhat.size() + 1)
     {
-      // all positives
+      // sum
       g.set_size(_fhat.n_rows + 1, 1);
-      g.zeros();
+      g.ones();
 
-      for (size_t i = 0; i < p.n_rows; ++i)
-      {
-        if (p(i) < 0.f)
-        {
-          for (size_t i = 0; i < _fhat.size(); i++) { g[i] = 1.f; }
-        }
-      }
+      if (constraint == 0.f) { g = -1.f * g; }
 
       g[_fhat.size()] = 0.f;
     }
-    // else if (i == _fhat.size() + 2)
-    // {
-    //   // all smaller than 1
-    //   g.set_size(_fhat.n_rows + 1, 1);
-    //   g.zeros();
-
-    //   for (size_t i = 0; i < p.n_rows; ++i)
-    //   {
-    //     if (p(i) > 1.f) { g[i] = 1.f; }
-    //   }
-
-    //   g[_fhat.size()] = 0.f;
-    // }
     else if (i == _fhat.size() + 2)
     {
+      // sum
       g.set_size(_fhat.n_rows + 1, 1);
-      g.zeros();
-      if (constraint == 0.f) { g[_fhat.size()] = 1.f; }
-      else { g[_fhat.size()] = -1.f; }
+      g.ones();
+
+      if (constraint != 0.f) { g = -1.f * g; }
+
+      g[_fhat.size()] = 0.f;
+    }
+    else if (i == _fhat.size() + 3)
+    {
+      g.set_size(_fhat.n_rows + 1, 1);
+      g.ones();
+
+      if (z < 1.f) { g[_fhat.size()] = -1.f; }
     }
   }
 };
@@ -315,13 +292,13 @@ public:
   CTest() = default;
 
   // Return the objective function f(x) for the given x.
-  double Evaluate(const arma::mat& x) { return x[0] * x[0] + x[1]; }
+  double Evaluate(const arma::mat& x) { return x[0] * x[0] - x[1]; }
   // Compute the gradient of f(x) for the given x and store the result in g.
   void Gradient(const arma::mat& x, arma::mat& g)
   {
     g.set_size(2, 1);
     g[0] = 2 * x[0];
-    g[1] = 1.f;  // x[1] > 0.f ? 1.f : (x[1] < 0.f ? -1.f : 0.f);
+    g[1] = -1.f;  // x[1] > 0.f ? 1.f : (x[1] < 0.f ? -1.f : 0.f);
   }
 
   // Get the number of constraints on the objective function.
@@ -342,8 +319,8 @@ public:
     else if (i == 1)
     {
       x.print("x and y are:");
-      if (x[1] >= 3.f) { return 0.f; }
-      return 1.f * (3.f - x[1]);
+      if (x[1] <= 3.f) { return 0.f; }
+      return 1.f * (x[1] - 3.f);
     }
     return 0.f;
   }
@@ -364,9 +341,9 @@ public:
     else if (i == 1)
     {
       g[0] = 0.f;
-      if (x[1] >= 3.f) { g[1] = 1.f; }
+      if (x[1] >= 3.f) { g[1] = -1.f; }
       {
-        g[1] = -1.f;
+        g[1] = 1.f;
       }
     }
   }
@@ -399,12 +376,12 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
 
   // for (auto& as : a_s) { fhat(as.action) = as.score - fhat_min; }
 
-  // float gamma = 1.f;
-  // for (size_t i = 0; i < fhat.n_rows; i++) { fhat(i) = fhat(i) * gamma; }
+  float gamma = _gamma;
+  for (size_t i = 0; i < fhat.n_rows; i++) { fhat(i) = fhat(i) * gamma; }
   fhat.print("fhat after: ");
 
-  float z = 1.f - fhat_min;
-  // z = z * gamma;
+  float z = 1.f;  // - fhat_min;
+  z = z * gamma;
   std::cout << "fhat_min: " << fhat_min << " z: " << z << std::endl;
 
   // initial p can be uniform random
@@ -432,7 +409,7 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
     const auto& triplet = graph_reduction_features.triplets[i];
     locations(0, i) = triplet.row;
     locations(1, i) = triplet.col;
-    values(i) = triplet.val * _gamma;
+    values(i) = triplet.val;
     // values(i) = triplet.val;
   }
 
@@ -448,7 +425,7 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
 
   std::cout << "new optimizer" << std::endl;
   ens::AugLagrangian optimizer;  //(0, 0.25f);
-  optimizer.MaxIterations() = 2000;
+  // optimizer.MaxIterations() = 1000;
   // std::cout << "MAX ITERS: " << optimizer.MaxIterations() << std::endl;
   optimizer.Optimize(f, coordinates);
 
@@ -456,14 +433,14 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
   for (size_t i = 0; i < a_s.size(); i++) { p_sum += coordinates[i]; }
   std::cout << "SUM: " << p_sum << " sum each: " << (1.f - p_sum) / a_s.size() << std::endl;
 
-  // coordinates.print("coords before balancing: ");
+  coordinates.print("coords before balancing: ");
 
-  // if (!VW::math::are_same(p_sum, 1.f))
-  // {
-  //   float rest = 1.f - p_sum;
-  //   float rest_each = rest / (a_s.size());
-  //   for (size_t i = 0; i < a_s.size(); i++) { coordinates[i] = coordinates[i] + rest_each; }
-  // }
+  if (!VW::math::are_same(p_sum, 1.f))
+  {
+    float rest = 1.f - p_sum;
+    float rest_each = rest / (a_s.size());
+    for (size_t i = 0; i < a_s.size(); i++) { coordinates[i] = coordinates[i] + rest_each; }
+  }
 
   coordinates.print("coords: ");
 
