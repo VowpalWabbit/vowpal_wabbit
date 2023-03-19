@@ -305,6 +305,7 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
   ConstrainedFunctionType f(fhat, G, _gamma);
 
   ens::AugLagrangian optimizer;
+  // TODO should I set an upper limit for performance reasons?
   // optimizer.MaxIterations() = 1000;
   optimizer.Optimize(f, coordinates);
 
@@ -319,6 +320,9 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
     float rest_each = rest / (a_s.size());
     for (size_t i = 0; i < a_s.size(); i++) { coordinates[i] = coordinates[i] + rest_each; }
   }
+
+  // TODO also need to triple check that no probabilities end up being negative
+  // just because the constraint is there does not mean that it can't be violated
 
   coordinates.print("coords: ");
 
