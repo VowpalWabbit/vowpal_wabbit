@@ -150,7 +150,7 @@ public:
       {
         if (p(i) < 0) { neg_sum += p(i); }
       }
-      return -1.f * _gamma * neg_sum;
+      return -100.f * _gamma * neg_sum;
     }
     else if (i == _fhat.size() + 1)
     {
