@@ -249,7 +249,7 @@ void freegrad_update_after_prediction(freegrad& fg, VW::example& ec)
 
   // Partial derivative of loss (Note that the weight of the examples ec is not accounted for at this stage. This is
   // done in inner_freegrad_update_after_prediction)
-  fg.update_data.update = fg.all->lc.loss->first_derivative(fg.all->sd.get(), ec.pred.scalar, ec.l.simple.label);
+  fg.update_data.update = fg.all->loss_config.loss->first_derivative(fg.all->sd.get(), ec.pred.scalar, ec.l.simple.label);
 
   // Compute gradient norm
   VW::foreach_feature<freegrad_update_data, gradient_dot_w>(*fg.all, ec, fg.update_data);

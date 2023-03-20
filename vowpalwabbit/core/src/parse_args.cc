@@ -1048,9 +1048,9 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
       .add(make_option("logistic_max", logistic_loss_max)
                .default_value(1.0f)
                .help("Maximum loss value for logistic loss. Defaults to +1"))
-      .add(make_option("l1", all.lc.l1_lambda).default_value(0.0f).help("L_1 lambda"))
-      .add(make_option("l2", all.lc.l2_lambda).default_value(0.0f).help("L_2 lambda"))
-      .add(make_option("no_bias_regularization", all.lc.no_bias).help("No bias in regularization"))
+      .add(make_option("l1", all.loss_config.l1_lambda).default_value(0.0f).help("L_1 lambda"))
+      .add(make_option("l2", all.loss_config.l2_lambda).default_value(0.0f).help("L_2 lambda"))
+      .add(make_option("no_bias_regularization", all.loss_config.no_bias).help("No bias in regularization"))
       .add(make_option("named_labels", named_labels)
                .keep()
                .help("Use names for labels (multiclass, etc.) rather than integers, argument specified all possible "
@@ -1126,7 +1126,7 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
 
   if (loss_function_accepts_quantile_tau)
   {
-    all.lc.loss = get_loss_function(all, loss_function, quantile_loss_parameter);
+    all.loss_config.loss = get_loss_function(all, loss_function, quantile_loss_parameter);
   }
   else if (loss_function_accepts_expectile_q)
   {
@@ -1136,37 +1136,37 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
           "Option 'expectile_q' must be specified with a value in range (0.0, 0.5] "
           "when using the expectile loss function.");
     }
-    all.lc.loss = get_loss_function(all, loss_function, expectile_loss_parameter);
+    all.loss_config.loss = get_loss_function(all, loss_function, expectile_loss_parameter);
   }
   else if (loss_function_accepts_logistic_args)
   {
-    all.lc.loss = get_loss_function(all, loss_function, logistic_loss_min, logistic_loss_max);
+    all.loss_config.loss = get_loss_function(all, loss_function, logistic_loss_min, logistic_loss_max);
   }
-  else { all.lc.loss = get_loss_function(all, loss_function); }
+  else { all.loss_config.loss = get_loss_function(all, loss_function); }
 
-  if (all.lc.l1_lambda < 0.f)
+  if (all.loss_config.l1_lambda < 0.f)
   {
-    *(all.output_runtime.trace_message) << "l1_lambda should be nonnegative: resetting from " << all.lc.l1_lambda
+    *(all.output_runtime.trace_message) << "l1_lambda should be nonnegative: resetting from " << all.loss_config.l1_lambda
                                         << " to 0" << endl;
-    all.lc.l1_lambda = 0.f;
+    all.loss_config.l1_lambda = 0.f;
   }
-  if (all.lc.l2_lambda < 0.f)
+  if (all.loss_config.l2_lambda < 0.f)
   {
-    *(all.output_runtime.trace_message) << "l2_lambda should be nonnegative: resetting from " << all.lc.l2_lambda
+    *(all.output_runtime.trace_message) << "l2_lambda should be nonnegative: resetting from " << all.loss_config.l2_lambda
                                         << " to 0" << endl;
-    all.lc.l2_lambda = 0.f;
+    all.loss_config.l2_lambda = 0.f;
   }
-  all.lc.reg_mode += (all.lc.l1_lambda > 0.) ? 1 : 0;
-  all.lc.reg_mode += (all.lc.l2_lambda > 0.) ? 2 : 0;
+  all.loss_config.reg_mode += (all.loss_config.l1_lambda > 0.) ? 1 : 0;
+  all.loss_config.reg_mode += (all.loss_config.l2_lambda > 0.) ? 2 : 0;
   if (!all.output_config.quiet)
   {
-    if (all.lc.reg_mode % 2 && !options.was_supplied("bfgs"))
+    if (all.loss_config.reg_mode % 2 && !options.was_supplied("bfgs"))
     {
-      *(all.output_runtime.trace_message) << "using l1 regularization = " << all.lc.l1_lambda << endl;
+      *(all.output_runtime.trace_message) << "using l1 regularization = " << all.loss_config.l1_lambda << endl;
     }
-    if (all.lc.reg_mode > 1)
+    if (all.loss_config.reg_mode > 1)
     {
-      *(all.output_runtime.trace_message) << "using l2 regularization = " << all.lc.l2_lambda << endl;
+      *(all.output_runtime.trace_message) << "using l2 regularization = " << all.loss_config.l2_lambda << endl;
     }
   }
 }

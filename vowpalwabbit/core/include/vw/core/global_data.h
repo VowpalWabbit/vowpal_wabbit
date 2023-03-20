@@ -317,10 +317,15 @@ public:
   std::string dump_weights_to_json_experimental();
 
   details::feature_tweaks_config fc;  // feature related configs
+  // details::feature_tweaks_config feature_tweaks_config;  // feature related configs
   details::initial_weights_config iwc;
+  // details::initial_weights_config initial_weights_config;
   details::update_rule_config uc;
-  details::loss_config lc;
+  // details::update_rule_config update_rule_config;
+  details::loss_config loss_config;
+  // details::passes_config passes_config;
   details::passes_config pc;
+  // details::output_model_config output_model_config;
   details::output_model_config om;
 
   details::parser_runtime parser_runtime;

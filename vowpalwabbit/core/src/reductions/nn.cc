@@ -167,7 +167,7 @@ void predict_or_learn_multi(nn& n, learner& base, VW::example& ec)
     float save_min_label;
     float save_max_label;
     float dropscale = n.dropout ? 2.0f : 1.0f;
-    auto loss_function_swap_guard = VW::swap_guard(n.all->lc.loss, n.squared_loss);
+    auto loss_function_swap_guard = VW::swap_guard(n.all->loss_config.loss, n.squared_loss);
 
     VW::polyprediction* hidden_units = n.hidden_units_pred;
     VW::polyprediction* hiddenbias_pred = n.hiddenbias_pred;
@@ -245,7 +245,7 @@ void predict_or_learn_multi(nn& n, learner& base, VW::example& ec)
     n.outputweight.ft_offset = ec.ft_offset;
 
     n.all->set_minmax = nullptr;
-    auto loss_function_swap_guard_converse_block = VW::swap_guard(n.all->lc.loss, n.squared_loss);
+    auto loss_function_swap_guard_converse_block = VW::swap_guard(n.all->loss_config.loss, n.squared_loss);
     save_min_label = n.all->sd->min_label;
     n.all->sd->min_label = -1;
     save_max_label = n.all->sd->max_label;
@@ -330,11 +330,11 @@ void predict_or_learn_multi(nn& n, learner& base, VW::example& ec)
     {
       if (n.all->runtime_config.training && ld.label != FLT_MAX)
       {
-        float gradient = n.all->lc.loss->first_derivative(n.all->sd.get(), n.prediction, ld.label);
+        float gradient = n.all->loss_config.loss->first_derivative(n.all->sd.get(), n.prediction, ld.label);
 
         if (std::fabs(gradient) > 0)
         {
-          auto loss_function_swap_guard_learn_block = VW::swap_guard(n.all->lc.loss, n.squared_loss);
+          auto loss_function_swap_guard_learn_block = VW::swap_guard(n.all->loss_config.loss, n.squared_loss);
           n.all->set_minmax = nullptr;
           save_min_label = n.all->sd->min_label;
           n.all->sd->min_label = HIDDEN_MIN_ACTIVATION;

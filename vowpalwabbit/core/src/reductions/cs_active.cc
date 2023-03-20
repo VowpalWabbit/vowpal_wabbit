@@ -425,7 +425,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cs_active_setup(VW::setup_
   data->all = &all;
   data->t = 1;
 
-  auto loss_function_type = all.lc.loss->get_type();
+  auto loss_function_type = all.loss_config.loss->get_type();
   if (loss_function_type != "squared") THROW("non-squared loss can't be used with --cs_active");
 
   if (options.was_supplied("lda")) THROW("lda can't be combined with active learning");

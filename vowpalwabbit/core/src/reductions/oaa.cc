@@ -397,7 +397,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::oaa_setup(VW::setup_base_i
     pred_type = VW::prediction_type_t::SCALARS;
     if (probabilities)
     {
-      auto loss_function_type = all.lc.loss->get_type();
+      auto loss_function_type = all.loss_config.loss->get_type();
       if (loss_function_type != "logistic")
       {
         all.logger.out_warn("--probabilities should be used only with --loss_function=logistic, currently using: {}",

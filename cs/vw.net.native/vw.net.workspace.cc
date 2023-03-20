@@ -181,7 +181,7 @@ API void WorkspaceGetPerformanceStatistics(
 
   float best_constant;
   float best_constant_loss;
-  if (get_best_constant(*workspace->vw->lc.loss.get(), *workspace->vw->sd, best_constant, best_constant_loss))
+  if (get_best_constant(*workspace->vw->loss_config.loss.get(), *workspace->vw->sd, best_constant, best_constant_loss))
   {
     statistics->best_constant = best_constant;
     if (best_constant_loss != FLT_MIN) { statistics->best_constant_loss = best_constant_loss; }

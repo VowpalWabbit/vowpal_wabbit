@@ -146,7 +146,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::multilabel_oaa_setup(VW::s
       data->link = "logistic";
     }
     pred_type = VW::prediction_type_t::SCALARS;
-    auto loss_function_type = all.lc.loss->get_type();
+    auto loss_function_type = all.loss_config.loss->get_type();
     if (loss_function_type != "logistic")
     {
       all.logger.out_warn(

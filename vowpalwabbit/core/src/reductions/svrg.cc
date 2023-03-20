@@ -77,7 +77,7 @@ void predict(svrg& s, VW::example& ec)
 
 float gradient_scalar(const svrg& s, const VW::example& ec, float pred)
 {
-  return s.all->lc.loss->first_derivative(s.all->sd.get(), pred, ec.l.simple.label) * ec.weight;
+  return s.all->loss_config.loss->first_derivative(s.all->sd.get(), pred, ec.l.simple.label) * ec.weight;
 }
 
 // -- Updates, taking inner steps vs. accumulating a full gradient --

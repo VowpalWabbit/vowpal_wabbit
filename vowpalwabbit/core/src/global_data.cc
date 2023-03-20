@@ -314,13 +314,13 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   // Default is stderr.
   output_runtime.trace_message = std::make_shared<std::ostream>(std::cout.rdbuf());
 
-  lc.loss = nullptr;
+  loss_config.loss = nullptr;
 
-  lc.reg_mode = 0;
+  loss_config.reg_mode = 0;
   pc.current_pass = 0;
 
   reduction_state.bfgs = false;
-  lc.no_bias = false;
+  loss_config.no_bias = false;
   reduction_state.active = false;
   iwc.num_bits = 18;
   runtime_config.default_bits = true;
@@ -359,8 +359,8 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   reduction_state.searchstr = nullptr;
 
   // nonormalize = false;
-  lc.l1_lambda = 0.0;
-  lc.l2_lambda = 0.0;
+  loss_config.l1_lambda = 0.0;
+  loss_config.l2_lambda = 0.0;
 
   uc.eta_decay_rate = 1.0;
   iwc.initial_weight = 0.0;
@@ -405,7 +405,7 @@ void workspace::finish()
   // also update VowpalWabbit::PerformanceStatistics::get() (vowpalwabbit.cpp)
   if (!output_config.quiet && !options->was_supplied("audit_regressor"))
   {
-    sd->print_summary(*output_runtime.trace_message, *sd, *lc.loss, pc.current_pass, pc.holdout_set_off);
+    sd->print_summary(*output_runtime.trace_message, *sd, *loss_config.loss, pc.current_pass, pc.holdout_set_off);
   }
 
   details::finalize_regressor(*this, om.final_regressor_name);

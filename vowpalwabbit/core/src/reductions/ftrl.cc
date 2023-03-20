@@ -282,19 +282,19 @@ void update_state_and_predict_pistol(ftrl& b, VW::example& ec)
 
 void update_after_prediction_proximal(ftrl& b, VW::example& ec)
 {
-  b.data.update = b.all->lc.loss->first_derivative(b.all->sd.get(), ec.pred.scalar, ec.l.simple.label) * ec.weight;
+  b.data.update = b.all->loss_config.loss->first_derivative(b.all->sd.get(), ec.pred.scalar, ec.l.simple.label) * ec.weight;
   VW::foreach_feature<ftrl_update_data, inner_update_proximal>(*b.all, ec, b.data);
 }
 
 void update_after_prediction_pistol(ftrl& b, VW::example& ec)
 {
-  b.data.update = b.all->lc.loss->first_derivative(b.all->sd.get(), ec.pred.scalar, ec.l.simple.label) * ec.weight;
+  b.data.update = b.all->loss_config.loss->first_derivative(b.all->sd.get(), ec.pred.scalar, ec.l.simple.label) * ec.weight;
   VW::foreach_feature<ftrl_update_data, inner_update_pistol_post>(*b.all, ec, b.data);
 }
 
 void coin_betting_update_after_prediction(ftrl& b, VW::example& ec)
 {
-  b.data.update = b.all->lc.loss->first_derivative(b.all->sd.get(), ec.pred.scalar, ec.l.simple.label) * ec.weight;
+  b.data.update = b.all->loss_config.loss->first_derivative(b.all->sd.get(), ec.pred.scalar, ec.l.simple.label) * ec.weight;
   VW::foreach_feature<ftrl_update_data, inner_coin_betting_update_after_prediction>(*b.all, ec, b.data);
 }
 
@@ -459,8 +459,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::ftrl_setup(VW::setup_base_
 
   b->data.ftrl_alpha = b->ftrl_alpha;
   b->data.ftrl_beta = b->ftrl_beta;
-  b->data.l1_lambda = b->all->lc.l1_lambda;
-  b->data.l2_lambda = b->all->lc.l2_lambda;
+  b->data.l1_lambda = b->all->loss_config.l1_lambda;
+  b->data.l2_lambda = b->all->loss_config.l2_lambda;
 
   if (!all.output_config.quiet)
   {

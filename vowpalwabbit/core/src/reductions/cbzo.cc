@@ -59,18 +59,18 @@ inline void set_weight(VW::workspace& all, uint64_t index, float value)
 
 float l1_grad(VW::workspace& all, uint64_t fi)
 {
-  if (all.lc.no_bias && fi == VW::details::CONSTANT) { return 0.0f; }
+  if (all.loss_config.no_bias && fi == VW::details::CONSTANT) { return 0.0f; }
 
   float fw = get_weight(all, fi);
-  return fw >= 0.0f ? all.lc.l1_lambda : -all.lc.l1_lambda;
+  return fw >= 0.0f ? all.loss_config.l1_lambda : -all.loss_config.l1_lambda;
 }
 
 float l2_grad(VW::workspace& all, uint64_t fi)
 {
-  if (all.lc.no_bias && fi == VW::details::CONSTANT) { return 0.0f; }
+  if (all.loss_config.no_bias && fi == VW::details::CONSTANT) { return 0.0f; }
 
   float fw = get_weight(all, fi);
-  return all.lc.l2_lambda * fw;
+  return all.loss_config.l2_lambda * fw;
 }
 
 inline void accumulate_dotprod(float& dotprod, float x, float& fw) { dotprod += x * fw; }

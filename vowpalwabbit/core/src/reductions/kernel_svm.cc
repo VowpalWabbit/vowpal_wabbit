@@ -796,7 +796,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::kernel_svm_setup(VW::setup
 
   std::string loss_function = "hinge";
   float loss_parameter = 0.0;
-  all.lc.loss = get_loss_function(all, loss_function, loss_parameter);
+  all.loss_config.loss = get_loss_function(all, loss_function, loss_parameter);
 
   params->model = &VW::details::calloc_or_throw<svm_model>();
   new (params->model) svm_model();
@@ -820,7 +820,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::kernel_svm_setup(VW::setup
     params->subsample = static_cast<size_t>(ceil(params->pool_size / all.runtime_state.all_reduce->total));
   }
 
-  params->lambda = all.lc.l2_lambda;
+  params->lambda = all.loss_config.l2_lambda;
   if (params->lambda == 0.) { params->lambda = 1.; }
   *params->all->output_runtime.trace_message << "Lambda = " << params->lambda << endl;
   *params->all->output_runtime.trace_message << "Kernel = " << kernel_type << endl;

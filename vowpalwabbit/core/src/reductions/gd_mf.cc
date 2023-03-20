@@ -172,7 +172,7 @@ float mf_predict(gdmf& d, VW::example& ec, T& weights)
 
   if (ec.l.simple.label != FLT_MAX)
   {
-    ec.loss = all.lc.loss->get_loss(all.sd.get(), ec.pred.scalar, ec.l.simple.label) * ec.weight;
+    ec.loss = all.loss_config.loss->get_loss(all.sd.get(), ec.pred.scalar, ec.l.simple.label) * ec.weight;
   }
 
   if (all.output_config.audit) { mf_print_audit_features(d, ec, 0); }
@@ -205,9 +205,9 @@ void mf_train(gdmf& d, VW::example& ec, T& weights)
   // use final prediction to get update size
   // update = eta_t*(y-y_hat) where eta_t = eta/(3*t^p) * importance weight
   float eta_t = all.uc.eta / powf(static_cast<float>(all.sd->t) + ec.weight, all.uc.power_t) / 3.f * ec.weight;
-  float update = all.lc.loss->get_update(ec.pred.scalar, ld.label, eta_t, 1.);  // ec.total_sum_feat_sq);
+  float update = all.loss_config.loss->get_update(ec.pred.scalar, ld.label, eta_t, 1.);  // ec.total_sum_feat_sq);
 
-  float regularization = eta_t * all.lc.l2_lambda;
+  float regularization = eta_t * all.loss_config.l2_lambda;
 
   // linear update
   for (VW::features& fs : ec) { sd_offset_update<T>(weights, fs, 0, update, regularization); }

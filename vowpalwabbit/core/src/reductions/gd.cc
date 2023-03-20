@@ -714,7 +714,7 @@ float get_pred_per_update(VW::reductions::gd& g, VW::example& ec)
   VW::workspace& all = *g.all;
 
   float grad_squared = ec.weight;
-  if (!adax) { grad_squared *= all.lc.loss->get_square_grad(ec.pred.scalar, ld.label); }
+  if (!adax) { grad_squared *= all.loss_config.loss->get_square_grad(ec.pred.scalar, ld.label); }
 
   if (grad_squared == 0 && !stateless) { return 1.; }
 
@@ -793,22 +793,22 @@ float compute_update(VW::reductions::gd& g, VW::example& ec)
 
   float update = 0.;
   ec.updated_prediction = ec.pred.scalar;
-  if (all.lc.loss->get_loss(all.sd.get(), ec.pred.scalar, ld.label) > 0.)
+  if (all.loss_config.loss->get_loss(all.sd.get(), ec.pred.scalar, ld.label) > 0.)
   {
     float pred_per_update = sensitivity<sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, false>(g, ec);
     float update_scale = get_scale<adaptive>(g, ec, ec.weight);
-    if (invariant) { update = all.lc.loss->get_update(ec.pred.scalar, ld.label, update_scale, pred_per_update); }
-    else { update = all.lc.loss->get_unsafe_update(ec.pred.scalar, ld.label, update_scale); }
+    if (invariant) { update = all.loss_config.loss->get_update(ec.pred.scalar, ld.label, update_scale, pred_per_update); }
+    else { update = all.loss_config.loss->get_unsafe_update(ec.pred.scalar, ld.label, update_scale); }
     // changed from ec.partial_prediction to ld.prediction
     ec.updated_prediction += pred_per_update * update;
 
-    if (all.lc.reg_mode && std::fabs(update) > 1e-8)
+    if (all.loss_config.reg_mode && std::fabs(update) > 1e-8)
     {
-      double dev1 = all.lc.loss->first_derivative(all.sd.get(), ec.pred.scalar, ld.label);
+      double dev1 = all.loss_config.loss->first_derivative(all.sd.get(), ec.pred.scalar, ld.label);
       double eta_bar = (fabs(dev1) > 1e-8) ? (-update / dev1) : 0.0;
-      if (fabs(dev1) > 1e-8) { all.sd->contraction *= (1. - all.lc.l2_lambda * eta_bar); }
+      if (fabs(dev1) > 1e-8) { all.sd->contraction *= (1. - all.loss_config.l2_lambda * eta_bar); }
       update /= static_cast<float>(all.sd->contraction);
-      all.sd->gravity += eta_bar * all.lc.l1_lambda;
+      all.sd->gravity += eta_bar * all.loss_config.l1_lambda;
     }
   }
 
@@ -1519,7 +1519,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i&
         pow(static_cast<double>(all.uc.eta_decay_rate), static_cast<double>(all.runtime_config.numpasses)));
   }
 
-  if (all.lc.reg_mode % 2)
+  if (all.loss_config.reg_mode % 2)
   {
     if (all.output_config.audit || all.output_config.hash_inv)
     {

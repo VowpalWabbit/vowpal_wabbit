@@ -447,9 +447,9 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::plt_setup(VW::setup_base_i
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  if (all.lc.loss->get_type() != "logistic")
+  if (all.loss_config.loss->get_type() != "logistic")
   {
-    THROW("--plt requires --loss_function=logistic, but instead found: " << all.lc.loss->get_type());
+    THROW("--plt requires --loss_function=logistic, but instead found: " << all.loss_config.loss->get_type());
   }
 
   tree->all = &all;
