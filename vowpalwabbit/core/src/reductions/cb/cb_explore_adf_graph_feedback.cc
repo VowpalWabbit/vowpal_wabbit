@@ -21,16 +21,12 @@
 #include "vw/core/vw_math.h"
 #include "vw/explore/explore.h"
 
-#include <Eigen/Core>
-#include <Eigen/Dense>
 #include <algorithm>
 #include <armadillo>
 #include <cmath>
 #include <ensmallen.hpp>
 #include <functional>
 #include <vector>
-
-using namespace Eigen;
 
 using namespace VW::cb_explore_adf;
 
@@ -302,6 +298,8 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
 
   arma::sp_mat G(true, locations, values, a_s.size(), a_s.size());
 
+  fhat.print("fhat: ");
+
   ConstrainedFunctionType f(fhat, G, _gamma);
 
   ens::AugLagrangian optimizer;
@@ -309,36 +307,57 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
   // optimizer.MaxIterations() = 1000;
   optimizer.Optimize(f, coordinates);
 
+  coordinates.print("coords before balancing: ");
+  for (size_t i = 0; i < a_s.size(); i++)
+  {
+    if (VW::math::are_same(static_cast<float>(coordinates[i]), 0.f) || coordinates[i] < 0.f) { coordinates[i] = 0.f; }
+  }
+
   float p_sum = 0;
   for (size_t i = 0; i < a_s.size(); i++) { p_sum += coordinates[i]; }
-
-  coordinates.print("coords before balancing: ");
 
   if (!VW::math::are_same(p_sum, 1.f))
   {
     float rest = 1.f - p_sum;
     float rest_each = rest / (a_s.size());
-    for (size_t i = 0; i < a_s.size(); i++) { coordinates[i] = coordinates[i] + rest_each; }
+    for (size_t i = 0; i < a_s.size(); i++)
+    {
+      if (coordinates[i] == 0.f) { continue; }
+      else { coordinates[i] = coordinates[i] + rest_each; }
+    }
   }
 
-  // TODO also need to triple check that no probabilities end up being negative
-  // just because the constraint is there does not mean that it can't be violated
+  // TODO also need to triple check that no probabilities are nan
+  // TODO json graph input
+  // TODO graph not provided or not a good/valid graph
+  // TODO how to properly link armadillo
+  // TODO can I replace aramdillo with Eigen dependency?
+  // TODO figure out what to actually do with gamma, do I want it to decay? I guess we do if it is the same as squarecb
+  // then
+  // TODO save_load the count
 
   coordinates.print("coords: ");
 
-  {
-    arma::vec probs(coordinates.n_rows - 1);
-    for (size_t i = 0; i < probs.n_rows; ++i)
-    {
-      probs(i) = coordinates[i];
-      if (std::isnan(probs(i))) { return; }
-    }
-    probs.print("final p: ");
+  arma::vec probs(coordinates.n_rows - 1);
+  for (size_t i = 0; i < probs.n_rows; ++i) { probs(i) = coordinates[i]; }
+  probs.print("final p: ");
 
-    float z = coordinates[coordinates.n_rows - 1];
-    std::cout << "VALUE IS: " << arma::dot(fhat, probs) + z << std::endl;
-  }
+  z = coordinates[coordinates.n_rows - 1];
+  std::cout << "VALUE IS: " << arma::dot(fhat, probs) + z << std::endl;
+
+  // set the new probabilities in the example
+  for (auto& as : a_s) { as.score = probs(as.action); }
+  std::sort(a_s.begin(), a_s.end(),
+      [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) { return a.score > b.score; });
 }
+
+// for unit testing I can get fhat from cb adf reduction
+// can I template out the constraint class and put it in a header file and use it for testing too?
+// I can use it in a test to find the z that would be proposed and that way I can have fhat, z, and p from the probs
+// and verify cvxpy? This will not work from the python side because I don't have access to the constraint class
+
+// in the unit test I can just plug in the expected probabilities but that is not enough for the python test is it?
+// maybe with tolerance?
 
 template <bool is_learn>
 void cb_explore_adf_graph_feedback::predict_or_learn_impl(VW::LEARNER::learner& base, multi_ex& examples)
@@ -391,16 +410,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_graph_feedb
   auto enabled = options.add_parse_and_check_necessary(new_options) && graph_feedback;
   if (!enabled) { return nullptr; }
 
-  if (options.was_supplied("cb_type"))
-  {
-    auto cb_type = options.get_typed_option<std::string>("cb_type").value();
-    if (cb_type != "mtr")
-    {
-      all.logger.err_warn(
-          "Only cb_type 'mtr' is currently supported with graph feedback, resetting to mtr. Input was: '{}'", cb_type);
-      options.replace("cb_type", "mtr");
-    }
-  }
+  if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
 
   auto base = require_multiline(stack_builder.setup_base_learner());
   all.example_parser->lbl_parser = VW::cb_label_parser_global;
@@ -417,7 +427,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_graph_feedb
                .set_input_label_type(VW::label_type_t::CB)
                .set_output_label_type(VW::label_type_t::CB)
                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
-               .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+               .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                .set_params_per_weight(problem_multiplier)
                .set_output_example_prediction(explore_type::output_example_prediction)
                .set_update_stats(explore_type::update_stats)
