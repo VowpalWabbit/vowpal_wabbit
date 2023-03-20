@@ -82,7 +82,8 @@ void merge_weights_with_save_resume(size_t length,
   {
     // There is no copy constructor for weights, so we have to copy manually.
     weight_copies.emplace_back(VW::dense_parameters::deep_copy(i));
-    VW::details::do_weighting(output_workspace.iwc.normalized_idx, length, adaptive_totals.data(), weight_copies.back());
+    VW::details::do_weighting(
+        output_workspace.iwc.normalized_idx, length, adaptive_totals.data(), weight_copies.back());
   }
 
   // Weights have already been reweighted, so just accumulate.
@@ -797,7 +798,10 @@ float compute_update(VW::reductions::gd& g, VW::example& ec)
   {
     float pred_per_update = sensitivity<sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare, false>(g, ec);
     float update_scale = get_scale<adaptive>(g, ec, ec.weight);
-    if (invariant) { update = all.loss_config.loss->get_update(ec.pred.scalar, ld.label, update_scale, pred_per_update); }
+    if (invariant)
+    {
+      update = all.loss_config.loss->get_update(ec.pred.scalar, ld.label, update_scale, pred_per_update);
+    }
     else { update = all.loss_config.loss->get_unsafe_update(ec.pred.scalar, ld.label, update_scale); }
     // changed from ec.partial_prediction to ld.prediction
     ec.updated_prediction += pred_per_update * update;

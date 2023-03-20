@@ -1146,14 +1146,14 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
 
   if (all.loss_config.l1_lambda < 0.f)
   {
-    *(all.output_runtime.trace_message) << "l1_lambda should be nonnegative: resetting from " << all.loss_config.l1_lambda
-                                        << " to 0" << endl;
+    *(all.output_runtime.trace_message) << "l1_lambda should be nonnegative: resetting from "
+                                        << all.loss_config.l1_lambda << " to 0" << endl;
     all.loss_config.l1_lambda = 0.f;
   }
   if (all.loss_config.l2_lambda < 0.f)
   {
-    *(all.output_runtime.trace_message) << "l2_lambda should be nonnegative: resetting from " << all.loss_config.l2_lambda
-                                        << " to 0" << endl;
+    *(all.output_runtime.trace_message) << "l2_lambda should be nonnegative: resetting from "
+                                        << all.loss_config.l2_lambda << " to 0" << endl;
     all.loss_config.l2_lambda = 0.f;
   }
   all.loss_config.reg_mode += (all.loss_config.l1_lambda > 0.) ? 1 : 0;

@@ -249,7 +249,8 @@ void freegrad_update_after_prediction(freegrad& fg, VW::example& ec)
 
   // Partial derivative of loss (Note that the weight of the examples ec is not accounted for at this stage. This is
   // done in inner_freegrad_update_after_prediction)
-  fg.update_data.update = fg.all->loss_config.loss->first_derivative(fg.all->sd.get(), ec.pred.scalar, ec.l.simple.label);
+  fg.update_data.update =
+      fg.all->loss_config.loss->first_derivative(fg.all->sd.get(), ec.pred.scalar, ec.l.simple.label);
 
   // Compute gradient norm
   VW::foreach_feature<freegrad_update_data, gradient_dot_w>(*fg.all, ec, fg.update_data);
@@ -390,8 +391,10 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::freegrad_setup(VW::setup_b
     fg_ptr->early_stop_thres = options.get_typed_option<uint64_t>("early_terminate").value();
   }
 
-  auto predict_ptr = (fg_ptr->all->output_config.audit || fg_ptr->all->output_config.hash_inv) ? predict<true> : predict<false>;
-  auto learn_ptr = (fg_ptr->all->output_config.audit || fg_ptr->all->output_config.hash_inv) ? learn_freegrad<true> : learn_freegrad<false>;
+  auto predict_ptr =
+      (fg_ptr->all->output_config.audit || fg_ptr->all->output_config.hash_inv) ? predict<true> : predict<false>;
+  auto learn_ptr = (fg_ptr->all->output_config.audit || fg_ptr->all->output_config.hash_inv) ? learn_freegrad<true>
+                                                                                             : learn_freegrad<false>;
   auto l = VW::LEARNER::make_bottom_learner(std::move(fg_ptr), learn_ptr, predict_ptr,
       stack_builder.get_setupfn_name(freegrad_setup), VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
                .set_learn_returns_prediction(true)

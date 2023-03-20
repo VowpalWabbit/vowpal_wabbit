@@ -184,7 +184,8 @@ void compute_expert_loss(data& sm, VW::example& ec)
   if VW_STD17_CONSTEXPR (is_learn)
   {
     const float label = ec.l.simple.label;
-    sm.alg_loss += sm.net_feature_weight * sm.m_all->loss_config.loss->get_loss(sm.m_all->sd.get(), sm.feature_pred, label);
+    sm.alg_loss +=
+        sm.net_feature_weight * sm.m_all->loss_config.loss->get_loss(sm.m_all->sd.get(), sm.feature_pred, label);
     sm.alg_loss *= inv_weight;
   }
 }
@@ -214,7 +215,8 @@ void update_marginal(data& sm, VW::example& ec)
           expert_pair& e = sm.expert_state[key];
           const float regret1 = sm.alg_loss -
               sm.m_all->loss_config.loss->get_loss(sm.m_all->sd.get(), static_cast<float>(m.first / m.second), label);
-          const float regret2 = sm.alg_loss - sm.m_all->loss_config.loss->get_loss(sm.m_all->sd.get(), sm.feature_pred, label);
+          const float regret2 =
+              sm.alg_loss - sm.m_all->loss_config.loss->get_loss(sm.m_all->sd.get(), sm.feature_pred, label);
 
           e.first.regret += regret1 * weight;
           e.first.abs_regret += regret1 * regret1 * weight;  // fabs(regret1);

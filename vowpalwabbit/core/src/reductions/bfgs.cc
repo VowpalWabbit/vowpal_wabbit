@@ -184,7 +184,8 @@ inline void add_precond(float& d, float f, float& fw) { (&fw)[W_COND] += d * f *
 
 void update_preconditioner(VW::workspace& all, VW::example& ec)
 {
-  float curvature = all.loss_config.loss->second_derivative(all.sd.get(), ec.pred.scalar, ec.l.simple.label) * ec.weight;
+  float curvature =
+      all.loss_config.loss->second_derivative(all.sd.get(), ec.pred.scalar, ec.l.simple.label) * ec.weight;
   VW::foreach_feature<float, add_precond>(all, ec, curvature);
 }
 
@@ -830,7 +831,10 @@ int process_pass(VW::workspace& all, bfgs& b)
         float t = static_cast<float>(b.curvature);
         b.curvature = VW::details::accumulate_scalar(all, t);  // Accumulate curvatures
       }
-      if (all.loss_config.l2_lambda > 0.) { b.curvature += regularizer_direction_magnitude(all, b, all.loss_config.l2_lambda); }
+      if (all.loss_config.l2_lambda > 0.)
+      {
+        b.curvature += regularizer_direction_magnitude(all, b, all.loss_config.l2_lambda);
+      }
       float dd = static_cast<float>(derivative_in_direction(all, b, b.mem, b.origin));
       if (b.curvature == 0. && dd != 0.)
       {

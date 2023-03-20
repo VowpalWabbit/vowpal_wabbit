@@ -134,8 +134,8 @@ void bs_predict_vote(VW::example& ec, const std::vector<double>& pred_vec)
   // ld.prediction = sum_labels/(float)counter; //replace line below for: "avg on votes" and get_loss()
   ec.pred.scalar = static_cast<float>(current_label);
 
-  // ec.loss = all.loss_config.loss->get_loss(all.sd, ld.prediction, ld.label) * ec.weight; //replace line below for: "avg on
-  // votes" and get_loss()
+  // ec.loss = all.loss_config.loss->get_loss(all.sd, ld.prediction, ld.label) * ec.weight; //replace line below for:
+  // "avg on votes" and get_loss()
   ec.loss = ((ec.pred.scalar == ec.l.simple.label) ? 0.f : 1.f) * ec.weight;
 }
 

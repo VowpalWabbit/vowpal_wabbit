@@ -553,7 +553,8 @@ void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
     if (!train_pool[i]) { continue; }
 
     fec = &(params.pool[i]->ex);
-    write_model_field_flat_example(*b, *fec, "_flat_example", false, all.parser_runtime.example_parser->lbl_parser, all.runtime_state.parse_mask);
+    write_model_field_flat_example(
+        *b, *fec, "_flat_example", false, all.parser_runtime.example_parser->lbl_parser, all.runtime_state.parse_mask);
     delete params.pool[i];
   }
 

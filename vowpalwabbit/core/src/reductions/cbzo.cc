@@ -236,7 +236,10 @@ void save_load(cbzo& data, VW::io_buf& model_file, bool read, bool text)
   if (read)
   {
     VW::details::initialize_regressor(all);
-    if (data.all->fc.initial_constant != 0.0f) { set_weight(all, VW::details::CONSTANT, data.all->fc.initial_constant); }
+    if (data.all->fc.initial_constant != 0.0f)
+    {
+      set_weight(all, VW::details::CONSTANT, data.all->fc.initial_constant);
+    }
   }
   if (model_file.num_files() > 0) { save_load_regressor(all, model_file, read, text); }
 }
