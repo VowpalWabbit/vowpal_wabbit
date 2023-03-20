@@ -90,15 +90,8 @@ inline float learn_node(plt& p, uint32_t n, learner& base, VW::example& ec)
   return ec.loss;
 }
 
-void learn(plt& p, learner& base, VW::example& ec)
+void get_nodes_to_update(plt& p, VW::multilabel_label& multilabels)
 {
-  auto multilabels = std::move(ec.l.multilabels);
-  VW::polyprediction pred = std::move(ec.pred);
-
-  double t = p.all->sd->t;
-  double weighted_holdout_examples = p.all->sd->weighted_holdout_examples;
-  p.all->sd->weighted_holdout_examples = 0;
-
   p.positive_nodes.clear();
   p.negative_nodes.clear();
 
@@ -139,7 +132,16 @@ void learn(plt& p, learner& base, VW::example& ec)
     }
   }
   else { p.negative_nodes.insert(0); }
+}
 
+void learn(plt& p, learner& base, VW::example& ec)
+{
+  auto multilabels = std::move(ec.l.multilabels);
+  VW::polyprediction pred = std::move(ec.pred);
+
+  get_nodes_to_update(p, multilabels);
+
+  double t = p.all->sd->t;
   float loss = 0;
   ec.l.simple = {1.f};
   ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
@@ -149,8 +151,6 @@ void learn(plt& p, learner& base, VW::example& ec)
   for (auto& n : p.negative_nodes) { loss += learn_node(p, n, base, ec); }
 
   p.all->sd->t = t;
-  p.all->sd->weighted_holdout_examples = weighted_holdout_examples;
-
   ec.loss = loss;
   ec.pred = std::move(pred);
   ec.l.multilabels = std::move(multilabels);
@@ -166,12 +166,37 @@ inline float predict_node(uint32_t n, learner& base, VW::example& ec)
   return sigmoid(ec.partial_prediction);
 }
 
+inline float evaluate_node(uint32_t n, learner& base, VW::example& ec)
+{
+  base.predict(ec, n);
+  return ec.loss;
+}
+
 template <bool threshold>
 void predict(plt& p, learner& base, VW::example& ec)
 {
   auto multilabels = std::move(ec.l.multilabels);
   VW::polyprediction pred = std::move(ec.pred);
 
+  // if true labels are present (e.g., predicting on holdout set),
+  // calculate training loss without updating base learner/weights
+  if (multilabels.label_v.size() > 0)
+  {
+    get_nodes_to_update(p, multilabels);
+
+    float loss = 0;
+    ec.l.simple = {1.f};
+    ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
+    for (auto& n : p.positive_nodes) { loss += evaluate_node(n, base, ec); }
+
+    ec.l.simple.label = -1.f;
+    for (auto& n : p.negative_nodes) { loss += evaluate_node(n, base, ec); }
+
+    ec.loss = loss;
+  }
+  else { ec.loss = 0; }
+
+  // start real prediction
   if (p.probabilities) { pred.a_s.clear(); }
   pred.multilabels.label_v.clear();
 
@@ -220,18 +245,21 @@ void predict(plt& p, learner& base, VW::example& ec)
       }
     }
 
-    // calculate evaluation measures
-    uint32_t tp = 0;
-    uint32_t pred_size = pred.multilabels.label_v.size();
-
-    for (uint32_t i = 0; i < pred_size; ++i)
+    // if there are true labels, calculate evaluation measures
+    if (p.true_labels.size() > 0)
     {
-      uint32_t pred_label = pred.multilabels.label_v[i];
-      if (p.true_labels.count(pred_label)) { ++tp; }
+      uint32_t tp = 0;
+      uint32_t pred_size = pred.multilabels.label_v.size();
+
+      for (uint32_t i = 0; i < pred_size; ++i)
+      {
+        uint32_t pred_label = pred.multilabels.label_v[i];
+        if (p.true_labels.count(pred_label)) { ++tp; }
+      }
+      p.tp += tp;
+      p.fp += static_cast<uint32_t>(pred_size) - tp;
+      p.fn += static_cast<uint32_t>(p.true_labels.size()) - tp;
     }
-    p.tp += tp;
-    p.fp += static_cast<uint32_t>(pred_size) - tp;
-    p.fn += static_cast<uint32_t>(p.true_labels.size()) - tp;
   }
 
   // top-k prediction
@@ -270,21 +298,23 @@ void predict(plt& p, learner& base, VW::example& ec)
       }
     }
 
-    // calculate precision and recall at
-    float tp_at = 0;
-    for (size_t i = 0; i < p.top_k; ++i)
+    // if there are true labels, calculate precision and recall at k
+    if (p.true_labels.size() > 0)
     {
-      uint32_t pred_label = pred.multilabels.label_v[i];
-      if (p.true_labels.count(pred_label)) { tp_at += 1; }
-      p.p_at[i] += tp_at / (i + 1);
-      if (p.true_labels.size() > 0) { p.r_at[i] += tp_at / p.true_labels.size(); }
+      float tp_at = 0;
+      for (size_t i = 0; i < p.top_k; ++i)
+      {
+        uint32_t pred_label = pred.multilabels.label_v[i];
+        if (p.true_labels.count(pred_label)) { tp_at += 1; }
+        p.p_at[i] += tp_at / (i + 1);
+        if (p.true_labels.size() > 0) { p.r_at[i] += tp_at / p.true_labels.size(); }
+      }
     }
   }
 
   ++p.ec_count;
   p.node_queue.clear();
 
-  ec.loss = 0;
   ec.pred = std::move(pred);
   ec.l.multilabels = std::move(multilabels);
 }
