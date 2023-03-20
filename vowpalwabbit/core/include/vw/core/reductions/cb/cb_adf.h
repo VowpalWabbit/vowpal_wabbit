@@ -28,29 +28,35 @@ public:
 
   cb_adf(VW::cb_type_t cb_type, bool rank_all, float clip_p, bool no_predict, size_t feature_width_above,
       VW::workspace* all)
-      : _no_predict(no_predict), _rank_all(rank_all), _clip_p(clip_p), _gen_cs(feature_width_above), _all(all)
+      : _no_predict(no_predict)
+      , _rank_all(rank_all)
+      , _clip_p(clip_p)
+      , _gen_cs_mtr(feature_width_above)
+      , _cb_type(cb_type)
+      , _all(all)
   {
-    _gen_cs.cb_type = cb_type;
   }
 
-  void set_scorer(VW::LEARNER::learner* scorer) { _gen_cs.scorer = scorer; }
+  void set_scorer(VW::LEARNER::learner* scorer) { _gen_cs_dr.scorer = scorer; }
 
   bool get_rank_all() const { return _rank_all; }
 
-  const VW::details::cb_to_cs_adf& get_gen_cs() const { return _gen_cs; }
-  VW::details::cb_to_cs_adf& get_gen_cs() { return _gen_cs; }
+  const VW::details::cb_to_cs_adf_dr& get_gen_cs_dr() const { return _gen_cs_dr; }
+  const VW::details::cb_to_cs_adf_mtr& get_gen_cs_mtr() const { return _gen_cs_mtr; }
+
+  VW::details::cb_to_cs_adf_dr& get_gen_cs_dr() { return _gen_cs_dr; }
+  VW::details::cb_to_cs_adf_mtr& get_gen_cs_mtr() { return _gen_cs_mtr; }
 
   const VW::version_struct* get_model_file_ver() const;
 
   bool learn_returns_prediction() const
   {
-    return ((_gen_cs.cb_type == VW::cb_type_t::MTR) && !_no_predict) || _gen_cs.cb_type == VW::cb_type_t::IPS ||
-        _gen_cs.cb_type == VW::cb_type_t::DR || _gen_cs.cb_type == VW::cb_type_t::DM ||
-        _gen_cs.cb_type == VW::cb_type_t::SM;
+    return ((_cb_type == VW::cb_type_t::MTR) && !_no_predict) || _cb_type == VW::cb_type_t::IPS ||
+        _cb_type == VW::cb_type_t::DR || _cb_type == VW::cb_type_t::DM || _cb_type == VW::cb_type_t::SM;
   }
 
-  VW::cb_class* known_cost() { return &_gen_cs.known_cost; }
-  const VW::cb_class* known_cost() const { return &_gen_cs.known_cost; }
+  VW::cb_class* known_cost() { return &_gen_cs_dr.known_cost; }
+  const VW::cb_class* known_cost() const { return &_gen_cs_dr.known_cost; }
 
 private:
   void learn_ips(VW::LEARNER::learner& base, VW::multi_ex& examples);
@@ -75,7 +81,9 @@ private:
   const bool _no_predict;
   const bool _rank_all;
   const float _clip_p;
-  VW::details::cb_to_cs_adf _gen_cs;
+  VW::details::cb_to_cs_adf_dr _gen_cs_dr;
+  VW::details::cb_to_cs_adf_mtr _gen_cs_mtr;
+  VW::cb_type_t _cb_type;
 
   VW::workspace* _all = nullptr;
 };

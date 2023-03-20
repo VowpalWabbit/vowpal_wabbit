@@ -184,7 +184,7 @@ void VW::reductions::cb_adf::learn_sm(learner& base, VW::multi_ex& examples)
 
 void VW::reductions::cb_adf::learn_dr(learner& base, VW::multi_ex& examples)
 {
-  details::gen_cs_example_dr<true>(_gen_cs, examples, _cs_labels, _clip_p);
+  details::gen_cs_example_dr<true>(_gen_cs_dr, examples, _cs_labels, _clip_p);
   details::cs_ldf_learn_or_predict<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, true, _offset);
 }
 
@@ -207,22 +207,22 @@ void VW::reductions::cb_adf::learn_mtr(learner& base, VW::multi_ex& examples)
   // Train on _one_ action (which requires up to 3 examples).
   // We must go through the cost sensitive classifier layer to get
   // proper feature handling.
-  gen_cs_example_mtr(_gen_cs, examples, _cs_labels, _offset_index);
-  uint32_t nf = static_cast<uint32_t>(examples[_gen_cs.mtr_example]->num_features);
-  float old_weight = examples[_gen_cs.mtr_example]->weight;
-  const float clipped_p = std::max(examples[_gen_cs.mtr_example]->l.cb.costs[0].probability, _clip_p);
-  examples[_gen_cs.mtr_example]->weight *= 1.f / clipped_p *
-      (static_cast<float>(_gen_cs.per_model_state[_offset_index].event_sum) /
-          static_cast<float>(_gen_cs.per_model_state[_offset_index].action_sum));
+  gen_cs_example_mtr(_gen_cs_mtr, examples, _cs_labels, _offset_index);
+  uint32_t nf = static_cast<uint32_t>(examples[_gen_cs_mtr.mtr_example]->num_features);
+  float old_weight = examples[_gen_cs_mtr.mtr_example]->weight;
+  const float clipped_p = std::max(examples[_gen_cs_mtr.mtr_example]->l.cb.costs[0].probability, _clip_p);
+  examples[_gen_cs_mtr.mtr_example]->weight *= 1.f / clipped_p *
+      (static_cast<float>(_gen_cs_mtr.per_model_state[_offset_index].event_sum) /
+          static_cast<float>(_gen_cs_mtr.per_model_state[_offset_index].action_sum));
 
-  std::swap(_gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
+  std::swap(_gen_cs_mtr.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
   // TODO!!! cb_labels are not getting properly restored (empty costs are
   // dropped)
   details::cs_ldf_learn_or_predict<true>(
-      base, _gen_cs.mtr_ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
-  examples[_gen_cs.mtr_example]->num_features = nf;
-  examples[_gen_cs.mtr_example]->weight = old_weight;
-  std::swap(_gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
+      base, _gen_cs_mtr.mtr_ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
+  examples[_gen_cs_mtr.mtr_example]->num_features = nf;
+  examples[_gen_cs_mtr.mtr_example]->weight = old_weight;
+  std::swap(_gen_cs_mtr.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
 
   if (PREDICT)
   {  // Return the saved prediction
@@ -236,8 +236,8 @@ void VW::reductions::cb_adf::learn(learner& base, VW::multi_ex& ec_seq)
   {
     _offset = ec_seq[0]->ft_offset;
     _offset_index = _offset / _all->weights.stride();
-    _gen_cs.known_cost = VW::get_observed_cost_or_default_cb_adf(ec_seq);  // need to set for test case
-    switch (_gen_cs.cb_type)
+    _gen_cs_dr.known_cost = VW::get_observed_cost_or_default_cb_adf(ec_seq);  // need to set for test case
+    switch (_cb_type)
     {
       case VW::cb_type_t::DR:
         learn_dr(base, ec_seq);
@@ -264,7 +264,7 @@ void VW::reductions::cb_adf::predict(learner& base, VW::multi_ex& ec_seq)
 {
   _offset = ec_seq[0]->ft_offset;
   _offset_index = _offset / _all->weights.stride();
-  _gen_cs.known_cost = VW::get_observed_cost_or_default_cb_adf(ec_seq);  // need to set for test case
+  _gen_cs_dr.known_cost = VW::get_observed_cost_or_default_cb_adf(ec_seq);  // need to set for test case
   details::gen_cs_test_example(ec_seq, _cs_labels);                     // create test labels.
   details::cs_ldf_learn_or_predict<false>(base, ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
 }
@@ -282,7 +282,10 @@ bool VW::reductions::cb_adf::update_statistics(
   float loss = 0.;
 
   bool labeled_example = true;
-  if (_gen_cs.known_cost.probability > 0) { loss = get_cost_estimate(_gen_cs.known_cost, _gen_cs.pred_scores, action); }
+  if (_gen_cs_dr.known_cost.probability > 0)
+  {
+    loss = get_cost_estimate(_gen_cs_dr.known_cost, _gen_cs_dr.pred_scores, action);
+  }
   else { labeled_example = false; }
 
   bool holdout_example = labeled_example;
@@ -325,7 +328,7 @@ void print_update_cb_adf(VW::workspace& all, VW::shared_data& /* sd */, const VW
 {
   if (ec_seq.empty()) { return; }
 
-  const bool labeled_example = data.get_gen_cs().known_cost.probability > 0;
+  const bool labeled_example = data.get_gen_cs_dr().known_cost.probability > 0;
   const auto& ec = *ec_seq.front();
   if (labeled_example) { VW::details::print_update_cb(all, !labeled_example, ec, &ec_seq, true, data.known_cost()); }
   else { VW::details::print_update_cb(all, !labeled_example, ec, &ec_seq, true, nullptr); }
@@ -340,13 +343,13 @@ void save_load(VW::reductions::cb_adf& c, VW::io_buf& model_file, bool read, boo
   }
 
   std::stringstream msg;
-  msg << "event_sum " << c.get_gen_cs().per_model_state[0].event_sum << "\n";
-  VW::details::bin_text_read_write_fixed(model_file, (char*)&c.get_gen_cs().per_model_state[0].event_sum,
-      sizeof(c.get_gen_cs().per_model_state[0].event_sum), read, msg, text);
+  msg << "event_sum " << c.get_gen_cs_mtr().per_model_state[0].event_sum << "\n";
+  VW::details::bin_text_read_write_fixed(model_file, (char*)&c.get_gen_cs_mtr().per_model_state[0].event_sum,
+      sizeof(c.get_gen_cs_mtr().per_model_state[0].event_sum), read, msg, text);
 
-  msg << "action_sum " << c.get_gen_cs().per_model_state[0].action_sum << "\n";
-  VW::details::bin_text_read_write_fixed(model_file, (char*)&c.get_gen_cs().per_model_state[0].action_sum,
-      sizeof(c.get_gen_cs().per_model_state[0].action_sum), read, msg, text);
+  msg << "action_sum " << c.get_gen_cs_mtr().per_model_state[0].action_sum << "\n";
+  VW::details::bin_text_read_write_fixed(model_file, (char*)&c.get_gen_cs_mtr().per_model_state[0].action_sum,
+      sizeof(c.get_gen_cs_mtr().per_model_state[0].action_sum), read, msg, text);
 }
 
 void cb_adf_merge(const std::vector<float>& /* per_model_weights */,
@@ -354,10 +357,12 @@ void cb_adf_merge(const std::vector<float>& /* per_model_weights */,
 {
   for (const auto* source : sources)
   {
-    for (size_t i = 0; i < output_data.get_gen_cs().per_model_state.size(); i++)
+    for (size_t i = 0; i < output_data.get_gen_cs_mtr().per_model_state.size(); i++)
     {
-      output_data.get_gen_cs().per_model_state[i].event_sum += source->get_gen_cs().per_model_state[i].event_sum;
-      output_data.get_gen_cs().per_model_state[i].action_sum += source->get_gen_cs().per_model_state[i].action_sum;
+      output_data.get_gen_cs_mtr().per_model_state[i].event_sum +=
+          source->get_gen_cs_mtr().per_model_state[i].event_sum;
+      output_data.get_gen_cs_mtr().per_model_state[i].action_sum +=
+          source->get_gen_cs_mtr().per_model_state[i].action_sum;
     }
   }
 }
@@ -365,24 +370,24 @@ void cb_adf_merge(const std::vector<float>& /* per_model_weights */,
 void cb_adf_add(
     const VW::reductions::cb_adf& data1, const VW::reductions::cb_adf& data2, VW::reductions::cb_adf& data_out)
 {
-  for (size_t i = 0; i < data1.get_gen_cs().per_model_state.size(); i++)
+  for (size_t i = 0; i < data1.get_gen_cs_mtr().per_model_state.size(); i++)
   {
-    data_out.get_gen_cs().per_model_state[i].event_sum =
-        data1.get_gen_cs().per_model_state[i].event_sum + data2.get_gen_cs().per_model_state[i].event_sum;
-    data_out.get_gen_cs().per_model_state[i].action_sum =
-        data1.get_gen_cs().per_model_state[i].action_sum + data2.get_gen_cs().per_model_state[i].action_sum;
+    data_out.get_gen_cs_mtr().per_model_state[i].event_sum =
+        data1.get_gen_cs_mtr().per_model_state[i].event_sum + data2.get_gen_cs_mtr().per_model_state[i].event_sum;
+    data_out.get_gen_cs_mtr().per_model_state[i].action_sum =
+        data1.get_gen_cs_mtr().per_model_state[i].action_sum + data2.get_gen_cs_mtr().per_model_state[i].action_sum;
   }
 }
 
 void cb_adf_subtract(
     const VW::reductions::cb_adf& data1, const VW::reductions::cb_adf& data2, VW::reductions::cb_adf& data_out)
 {
-  for (size_t i = 0; i < data1.get_gen_cs().per_model_state.size(); i++)
+  for (size_t i = 0; i < data1.get_gen_cs_mtr().per_model_state.size(); i++)
   {
-    data_out.get_gen_cs().per_model_state[i].event_sum =
-        data1.get_gen_cs().per_model_state[i].event_sum - data2.get_gen_cs().per_model_state[i].event_sum;
-    data_out.get_gen_cs().per_model_state[i].action_sum =
-        data1.get_gen_cs().per_model_state[i].action_sum - data2.get_gen_cs().per_model_state[i].action_sum;
+    data_out.get_gen_cs_mtr().per_model_state[i].event_sum =
+        data1.get_gen_cs_mtr().per_model_state[i].event_sum - data2.get_gen_cs_mtr().per_model_state[i].event_sum;
+    data_out.get_gen_cs_mtr().per_model_state[i].action_sum =
+        data1.get_gen_cs_mtr().per_model_state[i].action_sum - data2.get_gen_cs_mtr().per_model_state[i].action_sum;
   }
 }
 
