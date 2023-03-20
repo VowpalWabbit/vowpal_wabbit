@@ -120,8 +120,8 @@ std::shared_ptr<VW::LEARNER::learner> expreplay_setup(VW::setup_base_i& stack_bu
   for (uint64_t i = 0; i < er->N; i++)
   {
     er->buf.push_back(new VW::example);
-    er->buf.back()->interactions = &all.fc.interactions;
-    er->buf.back()->extent_interactions = &all.fc.extent_interactions;
+    er->buf.back()->interactions = &all.feature_tweaks_config.interactions;
+    er->buf.back()->extent_interactions = &all.feature_tweaks_config.extent_interactions;
   }
   er->filled.resize(er->N, false);
 

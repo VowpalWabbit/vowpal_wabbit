@@ -1493,7 +1493,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i&
     g->early_stop_thres = options.get_typed_option<uint64_t>("early_terminate").value();
   }
 
-  g->initial_constant = all.fc.initial_constant;
+  g->initial_constant = all.feature_tweaks_config.initial_constant;
 
   if (sgd || adaptive || invariant || normalized)
   {

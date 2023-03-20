@@ -304,14 +304,14 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::automl_setup(VW::setup_bas
 
   // override and clear all the global interactions
   // see parser.cc line 740
-  all.fc.interactions.clear();
-  assert(all.fc.interactions.empty() == true);
+  all.feature_tweaks_config.interactions.clear();
+  assert(all.feature_tweaks_config.interactions.empty() == true);
 
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs
   auto learner = stack_builder.setup_base_learner(max_live_configs);
 
-  assert(all.fc.interactions.empty() == true);
+  assert(all.feature_tweaks_config.interactions.empty() == true);
 
   assert(all.weights.sparse == false);
   if (all.weights.sparse) THROW("--automl does not work with sparse weights");

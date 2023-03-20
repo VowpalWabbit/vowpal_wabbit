@@ -182,8 +182,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::baseline_setup(VW::setup_b
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   // initialize baseline example's interactions.
-  data->ec.interactions = &all.fc.interactions;
-  data->ec.extent_interactions = &all.fc.extent_interactions;
+  data->ec.interactions = &all.feature_tweaks_config.interactions;
+  data->ec.extent_interactions = &all.feature_tweaks_config.extent_interactions;
   data->all = &all;
 
   const auto loss_function_type = all.loss_config.loss->get_type();

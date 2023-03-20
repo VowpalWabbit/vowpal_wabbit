@@ -497,8 +497,8 @@ VW::example* my_empty_example0(vw_ptr vw, size_t labelType)
   VW::label_parser* lp = get_label_parser(&*vw, labelType);
   VW::example* ec = new VW::example;
   lp->default_label(ec->l);
-  ec->interactions = &vw->fc.interactions;
-  ec->extent_interactions = &vw->fc.extent_interactions;
+  ec->interactions = &vw->feature_tweaks_config.interactions;
+  ec->extent_interactions = &vw->feature_tweaks_config.extent_interactions;
   return ec;
 }
 
@@ -812,14 +812,15 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
   ae->reset_total_sum_feat_sq();
   ae->loss = 0.;
 
-  if (all.fc.ignore_some) { THROW("Cannot unsetup example when some namespaces are ignored"); }
+  if (all.feature_tweaks_config.ignore_some) { THROW("Cannot unsetup example when some namespaces are ignored"); }
 
-  if (all.fc.skip_gram_transformer != nullptr && !all.fc.skip_gram_transformer->get_initial_ngram_definitions().empty())
+  if (all.feature_tweaks_config.skip_gram_transformer != nullptr &&
+      !all.feature_tweaks_config.skip_gram_transformer->get_initial_ngram_definitions().empty())
   {
     THROW("Cannot unsetup example when ngrams are in use");
   }
 
-  if (all.fc.add_constant)
+  if (all.feature_tweaks_config.add_constant)
   {
     ae->feature_space[VW::details::CONSTANT_NAMESPACE].clear();
     int hit_constant = -1;

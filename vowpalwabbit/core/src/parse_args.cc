@@ -121,7 +121,7 @@ void VW::details::parse_dictionary_argument(VW::workspace& all, const std::strin
     s.remove_prefix(2);
   }
 
-  std::string file_name = find_in_path(all.fc.dictionary_path, std::string(s));
+  std::string file_name = find_in_path(all.feature_tweaks_config.dictionary_path, std::string(s));
   if (file_name.empty()) THROW("error: cannot find dictionary '" << s << "' in path; try adding --dictionary_path")
 
   bool is_gzip = VW::ends_with(file_name, ".gz");
@@ -147,11 +147,12 @@ void VW::details::parse_dictionary_argument(VW::workspace& all, const std::strin
   }
 
   // see if we've already read this dictionary
-  for (size_t id = 0; id < all.fc.loaded_dictionaries.size(); id++)
+  for (size_t id = 0; id < all.feature_tweaks_config.loaded_dictionaries.size(); id++)
   {
-    if (all.fc.loaded_dictionaries[id].file_hash == fd_hash)
+    if (all.feature_tweaks_config.loaded_dictionaries[id].file_hash == fd_hash)
     {
-      all.fc.namespace_dictionaries[static_cast<size_t>(ns)].push_back(all.fc.loaded_dictionaries[id].dict);
+      all.feature_tweaks_config.namespace_dictionaries[static_cast<size_t>(ns)].push_back(
+          all.feature_tweaks_config.loaded_dictionaries[id].dict);
       return;
     }
   }
@@ -239,9 +240,9 @@ void VW::details::parse_dictionary_argument(VW::workspace& all, const std::strin
                                         << (map->size() == 1 ? "" : "s") << endl;
   }
 
-  all.fc.namespace_dictionaries[static_cast<size_t>(ns)].push_back(map);
+  all.feature_tweaks_config.namespace_dictionaries[static_cast<size_t>(ns)].push_back(map);
   details::dictionary_info info = {std::string{s}, fd_hash, map};
-  all.fc.loaded_dictionaries.push_back(info);
+  all.feature_tweaks_config.loaded_dictionaries.push_back(info);
 }
 
 void parse_affix_argument(VW::workspace& all, const std::string& str)
@@ -279,8 +280,8 @@ void parse_affix_argument(VW::workspace& all, const std::string& str)
       }
 
       uint16_t afx = (len << 1) | (prefix & 0x1);
-      all.fc.affix_features[ns] <<= 4;
-      all.fc.affix_features[ns] |= afx;
+      all.feature_tweaks_config.affix_features[ns] <<= 4;
+      all.feature_tweaks_config.affix_features[ns] |= afx;
 
       p = strtok_s(nullptr, ",", &next_token);
     }
@@ -576,7 +577,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
                .keep())
       .add(make_option("bit_precision", new_bits).short_name("b").help("Number of bits in the feature table"))
       .add(make_option("noconstant", noconstant).keep().help("Don't add a constant feature"))
-      .add(make_option("constant", all.fc.initial_constant)
+      .add(make_option("constant", all.feature_tweaks_config.initial_constant)
                .default_value(0.f)
                .short_name("C")
                .help("Set initial value of constant"))
@@ -586,7 +587,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
                .help("Generate skips in N grams. This in conjunction with the ngram tag can be used to generate "
                      "generalized n-skip-k-gram. To generate n-skips for a single namespace 'foo', arg should be fN."))
       .add(
-          make_option("feature_limit", all.fc.limit_strings)
+          make_option("feature_limit", all.feature_tweaks_config.limit_strings)
               .help("Limit to N unique features per namespace. To apply to a single namespace 'foo', arg should be fN"))
       .add(make_option("affix", affix)
                .keep()
@@ -608,7 +609,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
                .experimental()
                .help("Create feature interactions of any level between namespaces by specifying the full "
                      "name of each namespace."))
-      .add(make_option("permutations", all.fc.permutations)
+      .add(make_option("permutations", all.feature_tweaks_config.permutations)
                .help("Use permutations instead of combinations for feature interactions of same namespace"))
       .add(make_option("leave_duplicate_interactions", leave_duplicate_interactions)
                .help("Don't remove interactions with duplicate combinations of namespaces. For ex. this is a "
@@ -626,8 +627,8 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     for (auto& spelling_n : spelling_ns)
     {
       spelling_n = VW::decode_inline_hex(spelling_n, all.logger);
-      if (spelling_n[0] == '_') { all.fc.spelling_features[static_cast<unsigned char>(' ')] = true; }
-      else { all.fc.spelling_features[static_cast<size_t>(spelling_n[0])] = true; }
+      if (spelling_n[0] == '_') { all.feature_tweaks_config.spelling_features[static_cast<unsigned char>(' ')] = true; }
+      else { all.feature_tweaks_config.spelling_features[static_cast<size_t>(spelling_n[0])] = true; }
     }
   }
 
@@ -653,13 +654,15 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     std::transform(skip_strings.begin(), skip_strings.end(), std::back_inserter(hex_decoded_skip_strings),
         [&](const std::string& arg) { return VW::decode_inline_hex(arg, all.logger); });
 
-    all.fc.skip_gram_transformer = VW::make_unique<VW::kskip_ngram_transformer>(VW::kskip_ngram_transformer::build(
-        hex_decoded_ngram_strings, hex_decoded_skip_strings, all.output_config.quiet, all.logger));
+    all.feature_tweaks_config.skip_gram_transformer =
+        VW::make_unique<VW::kskip_ngram_transformer>(VW::kskip_ngram_transformer::build(
+            hex_decoded_ngram_strings, hex_decoded_skip_strings, all.output_config.quiet, all.logger));
   }
 
   if (options.was_supplied("feature_limit"))
   {
-    VW::details::compile_limits(all.fc.limit_strings, all.fc.limit, all.output_config.quiet, all.logger);
+    VW::details::compile_limits(
+        all.feature_tweaks_config.limit_strings, all.feature_tweaks_config.limit, all.output_config.quiet, all.logger);
   }
 
   if (options.was_supplied("bit_precision"))
@@ -677,7 +680,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
   // prepare namespace interactions
   std::vector<std::vector<VW::namespace_index>> decoded_interactions;
 
-  if ( ( (!all.fc.interactions.empty() && /*data was restored from old model file directly to v_array and will be overriden automatically*/
+  if ( ( (!all.feature_tweaks_config.interactions.empty() && /*data was restored from old model file directly to v_array and will be overriden automatically*/
           (options.was_supplied("quadratic") || options.was_supplied("cubic") || options.was_supplied("interactions")) ) )
        ||
        interactions_settings_duplicated /*settings were restored from model file to file_options and overriden by params from command line*/)
@@ -686,7 +689,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
         "model file has set of {{-q, --cubic, --interactions}} settings stored, but they'll be "
         "OVERRIDDEN by set of {{-q, --cubic, --interactions}} settings from command line.");
     // in case arrays were already filled in with values from old model file - reset them
-    if (!all.fc.interactions.empty()) { all.fc.interactions.clear(); }
+    if (!all.feature_tweaks_config.interactions.empty()) { all.feature_tweaks_config.interactions.clear(); }
   }
 
   if (options.was_supplied("quadratic"))
@@ -775,7 +778,7 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
           sorted_cnt);
     }
 
-    all.fc.interactions = std::move(decoded_interactions);
+    all.feature_tweaks_config.interactions = std::move(decoded_interactions);
   }
 
   if (options.was_supplied("experimental_full_name_interactions"))
@@ -785,33 +788,35 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
       auto parsed = VW::details::parse_full_name_interactions(all, i);
       if (parsed.size() < 2) { THROW("Feature interactions must involve at least two namespaces") }
       std::sort(parsed.begin(), parsed.end());
-      all.fc.extent_interactions.push_back(parsed);
+      all.feature_tweaks_config.extent_interactions.push_back(parsed);
     }
-    std::sort(all.fc.extent_interactions.begin(), all.fc.extent_interactions.end());
+    std::sort(
+        all.feature_tweaks_config.extent_interactions.begin(), all.feature_tweaks_config.extent_interactions.end());
     if (!leave_duplicate_interactions)
     {
-      all.fc.extent_interactions.erase(
-          std::unique(all.fc.extent_interactions.begin(), all.fc.extent_interactions.end()),
-          all.fc.extent_interactions.end());
+      all.feature_tweaks_config.extent_interactions.erase(
+          std::unique(all.feature_tweaks_config.extent_interactions.begin(),
+              all.feature_tweaks_config.extent_interactions.end()),
+          all.feature_tweaks_config.extent_interactions.end());
     }
   }
 
   for (size_t i = 0; i < VW::NUM_NAMESPACES; i++)
   {
-    all.fc.ignore[i] = false;
-    all.fc.ignore_linear[i] = false;
+    all.feature_tweaks_config.ignore[i] = false;
+    all.feature_tweaks_config.ignore_linear[i] = false;
   }
-  all.fc.ignore_some = false;
-  all.fc.ignore_some_linear = false;
+  all.feature_tweaks_config.ignore_some = false;
+  all.feature_tweaks_config.ignore_some_linear = false;
 
   if (options.was_supplied("ignore"))
   {
-    all.fc.ignore_some = true;
+    all.feature_tweaks_config.ignore_some = true;
 
     for (auto& i : ignores)
     {
       i = VW::decode_inline_hex(i, all.logger);
-      for (auto j : i) { all.fc.ignore[static_cast<size_t>(static_cast<unsigned char>(j))] = true; }
+      for (auto j : i) { all.feature_tweaks_config.ignore[static_cast<size_t>(static_cast<unsigned char>(j))] = true; }
     }
 
     if (!all.output_config.quiet)
@@ -819,7 +824,10 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
       *(all.output_runtime.trace_message) << "ignoring namespaces beginning with:";
       for (size_t i = 0; i < VW::NUM_NAMESPACES; ++i)
       {
-        if (all.fc.ignore[i]) { *(all.output_runtime.trace_message) << " " << static_cast<unsigned char>(i); }
+        if (all.feature_tweaks_config.ignore[i])
+        {
+          *(all.output_runtime.trace_message) << " " << static_cast<unsigned char>(i);
+        }
       }
       *(all.output_runtime.trace_message) << endl;
     }
@@ -827,12 +835,15 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
 
   if (options.was_supplied("ignore_linear"))
   {
-    all.fc.ignore_some_linear = true;
+    all.feature_tweaks_config.ignore_some_linear = true;
 
     for (auto& i : ignore_linears)
     {
       i = VW::decode_inline_hex(i, all.logger);
-      for (auto j : i) { all.fc.ignore_linear[static_cast<size_t>(static_cast<unsigned char>(j))] = true; }
+      for (auto j : i)
+      {
+        all.feature_tweaks_config.ignore_linear[static_cast<size_t>(static_cast<unsigned char>(j))] = true;
+      }
     }
 
     if (!all.output_config.quiet)
@@ -840,7 +851,10 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
       *(all.output_runtime.trace_message) << "ignoring linear terms for namespaces beginning with:";
       for (size_t i = 0; i < VW::NUM_NAMESPACES; ++i)
       {
-        if (all.fc.ignore_linear[i]) { *(all.output_runtime.trace_message) << " " << static_cast<unsigned char>(i); }
+        if (all.feature_tweaks_config.ignore_linear[i])
+        {
+          *(all.output_runtime.trace_message) << " " << static_cast<unsigned char>(i);
+        }
       }
       *(all.output_runtime.trace_message) << endl;
     }
@@ -855,25 +869,29 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
       const auto& feature_name = std::get<1>(namespace_and_feature);
       if (!(ns.empty() || feature_name.empty()))
       {
-        if (all.fc.ignore_features_dsjson.find(ns) == all.fc.ignore_features_dsjson.end())
+        if (all.feature_tweaks_config.ignore_features_dsjson.find(ns) ==
+            all.feature_tweaks_config.ignore_features_dsjson.end())
         {
-          all.fc.ignore_features_dsjson.insert({ns, std::set<std::string>{feature_name}});
+          all.feature_tweaks_config.ignore_features_dsjson.insert({ns, std::set<std::string>{feature_name}});
         }
-        else { all.fc.ignore_features_dsjson.at(ns).insert(feature_name); }
+        else { all.feature_tweaks_config.ignore_features_dsjson.at(ns).insert(feature_name); }
       }
     }
   }
 
   if (options.was_supplied("keep"))
   {
-    for (size_t i = 0; i < VW::NUM_NAMESPACES; i++) { all.fc.ignore[i] = true; }
+    for (size_t i = 0; i < VW::NUM_NAMESPACES; i++) { all.feature_tweaks_config.ignore[i] = true; }
 
-    all.fc.ignore_some = true;
+    all.feature_tweaks_config.ignore_some = true;
 
     for (auto& i : keeps)
     {
       i = VW::decode_inline_hex(i, all.logger);
-      for (const auto& j : i) { all.fc.ignore[static_cast<size_t>(static_cast<unsigned char>(j))] = false; }
+      for (const auto& j : i)
+      {
+        all.feature_tweaks_config.ignore[static_cast<size_t>(static_cast<unsigned char>(j))] = false;
+      }
     }
 
     if (!all.output_config.quiet)
@@ -881,19 +899,25 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
       *(all.output_runtime.trace_message) << "using namespaces beginning with:";
       for (size_t i = 0; i < VW::NUM_NAMESPACES; ++i)
       {
-        if (!all.fc.ignore[i]) { *(all.output_runtime.trace_message) << " " << static_cast<unsigned char>(i); }
+        if (!all.feature_tweaks_config.ignore[i])
+        {
+          *(all.output_runtime.trace_message) << " " << static_cast<unsigned char>(i);
+        }
       }
       *(all.output_runtime.trace_message) << endl;
     }
   }
 
   // --redefine param code
-  all.fc.redefine_some = false;  // false by default
+  all.feature_tweaks_config.redefine_some = false;  // false by default
 
   if (options.was_supplied("redefine"))
   {
     // initial values: i-th namespace is redefined to i itself
-    for (size_t i = 0; i < VW::NUM_NAMESPACES; i++) { all.fc.redefine[i] = static_cast<unsigned char>(i); }
+    for (size_t i = 0; i < VW::NUM_NAMESPACES; i++)
+    {
+      all.feature_tweaks_config.redefine[i] = static_cast<unsigned char>(i);
+    }
 
     // note: --redefine declaration order is matter
     // so --redefine :=L --redefine ab:=M  --ignore L  will ignore all except a and b under new M namspace
@@ -928,13 +952,13 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
             "target namespace.",
             new_namespace);
       }
-      all.fc.redefine_some = true;
+      all.feature_tweaks_config.redefine_some = true;
 
       // case ':=S' doesn't require any additional code as new_namespace = ' ' by default
 
       if (operator_pos == arg_len)
       {  // S is empty, default namespace shall be used
-        all.fc.redefine[static_cast<int>(' ')] = new_namespace;
+        all.feature_tweaks_config.redefine[static_cast<int>(' ')] = new_namespace;
       }
       else
       {
@@ -942,11 +966,11 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
         {
           // all namespaces from S are redefined to N
           unsigned char c = argument[i];
-          if (c != ':') { all.fc.redefine[c] = new_namespace; }
+          if (c != ':') { all.feature_tweaks_config.redefine[c] = new_namespace; }
           else
           {
             // wildcard found: redefine all except default and break
-            for (size_t j = 0; j < VW::NUM_NAMESPACES; j++) { all.fc.redefine[j] = new_namespace; }
+            for (size_t j = 0; j < VW::NUM_NAMESPACES; j++) { all.feature_tweaks_config.redefine[j] = new_namespace; }
             break;  // break processing S
           }
         }
@@ -960,10 +984,10 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
     {
       for (const std::string& path : dictionary_path)
       {
-        if (directory_exists(path)) { all.fc.dictionary_path.push_back(path); }
+        if (directory_exists(path)) { all.feature_tweaks_config.dictionary_path.push_back(path); }
       }
     }
-    if (directory_exists(".")) { all.fc.dictionary_path.emplace_back("."); }
+    if (directory_exists(".")) { all.feature_tweaks_config.dictionary_path.emplace_back("."); }
 
 #if _WIN32
     std::string path_env_var;
@@ -986,15 +1010,15 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
       size_t index = path_env_var.find(delimiter);
       while (index != std::string::npos)
       {
-        all.fc.dictionary_path.push_back(path_env_var.substr(previous, index - previous));
+        all.feature_tweaks_config.dictionary_path.push_back(path_env_var.substr(previous, index - previous));
         previous = index + 1;
         index = path_env_var.find(delimiter, previous);
       }
-      all.fc.dictionary_path.push_back(path_env_var.substr(previous));
+      all.feature_tweaks_config.dictionary_path.push_back(path_env_var.substr(previous));
     }
   }
 
-  if (noconstant) { all.fc.add_constant = false; }
+  if (noconstant) { all.feature_tweaks_config.add_constant = false; }
 }
 
 void parse_example_tweaks(options_i& options, VW::workspace& all)

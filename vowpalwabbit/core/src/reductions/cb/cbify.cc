@@ -778,8 +778,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cbify_setup(VW::setup_base
 
     if (data->use_adf)
     {
-      data->adf_data.init_adf_data(
-          num_actions, base->feature_width_below, all.fc.interactions, all.fc.extent_interactions);
+      data->adf_data.init_adf_data(num_actions, base->feature_width_below, all.feature_tweaks_config.interactions,
+          all.feature_tweaks_config.extent_interactions);
     }
 
     if (use_cs)

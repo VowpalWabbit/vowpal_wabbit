@@ -63,7 +63,7 @@ int main(int argc, char* argv[])
 
   // global model params
   std::vector<unsigned char> first_pair;
-  for (auto const& i : model->fc.interactions)
+  for (auto const& i : model->feature_tweaks_config.interactions)
   {
     if (i.size() == 2)
     {

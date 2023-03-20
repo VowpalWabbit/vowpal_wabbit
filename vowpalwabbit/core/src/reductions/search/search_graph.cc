@@ -339,7 +339,7 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, VW::multi_ex
   ec[n]->num_features += ec[n]->feature_space[VW::details::NEIGHBOR_NAMESPACE].size();
 
   VW::workspace& all = sch.get_vw_pointer_unsafe();
-  for (const auto& i : all.fc.interactions)
+  for (const auto& i : all.feature_tweaks_config.interactions)
   {
     if (i.size() != 2) { continue; }
     int i0 = static_cast<int>(i[0]);

@@ -403,9 +403,9 @@ void scorer_example(emt_tree& b, const emt_example& ex1, const emt_example& ex2)
     out.interactions->clear();
     out.interactions->push_back({X_NS, Z_NS});
 
-    b.all->fc.ignore_some_linear = true;
-    b.all->fc.ignore_linear[X_NS] = true;
-    b.all->fc.ignore_linear[Z_NS] = true;
+    b.all->feature_tweaks_config.ignore_some_linear = true;
+    b.all->feature_tweaks_config.ignore_linear[X_NS] = true;
+    b.all->feature_tweaks_config.ignore_linear[Z_NS] = true;
 
     scorer_features(ex1.full, out.feature_space[X_NS]);
     scorer_features(ex2.full, out.feature_space[Z_NS]);
@@ -623,7 +623,7 @@ void node_predict(emt_tree& b, learner& base, emt_node& cn, emt_example& ex, VW:
 
 void emt_predict(emt_tree& b, learner& base, VW::example& ec)
 {
-  b.all->fc.ignore_some_linear = false;
+  b.all->feature_tweaks_config.ignore_some_linear = false;
   emt_example ex(*b.all, &ec);
 
   emt_node& cn = *tree_route(b, ex);
@@ -633,7 +633,7 @@ void emt_predict(emt_tree& b, learner& base, VW::example& ec)
 
 void emt_learn(emt_tree& b, learner& base, VW::example& ec)
 {
-  b.all->fc.ignore_some_linear = false;
+  b.all->feature_tweaks_config.ignore_some_linear = false;
   auto ex = VW::make_unique<emt_example>(*b.all, &ec);
 
   emt_node& cn = *tree_route(b, *ex);

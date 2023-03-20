@@ -227,9 +227,10 @@ void VW::details::save_load_header(VW::workspace& all, VW::io_buf& model_file, b
         // Only the read path is implemented since this is for old version read support.
         bytes_read_write += VW::details::bin_text_read_write_fixed_validated(model_file, pair, 2, read, msg, text);
         std::vector<VW::namespace_index> temp(pair, *(&pair + 1));
-        if (std::count(all.fc.interactions.begin(), all.fc.interactions.end(), temp) == 0)
+        if (std::count(all.feature_tweaks_config.interactions.begin(), all.feature_tweaks_config.interactions.end(),
+                temp) == 0)
         {
-          all.fc.interactions.emplace_back(temp.begin(), temp.end());
+          all.feature_tweaks_config.interactions.emplace_back(temp.begin(), temp.end());
         }
       }
 
@@ -251,9 +252,10 @@ void VW::details::save_load_header(VW::workspace& all, VW::io_buf& model_file, b
         bytes_read_write += VW::details::bin_text_read_write_fixed_validated(model_file, triple, 3, read, msg, text);
 
         std::vector<VW::namespace_index> temp(triple, *(&triple + 1));
-        if (count(all.fc.interactions.begin(), all.fc.interactions.end(), temp) == 0)
+        if (count(all.feature_tweaks_config.interactions.begin(), all.feature_tweaks_config.interactions.end(), temp) ==
+            0)
         {
-          all.fc.interactions.emplace_back(temp.begin(), temp.end());
+          all.feature_tweaks_config.interactions.emplace_back(temp.begin(), temp.end());
         }
       }
 
@@ -286,9 +288,10 @@ void VW::details::save_load_header(VW::workspace& all, VW::io_buf& model_file, b
           if (size != inter_len) { THROW("Failed to read interaction from model file."); }
 
           std::vector<VW::namespace_index> temp(buff2.data(), buff2.data() + size);
-          if (count(all.fc.interactions.begin(), all.fc.interactions.end(), temp) == 0)
+          if (count(all.feature_tweaks_config.interactions.begin(), all.feature_tweaks_config.interactions.end(),
+                  temp) == 0)
           {
-            all.fc.interactions.emplace_back(buff2.data(), buff2.data() + inter_len);
+            all.feature_tweaks_config.interactions.emplace_back(buff2.data(), buff2.data() + inter_len);
           }
         }
 
@@ -328,7 +331,7 @@ void VW::details::save_load_header(VW::workspace& all, VW::io_buf& model_file, b
         reinterpret_cast<char*>(&all.reduction_state.lda), sizeof(all.reduction_state.lda), read, msg, text);
 
     // TODO: validate ngram_len?
-    auto* g_transformer = all.fc.skip_gram_transformer.get();
+    auto* g_transformer = all.feature_tweaks_config.skip_gram_transformer.get();
     uint32_t ngram_len =
         (g_transformer != nullptr) ? static_cast<uint32_t>(g_transformer->get_initial_ngram_definitions().size()) : 0;
     msg << ngram_len << " ngram:";

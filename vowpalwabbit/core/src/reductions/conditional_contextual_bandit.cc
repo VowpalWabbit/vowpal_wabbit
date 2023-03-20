@@ -428,7 +428,8 @@ void learn_or_predict(ccb_data& data, learner& base, VW::multi_ex& examples)
   // that the cache will be invalidated.
   if (!previously_should_augment_with_slot_info && should_augment_with_slot_info)
   {
-    insert_ccb_interactions(data.all->fc.interactions, data.all->fc.extent_interactions);
+    insert_ccb_interactions(
+        data.all->feature_tweaks_config.interactions, data.all->feature_tweaks_config.extent_interactions);
   }
 
   // This will overwrite the labels with CB.
@@ -626,7 +627,8 @@ void save_load(ccb_data& sm, VW::io_buf& io, bool read, bool text)
 
   if (read && sm.has_seen_multi_slot_example)
   {
-    insert_ccb_interactions(sm.all->fc.interactions, sm.all->fc.extent_interactions);
+    insert_ccb_interactions(
+        sm.all->feature_tweaks_config.interactions, sm.all->feature_tweaks_config.extent_interactions);
   }
 }
 }  // namespace

@@ -365,16 +365,16 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
 
   update_rule_config.eta_decay_rate = 1.0;
   initial_weights_config.initial_weight = 0.0;
-  fc.initial_constant = 0.0;
+  feature_tweaks_config.initial_constant = 0.0;
 
   for (size_t i = 0; i < NUM_NAMESPACES; i++)
   {
-    fc.limit[i] = INT_MAX;
-    fc.affix_features[i] = 0;
-    fc.spelling_features[i] = 0;
+    feature_tweaks_config.limit[i] = INT_MAX;
+    feature_tweaks_config.affix_features[i] = 0;
+    feature_tweaks_config.spelling_features[i] = 0;
   }
 
-  fc.add_constant = true;
+  feature_tweaks_config.add_constant = true;
 
   reduction_state.invariant_updates = true;
   initial_weights_config.normalized_idx = 2;
