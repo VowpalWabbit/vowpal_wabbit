@@ -293,7 +293,8 @@ std::shared_ptr<VW::LEARNER::learner> make_las_with_impl(VW::setup_base_i& stack
   float seed = (all.get_random_state()->get_random() + 1) * 10.f;
 
   auto data = VW::make_unique<cb_explore_adf_large_action_space<T, S>>(d, c, apply_shrink_factor, &all, seed,
-      1 << all.iwc.num_bits, thread_pool_size, block_size, action_cache_slack, use_explicit_simd, impl_type);
+      1 << all.initial_weights_config.num_bits, thread_pool_size, block_size, action_cache_slack, use_explicit_simd,
+      impl_type);
 
   auto l = make_reduction_learner(std::move(data), base, learn<T, S>, predict<T, S>,
       stack_builder.get_setupfn_name(VW::reductions::cb_explore_adf_large_action_space_setup))

@@ -833,7 +833,7 @@ void VowpalWabbit::ReturnExampleToPool(VowpalWabbitExample^ ex)
 }
 
 cli::array<List<VowpalWabbitFeature^>^>^ VowpalWabbit::GetTopicAllocation(int top)
-{ uint64_t length = (uint64_t)1 << m_vw->iwc.num_bits;
+{ uint64_t length = (uint64_t)1 << m_vw->initial_weights_config.num_bits;
   // using jagged array to enable LINQ
   auto K = (int)m_vw->reduction_state.lda;
   auto allocation = gcnew cli::array<List<VowpalWabbitFeature^>^>(K);
@@ -858,7 +858,7 @@ cli::array<List<VowpalWabbitFeature^>^>^ VowpalWabbit::GetTopicAllocation(int to
 template<typename T>
 cli::array<cli::array<float>^>^ VowpalWabbit::FillTopicAllocation(T& weights)
 {
-	uint64_t length = (uint64_t)1 << m_vw->iwc.num_bits;
+	uint64_t length = (uint64_t)1 << m_vw->initial_weights_config.num_bits;
 
 	// using jagged array to enable LINQ
 	auto K = (int)m_vw->reduction_state.lda;

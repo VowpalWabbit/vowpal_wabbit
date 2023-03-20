@@ -309,8 +309,9 @@ void pre_save_load_epsilon_decay(VW::workspace& all, VW::reductions::epsilon_dec
     }
   }
 
-  all.iwc.num_bits = all.iwc.num_bits - static_cast<uint32_t>(std::log2(data._feature_width));
-  options.get_typed_option<uint32_t>("bit_precision").value(all.iwc.num_bits);
+  all.initial_weights_config.num_bits =
+      all.initial_weights_config.num_bits - static_cast<uint32_t>(std::log2(data._feature_width));
+  options.get_typed_option<uint32_t>("bit_precision").value(all.initial_weights_config.num_bits);
 }
 
 }  // namespace

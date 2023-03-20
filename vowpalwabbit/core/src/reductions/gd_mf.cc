@@ -259,11 +259,11 @@ void initialize_weights(VW::weight* weights, uint64_t index, uint32_t stride)
 void save_load(gdmf& d, VW::io_buf& model_file, bool read, bool text)
 {
   VW::workspace& all = *d.all;
-  uint64_t length = static_cast<uint64_t>(1) << all.iwc.num_bits;
+  uint64_t length = static_cast<uint64_t>(1) << all.initial_weights_config.num_bits;
   if (read)
   {
     VW::details::initialize_regressor(all);
-    if (all.iwc.random_weights)
+    if (all.initial_weights_config.random_weights)
     {
       uint32_t stride = all.weights.stride();
       auto weight_initializer = [stride](VW::weight* weights, uint64_t index)
@@ -374,7 +374,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_mf_setup(VW::setup_base
   // store linear + 2*rank weights per index, round up to power of two
   float temp = ceilf(logf(static_cast<float>(data->rank * 2 + 1)) / logf(2.f));
   all.weights.stride_shift(static_cast<size_t>(temp));
-  all.iwc.random_weights = true;
+  all.initial_weights_config.random_weights = true;
 
   if (!all.passes_config.holdout_set_off)
   {

@@ -318,8 +318,7 @@ public:
 
   details::feature_tweaks_config fc;  // feature related configs
   // details::feature_tweaks_config feature_tweaks_config;  // feature related configs
-  details::initial_weights_config iwc;
-  // details::initial_weights_config initial_weights_config;
+  details::initial_weights_config initial_weights_config;
   details::update_rule_config update_rule_config;
   details::loss_config loss_config;
   details::passes_config passes_config;
@@ -342,7 +341,7 @@ public:
   std::string id;
   std::string feature_mask;
 
-  size_t length() { return (static_cast<size_t>(1)) << iwc.num_bits; };
+  size_t length() { return (static_cast<size_t>(1)) << initial_weights_config.num_bits; };
 
   void (*print_by_ref)(VW::io::writer*, float, float, const v_array<char>&, VW::io::logger&);
   void (*print_text_by_ref)(VW::io::writer*, const std::string&, const v_array<char>&, VW::io::logger&);

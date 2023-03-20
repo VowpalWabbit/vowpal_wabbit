@@ -326,7 +326,8 @@ void make_write_cache(VW::workspace& all, std::string& newname, bool quiet)
   output.bin_write_fixed(reinterpret_cast<const char*>(&v_length), sizeof(v_length));
   output.bin_write_fixed(VW::VERSION.to_string().c_str(), v_length);
   output.bin_write_fixed("c", 1);
-  output.bin_write_fixed(reinterpret_cast<const char*>(&all.iwc.num_bits), sizeof(all.iwc.num_bits));
+  output.bin_write_fixed(
+      reinterpret_cast<const char*>(&all.initial_weights_config.num_bits), sizeof(all.initial_weights_config.num_bits));
   output.flush();
 
   all.parser_runtime.example_parser->finalname = newname;
@@ -357,7 +358,7 @@ void parse_cache(VW::workspace& all, std::vector<std::string> cache_files, bool 
     else
     {
       uint64_t c = cache_numbits(*all.parser_runtime.example_parser->input.get_input_files().back());
-      if (c < all.iwc.num_bits)
+      if (c < all.initial_weights_config.num_bits)
       {
         if (!quiet)
         {
@@ -375,7 +376,7 @@ void parse_cache(VW::workspace& all, std::vector<std::string> cache_files, bool 
     }
   }
 
-  all.runtime_state.parse_mask = (static_cast<uint64_t>(1) << all.iwc.num_bits) - 1;
+  all.runtime_state.parse_mask = (static_cast<uint64_t>(1) << all.initial_weights_config.num_bits) - 1;
   if (cache_files.size() == 0)
   {
     if (!quiet) { *(all.output_runtime.trace_message) << "using no cache" << endl; }

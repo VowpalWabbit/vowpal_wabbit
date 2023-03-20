@@ -83,7 +83,7 @@ void merge_weights_with_save_resume(size_t length,
     // There is no copy constructor for weights, so we have to copy manually.
     weight_copies.emplace_back(VW::dense_parameters::deep_copy(i));
     VW::details::do_weighting(
-        output_workspace.iwc.normalized_idx, length, adaptive_totals.data(), weight_copies.back());
+        output_workspace.initial_weights_config.normalized_idx, length, adaptive_totals.data(), weight_copies.back());
   }
 
   // Weights have already been reweighted, so just accumulate.
@@ -255,7 +255,7 @@ void merge(const std::vector<float>& per_model_weighting, const std::vector<cons
     const std::vector<const VW::reductions::gd*>& all_data, VW::workspace& output_workspace,
     VW::reductions::gd& output_data)
 {
-  const size_t length = static_cast<size_t>(1) << output_workspace.iwc.num_bits;
+  const size_t length = static_cast<size_t>(1) << output_workspace.initial_weights_config.num_bits;
 
   // Weight aggregation is based on same method as allreduce.
   if (output_workspace.weights.sparse)
@@ -295,7 +295,7 @@ void merge(const std::vector<float>& per_model_weighting, const std::vector<cons
 void add(const VW::workspace& ws1, const VW::reductions::gd& data1, const VW::workspace& ws2,
     const VW::reductions::gd& data2, VW::workspace& ws_out, VW::reductions::gd& data_out)
 {
-  const size_t length = static_cast<size_t>(1) << ws_out.iwc.num_bits;
+  const size_t length = static_cast<size_t>(1) << ws_out.initial_weights_config.num_bits;
   if (ws_out.weights.sparse)
   {
     add_weights(ws_out.weights.sparse_weights, ws1.weights.sparse_weights, ws2.weights.sparse_weights, length);
@@ -316,7 +316,7 @@ void add(const VW::workspace& ws1, const VW::reductions::gd& data1, const VW::wo
 void subtract(const VW::workspace& ws1, const VW::reductions::gd& data1, const VW::workspace& ws2,
     const VW::reductions::gd& data2, VW::workspace& ws_out, VW::reductions::gd& data_out)
 {
-  const size_t length = static_cast<size_t>(1) << ws_out.iwc.num_bits;
+  const size_t length = static_cast<size_t>(1) << ws_out.initial_weights_config.num_bits;
   if (ws_out.weights.sparse)
   {
     subtract_weights(ws_out.weights.sparse_weights, ws1.weights.sparse_weights, ws2.weights.sparse_weights, length);
@@ -936,12 +936,12 @@ void save_load_regressor(VW::workspace& all, VW::io_buf& model_file, bool read, 
 
   uint64_t i = 0;
   uint32_t old_i = 0;
-  uint64_t length = static_cast<uint64_t>(1) << all.iwc.num_bits;
+  uint64_t length = static_cast<uint64_t>(1) << all.initial_weights_config.num_bits;
   if (read)
   {
     do {
       brw = 1;
-      if (all.iwc.num_bits < 31)  // backwards compatible
+      if (all.initial_weights_config.num_bits < 31)  // backwards compatible
       {
         brw = model_file.bin_read_fixed(reinterpret_cast<char*>(&old_i), sizeof(old_i));
         i = old_i;
@@ -965,7 +965,7 @@ void save_load_regressor(VW::workspace& all, VW::io_buf& model_file, bool read, 
       {
         i = v.index() >> weights.stride_shift();
         std::stringstream msg;
-        brw = write_index(model_file, msg, text, all.iwc.num_bits, i);
+        brw = write_index(model_file, msg, text, all.initial_weights_config.num_bits, i);
         msg << ":" << *v << "\n";
         brw += VW::details::bin_text_write_fixed(model_file, (char*)&(*v), sizeof(*v), msg, text);
       }
@@ -986,7 +986,7 @@ template <class T>
 void save_load_online_state_weights(VW::workspace& all, VW::io_buf& model_file, bool read, bool text,
     VW::reductions::gd* g, std::stringstream& msg, uint32_t ftrl_size, T& weights)
 {
-  uint64_t length = static_cast<uint64_t>(1) << all.iwc.num_bits;
+  uint64_t length = static_cast<uint64_t>(1) << all.initial_weights_config.num_bits;
 
   uint64_t i = 0;
   uint32_t old_i = 0;
@@ -996,7 +996,7 @@ void save_load_online_state_weights(VW::workspace& all, VW::io_buf& model_file, 
   {
     do {
       brw = 1;
-      if (all.iwc.num_bits < 31)  // backwards compatible
+      if (all.initial_weights_config.num_bits < 31)  // backwards compatible
       {
         brw = model_file.bin_read_fixed(reinterpret_cast<char*>(&old_i), sizeof(old_i));
         i = old_i;
@@ -1054,19 +1054,19 @@ void save_load_online_state_weights(VW::workspace& all, VW::io_buf& model_file, 
 
       if (ftrl3_write)
       {
-        brw = write_index(model_file, msg, text, all.iwc.num_bits, i);
+        brw = write_index(model_file, msg, text, all.initial_weights_config.num_bits, i);
         msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << "\n";
         brw += VW::details::bin_text_write_fixed(model_file, (char*)&(*v), 3 * sizeof(*v), msg, text);
       }
       else if (ftrl4_write)
       {
-        brw = write_index(model_file, msg, text, all.iwc.num_bits, i);
+        brw = write_index(model_file, msg, text, all.initial_weights_config.num_bits, i);
         msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << " " << (&(*v))[3] << "\n";
         brw += VW::details::bin_text_write_fixed(model_file, (char*)&(*v), 4 * sizeof(*v), msg, text);
       }
       else if (ftrl6_write)
       {
-        brw = write_index(model_file, msg, text, all.iwc.num_bits, i);
+        brw = write_index(model_file, msg, text, all.initial_weights_config.num_bits, i);
         msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << " " << (&(*v))[3] << " " << (&(*v))[4] << " "
             << (&(*v))[5] << "\n";
         brw += VW::details::bin_text_write_fixed(model_file, (char*)&(*v), 6 * sizeof(*v), msg, text);
@@ -1075,7 +1075,7 @@ void save_load_online_state_weights(VW::workspace& all, VW::io_buf& model_file, 
       {
         if (*v != 0.)
         {
-          brw = write_index(model_file, msg, text, all.iwc.num_bits, i);
+          brw = write_index(model_file, msg, text, all.initial_weights_config.num_bits, i);
           msg << ":" << *v << "\n";
           brw += VW::details::bin_text_write_fixed(model_file, (char*)&(*v), sizeof(*v), msg, text);
         }
@@ -1085,7 +1085,7 @@ void save_load_online_state_weights(VW::workspace& all, VW::io_buf& model_file, 
         // either adaptive or normalized
         if (*v != 0. || (&(*v))[1] != 0.)
         {
-          brw = write_index(model_file, msg, text, all.iwc.num_bits, i);
+          brw = write_index(model_file, msg, text, all.initial_weights_config.num_bits, i);
           msg << ":" << *v << " " << (&(*v))[1] << "\n";
           brw += VW::details::bin_text_write_fixed(model_file, (char*)&(*v), 2 * sizeof(*v), msg, text);
         }
@@ -1095,7 +1095,7 @@ void save_load_online_state_weights(VW::workspace& all, VW::io_buf& model_file, 
         // adaptive and normalized
         if (*v != 0. || (&(*v))[1] != 0. || (&(*v))[2] != 0.)
         {
-          brw = write_index(model_file, msg, text, all.iwc.num_bits, i);
+          brw = write_index(model_file, msg, text, all.initial_weights_config.num_bits, i);
           msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << "\n";
           brw += VW::details::bin_text_write_fixed(model_file, (char*)&(*v), 3 * sizeof(*v), msg, text);
         }
@@ -1266,7 +1266,7 @@ void save_load(VW::reductions::gd& g, VW::io_buf& model_file, bool read, bool te
 
     if (all.weights.adaptive && all.update_rule_config.initial_t > 0)
     {
-      float init_weight = all.iwc.initial_weight;
+      float init_weight = all.initial_weights_config.initial_weight;
       float init_t = all.update_rule_config.initial_t;
       auto initial_gd_weight_initializer = [init_weight, init_t](VW::weight* weights, uint64_t /*index*/)
       {
@@ -1320,7 +1320,7 @@ template <bool sparse_l2, bool invariant, bool sqrt_rate, bool feature_mask_off,
     uint64_t spare, uint64_t next>
 uint64_t set_learn(VW::workspace& all, VW::reductions::gd& g)
 {
-  all.iwc.normalized_idx = normalized;
+  all.initial_weights_config.normalized_idx = normalized;
   if (g.adax)
   {
     g.learn = learn<sparse_l2, invariant, sqrt_rate, feature_mask_off, true, adaptive, normalized, spare>;
@@ -1341,7 +1341,7 @@ template <bool sparse_l2, bool invariant, bool sqrt_rate, uint64_t adaptive, uin
     uint64_t next>
 uint64_t set_learn(VW::workspace& all, bool feature_mask_off, VW::reductions::gd& g)
 {
-  all.iwc.normalized_idx = normalized;
+  all.initial_weights_config.normalized_idx = normalized;
   if (feature_mask_off)
   {
     return set_learn<sparse_l2, invariant, sqrt_rate, true, adaptive, normalized, spare, next>(all, g);

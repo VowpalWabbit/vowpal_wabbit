@@ -76,9 +76,9 @@ TEST(Merge, MergeSimpleModel)
 
   // check that weight values got merged
   EXPECT_FALSE(result->weights.sparse);
-  EXPECT_EQ(result->iwc.num_bits, vw1->iwc.num_bits);
-  EXPECT_EQ(result->iwc.num_bits, vw2->iwc.num_bits);
-  const size_t length = static_cast<size_t>(1) << result->iwc.num_bits;
+  EXPECT_EQ(result->initial_weights_config.num_bits, vw1->initial_weights_config.num_bits);
+  EXPECT_EQ(result->initial_weights_config.num_bits, vw2->initial_weights_config.num_bits);
+  const size_t length = static_cast<size_t>(1) << result->initial_weights_config.num_bits;
   const auto& vw1_weights = vw1->weights.dense_weights;
   const auto& vw2_weights = vw2->weights.dense_weights;
   const auto& result_weights = result->weights.dense_weights;

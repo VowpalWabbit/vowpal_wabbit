@@ -43,10 +43,10 @@ private:
   {
     auto options = vw->options.get();
 
-    if (vw->iwc.initial_regressors.size() > 0)
+    if (vw->initial_weights_config.initial_regressors.size() > 0)
     { m_regressors = gcnew List<String^>;
 
-      for (auto& r : vw->iwc.initial_regressors) m_regressors->Add(gcnew String(r.c_str()));
+      for (auto& r : vw->initial_weights_config.initial_regressors) m_regressors->Add(gcnew String(r.c_str()));
     }
 
     VW::config::cli_options_serializer serializer;

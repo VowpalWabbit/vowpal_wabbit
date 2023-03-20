@@ -323,13 +323,13 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   reduction_state.bfgs = false;
   loss_config.no_bias = false;
   reduction_state.active = false;
-  iwc.num_bits = 18;
+  initial_weights_config.num_bits = 18;
   runtime_config.default_bits = true;
   runtime_config.daemon = false;
   output_model_config.save_resume = true;
   output_model_config.preserve_performance_counters = false;
 
-  iwc.random_positive_weights = false;
+  initial_weights_config.random_positive_weights = false;
 
   weights.sparse = false;
 
@@ -348,10 +348,10 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   print_by_ref = VW::details::print_result_by_ref;
   print_text_by_ref = print_raw_text_by_ref;
   reduction_state.lda = 0;
-  iwc.random_weights = false;
-  iwc.normal_weights = false;
-  iwc.tnormal_weights = false;
-  iwc.per_feature_regularizer_input = "";
+  initial_weights_config.random_weights = false;
+  initial_weights_config.normal_weights = false;
+  initial_weights_config.tnormal_weights = false;
+  initial_weights_config.per_feature_regularizer_input = "";
   output_model_config.per_feature_regularizer_output = "";
   output_model_config.per_feature_regularizer_text = "";
 
@@ -364,7 +364,7 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   loss_config.l2_lambda = 0.0;
 
   update_rule_config.eta_decay_rate = 1.0;
-  iwc.initial_weight = 0.0;
+  initial_weights_config.initial_weight = 0.0;
   fc.initial_constant = 0.0;
 
   for (size_t i = 0; i < NUM_NAMESPACES; i++)
@@ -377,7 +377,7 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   fc.add_constant = true;
 
   reduction_state.invariant_updates = true;
-  iwc.normalized_idx = 2;
+  initial_weights_config.normalized_idx = 2;
 
   output_config.audit = false;
   output_runtime.audit_writer = VW::io::open_stdout();

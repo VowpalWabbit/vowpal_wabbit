@@ -664,12 +664,12 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
 
   if (options.was_supplied("bit_precision"))
   {
-    if (all.runtime_config.default_bits == false && new_bits != all.iwc.num_bits)
-      THROW("Number of bits is set to " << new_bits << " and " << all.iwc.num_bits
+    if (all.runtime_config.default_bits == false && new_bits != all.initial_weights_config.num_bits)
+      THROW("Number of bits is set to " << new_bits << " and " << all.initial_weights_config.num_bits
                                         << " by argument and model.  That does not work.")
 
     all.runtime_config.default_bits = false;
-    all.iwc.num_bits = new_bits;
+    all.initial_weights_config.num_bits = new_bits;
 
     VW::validate_num_bits(all);
   }
@@ -1325,18 +1325,18 @@ void load_input_model(VW::workspace& all, VW::io_buf& io_temp)
 {
   // Need to see if we have to load feature mask first or second.
   // -i and -mask are from same file, load -i file first so mask can use it
-  if (!all.feature_mask.empty() && !all.iwc.initial_regressors.empty() &&
-      all.feature_mask == all.iwc.initial_regressors[0])
+  if (!all.feature_mask.empty() && !all.initial_weights_config.initial_regressors.empty() &&
+      all.feature_mask == all.initial_weights_config.initial_regressors[0])
   {
     // load rest of regressor
     all.l->save_load(io_temp, true, false);
     io_temp.close_file();
 
-    VW::details::parse_mask_regressor_args(all, all.feature_mask, all.iwc.initial_regressors);
+    VW::details::parse_mask_regressor_args(all, all.feature_mask, all.initial_weights_config.initial_regressors);
   }
   else
   {  // load mask first
-    VW::details::parse_mask_regressor_args(all, all.feature_mask, all.iwc.initial_regressors);
+    VW::details::parse_mask_regressor_args(all, all.feature_mask, all.initial_weights_config.initial_regressors);
 
     // load rest of regressor
     all.l->save_load(io_temp, true, false);
@@ -1482,16 +1482,20 @@ std::unique_ptr<VW::workspace> VW::details::parse_args(std::unique_ptr<options_i
 
   option_group_definition weight_args("Weight");
   weight_args
-      .add(make_option("initial_regressor", all->iwc.initial_regressors).help("Initial regressor(s)").short_name("i"))
-      .add(make_option("initial_weight", all->iwc.initial_weight)
+      .add(make_option("initial_regressor", all->initial_weights_config.initial_regressors)
+               .help("Initial regressor(s)")
+               .short_name("i"))
+      .add(make_option("initial_weight", all->initial_weights_config.initial_weight)
                .default_value(0.f)
                .help("Set all weights to an initial value of arg"))
-      .add(make_option("random_weights", all->iwc.random_weights).help("Make initial weights random"))
-      .add(make_option("normal_weights", all->iwc.normal_weights).help("Make initial weights normal"))
-      .add(make_option("truncated_normal_weights", all->iwc.tnormal_weights)
+      .add(
+          make_option("random_weights", all->initial_weights_config.random_weights).help("Make initial weights random"))
+      .add(
+          make_option("normal_weights", all->initial_weights_config.normal_weights).help("Make initial weights normal"))
+      .add(make_option("truncated_normal_weights", all->initial_weights_config.tnormal_weights)
                .help("Make initial weights truncated normal"))
       .add(make_option("sparse_weights", all->weights.sparse).help("Use a sparse datastructure for weights"))
-      .add(make_option("input_feature_regularizer", all->iwc.per_feature_regularizer_input)
+      .add(make_option("input_feature_regularizer", all->initial_weights_config.per_feature_regularizer_input)
                .help("Per feature regularization input file"));
   all->options->add_and_parse(weight_args);
 

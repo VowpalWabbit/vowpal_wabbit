@@ -40,10 +40,10 @@ std::unique_ptr<VW::workspace> initialize_internal(
   VW::io_buf local_model;
   if (model == nullptr)
   {
-    std::vector<std::string> all_initial_regressor_files(all->iwc.initial_regressors);
+    std::vector<std::string> all_initial_regressor_files(all->initial_weights_config.initial_regressors);
     if (all->options->was_supplied("input_feature_regularizer"))
     {
-      all_initial_regressor_files.push_back(all->iwc.per_feature_regularizer_input);
+      all_initial_regressor_files.push_back(all->initial_weights_config.per_feature_regularizer_input);
     }
     VW::details::read_regressor_file(*all, all_initial_regressor_files, local_model);
     model = &local_model;
@@ -62,13 +62,14 @@ std::unique_ptr<VW::workspace> initialize_internal(
   }
   catch (VW::save_load_model_exception& e)
   {
-    auto msg = fmt::format("{}, model files = {}", e.what(), fmt::join(all->iwc.initial_regressors, ", "));
+    auto msg =
+        fmt::format("{}, model files = {}", e.what(), fmt::join(all->initial_weights_config.initial_regressors, ", "));
     throw VW::save_load_model_exception(e.filename(), e.line_number(), msg);
   }
 
   if (!all->output_config.quiet)
   {
-    *(all->output_runtime.trace_message) << "Num weight bits = " << all->iwc.num_bits << std::endl;
+    *(all->output_runtime.trace_message) << "Num weight bits = " << all->initial_weights_config.num_bits << std::endl;
     *(all->output_runtime.trace_message) << "learning rate = " << all->update_rule_config.eta << std::endl;
     *(all->output_runtime.trace_message) << "initial_t = " << all->sd->t << std::endl;
     *(all->output_runtime.trace_message) << "power_t = " << all->update_rule_config.power_t << std::endl;
@@ -494,7 +495,7 @@ const char* VW::are_features_compatible(const VW::workspace& vw1, const VW::work
 
   if (!std::equal(vw1.fc.limit.begin(), vw1.fc.limit.end(), vw2.fc.limit.begin())) { return "limit"; }
 
-  if (vw1.iwc.num_bits != vw2.iwc.num_bits) { return "num_bits"; }
+  if (vw1.initial_weights_config.num_bits != vw2.initial_weights_config.num_bits) { return "num_bits"; }
 
   if (vw1.fc.permutations != vw2.fc.permutations) { return "permutations"; }
 

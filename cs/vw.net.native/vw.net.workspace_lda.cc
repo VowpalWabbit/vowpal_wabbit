@@ -10,7 +10,7 @@ API int WorkspaceGetTopicCount(vw_net_native::workspace_context* workspace)
 
 API uint64_t WorkspaceGetTopicSize(vw_net_native::workspace_context* workspace)
 {
-  return 1ULL << workspace->vw->iwc.num_bits;
+  return 1ULL << workspace->vw->initial_weights_config.num_bits;
 }
 
 template <typename T>

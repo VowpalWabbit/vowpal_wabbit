@@ -75,7 +75,7 @@ void initialize_regressor(VW::workspace& all, T& weights)
   // Regressor is already initialized.
   if (weights.not_null()) { return; }
 
-  size_t length = (static_cast<size_t>(1)) << all.iwc.num_bits;
+  size_t length = (static_cast<size_t>(1)) << all.initial_weights_config.num_bits;
   try
   {
     uint32_t ss = weights.stride_shift();
@@ -84,35 +84,37 @@ void initialize_regressor(VW::workspace& all, T& weights)
   }
   catch (const VW::vw_exception&)
   {
-    THROW(" Failed to allocate weight array with " << all.iwc.num_bits << " bits: try decreasing -b <bits>");
+    THROW(" Failed to allocate weight array with " << all.initial_weights_config.num_bits
+                                                   << " bits: try decreasing -b <bits>");
   }
   if (weights.mask() == 0)
   {
-    THROW(" Failed to allocate weight array with " << all.iwc.num_bits << " bits: try decreasing -b <bits>");
+    THROW(" Failed to allocate weight array with " << all.initial_weights_config.num_bits
+                                                   << " bits: try decreasing -b <bits>");
   }
-  else if (all.iwc.initial_weight != 0.)
+  else if (all.initial_weights_config.initial_weight != 0.)
   {
-    auto initial_weight = all.iwc.initial_weight;
+    auto initial_weight = all.initial_weights_config.initial_weight;
     auto initial_value_weight_initializer = [initial_weight](VW::weight* weights, uint64_t /*index*/)
     { weights[0] = initial_weight; };
     weights.set_default(initial_value_weight_initializer);
   }
-  else if (all.iwc.random_positive_weights)
+  else if (all.initial_weights_config.random_positive_weights)
   {
     auto rand_state = *all.get_random_state();
     auto random_positive = [&rand_state](VW::weight* weights, uint64_t)
     { weights[0] = 0.1f * rand_state.get_and_update_random(); };
     weights.set_default(random_positive);
   }
-  else if (all.iwc.random_weights)
+  else if (all.initial_weights_config.random_weights)
   {
     auto rand_state = *all.get_random_state();
     auto random_neg_pos = [&rand_state](VW::weight* weights, uint64_t)
     { weights[0] = rand_state.get_and_update_random() - 0.5f; };
     weights.set_default(random_neg_pos);
   }
-  else if (all.iwc.normal_weights) { weights.set_default(&initialize_weights_as_polar_normal); }
-  else if (all.iwc.tnormal_weights)
+  else if (all.initial_weights_config.normal_weights) { weights.set_default(&initialize_weights_as_polar_normal); }
+  else if (all.initial_weights_config.tnormal_weights)
   {
     weights.set_default(&initialize_weights_as_polar_normal);
     truncate(all, weights);
@@ -187,8 +189,8 @@ void VW::details::save_load_header(VW::workspace& all, VW::io_buf& model_file, b
     bytes_read_write += VW::details::bin_text_read_write_fixed_validated(
         model_file, reinterpret_cast<char*>(&all.sd->max_label), sizeof(all.sd->max_label), read, msg, text);
 
-    msg << "bits:" << all.iwc.num_bits << "\n";
-    uint32_t local_num_bits = all.iwc.num_bits;
+    msg << "bits:" << all.initial_weights_config.num_bits << "\n";
+    uint32_t local_num_bits = all.initial_weights_config.num_bits;
     bytes_read_write += VW::details::bin_text_read_write_fixed_validated(
         model_file, reinterpret_cast<char*>(&local_num_bits), sizeof(local_num_bits), read, msg, text);
 
@@ -203,7 +205,7 @@ void VW::details::save_load_header(VW::workspace& all, VW::io_buf& model_file, b
     VW::validate_default_bits(all, local_num_bits);
 
     all.runtime_config.default_bits = false;
-    all.iwc.num_bits = local_num_bits;
+    all.initial_weights_config.num_bits = local_num_bits;
 
     VW::validate_num_bits(all);
 

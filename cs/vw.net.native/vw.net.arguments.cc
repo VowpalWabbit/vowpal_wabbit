@@ -42,20 +42,23 @@ API char* SerializeCommandLine(vw_net_native::workspace_context* workspace)
 
 API size_t GetInitialRegressorFilenamesCount(vw_net_native::workspace_context* workspace)
 {
-  return workspace->vw->iwc.initial_regressors.size();
+  return workspace->vw->initial_weights_config.initial_regressors.size();
 }
 
 API vw_net_native::dotnet_size_t GetInitialRegressorFilenames(
     vw_net_native::workspace_context* workspace, const char** filenames, vw_net_native::dotnet_size_t count)
 {
-  std::vector<std::string>& initial_regressors = workspace->vw->iwc.initial_regressors;
+  std::vector<std::string>& initial_regressors = workspace->vw->initial_weights_config.initial_regressors;
   size_t size = initial_regressors.size();
   if ((size_t)count < size)
   {
     return vw_net_native::size_to_neg_dotnet_size(size);  // Not enough space in destination buffer
   }
 
-  for (size_t i = 0; i < size; i++) { filenames[i] = workspace->vw->iwc.initial_regressors[i].c_str(); }
+  for (size_t i = 0; i < size; i++)
+  {
+    filenames[i] = workspace->vw->initial_weights_config.initial_regressors[i].c_str();
+  }
 
-  return workspace->vw->iwc.initial_regressors.size();
+  return workspace->vw->initial_weights_config.initial_regressors.size();
 }

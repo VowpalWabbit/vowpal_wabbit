@@ -38,7 +38,7 @@ void parse_dispatch(VW::workspace& all, DispatchFuncT& dispatch)
       }
       else
       {
-        VW::details::reset_source(all, all.iwc.num_bits);
+        VW::details::reset_source(all, all.initial_weights_config.num_bits);
         all.runtime_state.do_reset_source = false;
         all.runtime_state.passes_complete++;
 

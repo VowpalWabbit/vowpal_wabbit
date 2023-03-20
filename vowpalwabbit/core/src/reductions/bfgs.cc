@@ -558,7 +558,7 @@ void finalize_preconditioner(VW::workspace& all, bfgs& b, float regularization)
 template <class T>
 void preconditioner_to_regularizer(VW::workspace& all, bfgs& b, float regularization, T& weights)
 {
-  uint32_t length = 1 << all.iwc.num_bits;
+  uint32_t length = 1 << all.initial_weights_config.num_bits;
 
   if (b.regularizers == nullptr)
   {
@@ -1010,7 +1010,7 @@ void learn(bfgs& b, VW::example& ec)
 
 void save_load_regularizer(VW::workspace& all, bfgs& b, VW::io_buf& model_file, bool read, bool text)
 {
-  uint32_t length = 2 * (1 << all.iwc.num_bits);
+  uint32_t length = 2 * (1 << all.initial_weights_config.num_bits);
   uint32_t i = 0;
   size_t brw = 1;
 
@@ -1052,12 +1052,12 @@ void save_load(bfgs& b, VW::io_buf& model_file, bool read, bool text)
 {
   VW::workspace* all = b.all;
 
-  uint32_t length = 1 << all->iwc.num_bits;
+  uint32_t length = 1 << all->initial_weights_config.num_bits;
 
   if (read)
   {
     VW::details::initialize_regressor(*all);
-    if (all->iwc.per_feature_regularizer_input != "")
+    if (all->initial_weights_config.per_feature_regularizer_input != "")
     {
       b.regularizers = VW::details::calloc_or_throw<VW::weight>(2 * length);
       if (b.regularizers == nullptr) THROW("Failed to allocate regularizers array: try decreasing -b <bits>");
@@ -1096,8 +1096,9 @@ void save_load(bfgs& b, VW::io_buf& model_file, bool read, bool text)
     reset_state(*all, b, false);
   }
 
-  // bool reg_vector = b.output_regularizer || all->iwc.per_feature_regularizer_input.length() > 0;
-  bool reg_vector = (b.output_regularizer && !read) || (all->iwc.per_feature_regularizer_input.length() > 0 && read);
+  // bool reg_vector = b.output_regularizer || all->initial_weights_config.per_feature_regularizer_input.length() > 0;
+  bool reg_vector = (b.output_regularizer && !read) ||
+      (all->initial_weights_config.per_feature_regularizer_input.length() > 0 && read);
 
   if (model_file.num_files() > 0)
   {

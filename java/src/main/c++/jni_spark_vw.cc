@@ -293,7 +293,7 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getArgu
   jmethodID ctor = env->GetMethodID(clazz, "<init>", "(IILjava/lang/String;DD)V");
   CHECK_JNI_EXCEPTION(nullptr);
 
-  return env->NewObject(clazz, ctor, all->iwc.num_bits, all->runtime_config.hash_seed, args,
+  return env->NewObject(clazz, ctor, all->initial_weights_config.num_bits, all->runtime_config.hash_seed, args,
       all->update_rule_config.eta, all->update_rule_config.power_t);
 }
 
@@ -359,7 +359,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_endPass(JN
     // note: this code duplication seems bound for trouble
     // from parse_dispatch_loop.h:26
     // from learner.cc:41
-    VW::details::reset_source(*all, all->iwc.num_bits);
+    VW::details::reset_source(*all, all->initial_weights_config.num_bits);
     all->runtime_state.do_reset_source = false;
     all->runtime_state.passes_complete++;
 
@@ -480,7 +480,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_addToName
     double* values0 = (double*)valuesGuard.data();
 
     int size = env->GetArrayLength(values);
-    int mask = (1 << all->iwc.num_bits) - 1;
+    int mask = (1 << all->initial_weights_config.num_bits) - 1;
 
     // pre-allocate
     features->values.reserve(features->values.capacity() + size);
@@ -522,7 +522,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_addToName
     double* values0 = (double*)valuesGuard.data();
 
     int size = env->GetArrayLength(indices);
-    int mask = (1 << all->iwc.num_bits) - 1;
+    int mask = (1 << all->initial_weights_config.num_bits) - 1;
 
     // pre-allocate
     features->values.reserve(features->values.capacity() + size);
