@@ -815,8 +815,5 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::csldf_setup(VW::setup_base
                .set_output_example_prediction(output_example_prediction_func)
                .set_print_update(print_update_func)
                .build();
-
-  all.parser_runtime.example_parser->lbl_parser = VW::cs_label_parser_global;
-
   return l;
 }

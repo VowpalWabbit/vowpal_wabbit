@@ -235,7 +235,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::bs_setup(VW::setup_base_i&
                .help("Prediction type"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
-  size_t ws = data->num_bootstrap_rounds;
+  size_t feature_width = data->num_bootstrap_rounds;
 
   if (options.was_supplied("bs_type"))
   {
@@ -256,9 +256,9 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::bs_setup(VW::setup_base_i&
   data->all = &all;
   data->random_state = all.get_random_state();
 
-  auto l = make_reduction_learner(std::move(data), require_singleline(stack_builder.setup_base_learner()),
+  auto l = make_reduction_learner(std::move(data), require_singleline(stack_builder.setup_base_learner(feature_width)),
       predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(bs_setup))
-               .set_params_per_weight(ws)
+               .set_feature_width(feature_width)
                .set_learn_returns_prediction(true)
                .set_output_example_prediction(output_example_prediction_bs)
                .set_update_stats(VW::details::update_stats_simple_label<bs_data>)

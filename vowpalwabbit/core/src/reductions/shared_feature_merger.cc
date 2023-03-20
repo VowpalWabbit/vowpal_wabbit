@@ -122,7 +122,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::shared_feature_merger_setu
   if (options.was_supplied("large_action_space")) { data->store_shared_ex_in_reduction_features = true; }
 
   auto multi_base = VW::LEARNER::require_multiline(base);
-  data->label_type = all.parser_runtime.example_parser->lbl_parser.label_type;
+  data->label_type = base->get_input_label_type();
 
   // Both label and prediction types inherit that of base.
   auto learner = VW::LEARNER::make_reduction_learner(std::move(data), multi_base, predict_or_learn<true>,

@@ -482,12 +482,8 @@ void save_load(OjaNewton& oja_newton_ptr, VW::io_buf& model_file, bool read, boo
     VW::details::bin_text_read_write_fixed(
         model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
 
-    double temp = 0.;
-    double temp_normalized_sum_norm_x = 0.;
-    if (resume)
-    {
-      VW::details::save_load_online_state_gd(all, model_file, read, text, temp, temp_normalized_sum_norm_x);
-    }
+    std::vector<VW::reductions::details::gd_per_model_state> temp_pms = {VW::reductions::details::gd_per_model_state()};
+    if (resume) { VW::details::save_load_online_state_gd(all, model_file, read, text, temp_pms); }
     else { VW::details::save_load_regressor_gd(all, model_file, read, text); }
   }
 }
@@ -569,7 +565,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::oja_newton_setup(VW::setup
 
   auto l = make_bottom_learner(std::move(oja_newton_ptr), learn, predict,
       stack_builder.get_setupfn_name(oja_newton_setup), VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
-               .set_params_per_weight(all.weights.stride())
                .set_save_load(save_load)
                .set_output_example_prediction(VW::details::output_example_prediction_simple_label<OjaNewton>)
                .set_update_stats(VW::details::update_stats_simple_label<OjaNewton>)

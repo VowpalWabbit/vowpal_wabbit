@@ -319,7 +319,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::explore_eval_setup(VW::set
   if (!options.was_supplied("cb_explore_adf")) { options.insert("cb_explore_adf", ""); }
 
   auto base = require_multiline(stack_builder.setup_base_learner());
-  all.parser_runtime.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   auto l = make_reduction_learner(std::move(data), base, do_actual_learning<true>, do_actual_learning<false>,
       stack_builder.get_setupfn_name(explore_eval_setup))

@@ -211,7 +211,7 @@ public:
   bool is_ccb_input_model = false;
   void* /*Search::search*/ searchstr;
   bool invariant_updates;  // Should we use importance aware/safe updates, gd only
-  uint32_t wpp;
+  uint32_t total_feature_width;
 };
 
 class runtime_config

@@ -374,12 +374,16 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_setup(VW::setup
   data->cbcs.cb_type = VW::cb_type_t::DR;
   data->model_file_version = all.runtime_state.model_file_ver;
 
-  auto base = require_singleline(stack_builder.setup_base_learner());
+  size_t params_per_weight = 1;
+  if (options.was_supplied("cover")) { params_per_weight = data->cover_size + 1; }
+  else if (options.was_supplied("bag")) { params_per_weight = data->bag_size; }
+
+  auto base = require_singleline(stack_builder.setup_base_learner(params_per_weight));
   data->cbcs.scorer = VW::LEARNER::require_singleline(base->get_learner_by_name_prefix("scorer"));
 
   void (*learn_ptr)(cb_explore&, learner&, VW::example&);
   void (*predict_ptr)(cb_explore&, learner&, VW::example&);
-  size_t params_per_weight;
+
   std::string name_addition;
 
   if (options.was_supplied("cover"))
@@ -402,28 +406,24 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_setup(VW::setup
     data->preds.reserve(data->cover_size);
     learn_ptr = predict_or_learn_cover<true>;
     predict_ptr = predict_or_learn_cover<false>;
-    params_per_weight = data->cover_size + 1;
     name_addition = "-cover";
   }
   else if (options.was_supplied("bag"))
   {
     learn_ptr = predict_or_learn_bag<true>;
     predict_ptr = predict_or_learn_bag<false>;
-    params_per_weight = data->bag_size;
     name_addition = "-bag";
   }
   else if (options.was_supplied("first"))
   {
     learn_ptr = predict_or_learn_first<true>;
     predict_ptr = predict_or_learn_first<false>;
-    params_per_weight = 1;
     name_addition = "-first";
   }
   else  // greedy
   {
     learn_ptr = predict_or_learn_greedy<true>;
     predict_ptr = predict_or_learn_greedy<false>;
-    params_per_weight = 1;
     name_addition = "-greedy";
   }
   auto l = make_reduction_learner(
@@ -432,7 +432,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_setup(VW::setup
                .set_output_label_type(VW::label_type_t::CB)
                .set_input_prediction_type(VW::prediction_type_t::MULTICLASS)
                .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
-               .set_params_per_weight(params_per_weight)
+               .set_feature_width(params_per_weight)
                .set_update_stats(::update_stats_cb_explore)
                .set_output_example_prediction(::output_example_prediction_cb_explore)
                .set_print_update(::print_update_cb_explore)

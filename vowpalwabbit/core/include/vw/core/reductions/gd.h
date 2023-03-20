@@ -26,7 +26,7 @@ std::shared_ptr<VW::LEARNER::learner> gd_setup(VW::setup_base_i& stack_builder);
 namespace details
 {
 
-class per_model_state
+class gd_per_model_state
 {
 public:
   double normalized_sum_norm_x = 0.0;
@@ -37,7 +37,9 @@ public:
 class gd
 {
 public:
-  std::vector<details::per_model_state> per_model_states;
+  gd(size_t feature_width_above = 1) : gd_per_model_states(feature_width_above) {}
+  std::vector<VW::reductions::details::gd_per_model_state> gd_per_model_states;
+  VW::reductions::details::gd_per_model_state* current_model_state = nullptr;
   size_t no_win_counter = 0;
   size_t early_stop_thres = 0;
   float initial_constant = 0.f;
@@ -64,8 +66,9 @@ float finalize_prediction(VW::shared_data& sd, VW::io::logger& logger, float ret
 void print_features(VW::workspace& all, VW::example& ec);
 void print_audit_features(VW::workspace&, VW::example& ec);
 void save_load_regressor_gd(VW::workspace& all, VW::io_buf& model_file, bool read, bool text);
-void save_load_online_state_gd(VW::workspace& all, VW::io_buf& model_file, bool read, bool text, double& total_weight,
-    double& normalized_sum_norm_x, VW::reductions::gd* g = nullptr, uint32_t ftrl_size = 0);
+void save_load_online_state_gd(VW::workspace& all, VW::io_buf& model_file, bool read, bool text,
+    std::vector<VW::reductions::details::gd_per_model_state>& pms, VW::reductions::gd* g = nullptr,
+    uint32_t ftrl_size = 0);
 
 template <class T>
 class multipredict_info
@@ -196,18 +199,27 @@ inline float trunc_weight(const float w, const float gravity)
 
 namespace VW
 {
+namespace model_utils
+{
+size_t read_model_field(io_buf&, VW::reductions::details::gd_per_model_state&);
+size_t write_model_field(io_buf&, const VW::reductions::details::gd_per_model_state&, const std::string&, bool);
+}  // namespace model_utils
+}  // namespace VW
+
+namespace VW
+{
 template <class R, class S, void (*T)(R&, float, S), bool audit, void (*audit_func)(R&, const VW::audit_strings*)>
 inline void generate_interactions(VW::workspace& all, VW::example_predict& ec, R& dat, size_t& num_interacted_features)
 {
   if (all.weights.sparse)
   {
-    generate_interactions<R, S, T, audit, audit_func, VW::sparse_parameters>(*ec.interactions, *ec.extent_interactions,
+    VW::generate_interactions<R, S, T, audit, audit_func, VW::sparse_parameters>(*ec.interactions, *ec.extent_interactions,
         all.fc.permutations, ec, dat, all.weights.sparse_weights, num_interacted_features,
         all.runtime_state.generate_interactions_object_cache_state);
   }
   else
   {
-    generate_interactions<R, S, T, audit, audit_func, VW::dense_parameters>(*ec.interactions, *ec.extent_interactions,
+    VW::generate_interactions<R, S, T, audit, audit_func, VW::dense_parameters>(*ec.interactions, *ec.extent_interactions,
         all.fc.permutations, ec, dat, all.weights.dense_weights, num_interacted_features,
         all.runtime_state.generate_interactions_object_cache_state);
   }
@@ -219,40 +231,19 @@ inline void generate_interactions(VW::workspace& all, VW::example_predict& ec, R
 {
   if (all.weights.sparse)
   {
-    generate_interactions<R, S, T, VW::sparse_parameters>(all.fc.interactions, all.fc.extent_interactions,
+    VW::generate_interactions<R, S, T, VW::sparse_parameters>(all.fc.interactions, all.fc.extent_interactions,
         all.fc.permutations, ec, dat, all.weights.sparse_weights, num_interacted_features,
         all.runtime_state.generate_interactions_object_cache_state);
   }
   else
   {
-    generate_interactions<R, S, T, VW::dense_parameters>(all.fc.interactions, all.fc.extent_interactions,
+    VW::generate_interactions<R, S, T, VW::dense_parameters>(all.fc.interactions, all.fc.extent_interactions,
         all.fc.permutations, ec, dat, all.weights.dense_weights, num_interacted_features,
         all.runtime_state.generate_interactions_object_cache_state);
   }
 }
 
 }  // namespace VW
-
-namespace INTERACTIONS  // NOLINT
-{
-template <class R, class S, void (*T)(R&, float, S), bool audit, void (*audit_func)(R&, const VW::audit_strings*)>
-VW_DEPRECATED("Moved to VW namespace")
-inline void generate_interactions(VW::workspace& all, VW::example_predict& ec, R& dat, size_t& num_interacted_features)
-{
-  // call version in VW namespace
-  VW::generate_interactions<R, S, T, audit, audit_func>(all, ec, dat, num_interacted_features);
-}
-
-// this code is for C++98/03 complience as I unable to pass null function-pointer as template argument in g++-4.6
-template <class R, class S, void (*T)(R&, float, S)>
-VW_DEPRECATED("Moved to VW namespace")
-inline void generate_interactions(VW::workspace& all, VW::example_predict& ec, R& dat, size_t& num_interacted_features)
-{
-  // call version in VW namespace
-  VW::generate_interactions<R, S, T>(all, ec, dat, num_interacted_features);
-}
-
-}  // namespace INTERACTIONS
 
 namespace GD
 {

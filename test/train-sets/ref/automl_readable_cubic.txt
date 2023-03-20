@@ -1,4 +1,4 @@
-Version 9.7.0
+Version 9.8.0
 Id 
 Min label:-1
 Max label:0
@@ -1780,28 +1780,11 @@ _automl_config_manager_index_queue[161].first = -12
 _automl_config_manager_index_queue[161].second = 3
 _automl_config_manager_index_queue[162].first = -12
 _automl_config_manager_index_queue[162].second = 2
-_automl_config_manager_per_live_model_state_double.size() = 9
-_automl_config_manager_per_live_model_state_double[0] = 527.0563162750805
-_automl_config_manager_per_live_model_state_double[1] = 0.20408162474632263
-_automl_config_manager_per_live_model_state_double[2] = 0
-_automl_config_manager_per_live_model_state_double[3] = 525.5256293525599
-_automl_config_manager_per_live_model_state_double[4] = 0.20408162474632263
-_automl_config_manager_per_live_model_state_double[5] = 0
-_automl_config_manager_per_live_model_state_double[6] = 523.9874438254192
-_automl_config_manager_per_live_model_state_double[7] = 0.20408162474632263
-_automl_config_manager_per_live_model_state_double[8] = 0
-_automl_config_manager_per_live_model_state_uint64.size() = 6
-_automl_config_manager_per_live_model_state_uint64[0] = 3
-_automl_config_manager_per_live_model_state_uint64[1] = 36
-_automl_config_manager_per_live_model_state_uint64[2] = 3
-_automl_config_manager_per_live_model_state_uint64[3] = 36
-_automl_config_manager_per_live_model_state_uint64[4] = 3
-_automl_config_manager_per_live_model_state_uint64[5] = 36
-event_sum 0
-action_sum 0
+event_sum 3
+action_sum 36
 :1
 initial_t 0
-norm normalizer 0
+norm normalizer 527.056
 t 3
 sum_loss -0.122449
 sum_loss_since_last_dump 0
@@ -1813,7 +1796,7 @@ weighted_labels 0
 weighted_unlabeled_examples 0
 example_number 3
 total_features 508674
-total_weight 0
+total_weight 0.204082
 sd::oec.weighted_labeled_examples 3
 current_pass 1
 l1_state 0

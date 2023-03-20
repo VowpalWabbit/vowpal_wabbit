@@ -200,12 +200,12 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::csoaa_setup(VW::setup_base
   c->search = options.was_supplied("search");
 
   c->pred = VW::details::calloc_or_throw<VW::polyprediction>(c->num_classes);
-  size_t ws = c->num_classes;
-  auto l = make_reduction_learner(std::move(c), require_singleline(stack_builder.setup_base_learner()),
+  size_t feature_width = c->num_classes;
+  auto l = make_reduction_learner(std::move(c), require_singleline(stack_builder.setup_base_learner(feature_width)),
       predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(csoaa_setup))
                .set_learn_returns_prediction(
                    true) /* csoaa.learn calls gd.learn. nothing to be gained by calling csoaa.predict first */
-               .set_params_per_weight(ws)
+               .set_feature_width(feature_width)
                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
                .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
                .set_input_label_type(VW::label_type_t::CS)
@@ -214,8 +214,5 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::csoaa_setup(VW::setup_base
                .set_output_example_prediction(VW::details::output_example_prediction_cs_label<csoaa>)
                .set_print_update(VW::details::print_update_cs_label<csoaa>)
                .build();
-
-  all.parser_runtime.example_parser->lbl_parser = VW::cs_label_parser_global;
-
   return l;
 }
