@@ -5082,12 +5082,13 @@
   {
     "id": 394,
     "desc": "Test using automl with ccb",
-    "vw_command": "--ccb_explore_adf --example_queue_limit 7 -d train-sets/ccb_reuse_small.data --automl 3 --verbose_metrics --extra_metrics aml_ccb_metrics.json --oracle_type one_diff",
+    "vw_command": "--ccb_explore_adf --example_queue_limit 7 -d train-sets/ccb_automl.dsjson --automl 4 --dsjson --verbose_metrics --extra_metrics aml_ccb_metrics.json --oracle_type one_diff",
     "diff_files": {
+      "stderr": "train-sets/ref/automl_ccb.stderr",
       "aml_ccb_metrics.json": "test-sets/ref/aml_ccb_metrics.json"
     },
     "input_files": [
-      "train-sets/ccb_reuse_small.data"
+      "train-sets/ccb_automl.dsjson"
     ]
   },
   {
@@ -5883,6 +5884,17 @@
     },
     "input_files": [
       "train-sets/automl_spin_off.txt"
+    ]
+  },
+  {
+    "id": 455,
+    "desc": "large action spaces with cb_explore_adf epsilon greedy and ips",
+    "vw_command": "--cb_explore_adf -d train-sets/las_100_actions.txt --noconstant --large_action_space --cb_type ips",
+    "diff_files": {
+      "stderr": "train-sets/ref/las_egreedy_ips.stderr"    
+    },
+    "input_files": [
+      "train-sets/las_100_actions.txt"
     ]
   }
 ]

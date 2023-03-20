@@ -35,8 +35,8 @@ TEST(Las, CheckFindingMaxVolume)
     VW::cb_explore_adf::cb_explore_adf_large_action_space<VW::cb_explore_adf::one_pass_svd_impl,
         VW::cb_explore_adf::one_rank_spanner_state>
         largecb(
-            /*d=*/0, /*c=*/2, false, vw.get(), seed, 1 << vw->num_bits,
-            /*thread_pool_size*/ 0, /*block_size*/ 0, /*use_explicit_simd=*/use_simd,
+            /*d=*/0, /*c=*/2, false, vw.get(), seed, 1 << vw->initial_weights_config.num_bits,
+            /*thread_pool_size*/ 0, /*block_size*/ 0, /*cache slack size*/ 50, /*use_explicit_simd=*/use_simd,
             VW::cb_explore_adf::implementation_type::one_pass_svd);
     largecb.U = Eigen::MatrixXf{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {0, 0, 0}, {7, 5, 3}, {6, 4, 8}};
     Eigen::MatrixXf X{{1, 2, 3}, {3, 2, 1}, {2, 1, 3}};

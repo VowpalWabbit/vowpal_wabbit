@@ -8,6 +8,7 @@
 #include "vw/common/random.h"
 #include "vw/config/options.h"
 #include "vw/core/example.h"
+#include "vw/core/feature_group.h"
 #include "vw/core/learner.h"
 #include "vw/core/multiclass.h"
 #include "vw/core/multilabel.h"
@@ -226,39 +227,14 @@ public:
   }
 };
 
-float linear_kernel(const VW::flat_example* fec1, const VW::flat_example* fec2)
-{
-  float dotprod = 0;
-
-  auto& fs_1 = const_cast<VW::features&>(fec1->fs);
-  auto& fs_2 = const_cast<VW::features&>(fec2->fs);
-  if (fs_2.indices.size() == 0) { return 0.f; }
-
-  for (size_t idx1 = 0, idx2 = 0; idx1 < fs_1.size() && idx2 < fs_2.size(); idx1++)
-  {
-    uint64_t ec1pos = fs_1.indices[idx1];
-    uint64_t ec2pos = fs_2.indices[idx2];
-    if (ec1pos < ec2pos) { continue; }
-
-    while (ec1pos > ec2pos && ++idx2 < fs_2.size()) { ec2pos = fs_2.indices[idx2]; }
-
-    if (ec1pos == ec2pos)
-    {
-      dotprod += fs_1.values[idx1] * fs_2.values[idx2];
-      ++idx2;
-    }
-  }
-  return dotprod;
-}
-
 float normalized_linear_prod(memory_tree& b, VW::example* ec1, VW::example* ec2)
 {
-  VW::flat_example* fec1 = VW::flatten_sort_example(*b.all, ec1);
-  VW::flat_example* fec2 = VW::flatten_sort_example(*b.all, ec2);
-  float norm_sqrt = std::pow(fec1->total_sum_feat_sq * fec2->total_sum_feat_sq, 0.5f);
-  float linear_prod = linear_kernel(fec1, fec2);
-  VW::free_flatten_example(fec1);
-  VW::free_flatten_example(fec2);
+  VW::features fs1;
+  VW::features fs2;
+  flatten_features(*b.all, *ec1, fs1);
+  flatten_features(*b.all, *ec2, fs2);
+  float norm_sqrt = std::pow(fs1.sum_feat_sq * fs2.sum_feat_sq, 0.5f);
+  float linear_prod = VW::features_dot_product(fs1, fs2);
   return linear_prod / norm_sqrt;
 }
 
@@ -1204,8 +1180,8 @@ void save_load_memory_tree(memory_tree& b, VW::io_buf& model_file, bool read, bo
     for (uint32_t i = 0; i < n_examples; i++)
     {
       save_load_example(b.examples[i], model_file, read, text, msg, b.oas);
-      b.examples[i]->interactions = &b.all->interactions;
-      b.examples[i]->extent_interactions = &b.all->extent_interactions;
+      b.examples[i]->interactions = &b.all->feature_tweaks_config.interactions;
+      b.examples[i]->extent_interactions = &b.all->feature_tweaks_config.extent_interactions;
     }
     // std::cout<<"done loading...."<< std::endl;
   }
@@ -1253,24 +1229,24 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::memory_tree_setup(VW::setu
   tree->all = &all;
   tree->random_state = all.get_random_state();
   tree->current_pass = 0;
-  tree->final_pass = all.numpasses;
+  tree->final_pass = all.runtime_config.numpasses;
 
   tree->max_leaf_examples = static_cast<size_t>(tree->leaf_example_multiplier * (log(tree->max_nodes) / log(2)));
 
   init_tree(*tree);
 
-  if (!all.quiet)
+  if (!all.output_config.quiet)
   {
-    *(all.trace_message) << "memory_tree:"
-                         << " "
-                         << "max_nodes = " << tree->max_nodes << " "
-                         << "max_leaf_examples = " << tree->max_leaf_examples << " "
-                         << "alpha = " << tree->alpha << " "
-                         << "oas = " << tree->oas << " "
-                         << "online =" << tree->online << " " << std::endl;
+    *(all.output_runtime.trace_message) << "memory_tree:"
+                                        << " "
+                                        << "max_nodes = " << tree->max_nodes << " "
+                                        << "max_leaf_examples = " << tree->max_leaf_examples << " "
+                                        << "alpha = " << tree->alpha << " "
+                                        << "oas = " << tree->oas << " "
+                                        << "online =" << tree->online << " " << std::endl;
   }
 
-  size_t num_learners;
+  size_t feature_width;
   VW::prediction_type_t pred_type;
   VW::label_type_t label_type;
   bool oas = tree->oas;
@@ -1278,22 +1254,20 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::memory_tree_setup(VW::setu
   // multi-class classification
   if (!oas)
   {
-    num_learners = tree->max_nodes + 1;
-    all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
+    feature_width = tree->max_nodes + 1;
     pred_type = VW::prediction_type_t::MULTICLASS;
     label_type = VW::label_type_t::MULTICLASS;
   }  // multi-label classification
   else
   {
-    num_learners = tree->max_nodes + 1 + tree->max_num_labels;
-    all.example_parser->lbl_parser = VW::multilabel_label_parser_global;
+    feature_width = tree->max_nodes + 1 + tree->max_num_labels;
     pred_type = VW::prediction_type_t::MULTILABELS;
     label_type = VW::label_type_t::MULTILABEL;
   }
 
-  auto l = make_reduction_learner(std::move(tree), require_singleline(stack_builder.setup_base_learner(num_learners)),
+  auto l = make_reduction_learner(std::move(tree), require_singleline(stack_builder.setup_base_learner(feature_width)),
       learn, predict, stack_builder.get_setupfn_name(memory_tree_setup))
-               .set_params_per_weight(num_learners)
+               .set_feature_width(feature_width)
                .set_end_pass(end_pass)
                .set_save_load(save_load_memory_tree)
                .set_input_label_type(label_type)

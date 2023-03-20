@@ -267,7 +267,7 @@ std::string default_reduction_stack_setup::get_setupfn_name(reduction_setup_fn s
 
 // this function consumes all the _reduction_stack until it's able to construct a learner
 // same signature/code as the old setup_base(...) from parse_args.cc
-std::shared_ptr<VW::LEARNER::learner> default_reduction_stack_setup::setup_base_learner(size_t increment)
+std::shared_ptr<VW::LEARNER::learner> default_reduction_stack_setup::setup_base_learner(size_t feature_width)
 {
   if (!_reduction_stack.empty())
   {
@@ -276,7 +276,7 @@ std::shared_ptr<VW::LEARNER::learner> default_reduction_stack_setup::setup_base_
     std::string setup_func_name = std::get<0>(func_map);
     _reduction_stack.pop_back();
 
-    _ppw *= increment;
+    _feature_width_above *= feature_width;
     // 'hacky' way of keeping track of the option group created by the setup_func about to be created
     _options_impl->tint(setup_func_name);
     std::shared_ptr<VW::LEARNER::learner> result = setup_func(*this);
@@ -288,6 +288,11 @@ std::shared_ptr<VW::LEARNER::learner> default_reduction_stack_setup::setup_base_
     if (result == nullptr) { return this->setup_base_learner(); }
     else
     {
+      if (result->get_base_learner() == nullptr)
+      {
+        result->feature_width = get_all_pointer()->weights.stride();
+        result->feature_width_below = result->feature_width;
+      }
       _reduction_stack.clear();
       return result;
     }

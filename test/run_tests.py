@@ -770,7 +770,7 @@ def convert_tests_for_flatbuffers(
             )
             continue
         # todo: 300 understand why is it failing
-        # test 189, 312, 316, 318, 351, 438 and 319 depend on dsjson parser behaviour
+        # test 189, 312, 316, 318, 351, 438, 394 and 319 depend on dsjson parser behaviour
         # they can be enabled if we ignore diffing the --extra_metrics
         # (324-326) deals with corrupted data, so cannot be translated to fb
         # pdrop is not supported in fb, so 327-331 are excluded
@@ -795,6 +795,7 @@ def convert_tests_for_flatbuffers(
             "337",
             "338",
             "351",
+            "394",
             "399",
             "400",
             "404",
@@ -926,10 +927,11 @@ def get_test(test_number: int, tests: List[TestData]) -> Optional[TestData]:
 def interpret_test_arg(arg: str, *, num_tests: int) -> List[int]:
     single_number_pattern = re.compile(r"^\d+$")
     range_pattern = re.compile(r"^(\d+)?\.\.(\d+)?$")
+    range_pattern_match = range_pattern.match(arg)
     if single_number_pattern.match(arg):
         return [int(arg)]
-    elif range_pattern.match(arg):
-        start, end = range_pattern.match(arg).groups()
+    elif range_pattern_match:
+        start, end = range_pattern_match.groups()
         start = int(start) if start else 1
         end = int(end) if end else num_tests
         if start > end:

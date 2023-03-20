@@ -160,7 +160,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
   if (search_span_bilou)
   {
     // TODO: is this the right logger?
-    *(sch.get_vw_pointer_unsafe().trace_message)
+    *(sch.get_vw_pointer_unsafe().output_runtime.trace_message)
         << "switching to BILOU encoding for sequence span labeling" << std::endl;
     data->encoding = encoding_type::BILOU;
     num_actions = num_actions * 2 - 1;
@@ -191,7 +191,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
       Search::AUTO_HAMMING_LOSS |     // please just use hamming loss on individual predictions -- we won't declare loss
       Search::EXAMPLES_DONT_CHANGE |  // we don't do any internal example munging
       0);
-  sch.set_num_learners(num_actions);
+  sch.set_feature_width(num_actions);
   sch.set_task_data<task_data>(data.release());
 }
 
@@ -397,8 +397,8 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& /*options*/
     auto& lab = data->ldf_examples[a].l.cs;
     lab.reset_to_default();
     lab.costs.push_back(default_wclass);
-    data->ldf_examples[a].interactions = &sch.get_vw_pointer_unsafe().interactions;
-    data->ldf_examples[a].extent_interactions = &sch.get_vw_pointer_unsafe().extent_interactions;
+    data->ldf_examples[a].interactions = &sch.get_vw_pointer_unsafe().feature_tweaks_config.interactions;
+    data->ldf_examples[a].extent_interactions = &sch.get_vw_pointer_unsafe().feature_tweaks_config.extent_interactions;
   }
 
   data->num_actions = num_actions;

@@ -76,8 +76,8 @@ void confidence_print_result(
 void output_example_prediction_confidence(
     VW::workspace& all, const confidence& /* data */, const VW::example& ec, VW::io::logger& logger)
 {
-  all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag, logger);
-  for (const auto& sink : all.final_prediction_sink)
+  all.print_by_ref(all.output_runtime.raw_prediction.get(), ec.partial_prediction, -1, ec.tag, logger);
+  for (const auto& sink : all.output_runtime.final_prediction_sink)
   {
     confidence_print_result(sink.get(), ec.pred.scalar, ec.confidence, ec.tag, logger);
   }
@@ -97,7 +97,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::confidence_setup(VW::setup
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  if (!all.training)
+  if (!all.runtime_config.training)
   {
     all.logger.out_warn(
         "Confidence does not work in test mode because learning algorithm state is needed.  Do not use "

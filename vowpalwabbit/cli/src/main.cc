@@ -19,7 +19,7 @@ using namespace VW::config;
 std::unique_ptr<VW::workspace> setup(std::unique_ptr<options_i> options)
 {
   auto all = VW::initialize(std::move(options));
-  all->vw_is_main = true;
+  all->runtime_config.vw_is_main = true;
   return all;
 }
 
@@ -117,7 +117,10 @@ int main(int argc, char* argv[])
 
     for (auto& v : alls)
     {
-      if (v->example_parser->exc_ptr) { std::rethrow_exception(v->example_parser->exc_ptr); }
+      if (v->parser_runtime.example_parser->exc_ptr)
+      {
+        std::rethrow_exception(v->parser_runtime.example_parser->exc_ptr);
+      }
 
       VW::sync_stats(*v);
       // Leave deletion up to the unique_ptr

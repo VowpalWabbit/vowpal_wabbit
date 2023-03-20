@@ -40,7 +40,7 @@ void predict_or_learn(scorer& s, VW::LEARNER::learner& base, VW::example& ec)
 
   if (ec.weight > 0 && ec.l.simple.label != FLT_MAX)
   {
-    ec.loss = s.all->loss->get_loss(s.all->sd.get(), ec.pred.scalar, ec.l.simple.label) * ec.weight;
+    ec.loss = s.all->loss_config.loss->get_loss(s.all->sd.get(), ec.pred.scalar, ec.l.simple.label) * ec.weight;
   }
 
   ec.pred.scalar = link(ec.pred.scalar);

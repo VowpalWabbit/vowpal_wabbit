@@ -367,21 +367,21 @@ std::vector<VW::namespace_extent> unflatten_namespace_extents_dont_skip(
 void to_flat::convert_txt_to_flat(VW::workspace& all)
 {
   std::ofstream outfile;
-  if (output_flatbuffer_name.empty()) { output_flatbuffer_name = all.data_filename + ".fb"; }
+  if (output_flatbuffer_name.empty()) { output_flatbuffer_name = all.parser_runtime.data_filename + ".fb"; }
   outfile.open(output_flatbuffer_name, std::ios::binary | std::ios::out);
 
   MultiExampleBuilder multi_ex_builder;
   ExampleBuilder ex_builder;
 
   VW::example* ae = nullptr;
-  all.example_parser->ready_parsed_examples.try_pop(ae);
+  all.parser_runtime.example_parser->ready_parsed_examples.try_pop(ae);
 
   while (ae != nullptr && !ae->end_pass)
   {
     // Create Label for current example
     flatbuffers::Offset<void> label;
     VW::parsers::flatbuffer::Label label_type = VW::parsers::flatbuffer::Label_NONE;
-    switch (all.example_parser->lbl_parser.label_type)
+    switch (all.parser_runtime.example_parser->lbl_parser.label_type)
     {
       case VW::label_type_t::NOLABEL:
         to_flat::create_no_label(ae, ex_builder);
@@ -418,7 +418,7 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
         break;
     }
 
-    uint64_t multiplier = (uint64_t)all.wpp << all.weights.stride_shift();
+    uint64_t multiplier = (uint64_t)all.reduction_state.total_feature_width << all.weights.stride_shift();
     if (multiplier != 1)
     {
       for (VW::features& fs : *ae)
@@ -442,7 +442,8 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
       {
         // The extent hash for a non-hash-extent will be 0, which is the same as the field no existing to flatbuffers.
         auto created_ns = create_namespace(ae->feature_space[ns].audit_begin() + extent.begin_index,
-            ae->feature_space[ns].audit_begin() + extent.end_index, ns, extent.hash, all.audit || all.hash_inv);
+            ae->feature_space[ns].audit_begin() + extent.end_index, ns, extent.hash,
+            all.output_config.audit || all.output_config.hash_inv);
         namespaces.push_back(created_ns);
       }
     }
@@ -451,11 +452,11 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
     if (all.l->is_multiline())
     {
       if (!VW::example_is_newline(*ae) ||
-          (all.example_parser->lbl_parser.label_type == VW::label_type_t::CB &&
+          (all.parser_runtime.example_parser->lbl_parser.label_type == VW::label_type_t::CB &&
               !VW::example_is_newline_not_header_cb(*ae)) ||
-          ((all.example_parser->lbl_parser.label_type == VW::label_type_t::CCB &&
+          ((all.parser_runtime.example_parser->lbl_parser.label_type == VW::label_type_t::CCB &&
                ae->l.conditional_contextual_bandit.type == VW::ccb_example_type::SLOT) ||
-              (all.example_parser->lbl_parser.label_type == VW::label_type_t::SLATES &&
+              (all.parser_runtime.example_parser->lbl_parser.label_type == VW::label_type_t::SLATES &&
                   ae->l.slates.type == VW::slates::example_type::SLOT)))
       {
         ex_builder.namespaces.insert(ex_builder.namespaces.end(), namespaces.begin(), namespaces.end());
@@ -466,7 +467,7 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
         _multi_ex_index++;
         _examples++;
         ae = nullptr;
-        all.example_parser->ready_parsed_examples.try_pop(ae);
+        all.parser_runtime.example_parser->ready_parsed_examples.try_pop(ae);
         continue;
       }
       else { ex_builder.is_newline = true; }
@@ -482,7 +483,7 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
     write_to_file(collection, all.l->is_multiline(), multi_ex_builder, ex_builder, outfile);
 
     ae = nullptr;
-    all.example_parser->ready_parsed_examples.try_pop(ae);
+    all.parser_runtime.example_parser->ready_parsed_examples.try_pop(ae);
   }
 
   if (collection && _collection_count > 0)
@@ -496,6 +497,6 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
     write_to_file(collection, all.l->is_multiline(), multi_ex_builder, ex_builder, outfile);
   }
 
-  *(all.trace_message) << "Converted " << _examples << " examples" << std::endl;
-  *(all.trace_message) << "Flatbuffer " << output_flatbuffer_name << " created" << std::endl;
+  *(all.output_runtime.trace_message) << "Converted " << _examples << " examples" << std::endl;
+  *(all.output_runtime.trace_message) << "Flatbuffer " << output_flatbuffer_name << " created" << std::endl;
 }

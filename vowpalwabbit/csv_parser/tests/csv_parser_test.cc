@@ -32,7 +32,7 @@ TEST(CsvParser, ComplexCsvSimpleLabelExamples)
   VW::multi_ex examples;
 
   examples.push_back(&VW::get_unused_example(vw.get()));
-  EXPECT_EQ(vw->example_parser->reader(vw.get(), buffer, examples), 1);
+  EXPECT_EQ(vw->parser_runtime.example_parser->reader(vw.get(), buffer, examples), 1);
 
   // Check example 1 label and tag
   EXPECT_FLOAT_EQ(examples[0]->l.simple.label, 1.f);
@@ -93,7 +93,7 @@ TEST(CsvParser, ComplexCsvSimpleLabelExamples)
   examples.clear();
 
   examples.push_back(&VW::get_unused_example(vw.get()));
-  EXPECT_EQ(vw->example_parser->reader(vw.get(), buffer, examples), 1);
+  EXPECT_EQ(vw->parser_runtime.example_parser->reader(vw.get(), buffer, examples), 1);
 
   // Check example 2 label and tag
   EXPECT_FLOAT_EQ(examples[0]->l.simple.label, 2.f);
@@ -164,7 +164,7 @@ TEST(CsvParser, MultipleFileExamples)
   buffer.add_file(VW::io::create_buffer_view(file1_string.data(), file1_string.size()));
 
   examples.push_back(&VW::get_unused_example(vw.get()));
-  EXPECT_EQ(vw->example_parser->reader(vw.get(), buffer, examples), 1);
+  EXPECT_EQ(vw->parser_runtime.example_parser->reader(vw.get(), buffer, examples), 1);
 
   EXPECT_FLOAT_EQ(examples[0]->l.simple.label, 4);
   EXPECT_EQ(examples[0]->tag.size(), 1);
@@ -178,7 +178,7 @@ TEST(CsvParser, MultipleFileExamples)
 
   VW::finish_example(*vw, *examples[0]);
 
-  EXPECT_EQ(vw->example_parser->reader(vw.get(), buffer, examples), 0);
+  EXPECT_EQ(vw->parser_runtime.example_parser->reader(vw.get(), buffer, examples), 0);
   examples.clear();
 
   // Read the second file
@@ -194,7 +194,7 @@ TEST(CsvParser, MultipleFileExamples)
   buffer.add_file(VW::io::create_buffer_view(file2_string.data(), file2_string.size()));
 
   examples.push_back(&VW::get_unused_example(vw.get()));
-  EXPECT_EQ(vw->example_parser->reader(vw.get(), buffer, examples), 1);
+  EXPECT_EQ(vw->parser_runtime.example_parser->reader(vw.get(), buffer, examples), 1);
 
   EXPECT_FLOAT_EQ(examples[0]->l.simple.label, 6);
   EXPECT_EQ(examples[0]->tag.size(), 2);
@@ -228,7 +228,7 @@ TEST(CsvParser, MulticlassExamples)
   VW::multi_ex examples;
 
   examples.push_back(&VW::get_unused_example(vw.get()));
-  EXPECT_EQ(vw->example_parser->reader(vw.get(), buffer, examples), 1);
+  EXPECT_EQ(vw->parser_runtime.example_parser->reader(vw.get(), buffer, examples), 1);
 
   // Check example 1 label
   EXPECT_EQ(examples[0]->l.multi.label, 2);
@@ -256,7 +256,7 @@ TEST(CsvParser, MulticlassExamples)
   examples.clear();
 
   examples.push_back(&VW::get_unused_example(vw.get()));
-  EXPECT_EQ(vw->example_parser->reader(vw.get(), buffer, examples), 1);
+  EXPECT_EQ(vw->parser_runtime.example_parser->reader(vw.get(), buffer, examples), 1);
 
   // Check example 1 label
   EXPECT_EQ(examples[0]->l.multi.label, 1);
@@ -304,7 +304,7 @@ TEST(CsvParser, ReplaceHeader)
   VW::multi_ex examples;
 
   examples.push_back(&VW::get_unused_example(vw.get()));
-  EXPECT_EQ(vw->example_parser->reader(vw.get(), buffer, examples), 1);
+  EXPECT_EQ(vw->parser_runtime.example_parser->reader(vw.get(), buffer, examples), 1);
 
   // Check example 1 label
   EXPECT_FLOAT_EQ(examples[0]->l.simple.label, 3.f);
@@ -349,7 +349,7 @@ TEST(CsvParser, NoHeader)
   VW::multi_ex examples;
 
   examples.push_back(&VW::get_unused_example(vw.get()));
-  EXPECT_EQ(vw->example_parser->reader(vw.get(), buffer, examples), 1);
+  EXPECT_EQ(vw->parser_runtime.example_parser->reader(vw.get(), buffer, examples), 1);
 
   // Check example 1 label
   EXPECT_FLOAT_EQ(examples[0]->l.simple.label, 2.f);
@@ -398,7 +398,7 @@ TEST(CsvParser, EmptyHeaderAndExampleLine)
   VW::multi_ex examples;
 
   examples.push_back(&VW::get_unused_example(vw.get()));
-  EXPECT_EQ(vw->example_parser->reader(vw.get(), buffer, examples), 1);
+  EXPECT_EQ(vw->parser_runtime.example_parser->reader(vw.get(), buffer, examples), 1);
   EXPECT_EQ(examples[0]->is_newline, true);
 
   VW::finish_example(*vw, *examples[0]);
@@ -419,7 +419,7 @@ TEST(CsvParser, EmptyLineErrorThrown)
   VW::multi_ex examples;
 
   examples.push_back(&VW::get_unused_example(vw.get()));
-  EXPECT_THROW(vw->example_parser->reader(vw.get(), buffer, examples), VW::vw_exception);
+  EXPECT_THROW(vw->parser_runtime.example_parser->reader(vw.get(), buffer, examples), VW::vw_exception);
 
   VW::finish_example(*vw, *examples[0]);
 }
@@ -455,7 +455,7 @@ TEST(CsvParser, MalformedNamespaceValuePairNoElementErrorThrown)
   buffer.add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
   VW::multi_ex examples;
   examples.push_back(&VW::get_unused_example(vw.get()));
-  EXPECT_THROW(vw->example_parser->reader(vw.get(), buffer, examples), VW::vw_exception);
+  EXPECT_THROW(vw->parser_runtime.example_parser->reader(vw.get(), buffer, examples), VW::vw_exception);
 
   VW::finish_example(*vw, *examples[0]);
 }
@@ -468,7 +468,7 @@ TEST(CsvParser, MalformedNamespaceValuePairOneElementErrorThrown)
   buffer.add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
   VW::multi_ex examples;
   examples.push_back(&VW::get_unused_example(vw.get()));
-  EXPECT_THROW(vw->example_parser->reader(vw.get(), buffer, examples), VW::vw_exception);
+  EXPECT_THROW(vw->parser_runtime.example_parser->reader(vw.get(), buffer, examples), VW::vw_exception);
 
   VW::finish_example(*vw, *examples[0]);
 }
@@ -481,7 +481,7 @@ TEST(CsvParser, MalformedNamespaceValuePairThreeElementErrorThrown)
   buffer.add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
   VW::multi_ex examples;
   examples.push_back(&VW::get_unused_example(vw.get()));
-  EXPECT_THROW(vw->example_parser->reader(vw.get(), buffer, examples), VW::vw_exception);
+  EXPECT_THROW(vw->parser_runtime.example_parser->reader(vw.get(), buffer, examples), VW::vw_exception);
 
   VW::finish_example(*vw, *examples[0]);
 }
@@ -494,7 +494,7 @@ TEST(CsvParser, NanNamespaceValueErrorThrown)
   buffer.add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
   VW::multi_ex examples;
   examples.push_back(&VW::get_unused_example(vw.get()));
-  EXPECT_THROW(vw->example_parser->reader(vw.get(), buffer, examples), VW::vw_exception);
+  EXPECT_THROW(vw->parser_runtime.example_parser->reader(vw.get(), buffer, examples), VW::vw_exception);
 
   VW::finish_example(*vw, *examples[0]);
 }
@@ -513,7 +513,7 @@ TEST(CsvParser, MalformedHeaderErrorThrown)
   VW::multi_ex examples;
 
   examples.push_back(&VW::get_unused_example(vw.get()));
-  EXPECT_THROW(vw->example_parser->reader(vw.get(), buffer, examples), VW::vw_exception);
+  EXPECT_THROW(vw->parser_runtime.example_parser->reader(vw.get(), buffer, examples), VW::vw_exception);
 
   VW::finish_example(*vw, *examples[0]);
 }
@@ -535,8 +535,8 @@ TEST(CsvParser, UnmatchingElementErrorThrown)
   VW::multi_ex examples;
 
   examples.push_back(&VW::get_unused_example(vw.get()));
-  EXPECT_THROW(vw->example_parser->reader(vw.get(), buffer, examples), VW::vw_exception);
-  EXPECT_THROW(vw->example_parser->reader(vw.get(), buffer, examples), VW::vw_exception);
+  EXPECT_THROW(vw->parser_runtime.example_parser->reader(vw.get(), buffer, examples), VW::vw_exception);
+  EXPECT_THROW(vw->parser_runtime.example_parser->reader(vw.get(), buffer, examples), VW::vw_exception);
 
   VW::finish_example(*vw, *examples[0]);
 }
@@ -554,7 +554,7 @@ TEST(CsvParser, UnmatchingQuotesErrorThrown)
   VW::multi_ex examples;
 
   examples.push_back(&VW::get_unused_example(vw.get()));
-  EXPECT_THROW(vw->example_parser->reader(vw.get(), buffer, examples), VW::vw_exception);
+  EXPECT_THROW(vw->parser_runtime.example_parser->reader(vw.get(), buffer, examples), VW::vw_exception);
 
   VW::finish_example(*vw, *examples[0]);
 }
@@ -571,7 +571,7 @@ TEST(CsvParser, QuotesEolErrorThrown)
   VW::multi_ex examples;
 
   examples.push_back(&VW::get_unused_example(vw.get()));
-  EXPECT_THROW(vw->example_parser->reader(vw.get(), buffer, examples), VW::vw_exception);
+  EXPECT_THROW(vw->parser_runtime.example_parser->reader(vw.get(), buffer, examples), VW::vw_exception);
 
   VW::finish_example(*vw, *examples[0]);
 }
@@ -614,7 +614,7 @@ TEST(CsvParser, MultilineExamples)
 
   // Example 1
   examples.push_back(&VW::get_unused_example(vw.get()));
-  EXPECT_EQ(vw->example_parser->reader(vw.get(), buffer, examples), 1);
+  EXPECT_EQ(vw->parser_runtime.example_parser->reader(vw.get(), buffer, examples), 1);
   EXPECT_EQ(examples[0]->l.cb.costs.size(), 1);
   EXPECT_EQ(examples[0]->feature_space[' '].size(), 2);
   EXPECT_FLOAT_EQ(examples[0]->feature_space[' '].values[0], 1);
@@ -623,7 +623,7 @@ TEST(CsvParser, MultilineExamples)
   examples.clear();
 
   examples.push_back(&VW::get_unused_example(vw.get()));
-  EXPECT_EQ(vw->example_parser->reader(vw.get(), buffer, examples), 1);
+  EXPECT_EQ(vw->parser_runtime.example_parser->reader(vw.get(), buffer, examples), 1);
   EXPECT_EQ(examples[0]->l.cb.costs.size(), 1);
   EXPECT_FLOAT_EQ(examples[0]->l.cb.costs[0].probability, 0.75);
   EXPECT_FLOAT_EQ(examples[0]->l.cb.costs[0].cost, 0.1);
@@ -636,7 +636,7 @@ TEST(CsvParser, MultilineExamples)
   examples.clear();
 
   examples.push_back(&VW::get_unused_example(vw.get()));
-  EXPECT_EQ(vw->example_parser->reader(vw.get(), buffer, examples), 1);
+  EXPECT_EQ(vw->parser_runtime.example_parser->reader(vw.get(), buffer, examples), 1);
   EXPECT_EQ(examples[0]->l.cb.costs.size(), 0);
   EXPECT_EQ(examples[0]->feature_space[' '].size(), 2);
   EXPECT_FLOAT_EQ(examples[0]->feature_space[' '].values[0], 1);
@@ -645,14 +645,14 @@ TEST(CsvParser, MultilineExamples)
   examples.clear();
 
   examples.push_back(&VW::get_unused_example(vw.get()));
-  EXPECT_EQ(vw->example_parser->reader(vw.get(), buffer, examples), 1);
+  EXPECT_EQ(vw->parser_runtime.example_parser->reader(vw.get(), buffer, examples), 1);
   EXPECT_EQ(examples[0]->is_newline, true);
   VW::finish_example(*vw, *examples[0]);
   examples.clear();
 
   // Example 2
   examples.push_back(&VW::get_unused_example(vw.get()));
-  EXPECT_EQ(vw->example_parser->reader(vw.get(), buffer, examples), 1);
+  EXPECT_EQ(vw->parser_runtime.example_parser->reader(vw.get(), buffer, examples), 1);
   EXPECT_EQ(examples[0]->l.cb.costs.size(), 1);
   EXPECT_EQ(examples[0]->feature_space[' '].size(), 2);
   EXPECT_FLOAT_EQ(examples[0]->feature_space[' '].values[0], 1);
@@ -661,7 +661,7 @@ TEST(CsvParser, MultilineExamples)
   examples.clear();
 
   examples.push_back(&VW::get_unused_example(vw.get()));
-  EXPECT_EQ(vw->example_parser->reader(vw.get(), buffer, examples), 1);
+  EXPECT_EQ(vw->parser_runtime.example_parser->reader(vw.get(), buffer, examples), 1);
   EXPECT_EQ(examples[0]->l.cb.costs.size(), 1);
   EXPECT_FLOAT_EQ(examples[0]->l.cb.costs[0].probability, 0.5);
   EXPECT_FLOAT_EQ(examples[0]->l.cb.costs[0].cost, 1.0);
@@ -674,7 +674,7 @@ TEST(CsvParser, MultilineExamples)
   examples.clear();
 
   examples.push_back(&VW::get_unused_example(vw.get()));
-  EXPECT_EQ(vw->example_parser->reader(vw.get(), buffer, examples), 1);
+  EXPECT_EQ(vw->parser_runtime.example_parser->reader(vw.get(), buffer, examples), 1);
   EXPECT_EQ(examples[0]->l.cb.costs.size(), 0);
   EXPECT_EQ(examples[0]->feature_space[' '].size(), 3);
   EXPECT_FLOAT_EQ(examples[0]->feature_space[' '].values[0], 0.5);
@@ -684,7 +684,7 @@ TEST(CsvParser, MultilineExamples)
   examples.clear();
 
   examples.push_back(&VW::get_unused_example(vw.get()));
-  EXPECT_EQ(vw->example_parser->reader(vw.get(), buffer, examples), 1);
+  EXPECT_EQ(vw->parser_runtime.example_parser->reader(vw.get(), buffer, examples), 1);
   EXPECT_EQ(examples[0]->is_newline, true);
   VW::finish_example(*vw, *examples[0]);
   examples.clear();

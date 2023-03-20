@@ -41,11 +41,12 @@ VW::workspace* setup(std::unique_ptr<options_i, VW::options_deleter_type> option
     std::cout << "unknown exception" << std::endl;
     throw;
   }
-  all->vw_is_main = true;
+  all->runtime_config.vw_is_main = true;
 
-  if (!all->quiet && !all->bfgs && !all->searchstr && !all->options->was_supplied("audit_regressor"))
+  if (!all->output_config.quiet && !all->reduction_state.bfgs && !all->reduction_state.searchstr &&
+      !all->options->was_supplied("audit_regressor"))
   {
-    all->sd->print_update_header(*(all->trace_message));
+    all->sd->print_update_header(*(all->output_runtime.trace_message));
   }
 
   return all;

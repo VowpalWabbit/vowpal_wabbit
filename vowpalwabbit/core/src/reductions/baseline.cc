@@ -56,7 +56,8 @@ void init_global(baseline_data& data)
   data.ec.indices.push_back(VW::details::CONSTANT_NAMESPACE);
   // different index from constant to avoid conflicts
   data.ec.feature_space[VW::details::CONSTANT_NAMESPACE].push_back(1,
-      ((VW::details::CONSTANT - 17) * data.all->wpp) << data.all->weights.stride_shift(),
+      ((VW::details::CONSTANT - 17) * data.all->reduction_state.total_feature_width)
+          << data.all->weights.stride_shift(),
       VW::details::CONSTANT_NAMESPACE);
   data.ec.reset_total_sum_feat_sq();
   data.ec.num_features++;
@@ -111,9 +112,9 @@ void predict_or_learn(baseline_data& data, learner& base, VW::example& ec)
         multiplier = std::max(0.0001f, std::max(std::abs(data.all->sd->min_label), std::abs(data.all->sd->max_label)));
         if (multiplier > MAX_MULTIPLIER) { multiplier = MAX_MULTIPLIER; }
       }
-      data.all->eta *= multiplier;
+      data.all->update_rule_config.eta *= multiplier;
       base.learn(data.ec);
-      data.all->eta /= multiplier;
+      data.all->update_rule_config.eta /= multiplier;
     }
     else { base.learn(data.ec); }
 
@@ -181,11 +182,11 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::baseline_setup(VW::setup_b
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   // initialize baseline example's interactions.
-  data->ec.interactions = &all.interactions;
-  data->ec.extent_interactions = &all.extent_interactions;
+  data->ec.interactions = &all.feature_tweaks_config.interactions;
+  data->ec.extent_interactions = &all.feature_tweaks_config.extent_interactions;
   data->all = &all;
 
-  const auto loss_function_type = all.loss->get_type();
+  const auto loss_function_type = all.loss_config.loss->get_type();
   if (loss_function_type != "logistic") { data->lr_scaling = true; }
 
   auto base = require_singleline(stack_builder.setup_base_learner());

@@ -639,6 +639,11 @@ Weight Options:
                                             with quadratic interactions. (x86 Linux only) (type: bool, experimental)
     --two_pass_svd                          A more accurate svd that is much slower than the default (one
                                             pass svd) (type: bool, experimental)
+    --action_cache_slack arg                If actions do not change between example calls then some calculations
+                                            for this algorithm are cached. If action cache size exceeds the
+                                            number of active actions plus action_cache_slack, then the cache
+                                            will be cleared. Setting this to -1 disables any caching (type:
+                                            uint, default: 50, keep, experimental)
 [Reduction] Explore Evaluation Options:
     --explore_eval                          Evaluate explore_eval adf policies (type: bool, keep, necessary)
     --multiplier arg                        Multiplier used to make all rejection sample probabilities <=

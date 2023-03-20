@@ -77,9 +77,9 @@ public:
 
   // for adding new features
   uint64_t mask;        // all->reg.weight_mask
-  uint64_t multiplier;  // all.wpp << all.stride_shift
+  uint64_t multiplier;  // all.reduction_state.total_feature_width << all.stride_shift
   size_t ss;            // stride_shift
-  size_t wpp;
+  size_t total_feature_width;
 
   // per-example data
   uint32_t N;                               // NOLINT number of nodes
@@ -122,7 +122,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 
   D->K = num_actions;
   D->numN = (D->directed + 1) * (D->K + 1);
-  *(sch.get_vw_pointer_unsafe().trace_message) << "K=" << D->K << ", numN=" << D->numN << std::endl;
+  *(sch.get_vw_pointer_unsafe().output_runtime.trace_message) << "K=" << D->K << ", numN=" << D->numN << std::endl;
   D->neighbor_predictions.resize(D->numN, 0.f);
 
   D->confusion_matrix.resize((D->K + 1) * (D->K + 1), 0);
@@ -130,7 +130,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
   D->true_counts_total = static_cast<float>(D->K + 1);
   for (size_t k = 0; k <= D->K; k++) { D->true_counts[k] = 1.; }
 
-  if (D->separate_learners) { sch.set_num_learners(D->num_loops); }
+  if (D->separate_learners) { sch.set_feature_width(D->num_loops); }
 
   sch.set_task_data<task_data>(D.release());
   sch.set_options(0);  // Search::AUTO_HAMMING_LOSS
@@ -188,8 +188,8 @@ void run_bfs(task_data& D, VW::multi_ex& ec)
 void setup(Search::search& sch, VW::multi_ex& ec)
 {
   task_data& D = *sch.get_task_data<task_data>();  // NOLINT
-  D.multiplier = D.wpp << D.ss;
-  D.wpp = sch.get_vw_pointer_unsafe().wpp;
+  D.multiplier = D.total_feature_width << D.ss;
+  D.total_feature_width = sch.get_vw_pointer_unsafe().reduction_state.total_feature_width;
   D.mask = sch.get_vw_pointer_unsafe().weights.mask();
   D.ss = sch.get_vw_pointer_unsafe().weights.stride_shift();
   D.N = 0;
@@ -339,7 +339,7 @@ void add_edge_features(Search::search& sch, task_data& D, size_t n, VW::multi_ex
   ec[n]->num_features += ec[n]->feature_space[VW::details::NEIGHBOR_NAMESPACE].size();
 
   VW::workspace& all = sch.get_vw_pointer_unsafe();
-  for (const auto& i : all.interactions)
+  for (const auto& i : all.feature_tweaks_config.interactions)
   {
     if (i.size() != 2) { continue; }
     int i0 = static_cast<int>(i[0]);

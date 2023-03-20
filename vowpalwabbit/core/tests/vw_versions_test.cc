@@ -18,8 +18,8 @@ TEST(Version, VerifyVwVersions)
   // check default vw version value
   auto null_logger = VW::io::create_null_logger();
   VW::workspace dummy_vw(null_logger);
-  EXPECT_TRUE(dummy_vw.model_file_ver == EMPTY_VERSION_FILE);
-  EXPECT_TRUE(dummy_vw.model_file_ver < VERSION_FILE_WITH_CB_ADF_SAVE);
+  EXPECT_TRUE(dummy_vw.runtime_state.model_file_ver == EMPTY_VERSION_FILE);
+  EXPECT_TRUE(dummy_vw.runtime_state.model_file_ver < VERSION_FILE_WITH_CB_ADF_SAVE);
 
   EXPECT_TRUE(VERSION_FILE_WITH_RANK_IN_HEADER < VERSION_FILE_WITH_INTERACTIONS);
   EXPECT_TRUE(VERSION_FILE_WITH_CB_ADF_SAVE < VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG);

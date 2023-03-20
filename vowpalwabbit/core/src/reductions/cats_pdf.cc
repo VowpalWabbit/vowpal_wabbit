@@ -107,7 +107,7 @@ void output_example_prediction_cats_pdf(
 {
   // output to the prediction to all files
   const auto str = VW::to_string(ec.pred.pdf, VW::details::AS_MANY_AS_NEEDED_FLOAT_FORMATTING_DECIMAL_PRECISION);
-  for (auto& f : all.final_prediction_sink)
+  for (auto& f : all.output_runtime.final_prediction_sink)
   {
     f->write(str.c_str(), str.size());
     f->write("\n\n", 2);
@@ -118,10 +118,11 @@ void print_update_cats_pdf(VW::workspace& all, VW::shared_data& /* sd */, const 
     const VW::example& ec, VW::io::logger& /* unused */)
 {
   const bool should_print_driver_update =
-      all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs;
+      all.sd->weighted_examples() >= all.sd->dump_interval && !all.output_config.quiet && !all.reduction_state.bfgs;
   if (should_print_driver_update)
   {
-    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass,
+    all.sd->print_update(*all.output_runtime.trace_message, all.passes_config.holdout_set_off,
+        all.passes_config.current_pass,
         ec.test_only
             ? "unknown"
             : VW::to_string(ec.l.cb_cont.costs[0], VW::details::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION),  // Label
@@ -158,7 +159,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cats_pdf_setup(setup_base_
   options.insert("cats_tree", std::to_string(num_actions));
 
   auto p_base = stack_builder.setup_base_learner();
-  bool always_predict = !all.final_prediction_sink.empty();
+  bool always_predict = !all.output_runtime.final_prediction_sink.empty();
   auto p_reduction = VW::make_unique<cats_pdf>(require_singleline(p_base).get(), always_predict);
 
   auto l = make_reduction_learner(std::move(p_reduction), require_singleline(p_base), predict_or_learn<true>,
@@ -171,8 +172,5 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cats_pdf_setup(setup_base_
                .set_print_update(print_update_cats_pdf)
                .set_update_stats(update_stats_cats_pdf)
                .build();
-
-  all.example_parser->lbl_parser = cb_continuous::the_label_parser;
-
   return l;
 }

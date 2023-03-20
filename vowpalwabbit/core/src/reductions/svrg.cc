@@ -77,7 +77,7 @@ void predict(svrg& s, VW::example& ec)
 
 float gradient_scalar(const svrg& s, const VW::example& ec, float pred)
 {
-  return s.all->loss->first_derivative(s.all->sd.get(), pred, ec.l.simple.label) * ec.weight;
+  return s.all->loss_config.loss->first_derivative(s.all->sd.get(), pred, ec.l.simple.label) * ec.weight;
 }
 
 // -- Updates, taking inner steps vs. accumulating a full gradient --
@@ -109,7 +109,7 @@ void update_inner(const svrg& s, VW::example& ec)
   // |ec| already has prediction according to inner weights.
   u.g_scalar_inner = gradient_scalar(s, ec, ec.pred.scalar);
   u.g_scalar_stable = gradient_scalar(s, ec, predict_stable(s, ec));
-  u.eta = s.all->eta;
+  u.eta = s.all->update_rule_config.eta;
   u.norm = static_cast<float>(s.stable_grad_count);
   VW::foreach_feature<update, update_inner_feature>(*s.all, ec, u);
 }
@@ -124,13 +124,13 @@ void learn(svrg& s, VW::example& ec)
 {
   predict(s, ec);
 
-  const int pass = static_cast<int>(s.all->passes_complete);
+  const int pass = static_cast<int>(s.all->runtime_state.passes_complete);
 
   if (pass % (s.stage_size + 1) == 0)  // Compute exact gradient
   {
-    if (s.prev_pass != pass && !s.all->quiet)
+    if (s.prev_pass != pass && !s.all->output_config.quiet)
     {
-      *(s.all->trace_message) << "svrg pass " << pass << ": committing stable point" << std::endl;
+      *(s.all->output_runtime.trace_message) << "svrg pass " << pass << ": committing stable point" << std::endl;
       for (uint32_t j = 0; j < VW::num_weights(*s.all); j++)
       {
         float w = VW::get_weight(*s.all, j, W_INNER);
@@ -138,16 +138,16 @@ void learn(svrg& s, VW::example& ec)
         VW::set_weight(*s.all, j, W_STABLEGRAD, 0.f);
       }
       s.stable_grad_count = 0;
-      *(s.all->trace_message) << "svrg pass " << pass << ": computing exact gradient" << std::endl;
+      *(s.all->output_runtime.trace_message) << "svrg pass " << pass << ": computing exact gradient" << std::endl;
     }
     update_stable(s, ec);
     s.stable_grad_count++;
   }
   else  // Perform updates
   {
-    if (s.prev_pass != pass && !s.all->quiet)
+    if (s.prev_pass != pass && !s.all->output_config.quiet)
     {
-      *(s.all->trace_message) << "svrg pass " << pass << ": taking steps" << std::endl;
+      *(s.all->output_runtime.trace_message) << "svrg pass " << pass << ": taking steps" << std::endl;
     }
     update_inner(s, ec);
   }
@@ -161,13 +161,13 @@ void save_load(svrg& s, VW::io_buf& model_file, bool read, bool text)
 
   if (model_file.num_files() != 0)
   {
-    bool resume = s.all->save_resume;
+    bool resume = s.all->output_model_config.save_resume;
     std::stringstream msg;
     msg << ":" << resume << "\n";
     VW::details::bin_text_read_write_fixed(
         model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
 
-    std::vector<VW::reductions::details::per_model_state> temp_pms = {VW::reductions::details::per_model_state()};
+    std::vector<VW::reductions::details::gd_per_model_state> temp_pms = {VW::reductions::details::gd_per_model_state()};
     if (resume) { VW::details::save_load_online_state_gd(*s.all, model_file, read, text, temp_pms); }
     else { VW::details::save_load_regressor_gd(*s.all, model_file, read, text); }
   }
@@ -192,7 +192,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::svrg_setup(VW::setup_base_
   all.weights.stride_shift(2);
   auto l = make_bottom_learner(std::move(s), learn, predict, stack_builder.get_setupfn_name(svrg_setup),
       VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
-               .set_params_per_weight(VW::details::UINT64_ONE << all.weights.stride_shift())
                .set_output_example_prediction(VW::details::output_example_prediction_simple_label<svrg>)
                .set_update_stats(VW::details::update_stats_simple_label<svrg>)
                .set_print_update(VW::details::print_update_simple_label<svrg>)

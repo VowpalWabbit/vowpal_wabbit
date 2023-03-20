@@ -640,7 +640,7 @@ class Workspace(pylibvw.vw):
 
         elif isinstance(ec, list):
             if not self._is_multiline():
-                raise TypeError("Expecting a mutiline Learner.")
+                raise TypeError("Expecting a multiline learner.")
             if len(ec) == 0:
                 raise ValueError("An empty list is invalid")
             if isinstance(ec[0], str):
