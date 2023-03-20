@@ -52,7 +52,7 @@ void end_pass(example& ec, VW::workspace& all)
 void save(example& ec, VW::workspace& all)
 {
   // save state command
-  std::string final_regressor_name = all.om.final_regressor_name;
+  std::string final_regressor_name = all.output_model_config.final_regressor_name;
 
   if ((ec.tag).size() >= 6 && (ec.tag)[4] == '_')
   {

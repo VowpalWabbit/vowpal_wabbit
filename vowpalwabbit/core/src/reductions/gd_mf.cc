@@ -314,13 +314,16 @@ void end_pass(gdmf& d)
   VW::workspace* all = d.all;
 
   all->uc.eta *= all->uc.eta_decay_rate;
-  if (all->om.save_per_pass) { VW::details::save_predictor(*all, all->om.final_regressor_name, all->pc.current_pass); }
+  if (all->output_model_config.save_per_pass)
+  {
+    VW::details::save_predictor(*all, all->output_model_config.final_regressor_name, all->pc.current_pass);
+  }
 
   if (!all->pc.holdout_set_off)
   {
     if (VW::details::summarize_holdout_set(*all, d.no_win_counter))
     {
-      VW::details::finalize_regressor(*all, all->om.final_regressor_name);
+      VW::details::finalize_regressor(*all, all->output_model_config.final_regressor_name);
     }
     if ((d.early_stop_thres == d.no_win_counter) &&
         ((all->pc.check_holdout_every_n_passes <= 1) ||

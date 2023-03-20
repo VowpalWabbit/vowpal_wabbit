@@ -510,7 +510,7 @@ void VW::details::save_predictor(VW::workspace& all, const std::string& reg_name
 {
   std::stringstream filename;
   filename << reg_name;
-  if (all.om.save_per_pass) { filename << "." << current_pass; }
+  if (all.output_model_config.save_per_pass) { filename << "." << current_pass; }
   dump_regressor(all, filename.str(), false);
 }
 
@@ -518,20 +518,20 @@ void VW::details::finalize_regressor(VW::workspace& all, const std::string& reg_
 {
   if (!all.pc.early_terminate)
   {
-    if (all.om.per_feature_regularizer_output.length() > 0)
+    if (all.output_model_config.per_feature_regularizer_output.length() > 0)
     {
-      dump_regressor(all, all.om.per_feature_regularizer_output, false);
+      dump_regressor(all, all.output_model_config.per_feature_regularizer_output, false);
     }
     else { dump_regressor(all, reg_name, false); }
-    if (all.om.per_feature_regularizer_text.length() > 0)
+    if (all.output_model_config.per_feature_regularizer_text.length() > 0)
     {
-      dump_regressor(all, all.om.per_feature_regularizer_text, true);
+      dump_regressor(all, all.output_model_config.per_feature_regularizer_text, true);
     }
     else
     {
-      dump_regressor(all, all.om.text_regressor_name, true);
+      dump_regressor(all, all.output_model_config.text_regressor_name, true);
       all.output_config.print_invert = true;
-      dump_regressor(all, all.om.inv_hash_regressor_name, true);
+      dump_regressor(all, all.output_model_config.inv_hash_regressor_name, true);
       all.output_config.print_invert = false;
     }
   }

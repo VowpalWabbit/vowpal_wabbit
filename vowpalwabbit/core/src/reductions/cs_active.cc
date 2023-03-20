@@ -196,8 +196,8 @@ void predict_or_learn(cs_active& cs_a, learner& base, VW::example& ec)
   {
     // save regressor
     std::stringstream filename;
-    filename << cs_a.all->om.final_regressor_name << "." << ec.example_counter << "." << cs_a.all->sd->queries << "."
-             << cs_a.num_any_queries;
+    filename << cs_a.all->output_model_config.final_regressor_name << "." << ec.example_counter << "."
+             << cs_a.all->sd->queries << "." << cs_a.num_any_queries;
     VW::save_predictor(*(cs_a.all), filename.str());
     *(cs_a.all->output_runtime.trace_message)
         << endl

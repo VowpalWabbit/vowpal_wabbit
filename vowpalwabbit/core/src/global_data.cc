@@ -259,24 +259,25 @@ std::string workspace::dump_weights_to_json_experimental()
     THROW("dump_weights_to_json is currently only supported for KSVM base learner. The current base learner is "
         << current->get_name());
   }
-  if (om.dump_json_weights_include_feature_names && !output_config.hash_inv)
+  if (output_model_config.dump_json_weights_include_feature_names && !output_config.hash_inv)
   {
     THROW("hash_inv == true is required to dump weights to json including feature names");
   }
-  if (om.dump_json_weights_include_extra_online_state && !om.save_resume)
+  if (output_model_config.dump_json_weights_include_extra_online_state && !output_model_config.save_resume)
   {
     THROW("save_resume == true is required to dump weights to json including feature names");
   }
-  if (om.dump_json_weights_include_extra_online_state && current->get_name() != "gd")
+  if (output_model_config.dump_json_weights_include_extra_online_state && current->get_name() != "gd")
   {
     THROW("including extra online state is only allowed with GD as base learner");
   }
 
-  return weights.sparse
-      ? dump_weights_to_json_weight_typed(weights.sparse_weights, output_runtime.index_name_map, weights,
-            om.dump_json_weights_include_feature_names, om.dump_json_weights_include_extra_online_state)
-      : dump_weights_to_json_weight_typed(weights.dense_weights, output_runtime.index_name_map, weights,
-            om.dump_json_weights_include_feature_names, om.dump_json_weights_include_extra_online_state);
+  return weights.sparse ? dump_weights_to_json_weight_typed(weights.sparse_weights, output_runtime.index_name_map,
+                              weights, output_model_config.dump_json_weights_include_feature_names,
+                              output_model_config.dump_json_weights_include_extra_online_state)
+                        : dump_weights_to_json_weight_typed(weights.dense_weights, output_runtime.index_name_map,
+                              weights, output_model_config.dump_json_weights_include_feature_names,
+                              output_model_config.dump_json_weights_include_extra_online_state);
 }
 }  // namespace VW
 
@@ -325,8 +326,8 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   iwc.num_bits = 18;
   runtime_config.default_bits = true;
   runtime_config.daemon = false;
-  om.save_resume = true;
-  om.preserve_performance_counters = false;
+  output_model_config.save_resume = true;
+  output_model_config.preserve_performance_counters = false;
 
   iwc.random_positive_weights = false;
 
@@ -351,8 +352,8 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   iwc.normal_weights = false;
   iwc.tnormal_weights = false;
   iwc.per_feature_regularizer_input = "";
-  om.per_feature_regularizer_output = "";
-  om.per_feature_regularizer_text = "";
+  output_model_config.per_feature_regularizer_output = "";
+  output_model_config.per_feature_regularizer_text = "";
 
   output_runtime.stdout_adapter = VW::io::open_stdout();
 
@@ -384,7 +385,7 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   runtime_config.pass_length = std::numeric_limits<size_t>::max();
   runtime_state.passes_complete = 0;
 
-  om.save_per_pass = false;
+  output_model_config.save_per_pass = false;
 
   runtime_state.do_reset_source = false;
   pc.holdout_set_off = true;
@@ -408,11 +409,11 @@ void workspace::finish()
     sd->print_summary(*output_runtime.trace_message, *sd, *loss_config.loss, pc.current_pass, pc.holdout_set_off);
   }
 
-  details::finalize_regressor(*this, om.final_regressor_name);
+  details::finalize_regressor(*this, output_model_config.final_regressor_name);
   if (options->was_supplied("dump_json_weights_experimental"))
   {
     auto content = dump_weights_to_json_experimental();
-    auto writer = VW::io::open_file_writer(om.json_weights_file_name);
+    auto writer = VW::io::open_file_writer(output_model_config.json_weights_file_name);
     writer->write(content.c_str(), content.length());
   }
   VW::reductions::output_metrics(*this);

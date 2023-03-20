@@ -325,8 +325,7 @@ public:
   details::loss_config loss_config;
   // details::passes_config passes_config;
   details::passes_config pc;
-  // details::output_model_config output_model_config;
-  details::output_model_config om;
+  details::output_model_config output_model_config;
 
   details::parser_runtime parser_runtime;
   details::runtime_config runtime_config;

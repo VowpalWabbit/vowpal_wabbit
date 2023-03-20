@@ -1178,14 +1178,14 @@ void parse_update_options(options_i& options, VW::workspace& all)
   update_args
       .add(make_option("learning_rate", all.uc.eta)
                .default_value(0.5f)
-               .keep(all.om.save_resume)
-               .allow_override(all.om.save_resume)
+               .keep(all.output_model_config.save_resume)
+               .allow_override(all.output_model_config.save_resume)
                .help("Set learning rate")
                .short_name("l"))
       .add(make_option("power_t", all.uc.power_t)
                .default_value(0.5f)
-               .keep(all.om.save_resume)
-               .allow_override(all.om.save_resume)
+               .keep(all.output_model_config.save_resume)
+               .allow_override(all.output_model_config.save_resume)
                .help("T power value"))
       .add(make_option("decay_learning_rate", all.uc.eta_decay_rate)
                .default_value(1.f)
@@ -1254,23 +1254,25 @@ void parse_output_model(options_i& options, VW::workspace& all)
 
   option_group_definition output_model_options("Output Model");
   output_model_options
-      .add(make_option("final_regressor", all.om.final_regressor_name).short_name("f").help("Final regressor"))
-      .add(make_option("readable_model", all.om.text_regressor_name)
+      .add(make_option("final_regressor", all.output_model_config.final_regressor_name)
+               .short_name("f")
+               .help("Final regressor"))
+      .add(make_option("readable_model", all.output_model_config.text_regressor_name)
                .help("Output human-readable final regressor with numeric features"))
-      .add(make_option("invert_hash", all.om.inv_hash_regressor_name)
+      .add(make_option("invert_hash", all.output_model_config.inv_hash_regressor_name)
                .help("Output human-readable final regressor with feature names.  Computationally expensive"))
       .add(make_option("hexfloat_weights", all.output_config.hexfloat_weights)
                .help("Output hexfloat format for floats for human-readable final regressor. Useful for "
                      "debugging/comparing."))
-      .add(make_option("dump_json_weights_experimental", all.om.json_weights_file_name)
+      .add(make_option("dump_json_weights_experimental", all.output_model_config.json_weights_file_name)
                .experimental()
                .help("Output json representation of model parameters."))
-      .add(make_option(
-          "dump_json_weights_include_feature_names_experimental", all.om.dump_json_weights_include_feature_names)
+      .add(make_option("dump_json_weights_include_feature_names_experimental",
+          all.output_model_config.dump_json_weights_include_feature_names)
                .experimental()
                .help("Whether to include feature names in json output"))
       .add(make_option("dump_json_weights_include_extra_online_state_experimental",
-          all.om.dump_json_weights_include_extra_online_state)
+          all.output_model_config.dump_json_weights_include_extra_online_state)
                .experimental()
                .help("Whether to include extra online state in json output"))
       .add(
@@ -1278,24 +1280,26 @@ void parse_output_model(options_i& options, VW::workspace& all)
               .help("Do not save extra state for learning to be resumed. Stored model can only be used for prediction"))
       .add(make_option("save_resume", save_resume)
                .help("This flag is now deprecated and models can continue learning by default"))
-      .add(make_option("preserve_performance_counters", all.om.preserve_performance_counters)
+      .add(make_option("preserve_performance_counters", all.output_model_config.preserve_performance_counters)
                .help("Prevent the default behavior of resetting counters when loading a model. Has no effect when "
                      "writing a model."))
-      .add(make_option("save_per_pass", all.om.save_per_pass).help("Save the model after every pass over data"))
-      .add(make_option("output_feature_regularizer_binary", all.om.per_feature_regularizer_output)
+      .add(make_option("save_per_pass", all.output_model_config.save_per_pass)
+               .help("Save the model after every pass over data"))
+      .add(make_option("output_feature_regularizer_binary", all.output_model_config.per_feature_regularizer_output)
                .help("Per feature regularization output file"))
-      .add(make_option("output_feature_regularizer_text", all.om.per_feature_regularizer_text)
+      .add(make_option("output_feature_regularizer_text", all.output_model_config.per_feature_regularizer_text)
                .help("Per feature regularization output file, in text"))
       .add(make_option("id", all.id).help("User supplied ID embedded into the final regressor"));
   options.add_and_parse(output_model_options);
 
-  if (!all.om.final_regressor_name.empty() && !all.output_config.quiet)
+  if (!all.output_model_config.final_regressor_name.empty() && !all.output_config.quiet)
   {
-    *(all.output_runtime.trace_message) << "final_regressor = " << all.om.final_regressor_name << endl;
+    *(all.output_runtime.trace_message) << "final_regressor = " << all.output_model_config.final_regressor_name << endl;
   }
 
   if (options.was_supplied("invert_hash")) { all.output_config.hash_inv = true; }
-  if (options.was_supplied("dump_json_weights_experimental") && all.om.dump_json_weights_include_feature_names)
+  if (options.was_supplied("dump_json_weights_experimental") &&
+      all.output_model_config.dump_json_weights_include_feature_names)
   {
     all.output_config.hash_inv = true;
   }
@@ -1303,9 +1307,10 @@ void parse_output_model(options_i& options, VW::workspace& all)
   {
     all.logger.err_warn("--save_resume flag is deprecated -- learning can now continue on saved models by default.");
   }
-  if (predict_only_model) { all.om.save_resume = false; }
+  if (predict_only_model) { all.output_model_config.save_resume = false; }
 
-  if ((options.was_supplied("invert_hash") || options.was_supplied("readable_model")) && all.om.save_resume)
+  if ((options.was_supplied("invert_hash") || options.was_supplied("readable_model")) &&
+      all.output_model_config.save_resume)
   {
     all.logger.err_info(
         "VW 9.0.0 introduced a change to the default model save behavior. Please use '--predict_only_model' when using "

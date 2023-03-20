@@ -161,7 +161,7 @@ void save_load(svrg& s, VW::io_buf& model_file, bool read, bool text)
 
   if (model_file.num_files() != 0)
   {
-    bool resume = s.all->om.save_resume;
+    bool resume = s.all->output_model_config.save_resume;
     std::stringstream msg;
     msg << ":" << resume << "\n";
     VW::details::bin_text_read_write_fixed(

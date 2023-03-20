@@ -345,7 +345,10 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cbzo_setup(VW::setup_base_
                .one_of({"linear", "constant"})
                .keep()
                .help("Policy/Model to Learn"))
-      .add(make_option("radius", data->radius).default_value(0.1f).keep(all.om.save_resume).help("Exploration Radius"));
+      .add(make_option("radius", data->radius)
+               .default_value(0.1f)
+               .keep(all.output_model_config.save_resume)
+               .help("Exploration Radius"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 

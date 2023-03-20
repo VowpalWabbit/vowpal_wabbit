@@ -24,7 +24,7 @@ API const char* GetWorkspaceDataFilename(vw_net_native::workspace_context* works
 
 API const char* GetFinalRegressorFilename(vw_net_native::workspace_context* workspace)
 {
-  return workspace->vw->om.final_regressor_name.c_str();
+  return workspace->vw->output_model_config.final_regressor_name.c_str();
 }
 
 API char* SerializeCommandLine(vw_net_native::workspace_context* workspace)
