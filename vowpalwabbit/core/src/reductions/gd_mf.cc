@@ -316,18 +316,18 @@ void end_pass(gdmf& d)
   all->uc.eta *= all->uc.eta_decay_rate;
   if (all->output_model_config.save_per_pass)
   {
-    VW::details::save_predictor(*all, all->output_model_config.final_regressor_name, all->pc.current_pass);
+    VW::details::save_predictor(*all, all->output_model_config.final_regressor_name, all->passes_config.current_pass);
   }
 
-  if (!all->pc.holdout_set_off)
+  if (!all->passes_config.holdout_set_off)
   {
     if (VW::details::summarize_holdout_set(*all, d.no_win_counter))
     {
       VW::details::finalize_regressor(*all, all->output_model_config.final_regressor_name);
     }
     if ((d.early_stop_thres == d.no_win_counter) &&
-        ((all->pc.check_holdout_every_n_passes <= 1) ||
-            ((all->pc.current_pass % all->pc.check_holdout_every_n_passes) == 0)))
+        ((all->passes_config.check_holdout_every_n_passes <= 1) ||
+            ((all->passes_config.current_pass % all->passes_config.check_holdout_every_n_passes) == 0)))
     {
       VW::details::set_done(*all);
     }
@@ -375,7 +375,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_mf_setup(VW::setup_base
   all.weights.stride_shift(static_cast<size_t>(temp));
   all.iwc.random_weights = true;
 
-  if (!all.pc.holdout_set_off)
+  if (!all.passes_config.holdout_set_off)
   {
     all.sd->holdout_best_loss = FLT_MAX;
     data->early_stop_thres = options.get_typed_option<uint64_t>("early_terminate").value();

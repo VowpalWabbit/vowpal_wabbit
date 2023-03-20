@@ -446,11 +446,11 @@ VW::details::input_options parse_source(VW::workspace& all, options_i& options)
   if ((parsed_options.cache || options.was_supplied("cache_file")) && options.was_supplied("invert_hash"))
     THROW("invert_hash is incompatible with a cache file.  Use it in single pass mode only.")
 
-  if (!all.pc.holdout_set_off &&
+  if (!all.passes_config.holdout_set_off &&
       (options.was_supplied("output_feature_regularizer_binary") ||
           options.was_supplied("output_feature_regularizer_text")))
   {
-    all.pc.holdout_set_off = true;
+    all.passes_config.holdout_set_off = true;
     *(all.output_runtime.trace_message) << "Making holdout_set_off=true since output regularizer specified" << endl;
   }
 
@@ -1014,9 +1014,11 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
 
   option_group_definition example_options("Example");
   example_options.add(make_option("testonly", test_only).short_name("t").help("Ignore label information and just test"))
-      .add(make_option("holdout_off", all.pc.holdout_set_off).help("No holdout data in multiple passes"))
-      .add(make_option("holdout_period", all.pc.holdout_period).default_value(10).help("Holdout period for test only"))
-      .add(make_option("holdout_after", all.pc.holdout_after)
+      .add(make_option("holdout_off", all.passes_config.holdout_set_off).help("No holdout data in multiple passes"))
+      .add(make_option("holdout_period", all.passes_config.holdout_period)
+               .default_value(10)
+               .help("Holdout period for test only"))
+      .add(make_option("holdout_after", all.passes_config.holdout_after)
                .help("Holdout after n training examples, default off (disables holdout_period)"))
       .add(
           make_option("early_terminate", early_terminate_passes)
@@ -1075,11 +1077,11 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
   }
   else { all.runtime_config.training = true; }
 
-  if ((all.runtime_config.numpasses > 1 || all.pc.holdout_after > 0) && !all.pc.holdout_set_off)
+  if ((all.runtime_config.numpasses > 1 || all.passes_config.holdout_after > 0) && !all.passes_config.holdout_set_off)
   {
-    all.pc.holdout_set_off = false;  // holdout is on unless explicitly off
+    all.passes_config.holdout_set_off = false;  // holdout is on unless explicitly off
   }
-  else { all.pc.holdout_set_off = true; }
+  else { all.passes_config.holdout_set_off = true; }
 
   if (options.was_supplied("min_prediction") || options.was_supplied("max_prediction") || test_only)
   {

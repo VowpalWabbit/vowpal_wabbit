@@ -104,9 +104,9 @@ void print_label_pred(VW::workspace& all, const VW::example& ec, uint32_t predic
 {
   VW::string_view sv_label = all.sd->ldict->get(ec.l.multi.label);
   VW::string_view sv_pred = all.sd->ldict->get(prediction);
-  all.sd->print_update(*all.output_runtime.trace_message, all.pc.holdout_set_off, all.pc.current_pass,
-      sv_label.empty() ? "unknown" : std::string{sv_label}, sv_pred.empty() ? "unknown" : std::string{sv_pred},
-      ec.get_num_features());
+  all.sd->print_update(*all.output_runtime.trace_message, all.passes_config.holdout_set_off,
+      all.passes_config.current_pass, sv_label.empty() ? "unknown" : std::string{sv_label},
+      sv_pred.empty() ? "unknown" : std::string{sv_pred}, ec.get_num_features());
 }
 
 void print_probability(VW::workspace& all, const VW::example& ec, uint32_t prediction)
@@ -119,8 +119,8 @@ void print_probability(VW::workspace& all, const VW::example& ec, uint32_t predi
   std::stringstream label_ss;
   label_ss << ec.l.multi.label;
 
-  all.sd->print_update(*all.output_runtime.trace_message, all.pc.holdout_set_off, all.pc.current_pass, label_ss.str(),
-      pred_ss.str(), ec.get_num_features());
+  all.sd->print_update(*all.output_runtime.trace_message, all.passes_config.holdout_set_off,
+      all.passes_config.current_pass, label_ss.str(), pred_ss.str(), ec.get_num_features());
 }
 
 void print_score(VW::workspace& all, const VW::example& ec, uint32_t prediction)
@@ -131,14 +131,14 @@ void print_score(VW::workspace& all, const VW::example& ec, uint32_t prediction)
   std::stringstream label_ss;
   label_ss << ec.l.multi.label;
 
-  all.sd->print_update(*all.output_runtime.trace_message, all.pc.holdout_set_off, all.pc.current_pass, label_ss.str(),
-      pred_ss.str(), ec.get_num_features());
+  all.sd->print_update(*all.output_runtime.trace_message, all.passes_config.holdout_set_off,
+      all.passes_config.current_pass, label_ss.str(), pred_ss.str(), ec.get_num_features());
 }
 
 void direct_print_update(VW::workspace& all, const VW::example& ec, uint32_t prediction)
 {
-  all.sd->print_update(*all.output_runtime.trace_message, all.pc.holdout_set_off, all.pc.current_pass, ec.l.multi.label,
-      prediction, ec.get_num_features());
+  all.sd->print_update(*all.output_runtime.trace_message, all.passes_config.holdout_set_off,
+      all.passes_config.current_pass, ec.l.multi.label, prediction, ec.get_num_features());
 }
 
 template <void (*T)(VW::workspace&, const VW::example&, uint32_t)>

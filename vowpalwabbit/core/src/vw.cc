@@ -711,9 +711,9 @@ void VW::setup_example(VW::workspace& all, VW::example* ae)
   }
 
   // Determine if this example is part of the holdout set.
-  ae->test_only = is_test_only(all.parser_runtime.example_parser->in_pass_counter, all.pc.holdout_period,
-      all.pc.holdout_after, all.pc.holdout_set_off,
-      all.parser_runtime.example_parser->emptylines_separate_examples ? (all.pc.holdout_period - 1) : 0);
+  ae->test_only = is_test_only(all.parser_runtime.example_parser->in_pass_counter, all.passes_config.holdout_period,
+      all.passes_config.holdout_after, all.passes_config.holdout_set_off,
+      all.parser_runtime.example_parser->emptylines_separate_examples ? (all.passes_config.holdout_period - 1) : 0);
   // If this example has a test only label then it is true regardless.
   ae->test_only |= all.parser_runtime.example_parser->lbl_parser.test_label(ae->l);
 

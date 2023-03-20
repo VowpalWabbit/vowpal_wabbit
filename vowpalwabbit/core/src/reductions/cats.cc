@@ -136,7 +136,8 @@ void print_update_cats(VW::workspace& all, VW::shared_data& sd, const VW::reduct
       all.sd->weighted_examples() >= all.sd->dump_interval && !all.output_config.quiet && !all.reduction_state.bfgs;
   if (should_print_driver_update)
   {
-    sd.print_update(*all.output_runtime.trace_message, all.pc.holdout_set_off, all.pc.current_pass,
+    sd.print_update(*all.output_runtime.trace_message, all.passes_config.holdout_set_off,
+        all.passes_config.current_pass,
         ec.test_only
             ? "unknown"
             : VW::to_string(ec.l.cb_cont.costs[0], VW::details::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION),  // Label

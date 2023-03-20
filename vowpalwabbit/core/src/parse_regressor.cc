@@ -516,7 +516,7 @@ void VW::details::save_predictor(VW::workspace& all, const std::string& reg_name
 
 void VW::details::finalize_regressor(VW::workspace& all, const std::string& reg_name)
 {
-  if (!all.pc.early_terminate)
+  if (!all.passes_config.early_terminate)
   {
     if (all.output_model_config.per_feature_regularizer_output.length() > 0)
     {

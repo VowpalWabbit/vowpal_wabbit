@@ -86,8 +86,8 @@ void print_update_sender(VW::workspace& all, VW::shared_data& sd, const sent_exa
 
   if (should_print_driver_update)
   {
-    sd.print_update(*all.output_runtime.trace_message, all.pc.holdout_set_off, all.pc.current_pass, info.label.label,
-        prediction, info.num_features);
+    sd.print_update(*all.output_runtime.trace_message, all.passes_config.holdout_set_off,
+        all.passes_config.current_pass, info.label.label, prediction, info.num_features);
   }
 }
 

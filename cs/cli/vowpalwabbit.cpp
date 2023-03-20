@@ -79,17 +79,17 @@ VowpalWabbitPerformanceStatistics^ VowpalWabbit::PerformanceStatistics::get()
 { // see parse_args.cc:finish(...)
   auto stats = gcnew VowpalWabbitPerformanceStatistics();
 
-  if (m_vw->pc.current_pass == 0)
+  if (m_vw->passes_config.current_pass == 0)
   { stats->NumberOfExamplesPerPass = m_vw->sd->example_number;
   }
   else
-  { stats->NumberOfExamplesPerPass = m_vw->sd->example_number / m_vw->pc.current_pass;
+  { stats->NumberOfExamplesPerPass = m_vw->sd->example_number / m_vw->passes_config.current_pass;
   }
 
   stats->WeightedExampleSum = m_vw->sd->weighted_examples();
   stats->WeightedLabelSum = m_vw->sd->weighted_labels;
 
-  if (m_vw->pc.holdout_set_off)
+  if (m_vw->passes_config.holdout_set_off)
 	  if (m_vw->sd->weighted_labeled_examples > 0)
 		  stats->AverageLoss = m_vw->sd->sum_loss / m_vw->sd->weighted_labeled_examples;
 	  else

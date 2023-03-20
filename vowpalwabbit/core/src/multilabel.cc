@@ -137,8 +137,8 @@ void VW::details::print_update_multilabel(VW::workspace& all, const VW::example&
     if (is_test) { label_string << "unknown"; }
     else { label_string << VW::to_string(ec.l.multilabels); }
 
-    all.sd->print_update(*all.output_runtime.trace_message, all.pc.holdout_set_off, all.pc.current_pass,
-        label_string.str(), VW::to_string(ec.pred.multilabels), ec.get_num_features());
+    all.sd->print_update(*all.output_runtime.trace_message, all.passes_config.holdout_set_off,
+        all.passes_config.current_pass, label_string.str(), VW::to_string(ec.pred.multilabels), ec.get_num_features());
   }
 }
 

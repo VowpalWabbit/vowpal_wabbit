@@ -273,8 +273,8 @@ void print_update_cbzo(VW::workspace& all, VW::shared_data& sd, const cbzo& /* d
   if (sd.weighted_examples() >= sd.dump_interval && !all.output_config.quiet)
   {
     const auto& costs = ec.l.cb_cont.costs;
-    sd.print_update(*all.output_runtime.trace_message, all.pc.holdout_set_off, all.pc.current_pass,
-        ec.test_only ? "unknown" : VW::to_string(costs[0]),
+    sd.print_update(*all.output_runtime.trace_message, all.passes_config.holdout_set_off,
+        all.passes_config.current_pass, ec.test_only ? "unknown" : VW::to_string(costs[0]),
         VW::to_string(ec.pred.pdf, VW::details::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION), ec.get_num_features());
   }
 }

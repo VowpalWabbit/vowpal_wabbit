@@ -323,8 +323,7 @@ public:
   details::update_rule_config uc;
   // details::update_rule_config update_rule_config;
   details::loss_config loss_config;
-  // details::passes_config passes_config;
-  details::passes_config pc;
+  details::passes_config passes_config;
   details::output_model_config output_model_config;
 
   details::parser_runtime parser_runtime;

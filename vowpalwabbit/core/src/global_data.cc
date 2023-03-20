@@ -318,7 +318,7 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   loss_config.loss = nullptr;
 
   loss_config.reg_mode = 0;
-  pc.current_pass = 0;
+  passes_config.current_pass = 0;
 
   reduction_state.bfgs = false;
   loss_config.no_bias = false;
@@ -388,10 +388,10 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   output_model_config.save_per_pass = false;
 
   runtime_state.do_reset_source = false;
-  pc.holdout_set_off = true;
-  pc.holdout_after = 0;
-  pc.check_holdout_every_n_passes = 1;
-  pc.early_terminate = false;
+  passes_config.holdout_set_off = true;
+  passes_config.holdout_after = 0;
+  passes_config.check_holdout_every_n_passes = 1;
+  passes_config.early_terminate = false;
 
   parser_runtime.max_examples = std::numeric_limits<size_t>::max();
 
@@ -406,7 +406,8 @@ void workspace::finish()
   // also update VowpalWabbit::PerformanceStatistics::get() (vowpalwabbit.cpp)
   if (!output_config.quiet && !options->was_supplied("audit_regressor"))
   {
-    sd->print_summary(*output_runtime.trace_message, *sd, *loss_config.loss, pc.current_pass, pc.holdout_set_off);
+    sd->print_summary(*output_runtime.trace_message, *sd, *loss_config.loss, passes_config.current_pass,
+        passes_config.holdout_set_off);
   }
 
   details::finalize_regressor(*this, output_model_config.final_regressor_name);

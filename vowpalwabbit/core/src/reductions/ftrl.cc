@@ -356,15 +356,15 @@ void end_pass(ftrl& g)
 {
   VW::workspace& all = *g.all;
 
-  if (!all.pc.holdout_set_off)
+  if (!all.passes_config.holdout_set_off)
   {
     if (VW::details::summarize_holdout_set(all, g.no_win_counter))
     {
       VW::details::finalize_regressor(all, all.output_model_config.final_regressor_name);
     }
     if ((g.early_stop_thres == g.no_win_counter) &&
-        ((all.pc.check_holdout_every_n_passes <= 1) ||
-            ((all.pc.current_pass % all.pc.check_holdout_every_n_passes) == 0)))
+        ((all.passes_config.check_holdout_every_n_passes <= 1) ||
+            ((all.passes_config.current_pass % all.passes_config.check_holdout_every_n_passes) == 0)))
     {
       VW::details::set_done(all);
     }
@@ -473,7 +473,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::ftrl_setup(VW::setup_base_
     *(all.output_runtime.trace_message) << "ftrl_beta = " << b->ftrl_beta << std::endl;
   }
 
-  if (!all.pc.holdout_set_off)
+  if (!all.passes_config.holdout_set_off)
   {
     all.sd->holdout_best_loss = FLT_MAX;
     b->early_stop_thres = options.get_typed_option<uint64_t>("early_terminate").value();
