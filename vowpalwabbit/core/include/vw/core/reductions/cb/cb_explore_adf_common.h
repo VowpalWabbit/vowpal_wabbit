@@ -258,12 +258,12 @@ void cb_explore_adf_base<ExploreType>::_output_example_prediction(
 {
   if (ec_seq.size() <= 0) { return; }
   auto& ec = *ec_seq[0];
-  for (auto& sink : all.final_prediction_sink)
+  for (auto& sink : all.output_runtime.final_prediction_sink)
   {
     VW::details::print_action_score(sink.get(), ec.pred.a_s, ec.tag, logger);
   }
 
-  if (all.raw_prediction != nullptr)
+  if (all.output_runtime.raw_prediction != nullptr)
   {
     std::string output_string;
     std::stringstream output_string_stream(output_string);
@@ -274,11 +274,14 @@ void cb_explore_adf_base<ExploreType>::_output_example_prediction(
       if (i > 0) { output_string_stream << ' '; }
       output_string_stream << costs[i].action << ':' << costs[i].partial_prediction;
     }
-    all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, logger);
+    all.print_text_by_ref(all.output_runtime.raw_prediction.get(), output_string_stream.str(), ec.tag, logger);
   }
   // maintain legacy printing behavior
-  if (all.raw_prediction != nullptr) { all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag, logger); }
-  VW::details::global_print_newline(all.final_prediction_sink, logger);
+  if (all.output_runtime.raw_prediction != nullptr)
+  {
+    all.print_text_by_ref(all.output_runtime.raw_prediction.get(), "", ec_seq[0]->tag, logger);
+  }
+  VW::details::global_print_newline(all.output_runtime.final_prediction_sink, logger);
 }
 
 template <typename ExploreType>

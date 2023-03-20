@@ -92,8 +92,9 @@ void pre_save_load_automl(VW::workspace& all, automl<CMType>& data)
     }
   }
 
-  all.num_bits = all.num_bits - static_cast<uint32_t>(std::log2(data.cm->max_live_configs));
-  options.get_typed_option<uint32_t>("bit_precision").value(all.num_bits);
+  all.initial_weights_config.num_bits =
+      all.initial_weights_config.num_bits - static_cast<uint32_t>(std::log2(data.cm->max_live_configs));
+  options.get_typed_option<uint32_t>("bit_precision").value(all.initial_weights_config.num_bits);
 
   std::vector<std::string> interactions_opt;
   for (auto& interaction : data.cm->estimators[0].first.live_interactions)
@@ -150,7 +151,7 @@ std::shared_ptr<VW::LEARNER::learner> make_automl_with_impl(VW::setup_base_i& st
   else if (priority_type == "favor_popular_namespaces") { calc_priority = &calc_priority_favor_popular_namespaces; }
   else { THROW("Invalid priority function provided"); }
 
-  // Note that all.total_feature_width will not be set correctly until after setup
+  // Note that all.reduction_state.total_feature_width will not be set correctly until after setup
   assert(oracle_type == "one_diff" || oracle_type == "rand" || oracle_type == "champdupe" ||
       oracle_type == "one_diff_inclusion" || oracle_type == "qbase_cubic");
 
@@ -167,7 +168,7 @@ std::shared_ptr<VW::LEARNER::learner> make_automl_with_impl(VW::setup_base_i& st
 
   auto cm = VW::make_unique<config_manager_type>(default_lease, max_live_configs, all.get_random_state(),
       static_cast<uint64_t>(priority_challengers), interaction_type, oracle_type, all.weights.dense_weights,
-      calc_priority, automl_significance_level, &all.logger, all.total_feature_width, ccb_on, conf_type,
+      calc_priority, automl_significance_level, &all.logger, all.reduction_state.total_feature_width, ccb_on, conf_type,
       trace_file_name_prefix, reward_as_cost, tol_x, is_brentq);
   auto data = VW::make_unique<automl<config_manager_type>>(
       std::move(cm), &all.logger, predict_only_model, trace_file_name_prefix);
@@ -303,14 +304,14 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::automl_setup(VW::setup_bas
 
   // override and clear all the global interactions
   // see parser.cc line 740
-  all.interactions.clear();
-  assert(all.interactions.empty() == true);
+  all.feature_tweaks_config.interactions.clear();
+  assert(all.feature_tweaks_config.interactions.empty() == true);
 
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs
   auto learner = stack_builder.setup_base_learner(max_live_configs);
 
-  assert(all.interactions.empty() == true);
+  assert(all.feature_tweaks_config.interactions.empty() == true);
 
   assert(all.weights.sparse == false);
   if (all.weights.sparse) THROW("--automl does not work with sparse weights");

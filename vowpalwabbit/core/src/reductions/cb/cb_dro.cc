@@ -135,12 +135,12 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_dro_setup(VW::setup_bas
 
   if (wmax <= 1) { THROW("cb_dro_wmax must exceed 1"); }
 
-  if (!all.quiet)
+  if (!all.output_config.quiet)
   {
-    *(all.trace_message) << "Using DRO for CB learning" << std::endl;
-    *(all.trace_message) << "cb_dro_alpha = " << alpha << std::endl;
-    *(all.trace_message) << "cb_dro_tau = " << tau << std::endl;
-    *(all.trace_message) << "cb_dro_wmax = " << wmax << std::endl;
+    *(all.output_runtime.trace_message) << "Using DRO for CB learning" << std::endl;
+    *(all.output_runtime.trace_message) << "cb_dro_alpha = " << alpha << std::endl;
+    *(all.output_runtime.trace_message) << "cb_dro_tau = " << tau << std::endl;
+    *(all.output_runtime.trace_message) << "cb_dro_wmax = " << wmax << std::endl;
   }
 
   auto data = VW::make_unique<cb_dro_data>(alpha, tau, wmax);

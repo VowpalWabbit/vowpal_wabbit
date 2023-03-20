@@ -28,8 +28,8 @@ TEST(Cache, WriteAndReadExample)
   io_writer.add_file(VW::io::create_vector_writer(backing_vector));
 
   VW::parsers::cache::details::cache_temp_buffer temp_buffer;
-  VW::parsers::cache::write_example_to_cache(
-      io_writer, &src_ex, workspace->example_parser->lbl_parser, workspace->parse_mask, temp_buffer);
+  VW::parsers::cache::write_example_to_cache(io_writer, &src_ex, workspace->parser_runtime.example_parser->lbl_parser,
+      workspace->runtime_state.parse_mask, temp_buffer);
   io_writer.flush();
 
   VW::io_buf io_reader;
@@ -79,8 +79,8 @@ TEST(Cache, WriteAndReadLargeExample)
   io_writer.add_file(VW::io::create_vector_writer(backing_vector));
 
   VW::parsers::cache::details::cache_temp_buffer temp_buffer;
-  VW::parsers::cache::write_example_to_cache(
-      io_writer, &src_ex, workspace->example_parser->lbl_parser, workspace->parse_mask, temp_buffer);
+  VW::parsers::cache::write_example_to_cache(io_writer, &src_ex, workspace->parser_runtime.example_parser->lbl_parser,
+      workspace->runtime_state.parse_mask, temp_buffer);
   io_writer.flush();
 
   VW::io_buf io_reader;

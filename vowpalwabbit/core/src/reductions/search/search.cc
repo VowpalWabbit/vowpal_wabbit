@@ -436,7 +436,8 @@ bool should_print_update(VW::workspace& all, bool hit_new_pass = false)
   {
     if (hit_new_pass) { return true; }
   }
-  return (all.sd->weighted_examples() >= all.sd->dump_interval) && !all.quiet && !all.bfgs;
+  return (all.sd->weighted_examples() >= all.sd->dump_interval) && !all.output_config.quiet &&
+      !all.reduction_state.bfgs;
 }
 
 bool might_print_update(VW::workspace& all)
@@ -449,24 +450,25 @@ bool might_print_update(VW::workspace& all)
   {
     return true;  // SPEEDUP: make this better
   }
-  return (all.sd->weighted_examples() + 1. >= all.sd->dump_interval) && !all.quiet && !all.bfgs;
+  return (all.sd->weighted_examples() + 1. >= all.sd->dump_interval) && !all.output_config.quiet &&
+      !all.reduction_state.bfgs;
 }
 
 bool must_run_test(VW::workspace& all, VW::multi_ex& ec, bool is_test_ex)
 {
-  return (all.final_prediction_sink.size() > 0) ||  // if we have to produce output, we need to run this
-      might_print_update(all) ||                    // if we have to print and update to stderr
-      (all.raw_prediction != nullptr) ||            // we need raw predictions
-      ((!all.vw_is_main) && (is_test_ex)) ||        // library needs predictions
+  return (all.output_runtime.final_prediction_sink.size() > 0) ||  // if we have to produce output, we need to run this
+      might_print_update(all) ||                                   // if we have to print and update to stderr
+      (all.output_runtime.raw_prediction != nullptr) ||            // we need raw predictions
+      ((!all.runtime_config.vw_is_main) && (is_test_ex)) ||        // library needs predictions
       // or:
       //   it's not quiet AND
       //     current_pass == 0
       //     OR holdout is off
       //     OR it's a test example
-      ((!all.quiet || !all.vw_is_main) &&  // had to disable this because of library mode!
+      ((!all.output_config.quiet || !all.runtime_config.vw_is_main) &&  // had to disable this because of library mode!
           (!is_test_ex) &&
-          (all.holdout_set_off ||                          // no holdout
-              ec[0]->test_only || (all.current_pass == 0)  // we need error rates for progressive cost
+          (all.passes_config.holdout_set_off ||                          // no holdout
+              ec[0]->test_only || (all.passes_config.current_pass == 0)  // we need error rates for progressive cost
               ));
 }
 
@@ -509,7 +511,7 @@ void print_update_search(VW::workspace& all, VW::shared_data& /* sd */, const se
   //       Currently there is no way to convert an ostream to FILE*, so the lines will need to be converted
   //       to ostream format
   auto& priv = *data.priv;
-  if (!priv.printed_output_header && !all.quiet)
+  if (!priv.printed_output_header && !all.output_config.quiet)
   {
     const char* header_fmt = "%-10s %-10s %8s%24s %22s %5s %5s  %7s  %7s  %7s  %-8s\n";
     fprintf(stderr, header_fmt, "average", "since", "instance", "current true", "current predicted", "cur", "cur",
@@ -537,7 +539,8 @@ void print_update_search(VW::workspace& all, VW::shared_data& /* sd */, const se
 
   float avg_loss = 0.;
   float avg_loss_since = 0.;
-  bool use_heldout_loss = (!all.holdout_set_off && all.current_pass >= 1) && (all.sd->weighted_holdout_examples > 0);
+  bool use_heldout_loss = (!all.passes_config.holdout_set_off && all.passes_config.current_pass >= 1) &&
+      (all.sd->weighted_holdout_examples > 0);
   if (use_heldout_loss)
   {
     avg_loss =
@@ -587,7 +590,7 @@ void add_new_feature(search_private& priv, float val, uint64_t idx)
   auto& fs = priv.dat_new_feature_ec->feature_space[priv.dat_new_feature_namespace];
   fs.push_back(val * priv.dat_new_feature_value, ((priv.dat_new_feature_idx + idx2) << ss));
   cdbg << "adding: " << fs.indices.back() << ':' << fs.values.back() << endl;
-  if (priv.all->audit)
+  if (priv.all->output_config.audit)
   {
     std::stringstream temp;
     temp << "fid=" << ((idx & mask) >> ss) << "_" << priv.dat_new_feature_audit_ss.str();
@@ -630,7 +633,7 @@ void add_neighbor_features(search_private& priv, VW::multi_ex& ec_seq)
       priv.dat_new_feature_value = 1.;
       priv.dat_new_feature_idx = static_cast<uint64_t>(priv.neighbor_features[n_id]) * static_cast<uint64_t>(13748127);
       priv.dat_new_feature_namespace = VW::details::NEIGHBOR_NAMESPACE;
-      if (priv.all->audit)
+      if (priv.all->output_config.audit)
       {
         priv.dat_new_feature_feature_space = &neighbor_feature_space;
         priv.dat_new_feature_audit_ss.str("");
@@ -779,7 +782,7 @@ void add_example_conditioning(search_private& priv, VW::example& ec, size_t cond
   for (size_t i = 0; i < I; i++)                                                            // position in conditioning
   {
     uint64_t fid = 71933 + 8491087 * extra_offset;
-    if (priv.all->audit)
+    if (priv.all->output_config.audit)
     {
       priv.dat_new_feature_audit_ss.str("");
       priv.dat_new_feature_audit_ss.clear();
@@ -801,7 +804,7 @@ void add_example_conditioning(search_private& priv, VW::example& ec, size_t cond
       priv.dat_new_feature_namespace = VW::details::CONDITIONING_NAMESPACE;
       priv.dat_new_feature_value = priv.acset.feature_value;
 
-      if (priv.all->audit)
+      if (priv.all->output_config.audit)
       {
         if (n > 0) { priv.dat_new_feature_audit_ss << ','; }
         if ((33 <= name) && (name <= 126)) { priv.dat_new_feature_audit_ss << name; }
@@ -835,7 +838,7 @@ void add_example_conditioning(search_private& priv, VW::example& ec, size_t cond
         if ((fs.values[k] > 1e-10) || (fs.values[k] < -1e-10))
         {
           uint64_t fid = 84913 + 48371803 * (extra_offset + 8392817 * name) + 840137 * (4891 + fs.indices[k]);
-          if (priv.all->audit)
+          if (priv.all->output_config.audit)
           {
             priv.dat_new_feature_audit_ss.str("");
             priv.dat_new_feature_audit_ss.clear();
@@ -1274,7 +1277,7 @@ action single_prediction_not_ldf(search_private& priv, VW::example& ec, int poli
   }
 
   // generate raw predictions if necessary
-  if ((priv.state == search_state::INIT_TEST) && (all.raw_prediction != nullptr))
+  if ((priv.state == search_state::INIT_TEST) && (all.output_runtime.raw_prediction != nullptr))
   {
     priv.raw_output_string_stream->str("");
     for (size_t k = 0; k < cs_get_costs_size(priv.cb_learner, ec.l); k++)
@@ -1283,7 +1286,8 @@ action single_prediction_not_ldf(search_private& priv, VW::example& ec, int poli
       (*priv.raw_output_string_stream) << cs_get_cost_index(priv.cb_learner, ec.l, k) << ':'
                                        << cs_get_cost_partial_prediction(priv.cb_learner, ec.l, k);
     }
-    all.print_text_by_ref(all.raw_prediction.get(), priv.raw_output_string_stream->str(), ec.tag, all.logger);
+    all.print_text_by_ref(
+        all.output_runtime.raw_prediction.get(), priv.raw_output_string_stream->str(), ec.tag, all.logger);
   }
 
   ec.l = old_label;
@@ -1843,7 +1847,7 @@ action search_predict(search_private& priv, VW::example* ecs, size_t ec_cnt, pta
             : action_repr(0);
       }
 
-      bool not_test = priv.all->training && !ecs[0].test_only;
+      bool not_test = priv.all->runtime_config.training && !ecs[0].test_only;
 
       if ((!skip) && (!need_fea) && not_test &&
           cached_action_store_or_find(priv, mytag, condition_on, condition_on_names, priv.condition_on_actions.data(),
@@ -2164,7 +2168,7 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, VW::
   // if (! priv.no_caching)
   priv.cache_hash_map.clear();
 
-  cdbg << "is_test_ex=" << is_test_ex << " vw_is_main=" << all.vw_is_main << endl;
+  cdbg << "is_test_ex=" << is_test_ex << " vw_is_main=" << all.runtime_config.vw_is_main << endl;
   cdbg << "must_run_test = " << must_run_test(all, ec_seq, is_test_ex) << endl;
   // do an initial test pass to compute output (and loss)
   if (must_run_test(all, ec_seq, is_test_ex))
@@ -2177,8 +2181,8 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, VW::
     // do the prediction
     reset_search_structure(priv);
     priv.state = search_state::INIT_TEST;
-    priv.should_produce_string =
-        might_print_update(all) || (all.final_prediction_sink.size() > 0) || (all.raw_prediction != nullptr);
+    priv.should_produce_string = might_print_update(all) || (all.output_runtime.final_prediction_sink.size() > 0) ||
+        (all.output_runtime.raw_prediction != nullptr);
     priv.pred_string->str("");
     priv.test_action_sequence.clear();
     run_task(sch, ec_seq);
@@ -2187,20 +2191,20 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, VW::
     if (!is_test_ex) { all.sd->update(ec_seq[0]->test_only, !is_test_ex, priv.test_loss, 1.f, priv.num_features); }
 
     // generate output
-    for (auto& sink : all.final_prediction_sink)
+    for (auto& sink : all.output_runtime.final_prediction_sink)
     {
       all.print_text_by_ref(sink.get(), priv.pred_string->str(), ec_seq[0]->tag, all.logger);
     }
 
-    if (all.raw_prediction != nullptr)
+    if (all.output_runtime.raw_prediction != nullptr)
     {
-      all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag, all.logger);
+      all.print_text_by_ref(all.output_runtime.raw_prediction.get(), "", ec_seq[0]->tag, all.logger);
     }
   }
 
   // if we're not training, then we're done!
   if (!is_learn) { return; }
-  if (is_test_ex || is_holdout_ex || ec_seq[0]->test_only || (!priv.all->training)) { return; }
+  if (is_test_ex || is_holdout_ex || ec_seq[0]->test_only || (!priv.all->runtime_config.training)) { return; }
 
   // SPEEDUP: if the oracle was never called, we can skip this!
 
@@ -2342,7 +2346,10 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, VW::
   {
     size_t prev_num = priv.num_calls_to_run_previous / priv.save_every_k_runs;
     size_t this_num = priv.num_calls_to_run / priv.save_every_k_runs;
-    if (this_num > prev_num) { VW::details::save_predictor(all, all.final_regressor_name, this_num); }
+    if (this_num > prev_num)
+    {
+      VW::details::save_predictor(all, all.output_model_config.final_regressor_name, this_num);
+    }
     priv.num_calls_to_run_previous = priv.num_calls_to_run;
   }
 }
@@ -2425,7 +2432,7 @@ void end_pass(search& sch)
   if (priv.passes_since_new_policy >= priv.passes_per_policy)
   {
     priv.passes_since_new_policy = 0;
-    if (all->training) { priv.current_policy++; }
+    if (all->runtime_config.training) { priv.current_policy++; }
     if (priv.current_policy > priv.total_number_of_policies)
     {
       priv.all->logger.err_error("internal error (bug): too many policies; not advancing");
@@ -2443,7 +2450,7 @@ void end_examples(search& sch)
   search_private& priv = *sch.priv;
   VW::workspace* all = priv.all;
 
-  if (all->training)
+  if (all->runtime_config.training)
   {
     // TODO work out a better system to update state that will be saved in the model.
     // Dig out option and change it in case we already loaded a predictor which had a value stored for
@@ -2748,7 +2755,7 @@ std::stringstream& search::output()
 
 void search::set_options(uint32_t opts)
 {
-  if (this->priv->all->vw_is_main && (this->priv->state != search_state::INITIALIZE))
+  if (this->priv->all->runtime_config.vw_is_main && (this->priv->state != search_state::INITIALIZE))
   {
     priv->all->logger.err_warn("Task should not set options except in initialize function.");
   }
@@ -2771,7 +2778,7 @@ void search::set_options(uint32_t opts)
 
 void search::set_label_parser(VW::label_parser& lp, bool (*is_test)(const VW::polylabel&))
 {
-  if (this->priv->all->vw_is_main && (this->priv->state != search_state::INITIALIZE))
+  if (this->priv->all->runtime_config.vw_is_main && (this->priv->state != search_state::INITIALIZE))
   {
     priv->all->logger.err_warn("Task should not set label parser except in initialize function.");
   }
@@ -2782,8 +2789,8 @@ void search::set_label_parser(VW::label_parser& lp, bool (*is_test)(const VW::po
   // TODO: figure out why Search needs to override is_test and remove this.
   lp.test_label = is_test;
 
-  this->priv->all->example_parser->lbl_parser = lp;
-  this->priv->all->example_parser->lbl_parser.test_label = is_test;
+  this->priv->all->parser_runtime.example_parser->lbl_parser = lp;
+  this->priv->all->parser_runtime.example_parser->lbl_parser.test_label = is_test;
   this->priv->label_is_test = is_test;
 }
 
@@ -3189,7 +3196,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::search_setup(VW::setup_bas
   {
     priv.adaptive_beta = true;
     priv.allow_current_policy = true;
-    priv.passes_per_policy = all.numpasses;
+    priv.passes_per_policy = all.runtime_config.numpasses;
     if (priv.current_policy > 1) { priv.current_policy = 1; }
   }
   else if (interpolation_string == "policy") { ; }
@@ -3242,10 +3249,10 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::search_setup(VW::setup_bas
   // compute total number of policies we will have at end of training
   // we add current_policy for cases where we start from an initial set of policies loaded through -i option
   uint32_t tmp_number_of_policies = priv.current_policy;
-  if (all.training)
+  if (all.runtime_config.training)
   {
-    tmp_number_of_policies +=
-        static_cast<int>(std::ceil((static_cast<float>(all.numpasses)) / (static_cast<float>(priv.passes_per_policy))));
+    tmp_number_of_policies += static_cast<int>(
+        std::ceil((static_cast<float>(all.runtime_config.numpasses)) / (static_cast<float>(priv.passes_per_policy))));
   }
 
   // the user might have specified the number of policies that will eventually be trained through multiple vw calls,
@@ -3266,7 +3273,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::search_setup(VW::setup_bas
   // current policy currently points to a new policy we would train
   // if we are not training and loaded a bunch of policies for testing, we need to subtract 1 from current policy
   // so that we only use those loaded when testing (as run_prediction is called with allow_current to true)
-  if (!all.training && priv.current_policy > 0) { priv.current_policy--; }
+  if (!all.runtime_config.training && priv.current_policy > 0) { priv.current_policy--; }
 
   all.options->replace("search_trained_nb_policies", std::to_string(priv.current_policy));
   all.options->get_typed_option<uint32_t>("search_trained_nb_policies").value(priv.current_policy);
@@ -3322,7 +3329,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::search_setup(VW::setup_bas
       break;
     }
   }
-  all.example_parser->emptylines_separate_examples = true;
+  all.parser_runtime.example_parser->emptylines_separate_examples = true;
 
   if (!options.was_supplied("csoaa") && !options.was_supplied("cs_active") && !options.was_supplied("csoaa_ldf") &&
       !options.was_supplied("wap_ldf") && !options.was_supplied("cb"))
@@ -3340,18 +3347,18 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::search_setup(VW::setup_bas
   cdbg << "active_csoaa = " << priv.active_csoaa << ", active_csoaa_verify = " << priv.active_csoaa_verify << endl;
 
   // default to OAA labels unless the task wants to override this (which they can do in initialize)
-  all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
+  all.parser_runtime.example_parser->lbl_parser = VW::multiclass_label_parser_global;
 
   if (priv.task && priv.task->initialize) { priv.task->initialize(*sch.get(), priv.A, options); }
   if (priv.metatask && priv.metatask->initialize) { priv.metatask->initialize(*sch.get(), priv.A, options); }
   priv.meta_t = 0;
 
-  VW::label_type_t expected_label_type = all.example_parser->lbl_parser.label_type;
+  VW::label_type_t expected_label_type = all.parser_runtime.example_parser->lbl_parser.label_type;
 
-  auto stash_lbl_parser = all.example_parser->lbl_parser;
+  auto stash_lbl_parser = all.parser_runtime.example_parser->lbl_parser;
   if (priv.xv) { priv.feature_width *= 3; }
   auto base = stack_builder.setup_base_learner(priv.total_number_of_policies * priv.feature_width);
-  all.example_parser->lbl_parser = stash_lbl_parser;
+  all.parser_runtime.example_parser->lbl_parser = stash_lbl_parser;
 
   if (options.was_supplied("search_allowed_transitions"))
   {
@@ -3363,10 +3370,10 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::search_setup(VW::setup_bas
 
   if (!priv.allow_current_policy)
   {  // if we're not dagger
-    all.check_holdout_every_n_passes = priv.passes_per_policy;
+    all.passes_config.check_holdout_every_n_passes = priv.passes_per_policy;
   }
 
-  all.searchstr = sch.get();
+  all.reduction_state.searchstr = sch.get();
 
   priv.start_clock_time = clock();
 

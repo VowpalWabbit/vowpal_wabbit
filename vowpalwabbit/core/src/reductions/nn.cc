@@ -90,8 +90,8 @@ void finish_setup(nn& n, VW::workspace& all)
 {
   // TODO: output_layer audit
 
-  n.output_layer.interactions = &all.interactions;
-  n.output_layer.extent_interactions = &all.extent_interactions;
+  n.output_layer.interactions = &all.feature_tweaks_config.interactions;
+  n.output_layer.extent_interactions = &all.feature_tweaks_config.extent_interactions;
   n.output_layer.indices.push_back(VW::details::NN_OUTPUT_NAMESPACE);
   uint64_t nn_index = NN_CONSTANT << all.weights.stride_shift();
 
@@ -99,7 +99,7 @@ void finish_setup(nn& n, VW::workspace& all)
   for (unsigned int i = 0; i < n.k; ++i)
   {
     fs.push_back(1., nn_index);
-    if (all.audit || all.hash_inv)
+    if (all.output_config.audit || all.output_config.hash_inv)
     {
       std::stringstream ss;
       ss << "OutputLayer" << i;
@@ -112,28 +112,28 @@ void finish_setup(nn& n, VW::workspace& all)
   if (!n.inpass)
   {
     fs.push_back(1., nn_index);
-    if (all.audit || all.hash_inv) { fs.space_names.emplace_back("", "OutputLayerConst"); }
+    if (all.output_config.audit || all.output_config.hash_inv) { fs.space_names.emplace_back("", "OutputLayerConst"); }
     ++n.output_layer.num_features;
   }
 
   // TODO: not correct if --noconstant
-  n.hiddenbias.interactions = &all.interactions;
-  n.hiddenbias.extent_interactions = &all.extent_interactions;
+  n.hiddenbias.interactions = &all.feature_tweaks_config.interactions;
+  n.hiddenbias.extent_interactions = &all.feature_tweaks_config.extent_interactions;
   n.hiddenbias.indices.push_back(VW::details::CONSTANT_NAMESPACE);
   n.hiddenbias.feature_space[VW::details::CONSTANT_NAMESPACE].push_back(1, VW::details::CONSTANT);
-  if (all.audit || all.hash_inv)
+  if (all.output_config.audit || all.output_config.hash_inv)
   {
     n.hiddenbias.feature_space[VW::details::CONSTANT_NAMESPACE].space_names.emplace_back("", "HiddenBias");
   }
   n.hiddenbias.l.simple.label = FLT_MAX;
   n.hiddenbias.weight = 1;
 
-  n.outputweight.interactions = &all.interactions;
-  n.outputweight.extent_interactions = &all.extent_interactions;
+  n.outputweight.interactions = &all.feature_tweaks_config.interactions;
+  n.outputweight.extent_interactions = &all.feature_tweaks_config.extent_interactions;
   n.outputweight.indices.push_back(VW::details::NN_OUTPUT_NAMESPACE);
   VW::features& outfs = n.output_layer.feature_space[VW::details::NN_OUTPUT_NAMESPACE];
   n.outputweight.feature_space[VW::details::NN_OUTPUT_NAMESPACE].push_back(outfs.values[0], outfs.indices[0]);
-  if (all.audit || all.hash_inv)
+  if (all.output_config.audit || all.output_config.hash_inv)
   {
     n.outputweight.feature_space[VW::details::NN_OUTPUT_NAMESPACE].space_names.emplace_back("", "OutputWeight");
   }
@@ -147,13 +147,13 @@ void finish_setup(nn& n, VW::workspace& all)
 
 void end_pass(nn& n)
 {
-  if (n.all->bfgs) { n.xsubi = n.save_xsubi; }
+  if (n.all->reduction_state.bfgs) { n.xsubi = n.save_xsubi; }
 }
 
 template <bool is_learn, bool recompute_hidden>
 void predict_or_learn_multi(nn& n, learner& base, VW::example& ec)
 {
-  bool should_output = n.all->raw_prediction != nullptr;
+  bool should_output = n.all->output_runtime.raw_prediction != nullptr;
   if (!n.finished_setup) { finish_setup(n, *(n.all)); }
   // Yes, copy all of shared data.
   VW::shared_data sd{*n.all->sd};
@@ -167,7 +167,7 @@ void predict_or_learn_multi(nn& n, learner& base, VW::example& ec)
     float save_min_label;
     float save_max_label;
     float dropscale = n.dropout ? 2.0f : 1.0f;
-    auto loss_function_swap_guard = VW::swap_guard(n.all->loss, n.squared_loss);
+    auto loss_function_swap_guard = VW::swap_guard(n.all->loss_config.loss, n.squared_loss);
 
     VW::polyprediction* hidden_units = n.hidden_units_pred;
     VW::polyprediction* hiddenbias_pred = n.hiddenbias_pred;
@@ -245,7 +245,7 @@ void predict_or_learn_multi(nn& n, learner& base, VW::example& ec)
     n.outputweight.ft_offset = ec.ft_offset;
 
     n.all->set_minmax = nullptr;
-    auto loss_function_swap_guard_converse_block = VW::swap_guard(n.all->loss, n.squared_loss);
+    auto loss_function_swap_guard_converse_block = VW::swap_guard(n.all->loss_config.loss, n.squared_loss);
     save_min_label = n.all->sd->min_label;
     n.all->sd->min_label = -1;
     save_max_label = n.all->sd->max_label;
@@ -322,18 +322,19 @@ void predict_or_learn_multi(nn& n, learner& base, VW::example& ec)
     if (should_output)
     {
       output_string_stream << ' ' << n.output_layer.partial_prediction;
-      n.all->print_text_by_ref(n.all->raw_prediction.get(), output_string_stream.str(), ec.tag, n.all->logger);
+      n.all->print_text_by_ref(
+          n.all->output_runtime.raw_prediction.get(), output_string_stream.str(), ec.tag, n.all->logger);
     }
 
     if (is_learn)
     {
-      if (n.all->training && ld.label != FLT_MAX)
+      if (n.all->runtime_config.training && ld.label != FLT_MAX)
       {
-        float gradient = n.all->loss->first_derivative(n.all->sd.get(), n.prediction, ld.label);
+        float gradient = n.all->loss_config.loss->first_derivative(n.all->sd.get(), n.prediction, ld.label);
 
         if (std::fabs(gradient) > 0)
         {
-          auto loss_function_swap_guard_learn_block = VW::swap_guard(n.all->loss, n.squared_loss);
+          auto loss_function_swap_guard_learn_block = VW::swap_guard(n.all->loss_config.loss, n.squared_loss);
           n.all->set_minmax = nullptr;
           save_min_label = n.all->sd->min_label;
           n.all->sd->min_label = HIDDEN_MIN_ACTIVATION;
@@ -421,7 +422,10 @@ void multipredict(nn& n, learner& base, VW::example& ec, size_t count, size_t st
 void output_example_prediction_nn(
     VW::workspace& all, const nn& /* data */, const VW::example& ec, VW::io::logger& /* unused */)
 {
-  for (auto& f : all.final_prediction_sink) { all.print_by_ref(f.get(), ec.pred.scalar, 0, ec.tag, all.logger); }
+  for (auto& f : all.output_runtime.final_prediction_sink)
+  {
+    all.print_by_ref(f.get(), ec.pred.scalar, 0, ec.tag, all.logger);
+  }
 }
 }  // namespace
 
@@ -446,25 +450,28 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::nn_setup(VW::setup_base_i&
   n->all = &all;
   n->random_state = all.get_random_state();
 
-  if (n->multitask && !all.quiet)
+  if (n->multitask && !all.output_config.quiet)
   {
-    all.logger.err_info("using multitask sharing for neural network {}", (all.training ? "training" : "testing"));
+    all.logger.err_info(
+        "using multitask sharing for neural network {}", (all.runtime_config.training ? "training" : "testing"));
   }
 
   if (options.was_supplied("meanfield"))
   {
     n->dropout = false;
-    all.logger.err_info("using mean field for neural network {}", (all.training ? "training" : "testing"));
+    all.logger.err_info(
+        "using mean field for neural network {}", (all.runtime_config.training ? "training" : "testing"));
   }
 
-  if (n->dropout && !all.quiet)
+  if (n->dropout && !all.output_config.quiet)
   {
-    all.logger.err_info("using dropout for neural network {}", (all.training ? "training" : "testing"));
+    all.logger.err_info("using dropout for neural network {}", (all.runtime_config.training ? "training" : "testing"));
   }
 
-  if (n->inpass && !all.quiet)
+  if (n->inpass && !all.output_config.quiet)
   {
-    all.logger.err_info("using input passthrough for neural network {}", (all.training ? "training" : "testing"));
+    all.logger.err_info(
+        "using input passthrough for neural network {}", (all.runtime_config.training ? "training" : "testing"));
   }
 
   n->finished_setup = false;

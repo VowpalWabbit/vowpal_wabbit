@@ -97,12 +97,12 @@ void output_example_prediction_cb_algs(
 {
   const auto& ld = uses_eval ? ec.l.cb_eval.event : ec.l.cb;
 
-  for (auto& sink : all.final_prediction_sink)
+  for (auto& sink : all.output_runtime.final_prediction_sink)
   {
     all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag, all.logger);
   }
 
-  if (all.raw_prediction != nullptr)
+  if (all.output_runtime.raw_prediction != nullptr)
   {
     std::stringstream output_string_stream;
     for (unsigned int i = 0; i < ld.costs.size(); i++)
@@ -111,7 +111,7 @@ void output_example_prediction_cb_algs(
       if (i > 0) { output_string_stream << ' '; }
       output_string_stream << cl.action << ':' << cl.partial_prediction;
     }
-    all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, logger);
+    all.print_text_by_ref(all.output_runtime.raw_prediction.get(), output_string_stream.str(), ec.tag, logger);
   }
 }
 

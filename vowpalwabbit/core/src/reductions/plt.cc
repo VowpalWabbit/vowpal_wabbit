@@ -331,7 +331,7 @@ void output_example_prediction_plt(VW::workspace& all, const plt& p, const VW::e
   if (p.probabilities)
   {
     // print probabilities for predicted labels stored in a_s vector, similar to multilabel_oaa reduction
-    for (auto& sink : all.final_prediction_sink)
+    for (auto& sink : all.output_runtime.final_prediction_sink)
     {
       VW::details::print_action_score(sink.get(), ec.pred.a_s, ec.tag, all.logger);
     }
@@ -351,7 +351,7 @@ void print_update_plt(VW::workspace& all, VW::shared_data&, const plt&, const VW
 void finish(plt& p)
 {
   // print results in the test mode
-  if (!p.all->training && p.ec_count > 0)
+  if (!p.all->runtime_config.training && p.ec_count > 0)
   {
     // top-k predictions
     if (p.top_k > 0)
@@ -359,16 +359,19 @@ void finish(plt& p)
       for (size_t i = 0; i < p.top_k; ++i)
       {
         // TODO: is this the correct logger?
-        *(p.all->trace_message) << "p@" << i + 1 << " = " << p.p_at[i] / p.ec_count << std::endl;
-        *(p.all->trace_message) << "r@" << i + 1 << " = " << p.r_at[i] / p.ec_count << std::endl;
+        *(p.all->output_runtime.trace_message) << "p@" << i + 1 << " = " << p.p_at[i] / p.ec_count << std::endl;
+        *(p.all->output_runtime.trace_message) << "r@" << i + 1 << " = " << p.r_at[i] / p.ec_count << std::endl;
       }
     }
     else if (p.threshold > 0)
     {
       // TODO: is this the correct logger?
-      *(p.all->trace_message) << "hamming loss = " << static_cast<double>(p.fp + p.fn) / p.ec_count << std::endl;
-      *(p.all->trace_message) << "micro-precision = " << static_cast<double>(p.tp) / (p.tp + p.fp) << std::endl;
-      *(p.all->trace_message) << "micro-recall = " << static_cast<double>(p.tp) / (p.tp + p.fn) << std::endl;
+      *(p.all->output_runtime.trace_message)
+          << "hamming loss = " << static_cast<double>(p.fp + p.fn) / p.ec_count << std::endl;
+      *(p.all->output_runtime.trace_message)
+          << "micro-precision = " << static_cast<double>(p.tp) / (p.tp + p.fp) << std::endl;
+      *(p.all->output_runtime.trace_message)
+          << "micro-recall = " << static_cast<double>(p.tp) / (p.tp + p.fn) << std::endl;
     }
   }
 }
@@ -444,9 +447,9 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::plt_setup(VW::setup_base_i
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  if (all.loss->get_type() != "logistic")
+  if (all.loss_config.loss->get_type() != "logistic")
   {
-    THROW("--plt requires --loss_function=logistic, but instead found: " << all.loss->get_type());
+    THROW("--plt requires --loss_function=logistic, but instead found: " << all.loss_config.loss->get_type());
   }
 
   tree->all = &all;
@@ -460,19 +463,19 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::plt_setup(VW::setup_base_i
   tree->t = static_cast<uint32_t>(e + d);
   tree->ti = tree->t - tree->k;
 
-  if (!all.quiet)
+  if (!all.output_config.quiet)
   {
-    *(all.trace_message) << "PLT k = " << tree->k << "\nkary_tree = " << tree->kary << std::endl;
-    if (!all.training)
+    *(all.output_runtime.trace_message) << "PLT k = " << tree->k << "\nkary_tree = " << tree->kary << std::endl;
+    if (!all.runtime_config.training)
     {
-      if (tree->top_k > 0) { *(all.trace_message) << "top_k = " << tree->top_k << std::endl; }
-      else { *(all.trace_message) << "threshold = " << tree->threshold << std::endl; }
+      if (tree->top_k > 0) { *(all.output_runtime.trace_message) << "top_k = " << tree->top_k << std::endl; }
+      else { *(all.output_runtime.trace_message) << "threshold = " << tree->threshold << std::endl; }
     }
   }
 
   // resize VW::v_arrays
   tree->nodes_time.resize(tree->t);
-  std::fill(tree->nodes_time.begin(), tree->nodes_time.end(), all.initial_t);
+  std::fill(tree->nodes_time.begin(), tree->nodes_time.end(), all.update_rule_config.initial_t);
   tree->node_pred.resize(tree->kary);
   if (tree->top_k > 0)
   {
@@ -480,7 +483,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::plt_setup(VW::setup_base_i
     tree->r_at.resize(tree->top_k);
   }
 
-  tree->model_file_version = all.model_file_ver;
+  tree->model_file_version = all.runtime_state.model_file_ver;
 
   size_t feature_width = tree->t;
   std::string name_addition = "";

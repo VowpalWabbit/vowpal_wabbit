@@ -309,8 +309,9 @@ void pre_save_load_epsilon_decay(VW::workspace& all, VW::reductions::epsilon_dec
     }
   }
 
-  all.num_bits = all.num_bits - static_cast<uint32_t>(std::log2(data._feature_width));
-  options.get_typed_option<uint32_t>("bit_precision").value(all.num_bits);
+  all.initial_weights_config.num_bits =
+      all.initial_weights_config.num_bits - static_cast<uint32_t>(std::log2(data._feature_width));
+  options.get_typed_option<uint32_t>("bit_precision").value(all.initial_weights_config.num_bits);
 }
 
 }  // namespace
@@ -418,8 +419,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::epsilon_decay_setup(VW::se
 
   auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(model_count, min_scope,
       epsilon_decay_significance_level, epsilon_decay_estimator_decay, all.weights.dense_weights,
-      epsilon_decay_audit_str, constant_epsilon, all.total_feature_width, min_champ_examples, initial_epsilon,
-      shift_model_bounds, reward_as_cost, tol_x, is_brentq, predict_only_model);
+      epsilon_decay_audit_str, constant_epsilon, all.reduction_state.total_feature_width, min_champ_examples,
+      initial_epsilon, shift_model_bounds, reward_as_cost, tol_x, is_brentq, predict_only_model);
 
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs

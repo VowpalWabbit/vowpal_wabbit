@@ -403,9 +403,9 @@ void scorer_example(emt_tree& b, const emt_example& ex1, const emt_example& ex2)
     out.interactions->clear();
     out.interactions->push_back({X_NS, Z_NS});
 
-    b.all->ignore_some_linear = true;
-    b.all->ignore_linear[X_NS] = true;
-    b.all->ignore_linear[Z_NS] = true;
+    b.all->feature_tweaks_config.ignore_some_linear = true;
+    b.all->feature_tweaks_config.ignore_linear[X_NS] = true;
+    b.all->feature_tweaks_config.ignore_linear[Z_NS] = true;
 
     scorer_features(ex1.full, out.feature_space[X_NS]);
     scorer_features(ex2.full, out.feature_space[Z_NS]);
@@ -427,7 +427,7 @@ void scorer_example(emt_tree& b, const emt_example& ex1, const emt_example& ex2)
   // a model weight w[i] then we may also store information about our confidence in
   // w[i] at w[i+1] and information about the scale of feature f[i] at w[i+2] and so on.
   // This variable indicates how many such meta-data places we need to save in between actual weights.
-  uint64_t floats_per_feature_index = static_cast<uint64_t>(b.all->total_feature_width)
+  uint64_t floats_per_feature_index = static_cast<uint64_t>(b.all->reduction_state.total_feature_width)
       << b.all->weights.stride_shift();
 
   // In both of the example_types above we construct our scorer_example from flat_examples. The VW routine
@@ -523,7 +523,7 @@ void scorer_learn(emt_tree& b, learner& base, emt_node& cn, const emt_example& e
 
   if (alternative_ex == nullptr || preferred_ex == nullptr)
   {
-    *(b.all->trace_message) << "ERROR" << std::endl;
+    *(b.all->output_runtime.trace_message) << "ERROR" << std::endl;
     return;
   }
 
@@ -623,7 +623,7 @@ void node_predict(emt_tree& b, learner& base, emt_node& cn, emt_example& ex, VW:
 
 void emt_predict(emt_tree& b, learner& base, VW::example& ec)
 {
-  b.all->ignore_some_linear = false;
+  b.all->feature_tweaks_config.ignore_some_linear = false;
   emt_example ex(*b.all, &ec);
 
   emt_node& cn = *tree_route(b, ex);
@@ -633,7 +633,7 @@ void emt_predict(emt_tree& b, learner& base, VW::example& ec)
 
 void emt_learn(emt_tree& b, learner& base, VW::example& ec)
 {
-  b.all->ignore_some_linear = false;
+  b.all->feature_tweaks_config.ignore_some_linear = false;
   auto ex = VW::make_unique<emt_example>(*b.all, &ec);
 
   emt_node& cn = *tree_route(b, *ex);
@@ -648,7 +648,8 @@ void emt_learn(emt_tree& b, learner& base, VW::example& ec)
 #ifdef VW_ENABLE_EMT_DEBUG_TIMER
 void emt_end_pass_timer(emt_tree& b)
 {
-  *(b.all->trace_message) << "##### pass_time: " << static_cast<float>(clock() - b.begin) / CLOCKS_PER_SEC << std::endl;
+  *(b.all->output_runtime.trace_message) << "##### pass_time: "
+                                         << static_cast<float>(clock() - b.begin) / CLOCKS_PER_SEC << std::endl;
 
   b.begin = clock();
 }

@@ -444,7 +444,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::log_multi_setup(VW::setup_
 
   std::string loss_function = "quantile";
   float loss_parameter = 0.5;
-  all.loss = get_loss_function(all, loss_function, loss_parameter);
+  all.loss_config.loss = get_loss_function(all, loss_function, loss_parameter);
 
   data->max_predictors = data->k - 1;
   init_tree(*data.get());

@@ -84,7 +84,10 @@ VW::example* VW::test_cb_adf_sequence(const VW::multi_ex& ec_seq)
   return ret;
 }
 
-const VW::version_struct* VW::reductions::cb_adf::get_model_file_ver() const { return &_all->model_file_ver; }
+const VW::version_struct* VW::reductions::cb_adf::get_model_file_ver() const
+{
+  return &_all->runtime_state.model_file_ver;
+}
 
 void VW::reductions::cb_adf::learn_ips(learner& base, VW::multi_ex& examples)
 {
@@ -311,7 +314,7 @@ void output_example_prediction_cb_adf(
 {
   if (ec_seq.empty()) { return; }
   const auto& ec = *ec_seq.front();
-  for (auto& sink : all.final_prediction_sink)
+  for (auto& sink : all.output_runtime.final_prediction_sink)
   {
     if (data.get_rank_all()) { VW::details::print_action_score(sink.get(), ec.pred.a_s, ec.tag, logger); }
     else
@@ -320,7 +323,7 @@ void output_example_prediction_cb_adf(
       all.print_by_ref(sink.get(), static_cast<float>(action), 0, ec.tag, logger);
     }
   }
-  VW::details::global_print_newline(all.final_prediction_sink, logger);
+  VW::details::global_print_newline(all.output_runtime.final_prediction_sink, logger);
 }
 
 void print_update_cb_adf(VW::workspace& all, VW::shared_data& /* sd */, const VW::reductions::cb_adf& data,

@@ -360,7 +360,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cats_tree_setup(VW::setup_
 
   auto tree = VW::make_unique<VW::reductions::cats::cats_tree>();
   tree->init(num_actions, bandwidth);
-  tree->set_trace_message(all.trace_message, all.quiet);
+  tree->set_trace_message(all.output_runtime.trace_message, all.output_config.quiet);
 
   int32_t feature_width = tree->learner_count();
   auto base = stack_builder.setup_base_learner(feature_width);

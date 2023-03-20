@@ -1180,8 +1180,8 @@ void save_load_memory_tree(memory_tree& b, VW::io_buf& model_file, bool read, bo
     for (uint32_t i = 0; i < n_examples; i++)
     {
       save_load_example(b.examples[i], model_file, read, text, msg, b.oas);
-      b.examples[i]->interactions = &b.all->interactions;
-      b.examples[i]->extent_interactions = &b.all->extent_interactions;
+      b.examples[i]->interactions = &b.all->feature_tweaks_config.interactions;
+      b.examples[i]->extent_interactions = &b.all->feature_tweaks_config.extent_interactions;
     }
     // std::cout<<"done loading...."<< std::endl;
   }
@@ -1229,21 +1229,21 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::memory_tree_setup(VW::setu
   tree->all = &all;
   tree->random_state = all.get_random_state();
   tree->current_pass = 0;
-  tree->final_pass = all.numpasses;
+  tree->final_pass = all.runtime_config.numpasses;
 
   tree->max_leaf_examples = static_cast<size_t>(tree->leaf_example_multiplier * (log(tree->max_nodes) / log(2)));
 
   init_tree(*tree);
 
-  if (!all.quiet)
+  if (!all.output_config.quiet)
   {
-    *(all.trace_message) << "memory_tree:"
-                         << " "
-                         << "max_nodes = " << tree->max_nodes << " "
-                         << "max_leaf_examples = " << tree->max_leaf_examples << " "
-                         << "alpha = " << tree->alpha << " "
-                         << "oas = " << tree->oas << " "
-                         << "online =" << tree->online << " " << std::endl;
+    *(all.output_runtime.trace_message) << "memory_tree:"
+                                        << " "
+                                        << "max_nodes = " << tree->max_nodes << " "
+                                        << "max_leaf_examples = " << tree->max_leaf_examples << " "
+                                        << "alpha = " << tree->alpha << " "
+                                        << "oas = " << tree->oas << " "
+                                        << "online =" << tree->online << " " << std::endl;
   }
 
   size_t feature_width;

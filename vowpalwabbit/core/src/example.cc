@@ -122,7 +122,7 @@ void flatten_features(VW::workspace& all, example& ec, features& fs)
   }
   else { ffs.mask = static_cast<uint64_t>(LONG_MAX) >> all.weights.stride_shift(); }
   VW::foreach_feature<full_features_and_source, uint64_t, vec_ffs_store>(all, ec, ffs);
-  ffs.fs.sort(all.parse_mask);
+  ffs.fs.sort(all.runtime_state.parse_mask);
   ffs.fs.sum_feat_sq = collision_cleanup(ffs.fs);
   fs = std::move(ffs.fs);
 }
@@ -137,7 +137,7 @@ namespace details
 void clean_example(VW::workspace& all, example& ec)
 {
   VW::empty_example(all, ec);
-  all.example_parser->example_pool.return_object(&ec);
+  all.parser_runtime.example_parser->example_pool.return_object(&ec);
 }
 void truncate_example_namespace(VW::example& ec, VW::namespace_index ns, const features& fs)
 {

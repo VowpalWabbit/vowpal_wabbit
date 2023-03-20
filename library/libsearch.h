@@ -18,7 +18,7 @@ template <class INPUT, class OUTPUT>
 class SearchTask  // NOLINT
 {
 public:
-  SearchTask(VW::workspace& vw_obj) : vw_obj(vw_obj), sch(*(Search::search*)vw_obj.searchstr)
+  SearchTask(VW::workspace& vw_obj) : vw_obj(vw_obj), sch(*(Search::search*)vw_obj.reduction_state.searchstr)
   {
     _bogus_example = new VW::example;
     VW::parsers::text::read_line(vw_obj, _bogus_example, (char*)"1 | x");

@@ -73,22 +73,26 @@ bool _test_only_generate_A(VW::workspace* _all, const multi_ex& examples, std::v
     {
       A_triplet_constructor w(_all->weights.sparse_weights.mask(), row_index, _triplets, max_non_zero_col);
       VW::foreach_feature<A_triplet_constructor, uint64_t, triplet_construction, sparse_parameters>(
-          _all->weights.sparse_weights, _all->ignore_some_linear, _all->ignore_linear,
+          _all->weights.sparse_weights, _all->feature_tweaks_config.ignore_some_linear,
+          _all->feature_tweaks_config.ignore_linear,
           (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
           (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
                                                       : *ex->extent_interactions),
-          _all->permutations, *ex, w, _all->generate_interactions_object_cache_state);
+          _all->feature_tweaks_config.permutations, *ex, w,
+          _all->runtime_state.generate_interactions_object_cache_state);
     }
     else
     {
       A_triplet_constructor w(_all->weights.dense_weights.mask(), row_index, _triplets, max_non_zero_col);
 
       VW::foreach_feature<A_triplet_constructor, uint64_t, triplet_construction, dense_parameters>(
-          _all->weights.dense_weights, _all->ignore_some_linear, _all->ignore_linear,
+          _all->weights.dense_weights, _all->feature_tweaks_config.ignore_some_linear,
+          _all->feature_tweaks_config.ignore_linear,
           (red_features.generated_interactions ? *red_features.generated_interactions : *ex->interactions),
           (red_features.generated_extent_interactions ? *red_features.generated_extent_interactions
                                                       : *ex->extent_interactions),
-          _all->permutations, *ex, w, _all->generate_interactions_object_cache_state);
+          _all->feature_tweaks_config.permutations, *ex, w,
+          _all->runtime_state.generate_interactions_object_cache_state);
     }
 
     if (shared_example != nullptr) { VW::details::append_example_namespaces_from_example(*ex, *shared_example); }
@@ -293,7 +297,8 @@ std::shared_ptr<VW::LEARNER::learner> make_las_with_impl(VW::setup_base_i& stack
   float seed = (all.get_random_state()->get_random() + 1) * 10.f;
 
   auto data = VW::make_unique<cb_explore_adf_large_action_space<T, S>>(d, c, apply_shrink_factor, &all, seed,
-      1 << all.num_bits, thread_pool_size, block_size, action_cache_slack, use_explicit_simd, impl_type);
+      1 << all.initial_weights_config.num_bits, thread_pool_size, block_size, action_cache_slack, use_explicit_simd,
+      impl_type);
 
   auto l = make_reduction_learner(std::move(data), base, learn<T, S>, predict<T, S>,
       stack_builder.get_setupfn_name(VW::reductions::cb_explore_adf_large_action_space_setup))

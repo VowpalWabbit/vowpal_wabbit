@@ -336,7 +336,7 @@ void save_load(boosting& o, VW::io_buf& model_file, bool read, bool text)
     }
   }
 
-  if (!o.all->quiet)
+  if (!o.all->output_config.quiet)
   {
     // avoid making syscalls multiple times
     fmt::memory_buffer buffer;

@@ -31,9 +31,9 @@ namespace vw_hash_helpers
 size_t get_hash_for_feature(VW::workspace& all, const std::string& ns, const std::string& feature)
 {
   std::uint64_t hash_ft = VW::hash_feature(all, feature, VW::hash_space(all, ns));
-  std::uint64_t ft = hash_ft & all.parse_mask;
+  std::uint64_t ft = hash_ft & all.runtime_state.parse_mask;
   // apply multiplier like setup_example
-  ft *= (static_cast<uint64_t>(all.total_feature_width) << all.weights.stride_shift());
+  ft *= (static_cast<uint64_t>(all.reduction_state.total_feature_width) << all.weights.stride_shift());
 
   return ft;
 }
@@ -98,7 +98,7 @@ bool weights_offset_test(cb_sim&, VW::workspace& all, VW::multi_ex&)
 
   // all weights of offset 1 will be set to zero
   VW::reductions::multi_model::clear_innermost_offset(
-      weights, offset_to_clear, all.total_feature_width, all.total_feature_width);
+      weights, offset_to_clear, all.reduction_state.total_feature_width, all.reduction_state.total_feature_width);
 
   for (auto index : feature_indexes)
   {
@@ -115,8 +115,8 @@ bool weights_offset_test(cb_sim&, VW::workspace& all, VW::multi_ex&)
   EXPECT_NEAR(EXPECTED_W2, weights.strided_index(interaction_index + offset_to_clear + 1), AUTO_ML_FLOAT_TOL);
 
   // copy from offset 2 to offset 1
-  VW::reductions::multi_model::move_innermost_offsets(
-      weights, offset_to_clear + 1, offset_to_clear, all.total_feature_width, all.total_feature_width);
+  VW::reductions::multi_model::move_innermost_offsets(weights, offset_to_clear + 1, offset_to_clear,
+      all.reduction_state.total_feature_width, all.reduction_state.total_feature_width);
 
   for (auto index : feature_indexes)
   {
@@ -180,11 +180,11 @@ bool all_weights_equal_test(cb_sim&, VW::workspace& all, VW::multi_ex&)
   for (auto iter = weights.begin(); iter != weights.end(); ++iter)
   {
     size_t prestride_index = iter.index() >> weights.stride_shift();
-    size_t current_offset = (iter.index() >> weights.stride_shift()) & (all.total_feature_width - 1);
+    size_t current_offset = (iter.index() >> weights.stride_shift()) & (all.reduction_state.total_feature_width - 1);
     if (current_offset == 0)
     {
       float* first_weight = &weights.first()[(prestride_index + 0) << weights.stride_shift()];
-      uint32_t till = 1;  // instead of all.total_feature_width, champdupe only uses 3 configs
+      uint32_t till = 1;  // instead of all.reduction_state.total_feature_width, champdupe only uses 3 configs
       for (uint32_t i = 1; i <= till; ++i)
       {
         float* other = &weights.first()[(prestride_index + i) << weights.stride_shift()];

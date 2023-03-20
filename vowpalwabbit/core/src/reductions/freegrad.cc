@@ -249,7 +249,8 @@ void freegrad_update_after_prediction(freegrad& fg, VW::example& ec)
 
   // Partial derivative of loss (Note that the weight of the examples ec is not accounted for at this stage. This is
   // done in inner_freegrad_update_after_prediction)
-  fg.update_data.update = fg.all->loss->first_derivative(fg.all->sd.get(), ec.pred.scalar, ec.l.simple.label);
+  fg.update_data.update =
+      fg.all->loss_config.loss->first_derivative(fg.all->sd.get(), ec.pred.scalar, ec.l.simple.label);
 
   // Compute gradient norm
   VW::foreach_feature<freegrad_update_data, gradient_dot_w>(*fg.all, ec, fg.update_data);
@@ -289,7 +290,7 @@ void save_load(freegrad& fg, VW::io_buf& model_file, bool read, bool text)
 
   if (model_file.num_files() != 0)
   {
-    bool resume = all->save_resume;
+    bool resume = all->output_model_config.save_resume;
     std::stringstream msg;
     msg << ":" << resume << "\n";
     VW::details::bin_text_read_write_fixed(
@@ -308,14 +309,15 @@ void end_pass(freegrad& fg)
 {
   VW::workspace& all = *fg.all;
 
-  if (!all.holdout_set_off)
+  if (!all.passes_config.holdout_set_off)
   {
     if (VW::details::summarize_holdout_set(all, fg.no_win_counter))
     {
-      VW::details::finalize_regressor(all, all.final_regressor_name);
+      VW::details::finalize_regressor(all, all.output_model_config.final_regressor_name);
     }
     if ((fg.early_stop_thres == fg.no_win_counter) &&
-        ((all.check_holdout_every_n_passes <= 1) || ((all.current_pass % all.check_holdout_every_n_passes) == 0)))
+        ((all.passes_config.check_holdout_every_n_passes <= 1) ||
+            ((all.passes_config.current_pass % all.passes_config.check_holdout_every_n_passes) == 0)))
     {
       VW::details::set_done(all);
     }
@@ -377,20 +379,22 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::freegrad_setup(VW::setup_b
   fg_ptr->all->weights.stride_shift(3);  // NOTE: for more parameter storage
   fg_ptr->freegrad_size = 6;
 
-  if (!fg_ptr->all->quiet)
+  if (!fg_ptr->all->output_config.quiet)
   {
-    *(fg_ptr->all->trace_message) << "Enabling FreeGrad based optimization" << std::endl;
-    *(fg_ptr->all->trace_message) << "Algorithm used: " << algorithm_name << std::endl;
+    *(fg_ptr->all->output_runtime.trace_message) << "Enabling FreeGrad based optimization" << std::endl;
+    *(fg_ptr->all->output_runtime.trace_message) << "Algorithm used: " << algorithm_name << std::endl;
   }
 
-  if (!fg_ptr->all->holdout_set_off)
+  if (!fg_ptr->all->passes_config.holdout_set_off)
   {
     fg_ptr->all->sd->holdout_best_loss = FLT_MAX;
     fg_ptr->early_stop_thres = options.get_typed_option<uint64_t>("early_terminate").value();
   }
 
-  auto predict_ptr = (fg_ptr->all->audit || fg_ptr->all->hash_inv) ? predict<true> : predict<false>;
-  auto learn_ptr = (fg_ptr->all->audit || fg_ptr->all->hash_inv) ? learn_freegrad<true> : learn_freegrad<false>;
+  auto predict_ptr =
+      (fg_ptr->all->output_config.audit || fg_ptr->all->output_config.hash_inv) ? predict<true> : predict<false>;
+  auto learn_ptr = (fg_ptr->all->output_config.audit || fg_ptr->all->output_config.hash_inv) ? learn_freegrad<true>
+                                                                                             : learn_freegrad<false>;
   auto l = VW::LEARNER::make_bottom_learner(std::move(fg_ptr), learn_ptr, predict_ptr,
       stack_builder.get_setupfn_name(freegrad_setup), VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
                .set_learn_returns_prediction(true)

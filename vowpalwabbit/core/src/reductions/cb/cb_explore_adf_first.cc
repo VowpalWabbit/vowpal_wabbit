@@ -121,8 +121,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_first_setup
   auto base = require_multiline(stack_builder.setup_base_learner(feature_width));
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_first>;
-  auto data = VW::make_unique<explore_type>(
-      all.global_metrics.are_metrics_enabled(), VW::cast_to_smaller_type<size_t>(tau), epsilon, all.model_file_ver);
+  auto data = VW::make_unique<explore_type>(all.output_runtime.global_metrics.are_metrics_enabled(),
+      VW::cast_to_smaller_type<size_t>(tau), epsilon, all.runtime_state.model_file_ver);
 
   if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
   auto l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,

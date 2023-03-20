@@ -73,9 +73,9 @@ TEST(FlatbufferParser, FlatbufferStandaloneExample)
   VW::multi_ex examples;
   examples.push_back(&VW::get_unused_example(all.get()));
   VW::io_buf unused_buffer;
-  all->flat_converter->parse_examples(all.get(), unused_buffer, examples, buf);
+  all->parser_runtime.flat_converter->parse_examples(all.get(), unused_buffer, examples, buf);
 
-  auto example = all->flat_converter->data()->example_obj_as_Example();
+  auto example = all->parser_runtime.flat_converter->data()->example_obj_as_Example();
   EXPECT_EQ(example->namespaces()->size(), 1);
   EXPECT_EQ(example->namespaces()->Get(0)->features()->size(), 1);
   EXPECT_FLOAT_EQ(example->label_as_SimpleLabel()->label(), 0.0);
@@ -115,9 +115,9 @@ TEST(FlatbufferParser, FlatbufferCollection)
   VW::multi_ex examples;
   examples.push_back(&VW::get_unused_example(all.get()));
   VW::io_buf unused_buffer;
-  all->flat_converter->parse_examples(all.get(), unused_buffer, examples, buf);
+  all->parser_runtime.flat_converter->parse_examples(all.get(), unused_buffer, examples, buf);
 
-  auto collection_examples = all->flat_converter->data()->example_obj_as_ExampleCollection()->examples();
+  auto collection_examples = all->parser_runtime.flat_converter->data()->example_obj_as_ExampleCollection()->examples();
   EXPECT_EQ(collection_examples->size(), 1);
   EXPECT_EQ(collection_examples->Get(0)->namespaces()->size(), 1);
   EXPECT_EQ(collection_examples->Get(0)->namespaces()->Get(0)->features()->size(), 1);

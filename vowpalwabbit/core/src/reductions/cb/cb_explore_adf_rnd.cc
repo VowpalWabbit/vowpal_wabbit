@@ -160,9 +160,11 @@ float cb_explore_adf_rnd::get_initial_prediction(VW::example* ec)
   lazy_gaussian w;
 
   std::pair<float, float> dotwithnorm(0.f, 0.f);
-  VW::foreach_feature<std::pair<float, float>, float, vec_add_with_norm, lazy_gaussian>(w, _all->ignore_some_linear,
-      _all->ignore_linear, _all->interactions, _all->extent_interactions, _all->permutations, *ec, dotwithnorm,
-      _all->generate_interactions_object_cache_state);
+  VW::foreach_feature<std::pair<float, float>, float, vec_add_with_norm, lazy_gaussian>(w,
+      _all->feature_tweaks_config.ignore_some_linear, _all->feature_tweaks_config.ignore_linear,
+      _all->feature_tweaks_config.interactions, _all->feature_tweaks_config.extent_interactions,
+      _all->feature_tweaks_config.permutations, *ec, dotwithnorm,
+      _all->runtime_state.generate_interactions_object_cache_state);
 
   return _sqrtinvlambda * dotwithnorm.second / std::sqrt(2.0f * std::max(1e-12f, dotwithnorm.first));
 }
@@ -303,8 +305,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_rnd_setup(V
   auto base = require_multiline(stack_builder.setup_base_learner(feature_width));
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_rnd>;
-  auto data = VW::make_unique<explore_type>(all.global_metrics.are_metrics_enabled(), epsilon, alpha, invlambda, numrnd,
-      base->feature_width_below * feature_width, &all);
+  auto data = VW::make_unique<explore_type>(all.output_runtime.global_metrics.are_metrics_enabled(), epsilon, alpha,
+      invlambda, numrnd, base->feature_width_below * feature_width, &all);
 
   if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
   auto l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,

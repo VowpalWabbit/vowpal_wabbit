@@ -21,7 +21,7 @@ static void add_float(float& c1, const float& c2) { c1 += c2; }
 
 void VW::details::accumulate(VW::workspace& all, parameters& weights, size_t offset)
 {
-  uint64_t length = UINT64_ONE << all.num_bits;  // This is size of gradient
+  uint64_t length = UINT64_ONE << all.initial_weights_config.num_bits;  // This is size of gradient
   float* local_grad = new float[length];
 
   if (weights.sparse)
@@ -68,8 +68,8 @@ float VW::details::accumulate_scalar(VW::workspace& all, float local_sum)
 
 void VW::details::accumulate_avg(VW::workspace& all, parameters& weights, size_t offset)
 {
-  uint32_t length = 1 << all.num_bits;  // This is size of gradient
-  float numnodes = static_cast<float>(all.all_reduce->total);
+  uint32_t length = 1 << all.initial_weights_config.num_bits;  // This is size of gradient
+  float numnodes = static_cast<float>(all.runtime_state.all_reduce->total);
   float* local_grad = new float[length];
 
   if (weights.sparse)
@@ -115,7 +115,7 @@ void VW::details::accumulate_weighted_avg(VW::workspace& all, parameters& weight
     return;
   }
 
-  uint32_t length = 1 << all.num_bits;  // This is the number of parameters
+  uint32_t length = 1 << all.initial_weights_config.num_bits;  // This is the number of parameters
   float* local_weights = new float[length];
 
   if (weights.sparse)
@@ -136,8 +136,14 @@ void VW::details::accumulate_weighted_avg(VW::workspace& all, parameters& weight
   // First compute weights for averaging
   VW::details::all_reduce<float, add_float>(all, local_weights, length);
 
-  if (weights.sparse) { VW::details::do_weighting(all.normalized_idx, length, local_weights, weights.sparse_weights); }
-  else { VW::details::do_weighting(all.normalized_idx, length, local_weights, weights.dense_weights); }
+  if (weights.sparse)
+  {
+    VW::details::do_weighting(all.initial_weights_config.normalized_idx, length, local_weights, weights.sparse_weights);
+  }
+  else
+  {
+    VW::details::do_weighting(all.initial_weights_config.normalized_idx, length, local_weights, weights.dense_weights);
+  }
 
   if (weights.sparse)
   {

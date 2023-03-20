@@ -47,7 +47,7 @@ void bs_predict_mean(const VW::workspace& all, VW::example& ec, const std::vecto
   ec.pred.scalar = static_cast<float>(std::accumulate(pred_vec.cbegin(), pred_vec.cend(), 0.0)) / pred_vec.size();
   if (ec.weight > 0 && ec.l.simple.label != FLT_MAX)
   {
-    ec.loss = all.loss->get_loss(all.sd.get(), ec.pred.scalar, ec.l.simple.label) * ec.weight;
+    ec.loss = all.loss_config.loss->get_loss(all.sd.get(), ec.pred.scalar, ec.l.simple.label) * ec.weight;
   }
 }
 
@@ -134,8 +134,8 @@ void bs_predict_vote(VW::example& ec, const std::vector<double>& pred_vec)
   // ld.prediction = sum_labels/(float)counter; //replace line below for: "avg on votes" and get_loss()
   ec.pred.scalar = static_cast<float>(current_label);
 
-  // ec.loss = all.loss->get_loss(all.sd, ld.prediction, ld.label) * ec.weight; //replace line below for: "avg on votes"
-  // and get_loss()
+  // ec.loss = all.loss_config.loss->get_loss(all.sd, ld.prediction, ld.label) * ec.weight; //replace line below for:
+  // "avg on votes" and get_loss()
   ec.loss = ((ec.pred.scalar == ec.l.simple.label) ? 0.f : 1.f) * ec.weight;
 }
 
@@ -157,11 +157,11 @@ void print_result(VW::io::writer* f, float res, const VW::v_array<char>& tag, fl
 void output_example_prediction_bs(
     VW::workspace& all, const bs_data& data, const VW::example& ec, VW::io::logger& logger)
 {
-  if (!all.final_prediction_sink.empty())
+  if (!all.output_runtime.final_prediction_sink.empty())
   {
     // get confidence interval only when printing out predictions
     const auto min_max = std::minmax_element(data.pred_vec.begin(), data.pred_vec.end());
-    for (auto& sink : all.final_prediction_sink)
+    for (auto& sink : all.output_runtime.final_prediction_sink)
     {
       print_result(sink.get(), ec.pred.scalar, ec.tag, *min_max.first, *min_max.second, logger);
     }
@@ -172,7 +172,7 @@ template <bool is_learn>
 void predict_or_learn(bs_data& d, learner& base, VW::example& ec)
 {
   VW::workspace& all = *d.all;
-  bool should_output = all.raw_prediction != nullptr;
+  bool should_output = all.output_runtime.raw_prediction != nullptr;
 
   float weight_temp = ec.weight;
 
@@ -211,7 +211,7 @@ void predict_or_learn(bs_data& d, learner& base, VW::example& ec)
 
   if (should_output)
   {
-    all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
+    all.print_text_by_ref(all.output_runtime.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
   }
 }
 }  // namespace

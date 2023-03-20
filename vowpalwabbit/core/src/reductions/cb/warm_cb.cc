@@ -138,12 +138,15 @@ void finish(warm_cb& data)
 {
   uint32_t argmin = find_min(data.cumulative_costs);
 
-  if (!data.all->quiet)
+  if (!data.all->output_config.quiet)
   {
-    *(data.all->trace_message) << "average variance estimate = " << data.cumu_var / data.inter_iter << std::endl;
-    *(data.all->trace_message) << "theoretical average variance = " << data.num_actions / data.epsilon << std::endl;
-    *(data.all->trace_message) << "last lambda chosen = " << data.lambdas[argmin] << " among lambdas ranging from "
-                               << data.lambdas[0] << " to " << data.lambdas[data.choices_lambda - 1] << std::endl;
+    *(data.all->output_runtime.trace_message)
+        << "average variance estimate = " << data.cumu_var / data.inter_iter << std::endl;
+    *(data.all->output_runtime.trace_message)
+        << "theoretical average variance = " << data.num_actions / data.epsilon << std::endl;
+    *(data.all->output_runtime.trace_message)
+        << "last lambda chosen = " << data.lambdas[argmin] << " among lambdas ranging from " << data.lambdas[0]
+        << " to " << data.lambdas[data.choices_lambda - 1] << std::endl;
   }
 }
 
