@@ -112,9 +112,9 @@ void predict_or_learn(baseline_data& data, learner& base, VW::example& ec)
         multiplier = std::max(0.0001f, std::max(std::abs(data.all->sd->min_label), std::abs(data.all->sd->max_label)));
         if (multiplier > MAX_MULTIPLIER) { multiplier = MAX_MULTIPLIER; }
       }
-      data.all->uc.eta *= multiplier;
+      data.all->update_rule_config.eta *= multiplier;
       base.learn(data.ec);
-      data.all->uc.eta /= multiplier;
+      data.all->update_rule_config.eta /= multiplier;
     }
     else { base.learn(data.ec); }
 

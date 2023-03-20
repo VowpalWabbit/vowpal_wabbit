@@ -69,12 +69,13 @@ std::unique_ptr<VW::workspace> initialize_internal(
   if (!all->output_config.quiet)
   {
     *(all->output_runtime.trace_message) << "Num weight bits = " << all->iwc.num_bits << std::endl;
-    *(all->output_runtime.trace_message) << "learning rate = " << all->uc.eta << std::endl;
+    *(all->output_runtime.trace_message) << "learning rate = " << all->update_rule_config.eta << std::endl;
     *(all->output_runtime.trace_message) << "initial_t = " << all->sd->t << std::endl;
-    *(all->output_runtime.trace_message) << "power_t = " << all->uc.power_t << std::endl;
+    *(all->output_runtime.trace_message) << "power_t = " << all->update_rule_config.power_t << std::endl;
     if (all->runtime_config.numpasses > 1)
     {
-      *(all->output_runtime.trace_message) << "decay_learning_rate = " << all->uc.eta_decay_rate << std::endl;
+      *(all->output_runtime.trace_message)
+          << "decay_learning_rate = " << all->update_rule_config.eta_decay_rate << std::endl;
     }
     if (all->options->was_supplied("cb_type"))
     {

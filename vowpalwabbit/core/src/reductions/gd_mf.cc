@@ -204,7 +204,8 @@ void mf_train(gdmf& d, VW::example& ec, T& weights)
 
   // use final prediction to get update size
   // update = eta_t*(y-y_hat) where eta_t = eta/(3*t^p) * importance weight
-  float eta_t = all.uc.eta / powf(static_cast<float>(all.sd->t) + ec.weight, all.uc.power_t) / 3.f * ec.weight;
+  float eta_t = all.update_rule_config.eta /
+      powf(static_cast<float>(all.sd->t) + ec.weight, all.update_rule_config.power_t) / 3.f * ec.weight;
   float update = all.loss_config.loss->get_update(ec.pred.scalar, ld.label, eta_t, 1.);  // ec.total_sum_feat_sq);
 
   float regularization = eta_t * all.loss_config.l2_lambda;
@@ -313,7 +314,7 @@ void end_pass(gdmf& d)
 {
   VW::workspace* all = d.all;
 
-  all->uc.eta *= all->uc.eta_decay_rate;
+  all->update_rule_config.eta *= all->update_rule_config.eta_decay_rate;
   if (all->output_model_config.save_per_pass)
   {
     VW::details::save_predictor(*all, all->output_model_config.final_regressor_name, all->passes_config.current_pass);
@@ -383,16 +384,16 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_mf_setup(VW::setup_base
 
   if (!options.was_supplied("learning_rate") && !options.was_supplied("l"))
   {
-    all.uc.eta = 10;  // default learning rate to 10 for non default update rule
+    all.update_rule_config.eta = 10;  // default learning rate to 10 for non default update rule
   }
 
   // default initial_t to 1 instead of 0
   if (!options.was_supplied("initial_t"))
   {
     all.sd->t = 1.f;
-    all.uc.initial_t = 1.f;
+    all.update_rule_config.initial_t = 1.f;
   }
-  all.uc.eta *= powf(static_cast<float>(all.sd->t), all.uc.power_t);
+  all.update_rule_config.eta *= powf(static_cast<float>(all.sd->t), all.update_rule_config.power_t);
 
   auto l = make_bottom_learner(std::move(data), learn, predict, stack_builder.get_setupfn_name(gd_mf_setup),
       VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)

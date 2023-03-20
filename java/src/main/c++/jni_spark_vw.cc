@@ -293,8 +293,8 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getArgu
   jmethodID ctor = env->GetMethodID(clazz, "<init>", "(IILjava/lang/String;DD)V");
   CHECK_JNI_EXCEPTION(nullptr);
 
-  return env->NewObject(
-      clazz, ctor, all->iwc.num_bits, all->runtime_config.hash_seed, args, all->uc.eta, all->uc.power_t);
+  return env->NewObject(clazz, ctor, all->iwc.num_bits, all->runtime_config.hash_seed, args,
+      all->update_rule_config.eta, all->update_rule_config.power_t);
 }
 
 JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getOutputPredictionType(

@@ -8,8 +8,8 @@ API void GetWorkspaceBasicArguments(
 {
   args->is_test_only = !workspace->vw->runtime_config.training;
   args->num_passes = (int)workspace->vw->runtime_config.numpasses;
-  args->learning_rate = workspace->vw->uc.eta;
-  args->power_t = workspace->vw->uc.power_t;
+  args->learning_rate = workspace->vw->update_rule_config.eta;
+  args->power_t = workspace->vw->update_rule_config.power_t;
 
   if (workspace->vw->options->was_supplied("cb"))
   {

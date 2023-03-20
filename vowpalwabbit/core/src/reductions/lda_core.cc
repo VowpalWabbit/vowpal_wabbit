@@ -769,8 +769,9 @@ void save_load(lda& l, VW::io_buf& model_file, bool read, bool text)
   if (read)
   {
     VW::details::initialize_regressor(all);
-    initial_weights init{all.uc.initial_t, static_cast<float>(l.lda_D / all.reduction_state.lda / all.length() * 200.f),
-        all.iwc.random_weights, all.reduction_state.lda, all.weights.stride()};
+    initial_weights init{all.update_rule_config.initial_t,
+        static_cast<float>(l.lda_D / all.reduction_state.lda / all.length() * 200.f), all.iwc.random_weights,
+        all.reduction_state.lda, all.weights.stride()};
 
     auto initial_lda_weight_initializer = [init](VW::weight* weights, uint64_t index)
     {
@@ -871,7 +872,7 @@ void learn_batch(lda& l, std::vector<example*>& batch)
 
   sort(l.sorted_features.begin(), l.sorted_features.end());
 
-  eta = l.all->uc.eta * l.powf(static_cast<float>(l.example_t), -l.all->uc.power_t);
+  eta = l.all->update_rule_config.eta * l.powf(static_cast<float>(l.example_t), -l.all->update_rule_config.power_t);
   minuseta = 1.0f - eta;
   eta *= l.lda_D / batch_size;
   l.decay_levels.push_back(l.decay_levels.back() + std::log(minuseta));
@@ -907,7 +908,8 @@ void learn_batch(lda& l, std::vector<example*>& batch)
 
   for (size_t d = 0; d < batch_size; d++)
   {
-    float score = lda_loop(l, l.Elogtheta, &(l.v[d * l.all->reduction_state.lda]), batch[d], l.all->uc.power_t);
+    float score =
+        lda_loop(l, l.Elogtheta, &(l.v[d * l.all->reduction_state.lda]), batch[d], l.all->update_rule_config.power_t);
     if (l.all->output_config.audit) { VW::details::print_audit_features(*l.all, *batch[d]); }
     // If the doc is empty, give it loss of 0.
     if (l.doc_lengths[d] > 0)
@@ -1330,7 +1332,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::lda_setup(VW::setup_base_i
   ld->sorted_features = std::vector<index_feature>();
   ld->total_lambda_init = false;
   ld->all = &all;
-  ld->example_t = all.uc.initial_t;
+  ld->example_t = all.update_rule_config.initial_t;
   if (ld->compute_coherence_metrics)
   {
     ld->feature_counts.resize(static_cast<uint32_t>(VW::details::UINT64_ONE << all.iwc.num_bits));
@@ -1343,10 +1345,10 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::lda_setup(VW::setup_base_i
   all.iwc.random_weights = true;
   all.fc.add_constant = false;
 
-  if (all.uc.eta > 1.)
+  if (all.update_rule_config.eta > 1.)
   {
     all.logger.err_warn("The learning rate is too high, setting it to 1");
-    all.uc.eta = std::min(all.uc.eta, 1.f);
+    all.update_rule_config.eta = std::min(all.update_rule_config.eta, 1.f);
   }
 
   size_t minibatch2 = next_pow2(ld->minibatch);

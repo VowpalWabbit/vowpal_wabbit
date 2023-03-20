@@ -475,7 +475,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::plt_setup(VW::setup_base_i
 
   // resize VW::v_arrays
   tree->nodes_time.resize(tree->t);
-  std::fill(tree->nodes_time.begin(), tree->nodes_time.end(), all.uc.initial_t);
+  std::fill(tree->nodes_time.begin(), tree->nodes_time.end(), all.update_rule_config.initial_t);
   tree->node_pred.resize(tree->kary);
   if (tree->top_k > 0)
   {

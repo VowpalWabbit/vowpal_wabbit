@@ -230,7 +230,7 @@ void end_pass(VW::reductions::gd& g)
     if (all.weights.adaptive) { VW::details::accumulate_weighted_avg(all, all.weights); }
     else { VW::details::accumulate_avg(all, all.weights, 0); }
   }
-  all.uc.eta *= all.uc.eta_decay_rate;
+  all.update_rule_config.eta *= all.update_rule_config.eta_decay_rate;
   if (all.output_model_config.save_per_pass)
   {
     VW::details::save_predictor(all, all.output_model_config.final_regressor_name, all.passes_config.current_pass);
@@ -766,7 +766,7 @@ VW_WARNING_STATE_POP
 template <size_t adaptive>
 float get_scale(VW::reductions::gd& g, VW::example& /* ec */, float weight)
 {
-  float update_scale = g.all->uc.eta * weight;
+  float update_scale = g.all->update_rule_config.eta * weight;
   if (!adaptive)
   {
     float t = static_cast<float>(
@@ -1110,9 +1110,9 @@ void VW::details::save_load_online_state_gd(VW::workspace& all, VW::io_buf& mode
 {
   std::stringstream msg;
 
-  msg << "initial_t " << all.uc.initial_t << "\n";
-  VW::details::bin_text_read_write_fixed(
-      model_file, reinterpret_cast<char*>(&all.uc.initial_t), sizeof(all.uc.initial_t), read, msg, text);
+  msg << "initial_t " << all.update_rule_config.initial_t << "\n";
+  VW::details::bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&all.update_rule_config.initial_t),
+      sizeof(all.update_rule_config.initial_t), read, msg, text);
 
   assert(pms.size() >= 1);
   msg << "norm normalizer " << pms[0].normalized_sum_norm_x << "\n";
@@ -1264,10 +1264,10 @@ void save_load(VW::reductions::gd& g, VW::io_buf& model_file, bool read, bool te
   {
     VW::details::initialize_regressor(all);
 
-    if (all.weights.adaptive && all.uc.initial_t > 0)
+    if (all.weights.adaptive && all.update_rule_config.initial_t > 0)
     {
       float init_weight = all.iwc.initial_weight;
-      float init_t = all.uc.initial_t;
+      float init_t = all.update_rule_config.initial_t;
       auto initial_gd_weight_initializer = [init_weight, init_t](VW::weight* weights, uint64_t /*index*/)
       {
         weights[0] = init_weight;
@@ -1472,15 +1472,16 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i&
   auto g = VW::make_unique<VW::reductions::gd>(feature_width_above);
   g->all = &all;
   g->no_win_counter = 0;
-  g->neg_norm_power = (all.weights.adaptive ? (all.uc.power_t - 1.f) : -1.f);
-  g->neg_power_t = -all.uc.power_t;
+  g->neg_norm_power = (all.weights.adaptive ? (all.update_rule_config.power_t - 1.f) : -1.f);
+  g->neg_power_t = -all.update_rule_config.power_t;
   g->sparse_l2 = sparse_l2;
 
-  if (all.uc.initial_t > 0)  // for the normalized update: if initial_t is bigger than 1 we interpret this as if we had
-                             // seen (all.uc.initial_t) previous fake datapoints all with norm 1
+  if (all.update_rule_config.initial_t >
+      0)  // for the normalized update: if initial_t is bigger than 1 we interpret this as if we had
+          // seen (all.update_rule_config.initial_t) previous fake datapoints all with norm 1
   {
-    g->gd_per_model_states[0].normalized_sum_norm_x = all.uc.initial_t;
-    g->gd_per_model_states[0].total_weight = all.uc.initial_t;
+    g->gd_per_model_states[0].normalized_sum_norm_x = all.update_rule_config.initial_t;
+    g->gd_per_model_states[0].total_weight = all.update_rule_config.initial_t;
   }
 
   bool feature_mask_off = true;
@@ -1504,7 +1505,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i&
     if (!options.was_supplied("learning_rate") && !options.was_supplied("l") &&
         !(all.weights.adaptive && all.weights.normalized))
     {
-      all.uc.eta = 10;  // default learning rate to 10 for non default update rule
+      all.update_rule_config.eta = 10;  // default learning rate to 10 for non default update rule
     }
 
     // if not using normalized or adaptive, default initial_t to 1 instead of 0
@@ -1513,9 +1514,9 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i&
       if (!options.was_supplied("initial_t"))
       {
         all.sd->t = 1.f;
-        all.uc.initial_t = 1.f;
+        all.update_rule_config.initial_t = 1.f;
       }
-      all.uc.eta *= powf(static_cast<float>(all.sd->t), all.uc.power_t);
+      all.update_rule_config.eta *= powf(static_cast<float>(all.sd->t), all.update_rule_config.power_t);
     }
   }
   else { all.reduction_state.invariant_updates = all.runtime_config.training; }
@@ -1529,11 +1530,13 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i&
 
   if (g->adax && !all.weights.adaptive) THROW("Cannot use adax without adaptive");
 
-  if (pow(static_cast<double>(all.uc.eta_decay_rate), static_cast<double>(all.runtime_config.numpasses)) < 0.0001)
+  if (pow(static_cast<double>(all.update_rule_config.eta_decay_rate),
+          static_cast<double>(all.runtime_config.numpasses)) < 0.0001)
   {
     all.logger.err_warn(
         "The learning rate for the last pass is multiplied by '{}' adjust --decay_learning_rate larger to avoid this.",
-        pow(static_cast<double>(all.uc.eta_decay_rate), static_cast<double>(all.runtime_config.numpasses)));
+        pow(static_cast<double>(all.update_rule_config.eta_decay_rate),
+            static_cast<double>(all.runtime_config.numpasses)));
   }
 
   if (all.loss_config.reg_mode % 2)
@@ -1561,7 +1564,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i&
   }
 
   uint64_t stride;
-  if (all.uc.power_t == 0.5) { stride = ::set_learn<true>(all, feature_mask_off, *g.get()); }
+  if (all.update_rule_config.power_t == 0.5) { stride = ::set_learn<true>(all, feature_mask_off, *g.get()); }
   else { stride = ::set_learn<false>(all, feature_mask_off, *g.get()); }
 
   all.weights.stride_shift(static_cast<uint32_t>(::ceil_log_2(stride - 1)));

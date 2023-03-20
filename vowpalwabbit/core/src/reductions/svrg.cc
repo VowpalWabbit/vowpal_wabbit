@@ -109,7 +109,7 @@ void update_inner(const svrg& s, VW::example& ec)
   // |ec| already has prediction according to inner weights.
   u.g_scalar_inner = gradient_scalar(s, ec, ec.pred.scalar);
   u.g_scalar_stable = gradient_scalar(s, ec, predict_stable(s, ec));
-  u.eta = s.all->uc.eta;
+  u.eta = s.all->update_rule_config.eta;
   u.norm = static_cast<float>(s.stable_grad_count);
   VW::foreach_feature<update, update_inner_feature>(*s.all, ec, u);
 }

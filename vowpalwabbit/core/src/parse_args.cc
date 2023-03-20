@@ -1069,11 +1069,11 @@ void parse_example_tweaks(options_i& options, VW::workspace& all)
   all.parser_runtime.max_examples =
       max_examples == -1 ? std::numeric_limits<size_t>::max() : VW::cast_signed_to_unsigned<size_t>(max_examples);
 
-  if (test_only || all.uc.eta == 0.)
+  if (test_only || all.update_rule_config.eta == 0.)
   {
     if (!all.output_config.quiet) { *(all.output_runtime.trace_message) << "only testing" << endl; }
     all.runtime_config.training = false;
-    if (all.reduction_state.lda > 0) { all.uc.eta = 0; }
+    if (all.reduction_state.lda > 0) { all.update_rule_config.eta = 0; }
   }
   else { all.runtime_config.training = true; }
 
@@ -1178,18 +1178,18 @@ void parse_update_options(options_i& options, VW::workspace& all)
   option_group_definition update_args("Update");
   float t_arg = 0.f;
   update_args
-      .add(make_option("learning_rate", all.uc.eta)
+      .add(make_option("learning_rate", all.update_rule_config.eta)
                .default_value(0.5f)
                .keep(all.output_model_config.save_resume)
                .allow_override(all.output_model_config.save_resume)
                .help("Set learning rate")
                .short_name("l"))
-      .add(make_option("power_t", all.uc.power_t)
+      .add(make_option("power_t", all.update_rule_config.power_t)
                .default_value(0.5f)
                .keep(all.output_model_config.save_resume)
                .allow_override(all.output_model_config.save_resume)
                .help("T power value"))
-      .add(make_option("decay_learning_rate", all.uc.eta_decay_rate)
+      .add(make_option("decay_learning_rate", all.update_rule_config.eta_decay_rate)
                .default_value(1.f)
                .help("Set Decay factor for learning_rate between passes"))
       .add(make_option("initial_t", t_arg).help("Initial t value"))
@@ -1198,7 +1198,7 @@ void parse_update_options(options_i& options, VW::workspace& all)
                      "given, also used for initial weights."));
   options.add_and_parse(update_args);
   if (options.was_supplied("initial_t")) { all.sd->t = t_arg; }
-  all.uc.initial_t = static_cast<float>(all.sd->t);
+  all.update_rule_config.initial_t = static_cast<float>(all.sd->t);
 }
 
 void parse_output_preds(options_i& options, VW::workspace& all)

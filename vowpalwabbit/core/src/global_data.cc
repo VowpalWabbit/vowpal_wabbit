@@ -340,9 +340,9 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
     if (label != FLT_MAX) { this->sd->max_label = std::max(this->sd->max_label, label); }
   };
 
-  uc.power_t = 0.5f;
-  uc.eta = 0.5f;  // default learning rate for normalized adaptive updates, this is switched to 10 by default for the
-                  // other updates (see parse_args.cc)
+  update_rule_config.power_t = 0.5f;
+  update_rule_config.eta = 0.5f;  // default learning rate for normalized adaptive updates, this is switched to 10 by
+                                  // default for the other updates (see parse_args.cc)
   runtime_config.numpasses = 1;
 
   print_by_ref = VW::details::print_result_by_ref;
@@ -363,7 +363,7 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   loss_config.l1_lambda = 0.0;
   loss_config.l2_lambda = 0.0;
 
-  uc.eta_decay_rate = 1.0;
+  update_rule_config.eta_decay_rate = 1.0;
   iwc.initial_weight = 0.0;
   fc.initial_constant = 0.0;
 

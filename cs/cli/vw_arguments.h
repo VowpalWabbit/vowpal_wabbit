@@ -65,8 +65,8 @@ private:
       m_numberOfActions = (int)options->get_typed_option<uint32_t>("cb").value();
     }
 
-    m_learning_rate = vw->uc.eta;
-    m_power_t = vw->uc.power_t;
+    m_learning_rate = vw->update_rule_config.eta;
+    m_power_t = vw->update_rule_config.power_t;
   }
 
 public:
