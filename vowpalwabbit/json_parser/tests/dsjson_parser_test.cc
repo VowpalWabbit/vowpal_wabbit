@@ -834,7 +834,7 @@ TEST(ParseDsjson, SlatesDomParser)
   VW::finish_example(*ccb_vw, ccb_examples);
 }
 
-TEST(ParseDsjson, IGLWithDefinitelyBadFlag)
+TEST(ParseDsjson, IglWithDefinitelyBadFlag)
 {
   std::string json_text = R"(
 {
@@ -937,7 +937,6 @@ TEST(ParseDsjson, CbWithObservations)
 }
 )";
 
-  // --cb_adf
   auto vw = VW::initialize(vwtest::make_args("--dsjson", "--experimental_igl", "--chain_hash", "--coin", "--cb_adf", "--no_stdin", "--quiet"));
   auto examples = vwtest::parse_dsjson(*vw, json_text);
 
@@ -1006,5 +1005,56 @@ TEST(ParseDsjson, CbWithObservations)
   EXPECT_EQ(examples[4]->feature_space['o'].indices[0], VW::chain_hash(*vw, "observation_feature", "x", VW::hash_space(*vw, "observation_ns")));
   EXPECT_EQ(examples[4]->feature_space['o'].indices.size(), 1);
 
+  VW::finish_example(*vw, examples);
+}
+
+TEST(ParseDsjson, CbWithObservationsNoLabel)
+{
+  std::string json_text = R"(
+  {
+    "a": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "c": {
+      "User": {
+        "user=Anna": 1,
+        "time_of_day=afternoon": 1
+      },
+      "_multi": [
+        {
+          "Action": {
+            "action=politics": 1
+          }
+        },
+        {
+          "Action": {
+            "action=sports": 1
+          }
+        },
+        {
+          "Action": {
+            "action=finance": 1
+          }
+        },
+        {
+          "Action": {
+            "action=camping": 1
+          }
+        }
+      ]
+    }
+  })";
+
+  auto vw = VW::initialize(vwtest::make_args("--dsjson", "--experimental_igl", "--chain_hash", "--coin", "--cb_explore_adf", "--no_stdin", "--quiet"));
+  auto examples = vwtest::parse_dsjson(*vw, json_text);
+
+  EXPECT_EQ(examples.size(), 5);
+
+  EXPECT_EQ(examples[0]->l.cb_with_observations.event.costs.size(), 1);
+  EXPECT_FLOAT_EQ(examples[0]->l.cb_with_observations.event.costs[0].probability, -1.f);
+  EXPECT_FLOAT_EQ(examples[0]->l.cb_with_observations.event.costs[0].cost, FLT_MAX);
   VW::finish_example(*vw, examples);
 }

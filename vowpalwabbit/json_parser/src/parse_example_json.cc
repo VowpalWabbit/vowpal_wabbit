@@ -399,18 +399,19 @@ public:
         cb_label = VW::cb_class{};
       }
     }
-    else if (ctx._label_parser.label_type == VW::label_type_t::CB_WITH_OBSERVATIONS) {
-      auto& ld = ctx.ex->l.cb_with_observations;
-      ld.event.costs.push_back(cb_label);
-      cb_label = CB::cb_class{};
-    }
     else if (found_cb)
     {
-      auto& ld = ctx.ex->l.cb;
-      ld.costs.push_back(cb_label);
+      if (ctx._label_parser.label_type == VW::label_type_t::CB_WITH_OBSERVATIONS) {
+        auto& ld = ctx.ex->l.cb_with_observations;
+        ld.event.costs.push_back(cb_label);
+        cb_label = CB::cb_class{};
+      } else {
+        auto& ld = ctx.ex->l.cb;
+        ld.costs.push_back(cb_label);
 
-      found_cb = false;
-      cb_label = VW::cb_class{};
+        found_cb = false;
+        cb_label = VW::cb_class{};
+      }
     }
     else if (found_cb_continuous)
     {

@@ -474,6 +474,8 @@ vw_add_test_executable(
       tests/scope_exit_test.cc
       tests/simulator.cc
       tests/simulator.h
+      tests/igl_simulator.h
+      tests/igl_simulator.cc
       tests/slates_parser_test.cc
       tests/slates_test.cc
       tests/status_builder_test.cc

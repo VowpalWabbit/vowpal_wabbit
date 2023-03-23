@@ -107,7 +107,7 @@ void learn(interaction_ground& igl, learner& base, VW::multi_ex& ec_seq)
 {
   float p_unlabeled_prior = 0.5f;
 
-  std::swap(igl.ik_ftrl->all->loss, igl.ik_all->loss);
+  std::swap(igl.ik_ftrl->all->loss_config.loss, igl.ik_all->loss_config.loss);
   std::swap(igl.ik_ftrl->all->sd, igl.ik_all->sd);
 
   float ik_pred = 0.f;
@@ -141,7 +141,10 @@ void learn(interaction_ground& igl, learner& base, VW::multi_ex& ec_seq)
     // 1. set up ik ex
     igl.ik_ex.l.simple.label = i == chosen_action_idx ? 1.f : -1.f;
 
-    float pa = action_scores[i].score;
+    auto action_score_iter = std::find_if( action_scores.begin(), action_scores.end(),
+      [&i](VW::action_score& element){ return element.action == i;} );
+
+    float pa = action_score_iter->score;
 
     if (i == chosen_action_idx) {
       igl.ik_ex.weight = 1/4.f / pa;
@@ -163,7 +166,7 @@ void learn(interaction_ground& igl, learner& base, VW::multi_ex& ec_seq)
     action_ex->l.cb_with_observations.event.reset_to_default();
   }
 
-  std::swap(igl.ik_ftrl->all->loss, igl.ik_all->loss);
+  std::swap(igl.ik_ftrl->all->loss_config.loss, igl.ik_all->loss_config.loss);
   std::swap(igl.ik_ftrl->all->sd, igl.ik_all->sd);
 
   float predicted_cost = 0.f;
@@ -329,7 +332,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::interaction_ground_setup(V
   assert(ik_options->was_supplied("loss_function") == true);
 
   ld->ik_all = VW::initialize_experimental(VW::make_unique<VW::config::options_cli>(VW::split_command_line(ik_args)));
-  all->example_parser->lbl_parser = VW::get_label_parser(label_type_t::CB_WITH_OBSERVATIONS);
+  all->parser_runtime.example_parser->lbl_parser = VW::get_label_parser(label_type_t::CB_WITH_OBSERVATIONS);
 
   std::unique_ptr<ik_stack_builder> ik_builder = VW::make_unique<ik_stack_builder>(ftrl_coin);
   ik_builder->delayed_state_attach(*ld->ik_all, *ik_options);
@@ -339,8 +342,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::interaction_ground_setup(V
   ld->pi_ftrl = VW::make_unique<ftrl>();
   *ld->pi_ftrl.get() = *ld->ik_ftrl;
 
-  ld->interactions = all->interactions;
-  ld->extent_interactions = &all->extent_interactions;
+  ld->interactions = all->feature_tweaks_config.interactions;
+  ld->extent_interactions = &all->feature_tweaks_config.extent_interactions;
 
   VW::prediction_type_t pred_type;
 

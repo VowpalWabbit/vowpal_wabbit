@@ -13,6 +13,7 @@ using namespace ::testing;
 
 #include "vw/core/vw.h"
 #include "vw/core/parser.h"
+#include "igl_simulator.h"
 
 #include <gtest/gtest.h>
 
@@ -81,7 +82,7 @@ std::vector<separate_weights_vector> split_weights(std::unique_ptr<VW::workspace
   return result;
 }
 
-TEST(IGL, ModelWeightsEqualToSeparateModelWeights) {
+TEST(Igl, ModelWeightsEqualToSeparateModelWeights) {
   example_vector sl_vector = {
     {
       "1 1.0 |User user=Tom time=afternoon |Action action=politics |v v=click ",
@@ -149,9 +150,8 @@ TEST(IGL, ModelWeightsEqualToSeparateModelWeights) {
   }
 
   // train IGL
-  for (size_t i = 0; i < igl_vector.size(); i++) {
-    std::string json_text = igl_vector[i];
-    auto examples = vwtest::parse_dsjson(*igl_vw, json_text);
+  for (auto& ex : igl_vector) {
+    auto examples = vwtest::parse_dsjson(*igl_vw, ex);
     VW::setup_examples(*igl_vw, examples);
 
     igl_vw->learn(examples);
@@ -178,7 +178,7 @@ TEST(IGL, ModelWeightsEqualToSeparateModelWeights) {
   EXPECT_EQ(multi_weights, igl_weights[1]);
 }
 
-TEST(IGL, VerifyRewardModelWeightsWithLabelAndWeight) {
+TEST(Igl, VerifyRewardModelWeightsWithLabelAndWeight) {
   std::string sl_ex_str = "1 0.25 |User user=Anna time_of_day=afternoon |Action action=politics |v v=none";
   auto sl_vw = VW::initialize(vwtest::make_args("--link=logistic", "--loss_function=logistic", "--coin", "--cubic", "UAv", "--noconstant", "--quiet"));
 
@@ -199,4 +199,21 @@ TEST(IGL, VerifyRewardModelWeightsWithLabelAndWeight) {
 
   EXPECT_GT(sl_weights.size(), 0);
   EXPECT_EQ(sl_weights, igl_weights[0]);
+}
+
+TEST(Igl, TrainingCoverges) {
+  std::vector<std::string> igl_args = {
+    "--cb_explore_adf", "--epsilon", "0.2", "--dsjson", "--coin", "--experimental_igl", "--noconstant", "-b", "19", "-q", "UA", "--quiet"
+  };
+
+  const size_t num_iterations = 2500;
+  const size_t seed = 777;
+  simulator::callback_map empty_hooks;
+
+  auto igl_vw = VW::initialize(vwtest::make_args(igl_args));
+
+  igl_simulator::igl_sim sim(seed);
+  auto ctr_vector = sim.run_simulation_hook(igl_vw.get(), num_iterations, empty_hooks);
+
+  EXPECT_GT(ctr_vector.back(), 0.5f);
 }
