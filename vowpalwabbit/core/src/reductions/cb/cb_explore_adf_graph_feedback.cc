@@ -304,7 +304,7 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
 
   ens::AugLagrangian optimizer;
   // TODO should I set an upper limit for performance reasons?
-  // optimizer.MaxIterations() = 1000;
+  // optimizer.MaxIterations() = 0;
   optimizer.Optimize(f, coordinates);
 
   coordinates.print("coords before balancing: ");
@@ -413,7 +413,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_graph_feedb
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
 
   auto base = require_multiline(stack_builder.setup_base_learner());
-  all.example_parser->lbl_parser = VW::cb_label_parser_global;
+  all.parser_runtime.example_parser->lbl_parser = VW::cb_label_parser_global;
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_graph_feedback>;
 
@@ -428,7 +428,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_graph_feedb
                .set_output_label_type(VW::label_type_t::CB)
                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
-               .set_params_per_weight(problem_multiplier)
+               .set_feature_width(problem_multiplier)
                .set_output_example_prediction(explore_type::output_example_prediction)
                .set_update_stats(explore_type::update_stats)
                .set_print_update(explore_type::print_update)
