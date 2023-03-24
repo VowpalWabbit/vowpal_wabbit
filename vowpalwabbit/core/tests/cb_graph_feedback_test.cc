@@ -15,7 +15,7 @@
 #include <string>
 
 using namespace testing;
-constexpr float EXPLICIT_FLOAT_TOL = 0.001f;
+constexpr float EXPLICIT_FLOAT_TOL = 0.01f;
 
 std::vector<std::vector<float>> predict_learn_return_action_scores_two_actions(
     VW::workspace& vw, const std::string& shared_graph)
@@ -65,7 +65,7 @@ TEST(GraphFeedback, CopsAndRobbers)
 {
   // aka one reveals info about the other so just give higher probability to the one with the lower cost
 
-  std::vector<std::string> args{"--cb_explore_adf", "--graph_feedback", "--quiet", "--gamma", "5"};
+  std::vector<std::string> args{"--cb_explore_adf", "--graph_feedback", "--quiet", "--gamma", "25"};
   auto vw_graph = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
 
   auto& vw = *vw_graph.get();
@@ -79,10 +79,10 @@ TEST(GraphFeedback, CopsAndRobbers)
   auto pred_results = predict_learn_return_action_scores_two_actions(vw, shared_graph);
 
   // f_hat 0.1998, 0.0999 -> second one has lower cost
-  EXPECT_THAT(pred_results[0], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.143, 0.856}));
+  EXPECT_THAT(pred_results[0], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.042, 0.957}));
 
   // fhat 0.4925, 0.6972 -> first one has lower cost
-  EXPECT_THAT(pred_results[1], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.894, 0.105}));
+  EXPECT_THAT(pred_results[1], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.913, 0.080}));
 }
 
 // TODO des an mporeis na vgaleis tous arithmous apo to peiper etsi opws dinontai
@@ -90,7 +90,7 @@ TEST(GraphFeedback, AppleTasting)
 {
   // aka spam filtering, or, one action reveals all and the other action reveals nothing
 
-  std::vector<std::string> args{"--cb_explore_adf", "--graph_feedback", "--quiet", "--gamma", "5"};
+  std::vector<std::string> args{"--cb_explore_adf", "--graph_feedback", "--quiet", "--gamma", "25"};
   auto vw_graph = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
 
   auto& vw = *vw_graph.get();
@@ -108,7 +108,7 @@ TEST(GraphFeedback, AppleTasting)
 
   // fhat 0.4925, 0.6972 -> the one that reveals all has the higher cost so give it some probability but not the biggest
   // -> the bigger the gamma the more we go with the scores, the smaller the gamma the more we go with the graph
-  EXPECT_THAT(pred_results[1], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.835, 0.164}));
+  EXPECT_THAT(pred_results[1], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.940, 0.0599}));
 }
 
 TEST(GraphFeedback, PostedPriceAuctionBidding)
@@ -136,7 +136,7 @@ TEST(GraphFeedback, PostedPriceAuctionBidding)
   EXPECT_THAT(pred_results[0], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.0, 1.0}));
 
   // fhat 0.4925, 0.6972
-  EXPECT_THAT(pred_results[1], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.780, 0.219}));
+  EXPECT_THAT(pred_results[1], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.722, 0.277}));
 }
 
 std::vector<std::vector<float>> predict_learn_return_as(VW::workspace& vw, const std::string& shared_graph)

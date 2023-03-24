@@ -2,8 +2,6 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#define EIGEN_MPL2_ONLY
-
 #include "vw/core/reductions/cb/cb_explore_adf_graph_feedback.h"
 
 #include "vw/common/random.h"
@@ -22,6 +20,8 @@
 #include "vw/explore/explore.h"
 
 #include <algorithm>
+#define ARMA_DONT_USE_BLAS
+#define ARMA_DONT_USE_LAPACK
 #include <armadillo>
 #include <cmath>
 #include <ensmallen.hpp>
@@ -72,7 +72,7 @@ public:
 
     float z = x[x.n_rows - 1];
 
-    return arma::dot(p, _fhat) + z;
+    return (arma::dot(p, _fhat) + z);
   }
 
   // Compute the gradient of f(x) for the given x and store the result in g.
@@ -142,8 +142,8 @@ public:
     }
     else if (i == _fhat.size() + 3)
     {
-      if (z > 1.f) { return 0.f; }
-      return 1.f - z;
+      if ((z / _gamma) > 1.f) { return 0.f; }
+      return 1.f - (z / _gamma);
     }
     return 0.;
   }
@@ -252,26 +252,37 @@ public:
       g.set_size(_fhat.n_rows + 1, 1);
       g.ones();
 
-      if (z < 1.f) { g[_fhat.size()] = -1.f; }
+      if ((z / _gamma) < 1.f) { g[_fhat.size()] = -1.f; }
     }
   }
 };
 
+bool valid_graph(const std::vector<VW::cb_graph_feedback::triplet>& triplets)
+{
+  // return false if all triplet vals are zero
+  for (auto& triplet : triplets)
+  {
+    if (triplet.val != 0.f) { return true; }
+  }
+  return false;
+}
+
 void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples)
 {
-  // TODO store G in reduction data and only update when new G is provided ?
-
   // get fhat
   auto& a_s = examples[0]->pred.a_s;
   arma::vec fhat(a_s.size());
   for (auto& as : a_s) { fhat(as.action) = as.score; }
+  // find fhat min
+  auto min_fhat = fhat.min();
+  fhat = _gamma * (fhat - min_fhat);
 
   // initial p can be uniform random
   arma::mat coordinates(fhat.size() + 1, 1);
   for (size_t i = 0; i < fhat.size(); i++) { coordinates[i] = 1.f / fhat.size(); }
 
   // initial z can be 1
-  float z = 1.f;
+  float z = (1.f - min_fhat) * _gamma;
 
   coordinates[fhat.size()] = z;
 
@@ -279,24 +290,27 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
   auto& graph_reduction_features =
       examples[0]->ex_reduction_features.template get<VW::cb_graph_feedback::reduction_features>();
 
-  if (graph_reduction_features.triplets.size() == 0)
+  arma::sp_mat G;
+
+  if (valid_graph(graph_reduction_features.triplets))
   {
-    std::cout << "do something when there is no G defined!" << std::endl;
+    arma::umat locations(2, graph_reduction_features.triplets.size());
+
+    arma::vec values(graph_reduction_features.triplets.size());
+
+    for (size_t i = 0; i < graph_reduction_features.triplets.size(); i++)
+    {
+      const auto& triplet = graph_reduction_features.triplets[i];
+      locations(0, i) = triplet.row;
+      locations(1, i) = triplet.col;
+      values(i) = triplet.val;
+    }
+
+    G = arma::sp_mat(true, locations, values, a_s.size(), a_s.size());
   }
+  else { G = arma::speye<arma::sp_mat>(fhat.size(), fhat.size()); }
 
-  arma::umat locations(2, graph_reduction_features.triplets.size());
-
-  arma::vec values(graph_reduction_features.triplets.size());
-
-  for (size_t i = 0; i < graph_reduction_features.triplets.size(); i++)
-  {
-    const auto& triplet = graph_reduction_features.triplets[i];
-    locations(0, i) = triplet.row;
-    locations(1, i) = triplet.col;
-    values(i) = triplet.val * _gamma;
-  }
-
-  arma::sp_mat G(true, locations, values, a_s.size(), a_s.size());
+  G.print("G: ");
 
   fhat.print("fhat: ");
 
@@ -304,13 +318,14 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
 
   ens::AugLagrangian optimizer;
   // TODO should I set an upper limit for performance reasons?
-  // optimizer.MaxIterations() = 0;
+  optimizer.MaxIterations() = 0;
   optimizer.Optimize(f, coordinates);
 
   coordinates.print("coords before balancing: ");
   for (size_t i = 0; i < a_s.size(); i++)
   {
     if (VW::math::are_same(static_cast<float>(coordinates[i]), 0.f) || coordinates[i] < 0.f) { coordinates[i] = 0.f; }
+    if (coordinates[i] > 1.f) { coordinates[i] = 1.f; }
   }
 
   float p_sum = 0;
@@ -343,12 +358,12 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
   probs.print("final p: ");
 
   z = coordinates[coordinates.n_rows - 1];
-  std::cout << "VALUE IS: " << arma::dot(fhat, probs) + z << std::endl;
+  std::cout << "VALUE IS: " << (arma::dot(fhat, probs) + z) / _gamma << std::endl;
 
   // set the new probabilities in the example
   for (auto& as : a_s) { as.score = probs(as.action); }
-  std::sort(a_s.begin(), a_s.end(),
-      [](const ACTION_SCORE::action_score& a, const ACTION_SCORE::action_score& b) { return a.score > b.score; });
+  std::sort(
+      a_s.begin(), a_s.end(), [](const VW::action_score& a, const VW::action_score& b) { return a.score > b.score; });
 }
 
 // for unit testing I can get fhat from cb adf reduction
