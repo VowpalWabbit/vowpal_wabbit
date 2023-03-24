@@ -109,12 +109,6 @@ else()
   target_include_directories(eigen SYSTEM INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/eigen>)
 endif()
 
-find_package(Armadillo REQUIRED)
-add_library(arm INTERFACE)
-target_include_directories(arm SYSTEM INTERFACE ${ARMADILLO_INCLUDE_DIRS})
-target_include_directories(arm SYSTEM INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/ensmallen/smallen/include>)
-#target_link_libraries(arm ${ARMADILLO_LIBRARIES})
-
 add_library(sse2neon INTERFACE)
 if(VW_SSE2NEON_SYS_DEP)
   find_path(SSE2NEON_INCLUDE_DIRS "sse2neon/sse2neon.h")
@@ -123,4 +117,15 @@ else()
   # This submodule is placed into a nested subdirectory since it exposes its
   # header at the root of the repo rather than its own nested sse2neon/ dir
   target_include_directories(sse2neon SYSTEM INTERFACE "${CMAKE_CURRENT_LIST_DIR}/sse2neon")
+endif()
+
+add_library(mlpack_ensmallen INTERFACE)
+# ensmallen can only be installed from source so doesn't really make sense to add it as a system dependency
+if(VW_ARMADILLO_SYS_DEP)
+  target_include_directories(mlpack_ensmallen INTERFACE ${CMAKE_CURRENT_LIST_DIR}/ensmallen/include)
+  find_package(Armadillo 9.800.0 REQUIRED)
+  target_include_directories(mlpack_ensmallen INTERFACE ${ARMADILLO_INCLUDE_DIRS})
+else()
+  target_include_directories(mlpack_ensmallen INTERFACE ${CMAKE_CURRENT_LIST_DIR}/ensmallen/include)
+  target_include_directories(mlpack_ensmallen INTERFACE ${CMAKE_CURRENT_LIST_DIR}/armadillo-code/include)
 endif()

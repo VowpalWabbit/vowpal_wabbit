@@ -31,6 +31,10 @@
           "type": "BOOL",
           "value": "ON"
         },
+        "VW_ARMADILLO_SYS_DEP": {
+          "type": "BOOL",
+          "value": "ON"
+        },
         "VW_BOOST_MATH_SYS_DEP": {
           "type": "BOOL",
           "value": "ON"
