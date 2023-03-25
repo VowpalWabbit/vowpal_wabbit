@@ -14,11 +14,10 @@
 
 #include <string>
 #include <vector>
+#include <utility>
 
 using namespace VW::reductions::eigen_memory_tree;
 
-namespace eigen_memory_tree_test
-{
 emt_tree* get_emt_tree(VW::workspace& all)
 {
   std::vector<std::string> e_r;
@@ -33,7 +32,7 @@ emt_tree* get_emt_tree(VW::workspace& all)
   return (emt_tree*)emt->get_internal_type_erased_data_pointer_test_use_only();
 }
 
-TEST(Emt, ParamsTest1)
+TEST(EigenMemoryTree, ParamsTest1)
 {
   auto vw = VW::initialize(vwtest::make_args("--quiet", "--emt"));
   auto* tree = get_emt_tree(*vw);
@@ -44,7 +43,7 @@ TEST(Emt, ParamsTest1)
   EXPECT_EQ(tree->bounder->max_size, 0);
 }
 
-TEST(Emt, ParamsTest2)
+TEST(EigenMemoryTree, ParamsTest2)
 {
   auto args = vwtest::make_args(
       "--quiet", "--emt", "--emt_tree", "20", "--emt_scorer", "distance", "--emt_router", "random", "--emt_leaf", "50");
@@ -57,15 +56,17 @@ TEST(Emt, ParamsTest2)
   EXPECT_EQ(tree->bounder->max_size, 20);
 }
 
-TEST(Emt, ExactMatchSansRouterTest)
+TEST(EigenMemoryTree, ExactMatchSansRouterTest)
 {
   auto vw = VW::initialize(vwtest::make_args("--quiet", "--emt"));
 
   auto* ex1 = VW::read_example(*vw, "1 | 1 2 3");
   auto* ex2 = VW::read_example(*vw, "2 | 2 3 4");
+  auto* ex3 = VW::read_example(*vw, "3 | 5");
 
   vw->learn(*ex1);
   vw->learn(*ex2);
+  vw->learn(*ex3);
 
   EXPECT_EQ(ex1->pred.multiclass, 0);
   EXPECT_EQ(ex2->pred.multiclass, 1);
@@ -80,15 +81,19 @@ TEST(Emt, ExactMatchSansRouterTest)
   vw->finish_example(*ex2);
 }
 
-TEST(Emt, ExactMatchWithRouterTest)
+TEST(EigenMemoryTree, ExactMatchWithRouterTest)
 {
   auto vw = VW::initialize(vwtest::make_args("--quiet", "--emt", "--emt_leaf", "5"));
 
   for (int i = 0; i < 10; i++)
   {
-    auto* ex = VW::read_example(*vw, std::to_string(i) + " | " + std::to_string(i));
-    vw->learn(*ex);
-    vw->finish_example(*ex);
+    auto* ex1 = VW::read_example(*vw, std::to_string(i) + " | " + std::to_string(i));
+    vw->learn(*ex1);
+    vw->finish_example(*ex1);
+      
+    auto* ex2 = VW::read_example(*vw, std::to_string(i) + " | " + std::to_string(i));
+    vw->learn(*ex2);
+    vw->finish_example(*ex2);
   }
 
   for (int i = 0; i < 10; i++)
@@ -100,7 +105,7 @@ TEST(Emt, ExactMatchWithRouterTest)
   }
 }
 
-TEST(Emt, Bounding)
+TEST(EigenMemoryTree, Bounding)
 {
   auto vw = VW::initialize(vwtest::make_args("--quiet", "--emt", "--emt_tree", "5"));
   auto* tree = get_emt_tree(*vw);
@@ -117,7 +122,7 @@ TEST(Emt, Bounding)
   EXPECT_EQ(tree->root->router_weights.size(), 0);
 }
 
-TEST(Emt, Split)
+TEST(EigenMemoryTree, Split)
 {
   auto args = vwtest::make_args("--quiet", "--emt", "--emt_tree", "10", "--emt_leaf", "3");
   auto vw = VW::initialize(std::move(args));
@@ -141,29 +146,29 @@ TEST(Emt, Split)
   EXPECT_EQ(tree->root->left->router_weights.size(), 0);
 }
 
-TEST(Emt, Inner)
+TEST(EigenMemoryTree, Inner)
 {
   emt_feats v1;
   emt_feats v2;
 
   EXPECT_EQ(emt_inner(v1, v2), 0);
 
-  v1.emplace_back(1, 2);
-  v2.emplace_back(2, 2);
+  v1.push_back(std::make_pair(1, 2));
+  v2.push_back(std::make_pair(2, 2));
 
   EXPECT_EQ(emt_inner(v1, v2), 0);
 
-  v1.emplace_back(2, 3);
+  v1.push_back(std::make_pair(2, 3));
 
   EXPECT_EQ(emt_inner(v1, v2), 6);
 
-  v1.emplace_back(3, 2);
-  v2.emplace_back(3, 5);
+  v1.push_back(std::make_pair(3, 2));
+  v2.push_back(std::make_pair(3, 5));
 
   EXPECT_EQ(emt_inner(v1, v2), 16);
 }
 
-TEST(Emt, ScaleAdd)
+TEST(EigenMemoryTree, ScaleAdd)
 {
   emt_feats v1;
   emt_feats v2;
@@ -171,38 +176,38 @@ TEST(Emt, ScaleAdd)
 
   EXPECT_EQ(emt_scale_add(1, v1, 1, v2), v3);
 
-  v1.emplace_back(1, 2);
-  v3.emplace_back(1, 2);
+  v1.push_back(std::make_pair(1, 2));
+  v3.push_back(std::make_pair(1, 2));
 
   EXPECT_EQ(emt_scale_add(1, v1, 1, v2), v3);
 
   v3.clear();
-  v3.emplace_back(1, -1);
+  v3.push_back(std::make_pair(1, -1));
 
   EXPECT_EQ(emt_scale_add(-.5, v1, 1, v2), v3);
 
   v1.clear();
   v2.clear();
   v3.clear();
-  v1.emplace_back(1, 2);
-  v2.emplace_back(1, 2.5);
-  v3.emplace_back(1, -.5);
+  v1.push_back(std::make_pair(1, 2  ));
+  v2.push_back(std::make_pair(1, 2.5));
+  v3.push_back(std::make_pair(1, -.5));
 
   EXPECT_EQ(emt_scale_add(1, v1, -1, v2), v3);
 
   v1.clear();
   v2.clear();
   v3.clear();
-  v1.emplace_back(1, 2);
-  v2.emplace_back(1, 2.5);
-  v2.emplace_back(5, 1);
-  v3.emplace_back(1, -4.5);
-  v3.emplace_back(5, -1);
+  v1.push_back(std::make_pair(1,  2));
+  v2.push_back(std::make_pair(1,  2.5));
+  v2.push_back(std::make_pair(5,  1));
+  v3.push_back(std::make_pair(1, -4.5));
+  v3.push_back(std::make_pair(5, -1));
 
   EXPECT_EQ(emt_scale_add(-1, v1, -1, v2), v3);
 }
 
-TEST(Emt, Abs)
+TEST(EigenMemoryTree, Abs)
 {
   emt_feats v1;
   emt_feats v2;
@@ -210,20 +215,20 @@ TEST(Emt, Abs)
   emt_abs(v1);
   EXPECT_EQ(v1, v2);
 
-  v1.emplace_back(1, -3);
-  v2.emplace_back(1, 3);
+  v1.push_back(std::make_pair(1, -3));
+  v2.push_back(std::make_pair(1,  3));
 
   emt_abs(v1);
   EXPECT_EQ(v1, v2);
 
-  v1.emplace_back(2, -4);
-  v2.emplace_back(2, 4);
+  v1.push_back(std::make_pair(2, -4));
+  v2.push_back(std::make_pair(2,  4));
 
   emt_abs(v1);
   EXPECT_EQ(v1, v2);
 }
 
-TEST(Emt, Normalize)
+TEST(EigenMemoryTree, Normalize)
 {
   emt_feats v1;
   emt_feats v2;
@@ -231,17 +236,17 @@ TEST(Emt, Normalize)
   emt_normalize(v1);
   EXPECT_EQ(v1, v2);
 
-  v1.emplace_back(1, -3);
-  v1.emplace_back(5, 4);
+  v1.push_back(std::make_pair(1, -3));
+  v1.push_back(std::make_pair(5,  4));
 
-  v2.emplace_back(1, -.6);
-  v2.emplace_back(5, .8);
+  v2.push_back(std::make_pair(1, -.6));
+  v2.push_back(std::make_pair(5,  .8));
 
   emt_normalize(v1);
   EXPECT_EQ(v1, v2);
 }
 
-TEST(Emt, Median)
+TEST(EigenMemoryTree, Median)
 {
   std::vector<float> v1;
 
@@ -260,7 +265,7 @@ TEST(Emt, Median)
   EXPECT_EQ(emt_median(v1), 5);
 }
 
-TEST(Emt, RouterEigen)
+TEST(EigenMemoryTree, RouterEigen)
 {
   VW::rand_state rng(1);
 
@@ -268,14 +273,14 @@ TEST(Emt, RouterEigen)
   emt_feats v2;
   emt_feats v3;
 
-  v1.emplace_back(1, 2);
-  v1.emplace_back(3, 3);
-  v1.emplace_back(5, 2);
+  v1.push_back(std::make_pair(1, 2));
+  v1.push_back(std::make_pair(3, 3));
+  v1.push_back(std::make_pair(5, 2));
 
-  v2.emplace_back(2, 5);
+  v2.push_back(std::make_pair(2, 5));
 
-  v3.emplace_back(1, 4);
-  v3.emplace_back(2, 10);
+  v3.push_back(std::make_pair(1,  4));
+  v3.push_back(std::make_pair(2, 10));
 
   std::vector<emt_feats> f;
 
@@ -304,7 +309,7 @@ TEST(Emt, RouterEigen)
   EXPECT_GE(var, 19.29);
 }
 
-TEST(Emt, Shuffle)
+TEST(EigenMemoryTree, Shuffle)
 {
   VW::rand_state rng(2);
 
@@ -317,15 +322,19 @@ TEST(Emt, Shuffle)
   EXPECT_EQ(v1[2], 1);
 }
 
-TEST(Emt, SaveLoad)
+TEST(EigenMemoryTree, SaveLoad)
 {
   auto vw_save = VW::initialize(vwtest::make_args("--quiet", "--emt", "--emt_leaf", "5"));
 
   for (int i = 0; i < 10; i++)
   {
-    auto* ex = VW::read_example(*vw_save, std::to_string(i) + " | " + std::to_string(i));
-    vw_save->learn(*ex);
-    vw_save->finish_example(*ex);
+    auto* ex1 = VW::read_example(*vw_save, std::to_string(i) + " | " + std::to_string(i));
+    vw_save->learn(*ex1);
+    vw_save->finish_example(*ex1);
+
+    auto* ex2 = VW::read_example(*vw_save, std::to_string(i) + " | " + std::to_string(i));
+    vw_save->learn(*ex2);
+    vw_save->finish_example(*ex2);
   }
 
   auto backing_vector = std::make_shared<std::vector<char>>();
@@ -345,5 +354,3 @@ TEST(Emt, SaveLoad)
     vw_load->finish_example(*ex);
   }
 }
-
-}  // namespace eigen_memory_tree_test
