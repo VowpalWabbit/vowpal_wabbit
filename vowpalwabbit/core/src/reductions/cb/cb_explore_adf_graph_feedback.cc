@@ -142,8 +142,8 @@ public:
     }
     else if (i == _fhat.size() + 3)
     {
-      if ((z / _gamma) > 1.f) { return 0.f; }
-      return 1.f - (z / _gamma);
+      if ((z / _gamma) > 0.f) { return 0.f; }
+      return 0.f - (z / _gamma);
     }
     return 0.;
   }
@@ -252,7 +252,7 @@ public:
       g.set_size(_fhat.n_rows + 1, 1);
       g.ones();
 
-      if ((z / _gamma) < 1.f) { g[_fhat.size()] = -1.f; }
+      if ((z / _gamma) < 0.f) { g[_fhat.size()] = -1.f; }
     }
   }
 };
@@ -267,24 +267,34 @@ bool valid_graph(const std::vector<VW::cb_graph_feedback::triplet>& triplets)
   return false;
 }
 
+arma::vec get_fhat_from_action_scores(const VW::action_scores a_s)
+{
+  arma::vec fhat(a_s.size());
+
+  for (auto& as : a_s) { fhat(as.action) = as.score; }
+
+  return fhat;
+}
+
 void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples)
 {
-  // get fhat
   auto& a_s = examples[0]->pred.a_s;
-  arma::vec fhat(a_s.size());
-  for (auto& as : a_s) { fhat(as.action) = as.score; }
+  arma::vec fhat = get_fhat_from_action_scores(a_s);
+  fhat.print("before:");
+
   // find fhat min
   auto min_fhat = fhat.min();
-  fhat = _gamma * (fhat - min_fhat);
+  arma::vec gammafhat = _gamma * (fhat - min_fhat);
 
   // initial p can be uniform random
-  arma::mat coordinates(fhat.size() + 1, 1);
-  for (size_t i = 0; i < fhat.size(); i++) { coordinates[i] = 1.f / fhat.size(); }
+  arma::mat coordinates(gammafhat.size() + 1, 1);
+  for (size_t i = 0; i < gammafhat.size(); i++) { coordinates[i] = 1.f / gammafhat.size(); }
 
   // initial z can be 1
-  float z = (1.f - min_fhat) * _gamma;
+  float z = _gamma * (1 - (min_fhat == 0 ? 1.f / fhat.size() : min_fhat));
+  std::cout << "Z: " << z << " min_fhat: " << min_fhat << std::endl;
 
-  coordinates[fhat.size()] = z;
+  coordinates[gammafhat.size()] = z;
 
   // get G
   auto& graph_reduction_features =
@@ -306,15 +316,15 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
       values(i) = triplet.val;
     }
 
-    G = arma::sp_mat(true, locations, values, a_s.size(), a_s.size());
+    G = arma::sp_mat(true, locations, values, gammafhat.size(), gammafhat.size());
   }
-  else { G = arma::speye<arma::sp_mat>(fhat.size(), fhat.size()); }
+  else { G = arma::speye<arma::sp_mat>(gammafhat.size(), gammafhat.size()); }
 
   G.print("G: ");
 
-  fhat.print("fhat: ");
+  gammafhat.print("gammafhat: ");
 
-  ConstrainedFunctionType f(fhat, G, _gamma);
+  ConstrainedFunctionType f(gammafhat, G, _gamma);
 
   ens::AugLagrangian optimizer;
   // TODO should I set an upper limit for performance reasons?
@@ -322,33 +332,50 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
   optimizer.Optimize(f, coordinates);
 
   coordinates.print("coords before balancing: ");
+  auto count_zeros = 0;
+  bool there_is_a_one = false;
   for (size_t i = 0; i < a_s.size(); i++)
   {
-    if (VW::math::are_same(static_cast<float>(coordinates[i]), 0.f) || coordinates[i] < 0.f) { coordinates[i] = 0.f; }
-    if (coordinates[i] > 1.f) { coordinates[i] = 1.f; }
-  }
-
-  float p_sum = 0;
-  for (size_t i = 0; i < a_s.size(); i++) { p_sum += coordinates[i]; }
-
-  if (!VW::math::are_same(p_sum, 1.f))
-  {
-    float rest = 1.f - p_sum;
-    float rest_each = rest / (a_s.size());
-    for (size_t i = 0; i < a_s.size(); i++)
+    if (VW::math::are_same(static_cast<float>(coordinates[i]), 0.f) || coordinates[i] < 0.f)
     {
-      if (coordinates[i] == 0.f) { continue; }
-      else { coordinates[i] = coordinates[i] + rest_each; }
+      coordinates[i] = 0.f;
+      count_zeros++;
+    }
+    if (coordinates[i] > 1.f)
+    {
+      coordinates[i] = 1.f;
+      there_is_a_one = true;
+      std::cout << "there is a one" << std::endl;
     }
   }
 
-  // TODO also need to triple check that no probabilities are nan
+  if (there_is_a_one)
+  {
+    for (size_t i = 0; i < a_s.size(); i++)
+    {
+      if (coordinates[i] != 1.f) { coordinates[i] = 0.f; }
+    }
+  }
+  else
+  {
+    float p_sum = 0;
+    for (size_t i = 0; i < a_s.size(); i++) { p_sum += coordinates[i]; }
+
+    std::cout << "sum: " << p_sum << std::endl;
+    if (!VW::math::are_same(p_sum, 1.f))
+    {
+      float rest = 1.f - p_sum;
+      std::cout << "rest: " << rest << std::endl;
+      float rest_each = rest / (a_s.size() - count_zeros);
+      for (size_t i = 0; i < a_s.size(); i++)
+      {
+        if (coordinates[i] == 0.f) { continue; }
+        else { coordinates[i] = coordinates[i] + rest_each; }
+      }
+    }
+  }
+
   // TODO json graph input
-  // TODO graph not provided or not a good/valid graph
-  // TODO how to properly link armadillo
-  // TODO can I replace aramdillo with Eigen dependency?
-  // TODO figure out what to actually do with gamma, do I want it to decay? I guess we do if it is the same as squarecb
-  // then
   // TODO save_load the count
 
   coordinates.print("coords: ");
@@ -358,21 +385,13 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
   probs.print("final p: ");
 
   z = coordinates[coordinates.n_rows - 1];
-  std::cout << "VALUE IS: " << (arma::dot(fhat, probs) + z) / _gamma << std::endl;
+  std::cout << "VALUE IS: " << (arma::dot(fhat, probs) + z / _gamma) << std::endl;
 
   // set the new probabilities in the example
   for (auto& as : a_s) { as.score = probs(as.action); }
   std::sort(
       a_s.begin(), a_s.end(), [](const VW::action_score& a, const VW::action_score& b) { return a.score > b.score; });
 }
-
-// for unit testing I can get fhat from cb adf reduction
-// can I template out the constraint class and put it in a header file and use it for testing too?
-// I can use it in a test to find the z that would be proposed and that way I can have fhat, z, and p from the probs
-// and verify cvxpy? This will not work from the python side because I don't have access to the constraint class
-
-// in the unit test I can just plug in the expected probabilities but that is not enough for the python test is it?
-// maybe with tolerance?
 
 template <bool is_learn>
 void cb_explore_adf_graph_feedback::predict_or_learn_impl(VW::LEARNER::learner& base, multi_ex& examples)
