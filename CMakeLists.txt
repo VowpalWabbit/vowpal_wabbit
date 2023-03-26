@@ -36,6 +36,9 @@ if (NOT CMAKE_BUILD_TYPE AND NOT GENERATOR_IS_MULTI_CONFIG)
   set(CMAKE_BUILD_TYPE "Release")
 endif()
 
+# This must stay near the top of the file so compile features are properly detected.
+include(VowpalWabbitFeatures)
+
 if(WIN32)
   include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/platforms/win32.cmake)
   message(STATUS "WinSDK Version: ${CMAKE_SYSTEM_VERSION}")
@@ -47,9 +50,14 @@ if(WIN32)
   endif()
 endif()
 
-option(BUILD_FLATBUFFERS "Build flatbuffers" OFF)
-if(BUILD_FLATBUFFERS)
+if(VW_FEAT_FLATBUFFERS)
   list(APPEND VCPKG_MANIFEST_FEATURES "flatbuffers")
+endif()
+
+# This is a hack around the fact the Python build does not seem to be capable of
+# dealing with manifest features.
+if(VW_FEAT_LDA AND NOT BUILD_PYTHON)
+  list(APPEND VCPKG_MANIFEST_FEATURES "lda")
 endif()
 
 option(BUILD_TESTING "Build tests" ON)
@@ -66,6 +74,8 @@ endif()
 project(vowpal_wabbit VERSION "${VW_VERSION_MAJOR}.${VW_VERSION_MINOR}.${VW_VERSION_PATCH}" LANGUAGES C CXX)
 set(VW_PROJECT_DESCRIPTION "Vowpal Wabbit Machine Learning System")
 set(VW_PROJECT_URL "https://vowpalwabbit.org")
+
+vw_print_enabled_features()
 
 option(USE_LATEST_STD "Override using C++11 with the latest standard the compiler offers. Default is C++11. " OFF)
 include(DetectCXXStandard)
@@ -133,7 +143,6 @@ option(VW_STRING_VIEW_LITE_SYS_DEP "Override using the submodule for string-view
 option(VW_SSE2NEON_SYS_DEP "Override using the submodule for SSE2Neon dependency. Instead will use find_package" OFF)
 option(VW_ARMADILLO_SYS_DEP "Override using the submodule for Armadillo dependency. Instead will use find_package" OFF)
 option(VW_BUILD_VW_C_WRAPPER "Enable building the c_wrapper project" ON)
-option(VW_BUILD_CSV "Build csv parser" OFF)
 option(VW_BUILD_LAS_WITH_SIMD "Build large action space with explicit simd (only work with linux for now)" ON)
 option(vw_BUILD_NET_CORE "Build .NET Core targets" OFF)
 option(vw_BUILD_NET_FRAMEWORK "Build .NET Framework targets" OFF)
@@ -229,7 +238,7 @@ include(ext_libs/ext_libs.cmake)
 add_subdirectory(vowpalwabbit)
 add_subdirectory(utl/dump_options)
 
-if (BUILD_FLATBUFFERS)
+if (VW_FEAT_FLATBUFFERS)
   add_subdirectory(utl/flatbuffer)
 endif()
 

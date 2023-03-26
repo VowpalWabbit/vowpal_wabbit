@@ -8,7 +8,7 @@ vw_add_library(
     TYPE "STATIC_ONLY"
     SOURCES ${vw_csv_parser_sources}
     PUBLIC_DEPS vw_common vw_config vw_core
-    DESCRIPTION "Parser implementation that reads csv examples. Disabled by default. Enable with `VW_BUILD_CSV`"
+    DESCRIPTION "Parser implementation that reads csv examples. Disabled by default. Enable with `VW_FEAT_CSV`"
     EXCEPTION_DESCRIPTION "Yes"
 )
 

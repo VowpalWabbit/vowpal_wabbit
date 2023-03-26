@@ -1,9 +1,15 @@
 {
-    "name": "demo",
-    "version": "1.0.0",
-    "builtin-baseline": "773516ecf6014d89cc69b11bb54605ad4be56694",
-    "dependencies": [ "zlib","boost-python","python3","flatbuffers" ],
-    "overrides": [
-        { "name": "python3", "version-string": "3.10.2", "port-version": 1 }
-    ]
+  "name": "demo",
+  "version": "1.0.0",
+  "builtin-baseline": "773516ecf6014d89cc69b11bb54605ad4be56694",
+  "dependencies": ["zlib", "boost-python", "python3", "flatbuffers"],
+  "overrides": [
+    { "name": "python3", "version-string": "3.10.2", "port-version": 1 }
+  ],
+  "features": {
+    "lda": {
+      "description": "",
+      "dependencies": []
+    }
+  }
 }

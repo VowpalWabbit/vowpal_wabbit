@@ -20,6 +20,8 @@ VW::string_view VW::to_string(VW::label_type_t label_type)
       return "label_type_t::CB";
     case label_type_t::CB_EVAL:
       return "label_type_t::CB_EVAL";
+    case label_type_t::CB_WITH_OBSERVATIONS:
+      return "label_type_t::CB_WITH_OBSERVATIONS";
     case label_type_t::CS:
       return "label_type_t::CS";
     case label_type_t::MULTILABEL:

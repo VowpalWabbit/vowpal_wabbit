@@ -43,7 +43,7 @@
 #include <iostream>
 #include <sstream>
 
-#ifdef BUILD_FLATBUFFERS
+#ifdef VW_FEAT_FLATBUFFERS_ENABLED
 #  include "vw/fb_parser/parse_example_flatbuffer.h"
 #endif
 

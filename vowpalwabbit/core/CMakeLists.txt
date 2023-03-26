@@ -17,6 +17,7 @@ set(vw_core_headers
   include/vw/core/daemon_utils.h
   include/vw/core/cb_type.h
   include/vw/core/cb.h
+  include/vw/core/cb_with_observations_label.h
   include/vw/core/ccb_label.h
   include/vw/core/ccb_reduction_features.h
   include/vw/core/estimators/confidence_sequence.h
@@ -140,7 +141,6 @@ set(vw_core_headers
   include/vw/core/reductions/interact.h
   include/vw/core/reductions/interaction_ground.h
   include/vw/core/reductions/kernel_svm.h
-  include/vw/core/reductions/lda_core.h
   include/vw/core/reductions/log_multi.h
   include/vw/core/reductions/lrq.h
   include/vw/core/reductions/lrqfa.h
@@ -204,6 +204,7 @@ set(vw_core_sources
   src/cb_continuous_label.cc
   src/cb_type.cc
   src/cb.cc
+  src/cb_with_observations_label.cc
   src/ccb_label.cc
   src/ccb_reduction_features.cc
   src/confidence_sequence.cc
@@ -314,7 +315,6 @@ set(vw_core_sources
   src/reductions/interact.cc
   src/reductions/interaction_ground.cc
   src/reductions/kernel_svm.cc
-  src/reductions/lda_core.cc
   src/reductions/log_multi.cc
   src/reductions/lrq.cc
   src/reductions/lrqfa.cc
@@ -361,6 +361,11 @@ set(vw_core_sources
   src/vw.cc
 )
 
+if(VW_FEAT_LDA)
+  list(APPEND vw_core_headers include/vw/core/reductions/lda_core.h)
+  list(APPEND vw_core_sources src/reductions/lda_core.cc)
+endif()
+
 vw_add_library(
     NAME "core"
     TYPE "STATIC_ONLY"
@@ -370,12 +375,16 @@ vw_add_library(
         # Special case for dealing with header-only INTERFACE dependencies of a STATIC library
         # Use BUILD_INTERFACE to prevent them from being exported, i.e. treat them as PRIVATE
         # https://gitlab.kitware.com/cmake/cmake/issues/15415
-        ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io $<BUILD_INTERFACE:${boost_math_target}> $<BUILD_INTERFACE:RapidJSON>
-        $<BUILD_INTERFACE:eigen> $<BUILD_INTERFACE:sse2neon> $<BUILD_INTERFACE:mlpack_ensmallen>
+        ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io $<BUILD_INTERFACE:RapidJSON>
+        $<BUILD_INTERFACE:eigen> $<BUILD_INTERFACE:sse2neon>
     DESCRIPTION "This contains all remaining VW code, all reduction implementations, driver, option handling"
     EXCEPTION_DESCRIPTION "Yes"
     ENABLE_INSTALL
 )
+
+if(VW_FEAT_LDA)
+  target_link_libraries(vw_core PRIVATE $<BUILD_INTERFACE:${boost_math_target}>)
+endif()
 
 target_include_directories(vw_core PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src)
 
@@ -385,14 +394,12 @@ if (VW_BUILD_LAS_WITH_SIMD AND (UNIX AND NOT APPLE) AND (${CMAKE_SYSTEM_PROCESSO
   target_compile_definitions(vw_core PUBLIC BUILD_LAS_WITH_SIMD)
 endif()
 
-if(VW_BUILD_CSV)
+if(VW_FEAT_CSV)
   target_link_libraries(vw_core PRIVATE vw_csv_parser)
-  target_compile_definitions(vw_core PUBLIC VW_BUILD_CSV)
 endif()
 
-if(BUILD_FLATBUFFERS)
+if(VW_FEAT_FLATBUFFERS)
   target_link_libraries(vw_core PRIVATE vw_fb_parser)
-  target_compile_definitions(vw_core PUBLIC BUILD_FLATBUFFERS)
 endif()
 
 # Handle generated header
@@ -438,6 +445,7 @@ vw_add_test_executable(
       tests/cb_large_actions_test.cc
       tests/cb_las_one_pass_svd_test.cc
       tests/cb_las_spanner_test.cc
+      tests/cb_with_observations_parser_test.cc
       tests/ccb_parser_test.cc
       tests/ccb_test.cc
       tests/chain_hashing.cc
@@ -476,6 +484,8 @@ vw_add_test_executable(
       tests/scope_exit_test.cc
       tests/simulator.cc
       tests/simulator.h
+      tests/igl_simulator.h
+      tests/igl_simulator.cc
       tests/slates_parser_test.cc
       tests/slates_test.cc
       tests/status_builder_test.cc
@@ -486,6 +496,7 @@ vw_add_test_executable(
       tests/v_array_test.cc
       tests/vw_versions_test.cc
       tests/weights_test.cc
+      tests/igl_test.cc
 )
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)

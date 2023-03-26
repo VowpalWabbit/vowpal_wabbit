@@ -7,6 +7,7 @@
 #include "vw/common/vw_exception.h"
 #include "vw/core/cb.h"
 #include "vw/core/cb_continuous_label.h"
+#include "vw/core/cb_with_observations_label.h"
 #include "vw/core/ccb_label.h"
 #include "vw/core/cost_sensitive.h"
 #include "vw/core/multiclass.h"
@@ -27,6 +28,9 @@ VW::label_parser VW::get_label_parser(VW::label_type_t label_type)
 
     case VW::label_type_t::CB_EVAL:
       return VW::cb_eval_label_parser_global;
+
+    case VW::label_type_t::CB_WITH_OBSERVATIONS:
+      return VW::cb_with_observations_global;
 
     case VW::label_type_t::CS:
       return VW::cs_label_parser_global;

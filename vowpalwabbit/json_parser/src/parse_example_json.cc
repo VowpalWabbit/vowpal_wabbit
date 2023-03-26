@@ -401,11 +401,20 @@ public:
     }
     else if (found_cb)
     {
-      auto& ld = ctx.ex->l.cb;
-      ld.costs.push_back(cb_label);
+      if (ctx._label_parser.label_type == VW::label_type_t::CB_WITH_OBSERVATIONS)
+      {
+        auto& ld = ctx.ex->l.cb_with_observations;
+        ld.event.costs.push_back(cb_label);
+        cb_label = VW::cb_class{};
+      }
+      else
+      {
+        auto& ld = ctx.ex->l.cb;
+        ld.costs.push_back(cb_label);
 
-      found_cb = false;
-      cb_label = VW::cb_class{};
+        found_cb = false;
+        cb_label = VW::cb_class{};
+      }
     }
     else if (found_cb_continuous)
     {
@@ -590,6 +599,12 @@ public:
 
       ld->costs.push_back(f);
     }
+    else if (ctx._label_parser.label_type == VW::label_type_t::CB_WITH_OBSERVATIONS)
+    {
+      VW::cb_with_observations_label* ld = &(*ctx.examples)[0]->l.cb_with_observations;
+      VW::cb_class f;
+      ld->event.costs.push_back(f);
+    }
     else if (ctx._label_parser.label_type == VW::label_type_t::CCB)
     {
       auto* ld = &ctx.ex->l.conditional_contextual_bandit;
@@ -601,7 +616,7 @@ public:
       ld.type = VW::slates::example_type::SHARED;
     }
     else
-      THROW("label type is not CB, CCB or slates")
+      THROW("label type is not CB, CB_WITH_OBSERVATIONS, CCB or slates")
 
     return this;
   }
@@ -634,6 +649,45 @@ public:
     ctx.ex = (*ctx.examples)[0];
 
     return &ctx.default_state;
+  }
+};
+
+template <bool audit>
+class ObservationState : public BaseState<audit>
+{
+public:
+  ObservationState() : BaseState<audit>("Observation") {}
+
+  BaseState<audit>* StartArray(Context<audit>& /*ctx*/) override { return this; }
+
+  // NO_SANITIZE_UNDEFINED needed because ctx.example_factory function pointer may be typecasted
+  BaseState<audit>* NO_SANITIZE_UNDEFINED StartObject(Context<audit>& ctx) override
+  {
+    // setup default namespace
+    ctx.PushNamespace(" ", this);
+
+    return &ctx.default_state;
+  }
+
+  BaseState<audit>* EndArray(Context<audit>& ctx, rapidjson::SizeType) override
+  {
+    // return to shared example
+    ctx.ex = (*ctx.examples)[0];
+    return &ctx.decision_service_state;
+  }
+};
+
+template <bool audit>
+class DefinitelyBadState : public BaseState<audit>
+{
+public:
+  DefinitelyBadState() : BaseState<audit>("DefinitelyBad") {}
+
+  BaseState<audit>* Bool(Context<audit>& ctx, bool b) override
+  {
+    if (b) { ctx.observation_example->l.cb_with_observations.is_definitely_bad = true; }
+
+    return ctx.previous_state;
   }
 };
 
@@ -935,6 +989,11 @@ public:
         return &ctx.uint_dedup_state;
       }
 
+      else if (ctx.key_length == 15 && !strncmp(str, "_definitely_bad", 15))
+      {
+        if ((ctx.return_path.back())->name == ctx.o_state.name) { return &ctx.definitely_bad_state; }
+      }
+
       return Ignore(ctx, length);
     }
 
@@ -991,6 +1050,11 @@ public:
   {
     BaseState<audit>* return_state = ctx.PopNamespace();
 
+    if (!strcmp(return_state->name, ctx.o_state.name))
+    {
+      return return_state;  // return to observation state
+    }
+
     if (ctx.namespace_path.empty())
     {
       int label_index = ctx.label_index_state.index;
@@ -1016,6 +1080,8 @@ public:
       // inject label
       ctx.label_object_state.EndObject(ctx, memberCount);
 
+      // inject observation examples
+      if (ctx.observation_example != nullptr) { ctx.examples->push_back(ctx.observation_example); }
       // If we are in CCB mode and there have been no slots. Check label cost, prob and action were passed. In that
       // case this is CB, so generate a single slot with this info.
       if (ctx._label_parser.label_type == VW::label_type_t::CCB)
@@ -1409,6 +1475,20 @@ public:
           ctx.key = " ";
           ctx.key_length = 1;
           return &ctx.default_state;
+        case 'o':
+          if (ctx._label_parser.label_type == VW::label_type_t::CB_WITH_OBSERVATIONS)
+          {
+            ctx.key = " ";
+            ctx.key_length = 1;
+
+            // allocate new example
+            ctx.ex = &ctx.example_factory();
+            ctx._label_parser.default_label(ctx.ex->l);
+            ctx.ex->l.cb_with_observations.is_observation = true;
+            ctx.observation_example = ctx.ex;
+
+            return &ctx.o_state;
+          }
       }
     }
     else if (length == 3 && !strcmp(str, "pdf"))
@@ -1516,6 +1596,7 @@ public:
   std::unordered_map<std::string, std::set<std::string>>* ignore_features = nullptr;
 
   VW::multi_ex* examples;
+  VW::example* observation_example = nullptr;
   VW::example* ex;
   rapidjson::InsituStringStream* stream;
   const char* stream_end;
@@ -1536,6 +1617,8 @@ public:
   TextState<audit> text_state;
   TagState<audit> tag_state;
   MultiState<audit> multi_state;
+  ObservationState<audit> o_state;
+  DefinitelyBadState<audit> definitely_bad_state;
   IgnoreState<audit> ignore_state;
   ArrayState<audit> array_state;
   SlotsState<audit> slots_state;
