@@ -52,6 +52,37 @@ private:
 };
 }  // namespace cb_explore_adf
 
+/**
+ * Implementing the constrained optimization from the paper: https://arxiv.org/abs/2302.08631
+ * We want to minimize objective: p * fhat + z
+ * where p is the resulting probability distribution, fhat is the scores we get from cb_adf and z is a constant
+ * The constaints are (very roughly) for each action we want:
+ *        (p - ea)**2 / G * p <= fhat_a + z
+ * where fhat_a is the cost for that action and ea is the vector of the identity matrix at index a
+ *
+ * G is num_actions x num_actions graph where each column indicates the probability of that action (corresponding to the
+ * column index) revealing the reward for a different action (which row are we talking about)
+ *
+ * So for example the identity matrix for a 2 x 2 matrix
+ * 1 0
+ * 0 1
+ *
+ * basically means that each action taken will reveal information only for itself
+ *
+ * and the all 1's matrix
+ *
+ * 1 1
+ * 1 1
+ *
+ * corresponds to supervised learning where each action taken will reveal infromation for every other action
+ *
+ *
+ * The way to think about gamma, which will increase over time, is that a small gamma means that the final p will
+ * "listen" more to the graph and try to give higher probability to the actions that reveal more, even if they have a
+ * higher cost. As gamma increases, the final p will "listen" less to the graph and will listen more to the cost, so if
+ * an action has a high cost it will have a lower probability of being chosen even if it reveals a lot of information
+ * about other actions
+ */
 class ConstrainedFunctionType
 {
   const arma::vec& _fhat;
@@ -128,6 +159,7 @@ public:
       {
         if (p(i) < 0) { neg_sum += p(i); }
       }
+      // negative probabilities are really really bad
       return -100.f * _gamma * neg_sum;
     }
     else if (i == _fhat.size() + 1)
@@ -267,40 +299,99 @@ bool valid_graph(const std::vector<VW::cb_graph_feedback::triplet>& triplets)
   return false;
 }
 
-arma::vec get_fhat_from_action_scores(const VW::action_scores a_s)
+std::pair<arma::mat, arma::vec> set_initial_coordinates(const arma::vec& fhat, float gamma)
 {
-  arma::vec fhat(a_s.size());
-
-  for (auto& as : a_s) { fhat(as.action) = as.score; }
-
-  return fhat;
-}
-
-void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples)
-{
-  auto& a_s = examples[0]->pred.a_s;
-  arma::vec fhat = get_fhat_from_action_scores(a_s);
-  fhat.print("before:");
-
   // find fhat min
   auto min_fhat = fhat.min();
-  arma::vec gammafhat = _gamma * (fhat - min_fhat);
+  arma::vec gammafhat = gamma * (fhat - min_fhat);
 
   // initial p can be uniform random
   arma::mat coordinates(gammafhat.size() + 1, 1);
   for (size_t i = 0; i < gammafhat.size(); i++) { coordinates[i] = 1.f / gammafhat.size(); }
 
   // initial z can be 1
-  float z = _gamma * (1 - (min_fhat == 0 ? 1.f / fhat.size() : min_fhat));
-  std::cout << "Z: " << z << " min_fhat: " << min_fhat << std::endl;
+  // but also be nice if all fhat's are zero
+  float z = gamma * (1 - (min_fhat == 0 ? 1.f / fhat.size() : min_fhat));
 
   coordinates[gammafhat.size()] = z;
 
-  // get G
-  auto& graph_reduction_features =
-      examples[0]->ex_reduction_features.template get<VW::cb_graph_feedback::reduction_features>();
+  return {coordinates, gammafhat};
+}
 
-  arma::sp_mat G;
+arma::vec get_probs_from_coordinates(arma::mat& coordinates, const arma::vec& fhat)
+{
+  // constraints are enforcers but they can be broken, so we need to check that probs are positive and sum to 1
+
+  // we also have to check for nan's because some starting points combined with some gammas might make the constraint
+  // optimization go off the charts it should be rare but we need to guard against it
+
+  size_t num_actions = coordinates.n_rows - 1;
+  auto count_zeros = 0;
+  bool there_is_a_one = false;
+  bool there_is_a_nan = false;
+
+  for (size_t i = 0; i < num_actions; i++)
+  {
+    if (VW::math::are_same(static_cast<float>(coordinates[i]), 0.f) || coordinates[i] < 0.f)
+    {
+      coordinates[i] = 0.f;
+      count_zeros++;
+    }
+    if (coordinates[i] > 1.f)
+    {
+      coordinates[i] = 1.f;
+      there_is_a_one = true;
+    }
+    if (std::isnan(coordinates[i])) { there_is_a_nan = true; }
+  }
+
+  if (there_is_a_nan)
+  {
+    for (size_t i = 0; i < num_actions; i++) { coordinates[i] = 1.f - fhat(i); }
+  }
+
+  if (there_is_a_one)
+  {
+    for (size_t i = 0; i < num_actions; i++)
+    {
+      if (coordinates[i] != 1.f) { coordinates[i] = 0.f; }
+    }
+  }
+
+  float p_sum = 0;
+  for (size_t i = 0; i < num_actions; i++) { p_sum += coordinates[i]; }
+
+  if (!VW::math::are_same(p_sum, 1.f))
+  {
+    float rest = 1.f - p_sum;
+    float rest_each = rest / (num_actions - count_zeros);
+    for (size_t i = 0; i < num_actions; i++)
+    {
+      if (coordinates[i] == 0.f) { continue; }
+      else { coordinates[i] = coordinates[i] + rest_each; }
+    }
+  }
+
+  float sum = 0;
+  arma::vec probs(num_actions);
+  for (size_t i = 0; i < probs.n_rows; ++i)
+  {
+    probs(i) = coordinates[i];
+    sum += probs(i);
+  }
+
+  if (!VW::math::are_same(sum, 1.f))
+  {
+    std::cout << "sum is: " << sum << std::endl;
+    THROW("Probabilities do not sum to 1, there must be a problem");
+  }
+
+  return probs;
+}
+
+arma::sp_mat get_graph(const VW::cb_graph_feedback::reduction_features& graph_reduction_features, size_t num_actions)
+{
+  arma::sp_mat G(num_actions, num_actions);
 
   if (valid_graph(graph_reduction_features.triplets))
   {
@@ -316,76 +407,36 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
       values(i) = triplet.val;
     }
 
-    G = arma::sp_mat(true, locations, values, gammafhat.size(), gammafhat.size());
+    G = arma::sp_mat(true, locations, values, num_actions, num_actions);
   }
-  else { G = arma::speye<arma::sp_mat>(gammafhat.size(), gammafhat.size()); }
+  else { G = arma::speye<arma::sp_mat>(num_actions, num_actions); }
+  return G;
+}
 
-  G.print("G: ");
+void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples)
+{
+  auto& a_s = examples[0]->pred.a_s;
+  size_t num_actions = a_s.size();
+  arma::vec fhat(a_s.size());
+  for (auto& as : a_s) { fhat(as.action) = as.score; }
 
-  gammafhat.print("gammafhat: ");
+  auto coord_gammafhat = set_initial_coordinates(fhat, _gamma);
+  arma::mat coordinates = std::get<0>(coord_gammafhat);
+  arma::vec gammafhat = std::get<1>(coord_gammafhat);
+
+  auto& graph_reduction_features =
+      examples[0]->ex_reduction_features.template get<VW::cb_graph_feedback::reduction_features>();
+  arma::sp_mat G = get_graph(graph_reduction_features, num_actions);
 
   ConstrainedFunctionType f(gammafhat, G, _gamma);
 
   ens::AugLagrangian optimizer;
-  // TODO should I set an upper limit for performance reasons?
-  optimizer.MaxIterations() = 0;
   optimizer.Optimize(f, coordinates);
 
-  coordinates.print("coords before balancing: ");
-  auto count_zeros = 0;
-  bool there_is_a_one = false;
-  for (size_t i = 0; i < a_s.size(); i++)
-  {
-    if (VW::math::are_same(static_cast<float>(coordinates[i]), 0.f) || coordinates[i] < 0.f)
-    {
-      coordinates[i] = 0.f;
-      count_zeros++;
-    }
-    if (coordinates[i] > 1.f)
-    {
-      coordinates[i] = 1.f;
-      there_is_a_one = true;
-      std::cout << "there is a one" << std::endl;
-    }
-  }
-
-  if (there_is_a_one)
-  {
-    for (size_t i = 0; i < a_s.size(); i++)
-    {
-      if (coordinates[i] != 1.f) { coordinates[i] = 0.f; }
-    }
-  }
-  else
-  {
-    float p_sum = 0;
-    for (size_t i = 0; i < a_s.size(); i++) { p_sum += coordinates[i]; }
-
-    std::cout << "sum: " << p_sum << std::endl;
-    if (!VW::math::are_same(p_sum, 1.f))
-    {
-      float rest = 1.f - p_sum;
-      std::cout << "rest: " << rest << std::endl;
-      float rest_each = rest / (a_s.size() - count_zeros);
-      for (size_t i = 0; i < a_s.size(); i++)
-      {
-        if (coordinates[i] == 0.f) { continue; }
-        else { coordinates[i] = coordinates[i] + rest_each; }
-      }
-    }
-  }
-
   // TODO json graph input
-  // TODO save_load the count
+  // TODO save_load the count and make gamma like squarecb gamma
 
-  coordinates.print("coords: ");
-
-  arma::vec probs(coordinates.n_rows - 1);
-  for (size_t i = 0; i < probs.n_rows; ++i) { probs(i) = coordinates[i]; }
-  probs.print("final p: ");
-
-  z = coordinates[coordinates.n_rows - 1];
-  std::cout << "VALUE IS: " << (arma::dot(fhat, probs) + z / _gamma) << std::endl;
+  arma::vec probs = get_probs_from_coordinates(coordinates, fhat);
 
   // set the new probabilities in the example
   for (auto& as : a_s) { as.score = probs(as.action); }
