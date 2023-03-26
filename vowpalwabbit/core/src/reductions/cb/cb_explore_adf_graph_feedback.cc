@@ -57,18 +57,18 @@ private:
  * Implementing the constrained optimization from the paper: https://arxiv.org/abs/2302.08631
  * We want to minimize objective: p * fhat + z
  * where p is the resulting probability distribution, fhat is the scores we get from cb_adf and z is a constant
- * The constaints are (very roughly) for each action we want:
+ * The constraints are (very roughly) for each action we want:
  *        (p - ea)**2 / G * p <= fhat_a + z
  * where fhat_a is the cost for that action and ea is the vector of the identity matrix at index a
  *
- * G is num_actions x num_actions graph where each column indicates the probability of that action (corresponding to the
- * column index) revealing the reward for a different action (which row are we talking about)
+ * G is a (num_actions x num_actions) graph where each column indicates the probability of that action (corresponding to
+ * the column index) revealing the reward for a different action (which row are we talking about)
  *
  * So for example the identity matrix for a 2 x 2 matrix
  * 1 0
  * 0 1
  *
- * basically means that each action taken will reveal information only for itself
+ * means that each action taken will reveal information only for itself
  *
  * and the all 1's matrix
  *
@@ -122,7 +122,6 @@ public:
   // unsatisfied, a value greater than 0 should be returned.  If the constraint
   // is satisfied, 0 should be returned.  The optimizer will add this value to
   // its overall objective that it is trying to minimize.
-
   double EvaluateConstraint(const size_t i, const arma::mat& x) const
   {
     arma::vec p(x.n_rows - 1);
