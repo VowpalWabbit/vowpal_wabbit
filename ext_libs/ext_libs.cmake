@@ -127,6 +127,8 @@ if(VW_ARMADILLO_SYS_DEP)
   find_package(Armadillo CONFIG 9.800.0 REQUIRED)
   target_link_libraries(mlpack_ensmallen INTERFACE armadillo)
 else()
+  set(BUILD_SMOKE_TEST OFF)
+  set(BUILD_SHARED_LIBS OFF)
   target_include_directories(mlpack_ensmallen SYSTEM INTERFACE ${CMAKE_CURRENT_LIST_DIR}/armadillo-code/include)
 endif()
 

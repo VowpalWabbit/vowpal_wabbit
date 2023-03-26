@@ -35,6 +35,10 @@
           "type": "BOOL",
           "value": "ON"
         },
+        "VW_ENSMALLEN_SYS_DEP": {
+          "type": "BOOL",
+          "value": "OFF"
+        },
         "VW_BOOST_MATH_SYS_DEP": {
           "type": "BOOL",
           "value": "ON"
