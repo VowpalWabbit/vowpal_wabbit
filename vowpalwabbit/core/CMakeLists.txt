@@ -379,7 +379,7 @@ vw_add_library(
         # Use BUILD_INTERFACE to prevent them from being exported, i.e. treat them as PRIVATE
         # https://gitlab.kitware.com/cmake/cmake/issues/15415
         ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io $<BUILD_INTERFACE:RapidJSON>
-        $<BUILD_INTERFACE:eigen> $<BUILD_INTERFACE:sse2neon>  $<BUILD_INTERFACE:mlpack_ensmallen>
+        $<BUILD_INTERFACE:eigen> $<BUILD_INTERFACE:sse2neon>
     DESCRIPTION "This contains all remaining VW code, all reduction implementations, driver, option handling"
     EXCEPTION_DESCRIPTION "Yes"
     ENABLE_INSTALL
@@ -387,6 +387,10 @@ vw_add_library(
 
 if(VW_FEAT_LDA)
   target_link_libraries(vw_core PRIVATE $<BUILD_INTERFACE:${boost_math_target}>)
+endif()
+
+if(VW_FEAT_CB_GRAPH_FEEDBACK)
+  target_link_libraries(vw_core PRIVATE $<BUILD_INTERFACE:mlpack_ensmallen>)
 endif()
 
 target_include_directories(vw_core PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src)
