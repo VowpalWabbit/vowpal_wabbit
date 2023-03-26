@@ -61,7 +61,7 @@ if(VW_FEAT_LDA AND NOT BUILD_PYTHON)
 endif()
 
 if(VW_FEAT_CB_GRAPH_FEEDBACK)
-  list(APPEND VCPKG_MANIFEST_FEATURES "cb_graph_feedback")
+  list(APPEND VCPKG_MANIFEST_FEATURES "cbgraphfeedback")
 endif()
 
 option(BUILD_TESTING "Build tests" ON)
