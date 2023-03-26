@@ -106,7 +106,6 @@ set(vw_core_headers
   include/vw/core/reductions/cb/cb_explore_adf_common.h
   include/vw/core/reductions/cb/cb_explore_adf_cover.h
   include/vw/core/reductions/cb/cb_explore_adf_first.h
-  include/vw/core/reductions/cb/cb_explore_adf_graph_feedback.h
   include/vw/core/reductions/cb/cb_explore_adf_greedy.h
   include/vw/core/reductions/cb/cb_explore_adf_large_action_space.h
   include/vw/core/reductions/cb/cb_explore_adf_regcb.h
@@ -275,7 +274,6 @@ set(vw_core_sources
   src/reductions/cb/cb_explore_adf_bag.cc
   src/reductions/cb/cb_explore_adf_cover.cc
   src/reductions/cb/cb_explore_adf_first.cc
-  src/reductions/cb/cb_explore_adf_graph_feedback.cc
   src/reductions/cb/cb_explore_adf_greedy.cc
   src/reductions/cb/cb_explore_adf_large_action_space.cc
   src/reductions/cb/cb_explore_adf_regcb.cc
@@ -366,6 +364,11 @@ if(VW_FEAT_LDA)
   list(APPEND vw_core_sources src/reductions/lda_core.cc)
 endif()
 
+if(VW_FEAT_CB_GRAPH_FEEDBACK)
+  list(APPEND vw_core_headers include/vw/core/reductions/cb/cb_explore_adf_graph_feedback.h)
+  list(APPEND vw_core_sources src/reductions/cb/cb_explore_adf_graph_feedback.cc)
+endif()
+
 vw_add_library(
     NAME "core"
     TYPE "STATIC_ONLY"
@@ -429,10 +432,7 @@ if(WIN32)
   target_compile_definitions(vw_core PUBLIC __SSE2__)
 endif()
 
-vw_add_test_executable(
-    FOR_LIB "core"
-    EXTRA_DEPS vw_test_common
-    SOURCES
+set(vw_core_test_sources
       tests/automl_test.cc
       tests/automl_weights_test.cc
       tests/baseline_cb_test.cc
@@ -441,7 +441,6 @@ vw_add_test_executable(
       tests/cats_user_provided_pdf.cc
       tests/cb_explore_adf_test.cc
       tests/cb_graph_feedback_label_text_parse_test.cc
-      tests/cb_graph_feedback_test.cc
       tests/cb_large_actions_test.cc
       tests/cb_las_one_pass_svd_test.cc
       tests/cb_las_spanner_test.cc
@@ -497,6 +496,16 @@ vw_add_test_executable(
       tests/vw_versions_test.cc
       tests/weights_test.cc
       tests/igl_test.cc
+)
+
+if(VW_FEAT_CB_GRAPH_FEEDBACK)
+  list(APPEND vw_core_test_sources tests/cb_graph_feedback_test.cc)
+endif()
+
+vw_add_test_executable(
+    FOR_LIB "core"
+    EXTRA_DEPS vw_test_common
+    SOURCES ${vw_core_test_sources}
 )
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)

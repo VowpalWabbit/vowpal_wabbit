@@ -3,7 +3,6 @@
   "name": "vowpal-wabbit",
   "version": "9.8.0",
   "dependencies": [
-    "armadillo",
     "eigen3",
     "fmt",
     "rapidjson",
@@ -27,6 +26,10 @@
     "benchmarks": {
       "description": "Build Benchmarks",
       "dependencies": ["benchmark"]
+    },
+    "cb_graph_feedback": {
+      "description": "Enable CB with graph feedback reduction",
+      "dependencies": ["armadillo"]
     }
   }
 }
