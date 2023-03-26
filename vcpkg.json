@@ -3,6 +3,7 @@
   "name": "vowpal-wabbit",
   "version": "9.8.0",
   "dependencies": [
+    "armadillo",
     "eigen3",
     "fmt",
     "rapidjson",
