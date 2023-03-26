@@ -37,7 +37,7 @@ namespace cb_explore_adf
 class cb_explore_adf_graph_feedback
 {
 public:
-  cb_explore_adf_graph_feedback(float gamma) : _gamma(gamma) {}
+  cb_explore_adf_graph_feedback(float gamma, VW::workspace* all) : _gamma(gamma), _all(all) {}
   // Should be called through cb_explore_adf_base for pre/post-processing
   void predict(VW::LEARNER::learner& base, multi_ex& examples);
   void learn(VW::LEARNER::learner& base, multi_ex& examples);
@@ -46,6 +46,7 @@ public:
   float _gamma;
 
 private:
+  VW::workspace* _all;
   template <bool is_learn>
   void predict_or_learn_impl(VW::LEARNER::learner& base, multi_ex& examples);
   void update_example_prediction(multi_ex& examples);
@@ -318,12 +319,12 @@ std::pair<arma::mat, arma::vec> set_initial_coordinates(const arma::vec& fhat, f
   return {coordinates, gammafhat};
 }
 
-arma::vec get_probs_from_coordinates(arma::mat& coordinates, const arma::vec& fhat)
+arma::vec get_probs_from_coordinates(arma::mat& coordinates, const arma::vec& fhat, VW::workspace& all)
 {
   // constraints are enforcers but they can be broken, so we need to check that probs are positive and sum to 1
 
   // we also have to check for nan's because some starting points combined with some gammas might make the constraint
-  // optimization go off the charts it should be rare but we need to guard against it
+  // optimization go off the charts; it should be rare but we need to guard against it
 
   size_t num_actions = coordinates.n_rows - 1;
   auto count_zeros = 0;
@@ -382,8 +383,8 @@ arma::vec get_probs_from_coordinates(arma::mat& coordinates, const arma::vec& fh
 
   if (!VW::math::are_same(sum, 1.f))
   {
-    std::cout << "sum is: " << sum << std::endl;
-    THROW("Probabilities do not sum to 1, there must be a problem");
+    // leaving this here just in case this happens for some reason that we did not think to check for
+    all.logger.err_warn("Probabilities do not sum to 1, they sum to: " + std::to_string(sum));
   }
 
   return probs;
@@ -436,7 +437,7 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
   // TODO json graph input
   // TODO save_load the count and make gamma like squarecb gamma
 
-  arma::vec probs = get_probs_from_coordinates(coordinates, fhat);
+  arma::vec probs = get_probs_from_coordinates(coordinates, fhat, *_all);
 
   // set the new probabilities in the example
   for (auto& as : a_s) { as.score = probs(as.action); }
@@ -505,7 +506,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_graph_feedb
   size_t problem_multiplier = 1;
   bool with_metrics = options.was_supplied("extra_metrics");
 
-  auto data = VW::make_unique<explore_type>(with_metrics, gamma);
+  auto data = VW::make_unique<explore_type>(with_metrics, gamma, &all);
 
   auto l = VW::LEARNER::make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(VW::reductions::cb_explore_adf_graph_feedback_setup))
