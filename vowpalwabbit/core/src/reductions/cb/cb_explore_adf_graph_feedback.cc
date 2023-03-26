@@ -97,7 +97,7 @@ public:
   }
 
   // Return the objective function f(x) for the given x.
-  double Evaluate(const arma::mat& x)
+  double Evaluate(const arma::mat& x) const
   {
     arma::mat p(x.n_rows - 1, 1);
     for (size_t i = 0; i < p.n_rows; ++i) { p[i] = x[i]; }
@@ -108,7 +108,7 @@ public:
   }
 
   // Compute the gradient of f(x) for the given x and store the result in g.
-  void Gradient(const arma::mat&, arma::mat& g)
+  void Gradient(const arma::mat&, arma::mat& g) const
   {
     g.set_size(_fhat.n_rows + 1, 1);
     for (size_t i = 0; i < _fhat.n_rows; ++i) { g[i] = _fhat(i); }
@@ -116,14 +116,14 @@ public:
   }
 
   // Get the number of constraints on the objective function.
-  size_t NumConstraints() { return _fhat.size() + 4; }
+  size_t NumConstraints() const { return _fhat.size() + 4; }
 
   // Evaluate constraint i at the parameters x.  If the constraint is
   // unsatisfied, a value greater than 0 should be returned.  If the constraint
   // is satisfied, 0 should be returned.  The optimizer will add this value to
   // its overall objective that it is trying to minimize.
 
-  double EvaluateConstraint(const size_t i, const arma::mat& x)
+  double EvaluateConstraint(const size_t i, const arma::mat& x) const
   {
     arma::vec p(x.n_rows - 1);
     for (size_t i = 0; i < p.n_rows; ++i) { p(i) = x[i]; }
@@ -185,7 +185,7 @@ public:
   // result in the given matrix g.  If the constraint is not satisfied, the
   // gradient should be set in such a way that the gradient points in the
   // direction where the constraint would be satisfied.
-  void GradientConstraint(const size_t i, const arma::mat& x, arma::mat& g)
+  void GradientConstraint(const size_t i, const arma::mat& x, arma::mat& g) const
   {
     arma::vec p(x.n_rows - 1);
     for (size_t i = 0; i < p.n_rows; ++i) { p(i) = x[i]; }
@@ -493,7 +493,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_graph_feedb
       .add(make_option("gamma", gamma).keep().default_value(10.f))
       .add(make_option("graph_feedback", graph_feedback).necessary().keep().help("Graph feedback pdf").experimental());
 
-  auto enabled = options.add_parse_and_check_necessary(new_options) && graph_feedback;
+  auto enabled = options.add_parse_and_check_necessary(new_options);
   if (!enabled) { return nullptr; }
 
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
