@@ -20,6 +20,5 @@ namespace reductions
  * @return VW::LEARNER::learner* learner if this reduction is active, nullptr otherwise
  */
 std::shared_ptr<VW::LEARNER::learner> interaction_ground_setup(VW::setup_base_i& stack_builder);
-void swap_ftrl(ftrl* source, ftrl* destination);
 }  // namespace reductions
 }  // namespace VW

@@ -251,7 +251,6 @@ void update_stats_igl(const VW::workspace& /* all */, VW::shared_data& sd, const
   if (ec_seq.size() <= 0) { return; }
 
   size_t num_features = 0;
-  size_t num_namespaces = 0;
 
   float loss = 0.;
 
@@ -264,12 +263,10 @@ void update_stats_igl(const VW::workspace& /* all */, VW::shared_data& sd, const
     {
       num_features += (ec_seq.size() - 1) *
           (example->get_num_features() - example->feature_space[VW::details::CONSTANT_NAMESPACE].size());
-      num_namespaces += (ec_seq.size() - 1) * example->indices.size();
     }
     else
     {
       num_features += example->get_num_features();
-      num_namespaces += example->indices.size();
     }
   }
 
