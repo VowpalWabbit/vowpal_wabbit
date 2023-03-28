@@ -68,6 +68,39 @@ emt_router_type emt_router_type_from_string(VW::string_view val)
   THROW(fmt::format("{} is not valid emt_router_type", val));
 }
 
+emt_initial_type emt_initial_type_from_string(VW::string_view val)
+{
+  if (val == "gaussian") { return emt_initial_type::GAUSSIAN; }
+
+  if (val == "cosine") { return emt_initial_type::COSINE; }
+
+  if (val == "euclidean") { return emt_initial_type::EUCLIDEAN; }
+
+  if (val == "none") { return emt_initial_type::NONE; }
+
+  THROW(fmt::format("{} is not valid emt_initial_type", val));
+}
+
+float emt_initial(emt_initial_type initial_type, emt_feats f1, emt_feats f2)
+{
+  if (initial_type == emt_initial_type::GAUSSIAN)
+  {
+    return 1-std::exp(-emt_norm(emt_scale_add(1,f1,-1,f2)));
+  }
+
+  if (initial_type == emt_initial_type::COSINE)
+  {
+    return 1-emt_inner(f1,f2)/(emt_norm(f1)*emt_norm(f2));
+  }
+
+  if (initial_type == emt_initial_type::EUCLIDEAN)
+  {
+    return emt_norm(emt_scale_add(1,f1,-1,f2));
+  }
+
+  return 0;
+}
+
 emt_example::emt_example(VW::workspace& all, VW::example* ex)
 {
   label = ex->l.multi.label;
@@ -121,12 +154,13 @@ emt_lru::K emt_lru::bound(emt_lru::K item)
 }
 
 emt_tree::emt_tree(VW::workspace* all, std::shared_ptr<VW::rand_state> random_state, uint32_t leaf_split,
-    emt_scorer_type scorer_type, emt_router_type router_type, uint64_t tree_bound)
+    emt_scorer_type scorer_type, emt_router_type router_type, emt_initial_type initial_type, uint64_t tree_bound)
     : all(all)
     , random_state(std::move(random_state))
     , leaf_split(leaf_split)
     , scorer_type(scorer_type)
     , router_type(router_type)
+    , initial_type(initial_type)
 {
   bounder = VW::make_unique<VW::reductions::eigen_memory_tree::emt_lru>(tree_bound);
   root = VW::make_unique<emt_node>();
@@ -240,7 +274,10 @@ emt_feats emt_scale_add(float s1, const emt_feats& f1, float s2, const emt_feats
       idx2++;
     }
 
-    out.emplace_back(index, f1_val * s1 + f2_val * s2);
+    auto new_val = s1 * f1_val + s2 * f2_val;
+    if (new_val != 0) {
+      out.emplace_back(index, new_val);
+    }
   }
   return out;
 }
@@ -355,8 +392,6 @@ void tree_bound(emt_tree& b, emt_example* ec)
   }
 }
 
-float scorer_initial(const float dist) { return 1 - std::exp(-dist); }
-
 void scorer_features(const emt_feats& f1, VW::features& out)
 {
   out.clear();
@@ -390,7 +425,7 @@ void scorer_example(emt_tree& b, const emt_example& ex1, const emt_example& ex2)
     out.total_sum_feat_sq = out.feature_space[X_NS].sum_feat_sq;
     out.num_features = out.feature_space[X_NS].size();
 
-    auto initial = scorer_initial(std::sqrt(out.total_sum_feat_sq));
+    auto initial = emt_initial(b.initial_type,ex1.full,ex2.full);
     out.ex_reduction_features.get<VW::simple_label_reduction_features>().initial = initial;
   }
 
@@ -419,7 +454,7 @@ void scorer_example(emt_tree& b, const emt_example& ex1, const emt_example& ex2)
     out.total_sum_feat_sq = out.feature_space[X_NS].sum_feat_sq + out.feature_space[Z_NS].sum_feat_sq;
     out.num_features = out.feature_space[X_NS].size() + out.feature_space[Z_NS].size();
 
-    auto initial = scorer_initial(emt_norm(emt_scale_add(1, ex1.full, -1, ex2.full)));
+    auto initial = emt_initial(b.initial_type,ex1.full,ex2.full);
     out.ex_reduction_features.get<VW::simple_label_reduction_features>().initial = initial;
   }
 
@@ -452,10 +487,11 @@ float scorer_predict(emt_tree& b, learner& base, const emt_example& pred_ex, con
 
   if (b.scorer_type == emt_scorer_type::DISTANCE)  // dist scorer
   {
-    return emt_norm(emt_scale_add(1, pred_ex.full, -1, leaf_ex.full));
+    return emt_initial(b.initial_type, pred_ex.full, leaf_ex.full);
   }
 
   // The features matched exactly. Return max negative to make sure it is picked.
+  // Do I want this here? It doesn't seem to matter on experimental datasets.
   if (pred_ex.full == leaf_ex.full) { return -FLT_MAX; }
 
   scorer_example(b, pred_ex, leaf_ex);
@@ -478,7 +514,7 @@ void scorer_learn(learner& base, VW::example& ex, float label, float weight)
 
 void scorer_learn(emt_tree& b, learner& base, emt_node& cn, const emt_example& ex, float weight)
 {
-  // random and dist scorer has nothing to learsn
+  // random and dist scorer has nothing to learn
   if (b.scorer_type == emt_scorer_type::RANDOM || b.scorer_type == emt_scorer_type::DISTANCE) { return; }
 
   if (weight == 0) { return; }
@@ -491,34 +527,39 @@ void scorer_learn(emt_tree& b, learner& base, emt_node& cn, const emt_example& e
   float preferred_error = FLT_MAX;
   emt_example* preferred_ex = nullptr;
 
+  float alternative_score = FLT_MAX;
   float alternative_error = FLT_MAX;
   emt_example* alternative_ex = nullptr;
 
-  for (auto& example : cn.examples)
-  {
-    float score = scorer_predict(b, base, ex, *example);
+  std::vector<float> scores;
+  for (auto& example : cn.examples) {
+    scores.push_back(scorer_predict(b, base, ex, *example));
+  }
 
-    if (score < preferred_score)
+  //double loop has time complexity of 2n which is almost always faster than a sort with n*log(n)
+  for (size_t i = 0; i < cn.examples.size(); i++)
+  {
+    if (scores[i] < preferred_score)
     {
-      preferred_score = score;
-      preferred_ex = example.get();
-      preferred_error = (example->label == ex.label) ? 0.f : 1.f;
+      preferred_score = scores[i];
+      preferred_ex = cn.examples[i].get();
+      preferred_error = (preferred_ex->label == ex.label) ? 0.f : 1.f;
     }
   }
 
-  for (auto& example : cn.examples)
+  for (size_t i = 0; i < cn.examples.size(); i++)
   {
-    if (example.get() == preferred_ex) { continue; }
+    if (cn.examples[i].get() == preferred_ex) { continue; }
+    float error = (cn.examples[i].get()->label == ex.label) ? 0.f : 1.f;
 
-    float error = (example->label == ex.label) ? 0.f : 1.f;
-    if (error < alternative_error)
-    {
+    if ((error < alternative_error) || (error==alternative_error && scores[i] < alternative_score)) {
+      alternative_score = scores[i];
+      alternative_ex = cn.examples[i].get();
       alternative_error = error;
-      alternative_ex = example.get();
     }
   }
 
-  // the better of the two options moves towards 0 while the other moves towards -1
+  // the better of the two options moves towards 0 while the other moves towards 1
   weight *= std::abs(preferred_error - alternative_error);
 
   if (alternative_ex == nullptr || preferred_ex == nullptr)
@@ -545,18 +586,6 @@ void scorer_learn(emt_tree& b, learner& base, emt_node& cn, const emt_example& e
       scorer_example(b, ex, *preferred_ex);
       scorer_learn(base, *b.ex, int(preferred_error > alternative_error), weight);
     }
-
-    // this trick gives worse outcomes. Why? It is faster so it'd be nice if it didn't.
-    // scorer_example(ex, *preferred_ex, b.ex[0]);
-    // scorer_example(ex, *alternative_ex, b.ex[1]);
-    // scorer_features(b.ex[0].feature_space[0], b.ex[1].feature_space[0], b.ex[2].feature_space[0], 2);
-
-    // b.ex[2].total_sum_feat_sq = b.ex[2].feature_space[0].sum_feat_sq;
-    // b.ex[2].num_features = b.ex[2].feature_space[0].size();
-
-    // float label = (preferred_reward < alternative_reward) ? 1.f : -1.f;
-    // float initial = scorer_initial(b.ex[0]) - scorer_initial(b.ex[1]);
-    // scorer_learn(b, base, b.ex[2], label, 1.5*weight, initial);
   }
 }
 
@@ -721,6 +750,10 @@ size_t read_model_field(io_buf& io, reductions::eigen_memory_tree::emt_tree& tre
   bytes += read_model_field(io, router_type);
   tree.router_type = static_cast<reductions::eigen_memory_tree::emt_router_type>(router_type);
 
+  uint32_t initial_type{};
+  bytes += read_model_field(io, initial_type);
+  tree.initial_type = static_cast<reductions::eigen_memory_tree::emt_initial_type>(initial_type);
+
   uint64_t tree_bound{};
   bytes += read_model_field(io, tree_bound);
   tree.bounder = VW::make_unique<reductions::eigen_memory_tree::emt_lru>(tree_bound);
@@ -737,6 +770,7 @@ size_t write_model_field(
   bytes += write_model_field(io, tree.leaf_split, upstream_name + ".leaf_split", text);
   bytes += write_model_field(io, static_cast<uint32_t>(tree.scorer_type), upstream_name + ".scorer_type", text);
   bytes += write_model_field(io, static_cast<uint32_t>(tree.router_type), upstream_name + ".router_type", text);
+  bytes += write_model_field(io, static_cast<uint32_t>(tree.initial_type), upstream_name + ".initial_type", text);
   bytes += write_model_field(io, tree.bounder->max_size, upstream_name + ".tree_bound", text);
   bytes += write_model_field(io, tree.root, upstream_name + ".root", text);
   return bytes;
@@ -765,8 +799,14 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::eigen_memory_tree_setup(VW
   bool enabled{};
   std::string scorer_type;
   std::string router_type;
+  std::string initial_type;
   uint32_t tree_bound = 0;
   uint32_t leaf_split = 0;
+
+  //the scorer when it is learning only ever sees 0 or 1 so
+  //VW's native min/max will be 0/1 if we don't make it larger
+  all.sd->min_label = 0;
+  all.sd->max_label = 3;
 
   option_group_definition new_options("[Reduction] Eigen Memory Tree");
   new_options.add(make_option("emt", enabled).keep().necessary().help("Make an eigen memory tree"))
@@ -783,6 +823,11 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::eigen_memory_tree_setup(VW
                .one_of({"random", "distance", "self_consistent_rank", "not_self_consistent_rank"})
                .default_value("self_consistent_rank")
                .help("Indicates the type of scorer to use"))
+      .add(make_option("emt_initial", initial_type)
+               .keep()
+               .one_of({"gaussian", "cosine", "euclidean", "none"})
+               .default_value("cosine")
+               .help("Indicates how to initialize scorer"))
       .add(make_option("emt_router", router_type)
                .keep()
                .one_of({"random", "eigen"})
@@ -792,7 +837,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::eigen_memory_tree_setup(VW
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   auto t = VW::make_unique<VW::reductions::eigen_memory_tree::emt_tree>(&all, all.get_random_state(), leaf_split,
-      emt_scorer_type_from_string(scorer_type), emt_router_type_from_string(router_type), tree_bound);
+      emt_scorer_type_from_string(scorer_type), emt_router_type_from_string(router_type),
+      emt_initial_type_from_string(initial_type), tree_bound);
 
   auto l =
       make_reduction_learner(std::move(t), require_singleline(stack_builder.setup_base_learner()), emt_learn,

@@ -18,7 +18,7 @@
 
 using namespace VW::reductions::eigen_memory_tree;
 
-emt_tree* get_emt_tree(VW::workspace& all)
+emt_tree* get_emt_tree(const VW::workspace& all)
 {
   std::vector<std::string> e_r;
   all.l->get_enabled_learners(e_r);
@@ -205,6 +205,28 @@ TEST(EigenMemoryTree, ScaleAdd)
   v3.push_back(std::make_pair(5, -1));
 
   EXPECT_EQ(emt_scale_add(-1, v1, -1, v2), v3);
+
+  v1.clear();
+  v2.clear();
+  v3.clear();
+  v1.push_back(std::make_pair(1,  2));
+  v1.push_back(std::make_pair(5,  1));
+  v2.push_back(std::make_pair(1,  2.5));
+  v3.push_back(std::make_pair(1, -4.5));
+  v3.push_back(std::make_pair(5, -1));
+
+  EXPECT_EQ(emt_scale_add(-1, v1, -1, v2), v3);
+
+  v1.clear();
+  v2.clear();
+  v3.clear();
+  v1.push_back(std::make_pair(1,  2));
+  v1.push_back(std::make_pair(5,  1));
+  v2.push_back(std::make_pair(1,  2.5));
+  v2.push_back(std::make_pair(5,  -1));
+  v3.push_back(std::make_pair(1, -4.5));
+
+  EXPECT_EQ(emt_scale_add(-1, v1, -1, v2), v3);
 }
 
 TEST(EigenMemoryTree, Abs)
@@ -309,6 +331,26 @@ TEST(EigenMemoryTree, RouterEigen)
   EXPECT_GE(var, 19.29);
 }
 
+TEST(EigenMemoryTree, ScorerInitial)
+{
+  emt_feats v1;
+  emt_feats v2;
+
+  emt_normalize(v1);
+  EXPECT_EQ(v1, v2);
+
+  v1.push_back(std::make_pair(1, -2));
+  v1.push_back(std::make_pair(5,  3));
+
+  v2.push_back(std::make_pair(1, 1));
+  v2.push_back(std::make_pair(5, -1));
+
+  EXPECT_EQ(emt_initial(emt_initial_type::NONE,v1,v2), 0);
+  EXPECT_EQ(emt_initial(emt_initial_type::EUCLIDEAN,v1,v2), 5);
+  EXPECT_NEAR(emt_initial(emt_initial_type::GAUSSIAN,v1,v2), 1-std::exp(-5), .001);
+  EXPECT_NEAR(emt_initial(emt_initial_type::COSINE,v1,v2), 1.98, .001);
+}
+
 TEST(EigenMemoryTree, Shuffle)
 {
   VW::rand_state rng(2);
@@ -324,7 +366,7 @@ TEST(EigenMemoryTree, Shuffle)
 
 TEST(EigenMemoryTree, SaveLoad)
 {
-  auto vw_save = VW::initialize(vwtest::make_args("--quiet", "--emt", "--emt_leaf", "5"));
+  auto vw_save = VW::initialize(vwtest::make_args("--quiet", "--emt", "--emt_leaf", "5", "--emt_initial", "gaussian"));
 
   for (int i = 0; i < 10; i++)
   {
@@ -345,6 +387,11 @@ TEST(EigenMemoryTree, SaveLoad)
 
   auto vw_load = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--preserve_performance_counters"),
       VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
+
+  auto* tree = get_emt_tree(*vw_load);
+
+  EXPECT_EQ(tree->leaf_split, 5);
+  EXPECT_EQ(static_cast<int>(tree->initial_type), 2);
 
   for (int i = 0; i < 10; i++)
   {
