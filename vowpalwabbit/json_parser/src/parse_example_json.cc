@@ -663,7 +663,7 @@ class ObservationState : public BaseState<audit>
 public:
   ObservationState() : BaseState<audit>("Observation") {}
 
-  BaseState<audit>* StartArray(Context<audit>& ctx) override
+  BaseState<audit>* StartArray(Context<audit>& /*ctx*/) override
   {
     return this;
   }
