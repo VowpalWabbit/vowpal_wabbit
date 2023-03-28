@@ -405,7 +405,7 @@ public:
       {
         auto& ld = ctx.ex->l.cb_with_observations;
         ld.event.costs.push_back(cb_label);
-        cb_label = CB::cb_class{};
+        cb_label = VW::cb_class{};
       }
       else
       {
@@ -602,7 +602,7 @@ public:
     else if (ctx._label_parser.label_type == VW::label_type_t::CB_WITH_OBSERVATIONS)
     {
       VW::cb_with_observations_label* ld = &(*ctx.examples)[0]->l.cb_with_observations;
-      CB::cb_class f;
+      VW::cb_class f;
 
       f.partial_prediction = 0.;
       f.action = static_cast<uint32_t>(VW::uniform_hash("shared", 6, 0));
