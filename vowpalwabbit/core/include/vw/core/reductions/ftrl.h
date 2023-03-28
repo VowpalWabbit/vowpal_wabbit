@@ -3,10 +3,12 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#include "vw/core/vw_fwd.h"
-#include <cstddef>
-#include <stdint.h>
 #include "vw/core/reductions/gd.h"
+#include "vw/core/vw_fwd.h"
+
+#include <stdint.h>
+
+#include <cstddef>
 
 class ftrl_update_data
 {

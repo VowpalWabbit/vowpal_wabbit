@@ -5,8 +5,8 @@
 #pragma once
 
 #include "vw/common/random.h"
-#include "vw/core/multi_ex.h"
 #include "vw/core/action_score.h"
+#include "vw/core/multi_ex.h"
 
 #include <functional>
 #include <map>
@@ -36,12 +36,13 @@ class cb_sim
   size_t callback_count;
 
 public:
+  const std::vector<std::string> actions;
   std::string user_ns;
   std::string action_ns;
   VW::rand_state random_state;
-  const std::vector<std::string> actions;
 
-  cb_sim(uint64_t seed = 0, bool use_default_ns = false, std::vector<std::string> actions = {"politics", "sports", "music"});
+  cb_sim(uint64_t seed = 0, bool use_default_ns = false,
+      std::vector<std::string> actions = {"politics", "sports", "music"});
   float get_reaction(const std::map<std::string, std::string>& context, const std::string& action,
       bool add_noise = false, bool swap_reward = false, float scale_reward = 1.f);
   VW::multi_ex build_vw_examples(VW::workspace* vw, std::map<std::string, std::string>& context);
@@ -49,7 +50,7 @@ public:
       const std::string& chosen_action, float cost = 0.f, float prob = 0.f);
   std::pair<int, float> sample_custom_pmf(std::vector<float>& pmf);
   VW::action_scores get_action_scores(VW::workspace* vw, VW::multi_ex examples);
-  std::pair<std::string, float> get_action(VW::workspace* vw, VW::action_scores scores);
+  std::pair<std::string, float> get_action(VW::action_scores scores);
   const std::string& choose_user();
   const std::string& choose_time_of_day();
   std::vector<float> run_simulation(VW::workspace* vw, size_t num_iterations, bool do_learn = true, size_t shift = 1,

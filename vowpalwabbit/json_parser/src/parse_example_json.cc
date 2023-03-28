@@ -401,11 +401,14 @@ public:
     }
     else if (found_cb)
     {
-      if (ctx._label_parser.label_type == VW::label_type_t::CB_WITH_OBSERVATIONS) {
+      if (ctx._label_parser.label_type == VW::label_type_t::CB_WITH_OBSERVATIONS)
+      {
         auto& ld = ctx.ex->l.cb_with_observations;
         ld.event.costs.push_back(cb_label);
         cb_label = CB::cb_class{};
-      } else {
+      }
+      else
+      {
         auto& ld = ctx.ex->l.cb;
         ld.costs.push_back(cb_label);
 
@@ -596,7 +599,8 @@ public:
 
       ld->costs.push_back(f);
     }
-    else if (ctx._label_parser.label_type == VW::label_type_t::CB_WITH_OBSERVATIONS) {
+    else if (ctx._label_parser.label_type == VW::label_type_t::CB_WITH_OBSERVATIONS)
+    {
       VW::cb_with_observations_label* ld = &(*ctx.examples)[0]->l.cb_with_observations;
       CB::cb_class f;
 
@@ -997,9 +1001,7 @@ public:
 
       else if (ctx.key_length == 15 && !strncmp(str, "_definitely_bad", 15))
       {
-        if ((ctx.return_path.back())->name == ctx.o_state.name) {
-          return &ctx.definitely_bad_state;
-        }
+        if ((ctx.return_path.back())->name == ctx.o_state.name) { return &ctx.definitely_bad_state; }
       }
 
       return Ignore(ctx, length);
@@ -1058,7 +1060,8 @@ public:
   {
     BaseState<audit>* return_state = ctx.PopNamespace();
 
-    if (!strcmp(return_state->name, ctx.o_state.name)) {
+    if (!strcmp(return_state->name, ctx.o_state.name))
+    {
       return return_state; // return to observation state
     }
 
@@ -1088,9 +1091,7 @@ public:
       ctx.label_object_state.EndObject(ctx, memberCount);
 
       // inject observation examples
-      if (ctx.observation_example != nullptr) {
-        ctx.examples->push_back(ctx.observation_example);
-      }
+      if (ctx.observation_example != nullptr) { ctx.examples->push_back(ctx.observation_example); }
       // If we are in CCB mode and there have been no slots. Check label cost, prob and action were passed. In that
       // case this is CB, so generate a single slot with this info.
       if (ctx._label_parser.label_type == VW::label_type_t::CCB)
@@ -1485,7 +1486,8 @@ public:
           ctx.key_length = 1;
           return &ctx.default_state;
         case 'o':
-          if (ctx._label_parser.label_type == VW::label_type_t::CB_WITH_OBSERVATIONS) {
+          if (ctx._label_parser.label_type == VW::label_type_t::CB_WITH_OBSERVATIONS)
+          {
             ctx.key = " ";
             ctx.key_length = 1;
 

@@ -84,7 +84,8 @@ std::pair<int, float> cb_sim::sample_custom_pmf(std::vector<float>& pmf)
   THROW("Error: No prob selected");
 }
 
-VW::multi_ex cb_sim::build_vw_examples(VW::workspace* vw, std::map<std::string, std::string>& context) {
+VW::multi_ex cb_sim::build_vw_examples(VW::workspace* vw, std::map<std::string, std::string>& context)
+{
   std::vector<std::string> multi_ex_str = cb_sim::to_vw_example_format(context, "");
   VW::multi_ex examples;
   for (const std::string& ex : multi_ex_str) { examples.push_back(VW::read_example(*vw, ex)); }
@@ -101,7 +102,7 @@ VW::action_scores cb_sim::get_action_scores(VW::workspace* vw, VW::multi_ex exam
   return scores;
 }
 
-std::pair<std::string, float> cb_sim::get_action(VW::workspace* vw, VW::action_scores scores)
+std::pair<std::string, float> cb_sim::get_action(VW::action_scores scores)
 {
   std::vector<float> ordered_scores(scores.size());
   for (auto const& action_score : scores) { ordered_scores[action_score.action] = action_score.score; }
@@ -170,7 +171,7 @@ std::vector<float> cb_sim::run_simulation_hook(VW::workspace* vw, size_t num_ite
     }
     auto examples = build_vw_examples(vw, context);
     auto a_s = get_action_scores(vw, examples);
-    auto action_prob = get_action(vw, a_s);
+    auto action_prob = get_action(a_s);
     auto chosen_action = action_prob.first;
     auto prob = action_prob.second;
 
