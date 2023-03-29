@@ -11,6 +11,7 @@
 #include "vw/core/label_dictionary.h"
 #include "vw/core/label_parser.h"
 #include "vw/core/loss_functions.h"
+#include "vw/core/model_utils.h"
 #include "vw/core/parse_primitives.h"
 #include "vw/core/prediction_type.h"
 #include "vw/core/reductions/cb/cb_adf.h"
@@ -22,6 +23,46 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 using namespace VW::reductions;
+
+namespace VW
+{
+namespace reductions
+{
+namespace model_utils
+{
+size_t write_model_field(
+    io_buf& io, ftrl& pi_ftrl, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += VW::model_utils::write_model_field(io, pi_ftrl.gd_per_model_states, upstream_name + ".gd_per_model_states", text);
+  return bytes;
+}
+
+size_t write_model_field(
+    io_buf& io, const VW::reductions::interaction_ground_data& igl, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += write_model_field(io, *igl.pi_ftrl.get(), ".pi", text);
+  return bytes;
+}
+
+size_t read_model_field(io_buf& io, ftrl& pi_ftrl)
+{
+  size_t bytes = 0;
+  pi_ftrl.gd_per_model_states.clear();
+  bytes += VW::model_utils::read_model_field(io, pi_ftrl.gd_per_model_states);
+  return bytes;
+}
+
+size_t read_model_field(io_buf& io, VW::reductions::interaction_ground_data& igl)
+{
+  size_t bytes = 0;
+  bytes += read_model_field(io, *igl.pi_ftrl.get());
+  return bytes;
+}
+}  // namespace model_utils
+}  // namespace reductions
+}  // namespace VW
 
 namespace
 {
@@ -91,23 +132,7 @@ void add_obs_features_to_ik_ex(VW::example& ik_ex, const VW::example& obs_ex)
   }
 }
 
-class interaction_ground
-{
-public:
-  std::shared_ptr<learner> ik_learner = nullptr;
-  VW::example ik_ex;
-
-  VW::cb_class known_cost;  // for update stats
-
-  std::vector<std::vector<VW::namespace_index>> interactions;
-  std::vector<std::vector<VW::extent_term>>* extent_interactions;
-
-  std::unique_ptr<VW::workspace> ik_all;
-  ftrl* ik_ftrl;                  // automatically save resume
-  std::unique_ptr<ftrl> pi_ftrl;  // TODO: add save resume
-};
-
-void learn(interaction_ground& igl, learner& base, VW::multi_ex& ec_seq)
+void learn(VW::reductions::interaction_ground_data& igl, learner& base, VW::multi_ex& ec_seq)
 {
   float p_unlabeled_prior = 0.5f;
 
@@ -198,7 +223,7 @@ void learn(interaction_ground& igl, learner& base, VW::multi_ex& ec_seq)
   ec_seq.push_back(observation_ex);
 }
 
-void predict(interaction_ground& igl, learner& base, VW::multi_ex& ec_seq)
+void predict(VW::reductions::interaction_ground_data& igl, learner& base, VW::multi_ex& ec_seq)
 {
   VW::example* observation_ex = nullptr;
 
@@ -228,7 +253,20 @@ void predict(interaction_ground& igl, learner& base, VW::multi_ex& ec_seq)
   if (observation_ex != nullptr) { ec_seq.push_back(observation_ex); }
 }
 
-void print_update_igl(VW::workspace& all, VW::shared_data& /*sd*/, const interaction_ground& data,
+void save_load_igl(VW::reductions::interaction_ground_data& igl, VW::io_buf& io, bool read, bool text)
+{
+  if (io.num_files() == 0) { return; }
+  if (read) {
+    VW::reductions::model_utils::read_model_field(io, igl);
+  }
+  else
+  {
+    VW::reductions::model_utils::write_model_field(io, igl, "igl", text);
+  }
+}
+// }  // namespace
+
+void print_update_igl(VW::workspace& all, VW::shared_data& /*sd*/, const VW::reductions::interaction_ground_data& data,
     const VW::multi_ex& ec_seq, VW::io::logger& /*logger*/)
 {
   if (ec_seq.empty()) { return; }
@@ -241,7 +279,7 @@ void print_update_igl(VW::workspace& all, VW::shared_data& /*sd*/, const interac
   VW::details::print_update_cb(all, !labeled_example, ec, &ec_seq, true, &data.known_cost);
 }
 
-void update_stats_igl(const VW::workspace& /* all */, VW::shared_data& sd, const interaction_ground& data,
+void update_stats_igl(const VW::workspace& /* all */, VW::shared_data& sd, const VW::reductions::interaction_ground_data& data,
     const VW::multi_ex& ec_seq, VW::io::logger& /*logger*/)
 {
   if (ec_seq.size() <= 0) { return; }
@@ -299,7 +337,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::interaction_ground_setup(V
 
   // number of weight vectors needed
   size_t feature_width = 2;  // One for reward and one for loss
-  auto ld = VW::make_unique<interaction_ground>();
+  auto ld = VW::make_unique<VW::reductions::interaction_ground_data>();
 
   if (!pi_options.was_supplied("cb_explore_adf")) { pi_options.insert("cb_explore_adf", ""); }
 
@@ -353,6 +391,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::interaction_ground_setup(V
                .set_output_prediction_type(pred_type)
                .set_update_stats(update_stats_igl)
                .set_print_update(print_update_igl)
+               .set_save_load(save_load_igl)
                .build();
 
   // TODO: assert ftrl is the base, fail otherwise
