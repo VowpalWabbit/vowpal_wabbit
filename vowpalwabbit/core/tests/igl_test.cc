@@ -114,8 +114,7 @@ TEST(Igl, ModelWeightsEqualToSeparateModelWeights)
           "-1 1.0 |User user=Tom time=afternoon |Action action=music |v v=none ",
           "1 1.0 |User user=Tom time=afternoon |Action action=food |v v=none ",
       },
-    };
-
+  };
 
   std::vector<std::string> multi_vector = {
       R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v=click": 1}, "_definitely_bad": false}], "a": [0, 1, 2, 3], "c": {"User": {"user=Tom": 1, "time=afternoon" : 1}, "_multi": [{"Action": {"action=politics": 1}}, {"Action": {"action=sports": 1}}, {"Action": {"action=music": 1}}, {"Action": {"action=food": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
@@ -130,7 +129,6 @@ TEST(Igl, ModelWeightsEqualToSeparateModelWeights)
       R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 3, "_labelIndex": 2, "o": [{"v": {"v=skip": 1}, "_definitely_bad": false}], "a": [0, 1, 2, 3], "c": {"User": {"user=Anna": 1, "time=morning" : 1}, "_multi": [{"Action": {"action=politics": 1}}, {"Action": {"action=sports": 1}}, {"Action": {"action=music": 1}}, {"Action": {"action=food": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25]})",
       R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 4, "_labelIndex": 3, "o": [{"v": {"v=none": 1}, "_definitely_bad": false}], "a": [0, 1, 2, 3], "c": {"User": {"user=Tom": 1, "time=afternoon" : 1}, "_multi": [{"Action": {"action=politics": 1}}, {"Action": {"action=sports": 1}}, {"Action": {"action=music": 1}}, {"Action": {"action=food": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25]})",
   };
-
 
   // two vw instance
   auto sl_vw = VW::initialize(vwtest::make_args(

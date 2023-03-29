@@ -28,7 +28,7 @@ void parse_label_cb_with_observations(VW::cb_with_observations_label& /*ld*/, VW
 {
   // TODO: implement text format parsing for cb with observations
 }
-} // namespace
+}  // namespace
 
 VW::label_parser VW::cb_with_observations_global = {
     // default_label
@@ -51,6 +51,4 @@ VW::label_parser VW::cb_with_observations_global = {
     // test_label
     [](const VW::polylabel& label) { return test_label_cb_with_observations(label.cb_with_observations); },
     // Label type
-    VW::label_type_t::CB_WITH_OBSERVATIONS
-};
-
+    VW::label_type_t::CB_WITH_OBSERVATIONS};

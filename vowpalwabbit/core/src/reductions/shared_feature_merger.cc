@@ -70,7 +70,7 @@ void predict_or_learn(sfm_data& data, VW::LEARNER::learner& base, VW::multi_ex& 
 
   // Guard example state restore against throws
   auto restore_guard = VW::scope_exit(
-      [has_example_header, &shared_example, &ec_seq, &store_shared_ex_in_reduction_features, &data]
+      [has_example_header, &shared_example, &ec_seq, &store_shared_ex_in_reduction_features]
       {
         if (has_example_header)
         {

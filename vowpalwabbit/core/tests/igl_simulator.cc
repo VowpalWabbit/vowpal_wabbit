@@ -42,11 +42,11 @@ std::string igl_sim::to_dsjson_format(const std::map<std::string, std::string>& 
   {
     // learn example
     ex << fmt::format(
-      "{{\"_label_cost\": 0,  \"_label_probability\": {}, \"_label_Action\": {}, \"_labelIndex\": {}, \"o\": "
-      "[{{\"v\": {{\"v={}\": 1}}, \"_definitely_bad\": {}}}], \"a\": [{}], \"c\": {{\"User\": {{\"user={}\": 1, "
-      "\"time={}\" : 1}}, \"_multi\": [{}]}}, \"p\":[{}]}}",
-      prob, chosen_index + 1, chosen_index, feedback, definitely_bad, a.str(), context.at("user"),
-      context.at("time_of_day"), multi.str(), p.str());
+        "{{\"_label_cost\": 0,  \"_label_probability\": {}, \"_label_Action\": {}, \"_labelIndex\": {}, \"o\": "
+        "[{{\"v\": {{\"v={}\": 1}}, \"_definitely_bad\": {}}}], \"a\": [{}], \"c\": {{\"User\": {{\"user={}\": 1, "
+        "\"time={}\" : 1}}, \"_multi\": [{}]}}, \"p\":[{}]}}",
+        prob, chosen_index + 1, chosen_index, feedback, definitely_bad, a.str(), context.at("user"),
+        context.at("time_of_day"), multi.str(), p.str());
   }
   else
   {

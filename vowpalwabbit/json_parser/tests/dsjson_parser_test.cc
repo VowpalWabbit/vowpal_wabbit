@@ -997,7 +997,8 @@ TEST(ParseDsjson, CbWithObservations)
   EXPECT_EQ(examples[3]->feature_space['e'].indices.size(), 2);
   EXPECT_EQ(examples[3]->feature_space['e'].indices[0], VW::hash_feature(*vw, "f1", VW::hash_space(*vw, "e_action")));
   EXPECT_EQ(examples[3]->feature_space['e'].values[0], 1);
-  EXPECT_EQ(examples[3]->feature_space['e'].indices[1], VW::chain_hash(*vw, "f2", "strng", VW::hash_space(*vw, "e_action")));
+  EXPECT_EQ(
+      examples[3]->feature_space['e'].indices[1], VW::chain_hash(*vw, "f2", "strng", VW::hash_space(*vw, "e_action")));
   EXPECT_EQ(examples[3]->feature_space['e'].values[0], 1);
 
   // Observation examples
