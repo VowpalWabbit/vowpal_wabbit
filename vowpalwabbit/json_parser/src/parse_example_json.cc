@@ -663,10 +663,7 @@ class ObservationState : public BaseState<audit>
 public:
   ObservationState() : BaseState<audit>("Observation") {}
 
-  BaseState<audit>* StartArray(Context<audit>& /*ctx*/) override
-  {
-    return this;
-  }
+  BaseState<audit>* StartArray(Context<audit>& /*ctx*/) override { return this; }
 
   // NO_SANITIZE_UNDEFINED needed because ctx.example_factory function pointer may be typecasted
   BaseState<audit>* NO_SANITIZE_UNDEFINED StartObject(Context<audit>& ctx) override
@@ -693,9 +690,7 @@ public:
 
   BaseState<audit>* Bool(Context<audit>& ctx, bool b) override
   {
-    if (b) {
-      ctx.observation_example->l.cb_with_observations.is_definitely_bad = true;
-    }
+    if (b) { ctx.observation_example->l.cb_with_observations.is_definitely_bad = true; }
 
     return ctx.previous_state;
   }
@@ -1062,7 +1057,7 @@ public:
 
     if (!strcmp(return_state->name, ctx.o_state.name))
     {
-      return return_state; // return to observation state
+      return return_state;  // return to observation state
     }
 
     if (ctx.namespace_path.empty())

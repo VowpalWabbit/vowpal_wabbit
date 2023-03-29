@@ -850,7 +850,6 @@ TEST(ParseDsjson, IglWithDefinitelyBadFlag)
 }
   )";
 
-
   auto vw = VW::initialize(vwtest::make_args(
       "--dsjson", "--experimental_igl", "--chain_hash", "--coin", "--cb_adf", "--no_stdin", "--quiet"));
   auto examples = vwtest::parse_dsjson(*vw, json_text);
@@ -971,8 +970,8 @@ TEST(ParseDsjson, CbWithObservations)
   // Compare action example namespace
   EXPECT_THAT(examples[1]->indices, ::testing::ElementsAre('b', 'c', 'f'));
   EXPECT_EQ(examples[1]->feature_space['b'].indices.size(), 2);
-  EXPECT_EQ(examples[1]->feature_space['b'].indices[0],
-      VW::hash_feature(*vw, "c_feature", VW::hash_space(*vw, "b_action")));
+  EXPECT_EQ(
+      examples[1]->feature_space['b'].indices[0], VW::hash_feature(*vw, "c_feature", VW::hash_space(*vw, "b_action")));
   EXPECT_EQ(examples[1]->feature_space['b'].values[0], 1);
   EXPECT_EQ(examples[1]->feature_space['b'].indices[1],
       VW::chain_hash(*vw, "d_feature", "strng", VW::hash_space(*vw, "b_action")));
@@ -984,8 +983,8 @@ TEST(ParseDsjson, CbWithObservations)
   EXPECT_EQ(examples[1]->feature_space['c'].values[0], 1);
 
   EXPECT_EQ(examples[1]->feature_space['f'].indices.size(), 1);
-  EXPECT_EQ(examples[1]->feature_space['f'].indices[0],
-      VW::hash_feature(*vw, "g_feature", VW::hash_space(*vw, "f_ns")));
+  EXPECT_EQ(
+      examples[1]->feature_space['f'].indices[0], VW::hash_feature(*vw, "g_feature", VW::hash_space(*vw, "f_ns")));
   EXPECT_FLOAT_EQ(examples[1]->feature_space['f'].values[0], 0.994963765f);
 
   EXPECT_THAT(examples[2]->indices, ::testing::ElementsAre('d'));
@@ -996,11 +995,9 @@ TEST(ParseDsjson, CbWithObservations)
 
   EXPECT_THAT(examples[3]->indices, ::testing::ElementsAre('e'));
   EXPECT_EQ(examples[3]->feature_space['e'].indices.size(), 2);
-  EXPECT_EQ(examples[3]->feature_space['e'].indices[0],
-      VW::hash_feature(*vw, "f1", VW::hash_space(*vw, "e_action")));
+  EXPECT_EQ(examples[3]->feature_space['e'].indices[0], VW::hash_feature(*vw, "f1", VW::hash_space(*vw, "e_action")));
   EXPECT_EQ(examples[3]->feature_space['e'].values[0], 1);
-  EXPECT_EQ(examples[3]->feature_space['e'].indices[1],
-      VW::chain_hash(*vw, "f2", "strng", VW::hash_space(*vw, "e_action")));
+  EXPECT_EQ(examples[3]->feature_space['e'].indices[1], VW::chain_hash(*vw, "f2", "strng", VW::hash_space(*vw, "e_action")));
   EXPECT_EQ(examples[3]->feature_space['e'].values[0], 1);
 
   // Observation examples
@@ -1008,9 +1005,8 @@ TEST(ParseDsjson, CbWithObservations)
 
   // Compare observation example namespace
   EXPECT_THAT(examples[4]->indices, ::testing::ElementsAre(' ', 'o'));
-  EXPECT_EQ(examples[4]->feature_space[' '].indices.size(), 2); // TODO: should remove EventID and ActionTaken
-  EXPECT_EQ(examples[4]->feature_space[' '].indices[0],
-      VW::hash_feature(*vw, "v", VW::hash_space(*vw, " ")));
+  EXPECT_EQ(examples[4]->feature_space[' '].indices.size(), 2);  // TODO: should remove EventID and ActionTaken
+  EXPECT_EQ(examples[4]->feature_space[' '].indices[0], VW::hash_feature(*vw, "v", VW::hash_space(*vw, " ")));
   EXPECT_EQ(examples[4]->feature_space[' '].values[0], 1);
 
   EXPECT_EQ(examples[4]->feature_space['o'].indices.size(), 1);

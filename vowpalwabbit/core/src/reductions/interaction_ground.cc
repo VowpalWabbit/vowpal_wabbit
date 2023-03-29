@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "vw/core/reductions/interaction_ground.h"
+
 #include "vw/common/vw_exception.h"
 #include "vw/config/options.h"
 #include "vw/config/options_cli.h"
@@ -10,14 +11,14 @@
 #include "vw/core/label_dictionary.h"
 #include "vw/core/label_parser.h"
 #include "vw/core/loss_functions.h"
+#include "vw/core/parse_primitives.h"
 #include "vw/core/prediction_type.h"
+#include "vw/core/reductions/cb/cb_adf.h"
 #include "vw/core/reductions/cb/cb_algs.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
-#include "vw/core/vw.h"
 #include "vw/core/simple_label.h"
-#include "vw/core/parse_primitives.h"
-#include "vw/core/reductions/cb/cb_adf.h"
+#include "vw/core/vw.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -42,7 +43,7 @@ public:
     }
   }
 
-  std::shared_ptr<VW::LEARNER::learner> setup_base_learner(size_t increment=1) override
+  std::shared_ptr<VW::LEARNER::learner> setup_base_learner(size_t increment = 1) override
   {
     if (_reduction_stack.size() == 0) { return _ik_base; }
 
@@ -144,15 +145,16 @@ void learn(interaction_ground& igl, learner& base, VW::multi_ex& ec_seq)
     igl.ik_ex.l.simple.label = i == chosen_action_idx ? 1.f : -1.f;
 
     auto action_score_iter = std::find_if(
-        action_scores.begin(), action_scores.end(), [&i](VW::action_score& element){ return element.action == i;} );
+        action_scores.begin(), action_scores.end(), [&i](VW::action_score& element) { return element.action == i; });
 
     float pa = action_score_iter->score;
 
-    if (i == chosen_action_idx) { igl.ik_ex.weight = 1/4.f / pa; }
-    else { igl.ik_ex.weight = 3/4.f / (1 - pa); }
+    if (i == chosen_action_idx) { igl.ik_ex.weight = 1 / 4.f / pa; }
+    else { igl.ik_ex.weight = 3 / 4.f / (1 - pa); }
 
     igl.ik_ex.interactions = &ik_interactions;
-    igl.ik_ex.extent_interactions = igl.extent_interactions; // TODO(low pri): not reuse igl.extent_interactions, need to add in feedback
+    // TODO(low pri): not reuse igl.extent_interactions, need to add in feedback
+    igl.ik_ex.extent_interactions = igl.extent_interactions;
 
     // 2. ik learn
     igl.ik_learner->learn(igl.ik_ex, 0);
@@ -226,7 +228,7 @@ void predict(interaction_ground& igl, learner& base, VW::multi_ex& ec_seq)
 
   if (observation_ex != nullptr) { ec_seq.push_back(observation_ex); }
 }
-} // namespace
+}  // namespace
 
 void print_update_igl(VW::workspace& all, VW::shared_data& /*sd*/, const interaction_ground& data,
     const VW::multi_ex& ec_seq, VW::io::logger& /*logger*/)
@@ -341,8 +343,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::interaction_ground_setup(V
   {
     pred_type = prediction_type_t::ACTION_PROBS;
   }
-  else
-  { THROW("--experimental_igl not implemented for this type of prediction"); }
+  else { THROW("--experimental_igl not implemented for this type of prediction"); }
 
   auto l = make_reduction_learner(
       std::move(ld), pi_learner, learn, predict, stack_builder.get_setupfn_name(interaction_ground_setup))

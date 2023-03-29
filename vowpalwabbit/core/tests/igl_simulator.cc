@@ -1,7 +1,9 @@
 
 #include "igl_simulator.h"
+
 #include "vw/core/vw.h"
 #include "vw/test_common/test_common.h"
+
 #include <fmt/format.h>
 
 namespace igl_simulator
@@ -16,11 +18,13 @@ std::string igl_sim::to_dsjson_format(const std::map<std::string, std::string>& 
   size_t chosen_index = 0;
   bool definitely_bad = feedback == "dislike";
 
-  for (size_t i = 0; i < a_s.size(); i++) {
+  for (size_t i = 0; i < a_s.size(); i++)
+  {
     a << a_s[i].action;
     p << a_s[i].score;
 
-    if (i != a_s.size() - 1) {
+    if (i != a_s.size() - 1)
+    {
       a << ",";
       p << ",";
     }
@@ -28,27 +32,27 @@ std::string igl_sim::to_dsjson_format(const std::map<std::string, std::string>& 
 
   for (size_t i = 0; i < actions.size(); i++)
   {
-    if (std::strcmp(actions[i].c_str(), chosen_action.c_str()) == 0) {
-      chosen_index = i;
-    }
+    if (std::strcmp(actions[i].c_str(), chosen_action.c_str()) == 0) { chosen_index = i; }
     multi << fmt::format("{{\"Action\": {{\"action={}\": 1}}}}", actions[i]);
 
-    if (i != actions.size() - 1) {
-      multi << ",";
-    }
+    if (i != actions.size() - 1) { multi << ","; }
   }
 
-  if (!chosen_action.empty()) {
+  if (!chosen_action.empty())
+  {
     // learn example
     ex << fmt::format(
-      "{{\"_label_cost\": 0,  \"_label_probability\": {}, \"_label_Action\": {}, \"_labelIndex\": {}, \"o\": [{{\"v\": {{\"v={}\": 1}}, \"_definitely_bad\": {}}}], \"a\": [{}], \"c\": {{\"User\": {{\"user={}\": 1, \"time={}\" : 1}}, \"_multi\": [{}]}}, \"p\":[{}]}}",
-      prob, chosen_index + 1, chosen_index, feedback, definitely_bad, a.str(), context.at("user"), context.at("time_of_day"), multi.str(), p.str());
+      "{{\"_label_cost\": 0,  \"_label_probability\": {}, \"_label_Action\": {}, \"_labelIndex\": {}, \"o\": "
+      "[{{\"v\": {{\"v={}\": 1}}, \"_definitely_bad\": {}}}], \"a\": [{}], \"c\": {{\"User\": {{\"user={}\": 1, "
+      "\"time={}\" : 1}}, \"_multi\": [{}]}}, \"p\":[{}]}}",
+      prob, chosen_index + 1, chosen_index, feedback, definitely_bad, a.str(), context.at("user"),
+      context.at("time_of_day"), multi.str(), p.str());
   }
-  else {
+  else
+  {
     // predict example
-    ex << fmt::format(
-      "{{ \"c\": {{\"User\": {{\"user={}\": 1, \"time={}\" : 1}}, \"_multi\": [{}]}}}}",
-      context.at("user"), context.at("time_of_day"), multi.str());
+    ex << fmt::format("{{ \"c\": {{\"User\": {{\"user={}\": 1, \"time={}\" : 1}}, \"_multi\": [{}]}}}}",
+        context.at("user"), context.at("time_of_day"), multi.str());
   }
 
   return ex.str();
@@ -75,7 +79,7 @@ std::string igl_sim::get_feedback(const std::string& user, const std::string& ch
 }
 
 igl_sim::igl_sim(uint64_t seed)
-: cb_sim(seed, false, {"politics", "sports", "music", "food", "finance", "health", "camping"})
+    : cb_sim(seed, false, {"politics", "sports", "music", "food", "finance", "health", "camping"})
 {
 }
 
@@ -123,4 +127,4 @@ std::vector<float> igl_sim::run_simulation(VW::workspace* igl_vw, size_t num_ite
   ctr.push_back(true_reward_sum / static_cast<float>(num_iterations));
   return ctr;
 }
-}
+}  // namespace igl_simulator

@@ -24,7 +24,7 @@ public:
   std::string sample_feedback(const std::map<std::string, float>& probs);
   std::string get_feedback(const std::string& pref, const std::string& chosen_action);
   float true_reward(const std::string& user, const std::string& action);
-  std::string to_dsjson_format(const std::map<std::string, std::string>& context, const std::string& chosen_action="",
-      float prob=0.f, std::string feedback="", VW::action_scores a_s={});
+  std::string to_dsjson_format(const std::map<std::string, std::string>& context, const std::string& chosen_action = "",
+      float prob=0.f, std::string feedback = "", VW::action_scores a_s = {});
 };
 }

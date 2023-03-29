@@ -27,10 +27,10 @@ separate_weights_vector get_separate_weights(std::unique_ptr<VW::workspace> vw)
 
   separate_weights_vector weights_vector;
 
-  while(iter < end)
+  while (iter < end)
   {
     bool non_zero = false;
-    for (int i=0; i < 6; i++)
+    for (size_t i = 0; i < 6; i++)
     {
       if (*iter[i] != 0.f) { non_zero = true; }
     }
@@ -60,7 +60,8 @@ std::vector<separate_weights_vector> split_weights(std::unique_ptr<VW::workspace
   while (iter < end)
   {
     bool non_zero = false;
-    for (int i=0; i < 6; i++) {
+    for (int i = 0; i < 6; i++)
+    {
       if (*iter[i] != 0.f) { non_zero = true; }
     }
     if (non_zero)
@@ -68,12 +69,12 @@ std::vector<separate_weights_vector> split_weights(std::unique_ptr<VW::workspace
       if ((iter.index_without_stride() & (2 - 1)) == 0)
       {
         sl_weights_vector.emplace_back(
-            iter.index_without_stride()>>1, *iter[0], *iter[1], *iter[2], *iter[3], *iter[4], *iter[5]);
+            iter.index_without_stride() >> 1, *iter[0], *iter[1], *iter[2], *iter[3], *iter[4], *iter[5]);
       }
       else
       {
         multi_weights_vector.emplace_back(
-            iter.index_without_stride()>>1, *iter[0], *iter[1], *iter[2], *iter[3], *iter[4], *iter[5]);
+            iter.index_without_stride() >> 1, *iter[0], *iter[1], *iter[2], *iter[3], *iter[4], *iter[5]);
       }
     }
 
@@ -89,31 +90,31 @@ std::vector<separate_weights_vector> split_weights(std::unique_ptr<VW::workspace
 TEST(Igl, ModelWeightsEqualToSeparateModelWeights)
 {
   example_vector sl_vector = {
-    {
-      "1 1.0 |User user=Tom time=afternoon |Action action=politics |v v=click ",
-      "-1 1.0 |User user=Tom time=afternoon |Action action=sports |v v=click ",
-      "-1 1.0 |User user=Tom time=afternoon |Action action=music |v v=click ",
-      "-1 1.0 |User user=Tom time=afternoon |Action action=food |v v=click ",
-    },
-    {
-      "-1 1.0 |User user=Anna time=morning |Action action=politics |v v=none ",
-      "-1 1.0 |User user=Anna time=morning |Action action=sports |v v=none ",
-      "-1 1.0 |User user=Anna time=morning |Action action=music |v v=none ",
-      "1 1.0 |User user=Anna time=morning |Action action=food |v v=none ",
-    },
-    {
-      "-1 1.0 |User user=Anna time=morning |Action action=politics |v v=skip ",
-      "-1 1.0 |User user=Anna time=morning |Action action=sports |v v=skip ",
-      "1 1.0 |User user=Anna time=morning |Action action=music |v v=skip ",
-      "-1 1.0 |User user=Anna time=morning |Action action=food |v v=skip ",
-    },
-    {
-      "-1 1.0 |User user=Tom time=afternoon |Action action=politics |v v=none ",
-      "-1 1.0 |User user=Tom time=afternoon |Action action=sports |v v=none ",
-      "-1 1.0 |User user=Tom time=afternoon |Action action=music |v v=none ",
-      "1 1.0 |User user=Tom time=afternoon |Action action=food |v v=none ",
-    },
-  };
+      {
+          "1 1.0 |User user=Tom time=afternoon |Action action=politics |v v=click ",
+          "-1 1.0 |User user=Tom time=afternoon |Action action=sports |v v=click ",
+          "-1 1.0 |User user=Tom time=afternoon |Action action=music |v v=click ",
+          "-1 1.0 |User user=Tom time=afternoon |Action action=food |v v=click ",
+      },
+      {
+          "-1 1.0 |User user=Anna time=morning |Action action=politics |v v=none ",
+          "-1 1.0 |User user=Anna time=morning |Action action=sports |v v=none ",
+          "-1 1.0 |User user=Anna time=morning |Action action=music |v v=none ",
+          "1 1.0 |User user=Anna time=morning |Action action=food |v v=none ",
+      },
+      {
+          "-1 1.0 |User user=Anna time=morning |Action action=politics |v v=skip ",
+          "-1 1.0 |User user=Anna time=morning |Action action=sports |v v=skip ",
+          "1 1.0 |User user=Anna time=morning |Action action=music |v v=skip ",
+          "-1 1.0 |User user=Anna time=morning |Action action=food |v v=skip ",
+      },
+      {
+          "-1 1.0 |User user=Tom time=afternoon |Action action=politics |v v=none ",
+          "-1 1.0 |User user=Tom time=afternoon |Action action=sports |v v=none ",
+          "-1 1.0 |User user=Tom time=afternoon |Action action=music |v v=none ",
+          "1 1.0 |User user=Tom time=afternoon |Action action=food |v v=none ",
+      },
+    };
 
 
   std::vector<std::string> multi_vector = {
@@ -134,12 +135,12 @@ TEST(Igl, ModelWeightsEqualToSeparateModelWeights)
   // two vw instance
   auto sl_vw = VW::initialize(vwtest::make_args(
       "--link=logistic", "--loss_function=logistic", "--coin", "--cubic", "cav", "--noconstant", "--quiet"));
-  auto multi_vw = VW::initialize(vwtest::make_args(
-      "--cb_explore_adf", "--coin", "--noconstant", "--dsjson", "-q", "ca", "--quiet"));
+  auto multi_vw = VW::initialize(
+      vwtest::make_args("--cb_explore_adf", "--coin", "--noconstant", "--dsjson", "-q", "ca", "--quiet"));
 
   // IGL instance
-  auto igl_vw = VW::initialize(vwtest::make_args("--cb_explore_adf", "--coin", "--experimental_igl",
-      "--noconstant", "--dsjson", "-b", "19", "-q", "ca", "--quiet"));
+  auto igl_vw = VW::initialize(vwtest::make_args("--cb_explore_adf", "--coin", "--experimental_igl", "--noconstant",
+      "--dsjson", "-b", "19", "-q", "ca", "--quiet"));
 
   // train separately
   for (size_t i = 0; i < sl_vector.size(); i++)
@@ -177,7 +178,7 @@ TEST(Igl, ModelWeightsEqualToSeparateModelWeights)
   EXPECT_GT(sl_weights.size(), 0);
   for (size_t i = 0; i < sl_weights.size(); i++)
   {
-    EXPECT_EQ(std::get<0>(sl_weights[i]), std::get<0>(igl_weights[0][i])); // feature hash
+    EXPECT_EQ(std::get<0>(sl_weights[i]), std::get<0>(igl_weights[0][i]));  // feature hash
     EXPECT_NEAR(std::get<1>(sl_weights[i]), std::get<1>(igl_weights[0][i]), vwtest::EXPLICIT_FLOAT_TOL);
     EXPECT_NEAR(std::get<2>(sl_weights[i]), std::get<2>(igl_weights[0][i]), vwtest::EXPLICIT_FLOAT_TOL);
     EXPECT_NEAR(std::get<3>(sl_weights[i]), std::get<3>(igl_weights[0][i]), vwtest::EXPLICIT_FLOAT_TOL);
@@ -202,8 +203,8 @@ TEST(Igl, VerifyRewardModelWeightsWithLabelAndWeight)
 
   std::string igl_ex_str =
       R"({"_label_cost": 0, "_label_probability": 1.0, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v=none": 1}, "_definitely_bad": false}], "a": [0], "c": {"User": {"user=Anna": 1, "time_of_day=afternoon": 1}, "_multi": [{"Action": {"action=politics": 1}}]}, "p": [1.0]})";
-  auto igl_vw = VW::initialize(vwtest::make_args("--cb_explore_adf", "--coin", "--experimental_igl",
-      "--noconstant", "--dsjson", "-b", "19", "-q", "UA", "--quiet"));
+  auto igl_vw = VW::initialize(vwtest::make_args("--cb_explore_adf", "--coin", "--experimental_igl", "--noconstant",
+      "--dsjson", "-b", "19", "-q", "UA", "--quiet"));
 
   auto igl_ex = vwtest::parse_dsjson(*igl_vw, igl_ex_str);
   VW::setup_examples(*igl_vw, igl_ex);

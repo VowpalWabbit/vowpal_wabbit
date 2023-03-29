@@ -50,7 +50,10 @@ void predict_or_learn(sfm_data& data, VW::LEARNER::learner& base, VW::multi_ex& 
     // merge sequences
     for (auto& example : ec_seq)
     {
-      if (is_cb_with_observations && example->l.cb_with_observations.is_observation) { continue; }
+      if (is_cb_with_observations)
+      {
+        if (example->l.cb_with_observations.is_observation) { continue; }
+      }
 
       VW::details::append_example_namespaces_from_example(*example, *shared_example);
       if (store_shared_ex_in_reduction_features)
@@ -73,10 +76,9 @@ void predict_or_learn(sfm_data& data, VW::LEARNER::learner& base, VW::multi_ex& 
         {
           for (auto& example : ec_seq)
           {
-            if (data.label_type == VW::label_type_t::CB_WITH_OBSERVATIONS) {
-              if (example->l.cb_with_observations.is_observation) {
-                continue;
-              }
+            if (is_cb_with_observations)
+            {
+              if (example->l.cb_with_observations.is_observation) { continue; }
             }
 
             VW::details::truncate_example_namespaces_from_example(*example, *shared_example);
@@ -139,18 +141,18 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::shared_feature_merger_setu
     // Both label and prediction types inherit that of base.
     learner = VW::LEARNER::make_reduction_learner(std::move(data), multi_base, predict_or_learn<true, true>,
         predict_or_learn<false, true>, stack_builder.get_setupfn_name(shared_feature_merger_setup))
-                      .set_learn_returns_prediction(base->learn_returns_prediction)
-                      .set_persist_metrics(persist)
-                      .build();
+                  .set_learn_returns_prediction(base->learn_returns_prediction)
+                  .set_persist_metrics(persist)
+                  .build();
   }
   else
   {
     // Both label and prediction types inherit that of base.
     learner = VW::LEARNER::make_reduction_learner(std::move(data), multi_base, predict_or_learn<true, false>,
         predict_or_learn<false, false>, stack_builder.get_setupfn_name(shared_feature_merger_setup))
-                      .set_learn_returns_prediction(base->learn_returns_prediction)
-                      .set_persist_metrics(persist)
-                      .build();
+                  .set_learn_returns_prediction(base->learn_returns_prediction)
+                  .set_persist_metrics(persist)
+                  .build();
   }
 
   // TODO: Incorrect feature numbers will be reported without merging the example namespaces from the
