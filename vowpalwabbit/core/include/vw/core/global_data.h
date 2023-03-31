@@ -107,6 +107,7 @@ class feature_tweaks_config
 {
 public:
   bool add_constant;
+  float initial_constant;
   bool permutations;  // if true - permutations of features generated instead of simple combinations. false by default
   // Referenced by examples as their set of interactions. Can be overriden by learners.
   std::vector<std::vector<namespace_index>> interactions;
