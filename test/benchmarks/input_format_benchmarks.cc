@@ -23,14 +23,14 @@ std::shared_ptr<std::vector<char>> get_cache_buffer(const std::string& es)
   auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(std::vector<std::string>{"--cb", "2", "--quiet"}));
 
   auto buffer = std::make_shared<std::vector<char>>();
-  vw->example_parser->output.add_file(VW::io::create_vector_writer(buffer));
+  vw->parser_runtime.example_parser->output.add_file(VW::io::create_vector_writer(buffer));
   auto* ae = &VW::get_unused_example(vw.get());
   VW::parsers::text::read_line(*vw, ae, const_cast<char*>(es.c_str()));
 
   VW::parsers::cache::details::cache_temp_buffer temp_buf;
-  VW::parsers::cache::write_example_to_cache(
-      vw->example_parser->output, ae, vw->example_parser->lbl_parser, vw->parse_mask, temp_buf);
-  vw->example_parser->output.flush();
+  VW::parsers::cache::write_example_to_cache(vw->parser_runtime.example_parser->output, ae,
+      vw->parser_runtime.example_parser->lbl_parser, vw->runtime_state.parse_mask, temp_buf);
+  vw->parser_runtime.example_parser->output.flush();
   VW::finish_example(*vw, *ae);
 
   return buffer;
@@ -72,7 +72,7 @@ static void bench_text_io_buf(benchmark::State& state, ExtraArgs&&... extra_args
 
   for (auto _ : state)
   {
-    vw->example_parser->reader(vw.get(), buffer, examples);
+    vw->parser_runtime.example_parser->reader(vw.get(), buffer, examples);
     VW::empty_example(*vw, *examples[0]);
     buffer.reset();
     benchmark::ClobberMemory();
@@ -93,7 +93,7 @@ static void benchmark_example_reuse(benchmark::State& state)
   for (auto _ : state)
   {
     examples.push_back(&VW::get_unused_example(vw.get()));
-    vw->example_parser->reader(vw.get(), buffer, examples);
+    vw->parser_runtime.example_parser->reader(vw.get(), buffer, examples);
     VW::finish_example(*vw, *examples[0]);
     buffer.reset();
     examples.clear();

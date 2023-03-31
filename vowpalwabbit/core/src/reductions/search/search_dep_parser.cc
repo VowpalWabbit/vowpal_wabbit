@@ -96,11 +96,11 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
   data->ex.indices.push_back(VAL_NAMESPACE);
   for (size_t i = 1; i < 14; i++) { data->ex.indices.push_back(static_cast<unsigned char>(i) + 'A'); }
   data->ex.indices.push_back(VW::details::CONSTANT_NAMESPACE);
-  data->ex.interactions = &sch.get_vw_pointer_unsafe().interactions;
-  data->ex.extent_interactions = &sch.get_vw_pointer_unsafe().extent_interactions;
+  data->ex.interactions = &sch.get_vw_pointer_unsafe().feature_tweaks_config.interactions;
+  data->ex.extent_interactions = &sch.get_vw_pointer_unsafe().feature_tweaks_config.extent_interactions;
 
-  if (data->one_learner) { sch.set_num_learners(1); }
-  else { sch.set_num_learners(3); }
+  if (data->one_learner) { sch.set_feature_width(1); }
+  else { sch.set_feature_width(3); }
 
   std::vector<std::vector<VW::namespace_index>> newpairs{{'B', 'C'}, {'B', 'E'}, {'B', 'B'}, {'C', 'C'}, {'D', 'D'},
       {'E', 'E'}, {'F', 'F'}, {'G', 'G'}, {'E', 'F'}, {'B', 'H'}, {'B', 'J'}, {'E', 'L'}, {'d', 'B'}, {'d', 'C'},
@@ -109,9 +109,11 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
       {'B', 'C', 'D'}, {'B', 'E', 'L'}, {'E', 'L', 'M'}, {'B', 'H', 'I'}, {'B', 'C', 'C'}, {'B', 'E', 'J'},
       {'B', 'E', 'H'}, {'B', 'J', 'K'}, {'B', 'E', 'N'}};
 
-  all.interactions.clear();
-  all.interactions.insert(std::end(all.interactions), std::begin(newpairs), std::end(newpairs));
-  all.interactions.insert(std::end(all.interactions), std::begin(newtriples), std::end(newtriples));
+  all.feature_tweaks_config.interactions.clear();
+  all.feature_tweaks_config.interactions.insert(
+      std::end(all.feature_tweaks_config.interactions), std::begin(newpairs), std::end(newpairs));
+  all.feature_tweaks_config.interactions.insert(
+      std::end(all.feature_tweaks_config.interactions), std::begin(newtriples), std::end(newtriples));
 
   if (data->cost_to_go) { sch.set_options(AUTO_CONDITION_FEATURES | NO_CACHING | ACTION_COSTS); }
   else { sch.set_options(AUTO_CONDITION_FEATURES | NO_CACHING); }
@@ -251,7 +253,7 @@ void extract_features(Search::search& sch, uint32_t idx, VW::multi_ex& ec)
   task_data* data = sch.get_task_data<task_data>();
   reset_ex(data->ex);
   uint64_t mask = sch.get_mask();
-  uint64_t multiplier = static_cast<uint64_t>(all.wpp) << all.weights.stride_shift();
+  uint64_t multiplier = static_cast<uint64_t>(all.reduction_state.total_feature_width) << all.weights.stride_shift();
 
   auto& stack = data->stack;
   auto& tags = data->tags;

@@ -104,23 +104,23 @@ void print_label_pred(VW::workspace& all, const VW::example& ec, uint32_t predic
 {
   VW::string_view sv_label = all.sd->ldict->get(ec.l.multi.label);
   VW::string_view sv_pred = all.sd->ldict->get(prediction);
-  all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass,
-      sv_label.empty() ? "unknown" : std::string{sv_label}, sv_pred.empty() ? "unknown" : std::string{sv_pred},
-      ec.get_num_features());
+  all.sd->print_update(*all.output_runtime.trace_message, all.passes_config.holdout_set_off,
+      all.passes_config.current_pass, sv_label.empty() ? "unknown" : std::string{sv_label},
+      sv_pred.empty() ? "unknown" : std::string{sv_pred}, ec.get_num_features());
 }
 
 void print_probability(VW::workspace& all, const VW::example& ec, uint32_t prediction)
 {
   std::stringstream pred_ss;
-  uint32_t pred_ind = (all.indexing == 0) ? prediction : prediction - 1;
+  uint32_t pred_ind = (all.runtime_state.indexing == 0) ? prediction : prediction - 1;
   pred_ss << prediction << "(" << std::setw(VW::details::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION)
           << std::setprecision(0) << std::fixed << 100 * ec.pred.scalars[pred_ind] << "%)";
 
   std::stringstream label_ss;
   label_ss << ec.l.multi.label;
 
-  all.sd->print_update(
-      *all.trace_message, all.holdout_set_off, all.current_pass, label_ss.str(), pred_ss.str(), ec.get_num_features());
+  all.sd->print_update(*all.output_runtime.trace_message, all.passes_config.holdout_set_off,
+      all.passes_config.current_pass, label_ss.str(), pred_ss.str(), ec.get_num_features());
 }
 
 void print_score(VW::workspace& all, const VW::example& ec, uint32_t prediction)
@@ -131,20 +131,20 @@ void print_score(VW::workspace& all, const VW::example& ec, uint32_t prediction)
   std::stringstream label_ss;
   label_ss << ec.l.multi.label;
 
-  all.sd->print_update(
-      *all.trace_message, all.holdout_set_off, all.current_pass, label_ss.str(), pred_ss.str(), ec.get_num_features());
+  all.sd->print_update(*all.output_runtime.trace_message, all.passes_config.holdout_set_off,
+      all.passes_config.current_pass, label_ss.str(), pred_ss.str(), ec.get_num_features());
 }
 
 void direct_print_update(VW::workspace& all, const VW::example& ec, uint32_t prediction)
 {
-  all.sd->print_update(
-      *all.trace_message, all.holdout_set_off, all.current_pass, ec.l.multi.label, prediction, ec.get_num_features());
+  all.sd->print_update(*all.output_runtime.trace_message, all.passes_config.holdout_set_off,
+      all.passes_config.current_pass, ec.l.multi.label, prediction, ec.get_num_features());
 }
 
 template <void (*T)(VW::workspace&, const VW::example&, uint32_t)>
 void print_update(VW::workspace& all, const VW::example& ec, uint32_t prediction)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.output_config.quiet && !all.reduction_state.bfgs)
   {
     if (!all.sd->ldict) { T(all, ec, prediction); }
     else { print_label_pred(all, ec, ec.pred.multiclass); }
@@ -168,7 +168,7 @@ void VW::details::finish_multiclass_example(VW::workspace& all, VW::example& ec,
 
   all.sd->update(ec.test_only, update_loss && (ec.l.multi.is_labeled()), loss, ec.weight, ec.get_num_features());
 
-  for (auto& sink : all.final_prediction_sink)
+  for (auto& sink : all.output_runtime.final_prediction_sink)
   {
     if (!all.sd->ldict) { all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag, all.logger); }
     else
@@ -193,7 +193,7 @@ void VW::details::update_stats_multiclass_label(
 void VW::details::output_example_prediction_multiclass_label(
     VW::workspace& all, const VW::example& ec, VW::io::logger& /* logger */)
 {
-  for (auto& sink : all.final_prediction_sink)
+  for (auto& sink : all.output_runtime.final_prediction_sink)
   {
     if (!all.sd->ldict) { all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag, all.logger); }
     else

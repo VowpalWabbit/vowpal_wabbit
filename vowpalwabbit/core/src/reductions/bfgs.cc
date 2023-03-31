@@ -174,7 +174,7 @@ float predict_and_gradient(VW::workspace& all, VW::example& ec)
   auto& ld = ec.l.simple;
   if (all.set_minmax) { all.set_minmax(ld.label); }
 
-  float loss_grad = all.loss->first_derivative(all.sd.get(), fp, ld.label) * ec.weight;
+  float loss_grad = all.loss_config.loss->first_derivative(all.sd.get(), fp, ld.label) * ec.weight;
   VW::foreach_feature<float, add_grad>(all, ec, loss_grad);
 
   return fp;
@@ -184,7 +184,8 @@ inline void add_precond(float& d, float f, float& fw) { (&fw)[W_COND] += d * f *
 
 void update_preconditioner(VW::workspace& all, VW::example& ec)
 {
-  float curvature = all.loss->second_derivative(all.sd.get(), ec.pred.scalar, ec.l.simple.label) * ec.weight;
+  float curvature =
+      all.loss_config.loss->second_derivative(all.sd.get(), ec.pred.scalar, ec.l.simple.label) * ec.weight;
   VW::foreach_feature<float, add_precond>(all, ec, curvature);
 }
 
@@ -270,7 +271,7 @@ void bfgs_iter_start(
     ((&(*w))[W_GT]) = 0;
   }
   lastj = 0;
-  if (!all.quiet)
+  if (!all.output_config.quiet)
   {
     fprintf(stderr, "%-10.5f\t%-10.5f\t%-10s\t%-10s\t%-10s\t", g1_g1 / (importance_weight_sum * importance_weight_sum),
         g1_Hg1 / importance_weight_sum, "", "", "");
@@ -321,12 +322,12 @@ void bfgs_iter_middle(
       (&(*w))[W_GT] = 0;
     }
     // TODO: spdlog can't print partial log lines. Figure out how to handle this..
-    if (!all.quiet) { fprintf(stderr, "%f\t", beta); }
+    if (!all.output_config.quiet) { fprintf(stderr, "%f\t", beta); }
     return;
   }
   else
   {
-    if (!all.quiet) { fprintf(stderr, "%-10s\t", ""); }
+    if (!all.output_config.quiet) { fprintf(stderr, "%-10s\t", ""); }
   }
 
   // implement bfgs
@@ -440,7 +441,7 @@ double wolfe_eval(VW::workspace& all, bfgs& b, float* mem, double loss_sum, doub
   double wolfe2 = g1_d / g0_d;
   // double new_step_cross = (loss_sum-previous_loss_sum-g1_d*step)/(g0_d-g1_d);
 
-  if (!all.quiet)
+  if (!all.output_config.quiet)
   {
     fprintf(stderr, "%-10.5f\t%-10.5f\t%s%-10f\t%-10f\t", g1_g1 / (importance_weight_sum * importance_weight_sum),
         g1_Hg1 / importance_weight_sum, " ", wolfe1, wolfe2);
@@ -490,7 +491,7 @@ double add_regularization(VW::workspace& all, bfgs& b, float regularization, T& 
 
   // if we're not regularizing the intercept term, then subtract it off from the result above
   // when accessing weights[constant], always use weights.strided_index(constant)
-  if (all.no_bias)
+  if (all.loss_config.no_bias)
   {
     if (b.regularizers == nullptr)
     {
@@ -557,7 +558,7 @@ void finalize_preconditioner(VW::workspace& all, bfgs& b, float regularization)
 template <class T>
 void preconditioner_to_regularizer(VW::workspace& all, bfgs& b, float regularization, T& weights)
 {
-  uint32_t length = 1 << all.num_bits;
+  uint32_t length = 1 << all.initial_weights_config.num_bits;
 
   if (b.regularizers == nullptr)
   {
@@ -655,27 +656,27 @@ int process_pass(VW::workspace& all, bfgs& b)
 {
   int status = LEARN_OK;
 
-  finalize_preconditioner(all, b, all.l2_lambda);
+  finalize_preconditioner(all, b, all.loss_config.l2_lambda);
   /********************************************************************/
   /* A) FIRST PASS FINISHED: INITIALIZE FIRST LINE SEARCH *************/
   /********************************************************************/
   if (b.first_pass)
   {
-    if (all.all_reduce != nullptr)
+    if (all.runtime_state.all_reduce != nullptr)
     {
       VW::details::accumulate(all, all.weights, W_COND);  // Accumulate preconditioner
       float temp = static_cast<float>(b.importance_weight_sum);
       b.importance_weight_sum = VW::details::accumulate_scalar(all, temp);
     }
-    // finalize_preconditioner(all, b, all.l2_lambda);
-    if (all.all_reduce != nullptr)
+    // finalize_preconditioner(all, b, all.loss_config.l2_lambda);
+    if (all.runtime_state.all_reduce != nullptr)
     {
       float temp = static_cast<float>(b.loss_sum);
       b.loss_sum = VW::details::accumulate_scalar(all, temp);  // Accumulate loss_sums
       VW::details::accumulate(all, all.weights, 1);            // Accumulate gradients from all nodes
     }
-    if (all.l2_lambda > 0.) { b.loss_sum += add_regularization(all, b, all.l2_lambda); }
-    if (!all.quiet)
+    if (all.loss_config.l2_lambda > 0.) { b.loss_sum += add_regularization(all, b, all.loss_config.l2_lambda); }
+    if (!all.output_config.quiet)
     {
       fprintf(stderr, "%2lu %-10.5f\t", static_cast<long unsigned int>(b.current_pass) + 1,
           b.loss_sum / b.importance_weight_sum);
@@ -697,7 +698,7 @@ int process_pass(VW::workspace& all, bfgs& b)
       b.t_end_global = std::chrono::system_clock::now();
       b.net_time = static_cast<double>(
           std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
-      if (!all.quiet) { fprintf(stderr, "%-10s\t%-10.5f\t%-.5f\n", "", d_mag, b.step_size); }
+      if (!all.output_config.quiet) { fprintf(stderr, "%-10s\t%-10.5f\t%-.5f\n", "", d_mag, b.step_size); }
       b.predictions.clear();
       update_weight(all, b.step_size);
     }
@@ -708,16 +709,16 @@ int process_pass(VW::workspace& all, bfgs& b)
     /********************************************************************/
     if (b.gradient_pass)  // We just finished computing all gradients
     {
-      if (all.all_reduce != nullptr)
+      if (all.runtime_state.all_reduce != nullptr)
       {
         float t = static_cast<float>(b.loss_sum);
         b.loss_sum = VW::details::accumulate_scalar(all, t);  // Accumulate loss_sums
         VW::details::accumulate(all, all.weights, 1);         // Accumulate gradients from all nodes
       }
-      if (all.l2_lambda > 0.) { b.loss_sum += add_regularization(all, b, all.l2_lambda); }
-      if (!all.quiet)
+      if (all.loss_config.l2_lambda > 0.) { b.loss_sum += add_regularization(all, b, all.loss_config.l2_lambda); }
+      if (!all.output_config.quiet)
       {
-        if (!all.holdout_set_off && b.current_pass >= 1)
+        if (!all.passes_config.holdout_set_off && b.current_pass >= 1)
         {
           if (all.sd->holdout_sum_loss_since_last_pass == 0. && all.sd->weighted_holdout_examples_since_last_pass == 0.)
           {
@@ -760,7 +761,10 @@ int process_pass(VW::workspace& all, bfgs& b)
         b.net_time = static_cast<double>(
             std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
         float ratio = (b.step_size == 0.f) ? 0.f : static_cast<float>(new_step) / b.step_size;
-        if (!all.quiet) { fprintf(stderr, "%-10s\t%-10s\t(revise x %.1f)\t%-.5f\n", "", "", ratio, new_step); }
+        if (!all.output_config.quiet)
+        {
+          fprintf(stderr, "%-10s\t%-10s\t(revise x %.1f)\t%-.5f\n", "", "", ratio, new_step);
+        }
         b.predictions.clear();
         update_weight(all, static_cast<float>(-b.step_size + new_step));
         b.step_size = static_cast<float>(new_step);
@@ -810,7 +814,7 @@ int process_pass(VW::workspace& all, bfgs& b)
           b.t_end_global = std::chrono::system_clock::now();
           b.net_time = static_cast<double>(
               std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
-          if (!all.quiet) { fprintf(stderr, "%-10s\t%-10.5f\t%-.5f\n", "", d_mag, b.step_size); }
+          if (!all.output_config.quiet) { fprintf(stderr, "%-10s\t%-10.5f\t%-.5f\n", "", d_mag, b.step_size); }
           b.predictions.clear();
           update_weight(all, b.step_size);
         }
@@ -822,12 +826,15 @@ int process_pass(VW::workspace& all, bfgs& b)
     /********************************************************************/
     else  // just finished all second gradients
     {
-      if (all.all_reduce != nullptr)
+      if (all.runtime_state.all_reduce != nullptr)
       {
         float t = static_cast<float>(b.curvature);
         b.curvature = VW::details::accumulate_scalar(all, t);  // Accumulate curvatures
       }
-      if (all.l2_lambda > 0.) { b.curvature += regularizer_direction_magnitude(all, b, all.l2_lambda); }
+      if (all.loss_config.l2_lambda > 0.)
+      {
+        b.curvature += regularizer_direction_magnitude(all, b, all.loss_config.l2_lambda);
+      }
       float dd = static_cast<float>(derivative_in_direction(all, b, b.mem, b.origin));
       if (b.curvature == 0. && dd != 0.)
       {
@@ -851,7 +858,7 @@ int process_pass(VW::workspace& all, bfgs& b)
       b.net_time = static_cast<double>(
           std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
 
-      if (!all.quiet)
+      if (!all.output_config.quiet)
       {
         fprintf(stderr, "%-10.5f\t%-10.5f\t%-.5f\n", b.curvature / b.importance_weight_sum, d_mag, b.step_size);
       }
@@ -863,17 +870,20 @@ int process_pass(VW::workspace& all, bfgs& b)
 
   if (b.output_regularizer)  // need to accumulate and place the regularizer.
   {
-    if (all.all_reduce != nullptr)
+    if (all.runtime_state.all_reduce != nullptr)
     {
       VW::details::accumulate(all, all.weights, W_COND);  // Accumulate preconditioner
     }
-    // preconditioner_to_regularizer(all, b, all.l2_lambda);
+    // preconditioner_to_regularizer(all, b, all.loss_config.l2_lambda);
   }
   b.t_end_global = std::chrono::system_clock::now();
   b.net_time = static_cast<double>(
       std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
 
-  if (all.save_per_pass) { VW::details::save_predictor(all, all.final_regressor_name, b.current_pass); }
+  if (all.output_model_config.save_per_pass)
+  {
+    VW::details::save_predictor(all, all.output_model_config.final_regressor_name, b.current_pass);
+  }
   return status;
 }
 
@@ -888,7 +898,7 @@ void process_example(VW::workspace& all, bfgs& b, VW::example& ec)
   if (b.gradient_pass)
   {
     ec.pred.scalar = predict_and_gradient(all, ec);  // w[0] & w[1]
-    ec.loss = all.loss->get_loss(all.sd.get(), ec.pred.scalar, ld.label) * ec.weight;
+    ec.loss = all.loss_config.loss->get_loss(all.sd.get(), ec.pred.scalar, ld.label) * ec.weight;
     b.loss_sum += ec.loss;
     b.predictions.push_back(ec.pred.scalar);
   }
@@ -904,8 +914,8 @@ void process_example(VW::workspace& all, bfgs& b, VW::example& ec)
     }
     ec.pred.scalar = b.predictions[b.example_number];
     ec.partial_prediction = b.predictions[b.example_number];
-    ec.loss = all.loss->get_loss(all.sd.get(), ec.pred.scalar, ld.label) * ec.weight;
-    float sd = all.loss->second_derivative(all.sd.get(), b.predictions[b.example_number++], ld.label);
+    ec.loss = all.loss_config.loss->get_loss(all.sd.get(), ec.pred.scalar, ld.label) * ec.weight;
+    float sd = all.loss_config.loss->second_derivative(all.sd.get(), b.predictions[b.example_number++], ld.label);
     b.curvature += (static_cast<double>(d_dot_x)) * d_dot_x * sd * ec.weight;
   }
   ec.updated_prediction = ec.pred.scalar;
@@ -929,16 +939,17 @@ void end_pass(bfgs& b)
       // reaching the max number of passes regardless of convergence
       if (b.final_pass == b.current_pass)
       {
-        *(b.all->trace_message) << "Maximum number of passes reached. ";
+        *(b.all->output_runtime.trace_message) << "Maximum number of passes reached. ";
         if (!b.output_regularizer)
         {
-          *(b.all->trace_message) << "To optimize further, increase the number of passes\n";
+          *(b.all->output_runtime.trace_message) << "To optimize further, increase the number of passes\n";
         }
         if (b.output_regularizer)
         {
-          *(b.all->trace_message) << "\nRegular model file has been created. ";
-          *(b.all->trace_message) << "Output feature regularizer file is created only when the convergence is reached. "
-                                     "Try increasing the number of passes for convergence\n";
+          *(b.all->output_runtime.trace_message) << "\nRegular model file has been created. ";
+          *(b.all->output_runtime.trace_message)
+              << "Output feature regularizer file is created only when the convergence is reached. "
+                 "Try increasing the number of passes for convergence\n";
           b.output_regularizer = false;
         }
       }
@@ -951,21 +962,21 @@ void end_pass(bfgs& b)
         // Reset preconditioner to zero so that it is correctly recomputed in the next pass
         zero_preconditioner(*all);
       }
-      if (!all->holdout_set_off)
+      if (!all->passes_config.holdout_set_off)
       {
         if (VW::details::summarize_holdout_set(*all, b.no_win_counter))
         {
-          VW::details::finalize_regressor(*all, all->final_regressor_name);
+          VW::details::finalize_regressor(*all, all->output_model_config.final_regressor_name);
         }
         if (b.early_stop_thres == b.no_win_counter)
         {
           VW::details::set_done(*all);
-          *(b.all->trace_message) << "Early termination reached w.r.t. holdout set error";
+          *(b.all->output_runtime.trace_message) << "Early termination reached w.r.t. holdout set error";
         }
       }
       if (b.final_pass == b.current_pass)
       {
-        VW::details::finalize_regressor(*all, all->final_regressor_name);
+        VW::details::finalize_regressor(*all, all->output_model_config.final_regressor_name);
         VW::details::set_done(*all);
       }
     }
@@ -999,11 +1010,11 @@ void learn(bfgs& b, VW::example& ec)
 
 void save_load_regularizer(VW::workspace& all, bfgs& b, VW::io_buf& model_file, bool read, bool text)
 {
-  uint32_t length = 2 * (1 << all.num_bits);
+  uint32_t length = 2 * (1 << all.initial_weights_config.num_bits);
   uint32_t i = 0;
   size_t brw = 1;
 
-  if (b.output_regularizer && !read) { preconditioner_to_regularizer(*(b.all), b, b.all->l2_lambda); }
+  if (b.output_regularizer && !read) { preconditioner_to_regularizer(*(b.all), b, b.all->loss_config.l2_lambda); }
 
   do {
     brw = 1;
@@ -1041,12 +1052,12 @@ void save_load(bfgs& b, VW::io_buf& model_file, bool read, bool text)
 {
   VW::workspace* all = b.all;
 
-  uint32_t length = 1 << all->num_bits;
+  uint32_t length = 1 << all->initial_weights_config.num_bits;
 
   if (read)
   {
     VW::details::initialize_regressor(*all);
-    if (all->per_feature_regularizer_input != "")
+    if (all->initial_weights_config.per_feature_regularizer_input != "")
     {
       b.regularizers = VW::details::calloc_or_throw<VW::weight>(2 * length);
       if (b.regularizers == nullptr) THROW("Failed to allocate regularizers array: try decreasing -b <bits>");
@@ -1068,7 +1079,7 @@ void save_load(bfgs& b, VW::io_buf& model_file, bool read, bool text)
     b.net_time = 0.0;
     b.t_start_global = std::chrono::system_clock::now();
 
-    if (!all->quiet)
+    if (!all->output_config.quiet)
     {
       const char* header_fmt = "%2s %-10s\t%-10s\t%-10s\t %-10s\t%-10s\t%-10s\t%-10s\t%-10s\t%-s\n";
       fprintf(stderr, header_fmt, "##", "avg. loss", "der. mag.", "d. m. cond.", "wolfe1", "wolfe2", "mix fraction",
@@ -1078,18 +1089,20 @@ void save_load(bfgs& b, VW::io_buf& model_file, bool read, bool text)
 
     if (b.regularizers != nullptr)
     {
-      all->l2_lambda = 1;  // To make sure we are adding the regularization
+      all->loss_config.l2_lambda = 1;  // To make sure we are adding the regularization
     }
-    b.output_regularizer = (all->per_feature_regularizer_output != "" || all->per_feature_regularizer_text != "");
+    b.output_regularizer = (all->output_model_config.per_feature_regularizer_output != "" ||
+        all->output_model_config.per_feature_regularizer_text != "");
     reset_state(*all, b, false);
   }
 
-  // bool reg_vector = b.output_regularizer || all->per_feature_regularizer_input.length() > 0;
-  bool reg_vector = (b.output_regularizer && !read) || (all->per_feature_regularizer_input.length() > 0 && read);
+  // bool reg_vector = b.output_regularizer || all->initial_weights_config.per_feature_regularizer_input.length() > 0;
+  bool reg_vector = (b.output_regularizer && !read) ||
+      (all->initial_weights_config.per_feature_regularizer_input.length() > 0 && read);
 
   if (model_file.num_files() > 0)
   {
-    if (all->save_resume)
+    if (all->output_model_config.save_resume)
     {
       const auto* const msg =
           "BFGS does not support models with save_resume data. Only models produced and consumed with "
@@ -1145,7 +1158,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::bfgs_setup(VW::setup_base_
   b->gradient_pass = true;
   b->preconditioner_pass = true;
   b->backstep_on = false;
-  b->final_pass = all.numpasses;
+  b->final_pass = all.runtime_config.numpasses;
   b->no_win_counter = 0;
 
   if (bfgs_enabled)
@@ -1155,7 +1168,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::bfgs_setup(VW::setup_base_
     b->hessian_on = local_hessian_on;
   }
 
-  if (!all.holdout_set_off)
+  if (!all.passes_config.holdout_set_off)
   {
     all.sd->holdout_best_loss = FLT_MAX;
     b->early_stop_thres = options.get_typed_option<uint64_t>("early_terminate").value();
@@ -1163,24 +1176,27 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::bfgs_setup(VW::setup_base_
 
   if (b->m == 0) { b->hessian_on = true; }
 
-  if (!all.quiet)
+  if (!all.output_config.quiet)
   {
-    if (b->m > 0) { *(all.trace_message) << "enabling BFGS based optimization "; }
-    else { *(all.trace_message) << "enabling conjugate gradient optimization via BFGS "; }
+    if (b->m > 0) { *(all.output_runtime.trace_message) << "enabling BFGS based optimization "; }
+    else { *(all.output_runtime.trace_message) << "enabling conjugate gradient optimization via BFGS "; }
 
-    if (b->hessian_on) { *(all.trace_message) << "with curvature calculation" << std::endl; }
-    else { *(all.trace_message) << "**without** curvature calculation" << std::endl; }
+    if (b->hessian_on) { *(all.output_runtime.trace_message) << "with curvature calculation" << std::endl; }
+    else { *(all.output_runtime.trace_message) << "**without** curvature calculation" << std::endl; }
   }
 
-  if (all.numpasses < 2 && all.training) { THROW("At least 2 passes must be used for BFGS"); }
+  if (all.runtime_config.numpasses < 2 && all.runtime_config.training)
+  {
+    THROW("At least 2 passes must be used for BFGS");
+  }
 
-  all.bfgs = true;
+  all.reduction_state.bfgs = true;
   all.weights.stride_shift(2);
 
   void (*learn_ptr)(bfgs&, VW::example&) = nullptr;
   void (*predict_ptr)(bfgs&, VW::example&) = nullptr;
   std::string learner_name;
-  if (all.audit || all.hash_inv)
+  if (all.output_config.audit || all.output_config.hash_inv)
   {
     learn_ptr = learn<true>;
     predict_ptr = predict<true>;
@@ -1195,7 +1211,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::bfgs_setup(VW::setup_base_
 
   return make_bottom_learner(
       std::move(b), learn_ptr, predict_ptr, learner_name, VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
-      .set_params_per_weight(all.weights.stride())
       .set_save_load(save_load)
       .set_init_driver(init_driver)
       .set_end_pass(end_pass)

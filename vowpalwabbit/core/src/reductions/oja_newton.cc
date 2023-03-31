@@ -74,7 +74,7 @@ public:
 
   void initialize_Z(VW::parameters& weights)  // NOLINT
   {
-    uint32_t length = 1 << all->num_bits;
+    uint32_t length = 1 << all->initial_weights_config.num_bits;
     if (normalize)  // initialize normalization part
     {
       for (uint32_t i = 0; i < length; i++) { (&(weights.strided_index(i)))[NORM2] = 0.1f; }
@@ -296,7 +296,7 @@ public:
 
     // second step: w[0] <- w[0] + (DZ)'b, b <- 0.
 
-    uint32_t length = 1 << all->num_bits;
+    uint32_t length = 1 << all->initial_weights_config.num_bits;
     for (uint32_t i = 0; i < length; i++)
     {
       VW::weight& w = all->weights.strided_index(i);
@@ -400,7 +400,8 @@ void learn(OjaNewton& oja_newton_ptr, VW::example& ec)
   predict(oja_newton_ptr, ec);
 
   oja_n_update_data& data = oja_newton_ptr.data;
-  data.g = oja_newton_ptr.all->loss->first_derivative(oja_newton_ptr.all->sd.get(), ec.pred.scalar, ec.l.simple.label) *
+  data.g = oja_newton_ptr.all->loss_config.loss->first_derivative(
+               oja_newton_ptr.all->sd.get(), ec.pred.scalar, ec.l.simple.label) *
       ec.weight;
   data.g /= 2;  // for half square loss
 
@@ -475,13 +476,13 @@ void save_load(OjaNewton& oja_newton_ptr, VW::io_buf& model_file, bool read, boo
 
   if (model_file.num_files() > 0)
   {
-    bool resume = all.save_resume;
+    bool resume = all.output_model_config.save_resume;
     std::stringstream msg;
     msg << ":" << resume << "\n";
     VW::details::bin_text_read_write_fixed(
         model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
 
-    std::vector<VW::reductions::details::per_model_state> temp_pms = {VW::reductions::details::per_model_state()};
+    std::vector<VW::reductions::details::gd_per_model_state> temp_pms = {VW::reductions::details::gd_per_model_state()};
     if (resume) { VW::details::save_load_online_state_gd(all, model_file, read, text, temp_pms); }
     else { VW::details::save_load_regressor_gd(all, model_file, read, text); }
   }
@@ -564,7 +565,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::oja_newton_setup(VW::setup
 
   auto l = make_bottom_learner(std::move(oja_newton_ptr), learn, predict,
       stack_builder.get_setupfn_name(oja_newton_setup), VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
-               .set_params_per_weight(all.weights.stride())
                .set_save_load(save_load)
                .set_output_example_prediction(VW::details::output_example_prediction_simple_label<OjaNewton>)
                .set_update_stats(VW::details::update_stats_simple_label<OjaNewton>)

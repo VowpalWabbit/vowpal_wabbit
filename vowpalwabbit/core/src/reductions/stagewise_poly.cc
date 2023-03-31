@@ -129,7 +129,7 @@ inline uint64_t wid_mask_un_shifted(const stagewise_poly& poly, uint64_t wid)
 
 inline uint64_t constant_feat(const stagewise_poly& poly)
 {
-  return stride_shift(poly, VW::details::CONSTANT * poly.all->wpp);
+  return stride_shift(poly, VW::details::CONSTANT * poly.all->reduction_state.total_feature_width);
 }
 
 inline uint64_t constant_feat_masked(const stagewise_poly& poly) { return wid_mask(poly, constant_feat(poly)); }
@@ -303,7 +303,8 @@ void sort_data_update_support(stagewise_poly& poly)
     uint64_t wid = stride_shift(poly, i);
     if (!parent_get(poly, wid) && wid != constant_feat_masked(poly))
     {
-      float weightsal = (fabsf(poly.all->weights[wid]) * poly.all->weights[poly.all->normalized_idx + (wid)]);
+      float weightsal =
+          (fabsf(poly.all->weights[wid]) * poly.all->weights[poly.all->initial_weights_config.normalized_idx + (wid)]);
       /*
        * here's some depth penalization code.  It was found to not improve
        * statistical performance, and meanwhile it is verified as giving
@@ -377,8 +378,8 @@ void synthetic_reset(stagewise_poly& poly, VW::example& ec)
   poly.synth_ec.weight = ec.weight;
   poly.synth_ec.tag = ec.tag;
   poly.synth_ec.example_counter = ec.example_counter;
-  poly.synth_ec.interactions = &poly.all->interactions;
-  poly.synth_ec.extent_interactions = &poly.all->extent_interactions;
+  poly.synth_ec.interactions = &poly.all->feature_tweaks_config.interactions;
+  poly.synth_ec.extent_interactions = &poly.all->feature_tweaks_config.extent_interactions;
 
   /**
    * Some comments on ft_offset.
@@ -513,7 +514,7 @@ void predict(stagewise_poly& poly, learner& base, VW::example& ec)
 
 void learn(stagewise_poly& poly, learner& base, VW::example& ec)
 {
-  bool training = poly.all->training && ec.l.simple.label != FLT_MAX;
+  bool training = poly.all->runtime_config.training && ec.l.simple.label != FLT_MAX;
   poly.original_ec = &ec;
 
   if (training)
@@ -539,7 +540,7 @@ void learn(stagewise_poly& poly, learner& base, VW::example& ec)
             (!poly.batch_sz_double && !(ec.example_counter % poly.batch_sz))))
     {
       poly.next_batch_sz *= 2;  // no effect when !poly.batch_sz_double
-      poly.update_support = (poly.all->all_reduce == nullptr || poly.numpasses == 1);
+      poly.update_support = (poly.all->runtime_state.all_reduce == nullptr || poly.numpasses == 1);
     }
     poly.last_example_counter = ec.example_counter;
   }
@@ -572,7 +573,7 @@ void reduce_min_max(uint8_t& v1, const uint8_t& v2)
 
 void end_pass(stagewise_poly& poly)
 {
-  if (!!poly.batch_sz || (poly.all->all_reduce != nullptr && poly.numpasses > 1)) { return; }
+  if (!!poly.batch_sz || (poly.all->runtime_state.all_reduce != nullptr && poly.numpasses > 1)) { return; }
 
   uint64_t sum_sparsity_inc = poly.sum_sparsity - poly.sum_sparsity_sync;
   uint64_t sum_input_sparsity_inc = poly.sum_input_sparsity - poly.sum_input_sparsity_sync;
@@ -584,7 +585,7 @@ void end_pass(stagewise_poly& poly)
 #endif  // DEBUG
 
   VW::workspace& all = *poly.all;
-  if (all.all_reduce != nullptr)
+  if (all.runtime_state.all_reduce != nullptr)
   {
     /*
      * The following is inconsistent with the transplant code in
@@ -612,7 +613,7 @@ void end_pass(stagewise_poly& poly)
   sanity_check_state(poly);
 #endif  // DEBUG
 
-  if (poly.numpasses != poly.all->numpasses)
+  if (poly.numpasses != poly.all->runtime_config.numpasses)
   {
     poly.update_support = true;
     poly.numpasses++;
@@ -709,13 +710,14 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::stagewise_poly_setup(VW::s
                      // This impl is the same as standard simple label printing apart from the fact the feature count
                      // from synth_ec is used.
 
-                     const bool should_print_driver_update =
-                         all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs;
+                     const bool should_print_driver_update = all.sd->weighted_examples() >= all.sd->dump_interval &&
+                         !all.output_config.quiet && !all.reduction_state.bfgs;
 
                      if (should_print_driver_update)
                      {
-                       sd.print_update(*all.trace_message, all.holdout_set_off, all.current_pass, ec.l.simple.label,
-                           ec.pred.scalar, data.synth_ec.get_num_features());
+                       sd.print_update(*all.output_runtime.trace_message, all.passes_config.holdout_set_off,
+                           all.passes_config.current_pass, ec.l.simple.label, ec.pred.scalar,
+                           data.synth_ec.get_num_features());
                      }
                    }
 

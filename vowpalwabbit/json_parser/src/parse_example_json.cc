@@ -1244,7 +1244,7 @@ public:
 
     if (ctx.dedup_examples->find(i) == ctx.dedup_examples->end()) { THROW("dedup id not found: " << i); }
 
-    auto* stored_ex = (*ctx.dedup_examples)[i];
+    auto* stored_ex = ctx.dedup_examples->at(i);
 
     new_ex->indices = stored_ex->indices;
     for (auto& ns : new_ex->indices) { new_ex->feature_space[ns] = stored_ex->feature_space[ns]; }
@@ -1512,7 +1512,7 @@ public:
   std::vector<VW::parsers::json::details::namespace_builder<audit>> namespace_path;
   std::vector<BaseState<audit>*> return_path;
 
-  std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr;
+  const std::unordered_map<uint64_t, VW::example*>* dedup_examples;
   std::unordered_map<std::string, std::set<std::string>>* ignore_features = nullptr;
 
   VW::multi_ex* examples;
@@ -1633,7 +1633,7 @@ public:
       bool chain_hash, VW::label_parser_reuse_mem* reuse_mem, const VW::named_labels* ldict, VW::io::logger* logger,
       VW::multi_ex* examples, rapidjson::InsituStringStream* stream, const char* stream_end,
       VW::example_factory_t example_factory, std::unordered_map<std::string, std::set<std::string>>* ignore_features,
-      std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr)
+      const std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr)
   {
     ctx.init(lbl_parser, hash_func, hash_seed, parse_mask, chain_hash, reuse_mem, ldict, logger);
     ctx.examples = examples;
@@ -1693,7 +1693,7 @@ void VW::parsers::json::read_line_json(const VW::label_parser& lbl_parser, hash_
     uint64_t parse_mask, bool chain_hash, VW::label_parser_reuse_mem* reuse_mem, const VW::named_labels* ldict,
     VW::multi_ex& examples, char* line, size_t length, example_factory_t example_factory, VW::io::logger& logger,
     std::unordered_map<std::string, std::set<std::string>>* ignore_features,
-    std::unordered_map<uint64_t, VW::example*>* dedup_examples)
+    const std::unordered_map<uint64_t, VW::example*>* dedup_examples)
 {
   if (lbl_parser.label_type == VW::label_type_t::SLATES)
   {
@@ -1731,11 +1731,12 @@ void VW::parsers::json::read_line_json(const VW::label_parser& lbl_parser, hash_
 
 template <bool audit>
 void VW::parsers::json::read_line_json(VW::workspace& all, VW::multi_ex& examples, char* line, size_t length,
-    example_factory_t example_factory, std::unordered_map<uint64_t, VW::example*>* dedup_examples)
+    example_factory_t example_factory, const std::unordered_map<uint64_t, VW::example*>* dedup_examples)
 {
-  return read_line_json<audit>(all.example_parser->lbl_parser, all.example_parser->hasher, all.hash_seed,
-      all.parse_mask, all.chain_hash_json, &all.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), examples,
-      line, length, std::move(example_factory), all.logger, &all.ignore_features_dsjson, dedup_examples);
+  return read_line_json<audit>(all.parser_runtime.example_parser->lbl_parser, all.parser_runtime.example_parser->hasher,
+      all.runtime_config.hash_seed, all.runtime_state.parse_mask, all.parser_runtime.chain_hash_json,
+      &all.parser_runtime.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), examples, line, length,
+      std::move(example_factory), all.logger, &all.feature_tweaks_config.ignore_features_dsjson, dedup_examples);
 }
 
 inline bool apply_pdrop(VW::label_type_t label_type, float pdrop, VW::multi_ex& examples, VW::io::logger& logger)
@@ -1768,11 +1769,12 @@ bool VW::parsers::json::read_line_decision_service_json(VW::workspace& all, VW::
     size_t length, bool copy_line, example_factory_t example_factory,
     VW::parsers::json::decision_service_interaction* data)
 {
-  if (all.example_parser->lbl_parser.label_type == VW::label_type_t::SLATES)
+  if (all.parser_runtime.example_parser->lbl_parser.label_type == VW::label_type_t::SLATES)
   {
     VW::parsers::json::details::parse_slates_example_dsjson<audit>(
         all, examples, line, length, std::move(example_factory), data);
-    return apply_pdrop(all.example_parser->lbl_parser.label_type, data->probability_of_drop, examples, all.logger);
+    return apply_pdrop(
+        all.parser_runtime.example_parser->lbl_parser.label_type, data->probability_of_drop, examples, all.logger);
   }
 
   std::vector<char> line_vec;
@@ -1786,9 +1788,10 @@ bool VW::parsers::json::read_line_decision_service_json(VW::workspace& all, VW::
   json_parser<audit> parser;
 
   VWReaderHandler<audit>& handler = parser.handler;
-  handler.init(all.example_parser->lbl_parser, all.example_parser->hasher, all.hash_seed, all.parse_mask,
-      all.chain_hash_json, &all.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), &all.logger, &examples,
-      &ss, line + length, example_factory, &all.ignore_features_dsjson);
+  handler.init(all.parser_runtime.example_parser->lbl_parser, all.parser_runtime.example_parser->hasher,
+      all.runtime_config.hash_seed, all.runtime_state.parse_mask, all.parser_runtime.chain_hash_json,
+      &all.parser_runtime.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), &all.logger, &examples, &ss,
+      line + length, example_factory, &all.feature_tweaks_config.ignore_features_dsjson);
 
   handler.ctx.SetStartStateToDecisionService(data);
   handler.ctx.decision_service_data = data;
@@ -1803,7 +1806,7 @@ bool VW::parsers::json::read_line_decision_service_json(VW::workspace& all, VW::
     // The stack of namespaces must be drained so there are no half extents left around.
     while (!handler.ctx.namespace_path.empty()) { handler.ctx.PopNamespace(); }
 
-    if (all.example_parser->strict_parse)
+    if (all.parser_runtime.example_parser->strict_parse)
     {
       THROW("JSON parser error at " << result.Offset() << ": " << GetParseError_En(result.Code())
                                     << ". "
@@ -1819,14 +1822,15 @@ bool VW::parsers::json::read_line_decision_service_json(VW::workspace& all, VW::
     }
   }
 
-  return apply_pdrop(all.example_parser->lbl_parser.label_type, data->probability_of_drop, examples, all.logger);
+  return apply_pdrop(
+      all.parser_runtime.example_parser->lbl_parser.label_type, data->probability_of_drop, examples, all.logger);
 }
 
 template <bool audit>
 bool VW::parsers::json::details::parse_line_json(
     VW::workspace* all, char* line, size_t num_chars, VW::multi_ex& examples)
 {
-  if (all->example_parser->decision_service_json)
+  if (all->parser_runtime.example_parser->decision_service_json)
   {
     // Skip lines that do not start with "{"
     if (line[0] != '{') { return false; }
@@ -1840,53 +1844,58 @@ bool VW::parsers::json::details::parse_line_json(
     {
       VW::return_multiple_example(*all, examples);
       examples.push_back(&VW::get_unused_example(all));
-      if (all->example_parser->metrics) { all->example_parser->metrics->line_parse_error++; }
+      if (all->parser_runtime.example_parser->metrics)
+      {
+        all->parser_runtime.example_parser->metrics->line_parse_error++;
+      }
       return false;
     }
 
-    if (all->example_parser->metrics)
+    if (all->parser_runtime.example_parser->metrics)
     {
       if (!interaction.event_id.empty())
       {
-        if (all->example_parser->metrics->first_event_id.empty())
+        if (all->parser_runtime.example_parser->metrics->first_event_id.empty())
         {
-          all->example_parser->metrics->first_event_id = std::move(interaction.event_id);
+          all->parser_runtime.example_parser->metrics->first_event_id = std::move(interaction.event_id);
         }
-        else { all->example_parser->metrics->last_event_id = std::move(interaction.event_id); }
+        else { all->parser_runtime.example_parser->metrics->last_event_id = std::move(interaction.event_id); }
       }
 
       if (!interaction.timestamp.empty())
       {
-        if (all->example_parser->metrics->first_event_time.empty())
+        if (all->parser_runtime.example_parser->metrics->first_event_time.empty())
         {
-          all->example_parser->metrics->first_event_time = std::move(interaction.timestamp);
+          all->parser_runtime.example_parser->metrics->first_event_time = std::move(interaction.timestamp);
         }
-        else { all->example_parser->metrics->last_event_time = std::move(interaction.timestamp); }
+        else { all->parser_runtime.example_parser->metrics->last_event_time = std::move(interaction.timestamp); }
       }
 
       // Technically the aggregation operation here is supposed to be user-defined
       // but according to Casey, the only operation used is Sum
       // The _original_label_cost element is found either at the top level OR under
       // the _outcomes node (for CCB)
-      all->example_parser->metrics->dsjson_sum_cost_original += interaction.original_label_cost;
-      all->example_parser->metrics->dsjson_sum_cost_original_first_slot += interaction.original_label_cost_first_slot;
+      all->parser_runtime.example_parser->metrics->dsjson_sum_cost_original += interaction.original_label_cost;
+      all->parser_runtime.example_parser->metrics->dsjson_sum_cost_original_first_slot +=
+          interaction.original_label_cost_first_slot;
       if (!interaction.actions.empty())
       {
         // APS requires this metric for CB (baseline action is 1)
         if (interaction.actions[0] == 1)
         {
-          all->example_parser->metrics->dsjson_sum_cost_original_baseline += interaction.original_label_cost;
+          all->parser_runtime.example_parser->metrics->dsjson_sum_cost_original_baseline +=
+              interaction.original_label_cost;
         }
 
         if (!interaction.baseline_actions.empty())
         {
           if (interaction.actions[0] == interaction.baseline_actions[0])
           {
-            all->example_parser->metrics->dsjson_number_of_label_equal_baseline_first_slot++;
-            all->example_parser->metrics->dsjson_sum_cost_original_label_equal_baseline_first_slot +=
+            all->parser_runtime.example_parser->metrics->dsjson_number_of_label_equal_baseline_first_slot++;
+            all->parser_runtime.example_parser->metrics->dsjson_sum_cost_original_label_equal_baseline_first_slot +=
                 interaction.original_label_cost_first_slot;
           }
-          else { all->example_parser->metrics->dsjson_number_of_label_not_equal_baseline_first_slot++; }
+          else { all->parser_runtime.example_parser->metrics->dsjson_number_of_label_not_equal_baseline_first_slot++; }
         }
       }
     }
@@ -1896,7 +1905,10 @@ bool VW::parsers::json::details::parse_line_json(
     // for counterfactual. (@marco)
     if (interaction.skip_learn)
     {
-      if (all->example_parser->metrics) { all->example_parser->metrics->number_of_skipped_events++; }
+      if (all->parser_runtime.example_parser->metrics)
+      {
+        all->parser_runtime.example_parser->metrics->number_of_skipped_events++;
+      }
       VW::return_multiple_example(*all, examples);
       examples.push_back(&VW::get_unused_example(all));
       return false;
@@ -1905,7 +1917,10 @@ bool VW::parsers::json::details::parse_line_json(
     // let's ask to continue reading data until we find a line with actions provided
     if (interaction.actions.size() == 0 && all->l->is_multiline())
     {
-      if (all->example_parser->metrics) { all->example_parser->metrics->number_of_events_zero_actions++; }
+      if (all->parser_runtime.example_parser->metrics)
+      {
+        all->parser_runtime.example_parser->metrics->number_of_events_zero_actions++;
+      }
       VW::return_multiple_example(*all, examples);
       examples.push_back(&VW::get_unused_example(all));
       return false;
@@ -1991,17 +2006,17 @@ template void VW::parsers::json::read_line_json<true>(const VW::label_parser& lb
     uint64_t hash_seed, uint64_t parse_mask, bool chain_hash, VW::label_parser_reuse_mem* reuse_mem,
     const VW::named_labels* ldict, VW::multi_ex& examples, char* line, size_t length, example_factory_t example_factory,
     VW::io::logger& logger, std::unordered_map<std::string, std::set<std::string>>* ignore_features,
-    std::unordered_map<uint64_t, VW::example*>* dedup_examples);
+    const std::unordered_map<uint64_t, VW::example*>* dedup_examples);
 template void VW::parsers::json::read_line_json<false>(const VW::label_parser& lbl_parser, hash_func_t hash_func,
     uint64_t hash_seed, uint64_t parse_mask, bool chain_hash, VW::label_parser_reuse_mem* reuse_mem,
     const VW::named_labels* ldict, VW::multi_ex& examples, char* line, size_t length, example_factory_t example_factory,
     VW::io::logger& logger, std::unordered_map<std::string, std::set<std::string>>* ignore_features,
-    std::unordered_map<uint64_t, VW::example*>* dedup_examples);
+    const std::unordered_map<uint64_t, VW::example*>* dedup_examples);
 
 template void VW::parsers::json::read_line_json<true>(VW::workspace& all, VW::multi_ex& examples, char* line,
-    size_t length, example_factory_t example_factory, std::unordered_map<uint64_t, VW::example*>* dedup_examples);
+    size_t length, example_factory_t example_factory, const std::unordered_map<uint64_t, VW::example*>* dedup_examples);
 template void VW::parsers::json::read_line_json<false>(VW::workspace& all, VW::multi_ex& examples, char* line,
-    size_t length, example_factory_t example_factory, std::unordered_map<uint64_t, VW::example*>* dedup_examples);
+    size_t length, example_factory_t example_factory, const std::unordered_map<uint64_t, VW::example*>* dedup_examples);
 
 template bool VW::parsers::json::read_line_decision_service_json<true>(VW::workspace& all, VW::multi_ex& examples,
     char* line, size_t length, bool copy_line, example_factory_t example_factory,

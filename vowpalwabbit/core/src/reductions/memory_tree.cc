@@ -1180,8 +1180,8 @@ void save_load_memory_tree(memory_tree& b, VW::io_buf& model_file, bool read, bo
     for (uint32_t i = 0; i < n_examples; i++)
     {
       save_load_example(b.examples[i], model_file, read, text, msg, b.oas);
-      b.examples[i]->interactions = &b.all->interactions;
-      b.examples[i]->extent_interactions = &b.all->extent_interactions;
+      b.examples[i]->interactions = &b.all->feature_tweaks_config.interactions;
+      b.examples[i]->extent_interactions = &b.all->feature_tweaks_config.extent_interactions;
     }
     // std::cout<<"done loading...."<< std::endl;
   }
@@ -1229,24 +1229,24 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::memory_tree_setup(VW::setu
   tree->all = &all;
   tree->random_state = all.get_random_state();
   tree->current_pass = 0;
-  tree->final_pass = all.numpasses;
+  tree->final_pass = all.runtime_config.numpasses;
 
   tree->max_leaf_examples = static_cast<size_t>(tree->leaf_example_multiplier * (log(tree->max_nodes) / log(2)));
 
   init_tree(*tree);
 
-  if (!all.quiet)
+  if (!all.output_config.quiet)
   {
-    *(all.trace_message) << "memory_tree:"
-                         << " "
-                         << "max_nodes = " << tree->max_nodes << " "
-                         << "max_leaf_examples = " << tree->max_leaf_examples << " "
-                         << "alpha = " << tree->alpha << " "
-                         << "oas = " << tree->oas << " "
-                         << "online =" << tree->online << " " << std::endl;
+    *(all.output_runtime.trace_message) << "memory_tree:"
+                                        << " "
+                                        << "max_nodes = " << tree->max_nodes << " "
+                                        << "max_leaf_examples = " << tree->max_leaf_examples << " "
+                                        << "alpha = " << tree->alpha << " "
+                                        << "oas = " << tree->oas << " "
+                                        << "online =" << tree->online << " " << std::endl;
   }
 
-  size_t num_learners;
+  size_t feature_width;
   VW::prediction_type_t pred_type;
   VW::label_type_t label_type;
   bool oas = tree->oas;
@@ -1254,20 +1254,20 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::memory_tree_setup(VW::setu
   // multi-class classification
   if (!oas)
   {
-    num_learners = tree->max_nodes + 1;
+    feature_width = tree->max_nodes + 1;
     pred_type = VW::prediction_type_t::MULTICLASS;
     label_type = VW::label_type_t::MULTICLASS;
   }  // multi-label classification
   else
   {
-    num_learners = tree->max_nodes + 1 + tree->max_num_labels;
+    feature_width = tree->max_nodes + 1 + tree->max_num_labels;
     pred_type = VW::prediction_type_t::MULTILABELS;
     label_type = VW::label_type_t::MULTILABEL;
   }
 
-  auto l = make_reduction_learner(std::move(tree), require_singleline(stack_builder.setup_base_learner(num_learners)),
+  auto l = make_reduction_learner(std::move(tree), require_singleline(stack_builder.setup_base_learner(feature_width)),
       learn, predict, stack_builder.get_setupfn_name(memory_tree_setup))
-               .set_params_per_weight(num_learners)
+               .set_feature_width(feature_width)
                .set_end_pass(end_pass)
                .set_save_load(save_load_memory_tree)
                .set_input_label_type(label_type)

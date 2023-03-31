@@ -324,14 +324,14 @@ void save_load_svm_model(svm_params& params, VW::io_buf& model_file, bool read, 
     {
       auto fec = VW::make_unique<flat_example>();
       auto* tmp = &VW::details::calloc_or_throw<svm_example>();
-      read_model_field_flat_example(model_file, *fec, params.all->example_parser->lbl_parser);
+      read_model_field_flat_example(model_file, *fec, params.all->parser_runtime.example_parser->lbl_parser);
       tmp->ex = *fec;
       model->support_vec.push_back(tmp);
     }
     else
     {
       write_model_field_flat_example(model_file, model->support_vec[i]->ex, "_flat_example", false,
-          params.all->example_parser->lbl_parser, params.all->parse_mask);
+          params.all->parser_runtime.example_parser->lbl_parser, params.all->runtime_state.parse_mask);
     }
   }
 
@@ -347,11 +347,11 @@ void save_load(svm_params& params, VW::io_buf& model_file, bool read, bool text)
 {
   if (text)
   {
-    *params.all->trace_message << "Not supporting readable model for kernel svm currently" << endl;
+    *params.all->output_runtime.trace_message << "Not supporting readable model for kernel svm currently" << endl;
     return;
   }
-  else if (params.all->model_file_ver > VW::version_definitions::EMPTY_VERSION_FILE &&
-      params.all->model_file_ver < VW::version_definitions::VERSION_FILE_WITH_FLAT_EXAMPLE_TAG_FIX)
+  else if (params.all->runtime_state.model_file_ver > VW::version_definitions::EMPTY_VERSION_FILE &&
+      params.all->runtime_state.model_file_ver < VW::version_definitions::VERSION_FILE_WITH_FLAT_EXAMPLE_TAG_FIX)
   {
     THROW("Models using ksvm from before version 9.6 are not compatable with this version of VW.")
   }
@@ -553,18 +553,19 @@ void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
     if (!train_pool[i]) { continue; }
 
     fec = &(params.pool[i]->ex);
-    write_model_field_flat_example(*b, *fec, "_flat_example", false, all.example_parser->lbl_parser, all.parse_mask);
+    write_model_field_flat_example(
+        *b, *fec, "_flat_example", false, all.parser_runtime.example_parser->lbl_parser, all.runtime_state.parse_mask);
     delete params.pool[i];
   }
 
-  size_t* sizes = VW::details::calloc_or_throw<size_t>(all.all_reduce->total);
-  sizes[all.all_reduce->node] = b->unflushed_bytes_count();
-  VW::details::all_reduce<size_t, add_size_t>(all, sizes, all.all_reduce->total);
+  size_t* sizes = VW::details::calloc_or_throw<size_t>(all.runtime_state.all_reduce->total);
+  sizes[all.runtime_state.all_reduce->node] = b->unflushed_bytes_count();
+  VW::details::all_reduce<size_t, add_size_t>(all, sizes, all.runtime_state.all_reduce->total);
 
   size_t prev_sum = 0, total_sum = 0;
-  for (size_t i = 0; i < all.all_reduce->total; i++)
+  for (size_t i = 0; i < all.runtime_state.all_reduce->total; i++)
   {
-    if (i <= (all.all_reduce->node - 1)) { prev_sum += sizes[i]; }
+    if (i <= (all.runtime_state.all_reduce->node - 1)) { prev_sum += sizes[i]; }
     total_sum += sizes[i];
   }
 
@@ -582,7 +583,7 @@ void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
 
     for (size_t i = 0; i < params.pool_size; i++)
     {
-      if (!read_model_field_flat_example(*b, *fec, all.example_parser->lbl_parser))
+      if (!read_model_field_flat_example(*b, *fec, all.parser_runtime.example_parser->lbl_parser))
       {
         params.pool[i] = &VW::details::calloc_or_throw<svm_example>();
         params.pool[i]->init_svm_example(fec);
@@ -593,7 +594,7 @@ void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
 
       num_read += b->unflushed_bytes_count();
       if (num_read == prev_sum) { params.local_begin = i + 1; }
-      if (num_read == prev_sum + sizes[all.all_reduce->node]) { params.local_end = i; }
+      if (num_read == prev_sum + sizes[all.runtime_state.all_reduce->node]) { params.local_end = i; }
     }
   }
   if (fec) { free(fec); }
@@ -657,7 +658,7 @@ void train(svm_params& params)
     sync_queries(*(params.all), params, train_pool);
   }
 
-  if (params.all->training)
+  if (params.all->runtime_config.training)
   {
     svm_model* model = params.model;
 
@@ -687,7 +688,7 @@ void train(svm_params& params)
             {
               if (!overshoot && max_pos == static_cast<size_t>(model_pos) && max_pos > 0 && j == 0)
               {
-                *params.all->trace_message << "Shouldn't reprocess right after process." << endl;
+                *params.all->output_runtime.trace_message << "Shouldn't reprocess right after process." << endl;
               }
               if (max_pos * model->num_support <= params.maxcache) { make_hot_sv(params, max_pos); }
               update(params, max_pos);
@@ -725,14 +726,15 @@ void learn(svm_params& params, VW::example& ec)
     ec.pred.scalar = score;
     ec.loss = std::max(0.f, 1.f - score * ec.l.simple.label);
     params.loss_sum += ec.loss;
-    if (params.all->training && ec.example_counter % 100 == 0) { trim_cache(params); }
-    if (params.all->training && ec.example_counter % 1000 == 0 && ec.example_counter >= 2)
+    if (params.all->runtime_config.training && ec.example_counter % 100 == 0) { trim_cache(params); }
+    if (params.all->runtime_config.training && ec.example_counter % 1000 == 0 && ec.example_counter >= 2)
     {
-      *params.all->trace_message << "Number of support vectors = " << params.model->num_support << endl;
-      *params.all->trace_message << "Number of kernel evaluations = " << num_kernel_evals << " "
-                                 << "Number of cache queries = " << num_cache_evals << " loss sum = " << params.loss_sum
-                                 << " " << params.model->alpha[params.model->num_support - 1] << " "
-                                 << params.model->alpha[params.model->num_support - 2] << endl;
+      *params.all->output_runtime.trace_message << "Number of support vectors = " << params.model->num_support << endl;
+      *params.all->output_runtime.trace_message << "Number of kernel evaluations = " << num_kernel_evals << " "
+                                                << "Number of cache queries = " << num_cache_evals
+                                                << " loss sum = " << params.loss_sum << " "
+                                                << params.model->alpha[params.model->num_support - 1] << " "
+                                                << params.model->alpha[params.model->num_support - 2] << endl;
     }
     params.pool[params.pool_pos] = sec;
     params.pool_pos++;
@@ -749,10 +751,10 @@ void finish_kernel_svm(svm_params& params)
 {
   if (params.all != nullptr)
   {
-    *(params.all->trace_message) << "Num support = " << params.model->num_support << endl;
-    *(params.all->trace_message) << "Number of kernel evaluations = " << num_kernel_evals << " "
-                                 << "Number of cache queries = " << num_cache_evals << endl;
-    *(params.all->trace_message) << "Total loss = " << params.loss_sum << endl;
+    *(params.all->output_runtime.trace_message) << "Num support = " << params.model->num_support << endl;
+    *(params.all->output_runtime.trace_message) << "Number of kernel evaluations = " << num_kernel_evals << " "
+                                                << "Number of cache queries = " << num_cache_evals << endl;
+    *(params.all->output_runtime.trace_message) << "Total loss = " << params.loss_sum << endl;
   }
 }
 }  // namespace
@@ -795,7 +797,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::kernel_svm_setup(VW::setup
 
   std::string loss_function = "hinge";
   float loss_parameter = 0.0;
-  all.loss = get_loss_function(all, loss_function, loss_parameter);
+  all.loss_config.loss = get_loss_function(all, loss_function, loss_parameter);
 
   params->model = &VW::details::calloc_or_throw<svm_model>();
   new (params->model) svm_model();
@@ -808,7 +810,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::kernel_svm_setup(VW::setup
   // This param comes from the active reduction.
   // During options refactor: this changes the semantics a bit - now this will only be true if --active was supplied and
   // NOT --simulation
-  if (all.active) { params->active = true; }
+  if (all.reduction_state.active) { params->active = true; }
   if (params->active) { params->active_c = 1.; }
 
   params->pool = VW::details::calloc_or_throw<svm_example*>(params->pool_size);
@@ -816,25 +818,25 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::kernel_svm_setup(VW::setup
 
   if (!options.was_supplied("subsample") && params->para_active)
   {
-    params->subsample = static_cast<size_t>(ceil(params->pool_size / all.all_reduce->total));
+    params->subsample = static_cast<size_t>(ceil(params->pool_size / all.runtime_state.all_reduce->total));
   }
 
-  params->lambda = all.l2_lambda;
+  params->lambda = all.loss_config.l2_lambda;
   if (params->lambda == 0.) { params->lambda = 1.; }
-  *params->all->trace_message << "Lambda = " << params->lambda << endl;
-  *params->all->trace_message << "Kernel = " << kernel_type << endl;
+  *params->all->output_runtime.trace_message << "Lambda = " << params->lambda << endl;
+  *params->all->output_runtime.trace_message << "Kernel = " << kernel_type << endl;
 
   if (kernel_type.compare("rbf") == 0)
   {
     params->kernel_type = SVM_KER_RBF;
-    *params->all->trace_message << "bandwidth = " << bandwidth << endl;
+    *params->all->output_runtime.trace_message << "bandwidth = " << bandwidth << endl;
     params->kernel_params = &VW::details::calloc_or_throw<double>();
     *(static_cast<float*>(params->kernel_params)) = bandwidth;
   }
   else if (kernel_type.compare("poly") == 0)
   {
     params->kernel_type = SVM_KER_POLY;
-    *params->all->trace_message << "degree = " << degree << endl;
+    *params->all->output_runtime.trace_message << "degree = " << degree << endl;
     params->kernel_params = &VW::details::calloc_or_throw<int>();
     *(static_cast<int*>(params->kernel_params)) = degree;
   }

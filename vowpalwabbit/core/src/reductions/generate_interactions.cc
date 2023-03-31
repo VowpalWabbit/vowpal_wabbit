@@ -187,7 +187,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::generate_interactions_setu
   options.add_and_parse(new_options);
 
   auto interactions_spec_contains_wildcards = false;
-  for (const auto& inter : all.interactions)
+  for (const auto& inter : all.feature_tweaks_config.interactions)
   {
     if (VW::contains_wildcard(inter))
     {
@@ -197,7 +197,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::generate_interactions_setu
   }
 
   auto interactions_spec_contains_extent_wildcards = false;
-  for (const auto& inter : all.extent_interactions)
+  for (const auto& inter : all.feature_tweaks_config.extent_interactions)
   {
     if (VW::contains_wildcard(inter))
     {
@@ -205,6 +205,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::generate_interactions_setu
       break;
     }
   }
+
+  if (options.was_supplied("automl")) { return nullptr; }
 
   // If there are no wildcards, then no expansion is required.
   // ccb_explore_adf adds a wildcard post setup and so this reduction must be turned on.

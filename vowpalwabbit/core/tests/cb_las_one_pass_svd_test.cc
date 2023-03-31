@@ -46,7 +46,7 @@ TEST(Las, CheckMetricsWithLASRunsOK)
 
   vw->finish_example(examples);
 
-  auto metrics = vw->global_metrics.collect_metrics(vw->l.get());
+  auto metrics = vw->output_runtime.global_metrics.collect_metrics(vw->l.get());
   EXPECT_EQ(metrics.get_uint("cbea_labeled_ex"), 1);
   EXPECT_EQ(metrics.get_uint("cb_las_filtering_factor"), 5);
 }
@@ -422,7 +422,8 @@ TEST(Las, ComputeDotProdScalarAndSimdHaveSameResults)
     auto* ex = examples[0];
     auto interactions =
         VW::details::compile_interactions<VW::details::generate_namespace_combinations_with_repetition, false>(
-            vw->interactions, std::set<VW::namespace_index>(ex->indices.begin(), ex->indices.end()));
+            vw->feature_tweaks_config.interactions,
+            std::set<VW::namespace_index>(ex->indices.begin(), ex->indices.end()));
     ex->interactions = &interactions;
     EXPECT_EQ(interactions.size(), 0);
 
@@ -439,7 +440,8 @@ TEST(Las, ComputeDotProdScalarAndSimdHaveSameResults)
     auto* ex = examples[0];
     auto interactions =
         VW::details::compile_interactions<VW::details::generate_namespace_combinations_with_repetition, false>(
-            vw->interactions, std::set<VW::namespace_index>(ex->indices.begin(), ex->indices.end()));
+            vw->feature_tweaks_config.interactions,
+            std::set<VW::namespace_index>(ex->indices.begin(), ex->indices.end()));
     ex->interactions = &interactions;
     EXPECT_EQ(interactions.size(), 0);
 
@@ -456,7 +458,8 @@ TEST(Las, ComputeDotProdScalarAndSimdHaveSameResults)
     auto* ex = examples[0];
     auto interactions =
         VW::details::compile_interactions<VW::details::generate_namespace_combinations_with_repetition, false>(
-            vw->interactions, std::set<VW::namespace_index>(ex->indices.begin(), ex->indices.end()));
+            vw->feature_tweaks_config.interactions,
+            std::set<VW::namespace_index>(ex->indices.begin(), ex->indices.end()));
     ex->interactions = &interactions;
     EXPECT_EQ(interactions.size(), 6);
 
@@ -473,7 +476,8 @@ TEST(Las, ComputeDotProdScalarAndSimdHaveSameResults)
     auto* ex = examples[0];
     auto interactions =
         VW::details::compile_interactions<VW::details::generate_namespace_combinations_with_repetition, false>(
-            vw->interactions, std::set<VW::namespace_index>(ex->indices.begin(), ex->indices.end()));
+            vw->feature_tweaks_config.interactions,
+            std::set<VW::namespace_index>(ex->indices.begin(), ex->indices.end()));
     ex->interactions = &interactions;
     EXPECT_EQ(interactions.size(), 6);
 

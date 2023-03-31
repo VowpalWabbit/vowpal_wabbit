@@ -157,9 +157,9 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_to_cb_adf_setup(VW::set
   if (options.was_supplied("eval")) { return nullptr; }
 
   // ANY model created with older version should default to --cb_force_legacy
-  if (all.model_file_ver != VW::version_definitions::EMPTY_VERSION_FILE)
+  if (all.runtime_state.model_file_ver != VW::version_definitions::EMPTY_VERSION_FILE)
   {
-    compat_old_cb = !(all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_CB_TO_CBADF);
+    compat_old_cb = !(all.runtime_state.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_CB_TO_CBADF);
   }
 
   // not compatible with adf
@@ -217,10 +217,11 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_to_cb_adf_setup(VW::set
 
   if (num_actions <= 0) { THROW("cb num actions must be positive"); }
 
-  data->adf_data.init_adf_data(num_actions, base->increment, all.interactions, all.extent_interactions);
+  data->adf_data.init_adf_data(num_actions, base->feature_width_below, all.feature_tweaks_config.interactions,
+      all.feature_tweaks_config.extent_interactions);
 
   // see csoaa.cc ~ line 894 / setup for csldf_setup
-  all.example_parser->emptylines_separate_examples = false;
+  all.parser_runtime.example_parser->emptylines_separate_examples = false;
   VW::prediction_type_t in_pred_type;
   VW::prediction_type_t out_pred_type;
 

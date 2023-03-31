@@ -202,18 +202,18 @@ void update_stats_slates(const VW::workspace& /* all */, VW::shared_data& sd,
 void output_example_prediction_slates(VW::workspace& all, const VW::reductions::slates_data& /* data */,
     const VW::multi_ex& ec_seq, VW::io::logger& /* unused */)
 {
-  for (auto& sink : all.final_prediction_sink)
+  for (auto& sink : all.output_runtime.final_prediction_sink)
   {
     VW::print_decision_scores(sink.get(), ec_seq[VW::details::SHARED_EX_INDEX]->pred.decision_scores, all.logger);
   }
-  VW::details::global_print_newline(all.final_prediction_sink, all.logger);
+  VW::details::global_print_newline(all.output_runtime.final_prediction_sink, all.logger);
 }
 
 void print_update_slates(VW::workspace& all, VW::shared_data& /* sd */, const VW::reductions::slates_data& /* data */,
     const VW::multi_ex& ec_seq, VW::io::logger& /* unused */)
 {
   const bool should_print_driver_update =
-      all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs;
+      all.sd->weighted_examples() >= all.sd->dump_interval && !all.output_config.quiet && !all.reduction_state.bfgs;
 
   if (!should_print_driver_update) { return; }
 
