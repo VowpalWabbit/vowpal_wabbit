@@ -1,10 +1,18 @@
-# We control library features with the feature list
+# We control library features with the feature list, including conditional
+# compilation or optional parts.
+#
+# This feature list can be specified in two ways:
+#   - Specifying -DVW_ENABLED_FEATURES="FEAT1;FEAT2"
+#   - Specifying individual features with -DVW_FEATURE_FEAT1_ENABLED=ON/OFF
+#
+# Note: If both are specified, the individual feature enabled flags take precedence.
+#
 # This allows us to enable/disable features without changing the code
 # The list of features is defined as a cmake list (; separated)
 # If a feature called X is enabled then:
 #   - The cmake variable VW_FEATURE_X_ENABLED is se to ON, otherwise it is OFF
 #   - The C++ macro VW_FEATURE_X_ENABLED is defined if the feature is enabled, otherwise it is not defined
-
+#
 # Features:
 #   FLATBUFFERS: Enable flatbuffers support
 #   CSV: Enable csv parser
