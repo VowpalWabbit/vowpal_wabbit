@@ -81,11 +81,11 @@
           "type": "BOOL",
           "value": "On"
         },
-        "BUILD_FLATBUFFERS": {
+        "VW_FEATURE_FLATBUFFERS_ENABLED": {
           "type": "BOOL",
           "value": "On"
         },
-        "VW_BUILD_CSV": {
+        "VW_FEATURE_CSV_ENABLED": {
           "type": "BOOL",
           "value": "On"
         }

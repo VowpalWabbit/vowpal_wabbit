@@ -17,18 +17,19 @@ if (NOT BUILD_ONLY_STANDALONE_BENCHMARKS)
   )
 endif()
 
-add_executable(vw-benchmarks.out
-  ${all_sources}
-)
-
 find_package(benchmark REQUIRED)
 
-# Add the include directories from vw target for testing
-target_link_libraries(vw-benchmarks.out PRIVATE vw_core benchmark::benchmark)
+vw_add_executable(
+    NAME "benchmarks"
+    OVERRIDE_BIN_NAME "vw-benchmarks.out"
+    SOURCES ${all_sources}
+    DEPS vw_core benchmark::benchmark
+    DESCRIPTION "Benchmarks"
+)
 
 # Communicate that Boost Unit Test is being statically linked
 if(STATIC_LINK_VW)
-  target_compile_definitions(vw-benchmarks.out PRIVATE STATIC_LINK_VW)
+  target_compile_definitions(vw_benchmarks_bin PRIVATE STATIC_LINK_VW)
 endif()
 
 add_test(

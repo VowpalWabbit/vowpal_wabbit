@@ -70,7 +70,7 @@ namespace flatbuffer
 class parser;
 }
 
-#ifdef VW_BUILD_CSV
+#ifdef VW_FEATURE_CSV_ENABLED
 namespace csv
 {
 class csv_parser;
@@ -152,7 +152,7 @@ public:
 
   uint32_t hash_seed;
 
-#ifdef BUILD_FLATBUFFERS
+#ifdef VW_FEATURE_FLATBUFFERS_ENABLED
   std::unique_ptr<VW::parsers::flatbuffer::parser> flat_converter;
 #endif
 
