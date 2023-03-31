@@ -106,68 +106,7 @@ public:
 class feature_tweaks_config
 {
 public:
-  std::shared_ptr<VW::shared_data> sd;
-
-  std::unique_ptr<parser> example_parser;
-  std::thread parse_thread;
-
-  all_reduce_type selected_all_reduce_type;
-  std::unique_ptr<all_reduce_base> all_reduce;
-
-  bool chain_hash_json = false;
-
-  std::shared_ptr<VW::LEARNER::learner> l;  // the top level learner
-
-  void learn(example&);
-  void learn(multi_ex&);
-  void predict(example&);
-  void predict(multi_ex&);
-  void finish_example(example&);
-  void finish_example(multi_ex&);
-
-  /// This is used to perform finalization steps the driver/cli would normally do.
-  /// If using VW in library mode, this call is optional.
-  /// Some things this function does are: print summary, finalize regressor, output metrics, etc
-  void finish();
-
-  /**
-   * @brief Generate a JSON string with the current model state and invert hash
-   * lookup table. Bottom learner in use must be gd and workspace.hash_inv must
-   * be true. This function is experimental and subject to change.
-   *
-   * @return std::string JSON formatted string
-   */
-  std::string dump_weights_to_json_experimental();
-
-  // Function to set min_label and max_label in shared_data
-  // Should be bound to a VW::shared_data pointer upon creating the function
-  // May be nullptr, so you must check before calling it
-  std::function<void(float)> set_minmax;
-
-  uint64_t current_pass;
-
-  uint32_t num_bits;  // log_2 of the number of features.
-  bool default_bits;
-
-  uint32_t hash_seed;
-
-#ifdef VW_FEATURE_FLATBUFFERS_ENABLED
-  std::unique_ptr<VW::parsers::flatbuffer::parser> flat_converter;
-#endif
-
-  VW::metrics_collector global_metrics;
-
-  // Experimental field.
-  // Generic parser interface to make it possible to use any external parser.
-  std::unique_ptr<VW::details::input_parser> custom_parser;
-
-  std::string data_filename;
-
-  bool daemon;
-
-  bool save_per_pass;
-  float initial_weight;
-  float initial_constant;
+  bool add_constant;
   bool permutations;  // if true - permutations of features generated instead of simple combinations. false by default
   // Referenced by examples as their set of interactions. Can be overriden by learners.
   std::vector<std::vector<namespace_index>> interactions;
@@ -312,7 +251,7 @@ public:
   std::thread parse_thread;
   size_t max_examples;  // for TLC
   bool chain_hash_json = false;
-#ifdef BUILD_FLATBUFFERS
+#ifdef VW_FEATURE_FLATBUFFERS_ENABLED
   std::unique_ptr<VW::parsers::flatbuffer::parser> flat_converter;
 #endif
 };
