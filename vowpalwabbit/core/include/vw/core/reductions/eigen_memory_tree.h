@@ -54,11 +54,9 @@ emt_router_type emt_router_type_from_string(VW::string_view val);
 emt_initial_type emt_initial_type_from_string(VW::string_view val);
 
 float emt_initial(emt_initial_type initial_type, emt_feats f1, emt_feats f2);
-
 float emt_median(std::vector<float>&);
 float emt_inner(const emt_feats&, const emt_feats&);
 float emt_norm(const emt_feats&);
-void emt_abs(emt_feats&);
 void emt_scale(emt_feats&, float);
 void emt_normalize(emt_feats&);
 emt_feats emt_scale_add(float, const emt_feats&, float, const emt_feats&);

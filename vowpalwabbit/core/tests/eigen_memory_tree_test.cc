@@ -225,29 +225,9 @@ TEST(EigenMemoryTree, ScaleAdd)
   v2.push_back(std::make_pair(1,  2.5));
   v2.push_back(std::make_pair(5,  -1));
   v3.push_back(std::make_pair(1, -4.5));
+  v3.push_back(std::make_pair(5, 0));
 
   EXPECT_EQ(emt_scale_add(-1, v1, -1, v2), v3);
-}
-
-TEST(EigenMemoryTree, Abs)
-{
-  emt_feats v1;
-  emt_feats v2;
-
-  emt_abs(v1);
-  EXPECT_EQ(v1, v2);
-
-  v1.push_back(std::make_pair(1, -3));
-  v2.push_back(std::make_pair(1,  3));
-
-  emt_abs(v1);
-  EXPECT_EQ(v1, v2);
-
-  v1.push_back(std::make_pair(2, -4));
-  v2.push_back(std::make_pair(2,  4));
-
-  emt_abs(v1);
-  EXPECT_EQ(v1, v2);
 }
 
 TEST(EigenMemoryTree, Normalize)

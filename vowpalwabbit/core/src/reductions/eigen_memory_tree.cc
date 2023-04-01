@@ -197,21 +197,25 @@ float emt_median(std::vector<float>& array)
   return *nth;
 }
 
-float emt_inner(const emt_feats& xs, const emt_feats& ys)
+float emt_inner(const emt_feats& f1, const emt_feats& f2)
 {
   float sum = 0;
-  uint64_t xi = 0;
-  uint64_t yi = 0;
+  auto iter1 = f1.begin();
+  auto iter2 = f2.begin();
 
-  while (xi < xs.size() && yi < ys.size())
+  while (iter1 != f1.end() && iter2 != f2.end())
   {
-    auto x = xs[xi];
-    auto y = ys[yi];
-
-    if (x.first == y.first) { sum += x.second * y.second; }
-
-    if (x.first <= y.first) { xi += 1; }
-    if (y.first <= x.first) { yi += 1; }
+    if (iter1->first < iter2->first) {
+      iter1++;
+    }
+    else if (iter2->first < iter1->first) {
+      iter2++;
+    }
+    else {
+      sum += iter1->second * iter2->second;
+      iter1++;
+      iter2++;
+    }
   }
 
   return sum;
@@ -233,52 +237,137 @@ void emt_scale(emt_feats& xs, float scalar)
 
 void emt_normalize(emt_feats& xs) { emt_scale(xs, 1 / emt_norm(xs)); }
 
-void emt_abs(emt_feats& fs)
+emt_feats emt_sub(const emt_feats& f1, const emt_feats& f2)
 {
-  for (auto& f : fs) { f.second = std::abs(f.second); }
+  emt_feats out;
+  auto iter1 = f1.begin();
+  auto iter2 = f2.begin();
+
+  while (iter1 != f1.end() && iter2 != f2.end())
+  {
+    if (iter1->first < iter2->first)
+    {
+      out.emplace_back(iter1->first, iter1->second);
+      iter1++;
+    }
+    else if(iter2->first < iter1->first) {
+      out.emplace_back(iter2->first, -iter2->second);
+      iter2++;
+    }
+    else {
+      out.emplace_back(iter1->first, iter1->second-iter2->second);
+      iter1++;
+      iter2++;
+    }
+  }
+
+  while (iter1 != f1.end()) {
+    out.emplace_back(iter1->first, iter1->second);
+    iter1++;
+  }
+
+  while (iter2 != f2.end()) {
+    out.emplace_back(iter2->first, -iter2->second);
+    iter2++;
+  }
+
+  return out;
+}
+
+emt_feats emt_scale_add(const emt_feats& f1, float s2, const emt_feats& f2)
+{
+  if (s2==-1) { return emt_sub(f1,f2); }
+
+  emt_feats out;
+  auto iter1 = f1.begin();
+  auto iter2 = f2.begin();
+
+  while (iter1 != f1.end() && iter2 != f2.end())
+  {
+    if (iter1->first < iter2->first)
+    {
+      out.emplace_back(iter1->first, iter1->second);
+      iter1++;
+    }
+    else if(iter2->first < iter1->first) {
+      out.emplace_back(iter2->first, s2*iter2->second);
+      iter2++;
+    }
+    else {
+      out.emplace_back(iter1->first, iter1->second+s2*iter2->second);
+      iter1++;
+      iter2++;
+    }
+  }
+
+  while (iter1 != f1.end()) {
+    out.emplace_back(iter1->first, iter1->second);
+    iter1++;
+  }
+
+  while (iter2 != f2.end()) {
+    out.emplace_back(iter2->first, s2*iter2->second);
+    iter2++;
+  }
+
+  return out;
+}
+
+void emt_scale_add2(emt_feats& f1, float s2, const emt_feats& f2)
+{
+  auto iter1 = f1.begin();
+  auto iter2 = f2.begin();
+
+  while (iter1 != f1.end() && iter2 != f2.end())
+  {
+    if (iter1->first < iter2->first)
+    {
+      iter1++;
+    }
+    else {
+      iter1->second = iter1->second+s2*iter2->second;
+      iter1++;
+      iter2++;
+    }
+  }
 }
 
 emt_feats emt_scale_add(float s1, const emt_feats& f1, float s2, const emt_feats& f2)
 {
-  size_t idx1 = 0;
-  size_t idx2 = 0;
-
-  uint64_t index = 0;
-  uint64_t f1_idx = 0;
-  uint64_t f2_idx = 0;
-
-  float f1_val = 0.f;
-  float f2_val = 0.f;
+  if (s1==1) { return emt_scale_add(f1,s2,f2); }
 
   emt_feats out;
+  auto iter1 = f1.begin();
+  auto iter2 = f2.begin();
 
-  while (idx1 < f1.size() || idx2 < f2.size())
+  while (iter1 != f1.end() && iter2 != f2.end())
   {
-    f1_idx = (idx1 == f1.size()) ? INT_MAX : f1[idx1].first;
-    f2_idx = (idx2 == f2.size()) ? INT_MAX : f2[idx2].first;
-
-    f1_val = 0.f;
-    f2_val = 0.f;
-
-    if (f1_idx <= f2_idx)
+    if (iter1->first < iter2->first)
     {
-      index = f1_idx;
-      f1_val = f1[idx1].second;
-      idx1++;
+      out.emplace_back(iter1->first, s1*iter1->second);
+      iter1++;
     }
-
-    if (f2_idx <= f1_idx)
-    {
-      index = f2_idx;
-      f2_val = f2[idx2].second;
-      idx2++;
+    else if(iter2->first < iter1->first) {
+      out.emplace_back(iter2->first, s2*iter2->second);
+      iter2++;
     }
-
-    auto new_val = s1 * f1_val + s2 * f2_val;
-    if (new_val != 0) {
-      out.emplace_back(index, new_val);
+    else {
+      out.emplace_back(iter1->first, s1*iter1->second+s2*iter2->second);
+      iter1++;
+      iter2++;
     }
   }
+
+  while (iter1 != f1.end()) {
+    out.emplace_back(iter1->first, s1*iter1->second);
+    iter1++;
+  }
+
+  while (iter2 != f2.end()) {
+    out.emplace_back(iter2->first, s2*iter2->second);
+    iter2++;
+  }
+
   return out;
 }
 
@@ -316,10 +405,10 @@ emt_feats emt_router_eigen(std::vector<emt_feats>& exs, VW::rand_state& rng)
   for (auto& p : sums) { means.emplace_back(p.first, p.second / exs.size()); }
 
   std::vector<emt_feats> centered_exs;
-  centered_exs.reserve(exs.size());
-  for (auto& e : exs) { centered_exs.push_back(emt_scale_add(1, e, -1, means)); }
+  for (auto& e : exs) { centered_exs.push_back(emt_sub(e, means)); }
 
   int n_epochs = 40;  // the bigger the better eigen approximation
+  int j = 0;
 
   for (int i = 0; i < n_epochs; i++)
   {
@@ -327,21 +416,21 @@ emt_feats emt_router_eigen(std::vector<emt_feats>& exs, VW::rand_state& rng)
     // projectors that are substantially
     // closer to the true top eigen vector
     // in experiments
-    float n = 1;
+    int n = 1;
     emt_shuffle(centered_exs.begin(), centered_exs.end(), rng);
-
     for (const emt_feats& fs : centered_exs)
     {
       // in matrix multiplication notation this looks like:
       // weights = weights + (1/n) * inner(outer(fs,fs), weights)
       //         = weights + (1/n) * fs * inner(fs,weights)
       //         =          weights+(1/n)*inner(fs,weights)*fs
-      weights = emt_scale_add(1, weights, (1 / n) * emt_inner(fs, weights), fs);
-      emt_normalize(weights);
-      n += 1;
+      j++;
+      emt_scale_add2(weights, emt_inner(fs, weights)/n, fs);
+      if (j%4 == 0) { emt_normalize(weights); }
+      n++;
     }
   }
-
+  emt_normalize(weights);
   return weights;
 }
 }  // namespace eigen_memory_tree
@@ -394,10 +483,53 @@ void tree_bound(emt_tree& b, emt_example* ec)
 
 void scorer_features(const emt_feats& f1, VW::features& out)
 {
-  out.clear();
   for (auto p : f1)
   {
     if (p.second != 0) { out.push_back(p.second, p.first); }
+  }
+}
+
+void scorer_features(const emt_feats& f1, const emt_feats& f2, VW::features& out)
+{
+  auto iter1 = f1.begin();
+  auto iter2 = f2.begin();
+
+  while (iter1 != f1.end() && iter2 != f2.end())
+  {
+    if (iter1->first < iter2->first)
+    {
+      if (iter1->second != 0) {
+        out.push_back(iter1->second,iter1->first);
+      }
+      iter1++;
+    }
+    else if(iter2->first < iter1->first) {
+      if (iter2->second != 0) {
+        out.push_back(iter2->second,iter2->first);
+      }
+      iter2++;
+    }
+    else {
+      if (iter1->second!=iter2->second) {
+        out.push_back(std::abs(iter1->second-iter2->second),iter1->first);
+      }
+      iter1++;
+      iter2++;
+    }
+  }
+
+  while (iter1 != f1.end()) {
+    if (iter1->second != 0) {
+      out.push_back(iter1->second,iter1->first);
+    }
+    iter1++;
+  }
+
+  while (iter2 != f2.end()) {
+    if (iter2->second != 0) {
+      out.push_back(iter2->second,iter2->first);
+    }
+    iter2++;
   }
 }
 
@@ -408,6 +540,9 @@ void scorer_example(emt_tree& b, const emt_example& ex1, const emt_example& ex2)
   static constexpr VW::namespace_index X_NS = 'x';
   static constexpr VW::namespace_index Z_NS = 'z';
 
+    out.feature_space[X_NS].clear();
+    out.feature_space[Z_NS].clear();
+
   if (b.scorer_type == emt_scorer_type::SELF_CONSISTENT_RANK)
   {
     out.indices.clear();
@@ -415,12 +550,7 @@ void scorer_example(emt_tree& b, const emt_example& ex1, const emt_example& ex2)
 
     out.interactions->clear();
 
-    out.feature_space[X_NS].clear();
-    out.feature_space[Z_NS].clear();
-
-    emt_feats feat_diff = emt_scale_add(1, ex1.full, -1, ex2.full);
-    emt_abs(feat_diff);
-    scorer_features(feat_diff, out.feature_space[X_NS]);
+    scorer_features(ex1.full, ex2.full, out.feature_space[X_NS]);
 
     out.total_sum_feat_sq = out.feature_space[X_NS].sum_feat_sq;
     out.num_features = out.feature_space[X_NS].size();
@@ -668,7 +798,6 @@ void emt_learn(emt_tree& b, learner& base, VW::example& ec)
   emt_node& cn = *tree_route(b, *ex);
   scorer_learn(b, base, cn, *ex, ec.weight);
   node_predict(b, base, cn, *ex, ec);  // vw learners predict and emt_learn
-
   tree_bound(b, ex.get());
   node_insert(cn, std::move(ex));
   node_split(b, cn);
