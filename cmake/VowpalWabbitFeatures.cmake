@@ -78,7 +78,7 @@ foreach(feature ${VW_ALL_FEATURES})
   string(TOUPPER ${feature} feature_upper)
 
   # Check if was explicitly passed and evaluates to false, then ignore the list
-  if(DEFINED VW_FEATURE_${feature_upper}_ENABLED AND NOT VW_FEATURE_${feature_upper}_ENABLED)
+  if(DEFINED VW_FEATURE_${feature_upper}_ENABLED)
     continue()
   endif()
 
