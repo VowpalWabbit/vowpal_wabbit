@@ -13,6 +13,11 @@
 #   - The cmake variable VW_FEATURE_X_ENABLED is se to ON, otherwise it is OFF
 #   - The C++ macro VW_FEATURE_X_ENABLED is defined if the feature is enabled, otherwise it is not defined
 #
+# If a feature has conditions for its enablement it can be disabled with:
+#   vw_disable_feature(FEATURE_NAME REASON)
+#
+# This MUST be done prior to include(VowpalWabbitUtils), and after include(VWFeatures)
+#
 # Features:
 #   FLATBUFFERS: Enable flatbuffers support
 #   CSV: Enable csv parser
@@ -101,6 +106,21 @@ unset(VW_DEFAULT_FEATURES)
 unset(VW_ALL_FEATURES)
 unset(VW_ENABLED_FEATURES_UPPER)
 unset(VW_ENABLED_FEATURES)
+
+function(vw_disable_feature FEATURE_NAME REASON)
+  string(TOUPPER ${FEATURE_NAME} feature_upper)
+  if (NOT DEFINED VW_FEATURE_${feature_upper}_ENABLED)
+    message(FATAL_ERROR "Feature ${feature_upper} is not a valid feature.")
+  endif()
+  if (NOT VW_FEATURE_${feature_upper}_ENABLED)
+    message(FATAL_ERROR "Feature ${feature_upper} is already disabled.")
+  endif()
+  message(STATUS "Disabling feature ${feature_upper}: ${REASON}")
+  set(VW_FEATURE_${feature_upper}_ENABLED OFF CACHE BOOL "Disable ${feature_upper} feature" FORCE)
+  set(${OUTPUT} vw_${LIB_NAME} PARENT_SCOPE)
+  list(REMOVE_ITEM VW_FEATURE_COMPILE_DEFINITIONS "VW_FEATURE_${feature_upper}_ENABLED")
+  set(VW_FEATURE_COMPILE_DEFINITIONS ${VW_FEATURE_COMPILE_DEFINITIONS} PARENT_SCOPE)
+endfunction()
 
 # Outputs:
 #   VW_FEATURE_COMPILE_DEFINITIONS: List of compile definitions for enabled features

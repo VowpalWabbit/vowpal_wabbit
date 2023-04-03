@@ -69,6 +69,12 @@ project(vowpal_wabbit VERSION "${VW_VERSION_MAJOR}.${VW_VERSION_MINOR}.${VW_VERS
 set(VW_PROJECT_DESCRIPTION "Vowpal Wabbit Machine Learning System")
 set(VW_PROJECT_URL "https://vowpalwabbit.org")
 
+# This must be checked after the project call since we need to check CMAKE_SYSTEM_PROCESSOR
+# It must be done before we include VowpalWabbitUtils
+if (VW_FEATURE_LAS_SIMD_ENABLED AND NOT ((UNIX AND NOT APPLE) AND (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64")))
+  vw_disable_feature(LAS_SIMD "LAS SIMD is only supported on x86_64 Linux")
+endif()
+
 option(USE_LATEST_STD "Override using C++11 with the latest standard the compiler offers. Default is C++11. " OFF)
 include(DetectCXXStandard)
 if(NOT VW_CXX_STANDARD)
