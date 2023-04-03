@@ -35,7 +35,7 @@ std::unique_ptr<VW::workspace> initialize_internal(
 {
   // Set up logger as early as possible
   auto all = VW::details::parse_args(std::move(options), trace_listener, trace_context, custom_logger);
-
+  std::cout << "Hello world" << std::endl;
   // if user doesn't pass in a model, read from options
   VW::io_buf local_model;
   if (model == nullptr)
