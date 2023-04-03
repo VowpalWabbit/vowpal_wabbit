@@ -139,13 +139,11 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_greedy_setu
   {
     input_label_type = VW::label_type_t::CB_WITH_OBSERVATIONS;
     output_label_type = VW::label_type_t::CB_WITH_OBSERVATIONS;
-    all.parser_runtime.example_parser->lbl_parser = VW::cb_with_observations_global;
   }
   else
   {
     input_label_type = VW::label_type_t::CB;
     output_label_type = VW::label_type_t::CB;
-    all.parser_runtime.example_parser->lbl_parser = VW::cb_label_parser_global;
   }
 
   if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }

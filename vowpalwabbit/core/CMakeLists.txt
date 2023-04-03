@@ -436,6 +436,7 @@ vw_add_test_executable(
       tests/cb_large_actions_test.cc
       tests/cb_las_one_pass_svd_test.cc
       tests/cb_las_spanner_test.cc
+      tests/cb_with_observations_parser_test.cc
       tests/ccb_parser_test.cc
       tests/ccb_test.cc
       tests/chain_hashing.cc

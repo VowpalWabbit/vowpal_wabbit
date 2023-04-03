@@ -6,10 +6,11 @@
 #include "vw/core/reductions/gd.h"
 #include "vw/core/vw_fwd.h"
 
-#include <stdint.h>
-
 #include <cstddef>
+#include <cstdint>
 
+namespace
+{
 class ftrl_update_data
 {
 public:
@@ -35,6 +36,7 @@ public:
   uint32_t ftrl_size = 0;
   std::vector<VW::reductions::details::gd_per_model_state> gd_per_model_states;
 };
+}  // namespace
 
 #include <memory>
 

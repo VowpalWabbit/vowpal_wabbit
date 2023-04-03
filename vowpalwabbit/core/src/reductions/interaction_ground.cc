@@ -55,12 +55,12 @@ private:
 };
 
 std::vector<std::vector<VW::namespace_index>> get_ik_interactions(
-    std::vector<std::vector<VW::namespace_index>> interactions, VW::example* observation_ex)
+    const std::vector<std::vector<VW::namespace_index>>& interactions, const VW::example& observation_ex)
 {
   std::vector<std::vector<VW::namespace_index>> new_interactions;
-  for (auto& interaction : interactions)
+  for (const auto& interaction : interactions)
   {
-    for (auto& obs_ns : observation_ex->indices)
+    for (auto obs_ns : observation_ex.indices)
     {
       if (obs_ns == VW::details::DEFAULT_NAMESPACE) { obs_ns = VW::details::IGL_FEEDBACK_NAMESPACE; }
 
@@ -72,21 +72,21 @@ std::vector<std::vector<VW::namespace_index>> get_ik_interactions(
   return new_interactions;
 }
 
-void add_obs_features_to_ik_ex(VW::example* ik_ex, VW::example* obs_ex)
+void add_obs_features_to_ik_ex(VW::example& ik_ex, const VW::example& obs_ex)
 {
-  for (auto& obs_ns : obs_ex->indices)
+  for (auto obs_ns : obs_ex.indices)
   {
-    ik_ex->indices.push_back(obs_ns);
+    ik_ex.indices.push_back(obs_ns);
 
-    for (size_t i = 0; i < obs_ex->feature_space[obs_ns].indices.size(); i++)
+    for (size_t i = 0; i < obs_ex.feature_space[obs_ns].indices.size(); i++)
     {
-      auto feature_hash = obs_ex->feature_space[obs_ns].indices[i];
-      auto feature_val = obs_ex->feature_space[obs_ns].values[i];
+      auto feature_hash = obs_ex.feature_space[obs_ns].indices[i];
+      auto feature_val = obs_ex.feature_space[obs_ns].values[i];
 
       if (obs_ns == VW::details::DEFAULT_NAMESPACE) { obs_ns = VW::details::IGL_FEEDBACK_NAMESPACE; }
 
-      ik_ex->feature_space[obs_ns].indices.push_back(feature_hash);
-      ik_ex->feature_space[obs_ns].values.push_back(feature_val);
+      ik_ex.feature_space[obs_ns].indices.push_back(feature_hash);
+      ik_ex.feature_space[obs_ns].values.push_back(feature_val);
     }
   }
 }
@@ -118,7 +118,7 @@ void learn(interaction_ground& igl, learner& base, VW::multi_ex& ec_seq)
   size_t chosen_action_idx = 0;
 
   const auto it = std::find_if(ec_seq.begin(), ec_seq.end(),
-      [](VW::example* item) { return !item->l.cb_with_observations.event.costs.empty(); });
+      [](const VW::example* item) { return !item->l.cb_with_observations.event.costs.empty(); });
 
   if (it != ec_seq.end()) { chosen_action_idx = std::distance(ec_seq.begin(), it); }
 
@@ -130,8 +130,7 @@ void learn(interaction_ground& igl, learner& base, VW::multi_ex& ec_seq)
     ec_seq.pop_back();
   }
 
-  VW::action_scores action_scores = ec_seq[0]->pred.a_s;
-  std::vector<std::vector<VW::namespace_index>> ik_interactions = get_ik_interactions(igl.interactions, observation_ex);
+  std::vector<std::vector<VW::namespace_index>> ik_interactions = get_ik_interactions(igl.interactions, *observation_ex);
 
   for (size_t i = 0; i < ec_seq.size(); i++)
   {
@@ -140,12 +139,12 @@ void learn(interaction_ground& igl, learner& base, VW::multi_ex& ec_seq)
     // TODO: Do we need constant feature here? If so, VW::add_constant_feature
     VW::details::append_example_namespaces_from_example(igl.ik_ex, *action_ex);
 
-    add_obs_features_to_ik_ex(&igl.ik_ex, observation_ex);
+    add_obs_features_to_ik_ex(igl.ik_ex, *observation_ex);
     // 1. set up ik ex
     igl.ik_ex.l.simple.label = i == chosen_action_idx ? 1.f : -1.f;
 
-    auto action_score_iter = std::find_if(
-        action_scores.begin(), action_scores.end(), [&i](VW::action_score& element) { return element.action == i; });
+    auto action_score_iter = std::find_if(ec_seq[0]->pred.a_s.begin(), ec_seq[0]->pred.a_s.end(),
+        [i](const VW::action_score& element) { return element.action == i; });
 
     float pa = action_score_iter->score;
 
@@ -172,7 +171,7 @@ void learn(interaction_ground& igl, learner& base, VW::multi_ex& ec_seq)
   // 4. update multi line ex label
   if (ik_pred * 2 > 1.f)
   {
-    bool is_definitely_bad = observation_ex->l.cb_with_observations.is_definitely_bad;
+    int is_definitely_bad = static_cast<int>(observation_ex->l.cb_with_observations.is_definitely_bad);
     predicted_cost = -1.f + is_definitely_bad * (1.f + 1.f / p_unlabeled_prior);
   }
 
@@ -312,15 +311,15 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::interaction_ground_setup(V
   auto ftrl_coin = pi_learner->get_learner_by_name_prefix("ftrl-Coin")->shared_from_this();
 
   // 2. prepare args for ik stack
-  std::string ik_args = "--quiet --link=logistic --loss_function=logistic --coin";
+  std::vector<std::string> ik_args = {"--quiet", "--link=logistic", "--loss_function=logistic", "--coin"};
   std::unique_ptr<options_i, options_deleter_type> ik_options(
-      new config::options_cli(VW::split_command_line(ik_args)), [](VW::config::options_i* ptr) { delete ptr; });
+      new config::options_cli(ik_args), [](VW::config::options_i* ptr) { delete ptr; });
 
   assert(ik_options->was_supplied("cb_explore_adf") == false || ik_options->was_supplied("cb_adf") == false);
   assert(ik_options->was_supplied("loss_function") == true);
 
-  ld->ik_all = VW::initialize_experimental(VW::make_unique<VW::config::options_cli>(VW::split_command_line(ik_args)));
-  all->parser_runtime.example_parser->lbl_parser = VW::get_label_parser(label_type_t::CB_WITH_OBSERVATIONS);
+  ld->ik_all = VW::initialize_experimental(
+      VW::make_unique<VW::config::options_cli>(ik_args), nullptr, nullptr, nullptr, &all->logger);
 
   std::unique_ptr<ik_stack_builder> ik_builder = VW::make_unique<ik_stack_builder>(ftrl_coin);
   ik_builder->delayed_state_attach(*ld->ik_all, *ik_options);

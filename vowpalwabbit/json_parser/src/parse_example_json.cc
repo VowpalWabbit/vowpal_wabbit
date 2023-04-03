@@ -603,11 +603,6 @@ public:
     {
       VW::cb_with_observations_label* ld = &(*ctx.examples)[0]->l.cb_with_observations;
       VW::cb_class f;
-
-      f.partial_prediction = 0.;
-      f.action = static_cast<uint32_t>(VW::uniform_hash("shared", 6, 0));
-      f.cost = FLT_MAX;
-      f.probability = -1.f;
       ld->event.costs.push_back(f);
     }
     else if (ctx._label_parser.label_type == VW::label_type_t::CCB)
