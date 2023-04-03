@@ -39,7 +39,7 @@ jobs:
       - name: Configure
         run: cmake --preset vcpkg-release -DBUILD_BENCHMARKS=On
       - name: Compile
-        run: cmake --build build --target vw_benchmarks_bin
+        run: cmake --build build --target vw-benchmarks.out
       - name: Run benchmarks
         run: >
           ./build/test/benchmarks/vw-benchmarks.out

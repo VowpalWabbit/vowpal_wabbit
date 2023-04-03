@@ -377,17 +377,20 @@ vw_add_library(
 
 target_include_directories(vw_core PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src)
 
-if (VW_FEATURE_LAS_SIMD_ENABLED)
+if (VW_BUILD_LAS_WITH_SIMD AND (UNIX AND NOT APPLE) AND (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64"))
   set_source_files_properties(src/reductions/cb/details/large_action/compute_dot_prod_avx2.cc PROPERTIES COMPILE_FLAGS "-mfma -mavx2")
   set_source_files_properties(src/reductions/cb/details/large_action/compute_dot_prod_avx512.cc PROPERTIES COMPILE_FLAGS "-mavx512f -mavx512bw -mavx512vl -mavx512vpopcntdq")
+  target_compile_definitions(vw_core PUBLIC BUILD_LAS_WITH_SIMD)
 endif()
 
-if(VW_FEATURE_CSV_ENABLED)
+if(VW_BUILD_CSV)
   target_link_libraries(vw_core PRIVATE vw_csv_parser)
+  target_compile_definitions(vw_core PUBLIC VW_BUILD_CSV)
 endif()
 
-if(VW_FEATURE_FLATBUFFERS_ENABLED)
+if(BUILD_FLATBUFFERS)
   target_link_libraries(vw_core PRIVATE vw_fb_parser)
+  target_compile_definitions(vw_core PUBLIC BUILD_FLATBUFFERS)
 endif()
 
 # Handle generated header

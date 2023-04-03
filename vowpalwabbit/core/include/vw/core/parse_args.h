@@ -36,7 +36,7 @@ public:
   bool compressed;
   bool chain_hash_json;
   bool flatbuffer = false;
-#ifdef VW_FEATURE_CSV_ENABLED
+#ifdef VW_BUILD_CSV
   std::unique_ptr<VW::parsers::csv::csv_parser_options> csv_opts;
 #endif
   bool stdin_off = false;

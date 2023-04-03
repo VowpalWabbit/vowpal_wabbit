@@ -75,11 +75,11 @@ int VW_GETPID() { return (int)::GetCurrentProcessId(); }
 #include <cassert>
 #include <cerrno>
 #include <cstdio>
-#ifdef VW_FEATURE_FLATBUFFERS_ENABLED
+#ifdef BUILD_FLATBUFFERS
 #  include "vw/fb_parser/parse_example_flatbuffer.h"
 #endif
 
-#ifdef VW_FEATURE_CSV_ENABLED
+#ifdef VW_BUILD_CSV
 #  include "vw/csv_parser/parse_example_csv.h"
 #endif
 
@@ -631,14 +631,14 @@ void VW::details::enable_sources(
       }
 
       if (input_options.json || input_options.dsjson) { set_json_reader(all, input_options.dsjson); }
-#ifdef VW_FEATURE_FLATBUFFERS_ENABLED
+#ifdef BUILD_FLATBUFFERS
       else if (input_options.flatbuffer)
       {
         all.parser_runtime.flat_converter = VW::make_unique<VW::parsers::flatbuffer::parser>();
         all.parser_runtime.example_parser->reader = VW::parsers::flatbuffer::flatbuffer_to_examples;
       }
 #endif
-#ifdef VW_FEATURE_CSV_ENABLED
+#ifdef VW_BUILD_CSV
       else if (input_options.csv_opts && input_options.csv_opts->enabled)
       {
         all.parser_runtime.custom_parser = VW::make_unique<VW::parsers::csv::csv_parser>(*input_options.csv_opts);

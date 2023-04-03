@@ -6,7 +6,7 @@
 
 // TODO: Make simd work with MSVC. Only works on linux for now.
 // TODO: Only works for x86. Make simd work on other architectures e.g. using SIMDe.
-#ifdef VW_FEATURE_LAS_SIMD_ENABLED
+#ifdef BUILD_LAS_WITH_SIMD
 
 #  include "vw/core/example.h"
 #  include "vw/core/global_data.h"

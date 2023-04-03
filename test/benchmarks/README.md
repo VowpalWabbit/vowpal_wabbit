@@ -10,7 +10,7 @@ Benchmarking is done via [github-action-benchmark](https://github.com/benchmark-
 Compile:
 ```
 cmake --preset vcpkg-release -DBUILD_BENCHMARKS=On
-cmake --build build --target vw_benchmarks_bin
+cmake --build build --target vw-benchmarks.out
 ```
 
 Run:
