@@ -24,6 +24,13 @@ cb_sim::cb_sim(uint64_t seed, bool use_default_ns)
   random_state.set_random_state(seed);
   callback_count = 0;
 }
+float simulator::cb_sim::get_gaussian_reward(float mean, float stddev)
+{
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::normal_distribution<float> distribution(mean, stddev);
+  return distribution(gen);
+}
 
 float cb_sim::get_reaction(const std::map<std::string, std::string>& context, const std::string& action, bool add_noise,
     bool swap_reward, float scale_reward)

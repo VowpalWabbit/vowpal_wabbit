@@ -6,7 +6,9 @@
 
 #include "vw/common/random.h"
 #include "vw/core/multi_ex.h"
-
+#include <random>
+#include <algorithm>
+#include "simulator.h"
 #include <functional>
 #include <map>
 #include <string>
@@ -43,6 +45,7 @@ public:
   cb_sim(uint64_t seed = 0, bool use_default_ns = false);
   float get_reaction(const std::map<std::string, std::string>& context, const std::string& action,
       bool add_noise = false, bool swap_reward = false, float scale_reward = 1.f);
+  float get_gaussian_reward(float mean, float stddev); // Added new method declaration
   std::vector<std::string> to_vw_example_format(const std::map<std::string, std::string>& context,
       const std::string& chosen_action, float cost = 0.f, float prob = 0.f);
   std::pair<int, float> sample_custom_pmf(std::vector<float>& pmf);
@@ -57,6 +60,7 @@ public:
 
 private:
   void call_if_exists(VW::workspace& vw, VW::multi_ex& ex, const callback_map& callbacks, const size_t event);
+
 };
 
 std::vector<float> _test_helper(const std::vector<std::string>& vw_arg, size_t num_iterations = 3000, int seed = 10);

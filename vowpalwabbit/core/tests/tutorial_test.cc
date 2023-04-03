@@ -28,3 +28,19 @@ TEST(Tutorial, CppSimulatorWithInteraction)
 
   EXPECT_FLOAT_EQ(without_save, with_save);
 }
+TEST(Tutorial, GaussianRewardSimulation) {
+  // Set up the parameters for the Gaussian reward simulation
+  float mean = 0.0f;
+  float stddev = 1.0f;
+
+  // Create a cb_sim instance
+  simulator::cb_sim sim;
+
+  // Generate a Gaussian reward using the new method
+  float reward = sim.get_gaussian_reward(mean, stddev);
+
+  // Perform any necessary checks to validate the generated reward
+  // For example, check if the reward falls within a specific range
+  EXPECT_LE(reward, mean + 3 * stddev);
+  EXPECT_GE(reward, mean - 3 * stddev);
+}
