@@ -37,7 +37,7 @@ if (NOT CMAKE_BUILD_TYPE AND NOT GENERATOR_IS_MULTI_CONFIG)
 endif()
 
 # This must stay near the top of the file so compile features are properly detected.
-include(VWFeatures)
+include(VowpalWabbitFeatures)
 
 if(WIN32)
   include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/platforms/win32.cmake)

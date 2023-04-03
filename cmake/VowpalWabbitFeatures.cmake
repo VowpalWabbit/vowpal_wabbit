@@ -16,7 +16,7 @@
 # If a feature has conditions for its enablement it can be disabled with:
 #   vw_disable_feature(FEATURE_NAME REASON)
 #
-# This MUST be done prior to include(VowpalWabbitUtils), and after include(VWFeatures)
+# This MUST be done prior to include(VowpalWabbitUtils), and after include(VowpalWabbitFeatures)
 #
 # Features:
 #   FLATBUFFERS: Enable flatbuffers support
