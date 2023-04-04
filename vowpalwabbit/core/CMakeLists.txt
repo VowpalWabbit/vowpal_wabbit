@@ -387,9 +387,8 @@ if(VW_FEAT_CSV)
   target_link_libraries(vw_core PRIVATE vw_csv_parser)
 endif()
 
-if(BUILD_FLATBUFFERS)
+if(VW_FEAT_FLATBUFFERS)
   target_link_libraries(vw_core PRIVATE vw_fb_parser)
-  target_compile_definitions(vw_core PUBLIC BUILD_FLATBUFFERS)
 endif()
 
 # Handle generated header
