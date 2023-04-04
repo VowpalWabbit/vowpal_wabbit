@@ -55,7 +55,7 @@
 #include <sstream>
 #include <tuple>
 #include <utility>
-#ifdef VW_BUILD_CSV
+#ifdef VW_FEAT_CSV_ENABLED
 #  include "vw/csv_parser/parse_example_csv.h"
 #endif
 
@@ -410,7 +410,7 @@ VW::details::input_options parse_source(VW::workspace& all, options_i& options)
       .add(make_option("flatbuffer", parsed_options.flatbuffer)
                .help("Data file will be interpreted as a flatbuffer file")
                .experimental());
-#ifdef VW_BUILD_CSV
+#ifdef VW_FEAT_CSV_ENABLED
   parsed_options.csv_opts = VW::make_unique<VW::parsers::csv::csv_parser_options>();
   VW::parsers::csv::csv_parser::set_parse_args(input_options, *parsed_options.csv_opts);
 #endif
@@ -457,7 +457,7 @@ VW::details::input_options parse_source(VW::workspace& all, options_i& options)
     *(all.output_runtime.trace_message) << "Making holdout_set_off=true since output regularizer specified" << endl;
   }
 
-#ifdef VW_BUILD_CSV
+#ifdef VW_FEAT_CSV_ENABLED
   VW::parsers::csv::csv_parser::handle_parse_args(*parsed_options.csv_opts);
 #endif
 

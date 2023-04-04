@@ -85,7 +85,7 @@
           "type": "BOOL",
           "value": "On"
         },
-        "VW_BUILD_CSV": {
+        "VW_FEAT_CSV": {
           "type": "BOOL",
           "value": "On"
         }
