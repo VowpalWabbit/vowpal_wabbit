@@ -79,7 +79,7 @@ int VW_GETPID() { return (int)::GetCurrentProcessId(); }
 #  include "vw/fb_parser/parse_example_flatbuffer.h"
 #endif
 
-#ifdef VW_BUILD_CSV
+#ifdef VW_FEAT_CSV_ENABLED
 #  include "vw/csv_parser/parse_example_csv.h"
 #endif
 
@@ -638,7 +638,7 @@ void VW::details::enable_sources(
         all.parser_runtime.example_parser->reader = VW::parsers::flatbuffer::flatbuffer_to_examples;
       }
 #endif
-#ifdef VW_BUILD_CSV
+#ifdef VW_FEAT_CSV_ENABLED
       else if (input_options.csv_opts && input_options.csv_opts->enabled)
       {
         all.parser_runtime.custom_parser = VW::make_unique<VW::parsers::csv::csv_parser>(*input_options.csv_opts);

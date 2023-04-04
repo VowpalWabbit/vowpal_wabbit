@@ -137,7 +137,6 @@ option(VW_EIGEN_SYS_DEP "Override using the submodule for Eigen3 dependency. Ins
 option(VW_STRING_VIEW_LITE_SYS_DEP "Override using the submodule for string-view-lite dependency. Instead will use find_package" OFF)
 option(VW_SSE2NEON_SYS_DEP "Override using the submodule for SSE2Neon dependency. Instead will use find_package" OFF)
 option(VW_BUILD_VW_C_WRAPPER "Enable building the c_wrapper project" ON)
-option(VW_BUILD_CSV "Build csv parser" OFF)
 option(VW_BUILD_LAS_WITH_SIMD "Build large action space with explicit simd (only work with linux for now)" ON)
 option(vw_BUILD_NET_CORE "Build .NET Core targets" OFF)
 option(vw_BUILD_NET_FRAMEWORK "Build .NET Framework targets" OFF)
