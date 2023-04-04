@@ -2,12 +2,12 @@
 # compilation or optional parts.
 #
 # This feature list can be specified by:
-#   - Specifying individual features with -DVW_FEATURE_FEAT1_ENABLED=ON/OFF
+#   - Specifying individual features with -DVW_FEATURE_FEAT1=ON/OFF
 #
 # This allows us to enable/disable features without changing the code
 # If a feature called X is enabled then:
-#   - The cmake variable VW_FEATURE_X_ENABLED is set to ON, otherwise it is OFF
-#   - The C++ macro VW_FEATURE_X_ENABLED is defined if the feature is enabled, otherwise it is not defined
+#   - The cmake variable VW_FEAT_X is set to ON, otherwise it is OFF
+#   - The C++ macro VW_FEAT_X_ENABLED is defined if the feature is enabled, otherwise it is not defined
 #
 # Features:
 #   FLATBUFFERS: Enable flatbuffers support
@@ -17,14 +17,14 @@
 # set(VW_ALL_FEATURES "LAS_SIMD;FLATBUFFERS;CSV")
 set(VW_ALL_FEATURES "")
 
-# option(VW_FEATURE_FLATBUFFERS_ENABLED "Enable flatbuffers support" OFF)
-# option(VW_FEATURE_CSV_ENABLED "Enable csv parser" OFF)
-# option(VW_FEATURE_LAS_SIMD_ENABLED "Enable large action space with explicit simd (only works with linux for now)" ON)
+# option(VW_FEAT_FLATBUFFERS "Enable flatbuffers support" OFF)
+# option(VW_FEAT_CSV "Enable csv parser" OFF)
+# option(VW_FEAT_LAS_SIMD "Enable large action space with explicit simd (only works with linux for now)" ON)
 
 # Legacy options for feature enablement
 # if(DEFINED BUILD_FLATBUFFERS)
-#   message(WARNING "BUILD_FLATBUFFERS is deprecated. Use -DVW_FEATURE_FLATBUFFERS_ENABLED=On instead.")
-#   set(VW_FEATURE_FLATBUFFERS_ENABLED ${BUILD_FLATBUFFERS} CACHE BOOL "" FORCE)
+#   message(WARNING "BUILD_FLATBUFFERS is deprecated. Use -DVW_FEAT_FLATBUFFERS=On instead.")
+#   set(VW_FEAT_FLATBUFFERS ${BUILD_FLATBUFFERS} CACHE BOOL "" FORCE)
 # endif()
 
 # if(DEFINED VW_BUILD_CSV)
@@ -33,8 +33,8 @@ set(VW_ALL_FEATURES "")
 # endif()
 
 # if(DEFINED VW_BUILD_LAS_WITH_SIMD)
-#   message(WARNING "VW_BUILD_LAS_WITH_SIMD is deprecated. Use -DVW_FEATURE_LAS_SIMD_ENABLED=On instead.")
-#   set(VW_FEATURE_LAS_SIMD_ENABLED ${VW_BUILD_LAS_WITH_SIMD} CACHE BOOL "" FORCE)
+#   message(WARNING "VW_BUILD_LAS_WITH_SIMD is deprecated. Use -DVW_FEAT_LAS_SIMD=On instead.")
+#   set(VW_FEAT_LAS_SIMD ${VW_BUILD_LAS_WITH_SIMD} CACHE BOOL "" FORCE)
 # endif()
 
 function(vw_print_enabled_features)
