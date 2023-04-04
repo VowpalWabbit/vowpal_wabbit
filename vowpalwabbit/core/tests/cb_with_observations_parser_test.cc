@@ -16,7 +16,6 @@
 #include <memory>
 #include <vector>
 
-
 TEST(CbWithObservations, CacheLabel)
 {
   auto backing_vector = std::make_shared<std::vector<char>>();

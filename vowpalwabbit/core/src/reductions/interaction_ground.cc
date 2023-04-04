@@ -129,7 +129,7 @@ void learn(interaction_ground& igl, learner& base, VW::multi_ex& ec_seq)
     ec_seq.pop_back();
   }
 
-  std::vector<std::vector<VW::namespace_index>> ik_interactions = get_ik_interactions(igl.interactions, *observation_ex);
+  auto ik_interactions = get_ik_interactions(igl.interactions, *observation_ex);
 
   for (size_t i = 0; i < ec_seq.size(); i++)
   {
