@@ -14,7 +14,6 @@
 #include "vw/core/parse_primitives.h"
 #include "vw/core/prediction_type.h"
 #include "vw/core/reductions/cb/cb_adf.h"
-#include "vw/core/reductions/cb/cb_algs.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/simple_label.h"
@@ -227,7 +226,6 @@ void predict(interaction_ground& igl, learner& base, VW::multi_ex& ec_seq)
 
   if (observation_ex != nullptr) { ec_seq.push_back(observation_ex); }
 }
-}  // namespace
 
 void print_update_igl(VW::workspace& all, VW::shared_data& /*sd*/, const interaction_ground& data,
     const VW::multi_ex& ec_seq, VW::io::logger& /*logger*/)
@@ -282,6 +280,7 @@ void update_stats_igl(const VW::workspace& /* all */, VW::shared_data& sd, const
 
   sd.update(holdout_example, labeled_example, loss, ec.weight, num_features);
 }
+}  // namespace
 
 std::shared_ptr<VW::LEARNER::learner> VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_builder)
 {
