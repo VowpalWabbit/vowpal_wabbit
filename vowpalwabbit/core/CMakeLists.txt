@@ -383,9 +383,8 @@ if (VW_BUILD_LAS_WITH_SIMD AND (UNIX AND NOT APPLE) AND (${CMAKE_SYSTEM_PROCESSO
   target_compile_definitions(vw_core PUBLIC BUILD_LAS_WITH_SIMD)
 endif()
 
-if(VW_BUILD_CSV)
+if(VW_FEAT_CSV)
   target_link_libraries(vw_core PRIVATE vw_csv_parser)
-  target_compile_definitions(vw_core PUBLIC VW_BUILD_CSV)
 endif()
 
 if(BUILD_FLATBUFFERS)

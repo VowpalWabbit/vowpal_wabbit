@@ -70,7 +70,7 @@ namespace flatbuffer
 class parser;
 }
 
-#ifdef VW_BUILD_CSV
+#ifdef VW_FEAT_CSV_ENABLED
 namespace csv
 {
 class csv_parser;
