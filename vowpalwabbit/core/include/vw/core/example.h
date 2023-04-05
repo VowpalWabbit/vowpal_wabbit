@@ -8,6 +8,7 @@
 #include "vw/core/active_multiclass_prediction.h"
 #include "vw/core/cb.h"
 #include "vw/core/cb_continuous_label.h"
+#include "vw/core/cb_with_observations_label.h"
 #include "vw/core/ccb_label.h"
 #include "vw/core/constant.h"
 #include "vw/core/cost_sensitive.h"
@@ -48,6 +49,7 @@ public:
   VW::slates::label slates;
   VW::cb_eval_label cb_eval;
   VW::multilabel_label multilabels;
+  VW::cb_with_observations_label cb_with_observations;
 };
 
 struct no_pred
