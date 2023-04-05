@@ -31,4 +31,6 @@ const std::string git_commit(COMMIT_VERSION);
 VW_WARNING_STATE_POP
 
 const std::string GIT_COMMIT(COMMIT_VERSION);
+
+const std::string ENABLED_FEATURES(VW_ENABLED_FEATURES);
 }  // namespace VW
