@@ -85,13 +85,14 @@ float emt_initial(emt_initial_type initial_type, emt_feats f1, emt_feats f2)
 {
   if (initial_type == emt_initial_type::GAUSSIAN) { return 1 - std::exp(-emt_norm(emt_scale_add(1, f1, -1, f2))); }
 
-  if (initial_type == emt_initial_type::COSINE) { 
+  if (initial_type == emt_initial_type::COSINE)
+  {
     auto den = (emt_norm(f1) * emt_norm(f2));
-    if (den != 0) {
-      return 1 - emt_inner(f1, f2) / den;
-    } else {
-      //cosine distance isn't defined for vectors of size 0 so
-      //we default to a gaussian loss as a fallback distance 
+    if (den != 0) { return 1 - emt_inner(f1, f2) / den; }
+    else
+    {
+      // cosine distance isn't defined for vectors of size 0 so
+      // we default to a gaussian loss as a fallback distance
       return 1 - std::exp(-emt_norm(emt_scale_add(1, f1, -1, f2)));
     }
   }

@@ -83,7 +83,8 @@ TEST(EigenMemoryTree, ExactMatchSansRouterTest)
 
 TEST(EigenMemoryTree, CloseMatchSansRouterTest)
 {
-  auto vw = VW::initialize(vwtest::make_args("--quiet", "--emt", "--emt_leaf", "20", "--adaptive", "--invariant", "--noconstant"));
+  auto vw = VW::initialize(
+      vwtest::make_args("--quiet", "--emt", "--emt_leaf", "20", "--adaptive", "--invariant", "--noconstant"));
 
   for (int i = 0; i < 10; i++)
   {
@@ -98,7 +99,7 @@ TEST(EigenMemoryTree, CloseMatchSansRouterTest)
 
   for (int i = 0; i < 10; i++)
   {
-    auto* ex = VW::read_example(*vw, " | 1:" + std::to_string(i+.1));
+    auto* ex = VW::read_example(*vw, " | 1:" + std::to_string(i + .1));
     vw->predict(*ex);
     EXPECT_EQ(ex->pred.multiclass, i);
     vw->finish_example(*ex);
