@@ -15,17 +15,17 @@
 #   LAS_SIMD: Enable large action space with explicit simd (only work with linux for now)
 
 # set(VW_ALL_FEATURES "LAS_SIMD;FLATBUFFERS;CSV")
-set(VW_ALL_FEATURES "CSV")
+set(VW_ALL_FEATURES "CSV;FLATBUFFERS")
 
-# option(VW_FEAT_FLATBUFFERS "Enable flatbuffers support" OFF)
+option(VW_FEAT_FLATBUFFERS "Enable flatbuffers support" OFF)
 option(VW_FEAT_CSV "Enable csv parser" OFF)
 # option(VW_FEAT_LAS_SIMD "Enable large action space with explicit simd (only works with linux for now)" ON)
 
 # Legacy options for feature enablement
-# if(DEFINED BUILD_FLATBUFFERS)
-#   message(WARNING "BUILD_FLATBUFFERS is deprecated. Use -DVW_FEAT_FLATBUFFERS=On instead.")
-#   set(VW_FEAT_FLATBUFFERS ${BUILD_FLATBUFFERS} CACHE BOOL "" FORCE)
-# endif()
+if(DEFINED BUILD_FLATBUFFERS)
+  message(WARNING "BUILD_FLATBUFFERS is deprecated. Use -DVW_FEAT_FLATBUFFERS=On instead.")
+  set(VW_FEAT_FLATBUFFERS ${BUILD_FLATBUFFERS} CACHE BOOL "" FORCE)
+endif()
 
 if(DEFINED VW_BUILD_CSV)
   message(WARNING "VW_BUILD_CSV is deprecated. Use -DVW_FEAT_CSV=On instead.")

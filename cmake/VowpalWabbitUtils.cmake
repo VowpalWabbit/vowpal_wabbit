@@ -189,7 +189,7 @@ function(vw_add_library)
     # Iterate features and add compile definitions
     foreach(feature ${VW_ALL_FEATURES})
       if(VW_FEAT_${feature})
-        target_compile_definitions(${FULL_LIB_NAME} PRIVATE VW_FEAT_${feature}_ENABLED)
+        target_compile_definitions(${FULL_LIB_NAME} PUBLIC VW_FEAT_${feature}_ENABLED)
       endif()
     endforeach()
 
@@ -261,7 +261,7 @@ function(vw_add_executable)
   # Iterate features and add compile definitions
   foreach(feature ${VW_ALL_FEATURES})
     if(VW_FEAT_${feature})
-      target_compile_definitions(${FULL_BIN_NAME} PRIVATE VW_FEAT_${feature}_ENABLED)
+      target_compile_definitions(${FULL_BIN_NAME} PUBLIC VW_FEAT_${feature}_ENABLED)
     endif()
   endforeach()
 
@@ -336,7 +336,7 @@ function(vw_add_test_executable)
     # Iterate features and add compile definitions
     foreach(feature ${VW_ALL_FEATURES})
       if(VW_FEAT_${feature})
-        target_compile_definitions(${FULL_TEST_NAME} PRIVATE VW_FEAT_${feature}_ENABLED)
+        target_compile_definitions(${FULL_TEST_NAME} PUBLIC VW_FEAT_${feature}_ENABLED)
       endif()
     endforeach()
     gtest_discover_tests(${FULL_TEST_NAME} PROPERTIES LABELS VWTestList DISCOVERY_TIMEOUT 60)
