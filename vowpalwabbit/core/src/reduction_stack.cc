@@ -66,7 +66,7 @@
 #include "vw/core/reductions/interaction_ground.h"
 #include "vw/core/reductions/kernel_svm.h"
 #ifdef VW_FEAT_LDA_ENABLED
-#include "vw/core/reductions/lda_core.h"
+#  include "vw/core/reductions/lda_core.h"
 #endif
 #include "vw/core/reductions/log_multi.h"
 #include "vw/core/reductions/lrq.h"
