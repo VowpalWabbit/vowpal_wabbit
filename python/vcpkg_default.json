@@ -5,8 +5,8 @@
   "dependencies": ["zlib", "boost-python", "python3", "flatbuffers"],
   "features": {
     "lda": {
-      "description": "Enable LDA reduction",
-      "dependencies": ["boost-math"]
+      "description": "",
+      "dependencies": []
     }
   }
 }

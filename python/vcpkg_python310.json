@@ -8,8 +8,8 @@
   ],
   "features": {
     "lda": {
-      "description": "Enable LDA reduction",
-      "dependencies": ["boost-math"]
+      "description": "",
+      "dependencies": []
     }
   }
 }
