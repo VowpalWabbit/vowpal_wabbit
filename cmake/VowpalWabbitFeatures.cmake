@@ -43,6 +43,7 @@ function(vw_print_enabled_features)
       list(APPEND ALL_ENABLED_FEATURES ${feature})
     endif()
   endforeach()
+  set(VW_ALL_ENABLED_FEATURES "${ALL_ENABLED_FEATURES}" PARENT_SCOPE)
 
   # Print enabled features
   message(STATUS "Enabled features: ${ALL_ENABLED_FEATURES} (Available features: ${VW_ALL_FEATURES})")
