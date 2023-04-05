@@ -5,6 +5,7 @@
 #include "vw/core/cached_learner.h"
 #include "vw/core/global_data.h"  // to get vw struct
 #include "vw/core/learner.h"
+#include "vw/core/reduction_registry.h"
 #include "vw/core/simple_label_parser.h"
 #include "vw/core/vw_fwd.h"
 
@@ -76,7 +77,6 @@
 #include "vw/core/reductions/multilabel_oaa.h"
 #include "vw/core/reductions/mwt.h"
 #include "vw/core/reductions/nn.h"
-#include "vw/core/reductions/noop.h"
 #include "vw/core/reductions/oaa.h"
 #include "vw/core/reductions/offset_tree.h"
 #include "vw/core/reductions/oja_newton.h"
@@ -142,7 +142,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, VW::reduction_setup_
   reductions.push_back(VW::reductions::sender_setup);
   reductions.push_back(VW::reductions::gd_mf_setup);
   reductions.push_back(VW::reductions::print_setup);
-  reductions.push_back(VW::reductions::noop_setup);
+  reductions.push_back(VW::reduction_registry::get("noop"));
   reductions.push_back(VW::reductions::bfgs_setup);
   reductions.push_back(VW::reductions::oja_newton_setup);
 

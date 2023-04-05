@@ -151,7 +151,6 @@ set(vw_core_headers
   include/vw/core/reductions/multilabel_oaa.h
   include/vw/core/reductions/mwt.h
   include/vw/core/reductions/nn.h
-  include/vw/core/reductions/noop.h
   include/vw/core/reductions/oaa.h
   include/vw/core/reductions/offset_tree.h
   include/vw/core/reductions/oja_newton.h
@@ -248,6 +247,7 @@ set(vw_core_sources
   src/print_utils.cc
   src/prob_dist_cont.cc
   src/qr_decomposition.cc
+  src/reduction_registry.cc
   src/reduction_stack.cc
   src/reductions/active_cover.cc
   src/reductions/active.cc

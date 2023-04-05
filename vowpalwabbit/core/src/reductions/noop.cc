@@ -4,10 +4,9 @@
 
 // This is a learner which does nothing with examples.  Used when VW is used as a compressor.
 
-#include "vw/core/reductions/noop.h"
-
 #include "vw/config/options.h"
 #include "vw/core/learner.h"
+#include "vw/core/reduction_registry.h"
 #include "vw/core/setup_base.h"
 
 using namespace VW::config;
@@ -15,9 +14,7 @@ namespace
 {
 void learn(char&, VW::example&) {}
 
-}  // namespace
-
-std::shared_ptr<VW::LEARNER::learner> VW::reductions::noop_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> noop_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
 
@@ -37,3 +34,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::noop_setup(VW::setup_base_
                  .build();
   return ret;
 }
+}  // namespace
+
+static VW::reduction_registry_entry _("noop", ::noop_setup);
