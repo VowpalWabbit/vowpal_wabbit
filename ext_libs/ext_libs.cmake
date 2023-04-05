@@ -83,7 +83,7 @@ else()
   add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/string-view-lite)
 endif()
 
-if(BUILD_FLATBUFFERS)
+if(VW_FEAT_FLATBUFFERS)
   find_package(Flatbuffers CONFIG QUIET)
   if(FLATBUFFERS_FOUND)
     get_property(flatc_location TARGET flatbuffers::flatc PROPERTY LOCATION)

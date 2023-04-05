@@ -50,7 +50,7 @@ jobs:
           -T ${{ matrix.toolset }}
           -DVW_NUGET_PACKAGE_VERSION="${{ steps.get_version.outputs.version }}"
           -DNATIVE_NUGET_PLATFORM_TAG="${{ matrix.arch_config.arch }}"
-          -DBUILD_FLATBUFFERS=Off
+          -DVW_FEAT_FLATBUFFERS=Off
           -DBUILD_TESTING=Off
           -DRAPIDJSON_SYS_DEP=Off
           -DFMT_SYS_DEP=Off

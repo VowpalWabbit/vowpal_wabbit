@@ -50,8 +50,7 @@ if(WIN32)
   endif()
 endif()
 
-option(BUILD_FLATBUFFERS "Build flatbuffers" OFF)
-if(BUILD_FLATBUFFERS)
+if(VW_FEAT_FLATBUFFERS)
   list(APPEND VCPKG_MANIFEST_FEATURES "flatbuffers")
 endif()
 
@@ -232,7 +231,7 @@ include(ext_libs/ext_libs.cmake)
 add_subdirectory(vowpalwabbit)
 add_subdirectory(utl/dump_options)
 
-if (BUILD_FLATBUFFERS)
+if (VW_FEAT_FLATBUFFERS)
   add_subdirectory(utl/flatbuffer)
 endif()
 

@@ -81,7 +81,7 @@
           "type": "BOOL",
           "value": "On"
         },
-        "BUILD_FLATBUFFERS": {
+        "VW_FEAT_FLATBUFFERS": {
           "type": "BOOL",
           "value": "On"
         },
