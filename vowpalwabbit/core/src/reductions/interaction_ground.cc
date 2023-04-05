@@ -30,11 +30,11 @@ namespace reductions
 {
 namespace model_utils
 {
-size_t write_model_field(
-    io_buf& io, ftrl& pi_ftrl, const std::string& upstream_name, bool text)
+size_t write_model_field(io_buf& io, ftrl& pi_ftrl, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
-  bytes += VW::model_utils::write_model_field(io, pi_ftrl.gd_per_model_states, upstream_name + ".gd_per_model_states", text);
+  bytes +=
+      VW::model_utils::write_model_field(io, pi_ftrl.gd_per_model_states, upstream_name + ".gd_per_model_states", text);
   return bytes;
 }
 
@@ -42,7 +42,7 @@ size_t write_model_field(
     io_buf& io, const VW::reductions::interaction_ground_data& igl, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
-  bytes += write_model_field(io, *igl.pi_ftrl.get(), ".pi", text);
+  bytes += write_model_field(io, *igl.pi_ftrl.get(), upstream_name + ".pi", text);
   return bytes;
 }
 
@@ -256,15 +256,9 @@ void predict(VW::reductions::interaction_ground_data& igl, learner& base, VW::mu
 void save_load_igl(VW::reductions::interaction_ground_data& igl, VW::io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
-  if (read) {
-    VW::reductions::model_utils::read_model_field(io, igl);
-  }
-  else
-  {
-    VW::reductions::model_utils::write_model_field(io, igl, "igl", text);
-  }
+  if (read) { VW::reductions::model_utils::read_model_field(io, igl); }
+  else { VW::reductions::model_utils::write_model_field(io, igl, "igl", text); }
 }
-// }  // namespace
 
 void print_update_igl(VW::workspace& all, VW::shared_data& /*sd*/, const VW::reductions::interaction_ground_data& data,
     const VW::multi_ex& ec_seq, VW::io::logger& /*logger*/)
@@ -279,8 +273,8 @@ void print_update_igl(VW::workspace& all, VW::shared_data& /*sd*/, const VW::red
   VW::details::print_update_cb(all, !labeled_example, ec, &ec_seq, true, &data.known_cost);
 }
 
-void update_stats_igl(const VW::workspace& /* all */, VW::shared_data& sd, const VW::reductions::interaction_ground_data& data,
-    const VW::multi_ex& ec_seq, VW::io::logger& /*logger*/)
+void update_stats_igl(const VW::workspace& /* all */, VW::shared_data& sd,
+    const VW::reductions::interaction_ground_data& data, const VW::multi_ex& ec_seq, VW::io::logger& /*logger*/)
 {
   if (ec_seq.size() <= 0) { return; }
 

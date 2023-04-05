@@ -33,7 +33,7 @@ public:
   std::vector<std::vector<VW::extent_term>>* extent_interactions;
 
   std::unique_ptr<VW::workspace> ik_all;
-  ftrl* ik_ftrl;                  // automatically save resume
+  ftrl* ik_ftrl;  // automatically save resume
   std::unique_ptr<ftrl> pi_ftrl;
 };
 }  // namespace reductions
