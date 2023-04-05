@@ -54,6 +54,10 @@ if(VW_FEAT_FLATBUFFERS)
   list(APPEND VCPKG_MANIFEST_FEATURES "flatbuffers")
 endif()
 
+if(VW_FEAT_LDA)
+  list(APPEND VCPKG_MANIFEST_FEATURES "lda")
+endif()
+
 option(BUILD_TESTING "Build tests" ON)
 if(BUILD_TESTING)
   list(APPEND VCPKG_MANIFEST_FEATURES "tests")
