@@ -9,7 +9,7 @@ void parse_label_cb_with_observations(VW::cb_with_observations_label& /*ld*/, VW
     VW::label_parser_reuse_mem& /*reuse_mem*/, const std::vector<VW::string_view>& /*words*/,
     VW::io::logger& /*logger*/)
 {
-  // TODO: implement text format parsing for cb with observations
+  THROW("text format is not implemented for cb_with_observations label")
 }
 }  // namespace
 

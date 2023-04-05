@@ -8,8 +8,11 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 
-namespace
+namespace VW
+{
+namespace reductions
 {
 class ftrl_update_data
 {
@@ -36,14 +39,7 @@ public:
   uint32_t ftrl_size = 0;
   std::vector<VW::reductions::details::gd_per_model_state> gd_per_model_states;
 };
-}  // namespace
 
-#include <memory>
-
-namespace VW
-{
-namespace reductions
-{
 std::shared_ptr<VW::LEARNER::learner> ftrl_setup(VW::setup_base_i& stack_builder);
 }
 }  // namespace VW

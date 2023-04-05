@@ -21,6 +21,7 @@
 
 using namespace VW::LEARNER;
 using namespace VW::config;
+using namespace VW::reductions;
 
 namespace
 {

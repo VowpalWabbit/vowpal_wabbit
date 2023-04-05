@@ -23,6 +23,7 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 using namespace VW::math;
+using namespace VW::reductions;
 
 #define W_XT 0  // current parameter
 #define W_ZT 1  // in proximal is "accumulated z(t) = z(t-1) + g(t) + sigma*w(t)", in general is the dual weight vector
