@@ -5,6 +5,7 @@
 #include "vw/core/parse_args.h"
 
 #include "vw/common/random.h"
+#include "vw/common/string_view.h"
 #include "vw/common/text_utils.h"
 #include "vw/common/vw_exception.h"
 #include "vw/config/cli_help_formatter.h"
@@ -332,6 +333,7 @@ void parse_diagnostics(options_i& options, VW::workspace& all)
   if (version_arg)
   {
     std::cout << VW::VERSION.to_string() << " (git commit: " << VW::GIT_COMMIT << ")\n";
+    std::cout << "Compiled features in binary: " << VW::ENABLED_FEATURES << "\n";
     exit(0);
   }
 
