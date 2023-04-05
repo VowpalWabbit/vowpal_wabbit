@@ -8,16 +8,13 @@
 
 std::map<std::string, VW::reduction_setup_fn>& VW::reduction_registry::map_instance()
 {
-    static std::map<std::string, VW::reduction_setup_fn> static_map_instance;
-    return static_map_instance;
+  static std::map<std::string, VW::reduction_setup_fn> static_map_instance;
+  return static_map_instance;
 }
 
-void  VW::reduction_registry::register_reduction(const std::string& name, VW::reduction_setup_fn f)
+void VW::reduction_registry::register_reduction(const std::string& name, VW::reduction_setup_fn f)
 {
   auto& map = map_instance();
-  if (map.find(name) != map.end())
-  {
-    THROW("Reduction with name '" << name << "' already registered");
-  }
+  if (map.find(name) != map.end()) { THROW("Reduction with name '" << name << "' already registered"); }
   map[name] = f;
 }
