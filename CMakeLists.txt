@@ -50,7 +50,6 @@ if(WIN32)
   endif()
 endif()
 
-option(VW_FEAT_FLATBUFFERS "Build flatbuffers" OFF)
 if(VW_FEAT_FLATBUFFERS)
   list(APPEND VCPKG_MANIFEST_FEATURES "flatbuffers")
 endif()
