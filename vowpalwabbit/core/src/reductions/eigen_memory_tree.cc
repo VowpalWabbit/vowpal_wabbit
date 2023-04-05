@@ -83,20 +83,11 @@ emt_initial_type emt_initial_type_from_string(VW::string_view val)
 
 float emt_initial(emt_initial_type initial_type, emt_feats f1, emt_feats f2)
 {
-  if (initial_type == emt_initial_type::GAUSSIAN)
-  {
-    return 1-std::exp(-emt_norm(emt_scale_add(1,f1,-1,f2)));
-  }
+  if (initial_type == emt_initial_type::GAUSSIAN) { return 1 - std::exp(-emt_norm(emt_scale_add(1, f1, -1, f2))); }
 
-  if (initial_type == emt_initial_type::COSINE)
-  {
-    return 1-emt_inner(f1,f2)/(emt_norm(f1)*emt_norm(f2));
-  }
+  if (initial_type == emt_initial_type::COSINE) { return 1 - emt_inner(f1, f2) / (emt_norm(f1) * emt_norm(f2)); }
 
-  if (initial_type == emt_initial_type::EUCLIDEAN)
-  {
-    return emt_norm(emt_scale_add(1,f1,-1,f2));
-  }
+  if (initial_type == emt_initial_type::EUCLIDEAN) { return emt_norm(emt_scale_add(1, f1, -1, f2)); }
 
   return 0;
 }
@@ -205,13 +196,10 @@ float emt_inner(const emt_feats& f1, const emt_feats& f2)
 
   while (iter1 != f1.end() && iter2 != f2.end())
   {
-    if (iter1->first < iter2->first) {
-      iter1++;
-    }
-    else if (iter2->first < iter1->first) {
-      iter2++;
-    }
-    else {
+    if (iter1->first < iter2->first) { iter1++; }
+    else if (iter2->first < iter1->first) { iter2++; }
+    else
+    {
       sum += iter1->second * iter2->second;
       iter1++;
       iter2++;
@@ -250,23 +238,27 @@ emt_feats emt_sub(const emt_feats& f1, const emt_feats& f2)
       out.emplace_back(iter1->first, iter1->second);
       iter1++;
     }
-    else if(iter2->first < iter1->first) {
+    else if (iter2->first < iter1->first)
+    {
       out.emplace_back(iter2->first, -iter2->second);
       iter2++;
     }
-    else {
-      out.emplace_back(iter1->first, iter1->second-iter2->second);
+    else
+    {
+      out.emplace_back(iter1->first, iter1->second - iter2->second);
       iter1++;
       iter2++;
     }
   }
 
-  while (iter1 != f1.end()) {
+  while (iter1 != f1.end())
+  {
     out.emplace_back(iter1->first, iter1->second);
     iter1++;
   }
 
-  while (iter2 != f2.end()) {
+  while (iter2 != f2.end())
+  {
     out.emplace_back(iter2->first, -iter2->second);
     iter2++;
   }
@@ -276,7 +268,7 @@ emt_feats emt_sub(const emt_feats& f1, const emt_feats& f2)
 
 emt_feats emt_scale_add(const emt_feats& f1, float s2, const emt_feats& f2)
 {
-  if (s2==-1) { return emt_sub(f1,f2); }
+  if (s2 == -1) { return emt_sub(f1, f2); }
 
   emt_feats out;
   auto iter1 = f1.begin();
@@ -289,24 +281,28 @@ emt_feats emt_scale_add(const emt_feats& f1, float s2, const emt_feats& f2)
       out.emplace_back(iter1->first, iter1->second);
       iter1++;
     }
-    else if(iter2->first < iter1->first) {
-      out.emplace_back(iter2->first, s2*iter2->second);
+    else if (iter2->first < iter1->first)
+    {
+      out.emplace_back(iter2->first, s2 * iter2->second);
       iter2++;
     }
-    else {
-      out.emplace_back(iter1->first, iter1->second+s2*iter2->second);
+    else
+    {
+      out.emplace_back(iter1->first, iter1->second + s2 * iter2->second);
       iter1++;
       iter2++;
     }
   }
 
-  while (iter1 != f1.end()) {
+  while (iter1 != f1.end())
+  {
     out.emplace_back(iter1->first, iter1->second);
     iter1++;
   }
 
-  while (iter2 != f2.end()) {
-    out.emplace_back(iter2->first, s2*iter2->second);
+  while (iter2 != f2.end())
+  {
+    out.emplace_back(iter2->first, s2 * iter2->second);
     iter2++;
   }
 
@@ -320,12 +316,10 @@ void emt_scale_add2(emt_feats& f1, float s2, const emt_feats& f2)
 
   while (iter1 != f1.end() && iter2 != f2.end())
   {
-    if (iter1->first < iter2->first)
+    if (iter1->first < iter2->first) { iter1++; }
+    else
     {
-      iter1++;
-    }
-    else {
-      iter1->second = iter1->second+s2*iter2->second;
+      iter1->second = iter1->second + s2 * iter2->second;
       iter1++;
       iter2++;
     }
@@ -334,7 +328,7 @@ void emt_scale_add2(emt_feats& f1, float s2, const emt_feats& f2)
 
 emt_feats emt_scale_add(float s1, const emt_feats& f1, float s2, const emt_feats& f2)
 {
-  if (s1==1) { return emt_scale_add(f1,s2,f2); }
+  if (s1 == 1) { return emt_scale_add(f1, s2, f2); }
 
   emt_feats out;
   auto iter1 = f1.begin();
@@ -344,27 +338,31 @@ emt_feats emt_scale_add(float s1, const emt_feats& f1, float s2, const emt_feats
   {
     if (iter1->first < iter2->first)
     {
-      out.emplace_back(iter1->first, s1*iter1->second);
+      out.emplace_back(iter1->first, s1 * iter1->second);
       iter1++;
     }
-    else if(iter2->first < iter1->first) {
-      out.emplace_back(iter2->first, s2*iter2->second);
+    else if (iter2->first < iter1->first)
+    {
+      out.emplace_back(iter2->first, s2 * iter2->second);
       iter2++;
     }
-    else {
-      out.emplace_back(iter1->first, s1*iter1->second+s2*iter2->second);
+    else
+    {
+      out.emplace_back(iter1->first, s1 * iter1->second + s2 * iter2->second);
       iter1++;
       iter2++;
     }
   }
 
-  while (iter1 != f1.end()) {
-    out.emplace_back(iter1->first, s1*iter1->second);
+  while (iter1 != f1.end())
+  {
+    out.emplace_back(iter1->first, s1 * iter1->second);
     iter1++;
   }
 
-  while (iter2 != f2.end()) {
-    out.emplace_back(iter2->first, s2*iter2->second);
+  while (iter2 != f2.end())
+  {
+    out.emplace_back(iter2->first, s2 * iter2->second);
     iter2++;
   }
 
@@ -425,8 +423,8 @@ emt_feats emt_router_eigen(std::vector<emt_feats>& exs, VW::rand_state& rng)
       //         = weights + (1/n) * fs * inner(fs,weights)
       //         =          weights+(1/n)*inner(fs,weights)*fs
       j++;
-      emt_scale_add2(weights, emt_inner(fs, weights)/n, fs);
-      if (j%4 == 0) { emt_normalize(weights); }
+      emt_scale_add2(weights, emt_inner(fs, weights) / n, fs);
+      if (j % 4 == 0) { emt_normalize(weights); }
       n++;
     }
   }
@@ -498,37 +496,31 @@ void scorer_features(const emt_feats& f1, const emt_feats& f2, VW::features& out
   {
     if (iter1->first < iter2->first)
     {
-      if (iter1->second != 0) {
-        out.push_back(iter1->second,iter1->first);
-      }
+      if (iter1->second != 0) { out.push_back(iter1->second, iter1->first); }
       iter1++;
     }
-    else if(iter2->first < iter1->first) {
-      if (iter2->second != 0) {
-        out.push_back(iter2->second,iter2->first);
-      }
+    else if (iter2->first < iter1->first)
+    {
+      if (iter2->second != 0) { out.push_back(iter2->second, iter2->first); }
       iter2++;
     }
-    else {
-      if (iter1->second!=iter2->second) {
-        out.push_back(std::abs(iter1->second-iter2->second),iter1->first);
-      }
+    else
+    {
+      if (iter1->second != iter2->second) { out.push_back(std::abs(iter1->second - iter2->second), iter1->first); }
       iter1++;
       iter2++;
     }
   }
 
-  while (iter1 != f1.end()) {
-    if (iter1->second != 0) {
-      out.push_back(iter1->second,iter1->first);
-    }
+  while (iter1 != f1.end())
+  {
+    if (iter1->second != 0) { out.push_back(iter1->second, iter1->first); }
     iter1++;
   }
 
-  while (iter2 != f2.end()) {
-    if (iter2->second != 0) {
-      out.push_back(iter2->second,iter2->first);
-    }
+  while (iter2 != f2.end())
+  {
+    if (iter2->second != 0) { out.push_back(iter2->second, iter2->first); }
     iter2++;
   }
 }
@@ -540,8 +532,8 @@ void scorer_example(emt_tree& b, const emt_example& ex1, const emt_example& ex2)
   static constexpr VW::namespace_index X_NS = 'x';
   static constexpr VW::namespace_index Z_NS = 'z';
 
-    out.feature_space[X_NS].clear();
-    out.feature_space[Z_NS].clear();
+  out.feature_space[X_NS].clear();
+  out.feature_space[Z_NS].clear();
 
   if (b.scorer_type == emt_scorer_type::SELF_CONSISTENT_RANK)
   {
@@ -555,7 +547,7 @@ void scorer_example(emt_tree& b, const emt_example& ex1, const emt_example& ex2)
     out.total_sum_feat_sq = out.feature_space[X_NS].sum_feat_sq;
     out.num_features = out.feature_space[X_NS].size();
 
-    auto initial = emt_initial(b.initial_type,ex1.full,ex2.full);
+    auto initial = emt_initial(b.initial_type, ex1.full, ex2.full);
     out.ex_reduction_features.get<VW::simple_label_reduction_features>().initial = initial;
   }
 
@@ -584,7 +576,7 @@ void scorer_example(emt_tree& b, const emt_example& ex1, const emt_example& ex2)
     out.total_sum_feat_sq = out.feature_space[X_NS].sum_feat_sq + out.feature_space[Z_NS].sum_feat_sq;
     out.num_features = out.feature_space[X_NS].size() + out.feature_space[Z_NS].size();
 
-    auto initial = emt_initial(b.initial_type,ex1.full,ex2.full);
+    auto initial = emt_initial(b.initial_type, ex1.full, ex2.full);
     out.ex_reduction_features.get<VW::simple_label_reduction_features>().initial = initial;
   }
 
@@ -662,11 +654,9 @@ void scorer_learn(emt_tree& b, learner& base, emt_node& cn, const emt_example& e
   emt_example* alternative_ex = nullptr;
 
   std::vector<float> scores;
-  for (auto& example : cn.examples) {
-    scores.push_back(scorer_predict(b, base, ex, *example));
-  }
+  for (auto& example : cn.examples) { scores.push_back(scorer_predict(b, base, ex, *example)); }
 
-  //double loop has time complexity of 2n which is almost always faster than a sort with n*log(n)
+  // double loop has time complexity of 2n which is almost always faster than a sort with n*log(n)
   for (size_t i = 0; i < cn.examples.size(); i++)
   {
     if (scores[i] < preferred_score)
@@ -682,7 +672,8 @@ void scorer_learn(emt_tree& b, learner& base, emt_node& cn, const emt_example& e
     if (cn.examples[i].get() == preferred_ex) { continue; }
     float error = (cn.examples[i].get()->label == ex.label) ? 0.f : 1.f;
 
-    if ((error < alternative_error) || (error==alternative_error && scores[i] < alternative_score)) {
+    if ((error < alternative_error) || (error == alternative_error && scores[i] < alternative_score))
+    {
       alternative_score = scores[i];
       alternative_ex = cn.examples[i].get();
       alternative_error = error;
@@ -932,8 +923,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::eigen_memory_tree_setup(VW
   uint32_t tree_bound = 0;
   uint32_t leaf_split = 0;
 
-  //the scorer when it is learning only ever sees 0 or 1 so
-  //VW's native min/max will be 0/1 if we don't make it larger
+  // the scorer when it is learning only ever sees 0 or 1 so
+  // VW's native min/max will be 0/1 if we don't make it larger
   all.sd->min_label = 0;
   all.sd->max_label = 3;
 

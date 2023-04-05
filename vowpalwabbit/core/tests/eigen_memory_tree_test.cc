@@ -13,8 +13,8 @@
 #include <gtest/gtest.h>
 
 #include <string>
-#include <vector>
 #include <utility>
+#include <vector>
 
 using namespace VW::reductions::eigen_memory_tree;
 
@@ -90,7 +90,7 @@ TEST(EigenMemoryTree, ExactMatchWithRouterTest)
     auto* ex1 = VW::read_example(*vw, std::to_string(i) + " | " + std::to_string(i));
     vw->learn(*ex1);
     vw->finish_example(*ex1);
-      
+
     auto* ex2 = VW::read_example(*vw, std::to_string(i) + " | " + std::to_string(i));
     vw->learn(*ex2);
     vw->finish_example(*ex2);
@@ -189,7 +189,7 @@ TEST(EigenMemoryTree, ScaleAdd)
   v1.clear();
   v2.clear();
   v3.clear();
-  v1.push_back(std::make_pair(1, 2  ));
+  v1.push_back(std::make_pair(1, 2));
   v2.push_back(std::make_pair(1, 2.5));
   v3.push_back(std::make_pair(1, -.5));
 
@@ -198,9 +198,9 @@ TEST(EigenMemoryTree, ScaleAdd)
   v1.clear();
   v2.clear();
   v3.clear();
-  v1.push_back(std::make_pair(1,  2));
-  v2.push_back(std::make_pair(1,  2.5));
-  v2.push_back(std::make_pair(5,  1));
+  v1.push_back(std::make_pair(1, 2));
+  v2.push_back(std::make_pair(1, 2.5));
+  v2.push_back(std::make_pair(5, 1));
   v3.push_back(std::make_pair(1, -4.5));
   v3.push_back(std::make_pair(5, -1));
 
@@ -209,9 +209,9 @@ TEST(EigenMemoryTree, ScaleAdd)
   v1.clear();
   v2.clear();
   v3.clear();
-  v1.push_back(std::make_pair(1,  2));
-  v1.push_back(std::make_pair(5,  1));
-  v2.push_back(std::make_pair(1,  2.5));
+  v1.push_back(std::make_pair(1, 2));
+  v1.push_back(std::make_pair(5, 1));
+  v2.push_back(std::make_pair(1, 2.5));
   v3.push_back(std::make_pair(1, -4.5));
   v3.push_back(std::make_pair(5, -1));
 
@@ -220,10 +220,10 @@ TEST(EigenMemoryTree, ScaleAdd)
   v1.clear();
   v2.clear();
   v3.clear();
-  v1.push_back(std::make_pair(1,  2));
-  v1.push_back(std::make_pair(5,  1));
-  v2.push_back(std::make_pair(1,  2.5));
-  v2.push_back(std::make_pair(5,  -1));
+  v1.push_back(std::make_pair(1, 2));
+  v1.push_back(std::make_pair(5, 1));
+  v2.push_back(std::make_pair(1, 2.5));
+  v2.push_back(std::make_pair(5, -1));
   v3.push_back(std::make_pair(1, -4.5));
   v3.push_back(std::make_pair(5, 0));
 
@@ -239,10 +239,10 @@ TEST(EigenMemoryTree, Normalize)
   EXPECT_EQ(v1, v2);
 
   v1.push_back(std::make_pair(1, -3));
-  v1.push_back(std::make_pair(5,  4));
+  v1.push_back(std::make_pair(5, 4));
 
   v2.push_back(std::make_pair(1, -.6));
-  v2.push_back(std::make_pair(5,  .8));
+  v2.push_back(std::make_pair(5, .8));
 
   emt_normalize(v1);
   EXPECT_EQ(v1, v2);
@@ -281,7 +281,7 @@ TEST(EigenMemoryTree, RouterEigen)
 
   v2.push_back(std::make_pair(2, 5));
 
-  v3.push_back(std::make_pair(1,  4));
+  v3.push_back(std::make_pair(1, 4));
   v3.push_back(std::make_pair(2, 10));
 
   std::vector<emt_feats> f;
@@ -320,15 +320,15 @@ TEST(EigenMemoryTree, ScorerInitial)
   EXPECT_EQ(v1, v2);
 
   v1.push_back(std::make_pair(1, -2));
-  v1.push_back(std::make_pair(5,  3));
+  v1.push_back(std::make_pair(5, 3));
 
   v2.push_back(std::make_pair(1, 1));
   v2.push_back(std::make_pair(5, -1));
 
-  EXPECT_EQ(emt_initial(emt_initial_type::NONE,v1,v2), 0);
-  EXPECT_EQ(emt_initial(emt_initial_type::EUCLIDEAN,v1,v2), 5);
-  EXPECT_NEAR(emt_initial(emt_initial_type::GAUSSIAN,v1,v2), 1-std::exp(-5), .001);
-  EXPECT_NEAR(emt_initial(emt_initial_type::COSINE,v1,v2), 1.98, .001);
+  EXPECT_EQ(emt_initial(emt_initial_type::NONE, v1, v2), 0);
+  EXPECT_EQ(emt_initial(emt_initial_type::EUCLIDEAN, v1, v2), 5);
+  EXPECT_NEAR(emt_initial(emt_initial_type::GAUSSIAN, v1, v2), 1 - std::exp(-5), .001);
+  EXPECT_NEAR(emt_initial(emt_initial_type::COSINE, v1, v2), 1.98, .001);
 }
 
 TEST(EigenMemoryTree, Shuffle)
