@@ -333,7 +333,7 @@ void parse_diagnostics(options_i& options, VW::workspace& all)
   if (version_arg)
   {
     std::cout << VW::VERSION.to_string() << " (git commit: " << VW::GIT_COMMIT << ")\n";
-    std::cout << "Enabled features: " << VW::ENABLED_FEATURES << "\n";
+    std::cout << "Compiled features in binary: " << VW::ENABLED_FEATURES << "\n";
     exit(0);
   }
 
