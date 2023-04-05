@@ -41,6 +41,7 @@ constexpr unsigned char NODE_ID_NAMESPACE = 136;                   // this is \x
 constexpr unsigned char BASELINE_ENABLED_MESSAGE_NAMESPACE = 137;  // this is \x89
 constexpr unsigned char CCB_SLOT_NAMESPACE = 139;
 constexpr unsigned char CCB_ID_NAMESPACE = 140;
+constexpr unsigned char IGL_FEEDBACK_NAMESPACE = 141;
 
 constexpr const char* CCB_LABEL = "ccb";
 constexpr const char* SLATES_LABEL = "slates";

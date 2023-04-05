@@ -17,6 +17,7 @@ set(vw_core_headers
   include/vw/core/daemon_utils.h
   include/vw/core/cb_type.h
   include/vw/core/cb.h
+  include/vw/core/cb_with_observations_label.h
   include/vw/core/ccb_label.h
   include/vw/core/ccb_reduction_features.h
   include/vw/core/estimators/confidence_sequence.h
@@ -203,6 +204,7 @@ set(vw_core_sources
   src/cb_continuous_label.cc
   src/cb_type.cc
   src/cb.cc
+  src/cb_with_observations_label.cc
   src/ccb_label.cc
   src/ccb_reduction_features.cc
   src/confidence_sequence.cc
@@ -433,6 +435,7 @@ vw_add_test_executable(
       tests/cb_large_actions_test.cc
       tests/cb_las_one_pass_svd_test.cc
       tests/cb_las_spanner_test.cc
+      tests/cb_with_observations_parser_test.cc
       tests/ccb_parser_test.cc
       tests/ccb_test.cc
       tests/chain_hashing.cc
@@ -471,6 +474,8 @@ vw_add_test_executable(
       tests/scope_exit_test.cc
       tests/simulator.cc
       tests/simulator.h
+      tests/igl_simulator.h
+      tests/igl_simulator.cc
       tests/slates_parser_test.cc
       tests/slates_test.cc
       tests/status_builder_test.cc
@@ -481,6 +486,7 @@ vw_add_test_executable(
       tests/v_array_test.cc
       tests/vw_versions_test.cc
       tests/weights_test.cc
+      tests/igl_test.cc
 )
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)

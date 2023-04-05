@@ -4732,26 +4732,26 @@
   },
   {
     "id": 367,
-    "desc": "Igl with a dataset containing costs - This intentionally has the same reference file as 368",
-    "vw_command": "--cbify 2 --experimental_igl -d train-sets/rcv1_multiclass.dat",
+    "desc": "Igl with two latent states",
+    "vw_command": "--dsjson --cb_explore_adf --epsilon 0.2 -q UA --coin --experimental_igl -d train-sets/igl.dsjson",
     "diff_files": {
       "stderr": "train-sets/ref/igl_result.stderr",
       "stdout": "train-sets/ref/igl_result.stdout"
     },
     "input_files": [
-      "train-sets/rcv1_multiclass.dat"
+      "train-sets/igl.dsjson"
     ]
   },
   {
     "id": 368,
-    "desc": "Igl with a dataset containing rewards - This intentionally has the same reference file as 367",
-    "vw_command": "--cbify 2 --flip_loss_sign --experimental_igl -d train-sets/rcv1_multiclass.dat",
+    "desc": "Igl with three latent states",
+    "vw_command": "--dsjson --cb_explore_adf --epsilon 0.2 -q UA --coin --experimental_igl -d train-sets/igl_3states.dsjson",
     "diff_files": {
-      "stderr": "train-sets/ref/igl_result.stderr",
+      "stderr": "train-sets/ref/igl_3states_result.stderr",
       "stdout": "train-sets/ref/igl_result.stdout"
     },
     "input_files": [
-      "train-sets/rcv1_multiclass.dat"
+      "train-sets/igl_3states.dsjson"
     ]
   },
   {
