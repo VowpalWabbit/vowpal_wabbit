@@ -85,7 +85,16 @@ float emt_initial(emt_initial_type initial_type, emt_feats f1, emt_feats f2)
 {
   if (initial_type == emt_initial_type::GAUSSIAN) { return 1 - std::exp(-emt_norm(emt_scale_add(1, f1, -1, f2))); }
 
-  if (initial_type == emt_initial_type::COSINE) { return 1 - emt_inner(f1, f2) / (emt_norm(f1) * emt_norm(f2)); }
+  if (initial_type == emt_initial_type::COSINE) { 
+    auto den = (emt_norm(f1) * emt_norm(f2));
+    if (den != 0) {
+      return 1 - emt_inner(f1, f2) / den;
+    } else {
+      //cosine distance isn't defined for vectors of size 0 so
+      //we default to a gaussian loss as a fallback distance 
+      return 1 - std::exp(-emt_norm(emt_scale_add(1, f1, -1, f2)));
+    }
+  }
 
   if (initial_type == emt_initial_type::EUCLIDEAN) { return emt_norm(emt_scale_add(1, f1, -1, f2)); }
 
@@ -514,13 +523,13 @@ void scorer_features(const emt_feats& f1, const emt_feats& f2, VW::features& out
 
   while (iter1 != f1.end())
   {
-    if (iter1->second != 0) { out.push_back(iter1->second, iter1->first); }
+    if (iter1->second != 0) { out.push_back(std::abs(iter1->second), iter1->first); }
     iter1++;
   }
 
   while (iter2 != f2.end())
   {
-    if (iter2->second != 0) { out.push_back(iter2->second, iter2->first); }
+    if (iter2->second != 0) { out.push_back(std::abs(iter2->second), iter2->first); }
     iter2++;
   }
 }

@@ -81,6 +81,30 @@ TEST(EigenMemoryTree, ExactMatchSansRouterTest)
   vw->finish_example(*ex2);
 }
 
+TEST(EigenMemoryTree, CloseMatchSansRouterTest)
+{
+  auto vw = VW::initialize(vwtest::make_args("--quiet", "--emt", "--emt_leaf", "20", "--adaptive", "--invariant", "--noconstant"));
+
+  for (int i = 0; i < 10; i++)
+  {
+    auto* ex1 = VW::read_example(*vw, std::to_string(i) + " | 1:" + std::to_string(i));
+    vw->learn(*ex1);
+    vw->finish_example(*ex1);
+
+    auto* ex2 = VW::read_example(*vw, std::to_string(i) + " | 1:" + std::to_string(i));
+    vw->learn(*ex2);
+    vw->finish_example(*ex2);
+  }
+
+  for (int i = 0; i < 10; i++)
+  {
+    auto* ex = VW::read_example(*vw, " | 1:" + std::to_string(i+.1));
+    vw->predict(*ex);
+    EXPECT_EQ(ex->pred.multiclass, i);
+    vw->finish_example(*ex);
+  }
+}
+
 TEST(EigenMemoryTree, ExactMatchWithRouterTest)
 {
   auto vw = VW::initialize(vwtest::make_args("--quiet", "--emt", "--emt_leaf", "5"));
