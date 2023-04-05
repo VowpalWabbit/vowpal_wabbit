@@ -13,11 +13,11 @@
 
 namespace simulator
 {
-cb_sim::cb_sim(uint64_t seed, bool use_default_ns)
+cb_sim::cb_sim(uint64_t seed, bool use_default_ns, std::vector<std::string> actions)
     : users({"Tom", "Anna"})
     , times_of_day({"morning", "afternoon"})
-    //, actions({"politics", "sports", "music", "food", "finance", "health", "camping"})
-    , actions({"politics", "sports", "music"})
+    // , actions({"politics", "sports", "music", "food", "finance", "health", "camping"})
+    , actions(actions)
     , user_ns("User")
     , action_ns(use_default_ns ? "" : "Action")
 {
@@ -84,17 +84,28 @@ std::pair<int, float> cb_sim::sample_custom_pmf(std::vector<float>& pmf)
   THROW("Error: No prob selected");
 }
 
-std::pair<std::string, float> cb_sim::get_action(VW::workspace* vw, const std::map<std::string, std::string>& context)
+VW::multi_ex cb_sim::build_vw_examples(VW::workspace* vw, std::map<std::string, std::string>& context)
 {
   std::vector<std::string> multi_ex_str = cb_sim::to_vw_example_format(context, "");
   VW::multi_ex examples;
   for (const std::string& ex : multi_ex_str) { examples.push_back(VW::read_example(*vw, ex)); }
-  vw->predict(examples);
 
-  auto const& scores = examples[0]->pred.a_s;
+  return examples;
+}
+
+VW::action_scores cb_sim::get_action_scores(VW::workspace* vw, VW::multi_ex examples)
+{
+  vw->predict(examples);
+  auto& scores = examples[0]->pred.a_s;
+  vw->finish_example(examples);
+
+  return scores;
+}
+
+std::pair<std::string, float> cb_sim::get_action(VW::action_scores scores)
+{
   std::vector<float> ordered_scores(scores.size());
   for (auto const& action_score : scores) { ordered_scores[action_score.action] = action_score.score; }
-  vw->finish_example(examples);
 
   std::pair<int, float> pmf_sample = sample_custom_pmf(ordered_scores);
   return std::make_pair(actions[pmf_sample.first], pmf_sample.second);
@@ -158,7 +169,9 @@ std::vector<float> cb_sim::run_simulation_hook(VW::workspace* vw, size_t num_ite
     {
       context.insert(std::pair<std::string, std::string>(std::to_string(j), std::to_string(j)));
     }
-    auto action_prob = get_action(vw, context);
+    auto examples = build_vw_examples(vw, context);
+    auto a_s = get_action_scores(vw, examples);
+    auto action_prob = get_action(a_s);
     auto chosen_action = action_prob.first;
     auto prob = action_prob.second;
 

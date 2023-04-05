@@ -189,7 +189,6 @@ void prepare_reductions(std::vector<std::tuple<std::string, VW::reduction_setup_
   reductions.push_back(VW::reductions::csldf_setup);
   reductions.push_back(VW::reductions::cb_algs_setup);
   reductions.push_back(VW::reductions::cb_adf_setup);
-  reductions.push_back(VW::reductions::interaction_ground_setup);
   reductions.push_back(VW::reductions::mwt_setup);
   reductions.push_back(VW::reductions::cats_tree_setup);
   reductions.push_back(VW::reductions::baseline_challenger_cb_setup);
@@ -206,6 +205,7 @@ void prepare_reductions(std::vector<std::tuple<std::string, VW::reduction_setup_
   reductions.push_back(VW::reductions::cb_explore_adf_cover_setup);
   reductions.push_back(VW::reductions::cb_explore_adf_bag_setup);
   reductions.push_back(VW::reductions::cb_dro_setup);
+  reductions.push_back(VW::reductions::interaction_ground_setup);
   reductions.push_back(VW::reductions::cb_sample_setup);
   reductions.push_back(VW::reductions::epsilon_decay_setup);
   reductions.push_back(VW::reductions::explore_eval_setup);
