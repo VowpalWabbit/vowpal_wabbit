@@ -8,17 +8,12 @@
 # If a feature called X is enabled then:
 #   - The cmake variable VW_FEAT_X is set to ON, otherwise it is OFF
 #   - The C++ macro VW_FEAT_X_ENABLED is defined if the feature is enabled, otherwise it is not defined
-#
-# Features:
-#   FLATBUFFERS: Enable flatbuffers support
-#   CSV: Enable csv parser
-#   LAS_SIMD: Enable large action space with explicit simd (only work with linux for now)
 
-# set(VW_ALL_FEATURES "LAS_SIMD;FLATBUFFERS;CSV")
-set(VW_ALL_FEATURES "CSV;FLATBUFFERS")
+set(VW_ALL_FEATURES "CSV;FLATBUFFERS;LDA")
 
 option(VW_FEAT_FLATBUFFERS "Enable flatbuffers support" OFF)
 option(VW_FEAT_CSV "Enable csv parser" OFF)
+option(VW_FEAT_LDA "Enable lda reduction" ON)
 # option(VW_FEAT_LAS_SIMD "Enable large action space with explicit simd (only works with linux for now)" ON)
 
 # Legacy options for feature enablement

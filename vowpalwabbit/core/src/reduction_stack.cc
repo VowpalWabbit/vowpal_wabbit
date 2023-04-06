@@ -65,7 +65,9 @@
 #include "vw/core/reductions/interact.h"
 #include "vw/core/reductions/interaction_ground.h"
 #include "vw/core/reductions/kernel_svm.h"
-#include "vw/core/reductions/lda_core.h"
+#ifdef VW_FEAT_LDA_ENABLED
+#  include "vw/core/reductions/lda_core.h"
+#endif
 #include "vw/core/reductions/log_multi.h"
 #include "vw/core/reductions/lrq.h"
 #include "vw/core/reductions/lrqfa.h"
@@ -163,7 +165,9 @@ void prepare_reductions(std::vector<std::tuple<std::string, VW::reduction_setup_
   reductions.push_back(VW::reductions::lrqfa_setup);
   reductions.push_back(VW::reductions::stagewise_poly_setup);
   reductions.push_back(VW::reductions::scorer_setup);
+#ifdef VW_FEAT_LDA_ENABLED
   reductions.push_back(VW::reductions::lda_setup);
+#endif
   reductions.push_back(VW::reductions::cbzo_setup);
 
   // Reductions

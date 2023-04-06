@@ -140,7 +140,6 @@ set(vw_core_headers
   include/vw/core/reductions/interact.h
   include/vw/core/reductions/interaction_ground.h
   include/vw/core/reductions/kernel_svm.h
-  include/vw/core/reductions/lda_core.h
   include/vw/core/reductions/log_multi.h
   include/vw/core/reductions/lrq.h
   include/vw/core/reductions/lrqfa.h
@@ -314,7 +313,6 @@ set(vw_core_sources
   src/reductions/interact.cc
   src/reductions/interaction_ground.cc
   src/reductions/kernel_svm.cc
-  src/reductions/lda_core.cc
   src/reductions/log_multi.cc
   src/reductions/lrq.cc
   src/reductions/lrqfa.cc
@@ -361,6 +359,11 @@ set(vw_core_sources
   src/vw.cc
 )
 
+if(VW_FEAT_LDA)
+  list(APPEND vw_core_headers include/vw/core/reductions/lda_core.h)
+  list(APPEND vw_core_sources src/reductions/lda_core.cc)
+endif()
+
 vw_add_library(
     NAME "core"
     TYPE "STATIC_ONLY"
@@ -370,12 +373,16 @@ vw_add_library(
         # Special case for dealing with header-only INTERFACE dependencies of a STATIC library
         # Use BUILD_INTERFACE to prevent them from being exported, i.e. treat them as PRIVATE
         # https://gitlab.kitware.com/cmake/cmake/issues/15415
-        ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io $<BUILD_INTERFACE:${boost_math_target}> $<BUILD_INTERFACE:RapidJSON>
+        ${CMAKE_DL_LIBS} ${LINK_THREADS} vw_io $<BUILD_INTERFACE:RapidJSON>
         $<BUILD_INTERFACE:eigen> $<BUILD_INTERFACE:sse2neon>
     DESCRIPTION "This contains all remaining VW code, all reduction implementations, driver, option handling"
     EXCEPTION_DESCRIPTION "Yes"
     ENABLE_INSTALL
 )
+
+if(VW_FEAT_LDA)
+  target_link_libraries(vw_core PRIVATE $<BUILD_INTERFACE:${boost_math_target}>)
+endif()
 
 target_include_directories(vw_core PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src)
 

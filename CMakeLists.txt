@@ -54,6 +54,12 @@ if(VW_FEAT_FLATBUFFERS)
   list(APPEND VCPKG_MANIFEST_FEATURES "flatbuffers")
 endif()
 
+# This is a hack around the fact the Python build does not seem to be capable of
+# dealing with manifest features.
+if(VW_FEAT_LDA AND NOT BUILD_PYTHON)
+  list(APPEND VCPKG_MANIFEST_FEATURES "lda")
+endif()
+
 option(BUILD_TESTING "Build tests" ON)
 if(BUILD_TESTING)
   list(APPEND VCPKG_MANIFEST_FEATURES "tests")
