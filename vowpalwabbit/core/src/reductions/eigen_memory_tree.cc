@@ -960,9 +960,9 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::eigen_memory_tree_setup(VW
                .help("Indicates the type of router to use"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
-  
-  // the scorer when it is learning only ever sees 0 or 1 so
-  // VW's native min/max will be 0/1 if we don't make it larger
+
+  // The EMT scorer, when it is learning, will only ever see 0's and 1's.
+  // Therefore, VW's native min/max will be 0/1 unless we explicitly make it larger.
   all.sd->min_label = 0;
   all.sd->max_label = 3;
 
