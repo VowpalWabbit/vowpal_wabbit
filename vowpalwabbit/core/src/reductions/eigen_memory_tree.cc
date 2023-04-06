@@ -963,8 +963,11 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::eigen_memory_tree_setup(VW
 
   // The EMT scorer, when it is learning, will only ever see 0's and 1's.
   // Therefore, VW's native min/max will be 0/1 unless we explicitly make it larger.
-  all.sd->min_label = 0;
-  all.sd->max_label = 3;
+  if (all.sd->min_label == 0 && all.sd->max_label == 0)
+  {
+    all.sd->min_label = 0;
+    all.sd->max_label = 3;
+  }
 
   auto t = VW::make_unique<VW::reductions::eigen_memory_tree::emt_tree>(&all, all.get_random_state(), leaf_split,
       emt_scorer_type_from_string(scorer_type), emt_router_type_from_string(router_type),
