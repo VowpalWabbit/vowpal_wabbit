@@ -933,11 +933,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::eigen_memory_tree_setup(VW
   uint32_t tree_bound = 0;
   uint32_t leaf_split = 0;
 
-  // the scorer when it is learning only ever sees 0 or 1 so
-  // VW's native min/max will be 0/1 if we don't make it larger
-  all.sd->min_label = 0;
-  all.sd->max_label = 3;
-
   option_group_definition new_options("[Reduction] Eigen Memory Tree");
   new_options.add(make_option("emt", enabled).keep().necessary().help("Make an eigen memory tree"))
       .add(make_option("emt_tree", tree_bound)
@@ -965,6 +960,11 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::eigen_memory_tree_setup(VW
                .help("Indicates the type of router to use"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+  
+  // the scorer when it is learning only ever sees 0 or 1 so
+  // VW's native min/max will be 0/1 if we don't make it larger
+  all.sd->min_label = 0;
+  all.sd->max_label = 3;
 
   auto t = VW::make_unique<VW::reductions::eigen_memory_tree::emt_tree>(&all, all.get_random_state(), leaf_split,
       emt_scorer_type_from_string(scorer_type), emt_router_type_from_string(router_type),
