@@ -79,6 +79,7 @@ TEST(EigenMemoryTree, ExactMatchSansRouterTest)
 
   vw->finish_example(*ex1);
   vw->finish_example(*ex2);
+  vw->finish_example(*ex3);
 }
 
 TEST(EigenMemoryTree, CloseMatchSansRouterTest)
