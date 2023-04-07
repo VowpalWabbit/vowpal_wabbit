@@ -49,8 +49,8 @@ jobs:
           version=$(./utl/version_number.py)
           version_trimmed=$(echo $version | sed 's/\+.*//')
           echo "Generated version number: $version"
-          echo "::set-output name=version::$version"
-          echo "::set-output name=version_trimmed::$version_trimmed"
+          echo "version=$version" >> $GITHUB_OUTPUT
+          echo "version_trimmed=$version_trimmed" >> $GITHUB_OUTPUT
 
       # Build .NET Core, all platforms
       - name: Configure .NET Core
@@ -112,7 +112,7 @@ jobs:
           cd nuget_staging
           nuget pack dotnet.nuspec
           $NugetFileName = Get-ChildItem *.nupkg -name
-          echo "::set-output name=NugetFileName::$NugetFileName"
+          echo "NugetFileName=$NugetFileName" >> $GITHUB_OUTPUT
       - name: Upload Combined
         if: ${{ startsWith(matrix.config.os, 'windows') }}
         uses: actions/upload-artifact@v1
@@ -128,7 +128,7 @@ jobs:
           cd nuget_staging
           nuget pack dotnetcore_runtime.nuspec
           NugetFileName=(*runtime*.nupkg)
-          echo "::set-output name=NugetFileName::${NugetFileName[0]}"
+          echo "NugetFileName=${NugetFileName[0]}" >> $GITHUB_OUTPUT
       - name: Upload .NET Core Runtime
         uses: actions/upload-artifact@v1
         with:
@@ -162,7 +162,7 @@ jobs:
         run: |
           version=$(./utl/version_number.py)
           echo "Generated version number: $version"
-          echo "::set-output name=version::$version"
+          echo "version=$version" >> $GITHUB_OUTPUT
 
       # Download the previously built Nuget packages
       - name: Clear nuget cache
@@ -221,7 +221,7 @@ jobs:
         run: |
           version=$(./utl/version_number.py)
           echo "Generated version number: $version"
-          echo "::set-output name=version::$version"
+          echo "version=$version" >> $GITHUB_OUTPUT
 
       # Download the previously built Nuget packages
       - name: Clear nuget cache
@@ -286,7 +286,7 @@ jobs:
         run: |
           version=$(./utl/version_number.py)
           echo "Generated version number: $version"
-          echo "::set-output name=version::$version"
+          echo "version=$version" >> $GITHUB_OUTPUT
 
       # Download the previously built Nuget packages
       - name: Clear nuget cache
