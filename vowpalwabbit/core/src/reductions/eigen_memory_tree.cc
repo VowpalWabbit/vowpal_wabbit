@@ -869,7 +869,23 @@ size_t write_model_field(
 size_t read_model_field(io_buf& io, reductions::eigen_memory_tree::emt_tree& tree)
 {
   size_t bytes = 0;
+
+  bytes += read_model_field(io, tree.leaf_split);
+
+  uint32_t scorer_type{};
+  bytes += read_model_field(io, scorer_type);
+  tree.scorer_type = static_cast<reductions::eigen_memory_tree::emt_scorer_type>(scorer_type);
+
+  uint32_t router_type{};
+  bytes += read_model_field(io, router_type);
+  tree.router_type = static_cast<reductions::eigen_memory_tree::emt_router_type>(router_type);
+
+  uint64_t tree_bound{};
+  bytes += read_model_field(io, tree_bound);
+  tree.bounder = VW::make_unique<reductions::eigen_memory_tree::emt_lru>(tree_bound);
+
   bytes += read_model_field(io, tree.root);
+
   return bytes;
 }
 
@@ -877,6 +893,10 @@ size_t write_model_field(
     io_buf& io, const reductions::eigen_memory_tree::emt_tree& tree, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
+  bytes += write_model_field(io, tree.leaf_split, upstream_name + ".leaf_split", text);
+  bytes += write_model_field(io, static_cast<uint32_t>(tree.scorer_type), upstream_name + ".scorer_type", text);
+  bytes += write_model_field(io, static_cast<uint32_t>(tree.router_type), upstream_name + ".router_type", text);
+  bytes += write_model_field(io, tree.bounder->max_size, upstream_name + ".tree_bound", text);
   bytes += write_model_field(io, tree.root, upstream_name + ".root", text);
   return bytes;
 }
