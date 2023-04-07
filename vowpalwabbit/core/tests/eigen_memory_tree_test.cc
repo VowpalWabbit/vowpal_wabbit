@@ -376,11 +376,11 @@ TEST(EigenMemoryTree, SaveLoad)
 
   for (int i = 0; i < 10; i++)
   {
-    auto* ex1 = VW::read_example(*vw_save, std::to_string(i) + " | " + std::to_string(i));
+    auto* ex1 = VW::read_example(*vw_save, std::to_string(i) + " | 1:" + std::to_string(i));
     vw_save->learn(*ex1);
     vw_save->finish_example(*ex1);
 
-    auto* ex2 = VW::read_example(*vw_save, std::to_string(i) + " | " + std::to_string(i));
+    auto* ex2 = VW::read_example(*vw_save, std::to_string(i) + " | 1:" + std::to_string(i));
     vw_save->learn(*ex2);
     vw_save->finish_example(*ex2);
   }
@@ -398,10 +398,12 @@ TEST(EigenMemoryTree, SaveLoad)
 
   EXPECT_EQ(tree->leaf_split, 5);
   EXPECT_EQ(static_cast<int>(tree->initial_type), 2);
+  EXPECT_EQ(static_cast<int>(tree->scorer_type), 3);
+  EXPECT_EQ(static_cast<int>(tree->router_type), 2);
 
   for (int i = 0; i < 10; i++)
   {
-    auto* ex = VW::read_example(*vw_load, " | " + std::to_string(i));
+    auto* ex = VW::read_example(*vw_load, " | 1:" + std::to_string(i+0.1));
     vw_load->predict(*ex);
     EXPECT_EQ(ex->pred.multiclass, i);
     vw_load->finish_example(*ex);
