@@ -40,9 +40,7 @@ public:
 
 namespace model_utils
 {
-size_t write_model_field(io_buf&, VW::reductions::ftrl&, const std::string&, bool);
 size_t write_model_field(io_buf&, const VW::reductions::interaction_ground_data&, const std::string&, bool);
-size_t read_model_field(io_buf&, VW::reductions::ftrl&);
 size_t read_model_field(io_buf&, VW::reductions::interaction_ground_data&);
 }  // namespace model_utils
 }  // namespace VW

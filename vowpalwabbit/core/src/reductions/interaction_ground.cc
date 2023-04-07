@@ -11,7 +11,6 @@
 #include "vw/core/label_dictionary.h"
 #include "vw/core/label_parser.h"
 #include "vw/core/loss_functions.h"
-#include "vw/core/model_utils.h"
 #include "vw/core/parse_primitives.h"
 #include "vw/core/prediction_type.h"
 #include "vw/core/reductions/cb/cb_adf.h"
@@ -30,27 +29,11 @@ namespace reductions
 {
 namespace model_utils
 {
-size_t write_model_field(io_buf& io, ftrl& pi_ftrl, const std::string& upstream_name, bool text)
-{
-  size_t bytes = 0;
-  bytes +=
-      VW::model_utils::write_model_field(io, pi_ftrl.gd_per_model_states, upstream_name + ".gd_per_model_states", text);
-  return bytes;
-}
-
 size_t write_model_field(
     io_buf& io, const VW::reductions::interaction_ground_data& igl, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, *igl.pi_ftrl.get(), upstream_name + ".pi", text);
-  return bytes;
-}
-
-size_t read_model_field(io_buf& io, ftrl& pi_ftrl)
-{
-  size_t bytes = 0;
-  pi_ftrl.gd_per_model_states.clear();
-  bytes += VW::model_utils::read_model_field(io, pi_ftrl.gd_per_model_states);
   return bytes;
 }
 
