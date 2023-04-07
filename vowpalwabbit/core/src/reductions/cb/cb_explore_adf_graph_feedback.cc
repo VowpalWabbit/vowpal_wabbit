@@ -384,7 +384,7 @@ arma::vec get_probs_from_coordinates(arma::mat& coordinates, const arma::vec& fh
   if (!VW::math::are_same(sum, 1.f))
   {
     // leaving this here just in case this happens for some reason that we did not think to check for
-    all.logger.err_warn("Probabilities do not sum to 1, they sum to: " + std::to_string(sum));
+    all.logger.warn("Probabilities do not sum to 1, they sum to: {}", sum);
   }
 
   return probs;
