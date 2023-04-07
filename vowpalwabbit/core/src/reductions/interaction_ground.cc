@@ -8,6 +8,7 @@
 #include "vw/config/options.h"
 #include "vw/config/options_cli.h"
 #include "vw/core/constant.h"
+#include "vw/core/print_utils.h"
 #include "vw/core/label_dictionary.h"
 #include "vw/core/label_parser.h"
 #include "vw/core/loss_functions.h"
@@ -256,6 +257,20 @@ void print_update_igl(VW::workspace& all, VW::shared_data& /*sd*/, const VW::red
   VW::details::print_update_cb(all, !labeled_example, ec, &ec_seq, true, &data.known_cost);
 }
 
+void output_igl_prediction(
+    VW::workspace& all, const interaction_ground_data& data, const VW::multi_ex& ec_seq, VW::io::logger& /* unused */)
+{
+  if (!ec_seq.empty())
+  {
+    // Print predictions
+    for (auto& sink : all.output_runtime.final_prediction_sink)
+    {
+      VW::details::print_action_score(sink.get(), ec_seq[VW::details::SHARED_EX_INDEX]->pred.a_s, ec_seq[VW::details::SHARED_EX_INDEX]->tag, all.logger);
+    }
+    VW::details::global_print_newline(all.output_runtime.final_prediction_sink, all.logger);
+  }
+}
+
 void update_stats_igl(const VW::workspace& /* all */, VW::shared_data& sd,
     const VW::reductions::interaction_ground_data& data, const VW::multi_ex& ec_seq, VW::io::logger& /*logger*/)
 {
@@ -369,6 +384,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::interaction_ground_setup(V
                .set_update_stats(update_stats_igl)
                .set_print_update(print_update_igl)
                .set_save_load(save_load_igl)
+               .set_output_example_prediction(output_igl_prediction)
                .build();
 
   // TODO: assert ftrl is the base, fail otherwise
