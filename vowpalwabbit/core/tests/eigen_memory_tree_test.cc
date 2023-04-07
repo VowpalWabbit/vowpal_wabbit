@@ -403,7 +403,7 @@ TEST(EigenMemoryTree, SaveLoad)
 
   for (int i = 0; i < 10; i++)
   {
-    auto* ex = VW::read_example(*vw_load, " | 1:" + std::to_string(i+0.1));
+    auto* ex = VW::read_example(*vw_load, " | 1:" + std::to_string(i + 0.1));
     vw_load->predict(*ex);
     EXPECT_EQ(ex->pred.multiclass, i);
     vw_load->finish_example(*ex);
