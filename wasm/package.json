@@ -4,6 +4,6 @@
   },
   "scripts": {
     "test1": "mocha --delay",
-    "test": "node --experimental-wasm-threads --experimental-wasm-bulk-memory ./node_modules/mocha/bin/mocha --delay"
+    "test": "node --experimental-wasm-threads ./node_modules/mocha/bin/mocha --delay"
   }
 }
