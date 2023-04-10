@@ -2,6 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #pragma once
+
+#ifdef VW_FEAT_SEARCH_ENABLED
 #include "search.h"
 
 #define DECLARE_METATASK(X)                \
@@ -15,3 +17,4 @@ DECLARE_METATASK(SelectiveBranchingMT)
 
 // namespace DebugMT              { extern Search::search_metatask metatask; }
 // namespace SelectiveBranchingMT { extern Search::search_metatask metatask; }
+#endif

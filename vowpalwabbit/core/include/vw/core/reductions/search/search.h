@@ -2,6 +2,9 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #pragma once
+
+#ifdef VW_FEAT_SEARCH_ENABLED
+
 #include "vw/core/example.h"
 #include "vw/core/global_data.h"
 
@@ -374,3 +377,4 @@ namespace reductions
 std::shared_ptr<VW::LEARNER::learner> search_setup(VW::setup_base_i& stack_builder);
 }
 }  // namespace VW
+#endif

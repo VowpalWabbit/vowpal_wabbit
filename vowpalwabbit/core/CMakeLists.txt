@@ -160,14 +160,6 @@ set(vw_core_headers
   include/vw/core/reductions/recall_tree.h
   include/vw/core/reductions/sample_pdf.h
   include/vw/core/reductions/scorer.h
-  include/vw/core/reductions/search/search_dep_parser.h
-  include/vw/core/reductions/search/search_entityrelationtask.h
-  include/vw/core/reductions/search/search_graph.h
-  include/vw/core/reductions/search/search_hooktask.h
-  include/vw/core/reductions/search/search_meta.h
-  include/vw/core/reductions/search/search_multiclasstask.h
-  include/vw/core/reductions/search/search_sequencetask.h
-  include/vw/core/reductions/search/search.h
   include/vw/core/reductions/sender.h
   include/vw/core/reductions/shared_feature_merger.h
   include/vw/core/reductions/slates.h
@@ -333,14 +325,6 @@ set(vw_core_sources
   src/reductions/recall_tree.cc
   src/reductions/sample_pdf.cc
   src/reductions/scorer.cc
-  src/reductions/search/search_dep_parser.cc
-  src/reductions/search/search_entityrelationtask.cc
-  src/reductions/search/search_graph.cc
-  src/reductions/search/search_hooktask.cc
-  src/reductions/search/search_meta.cc
-  src/reductions/search/search_multiclasstask.cc
-  src/reductions/search/search_sequencetask.cc
-  src/reductions/search/search.cc
   src/reductions/sender.cc
   src/reductions/shared_feature_merger.cc
   src/reductions/slates.cc
@@ -362,6 +346,29 @@ set(vw_core_sources
 if(VW_FEAT_LDA)
   list(APPEND vw_core_headers include/vw/core/reductions/lda_core.h)
   list(APPEND vw_core_sources src/reductions/lda_core.cc)
+endif()
+
+if(VW_FEAT_SEARCH)
+list(APPEND vw_core_headers
+  include/vw/core/reductions/search/search_dep_parser.h
+  include/vw/core/reductions/search/search_entityrelationtask.h
+  include/vw/core/reductions/search/search_graph.h
+  include/vw/core/reductions/search/search_hooktask.h
+  include/vw/core/reductions/search/search_meta.h
+  include/vw/core/reductions/search/search_multiclasstask.h
+  include/vw/core/reductions/search/search_sequencetask.h
+  include/vw/core/reductions/search/search.h
+)
+list(APPEND vw_core_sources
+  src/reductions/search/search_dep_parser.cc
+  src/reductions/search/search_entityrelationtask.cc
+  src/reductions/search/search_graph.cc
+  src/reductions/search/search_hooktask.cc
+  src/reductions/search/search_meta.cc
+  src/reductions/search/search_multiclasstask.cc
+  src/reductions/search/search_sequencetask.cc
+  src/reductions/search/search.cc
+)
 endif()
 
 vw_add_library(
