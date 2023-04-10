@@ -5,8 +5,8 @@
 
 #ifdef VW_FEAT_SEARCH_ENABLED
 
-#include "vw/core/example.h"
-#include "vw/core/global_data.h"
+#  include "vw/core/example.h"
+#  include "vw/core/global_data.h"
 
 // TODO: Search is using some macro-enabled logging logic for cdbg
 //       (going to clog [which in turn goes to err, with some differences])

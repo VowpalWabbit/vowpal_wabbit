@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 #pragma once
 #ifdef VW_FEAT_SEARCH_ENABLED
-#include "search.h"
+#  include "search.h"
 
 namespace MulticlassTask
 {

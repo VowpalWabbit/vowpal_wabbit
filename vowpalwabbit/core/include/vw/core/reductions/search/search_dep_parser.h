@@ -5,7 +5,7 @@
 
 #ifdef VW_FEAT_SEARCH_ENABLED
 
-#include "search.h"
+#  include "search.h"
 
 namespace DepParserTask
 {

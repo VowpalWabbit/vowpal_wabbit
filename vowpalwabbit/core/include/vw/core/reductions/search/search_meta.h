@@ -4,13 +4,13 @@
 #pragma once
 
 #ifdef VW_FEAT_SEARCH_ENABLED
-#include "search.h"
+#  include "search.h"
 
-#define DECLARE_METATASK(X)                \
-  namespace X                              \
-  {                                        \
-  extern Search::search_metatask metatask; \
-  }
+#  define DECLARE_METATASK(X)                \
+    namespace X                              \
+    {                                        \
+    extern Search::search_metatask metatask; \
+    }
 
 DECLARE_METATASK(DebugMT)
 DECLARE_METATASK(SelectiveBranchingMT)
