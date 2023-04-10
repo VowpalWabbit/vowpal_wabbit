@@ -42,8 +42,8 @@ namespace model_utils
 size_t write_model_field(io_buf& io, ftrl& ftrl_data, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
-  bytes +=
-      VW::model_utils::write_model_field(io, ftrl_data.gd_per_model_states, upstream_name + ".gd_per_model_states", text);
+  bytes += VW::model_utils::write_model_field(
+      io, ftrl_data.gd_per_model_states, upstream_name + ".gd_per_model_states", text);
   return bytes;
 }
 
@@ -54,7 +54,7 @@ size_t read_model_field(io_buf& io, ftrl& ftrl_data)
   bytes += VW::model_utils::read_model_field(io, ftrl_data.gd_per_model_states);
   return bytes;
 }
-}
+}  // namespace model_utils
 }  // namespace reductions
 }  // namespace VW
 

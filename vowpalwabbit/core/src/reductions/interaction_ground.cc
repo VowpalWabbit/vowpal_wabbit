@@ -258,14 +258,15 @@ void print_update_igl(VW::workspace& all, VW::shared_data& /*sd*/, const VW::red
 }
 
 void output_igl_prediction(
-    VW::workspace& all, const interaction_ground_data& data, const VW::multi_ex& ec_seq, VW::io::logger& /* unused */)
+    VW::workspace& all, const interaction_ground_data& /* data */, const VW::multi_ex& ec_seq, VW::io::logger& /* unused */)
 {
   if (!ec_seq.empty())
   {
     // Print predictions
     for (auto& sink : all.output_runtime.final_prediction_sink)
     {
-      VW::details::print_action_score(sink.get(), ec_seq[VW::details::SHARED_EX_INDEX]->pred.a_s, ec_seq[VW::details::SHARED_EX_INDEX]->tag, all.logger);
+      VW::details::print_action_score(sink.get(), ec_seq[VW::details::SHARED_EX_INDEX]->pred.a_s,
+          ec_seq[VW::details::SHARED_EX_INDEX]->tag, all.logger);
     }
     VW::details::global_print_newline(all.output_runtime.final_prediction_sink, all.logger);
   }
