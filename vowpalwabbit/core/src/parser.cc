@@ -37,7 +37,7 @@ typedef int socklen_t;
 // windows doesn't define SOL_TCP and use an enum for the later, so can't check for its presence with a macro.
 #  define SOL_TCP IPPROTO_TCP
 
-int daemon(int /*a*/, int /*b*/) { exit(0); }
+// int daemon(int /*a*/, int /*b*/) { exit(0); }
 
 // Starting with v142 the fix in the else block no longer works due to mismatching linkage. Going forward we should just
 // use the actual isocpp version.
@@ -464,7 +464,7 @@ void VW::details::enable_sources(
       // FIXME switch to posix_spawn
       VW_WARNING_STATE_PUSH
       VW_WARNING_DISABLE_DEPRECATED_USAGE
-      if (!all.reduction_state.active && daemon(1, 1)) THROWERRNO("daemon");
+      // if (!all.reduction_state.active && daemon(1, 1)) THROWERRNO("daemon");
       VW_WARNING_STATE_POP
     }
 

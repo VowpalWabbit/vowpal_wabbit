@@ -1,0 +1,9 @@
+{
+  "devDependencies": {
+    "mocha": "^9.1.2"
+  },
+  "scripts": {
+    "test1": "mocha --delay",
+    "test": "node --experimental-wasm-threads --experimental-wasm-bulk-memory ./node_modules/mocha/bin/mocha --delay"
+  }
+}
