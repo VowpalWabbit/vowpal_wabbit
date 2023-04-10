@@ -257,8 +257,8 @@ void print_update_igl(VW::workspace& all, VW::shared_data& /*sd*/, const VW::red
   VW::details::print_update_cb(all, !labeled_example, ec, &ec_seq, true, &data.known_cost);
 }
 
-void output_igl_prediction(
-    VW::workspace& all, const interaction_ground_data& /* data */, const VW::multi_ex& ec_seq, VW::io::logger& /* unused */)
+void output_igl_prediction(VW::workspace& all, const interaction_ground_data& /* data */, const VW::multi_ex& ec_seq,
+    VW::io::logger& /* unused */)
 {
   if (!ec_seq.empty())
   {
