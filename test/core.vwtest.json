@@ -5899,7 +5899,7 @@
   },
   {
     "id": 456,
-    "desc": "Igl save/load #1",
+    "desc": "Igl save_load, save model",
     "vw_command": "--dsjson --cb_explore_adf --epsilon 0.2 -q UA --coin --experimental_igl -d train-sets/igl_3states_1.dsjson -f igl_1.vw -p igl_1.pred",
     "diff_files": {
       "stderr": "train-sets/ref/igl_3states_1.stderr",
@@ -5912,7 +5912,7 @@
   },
   {
     "id": 457,
-    "desc": "Igl save/load #2",
+    "desc": "Igl save_load, load model",
     "vw_command": "--dsjson --cb_explore_adf --epsilon 0.2 -q UA --coin --experimental_igl -d train-sets/igl_3states_2.dsjson -i igl_1.vw -p igl_2.pred --readable_model igl_2.readable",
     "diff_files": {
       "stderr": "train-sets/ref/igl_3states_2.stderr",
