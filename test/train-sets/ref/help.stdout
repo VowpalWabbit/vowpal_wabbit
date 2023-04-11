@@ -623,7 +623,10 @@ Weight Options:
 [Reduction] Experimental: Contextual Bandit Exploration with ADF with graph feedback Options:
     --cb_explore_adf                        Online explore-exploit for a contextual bandit problem with multiline
                                             action dependent features (type: bool, keep, necessary)
-    --gamma arg                             (type: float, default: 10, keep)
+    --gamma_scale arg                       Sets CB with graph feedback gamma parameter to gamma=[gamma_scale]*[num
+                                            examples]^1/2 (type: float, default: 1, keep)
+    --gamma_exponent arg                    Exponent on [num examples] in CB with graph feedback parameter
+                                            gamma (type: float, default: 0.5, keep)
     --graph_feedback                        Graph feedback pdf (type: bool, keep, necessary, experimental)
 [Reduction] Experimental: Contextual Bandit Exploration with ADF with large action space filtering Options:
     --cb_explore_adf                        Online explore-exploit for a contextual bandit problem with multiline
