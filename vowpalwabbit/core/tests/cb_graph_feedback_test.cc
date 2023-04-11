@@ -77,7 +77,8 @@ TEST(GraphFeedback, CopsAndRobbers)
 {
   // aka one reveals info about the other so just give higher probability to the one with the lower cost
 
-  std::vector<std::string> args{"--cb_explore_adf", "--graph_feedback", "--quiet", "--gamma", "10"};
+  // gamma = gamma_scale * count ^ gamma_exponent
+  std::vector<std::string> args{"--cb_explore_adf", "--graph_feedback", "--quiet", "--gamma_scale", "10", "--gamma_exponent", "0"};
   auto vw_graph = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
 
   auto& vw = *vw_graph.get();
@@ -101,7 +102,7 @@ TEST(GraphFeedback, AppleTasting)
 {
   // aka spam filtering, or, one action reveals all and the other action reveals nothing
 
-  std::vector<std::string> args{"--cb_explore_adf", "--graph_feedback", "--quiet", "--gamma", "10"};
+  std::vector<std::string> args{"--cb_explore_adf", "--graph_feedback", "--quiet", "--gamma_scale", "10", "--gamma_exponent", "0"};
   auto vw_graph = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
 
   auto& vw = *vw_graph.get();
@@ -130,7 +131,7 @@ TEST(GraphFeedback, PostedPriceAuctionBidding)
   // 1 If the "do nothing" (action 0) action has the lower estimated loss/cost then p[0] = gamma * f_hat[1] / (1 + gamma
   // * f_hat[1]) + (upper bound of another value)
 
-  std::vector<std::string> args{"--cb_explore_adf", "--graph_feedback", "--quiet", "--gamma", "10"};
+  std::vector<std::string> args{"--cb_explore_adf", "--graph_feedback", "--quiet", "--gamma_scale", "10", "--gamma_exponent", "0"};
   auto vw_graph = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
 
   auto& vw = *vw_graph.get();
@@ -246,7 +247,7 @@ TEST(GraphFeedback, CheckIdentityGSmallGamma)
   // With the identity graph we just go with the cost i.e. highest cost -> lowest probability
   // You can see it respecting the costs as gamma increases and the graph losses its power in the decision making
 
-  std::vector<std::string> args{"--cb_explore_adf", "--graph_feedback", "--quiet", "--gamma", "1"};
+  std::vector<std::string> args{"--cb_explore_adf", "--graph_feedback", "--quiet", "--gamma_scale", "1", "--gamma_exponent", "0"};
   auto vw_graph = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
 
   auto& vw = *vw_graph.get();
@@ -279,7 +280,7 @@ TEST(GraphFeedback, CheckIdentityGSmallGamma)
 
 TEST(GraphFeedback, CheckIdentityGLargeGamma)
 {
-  std::vector<std::string> args{"--cb_explore_adf", "--graph_feedback", "--quiet", "--gamma", "20"};
+  std::vector<std::string> args{"--cb_explore_adf", "--graph_feedback", "--quiet", "--gamma_scale", "20", "--gamma_exponent", "0"};
   auto vw_graph = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
 
   auto& vw = *vw_graph.get();
@@ -315,7 +316,7 @@ TEST(GraphFeedback, CheckLastCol1GSmallGamma)
   // the last action reveals everything about everything, the other two actions don't reveal anything
   // it does take the cost into account but the weight of the probabilities should lie towards the last action
 
-  std::vector<std::string> args{"--cb_explore_adf", "--graph_feedback", "--quiet", "--gamma", "1"};
+  std::vector<std::string> args{"--cb_explore_adf", "--graph_feedback", "--quiet", "--gamma_scale", "1", "--gamma_exponent", "0"};
   auto vw_graph = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
 
   auto& vw = *vw_graph.get();
@@ -344,7 +345,7 @@ TEST(GraphFeedback, CheckLastCol1GSmallGamma)
 
 TEST(GraphFeedback, CheckLastCol1GMedGamma)
 {
-  std::vector<std::string> args{"--cb_explore_adf", "--graph_feedback", "--quiet", "--gamma", "2.5"};
+  std::vector<std::string> args{"--cb_explore_adf", "--graph_feedback", "--quiet", "--gamma_scale", "2.5", "--gamma_exponent", "0"};
   auto vw_graph = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
 
   auto& vw = *vw_graph.get();
@@ -376,7 +377,7 @@ TEST(GraphFeedback, CheckLastCol1GMedGamma)
 
 TEST(GraphFeedback, CheckLastCol1GLargeGamma)
 {
-  std::vector<std::string> args{"--cb_explore_adf", "--graph_feedback", "--quiet", "--gamma", "10"};
+  std::vector<std::string> args{"--cb_explore_adf", "--graph_feedback", "--quiet", "--gamma_scale", "10", "--gamma_exponent", "0"};
   auto vw_graph = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
 
   auto& vw = *vw_graph.get();
@@ -408,7 +409,7 @@ TEST(GraphFeedback, CheckFirstCol1GSmallGamma)
 {
   // now the probs should favour the first action
 
-  std::vector<std::string> args{"--cb_explore_adf", "--graph_feedback", "--quiet", "--gamma", "1"};
+  std::vector<std::string> args{"--cb_explore_adf", "--graph_feedback", "--quiet", "--gamma_scale", "1", "--gamma_exponent", "0"};
   auto vw_graph = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
 
   auto& vw = *vw_graph.get();
@@ -440,7 +441,7 @@ TEST(GraphFeedback, CheckFirstCol1GMedGamma)
 {
   // now the probs should favour the first action
 
-  std::vector<std::string> args{"--cb_explore_adf", "--graph_feedback", "--quiet", "--gamma", "2.5"};
+  std::vector<std::string> args{"--cb_explore_adf", "--graph_feedback", "--quiet", "--gamma_scale", "2.5", "--gamma_exponent", "0"};
   auto vw_graph = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
 
   auto& vw = *vw_graph.get();
@@ -475,7 +476,7 @@ TEST(GraphFeedback, CheckFirstCol1GLargeGamma)
 {
   // now the probs should favour the first action
 
-  std::vector<std::string> args{"--cb_explore_adf", "--graph_feedback", "--quiet", "--gamma", "100"};
+  std::vector<std::string> args{"--cb_explore_adf", "--graph_feedback", "--quiet", "--gamma_scale", "100", "--gamma_exponent", "0"};
   auto vw_graph = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
 
   auto& vw = *vw_graph.get();
@@ -510,7 +511,7 @@ TEST(GraphFeedback, CheckSupervisedG)
 {
   // if they are all 1s that means that all reveal information for all
 
-  std::vector<std::string> args{"--cb_explore_adf", "--graph_feedback", "--quiet", "--gamma", "10"};
+  std::vector<std::string> args{"--cb_explore_adf", "--graph_feedback", "--quiet", "--gamma_scale", "10", "--gamma_exponent", "0"};
   auto vw_graph = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
 
   auto& vw = *vw_graph.get();

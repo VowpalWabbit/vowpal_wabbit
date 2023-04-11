@@ -37,13 +37,17 @@ namespace cb_explore_adf
 class cb_explore_adf_graph_feedback
 {
 public:
-  cb_explore_adf_graph_feedback(float gamma, VW::workspace* all) : _gamma(gamma), _all(all) {}
+  cb_explore_adf_graph_feedback(float gamma_scale, float gamma_exponent, VW::workspace* all)
+      : _gamma_scale(gamma_scale), _gamma_exponent(gamma_exponent), _all(all)
+  {
+  }
   // Should be called through cb_explore_adf_base for pre/post-processing
   void predict(VW::LEARNER::learner& base, multi_ex& examples);
   void learn(VW::LEARNER::learner& base, multi_ex& examples);
   void save_load(io_buf& io, bool read, bool text);
   size_t _counter = 0;
-  float _gamma;
+  float _gamma_scale;
+  float _gamma_exponent;
 
 private:
   VW::workspace* _all;
@@ -418,9 +422,11 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
   auto& a_s = examples[0]->pred.a_s;
   size_t num_actions = a_s.size();
   arma::vec fhat(a_s.size());
-  for (auto& as : a_s) { fhat(as.action) = as.score; }
 
-  auto coord_gammafhat = set_initial_coordinates(fhat, _gamma);
+  for (auto& as : a_s) { fhat(as.action) = as.score; }
+  const float gamma = _gamma_scale * static_cast<float>(std::pow(_counter, _gamma_exponent));
+
+  auto coord_gammafhat = set_initial_coordinates(fhat, gamma);
   arma::mat coordinates = std::get<0>(coord_gammafhat);
   arma::vec gammafhat = std::get<1>(coord_gammafhat);
 
@@ -428,13 +434,12 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
       examples[0]->ex_reduction_features.template get<VW::cb_graph_feedback::reduction_features>();
   arma::sp_mat G = get_graph(graph_reduction_features, num_actions);
 
-  ConstrainedFunctionType f(gammafhat, G, _gamma);
+  ConstrainedFunctionType f(gammafhat, G, gamma);
 
   ens::AugLagrangian optimizer;
   optimizer.Optimize(f, coordinates);
 
   // TODO json graph input
-  // TODO save_load the count and make gamma like squarecb gamma
 
   arma::vec probs = get_probs_from_coordinates(coordinates, fhat, *_all);
 
@@ -470,7 +475,17 @@ void cb_explore_adf_graph_feedback::learn(VW::LEARNER::learner& base, multi_ex& 
   predict_or_learn_impl<true>(base, examples);
 }
 
-void cb_explore_adf_graph_feedback::save_load(io_buf&, bool, bool) {}
+void cb_explore_adf_graph_feedback::save_load(VW::io_buf& io, bool read, bool text)
+{
+  if (io.num_files() == 0) { return; }
+  if (!read)
+  {
+    std::stringstream msg;
+    if (!read) { msg << "cb adf with graph feedback storing example counter:  = " << _counter << "\n"; }
+    VW::details::bin_text_read_write_fixed_validated(
+        io, reinterpret_cast<char*>(&_counter), sizeof(_counter), read, msg, text);
+  }
+}
 
 std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_graph_feedback_setup(
     VW::setup_base_i& stack_builder)
@@ -480,7 +495,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_graph_feedb
   using config::make_option;
   bool cb_explore_adf_option = false;
   bool graph_feedback = false;
-  float gamma = 0.f;
+  float gamma_scale = 1.;
+  float gamma_exponent = 0.;
 
   config::option_group_definition new_options(
       "[Reduction] Experimental: Contextual Bandit Exploration with ADF with graph feedback");
@@ -489,7 +505,14 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_graph_feedb
                .keep()
                .necessary()
                .help("Online explore-exploit for a contextual bandit problem with multiline action dependent features"))
-      .add(make_option("gamma", gamma).keep().default_value(10.f))
+      .add(make_option("gamma_scale", gamma_scale)
+               .keep()
+               .default_value(1.f)
+               .help("Sets CB with graph feedback gamma parameter to gamma=[gamma_scale]*[num examples]^1/2"))
+      .add(make_option("gamma_exponent", gamma_exponent)
+               .keep()
+               .default_value(.5f)
+               .help("Exponent on [num examples] in CB with graph feedback parameter gamma"))
       .add(make_option("graph_feedback", graph_feedback).necessary().keep().help("Graph feedback pdf").experimental());
 
   auto enabled = options.add_parse_and_check_necessary(new_options);
@@ -505,7 +528,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_graph_feedb
   size_t problem_multiplier = 1;
   bool with_metrics = options.was_supplied("extra_metrics");
 
-  auto data = VW::make_unique<explore_type>(with_metrics, gamma, &all);
+  auto data = VW::make_unique<explore_type>(with_metrics, gamma_scale, gamma_exponent, &all);
 
   auto l = VW::LEARNER::make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(VW::reductions::cb_explore_adf_graph_feedback_setup))
