@@ -26,10 +26,6 @@
     "benchmarks": {
       "description": "Build Benchmarks",
       "dependencies": ["benchmark"]
-    },
-    "cbgraphfeedback": {
-      "description": "Enable CB with graph feedback reduction",
-      "dependencies": ["armadillo"]
     }
   }
 }
