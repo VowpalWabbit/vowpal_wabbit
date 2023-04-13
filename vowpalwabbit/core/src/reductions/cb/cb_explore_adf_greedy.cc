@@ -113,7 +113,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_greedy_setu
   // This basically runs if none of the other explore strategies are used
   bool use_greedy = !(options.was_supplied("first") || options.was_supplied("bag") || options.was_supplied("cover") ||
       options.was_supplied("regcb") || options.was_supplied("regcbopt") || options.was_supplied("squarecb") ||
-      options.was_supplied("rnd") || options.was_supplied("softmax") || options.was_supplied("synthcover"));
+      options.was_supplied("rnd") || options.was_supplied("softmax") || options.was_supplied("synthcover") ||
+      options.was_supplied("graph_feedback"));
 
   if (!cb_explore_adf_option || !use_greedy) { return nullptr; }
 
