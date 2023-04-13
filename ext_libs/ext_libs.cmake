@@ -121,3 +121,10 @@ else()
   # header at the root of the repo rather than its own nested sse2neon/ dir
   target_include_directories(sse2neon SYSTEM INTERFACE "${CMAKE_CURRENT_LIST_DIR}/sse2neon")
 endif()
+
+if(VW_FEAT_CB_GRAPH_FEEDBACK)
+  add_library(mlpack_ensmallen INTERFACE)
+  target_include_directories(mlpack_ensmallen SYSTEM INTERFACE ${CMAKE_CURRENT_LIST_DIR}/armadillo-code/include)
+
+  target_include_directories(mlpack_ensmallen SYSTEM INTERFACE ${CMAKE_CURRENT_LIST_DIR}/ensmallen/include)
+endif()
