@@ -124,8 +124,6 @@ endif()
 
 if(VW_FEAT_CB_GRAPH_FEEDBACK)
   add_library(mlpack_ensmallen INTERFACE)
-  set(BUILD_SMOKE_TEST OFF)
-  set(BUILD_SHARED_LIBS OFF)
   target_include_directories(mlpack_ensmallen SYSTEM INTERFACE ${CMAKE_CURRENT_LIST_DIR}/armadillo-code/include)
 
   target_include_directories(mlpack_ensmallen SYSTEM INTERFACE ${CMAKE_CURRENT_LIST_DIR}/ensmallen/include)
