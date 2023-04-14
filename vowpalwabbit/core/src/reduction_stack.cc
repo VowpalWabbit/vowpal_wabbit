@@ -31,6 +31,9 @@
 #include "vw/core/reductions/cb/cb_explore_adf_bag.h"
 #include "vw/core/reductions/cb/cb_explore_adf_cover.h"
 #include "vw/core/reductions/cb/cb_explore_adf_first.h"
+#ifdef VW_FEAT_CB_GRAPH_FEEDBACK_ENABLED
+#  include "vw/core/reductions/cb/cb_explore_adf_graph_feedback.h"
+#endif
 #include "vw/core/reductions/cb/cb_explore_adf_greedy.h"
 #include "vw/core/reductions/cb/cb_explore_adf_large_action_space.h"
 #include "vw/core/reductions/cb/cb_explore_adf_regcb.h"
@@ -201,6 +204,9 @@ void prepare_reductions(std::vector<std::tuple<std::string, VW::reduction_setup_
   reductions.push_back(VW::reductions::automl_setup);
   reductions.push_back(VW::reductions::cb_explore_setup);
   reductions.push_back(VW::reductions::cb_explore_adf_large_action_space_setup);
+#ifdef VW_FEAT_CB_GRAPH_FEEDBACK_ENABLED
+  reductions.push_back(VW::reductions::cb_explore_adf_graph_feedback_setup);
+#endif
   reductions.push_back(VW::reductions::cb_explore_adf_greedy_setup);
   reductions.push_back(VW::reductions::cb_explore_adf_softmax_setup);
   reductions.push_back(VW::reductions::cb_explore_adf_rnd_setup);

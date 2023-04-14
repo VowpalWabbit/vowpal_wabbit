@@ -227,7 +227,47 @@ TEST(Igl, TrainingCoverges)
   auto igl_vw = VW::initialize(vwtest::make_args(igl_args));
 
   igl_simulator::igl_sim sim(seed);
-  auto ctr_vector = sim.run_simulation(igl_vw.get(), num_iterations);
+  auto ctr_vector = sim.run_simulation(igl_vw.get(), 1, num_iterations);
 
   EXPECT_GT(ctr_vector.back(), 0.5f);
+}
+
+TEST(Igl, SaveResume)
+{
+  std::vector<std::string> igl_args = {"--cb_explore_adf", "--epsilon", "0.2", "--dsjson", "--coin",
+      "--experimental_igl", "--noconstant", "-b", "19", "-q", "UA", "--quiet"};
+
+  const size_t num_iterations = 500;
+  const size_t seed = 777;
+
+  auto igl_no_save = VW::initialize(vwtest::make_args(igl_args));
+
+  igl_simulator::igl_sim sim(seed);
+  auto ctr_vector = sim.run_simulation(igl_no_save.get(), 1, num_iterations);
+
+  // save_resume
+  const size_t split = num_iterations / 2;
+  auto igl_first = VW::initialize(VW::make_unique<VW::config::options_cli>(igl_args));
+  igl_simulator::igl_sim sim_split(seed);
+  sim_split.run_simulation(igl_first.get(), 1, split);
+
+  auto backing_vector = std::make_shared<std::vector<char>>();
+  {
+    VW::io_buf io_writer;
+    io_writer.add_file(VW::io::create_vector_writer(backing_vector));
+    VW::save_predictor(*igl_first, io_writer);
+    io_writer.flush();
+  }
+
+  igl_first->finish();
+  igl_first.reset();
+
+  auto igl_second = VW::initialize(VW::make_unique<VW::config::options_cli>(igl_args),
+      VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
+
+  // continue
+  auto ctr_save_resume = sim_split.run_simulation(igl_second.get(), split + 1, split);
+  igl_second->finish();
+
+  EXPECT_EQ(ctr_vector, ctr_save_resume);
 }

@@ -9,6 +9,7 @@
 #include "vw/core/label_parser.h"
 #include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
+#include "vw/core/model_utils.h"
 #include "vw/core/parse_regressor.h"
 #include "vw/core/parser.h"
 #include "vw/core/setup_base.h"
@@ -31,6 +32,31 @@ using namespace VW::reductions;
 #define W_MX 3  // maximum absolute value
 #define W_WE 4  // Wealth
 #define W_MG 5  // maximum gradient
+
+namespace VW
+{
+namespace reductions
+{
+namespace model_utils
+{
+size_t write_model_field(io_buf& io, ftrl& ftrl_data, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += VW::model_utils::write_model_field(
+      io, ftrl_data.gd_per_model_states, upstream_name + ".gd_per_model_states", text);
+  return bytes;
+}
+
+size_t read_model_field(io_buf& io, ftrl& ftrl_data)
+{
+  size_t bytes = 0;
+  ftrl_data.gd_per_model_states.clear();
+  bytes += VW::model_utils::read_model_field(io, ftrl_data.gd_per_model_states);
+  return bytes;
+}
+}  // namespace model_utils
+}  // namespace reductions
+}  // namespace VW
 
 namespace
 {

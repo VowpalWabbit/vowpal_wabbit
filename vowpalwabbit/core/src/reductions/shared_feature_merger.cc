@@ -56,16 +56,17 @@ void predict_or_learn(sfm_data& data, VW::LEARNER::learner& base, VW::multi_ex& 
       }
 
       VW::details::append_example_namespaces_from_example(*example, *shared_example);
-      if (store_shared_ex_in_reduction_features)
-      {
-        auto& red_features =
-            example->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
-        red_features.shared_example = shared_example;
-      }
     }
 
     std::swap(ec_seq[0]->pred, shared_example->pred);
     std::swap(ec_seq[0]->tag, shared_example->tag);
+    std::swap(ec_seq[0]->ex_reduction_features, shared_example->ex_reduction_features);
+    if (store_shared_ex_in_reduction_features)
+    {
+      auto& red_features =
+          ec_seq[0]->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
+      red_features.shared_example = shared_example;
+    }
   }
 
   // Guard example state restore against throws
@@ -82,16 +83,16 @@ void predict_or_learn(sfm_data& data, VW::LEARNER::learner& base, VW::multi_ex& 
             }
 
             VW::details::truncate_example_namespaces_from_example(*example, *shared_example);
-
-            if (store_shared_ex_in_reduction_features)
-            {
-              auto& red_features =
-                  example->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
-              red_features.reset_to_default();
-            }
           }
           std::swap(shared_example->pred, ec_seq[0]->pred);
           std::swap(shared_example->tag, ec_seq[0]->tag);
+          std::swap(shared_example->ex_reduction_features, ec_seq[0]->ex_reduction_features);
+          if (store_shared_ex_in_reduction_features)
+          {
+            auto& red_features =
+                ec_seq[0]->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
+            red_features.reset_to_default();
+          }
           ec_seq.insert(ec_seq.begin(), shared_example);
         }
       });

@@ -371,6 +371,11 @@ list(APPEND vw_core_sources
 )
 endif()
 
+if(VW_FEAT_CB_GRAPH_FEEDBACK)
+  list(APPEND vw_core_headers include/vw/core/reductions/cb/cb_explore_adf_graph_feedback.h)
+  list(APPEND vw_core_sources src/reductions/cb/cb_explore_adf_graph_feedback.cc)
+endif()
+
 vw_add_library(
     NAME "core"
     TYPE "STATIC_ONLY"
@@ -389,6 +394,10 @@ vw_add_library(
 
 if(VW_FEAT_LDA)
   target_link_libraries(vw_core PRIVATE $<BUILD_INTERFACE:${boost_math_target}>)
+endif()
+
+if(VW_FEAT_CB_GRAPH_FEEDBACK)
+  target_link_libraries(vw_core PRIVATE $<BUILD_INTERFACE:mlpack_ensmallen>)
 endif()
 
 target_include_directories(vw_core PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src)
@@ -434,10 +443,7 @@ if(WIN32)
   target_compile_definitions(vw_core PUBLIC __SSE2__)
 endif()
 
-vw_add_test_executable(
-    FOR_LIB "core"
-    EXTRA_DEPS vw_test_common
-    SOURCES
+set(vw_core_test_sources
       tests/automl_test.cc
       tests/automl_weights_test.cc
       tests/baseline_cb_test.cc
@@ -501,6 +507,16 @@ vw_add_test_executable(
       tests/vw_versions_test.cc
       tests/weights_test.cc
       tests/igl_test.cc
+)
+
+if(VW_FEAT_CB_GRAPH_FEEDBACK)
+  list(APPEND vw_core_test_sources tests/cb_graph_feedback_test.cc)
+endif()
+
+vw_add_test_executable(
+    FOR_LIB "core"
+    EXTRA_DEPS vw_test_common
+    SOURCES ${vw_core_test_sources}
 )
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
