@@ -102,6 +102,10 @@
         "VW_USE_ASAN": {
           "type": "BOOL",
           "value": "On"
+        },
+        "VW_FEAT_CB_GRAPH_FEEDBACK": {
+          "type": "BOOL",
+          "value": "On"
         }
       }
     },
