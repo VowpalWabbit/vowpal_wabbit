@@ -196,8 +196,7 @@ private:
     }
   }
 
-  void process_dictionary(VW::example* ex, VW::string_view feature_name, VW::string_view string_feature_value,
-      float float_feature_value) const
+  void process_dictionary(VW::example* ex, VW::string_view feature_name, VW::string_view string_feature_value) const
   {
     if (_namespace_dictionaries == nullptr) { return; }
 
@@ -346,7 +345,7 @@ private:
 
     process_affix(_ae, feature_name, str_feat_value, float_feature_value);
     process_spelling(_ae, feature_name, str_feat_value, float_feature_value);
-    process_dictionary(_ae, feature_name, str_feat_value, float_feature_value);
+    process_dictionary(_ae, feature_name, str_feat_value);
   }
 
   inline FORCE_INLINE void name_space_info_value()
@@ -454,7 +453,8 @@ private:
     else
     {
       // syntax error
-      parser_error("Malformed example when reading namespace info. '|', string, space, or EOL expected", _ae->example_counter);
+      parser_error(
+          "Malformed example when reading namespace info. '|', string, space, or EOL expected", _ae->example_counter);
     }
 
     if (_new_index && !_ae->feature_space[_index].empty()) { _ae->indices.push_back(_index); }
@@ -473,7 +473,8 @@ private:
     if (!current_is_eol() && !current_is_carriage_return())
     {
       // syntax error
-      parser_error("Unexpected character encountered when processing next namespace. '|' or EOL expected", _ae->example_counter);
+      parser_error(
+          "Unexpected character encountered when processing next namespace. '|' or EOL expected", _ae->example_counter);
     }
   }
 
