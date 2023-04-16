@@ -7,7 +7,8 @@ vw_add_library(
     NAME "text_parser"
     TYPE "STATIC_ONLY"
     SOURCES ${vw_text_parser_sources}
-    PUBLIC_DEPS vw_common vw_core vw_io
+    PUBLIC_DEPS vw_common vw_core
+    PRIVATE_DEPS  vw_io fmt::fmt
     DESCRIPTION "Read and write VW examples with text format."
     EXCEPTION_DESCRIPTION "Yes"
     ENABLE_INSTALL
