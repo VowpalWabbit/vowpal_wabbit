@@ -379,7 +379,7 @@ TEST(Las, CheckActionCacheWithCCB)
   EXPECT_TRUE(U_wnocache.isApprox(U_wcache, vwtest::EXPLICIT_FLOAT_TOL));
 }
 
-#ifdef BUILD_LAS_WITH_SIMD
+#ifdef VW_FEAT_LAS_SIMD_ENABLED
 TEST(Las, ComputeDotProdScalarAndSimdHaveSameResults)
 {
   float (*compute_dot_prod_simd)(uint64_t, VW::workspace*, uint64_t, VW::example*);

@@ -2,7 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#ifdef BUILD_LAS_WITH_SIMD
+#ifdef VW_FEAT_LAS_SIMD_ENABLED
 
 #  include "compute_dot_prod_simd.h"
 #  include "kernel_impl.h"
