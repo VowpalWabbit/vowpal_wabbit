@@ -305,9 +305,6 @@ private:
     }
     else { float_feature_value = _cur_channel_v * float_feature_value; }
 
-    parser_warning(feature_name, 1);
-    parser_warning(fmt::format("{}", _hasher(feature_name.data(), feature_name.length(), _channel_hash)), 999);
-
     uint64_t word_hash;
     // Case where string:string or :string
     if (!str_feat_value.empty())
