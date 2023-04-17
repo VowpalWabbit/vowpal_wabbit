@@ -91,7 +91,9 @@
 #include "vw/core/reductions/recall_tree.h"
 #include "vw/core/reductions/sample_pdf.h"
 #include "vw/core/reductions/scorer.h"
-#include "vw/core/reductions/search/search.h"
+#ifdef VW_FEAT_SEARCH_ENABLED
+#  include "vw/core/reductions/search/search.h"
+#endif
 #include "vw/core/reductions/sender.h"
 #include "vw/core/reductions/shared_feature_merger.h"
 #include "vw/core/reductions/slates.h"
@@ -236,7 +238,9 @@ void prepare_reductions(std::vector<std::tuple<std::string, VW::reduction_setup_
   reductions.push_back(VW::reductions::cb_to_cb_adf_setup);
   reductions.push_back(VW::reductions::offset_tree_setup);
   reductions.push_back(VW::reductions::expreplay_setup<'c', VW::cs_label_parser_global>);
+#ifdef VW_FEAT_SEARCH_ENABLED
   reductions.push_back(VW::reductions::search_setup);
+#endif
   reductions.push_back(VW::reductions::audit_regressor_setup);
   reductions.push_back(VW::reductions::metrics_setup);
   reductions.push_back(VW::reductions::count_label_setup);
