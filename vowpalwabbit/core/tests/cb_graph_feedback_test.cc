@@ -56,7 +56,7 @@ std::vector<std::vector<float>> predict_learn_return_action_scores_two_actions(
 
     examples.push_back(VW::read_example(vw, shared_graph + " | s_1 s_2"));
     examples.push_back(VW::read_example(vw, "| a_1 b_1 c_1"));
-    examples.push_back(VW::read_example(vw, "0:0.8:0.4 | a_2 b_2 c_2"));
+    examples.push_back(VW::read_example(vw, "1:0.8:0.4 | a_2 b_2 c_2"));
 
     vw.learn(examples);
     vw.predict(examples);
@@ -184,7 +184,7 @@ std::vector<std::vector<float>> predict_learn_return_as(VW::workspace& vw, const
 
     examples.push_back(VW::read_example(vw, shared_graph + " | s_1 s_2"));
     examples.push_back(VW::read_example(vw, "| b_1 c_1 d_1"));
-    examples.push_back(VW::read_example(vw, "0:0.1:0.4 | b_2 c_2 d_2"));
+    examples.push_back(VW::read_example(vw, "1:0.1:0.4 | b_2 c_2 d_2"));
     examples.push_back(VW::read_example(vw, "| a_100"));
 
     vw.predict(examples);
