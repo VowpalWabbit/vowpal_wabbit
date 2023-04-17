@@ -395,10 +395,9 @@ endif()
 
 target_include_directories(vw_core PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src)
 
-if (VW_BUILD_LAS_WITH_SIMD AND (UNIX AND NOT APPLE) AND (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64"))
+if (VW_FEAT_LAS_SIMD)
   set_source_files_properties(src/reductions/cb/details/large_action/compute_dot_prod_avx2.cc PROPERTIES COMPILE_FLAGS "-mfma -mavx2")
   set_source_files_properties(src/reductions/cb/details/large_action/compute_dot_prod_avx512.cc PROPERTIES COMPILE_FLAGS "-mavx512f -mavx512bw -mavx512vl -mavx512vpopcntdq")
-  target_compile_definitions(vw_core PUBLIC BUILD_LAS_WITH_SIMD)
 endif()
 
 if(VW_FEAT_CSV)
