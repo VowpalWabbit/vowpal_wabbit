@@ -1,12 +1,48 @@
-[warning] malformed example! '|',space, or EOL expected after : "| x:0.7"in Example #0: "| x:0.7"
-[warning] malformed example! '|' or EOL expected after : "| x:0.7"in Example #0: "| x:0.7"
-[warning] malformed example! '|',space, or EOL expected after : "| x:0.7"in Example #2: "| x:0.7"
-[warning] malformed example! '|' or EOL expected after : "| x:0.7"in Example #2: "| x:0.7"
-[warning] malformed example! '|',space, or EOL expected after : "| x:0.7"in Example #4: "| x:0.7"
-[warning] malformed example! '|' or EOL expected after : "| x:0.7"in Example #4: "| x:0.7"
-[warning] malformed example! '|',space, or EOL expected after : "| x:0.7"in Example #6: "| x:0.7"
-[warning] malformed example! '|' or EOL expected after : "| x:0.7"in Example #6: "| x:0.7"
-[warning] malformed example! '|',space, or EOL expected after : "| x:0.7"in Example #8: "| x:0.7"
-[warning] malformed example! '|' or EOL expected after : "| x:0.7"in Example #8: "| x:0.7"
-[warning] malformed example! '|',space, or EOL expected after : "| x:0.7"in Example #10: "| x:0.7"
-[warning] malformed example! '|' or EOL expected after : "| x:0.7"in Example #10: "| x:0.7"
+[error] [Example #0] malformed example! '|', space, or EOL expected but found '0x00'
+
+| x:0.7
+       ^
+[error] [Example #0] Unexpected character encountered when processing next namespace. '|' or EOL expected expected but found '0x00'
+
+| x:0.7
+       ^
+[error] [Example #2] malformed example! '|', space, or EOL expected but found '0x00'
+
+| x:0.7
+       ^
+[error] [Example #2] Unexpected character encountered when processing next namespace. '|' or EOL expected expected but found '0x00'
+
+| x:0.7
+       ^
+[error] [Example #4] malformed example! '|', space, or EOL expected but found '0x00'
+
+| x:0.7
+       ^
+[error] [Example #4] Unexpected character encountered when processing next namespace. '|' or EOL expected expected but found '0x00'
+
+| x:0.7
+       ^
+[error] [Example #6] malformed example! '|', space, or EOL expected but found '0x00'
+
+| x:0.7
+       ^
+[error] [Example #6] Unexpected character encountered when processing next namespace. '|' or EOL expected expected but found '0x00'
+
+| x:0.7
+       ^
+[error] [Example #8] malformed example! '|', space, or EOL expected but found '0x00'
+
+| x:0.7
+       ^
+[error] [Example #8] Unexpected character encountered when processing next namespace. '|' or EOL expected expected but found '0x00'
+
+| x:0.7
+       ^
+[error] [Example #10] malformed example! '|', space, or EOL expected but found '0x00'
+
+| x:0.7
+       ^
+[error] [Example #10] Unexpected character encountered when processing next namespace. '|' or EOL expected expected but found '0x00'
+
+| x:0.7
+       ^

@@ -24,6 +24,24 @@
 
 namespace
 {
+
+std::string char_to_repr(char c)
+{
+  switch(c)
+  {
+    case '\t': return "\\t";
+    case '\n': return "\\n";
+    case '\r': return "\\r";
+  }
+
+  if (std::isprint(c) != 0)
+  {
+    return fmt::format("{}", c);
+  }
+
+  return fmt::format("0x{:02x}", c);
+}
+
 template <bool audit>
 class tc_parser
 {
@@ -51,6 +69,12 @@ private:
   std::array<uint64_t, VW::NUM_NAMESPACES>* _affix_features;
   std::array<bool, VW::NUM_NAMESPACES>* _spelling_features;
   std::array<std::vector<std::shared_ptr<VW::details::feature_dict>>, VW::NUM_NAMESPACES>* _namespace_dictionaries;
+
+  VW_ATTR(nodiscard) inline FORCE_INLINE char current_char() const
+  {
+    assert(_read_idx < _line.size());
+    return _line[_read_idx];
+  }
 
   VW_ATTR(nodiscard) inline FORCE_INLINE bool current_is_whitespace() const
   {
@@ -81,7 +105,15 @@ private:
 
   std::string format_parser_diagnostic_message(VW::string_view message, size_t example_number)
   {
-    return fmt::format("[Example #{}] {}\n\n{}\n{:<{}}", example_number, message, _line, "^", _read_idx);
+    // If null terminator exists in middle of string, copy the string and remove it before printing
+    if (_line.find('\0') != VW::string_view::npos)
+    {
+      auto line = std::string(_line);
+      line.erase(std::remove(line.begin(), line.end(), '\0'), line.end());
+      return fmt::format("[Example #{}] {}\n\n{}\n{: >{}}", example_number, message, line, "^", _read_idx+1);
+    }
+
+    return fmt::format("[Example #{}] {}\n\n{}\n{: >{}}", example_number, message, _line, "^", _read_idx+1);
   }
 
   void parser_warning(VW::string_view message, size_t example_number)
@@ -270,7 +302,7 @@ private:
 
     float_feature_value = 0.f;
     // syntax error
-    parser_error("malformed example! '|', ':', space, or EOL expected", _ae->example_counter);
+    parser_error(fmt::format("malformed example! '|', ':', space, or EOL expected expected but found '{}'", char_to_repr(current_char())), _ae->example_counter);
     return true;
   }
 
@@ -362,7 +394,7 @@ private:
       _cur_channel_v = VW::details::parse_float(sv.data(), end_read, sv.data() + sv.size());
       if (end_read + _read_idx >= _line.size())
       {
-        parser_error("Malformed example! Float expected.", _ae->example_counter);
+        parser_error(fmt::format("Malformed example! Float expected expected but found '{}'", char_to_repr(current_char())), _ae->example_counter);
       }
       if (std::isnan(_cur_channel_v))
       {
@@ -373,7 +405,7 @@ private:
     }
 
     // syntax error
-    parser_error("Malformed example! '|',':', space, or EOL expected.", _ae->example_counter);
+    parser_error(fmt::format("Malformed example! '|',':', space, or EOL expected expected but found '{}'", char_to_repr(current_char())), _ae->example_counter);
   }
 
   inline FORCE_INLINE void name_space_info()
@@ -382,7 +414,7 @@ private:
         current_is_carriage_return())
     {
       // syntax error
-      parser_error("malformed example! String expected", _ae->example_counter);
+      parser_error(fmt::format("malformed example! String expected expected but found '{}'", char_to_repr(current_char())), _ae->example_counter);
       return;
     }
 
@@ -412,7 +444,7 @@ private:
     if (!(current_is_eol() || current_is_pipe() || current_is_carriage_return()))
     {
       // syntax error
-      parser_error("malformed example! '|',space, or EOL expected", _ae->example_counter);
+      parser_error(fmt::format("malformed example! '|', space, or EOL expected but found '{}'", char_to_repr(current_char())), _ae->example_counter);
     }
   }
 
@@ -450,8 +482,8 @@ private:
     else
     {
       // syntax error
-      parser_error(
-          "Malformed example when reading namespace info. '|', string, space, or EOL expected", _ae->example_counter);
+      parser_error(fmt::format(
+          "Malformed example when reading namespace info. '|', string, space, or EOL expected expected but found '{}'", char_to_repr(current_char())), _ae->example_counter);
     }
 
     if (_new_index && !_ae->feature_space[_index].empty()) { _ae->indices.push_back(_index); }
@@ -471,7 +503,7 @@ private:
     {
       // syntax error
       parser_error(
-          "Unexpected character encountered when processing next namespace. '|' or EOL expected", _ae->example_counter);
+          fmt::format("Unexpected character encountered when processing next namespace. '|' or EOL expected expected but found '{}'", char_to_repr(current_char())), _ae->example_counter);
     }
   }
 
@@ -485,12 +517,12 @@ public:
       , _strict_parse(strict_parse)
       , _hash_seed(hash_seed)
       , _parse_mask(parse_mask)
+      , _logger(logger)
       , _redefine_some(redefine_some)
       , _redefine(redefine)
       , _affix_features(affix_features)
       , _spelling_features(spelling_features)
       , _namespace_dictionaries(namespace_dictionaries)
-      , _logger(logger)
   {
     if (_redefine_some && _redefine == nullptr) { THROW("redefine_some is true but redefine is nullptr."); }
   }
