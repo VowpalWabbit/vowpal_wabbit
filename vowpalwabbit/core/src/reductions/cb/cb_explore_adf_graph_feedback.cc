@@ -588,7 +588,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_graph_feedb
   bool with_metrics = options.was_supplied("extra_metrics");
 
   auto data = VW::make_unique<explore_type>(with_metrics, gamma_scale, gamma_exponent, &all);
-  data->allow_multiple_costs = true;
+  data->set_allow_multiple_costs(true);
 
   auto l = VW::LEARNER::make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(VW::reductions::cb_explore_adf_graph_feedback_setup))

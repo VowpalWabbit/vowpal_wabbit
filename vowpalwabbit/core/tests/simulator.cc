@@ -15,12 +15,12 @@ namespace simulator
 {
 cb_sim_gf_filtering::cb_sim_gf_filtering(
     bool is_graph, uint64_t seed, bool use_default_ns, std::vector<std::string> actions)
-    : is_graph(is_graph), cb_sim(seed, use_default_ns, actions)
+    : cb_sim(seed, use_default_ns, actions), is_graph(is_graph)
 {
 }
 
-float cb_sim_gf_filtering::get_reaction(const std::map<std::string, std::string>& context, const std::string& action,
-    bool add_noise, bool swap_reward, float scale_reward)
+float cb_sim_gf_filtering::get_reaction(
+    const std::map<std::string, std::string>& context, const std::string& action, bool, bool, float)
 {
   float reward = 0.f;
   if (action == "spam")
