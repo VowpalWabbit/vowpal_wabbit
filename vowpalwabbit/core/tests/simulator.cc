@@ -265,7 +265,7 @@ std::vector<float> cb_sim::run_simulation_hook(VW::workspace* vw, size_t num_ite
   bool swap_reward = false;
   auto swap_after_iter = swap_after.begin();
 
-  size_t update_count = 0;
+  size_t update_count = shift;
 
   for (size_t i = shift; i < shift + num_iterations; ++i)
   {
