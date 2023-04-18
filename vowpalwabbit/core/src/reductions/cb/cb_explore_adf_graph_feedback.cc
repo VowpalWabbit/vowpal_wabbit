@@ -396,7 +396,6 @@ arma::vec get_probs_from_coordinates(arma::mat& coordinates, const arma::vec& fh
 void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples, const arma::sp_mat& G)
 {
   auto& a_s = examples[0]->pred.a_s;
-  size_t num_actions = a_s.size();
   arma::vec fhat(a_s.size());
 
   for (auto& as : a_s) { fhat(as.action) = as.score; }
