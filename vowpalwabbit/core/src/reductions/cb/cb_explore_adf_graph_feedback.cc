@@ -15,6 +15,7 @@
 #include "vw/core/reductions/cb/cb_adf.h"
 #include "vw/core/reductions/cb/cb_explore.h"
 #include "vw/core/reductions/cb/cb_explore_adf_common.h"
+#include "vw/core/scope_exit.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/vw_math.h"
 #include "vw/explore/explore.h"
@@ -464,12 +465,26 @@ void cb_explore_adf_graph_feedback::predict_or_learn_impl(VW::LEARNER::learner& 
       examples[i]->l.cb.costs.clear();
     }
 
+    auto restore_guard = VW::scope_exit(
+        [&examples, &cb_labels]
+        {
+          for (size_t i = 0; i < examples.size(); i++) { examples[i]->l.cb.costs = std::move(cb_labels[i]); }
+        });
+
     // re-instantiate the labels one-by-one and call learn
     for (size_t i = 0; i < examples.size(); i++)
     {
       auto* ex = examples[i];
 
       ex->l.cb.costs = std::move(cb_labels[i]);
+
+      auto local_restore_guard = VW::scope_exit(
+          [&ex, &cb_labels, &i]
+          {
+            cb_labels[i] = std::move(ex->l.cb.costs);
+            ex->l.cb.costs.clear();
+          });
+
       // if there is another label then learn, otherwise skip
       if (ex->l.cb.costs.size() > 0)
       {
@@ -500,13 +515,7 @@ void cb_explore_adf_graph_feedback::predict_or_learn_impl(VW::LEARNER::learner& 
 
         ex->l.cb.costs[0].probability = stashed_probability;
       }
-
-      cb_labels[i] = std::move(ex->l.cb.costs);
-      ex->l.cb.costs.clear();
     }
-
-    // restore the labels
-    for (size_t i = 0; i < examples.size(); i++) { examples[i]->l.cb.costs = std::move(cb_labels[i]); }
   }
   else
   {
