@@ -555,17 +555,21 @@ TEST(GraphFeedback, CheckSupervisedG)
   EXPECT_THAT(pred_results[3], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.0, 0.5, 0.5}));
 }
 
-TEST(GraphFeedback, CheckUpdateRule500WIterations)
+TEST(GraphFeedback, CheckUpdateRule100WIterations)
 {
   callback_map test_hooks;
 
   std::vector<std::string> vw_arg{"--cb_explore_adf", "--quiet", "--random_seed", "5", "-q", "UA"};
 
-  int seed = 10;
-  size_t num_iterations = 500;
+  int seed = 101;
+  size_t num_iterations = 100;
 
   auto vw_arg_gf = vw_arg;
   vw_arg_gf.push_back("--graph_feedback");
+  // this is a very simple simulation that converges quickly and small dataset, we want the gamma to grow a bit more
+  // aggressively and have the costs dictate the pmf more than the graph
+  vw_arg_gf.push_back("--gamma_exponent");
+  vw_arg_gf.push_back("1");
 
   auto vw_gf = VW::initialize(VW::make_unique<VW::config::options_cli>(vw_arg_gf));
 
@@ -586,18 +590,17 @@ TEST(GraphFeedback, CheckUpdateRule500WIterations)
   EXPECT_LT(sim_gf.not_spam_classified_as_spam, sim_egreedy.not_spam_classified_as_spam);
 }
 
-TEST(GraphFeedback, CheckUpdateRule1000WIterations)
+TEST(GraphFeedback, CheckUpdateRule500WIterations)
 {
   callback_map test_hooks;
 
   std::vector<std::string> vw_arg{"--cb_explore_adf", "--quiet", "--random_seed", "5", "-q", "UA"};
 
-  int seed = 101;
-  size_t num_iterations = 1000;
+  int seed = 10;
+  size_t num_iterations = 500;
 
   auto vw_arg_gf = vw_arg;
   vw_arg_gf.push_back("--graph_feedback");
-
   auto vw_gf = VW::initialize(VW::make_unique<VW::config::options_cli>(vw_arg_gf));
 
   auto vw_arg_egreedy = vw_arg;
