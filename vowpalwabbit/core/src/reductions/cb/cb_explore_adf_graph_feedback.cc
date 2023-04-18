@@ -52,9 +52,17 @@ public:
 
 private:
   VW::workspace* _all;
+  arma::sp_mat _G;
+  arma::mat _coordinates;
+  arma::vec _fhat;
+  arma::vec _gammafhat;
+  arma::vec _final_probs;
   template <bool is_learn>
   void predict_or_learn_impl(VW::LEARNER::learner& base, multi_ex& examples);
-  void update_example_prediction(multi_ex& examples, const arma::sp_mat& G);
+  void update_example_prediction(multi_ex& examples);
+  void set_graph(const VW::cb_graph_feedback::reduction_features& graph_reduction_features, size_t num_actions);
+  void set_initial_coordinates(const VW::action_scores &a_s, float gamma);
+  void set_probs_from_coordinates();
 };
 }  // namespace cb_explore_adf
 
@@ -304,67 +312,81 @@ bool valid_graph(const std::vector<VW::cb_graph_feedback::triplet>& triplets)
   return false;
 }
 
-std::pair<arma::mat, arma::vec> set_initial_coordinates(const arma::vec& fhat, float gamma)
+void cb_explore_adf_graph_feedback::set_initial_coordinates(const VW::action_scores &a_s, float gamma)
 {
+  size_t num_actions = a_s.size();
+  _fhat.resize(num_actions);
+  _fhat.zeros();
+
+  _gammafhat.resize(num_actions);
+  _gammafhat.zeros();
+
+  _coordinates.resize(num_actions + 1, 1);
+  _coordinates.zeros();
+
+  for (auto& as : a_s) { _fhat(as.action) = as.score; }
   // find fhat min
-  auto min_fhat = fhat.min();
-  arma::vec gammafhat = gamma * (fhat - min_fhat);
+  auto min_fhat = _fhat.min();
+  for (size_t i = 0;  i < num_actions; i++)
+  {
+    _gammafhat(i) = gamma * (_fhat(i) - min_fhat);
+  }
 
   // initial p can be uniform random
-  arma::mat coordinates(gammafhat.size() + 1, 1);
-  for (size_t i = 0; i < gammafhat.size(); i++) { coordinates[i] = 1.f / gammafhat.size(); }
+  for (size_t i = 0; i < num_actions; i++) { _coordinates[i] = 1.f / num_actions; }
 
   // initial z can be 1
   // but also be nice if all fhat's are zero
-  float z = gamma * (1 - (min_fhat == 0 ? 1.f / fhat.size() : min_fhat));
+  float z = gamma * (1 - (min_fhat == 0 ? 1.f / num_actions : min_fhat));
 
-  coordinates[gammafhat.size()] = z;
-
-  return {coordinates, gammafhat};
+  _coordinates[num_actions] = z;
 }
 
-arma::vec get_probs_from_coordinates(arma::mat& coordinates, const arma::vec& fhat, VW::workspace& all)
+void cb_explore_adf_graph_feedback::set_probs_from_coordinates()
 {
   // constraints are enforcers but they can be broken, so we need to check that probs are positive and sum to 1
 
   // we also have to check for nan's because some starting points combined with some gammas might make the constraint
   // optimization go off the charts; it should be rare but we need to guard against it
 
-  size_t num_actions = coordinates.n_rows - 1;
+  size_t num_actions = _coordinates.n_rows - 1;
+  _final_probs.resize(num_actions);
+  _final_probs.zeros();
+
   auto count_zeros = 0;
   bool there_is_a_one = false;
   bool there_is_a_nan = false;
 
   for (size_t i = 0; i < num_actions; i++)
   {
-    if (VW::math::are_same(static_cast<float>(coordinates[i]), 0.f) || coordinates[i] < 0.f)
+    if (VW::math::are_same(static_cast<float>(_coordinates[i]), 0.f) || _coordinates[i] < 0.f)
     {
-      coordinates[i] = 0.f;
+      _coordinates[i] = 0.f;
       count_zeros++;
     }
-    if (coordinates[i] > 1.f)
+    if (_coordinates[i] > 1.f)
     {
-      coordinates[i] = 1.f;
+      _coordinates[i] = 1.f;
       there_is_a_one = true;
     }
-    if (std::isnan(coordinates[i])) { there_is_a_nan = true; }
+    if (std::isnan(_coordinates[i])) { there_is_a_nan = true; }
   }
 
   if (there_is_a_nan)
   {
-    for (size_t i = 0; i < num_actions; i++) { coordinates[i] = 1.f - fhat(i); }
+    for (size_t i = 0; i < num_actions; i++) { _coordinates[i] = 1.f - _fhat(i); }
   }
 
   if (there_is_a_one)
   {
     for (size_t i = 0; i < num_actions; i++)
     {
-      if (coordinates[i] != 1.f) { coordinates[i] = 0.f; }
+      if (_coordinates[i] != 1.f) { _coordinates[i] = 0.f; }
     }
   }
 
   float p_sum = 0;
-  for (size_t i = 0; i < num_actions; i++) { p_sum += coordinates[i]; }
+  for (size_t i = 0; i < num_actions; i++) { p_sum += _coordinates[i]; }
 
   if (!VW::math::are_same(p_sum, 1.f))
   {
@@ -372,77 +394,63 @@ arma::vec get_probs_from_coordinates(arma::mat& coordinates, const arma::vec& fh
     float rest_each = rest / (num_actions - count_zeros);
     for (size_t i = 0; i < num_actions; i++)
     {
-      if (coordinates[i] == 0.f) { continue; }
-      else { coordinates[i] = coordinates[i] + rest_each; }
+      if (_coordinates[i] == 0.f) { continue; }
+      else { _coordinates[i] = _coordinates[i] + rest_each; }
     }
   }
 
   float sum = 0;
-  arma::vec probs(num_actions);
-  for (size_t i = 0; i < probs.n_rows; ++i)
+  for (size_t i = 0; i < num_actions; ++i)
   {
-    probs(i) = coordinates[i];
-    sum += probs(i);
+    _final_probs[i] = _coordinates[i];
+    sum += _final_probs[i];
   }
 
   if (!VW::math::are_same(sum, 1.f))
   {
     // leaving this here just in case this happens for some reason that we did not think to check for
-    all.logger.warn("Probabilities do not sum to 1, they sum to: {}", sum);
+    _all->logger.warn("Probabilities do not sum to 1, they sum to: {}", sum);
   }
-
-  return probs;
 }
 
-void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples, const arma::sp_mat& G)
+void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples)
 {
   auto& a_s = examples[0]->pred.a_s;
-  arma::vec fhat(a_s.size());
-
-  for (auto& as : a_s) { fhat(as.action) = as.score; }
+  
   const float gamma = _gamma_scale * static_cast<float>(std::pow(_counter, _gamma_exponent));
 
-  auto coord_gammafhat = set_initial_coordinates(fhat, gamma);
-  arma::mat coordinates = std::get<0>(coord_gammafhat);
-  arma::vec gammafhat = std::get<1>(coord_gammafhat);
+  set_initial_coordinates(a_s, gamma);
 
-  ConstrainedFunctionType f(gammafhat, G, gamma);
+  ConstrainedFunctionType f(_gammafhat, _G, gamma);
 
   ens::AugLagrangian optimizer;
-  optimizer.Optimize(f, coordinates);
+  optimizer.Optimize(f, _coordinates);
 
   // TODO json graph input
 
-  arma::vec probs = get_probs_from_coordinates(coordinates, fhat, *_all);
+  set_probs_from_coordinates();
 
   // set the new probabilities in the example
-  for (auto& as : a_s) { as.score = probs(as.action); }
+  for (auto& as : a_s) { as.score = _final_probs(as.action); }
   std::sort(
       a_s.begin(), a_s.end(), [](const VW::action_score& a, const VW::action_score& b) { return a.score > b.score; });
 }
 
-arma::sp_mat get_graph(const VW::cb_graph_feedback::reduction_features& graph_reduction_features, size_t num_actions)
+void cb_explore_adf_graph_feedback::set_graph(
+    const VW::cb_graph_feedback::reduction_features& graph_reduction_features, size_t num_actions)
 {
-  arma::sp_mat G(num_actions, num_actions);
+  _G.resize(num_actions, num_actions);
+  _G.zeros();
 
   if (valid_graph(graph_reduction_features.triplets))
   {
-    arma::umat locations(2, graph_reduction_features.triplets.size());
-
-    arma::vec values(graph_reduction_features.triplets.size());
-
     for (size_t i = 0; i < graph_reduction_features.triplets.size(); i++)
     {
       const auto& triplet = graph_reduction_features.triplets[i];
-      locations(0, i) = triplet.row;
-      locations(1, i) = triplet.col;
-      values(i) = triplet.val;
+      _G(triplet.row, triplet.col) = triplet.val;
     }
-
-    G = arma::sp_mat(true, locations, values, num_actions, num_actions);
   }
-  else { G = arma::speye<arma::sp_mat>(num_actions, num_actions); }
-  return G;
+  else { _G.diag(); }
 }
 
 template <bool is_learn>
@@ -450,7 +458,7 @@ void cb_explore_adf_graph_feedback::predict_or_learn_impl(VW::LEARNER::learner& 
 {
   auto& graph_reduction_features =
       examples[0]->ex_reduction_features.template get<VW::cb_graph_feedback::reduction_features>();
-  arma::sp_mat G = get_graph(graph_reduction_features, examples.size());
+  set_graph(graph_reduction_features, examples.size());
 
   if (is_learn)
   {
@@ -497,7 +505,7 @@ void cb_explore_adf_graph_feedback::predict_or_learn_impl(VW::LEARNER::learner& 
         if (chosen_action != current_action)
         {
           // get the graph probability
-          auto graph_prob = G.row(chosen_action)(current_action);
+          auto graph_prob = _G.row(chosen_action)(current_action);
 
           // sanity checks
           if (graph_prob == 0. || cb_labels[chosen_action].size() == 0 ||
@@ -520,7 +528,7 @@ void cb_explore_adf_graph_feedback::predict_or_learn_impl(VW::LEARNER::learner& 
   else
   {
     base.predict(examples);
-    update_example_prediction(examples, G);
+    update_example_prediction(examples);
   }
 }
 
