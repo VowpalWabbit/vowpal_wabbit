@@ -164,7 +164,7 @@ public:
         if (p(i) < 0) { neg_sum += p(i); }
       }
       // negative probabilities are really really bad
-      return -100.f * _gamma * neg_sum;
+      return -1000.f * _gamma * neg_sum;
     }
     else if (i == _fhat.size() + 1)
     {
@@ -498,7 +498,7 @@ void cb_explore_adf_graph_feedback::predict_or_learn_impl(VW::LEARNER::learner& 
         }
 
         base.learn(examples);
-        
+
         ex->l.cb.costs[0].probability = stashed_probability;
       }
 
@@ -580,6 +580,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_graph_feedb
   bool with_metrics = options.was_supplied("extra_metrics");
 
   auto data = VW::make_unique<explore_type>(with_metrics, gamma_scale, gamma_exponent, &all);
+  data->allow_multiple_costs = true;
 
   auto l = VW::LEARNER::make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(VW::reductions::cb_explore_adf_graph_feedback_setup))

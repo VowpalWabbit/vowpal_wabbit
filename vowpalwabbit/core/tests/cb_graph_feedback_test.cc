@@ -2,6 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "simulator.h"
 #include "vw/common/random.h"
 #include "vw/core/reductions/cb/cb_explore_adf_common.h"
 #include "vw/core/reductions/cb/cb_explore_adf_graph_feedback.h"
@@ -16,6 +17,9 @@
 
 using namespace testing;
 constexpr float EXPLICIT_FLOAT_TOL = 0.01f;
+
+using simulator::callback_map;
+using simulator::cb_sim;
 
 // Small gamma -> graph respected / High gamma -> costs respected
 
@@ -549,4 +553,66 @@ TEST(GraphFeedback, CheckSupervisedG)
 
   // 0.7371 0.3482 0.3482
   EXPECT_THAT(pred_results[3], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.0, 0.5, 0.5}));
+}
+
+TEST(GraphFeedback, CheckUpdateRule500WIterations)
+{
+  callback_map test_hooks;
+
+  std::vector<std::string> vw_arg{"--cb_explore_adf", "--quiet", "--random_seed", "5", "-q", "UA"};
+
+  int seed = 10;
+  size_t num_iterations = 500;
+
+  auto vw_arg_gf = vw_arg;
+  vw_arg_gf.push_back("--graph_feedback");
+
+  auto vw_gf = VW::initialize(VW::make_unique<VW::config::options_cli>(vw_arg_gf));
+
+  auto vw_arg_egreedy = vw_arg;
+  vw_arg_egreedy.push_back("--epsilon");
+  vw_arg_egreedy.push_back("0.2");
+
+  auto vw_egreedy = VW::initialize(VW::make_unique<VW::config::options_cli>(vw_arg_egreedy));
+
+  simulator::cb_sim_gf_filtering sim_gf(true, seed);
+  simulator::cb_sim_gf_filtering sim_egreedy(false, seed);
+
+  auto ctr_gf = sim_gf.run_simulation_hook(vw_gf.get(), num_iterations, test_hooks);
+  auto ctr_egreedy = sim_egreedy.run_simulation_hook(vw_egreedy.get(), num_iterations, test_hooks);
+
+  EXPECT_GT(ctr_gf.back(), ctr_egreedy.back());
+  EXPECT_GT(sim_gf.not_spam_classified_as_not_spam, sim_egreedy.not_spam_classified_as_not_spam);
+  EXPECT_LT(sim_gf.not_spam_classified_as_spam, sim_egreedy.not_spam_classified_as_spam);
+}
+
+TEST(GraphFeedback, CheckUpdateRule1000WIterations)
+{
+  callback_map test_hooks;
+
+  std::vector<std::string> vw_arg{"--cb_explore_adf", "--quiet", "--random_seed", "5", "-q", "UA"};
+
+  int seed = 101;
+  size_t num_iterations = 1000;
+
+  auto vw_arg_gf = vw_arg;
+  vw_arg_gf.push_back("--graph_feedback");
+
+  auto vw_gf = VW::initialize(VW::make_unique<VW::config::options_cli>(vw_arg_gf));
+
+  auto vw_arg_egreedy = vw_arg;
+  vw_arg_egreedy.push_back("--epsilon");
+  vw_arg_egreedy.push_back("0.2");
+
+  auto vw_egreedy = VW::initialize(VW::make_unique<VW::config::options_cli>(vw_arg_egreedy));
+
+  simulator::cb_sim_gf_filtering sim_gf(true, seed);
+  simulator::cb_sim_gf_filtering sim_egreedy(false, seed);
+
+  auto ctr_gf = sim_gf.run_simulation_hook(vw_gf.get(), num_iterations, test_hooks);
+  auto ctr_egreedy = sim_egreedy.run_simulation_hook(vw_egreedy.get(), num_iterations, test_hooks);
+
+  EXPECT_GT(ctr_gf.back(), ctr_egreedy.back());
+  EXPECT_GT(sim_gf.not_spam_classified_as_not_spam, sim_egreedy.not_spam_classified_as_not_spam);
+  EXPECT_LT(sim_gf.not_spam_classified_as_spam, sim_egreedy.not_spam_classified_as_spam);
 }
