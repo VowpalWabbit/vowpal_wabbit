@@ -15,6 +15,7 @@
 #include "vw/core/reductions/cb/cb_adf.h"
 #include "vw/core/reductions/cb/cb_explore.h"
 #include "vw/core/reductions/cb/cb_explore_adf_common.h"
+#include "vw/core/scope_exit.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/vw_math.h"
 #include "vw/explore/explore.h"
@@ -53,7 +54,7 @@ private:
   VW::workspace* _all;
   template <bool is_learn>
   void predict_or_learn_impl(VW::LEARNER::learner& base, multi_ex& examples);
-  void update_example_prediction(multi_ex& examples);
+  void update_example_prediction(multi_ex& examples, const arma::sp_mat& G);
 };
 }  // namespace cb_explore_adf
 
@@ -164,7 +165,7 @@ public:
         if (p(i) < 0) { neg_sum += p(i); }
       }
       // negative probabilities are really really bad
-      return -100.f * _gamma * neg_sum;
+      return -1000.f * _gamma * neg_sum;
     }
     else if (i == _fhat.size() + 1)
     {
@@ -393,6 +394,33 @@ arma::vec get_probs_from_coordinates(arma::mat& coordinates, const arma::vec& fh
   return probs;
 }
 
+void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples, const arma::sp_mat& G)
+{
+  auto& a_s = examples[0]->pred.a_s;
+  arma::vec fhat(a_s.size());
+
+  for (auto& as : a_s) { fhat(as.action) = as.score; }
+  const float gamma = _gamma_scale * static_cast<float>(std::pow(_counter, _gamma_exponent));
+
+  auto coord_gammafhat = set_initial_coordinates(fhat, gamma);
+  arma::mat coordinates = std::get<0>(coord_gammafhat);
+  arma::vec gammafhat = std::get<1>(coord_gammafhat);
+
+  ConstrainedFunctionType f(gammafhat, G, gamma);
+
+  ens::AugLagrangian optimizer;
+  optimizer.Optimize(f, coordinates);
+
+  // TODO json graph input
+
+  arma::vec probs = get_probs_from_coordinates(coordinates, fhat, *_all);
+
+  // set the new probabilities in the example
+  for (auto& as : a_s) { as.score = probs(as.action); }
+  std::sort(
+      a_s.begin(), a_s.end(), [](const VW::action_score& a, const VW::action_score& b) { return a.score > b.score; });
+}
+
 arma::sp_mat get_graph(const VW::cb_graph_feedback::reduction_features& graph_reduction_features, size_t num_actions)
 {
   arma::sp_mat G(num_actions, num_actions);
@@ -417,51 +445,82 @@ arma::sp_mat get_graph(const VW::cb_graph_feedback::reduction_features& graph_re
   return G;
 }
 
-void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples)
-{
-  auto& a_s = examples[0]->pred.a_s;
-  size_t num_actions = a_s.size();
-  arma::vec fhat(a_s.size());
-
-  for (auto& as : a_s) { fhat(as.action) = as.score; }
-  const float gamma = _gamma_scale * static_cast<float>(std::pow(_counter, _gamma_exponent));
-
-  auto coord_gammafhat = set_initial_coordinates(fhat, gamma);
-  arma::mat coordinates = std::get<0>(coord_gammafhat);
-  arma::vec gammafhat = std::get<1>(coord_gammafhat);
-
-  auto& graph_reduction_features =
-      examples[0]->ex_reduction_features.template get<VW::cb_graph_feedback::reduction_features>();
-  arma::sp_mat G = get_graph(graph_reduction_features, num_actions);
-
-  ConstrainedFunctionType f(gammafhat, G, gamma);
-
-  ens::AugLagrangian optimizer;
-  optimizer.Optimize(f, coordinates);
-
-  // TODO json graph input
-
-  arma::vec probs = get_probs_from_coordinates(coordinates, fhat, *_all);
-
-  // set the new probabilities in the example
-  for (auto& as : a_s) { as.score = probs(as.action); }
-  std::sort(
-      a_s.begin(), a_s.end(), [](const VW::action_score& a, const VW::action_score& b) { return a.score > b.score; });
-}
-
 template <bool is_learn>
 void cb_explore_adf_graph_feedback::predict_or_learn_impl(VW::LEARNER::learner& base, multi_ex& examples)
 {
+  auto& graph_reduction_features =
+      examples[0]->ex_reduction_features.template get<VW::cb_graph_feedback::reduction_features>();
+  arma::sp_mat G = get_graph(graph_reduction_features, examples.size());
+
   if (is_learn)
   {
     _counter++;
-    base.learn(examples);
-    if (base.learn_returns_prediction) { update_example_prediction(examples); }
+    std::vector<std::vector<VW::cb_class>> cb_labels;
+    cb_labels.reserve(examples.size());
+
+    // stash all of the labels
+    for (size_t i = 0; i < examples.size(); i++)
+    {
+      cb_labels.emplace_back(std::move(examples[i]->l.cb.costs));
+      examples[i]->l.cb.costs.clear();
+    }
+
+    auto restore_guard = VW::scope_exit(
+        [&examples, &cb_labels]
+        {
+          for (size_t i = 0; i < examples.size(); i++) { examples[i]->l.cb.costs = std::move(cb_labels[i]); }
+        });
+
+    // re-instantiate the labels one-by-one and call learn
+    for (size_t i = 0; i < examples.size(); i++)
+    {
+      auto* ex = examples[i];
+
+      ex->l.cb.costs = std::move(cb_labels[i]);
+
+      auto local_restore_guard = VW::scope_exit(
+          [&ex, &cb_labels, &i]
+          {
+            cb_labels[i] = std::move(ex->l.cb.costs);
+            ex->l.cb.costs.clear();
+          });
+
+      // if there is another label then learn, otherwise skip
+      if (ex->l.cb.costs.size() > 0)
+      {
+        float stashed_probability = ex->l.cb.costs[0].probability;
+
+        // calculate the probability for this action, if it is the action that was not chosen
+        auto chosen_action = ex->l.cb.costs[0].action;
+        auto current_action = i;
+
+        if (chosen_action != current_action)
+        {
+          // get the graph probability
+          auto graph_prob = G.row(chosen_action)(current_action);
+
+          // sanity checks
+          if (graph_prob == 0. || cb_labels[chosen_action].size() == 0 ||
+              cb_labels[chosen_action][0].probability <= 0.f)
+          {
+            // this should not happen, input is probably wrong
+            continue;
+          }
+
+          auto chosen_prob = cb_labels[chosen_action][0].probability;
+          ex->l.cb.costs[0].probability = chosen_prob * graph_prob;
+        }
+
+        base.learn(examples);
+
+        ex->l.cb.costs[0].probability = stashed_probability;
+      }
+    }
   }
   else
   {
     base.predict(examples);
-    update_example_prediction(examples);
+    update_example_prediction(examples, G);
   }
 }
 
@@ -496,7 +555,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_graph_feedb
   bool cb_explore_adf_option = false;
   bool graph_feedback = false;
   float gamma_scale = 1.;
-  float gamma_exponent = 0.;
+  float gamma_exponent = 0.5;
 
   config::option_group_definition new_options(
       "[Reduction] Experimental: Contextual Bandit Exploration with ADF with graph feedback");
@@ -529,6 +588,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_graph_feedb
   bool with_metrics = options.was_supplied("extra_metrics");
 
   auto data = VW::make_unique<explore_type>(with_metrics, gamma_scale, gamma_exponent, &all);
+  data->set_allow_multiple_costs(true);
 
   auto l = VW::LEARNER::make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(VW::reductions::cb_explore_adf_graph_feedback_setup))
