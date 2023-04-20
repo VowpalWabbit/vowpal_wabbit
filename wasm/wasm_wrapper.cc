@@ -1,19 +1,19 @@
-#include <iostream>
-#include <string>
-#include <array>
-#include <memory>
-
-#include "vw/core/learner.h"
-#include "vw/core/vw.h"
-#include "vw/core/example.h"
-#include "vw/core/shared_data.h"
-#include "vw/core/parse_primitives.h"
-#include "vw/core/parse_example.h"
-#include "vw/core/prediction_type.h"
 #include "vw/config/options.h"
+#include "vw/core/example.h"
+#include "vw/core/learner.h"
+#include "vw/core/parse_example.h"
+#include "vw/core/parse_primitives.h"
+#include "vw/core/prediction_type.h"
+#include "vw/core/shared_data.h"
+#include "vw/core/vw.h"
 
 #include <emscripten/bind.h>
 #include <emscripten/val.h>
+
+#include <array>
+#include <iostream>
+#include <memory>
+#include <string>
 
 std::array<std::string, 51> illegal_options = {"feature_mask", "initial_regressor", "input_feature_regularizer",
     "span_server", "unique_id", "total", "node", "span_server_port", "version", "audit", "progress", "limit_output",
@@ -23,7 +23,6 @@ std::array<std::string, 51> illegal_options = {"feature_mask", "initial_regresso
     "save_per_pass", "predictions", "raw_predictions", "extra_metrics", "audit_regressor", "sendto", "data", "daemon",
     "foreground", "port", "num_children", "pid_file", "port_file", "cache", "cache_file", "json", "dsjson",
     "kill_cache", "compressed", "no_daemon", "chain_hash", "flatbuffer"};
-
 
 std::string get_exception_message(int exceptionPtr)
 {
@@ -62,10 +61,7 @@ struct example_ptr
     return _example;
   }
 
-  example_ptr(example* ex, const std::shared_ptr<vw>& vw_ptr)
-      : _example(ex), weak_vw_ptr(vw_ptr), _released(false)
-  {
-  }
+  example_ptr(example* ex, const std::shared_ptr<vw>& vw_ptr) : _example(ex), weak_vw_ptr(vw_ptr), _released(false) {}
   ~example_ptr()
   {
     if (!_released)
