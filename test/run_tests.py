@@ -1212,10 +1212,14 @@ def main():
         tests = convert_tests_for_flatbuffers(
             tests, to_flatbuff_bin, test_base_working_dir, color_enum
         )
-    
+
     if args.skip_network_tests:
         for test in tests:
-            if "--active" in test.command_line or "--sendto" in test.command_line or "--daemon" in test.command_line:
+            if (
+                "--active" in test.command_line
+                or "--sendto" in test.command_line
+                or "--daemon" in test.command_line
+            ):
                 test.skip = True
                 test.skip_reason = "Tests requiring daemon or network skipped because of --skip_network_tests argument"
 
