@@ -424,8 +424,8 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
       a_s.begin(), a_s.end(), [](const VW::action_score& a, const VW::action_score& b) { return a.score > b.score; });
 }
 
-arma::sp_mat get_graph(
-    const VW::cb_graph_feedback::reduction_features& graph_reduction_features, size_t num_actions, VW::io::logger& logger)
+arma::sp_mat get_graph(const VW::cb_graph_feedback::reduction_features& graph_reduction_features, size_t num_actions,
+    VW::io::logger& logger)
 {
   arma::sp_mat G(num_actions, num_actions);
 
