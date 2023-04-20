@@ -294,13 +294,18 @@ public:
   }
 };
 
-bool valid_graph(const std::vector<VW::cb_graph_feedback::triplet>& triplets)
+bool valid_graph(const std::vector<VW::cb_graph_feedback::triplet>& triplets, size_t dim)
 {
   // return false if all triplet vals are zero
+  size_t at_least_one_non_zero = 0;
   for (auto& triplet : triplets)
   {
-    if (triplet.val != 0.f) { return true; }
+    if (triplet.row >= dim || triplet.col >= dim) { return false; }
+    if (triplet.val != 0.f) { at_least_one_non_zero++; }
   }
+
+  if (at_least_one_non_zero > 0) { return true; }
+
   return false;
 }
 
@@ -411,8 +416,6 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
   ens::AugLagrangian optimizer;
   optimizer.Optimize(f, coordinates);
 
-  // TODO json graph input
-
   arma::vec probs = get_probs_from_coordinates(coordinates, fhat, *_all);
 
   // set the new probabilities in the example
@@ -421,11 +424,12 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
       a_s.begin(), a_s.end(), [](const VW::action_score& a, const VW::action_score& b) { return a.score > b.score; });
 }
 
-arma::sp_mat get_graph(const VW::cb_graph_feedback::reduction_features& graph_reduction_features, size_t num_actions)
+arma::sp_mat get_graph(const VW::cb_graph_feedback::reduction_features& graph_reduction_features, size_t num_actions,
+    VW::io::logger& logger)
 {
   arma::sp_mat G(num_actions, num_actions);
 
-  if (valid_graph(graph_reduction_features.triplets))
+  if (valid_graph(graph_reduction_features.triplets, num_actions))
   {
     arma::umat locations(2, graph_reduction_features.triplets.size());
 
@@ -441,7 +445,11 @@ arma::sp_mat get_graph(const VW::cb_graph_feedback::reduction_features& graph_re
 
     G = arma::sp_mat(true, locations, values, num_actions, num_actions);
   }
-  else { G = arma::speye<arma::sp_mat>(num_actions, num_actions); }
+  else
+  {
+    logger.warn("The graph provided is invalid, replacing with identity graph");
+    G = arma::speye<arma::sp_mat>(num_actions, num_actions);
+  }
   return G;
 }
 
@@ -450,7 +458,7 @@ void cb_explore_adf_graph_feedback::predict_or_learn_impl(VW::LEARNER::learner& 
 {
   auto& graph_reduction_features =
       examples[0]->ex_reduction_features.template get<VW::cb_graph_feedback::reduction_features>();
-  arma::sp_mat G = get_graph(graph_reduction_features, examples.size());
+  arma::sp_mat G = get_graph(graph_reduction_features, examples.size(), _all->logger);
 
   if (is_learn)
   {

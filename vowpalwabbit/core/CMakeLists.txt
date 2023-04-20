@@ -450,7 +450,7 @@ set(vw_core_test_sources
       tests/cats_tree_test.cc
       tests/cats_user_provided_pdf.cc
       tests/cb_explore_adf_test.cc
-      tests/cb_graph_feedback_label_text_parse_test.cc
+      tests/cb_graph_feedback_label_parse_test.cc
       tests/cb_large_actions_test.cc
       tests/cb_las_one_pass_svd_test.cc
       tests/cb_las_spanner_test.cc
