@@ -81,6 +81,7 @@ class BuildPyLibVWBindingsModule(_build_ext):
             "-DBUILD_PYTHON=On",
             "-DBUILD_TESTING=Off",
             "-DWARNINGS=Off",
+            "-DVW_FEAT_CB_GRAPH_FEEDBACK=On",
         ]
 
         # This doesn't work as expected for Python3.6 and 3.7 on Windows.

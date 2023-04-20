@@ -13,7 +13,7 @@
 
 namespace VW
 {
-VW::example* test_cb_adf_sequence(const VW::multi_ex& ec_seq);
+VW::example* test_cb_adf_sequence(const VW::multi_ex& ec_seq, bool allow_multiple_costs = false);
 VW::cb_class get_observed_cost_or_default_cb_adf(const VW::multi_ex& examples);
 namespace reductions
 {

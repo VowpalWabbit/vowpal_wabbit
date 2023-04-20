@@ -87,7 +87,8 @@ class cb_explore_adf_base
 {
 public:
   template <typename... Args>
-  cb_explore_adf_base(bool with_metrics, Args&&... args) : explore(std::forward<Args>(args)...)
+  cb_explore_adf_base(bool with_metrics, Args&&... args)
+      : explore(std::forward<Args>(args)...), _allow_multiple_costs(false)
   {
     if (with_metrics) { _metrics = VW::make_unique<cb_explore_metrics>(); }
   }
@@ -104,9 +105,12 @@ public:
   static void print_update(VW::workspace& all, VW::shared_data& sd, const cb_explore_adf_base<ExploreType>& data,
       const multi_ex& ec_seq, VW::io::logger& logger);
 
+  void set_allow_multiple_costs(bool allow_multiple_costs) { _allow_multiple_costs = allow_multiple_costs; }
+
   ExploreType explore;
 
 private:
+  bool _allow_multiple_costs;
   VW::cb_class _known_cost;
   // used in output_example
   VW::cb_label _action_label;
@@ -124,7 +128,7 @@ template <typename ExploreType>
 inline void cb_explore_adf_base<ExploreType>::predict(
     cb_explore_adf_base<ExploreType>& data, VW::LEARNER::learner& base, multi_ex& examples)
 {
-  example* label_example = VW::test_cb_adf_sequence(examples);
+  example* label_example = VW::test_cb_adf_sequence(examples, data._allow_multiple_costs);
   data._known_cost = VW::get_observed_cost_or_default_cb_adf(examples);
 
   if (label_example != nullptr)
@@ -149,7 +153,7 @@ template <typename ExploreType>
 inline void cb_explore_adf_base<ExploreType>::learn(
     cb_explore_adf_base<ExploreType>& data, VW::LEARNER::learner& base, multi_ex& examples)
 {
-  example* label_example = VW::test_cb_adf_sequence(examples);
+  example* label_example = VW::test_cb_adf_sequence(examples, data._allow_multiple_costs);
   if (label_example != nullptr)
   {
     data._known_cost = VW::get_observed_cost_or_default_cb_adf(examples);

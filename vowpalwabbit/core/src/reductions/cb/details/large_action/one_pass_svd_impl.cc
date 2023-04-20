@@ -85,7 +85,7 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
   AOmega.resize(num_actions, p);
 
   auto compute_dot_prod = compute_dot_prod_scalar;
-#ifdef BUILD_LAS_WITH_SIMD
+#ifdef VW_FEAT_LAS_SIMD_ENABLED
   switch (_use_simd)
   {
     case (simd_type::AVX512):
@@ -180,7 +180,7 @@ one_pass_svd_impl::one_pass_svd_impl(VW::workspace* all, uint64_t d, uint64_t se
     , _block_size(block_size)
     , _action_cache_slack(action_cache_slack)
 {
-#ifdef BUILD_LAS_WITH_SIMD
+#ifdef VW_FEAT_LAS_SIMD_ENABLED
   _use_simd = simd_type::NO_SIMD;
   if (use_explicit_simd)
   {
