@@ -150,7 +150,8 @@ void learn(VW::reductions::igl::igl_data& igl, learner& base, VW::multi_ex& ec_s
   for (size_t i = 0; i < ec_seq.size(); i++)
   {
     auto action_ex = ec_seq[i];
-    VW::empty_example(*igl.ik_all, igl.ik_ex);
+    VW::empty_example(*igl.ik_ftrl->all, igl.ik_ex);
+
     // TODO: Do we need constant feature here? If so, VW::add_constant_feature
     VW::details::append_example_namespaces_from_example(igl.ik_ex, *action_ex);
 
@@ -247,7 +248,7 @@ void save_load_igl(VW::reductions::igl::igl_data& igl, VW::io_buf& io, bool read
 {
   if (io.num_files() == 0) { return; }
   if (read) { VW::reductions::model_utils::read_model_field(io, igl); }
-  else { VW::reductions::model_utils::write_model_field(io, igl, "igl", text); }
+  else if (!igl._predict_only_model) { VW::reductions::model_utils::write_model_field(io, igl, "igl", text); }
 }
 
 void print_update_igl(VW::workspace& all, VW::shared_data& /*sd*/, const VW::reductions::igl::igl_data& data,
@@ -268,13 +269,18 @@ void pre_save_load_igl(VW::workspace& all, igl::igl_data& data)
   options_i& options = *all.options;
   if (!data._predict_only_model) { return; }
 
-  // Adjust champ weights to new single-model space
+  auto cb_adf_learner = all.l->get_learner_by_name_prefix("cb_adf")->shared_from_this();
+  auto cb_adf_data = static_cast<cb_adf*>(cb_adf_learner->get_internal_type_erased_data_pointer_test_use_only());
+
+  std::swap(cb_adf_data->get_gen_cs_mtr().per_model_state[0], cb_adf_data->get_gen_cs_mtr().per_model_state[1]);
+
+  // Adjust pi model weights to new single-model space
   VW::reductions::multi_model::reduce_innermost_model_weights(all.weights.dense_weights, 1,
       all.reduction_state.total_feature_width, 2);
 
   for (auto& group : options.get_all_option_group_definitions())
   {
-    if (group.m_name == "[Reduction] Interaction Grounded Learning")
+    if (group.m_name == "[Reduction] Interaction Grounded Learning Options")
     {
       for (auto& opt : group.m_options) { opt->m_keep = false; }
     }
@@ -379,16 +385,17 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::interaction_ground_setup(V
   assert(ik_options->was_supplied("cb_explore_adf") == false || ik_options->was_supplied("cb_adf") == false);
   assert(ik_options->was_supplied("loss_function") == true);
 
+  ld->ik_ftrl = static_cast<ftrl*>(ftrl_coin->get_internal_type_erased_data_pointer_test_use_only());
+  ld->pi_ftrl = VW::make_unique<ftrl>();
+  *ld->pi_ftrl.get() = *ld->ik_ftrl;
+
   ld->ik_all = VW::initialize_experimental(
       VW::make_unique<VW::config::options_cli>(ik_args), nullptr, nullptr, nullptr, &all->logger);
 
   std::unique_ptr<ik_stack_builder> ik_builder = VW::make_unique<ik_stack_builder>(ftrl_coin);
-  ik_builder->delayed_state_attach(*ld->ik_all, *ik_options);
-  ld->ik_learner = require_singleline(ik_builder->setup_base_learner());
 
-  ld->ik_ftrl = static_cast<ftrl*>(ftrl_coin->get_internal_type_erased_data_pointer_test_use_only());
-  ld->pi_ftrl = VW::make_unique<ftrl>();
-  *ld->pi_ftrl.get() = *ld->ik_ftrl;
+  ik_builder->delayed_state_attach(*ld->ik_ftrl->all, *ik_options);
+  ld->ik_learner = require_singleline(ik_builder->setup_base_learner());
 
   ld->interactions = all->feature_tweaks_config.interactions;
   ld->extent_interactions = &all->feature_tweaks_config.extent_interactions;
