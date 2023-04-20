@@ -5891,10 +5891,41 @@
     "desc": "large action spaces with cb_explore_adf epsilon greedy and ips",
     "vw_command": "--cb_explore_adf -d train-sets/las_100_actions.txt --noconstant --large_action_space --cb_type ips",
     "diff_files": {
-      "stderr": "train-sets/ref/las_egreedy_ips.stderr"    
+      "stderr": "train-sets/ref/las_egreedy_ips.stderr"
     },
     "input_files": [
       "train-sets/las_100_actions.txt"
+    ]
+  },
+  {
+    "id": 456,
+    "desc": "Igl save_load, save model",
+    "vw_command": "--dsjson --cb_explore_adf --epsilon 0.2 -q UA --coin --experimental_igl -d train-sets/igl_3states_1.dsjson -f igl_1.vw -p igl_1.pred",
+    "diff_files": {
+      "stderr": "train-sets/ref/igl_3states_1.stderr",
+      "stdout": "train-sets/ref/igl_result.stdout",
+      "igl_1.pred": "pred-sets/ref/igl_1.pred"
+    },
+    "input_files": [
+      "train-sets/igl_3states_1.dsjson"
+    ]
+  },
+  {
+    "id": 457,
+    "desc": "Igl save_load, load model",
+    "vw_command": "--dsjson --cb_explore_adf --epsilon 0.2 -q UA --coin --experimental_igl -d train-sets/igl_3states_2.dsjson -i igl_1.vw -p igl_2.pred --readable_model igl_2.readable",
+    "diff_files": {
+      "stderr": "train-sets/ref/igl_3states_2.stderr",
+      "stdout": "train-sets/ref/igl_save_load.stdout",
+      "igl_2.pred": "pred-sets/ref/igl_2.pred",
+      "igl_2.readable": "train-sets/ref/igl_2.readable"
+    },
+    "input_files": [
+      "train-sets/igl_3states_2.dsjson",
+      "igl_1.vw"
+    ],
+    "depends_on": [
+      456
     ]
   }
 ]

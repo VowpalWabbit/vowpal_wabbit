@@ -160,14 +160,6 @@ set(vw_core_headers
   include/vw/core/reductions/recall_tree.h
   include/vw/core/reductions/sample_pdf.h
   include/vw/core/reductions/scorer.h
-  include/vw/core/reductions/search/search_dep_parser.h
-  include/vw/core/reductions/search/search_entityrelationtask.h
-  include/vw/core/reductions/search/search_graph.h
-  include/vw/core/reductions/search/search_hooktask.h
-  include/vw/core/reductions/search/search_meta.h
-  include/vw/core/reductions/search/search_multiclasstask.h
-  include/vw/core/reductions/search/search_sequencetask.h
-  include/vw/core/reductions/search/search.h
   include/vw/core/reductions/sender.h
   include/vw/core/reductions/shared_feature_merger.h
   include/vw/core/reductions/slates.h
@@ -333,14 +325,6 @@ set(vw_core_sources
   src/reductions/recall_tree.cc
   src/reductions/sample_pdf.cc
   src/reductions/scorer.cc
-  src/reductions/search/search_dep_parser.cc
-  src/reductions/search/search_entityrelationtask.cc
-  src/reductions/search/search_graph.cc
-  src/reductions/search/search_hooktask.cc
-  src/reductions/search/search_meta.cc
-  src/reductions/search/search_multiclasstask.cc
-  src/reductions/search/search_sequencetask.cc
-  src/reductions/search/search.cc
   src/reductions/sender.cc
   src/reductions/shared_feature_merger.cc
   src/reductions/slates.cc
@@ -364,6 +348,34 @@ if(VW_FEAT_LDA)
   list(APPEND vw_core_sources src/reductions/lda_core.cc)
 endif()
 
+if(VW_FEAT_SEARCH)
+list(APPEND vw_core_headers
+  include/vw/core/reductions/search/search_dep_parser.h
+  include/vw/core/reductions/search/search_entityrelationtask.h
+  include/vw/core/reductions/search/search_graph.h
+  include/vw/core/reductions/search/search_hooktask.h
+  include/vw/core/reductions/search/search_meta.h
+  include/vw/core/reductions/search/search_multiclasstask.h
+  include/vw/core/reductions/search/search_sequencetask.h
+  include/vw/core/reductions/search/search.h
+)
+list(APPEND vw_core_sources
+  src/reductions/search/search_dep_parser.cc
+  src/reductions/search/search_entityrelationtask.cc
+  src/reductions/search/search_graph.cc
+  src/reductions/search/search_hooktask.cc
+  src/reductions/search/search_meta.cc
+  src/reductions/search/search_multiclasstask.cc
+  src/reductions/search/search_sequencetask.cc
+  src/reductions/search/search.cc
+)
+endif()
+
+if(VW_FEAT_CB_GRAPH_FEEDBACK)
+  list(APPEND vw_core_headers include/vw/core/reductions/cb/cb_explore_adf_graph_feedback.h)
+  list(APPEND vw_core_sources src/reductions/cb/cb_explore_adf_graph_feedback.cc)
+endif()
+
 vw_add_library(
     NAME "core"
     TYPE "STATIC_ONLY"
@@ -384,12 +396,15 @@ if(VW_FEAT_LDA)
   target_link_libraries(vw_core PRIVATE $<BUILD_INTERFACE:${boost_math_target}>)
 endif()
 
+if(VW_FEAT_CB_GRAPH_FEEDBACK)
+  target_link_libraries(vw_core PRIVATE $<BUILD_INTERFACE:mlpack_ensmallen>)
+endif()
+
 target_include_directories(vw_core PRIVATE ${CMAKE_CURRENT_LIST_DIR}/src)
 
-if (VW_BUILD_LAS_WITH_SIMD AND (UNIX AND NOT APPLE) AND (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64"))
+if (VW_FEAT_LAS_SIMD)
   set_source_files_properties(src/reductions/cb/details/large_action/compute_dot_prod_avx2.cc PROPERTIES COMPILE_FLAGS "-mfma -mavx2")
   set_source_files_properties(src/reductions/cb/details/large_action/compute_dot_prod_avx512.cc PROPERTIES COMPILE_FLAGS "-mavx512f -mavx512bw -mavx512vl -mavx512vpopcntdq")
-  target_compile_definitions(vw_core PUBLIC BUILD_LAS_WITH_SIMD)
 endif()
 
 if(VW_FEAT_CSV)
@@ -427,10 +442,7 @@ if(WIN32)
   target_compile_definitions(vw_core PUBLIC __SSE2__)
 endif()
 
-vw_add_test_executable(
-    FOR_LIB "core"
-    EXTRA_DEPS vw_test_common
-    SOURCES
+set(vw_core_test_sources
       tests/automl_test.cc
       tests/automl_weights_test.cc
       tests/baseline_cb_test.cc
@@ -438,7 +450,7 @@ vw_add_test_executable(
       tests/cats_tree_test.cc
       tests/cats_user_provided_pdf.cc
       tests/cb_explore_adf_test.cc
-      tests/cb_graph_feedback_label_text_parse_test.cc
+      tests/cb_graph_feedback_label_parse_test.cc
       tests/cb_large_actions_test.cc
       tests/cb_las_one_pass_svd_test.cc
       tests/cb_las_spanner_test.cc
@@ -494,6 +506,16 @@ vw_add_test_executable(
       tests/vw_versions_test.cc
       tests/weights_test.cc
       tests/igl_test.cc
+)
+
+if(VW_FEAT_CB_GRAPH_FEEDBACK)
+  list(APPEND vw_core_test_sources tests/cb_graph_feedback_test.cc)
+endif()
+
+vw_add_test_executable(
+    FOR_LIB "core"
+    EXTRA_DEPS vw_test_common
+    SOURCES ${vw_core_test_sources}
 )
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
