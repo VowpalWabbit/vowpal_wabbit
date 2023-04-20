@@ -217,7 +217,9 @@ public:
 class runtime_config
 {
 public:
+#ifdef VW_FEAT_NETWORKING_ENABLED
   bool daemon;
+#endif
   bool vw_is_main = false;  // true if vw is executable; false in library mode
   bool training;            // Should I train if lable data is available?
   size_t pass_length;

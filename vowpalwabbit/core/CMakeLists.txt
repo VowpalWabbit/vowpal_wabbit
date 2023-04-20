@@ -14,7 +14,6 @@ set(vw_core_headers
   include/vw/core/cb_graph_feedback_reduction_features.h
   include/vw/core/multi_ex.h
   include/vw/core/learner_fwd.h
-  include/vw/core/daemon_utils.h
   include/vw/core/cb_type.h
   include/vw/core/cb.h
   include/vw/core/cb_with_observations_label.h
@@ -65,7 +64,6 @@ set(vw_core_headers
   include/vw/core/multiclass.h
   include/vw/core/multilabel.h
   include/vw/core/named_labels.h
-  include/vw/core/network.h
   include/vw/core/no_label.h
   include/vw/core/numeric_casts.h
   include/vw/core/object_pool.h
@@ -85,7 +83,6 @@ set(vw_core_headers
   include/vw/core/reduction_features.h
   include/vw/core/reduction_stack.h
   include/vw/core/reductions/active_cover.h
-  include/vw/core/reductions/active.h
   include/vw/core/reductions/audit_regressor.h
   include/vw/core/reductions/autolink.h
   include/vw/core/reductions/automl.h
@@ -160,7 +157,6 @@ set(vw_core_headers
   include/vw/core/reductions/recall_tree.h
   include/vw/core/reductions/sample_pdf.h
   include/vw/core/reductions/scorer.h
-  include/vw/core/reductions/sender.h
   include/vw/core/reductions/shared_feature_merger.h
   include/vw/core/reductions/slates.h
   include/vw/core/reductions/stagewise_poly.h
@@ -227,7 +223,6 @@ set(vw_core_sources
   src/multiclass.cc
   src/multilabel.cc
   src/named_labels.cc
-  src/network.cc
   src/no_label.cc
   src/parse_args.cc
   src/parse_example_json.cc
@@ -241,7 +236,6 @@ set(vw_core_sources
   src/qr_decomposition.cc
   src/reduction_stack.cc
   src/reductions/active_cover.cc
-  src/reductions/active.cc
   src/reductions/audit_regressor.cc
   src/reductions/autolink.cc
   src/reductions/automl.cc
@@ -293,7 +287,6 @@ set(vw_core_sources
   src/reductions/details/automl/automl_util.cc
   src/reductions/ect.cc
   src/reductions/eigen_memory_tree.cc
-  src/daemon_utils.cc
   src/reductions/epsilon_decay.cc
   src/reductions/explore_eval.cc
   src/reductions/freegrad.cc
@@ -325,7 +318,6 @@ set(vw_core_sources
   src/reductions/recall_tree.cc
   src/reductions/sample_pdf.cc
   src/reductions/scorer.cc
-  src/reductions/sender.cc
   src/reductions/shared_feature_merger.cc
   src/reductions/slates.cc
   src/reductions/stagewise_poly.cc
@@ -374,6 +366,22 @@ endif()
 if(VW_FEAT_CB_GRAPH_FEEDBACK)
   list(APPEND vw_core_headers include/vw/core/reductions/cb/cb_explore_adf_graph_feedback.h)
   list(APPEND vw_core_sources src/reductions/cb/cb_explore_adf_graph_feedback.cc)
+endif()
+
+if(VW_FEAT_NETWORKING)
+  list(APPEND vw_core_headers
+    include/vw/core/daemon_utils.h
+    include/vw/core/reductions/sender.h
+    include/vw/core/network.h
+    include/vw/core/reductions/active.h
+  )
+
+  list(APPEND vw_core_sources
+    src/daemon_utils.cc
+    src/reductions/sender.cc
+    src/network.cc
+    src/reductions/active.cc
+  )
 endif()
 
 vw_add_library(

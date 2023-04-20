@@ -18,15 +18,17 @@ namespace details
 class input_options
 {
 public:
+#ifdef VW_FEAT_NETWORKING_ENABLED
   bool daemon;
-  bool foreground;
-  uint32_t port;
   std::string pid_file;
   std::string port_file;
   uint64_t num_children;
+  bool foreground;
+  uint32_t port;
   // If a model was saved in daemon or active learning mode, force it to accept
   // local input when loaded instead.
   bool no_daemon = false;
+#endif
 
   bool cache;
   std::vector<std::string> cache_files;
