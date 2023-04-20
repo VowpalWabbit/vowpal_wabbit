@@ -425,7 +425,7 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
 }
 
 arma::sp_mat get_graph(
-    const VW::cb_graph_feedback::reduction_features& graph_reduction_features, size_t num_actions, VW::workspace& all)
+    const VW::cb_graph_feedback::reduction_features& graph_reduction_features, size_t num_actions, VW::io::logger& logger)
 {
   arma::sp_mat G(num_actions, num_actions);
 
@@ -447,7 +447,7 @@ arma::sp_mat get_graph(
   }
   else
   {
-    all.logger.warn("The graph provided is invalid, replacing with identity graph");
+    logger.warn("The graph provided is invalid, replacing with identity graph");
     G = arma::speye<arma::sp_mat>(num_actions, num_actions);
   }
   return G;
@@ -458,7 +458,7 @@ void cb_explore_adf_graph_feedback::predict_or_learn_impl(VW::LEARNER::learner& 
 {
   auto& graph_reduction_features =
       examples[0]->ex_reduction_features.template get<VW::cb_graph_feedback::reduction_features>();
-  arma::sp_mat G = get_graph(graph_reduction_features, examples.size(), *_all);
+  arma::sp_mat G = get_graph(graph_reduction_features, examples.size(), _all->logger);
 
   if (is_learn)
   {
