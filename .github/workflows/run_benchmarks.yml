@@ -44,7 +44,7 @@ jobs:
         run: >
           ./build/test/benchmarks/vw-benchmarks.out
           --benchmark_min_time=3
-          --benchmark_format=console
+          --benchmark_format=json
           --benchmark_out_format=json
           --benchmark_out=benchmark_results.json
       - uses: benchmark-action/github-action-benchmark@v1
