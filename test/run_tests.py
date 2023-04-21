@@ -1091,6 +1091,9 @@ def main():
     )
     args = parser.parse_args()
 
+    if args.skip_network_tests:
+        args.skip_spanning_tree_tests = True
+
     # user did not supply dir
     temp_working_dir: Path = Path(args.working_dir)
     if args.for_flatbuffers and args.working_dir == str(working_dir):
@@ -1134,7 +1137,7 @@ def main():
     print(f"Using VW binary: {vw_bin}")
 
     spanning_tree_bin: Optional[Path] = None
-    if not args.skip_spanning_tree_tests or not args.skip_network_tests:
+    if not args.skip_spanning_tree_tests:
         spanning_tree_bin = find_spanning_tree_binary(
             test_base_ref_dir, args.spanning_tree_bin_path
         )
