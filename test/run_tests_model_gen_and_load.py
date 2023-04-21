@@ -193,8 +193,8 @@ def get_tests(
     explicit_tests: Optional[List[int]] = None,
     color_enum: Type[Union[Color, NoColor]] = Color,
     skip_missing_args: bool = False,
-    skip_pr_tests: List[int] = [],
     skip_network_tests: bool = False,
+    skip_pr_tests: List[int] = [],
 ) -> List[TestData]:
     test_ref_dir: Path = Path(__file__).resolve().parent
 
