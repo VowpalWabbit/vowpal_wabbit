@@ -184,6 +184,14 @@
           "type": "BOOL",
           "value": "Off"
         },
+        "VW_FEAT_SEARCH": {
+          "type": "BOOL",
+          "value": "Off"
+        },
+        "VW_FEAT_NETWORKING": {
+          "type": "BOOL",
+          "value": "Off"
+        },
         "BUILD_TESTING": {
           "type": "BOOL",
           "value": "Off"
