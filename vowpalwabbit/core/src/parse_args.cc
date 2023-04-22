@@ -440,7 +440,7 @@ VW::details::input_options parse_source(VW::workspace& all, options_i& options)
     }
   }
 
-#ifdef VW_FEAT_DEAMON_ENABLED
+#ifdef VW_FEAT_NETWORKING_ENABLED
   if (parsed_options.daemon || options.was_supplied("pid_file") ||
       (options.was_supplied("port") && !all.reduction_state.active))
   {

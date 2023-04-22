@@ -251,7 +251,7 @@ void VW::details::reset_source(VW::workspace& all, size_t numbits)
 
   if (all.parser_runtime.example_parser->resettable == true)
   {
-#ifdef VW_FEAT_DEAMON_ENABLED
+#ifdef VW_FEAT_NETWORKING_ENABLED
     if (all.runtime_config.daemon)
     {
       // wait for all predictions to be sent back to client
@@ -664,7 +664,7 @@ void VW::details::enable_sources(
     THROW("need a cache file for multiple passes : try using  --cache or --cache_file <name>");
 
   if (!quiet
-#ifdef VW_FEAT_DEAMON_ENABLED
+#ifdef VW_FEAT_NETWORKING_ENABLED
       && !all.runtime_config.daemon
 #endif
   )
