@@ -325,7 +325,7 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   reduction_state.active = false;
   initial_weights_config.num_bits = 18;
   runtime_config.default_bits = true;
-#ifdef VW_FEAT_DAEMON_MODE_ENABLED
+#ifdef VW_FEAT_NETWORKING_ENABLED
   runtime_config.daemon = false;
 #endif
   output_model_config.save_resume = true;
