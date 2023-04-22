@@ -377,7 +377,9 @@ VW::details::input_options parse_source(VW::workspace& all, options_i& options)
   VW::details::input_options parsed_options;
 
   option_group_definition input_options("Input");
-  input_options.add(make_option("data", all.parser_runtime.data_filename).short_name("d").help("Example set"))
+  input_options
+      .add(make_option("data", all.parser_runtime.data_filename).short_name("d").help("Example set"))
+#ifdef VW_FEAT_NETWORKING_ENABLED
       .add(make_option("daemon", parsed_options.daemon).help("Persistent daemon mode on port 26542"))
       .add(make_option("foreground", parsed_options.foreground)
                .help("In persistent daemon mode, do not run in the background"))
@@ -387,6 +389,7 @@ VW::details::input_options parse_source(VW::workspace& all, options_i& options)
                .help("Number of children for persistent daemon mode"))
       .add(make_option("pid_file", parsed_options.pid_file).help("Write pid file in persistent daemon mode"))
       .add(make_option("port_file", parsed_options.port_file).help("Write port used in persistent daemon mode"))
+#endif
       .add(make_option("cache", parsed_options.cache).short_name("c").help("Use a cache.  The default is <data>.cache"))
       .add(make_option("cache_file", parsed_options.cache_files).help("The location(s) of cache_file"))
       .add(make_option("json", parsed_options.json).help("Enable JSON parsing"))
@@ -400,9 +403,11 @@ VW::details::input_options parse_source(VW::workspace& all, options_i& options)
                   "use gzip format whenever possible. If a cache file is being created, this option creates a "
                   "compressed cache file. A mixture of raw-text & compressed inputs are supported with autodetection."))
       .add(make_option("no_stdin", parsed_options.stdin_off).help("Do not default to reading from stdin"))
+#ifdef VW_FEAT_NETWORKING_ENABLED
       .add(make_option("no_daemon", parsed_options.no_daemon)
                .help("Force a loaded daemon or active learning model to accept local input instead of starting in "
                      "daemon mode"))
+#endif
       .add(make_option("chain_hash", parsed_options.chain_hash_json)
                .keep()
                .help("Enable chain hash in JSON for feature name and string feature value. e.g. {'A': {'B': 'C'}} is "
@@ -435,6 +440,7 @@ VW::details::input_options parse_source(VW::workspace& all, options_i& options)
     }
   }
 
+#ifdef VW_FEAT_NETWORKING_ENABLED
   if (parsed_options.daemon || options.was_supplied("pid_file") ||
       (options.was_supplied("port") && !all.reduction_state.active))
   {
@@ -442,6 +448,7 @@ VW::details::input_options parse_source(VW::workspace& all, options_i& options)
     // allow each child to process up to 1e5 connections
     all.runtime_config.numpasses = static_cast<size_t>(1e5);
   }
+#endif
 
   // Add an implicit cache file based on the data filename.
   if (parsed_options.cache) { parsed_options.cache_files.push_back(all.parser_runtime.data_filename + ".cache"); }

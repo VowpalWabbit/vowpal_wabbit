@@ -9,7 +9,9 @@
 #include "vw/core/vw_fwd.h"
 
 // reductions / setup functions
-#include "vw/core/reductions/active.h"
+#ifdef VW_FEAT_NETWORKING_ENABLED
+#  include "vw/core/reductions/active.h"
+#endif
 #include "vw/core/reductions/active_cover.h"
 #include "vw/core/reductions/audit_regressor.h"
 #include "vw/core/reductions/autolink.h"
@@ -94,7 +96,9 @@
 #ifdef VW_FEAT_SEARCH_ENABLED
 #  include "vw/core/reductions/search/search.h"
 #endif
-#include "vw/core/reductions/sender.h"
+#ifdef VW_FEAT_NETWORKING_ENABLED
+#  include "vw/core/reductions/sender.h"
+#endif
 #include "vw/core/reductions/shared_feature_merger.h"
 #include "vw/core/reductions/slates.h"
 #include "vw/core/reductions/stagewise_poly.h"
@@ -107,8 +111,11 @@ void register_reductions(std::vector<VW::reduction_setup_fn>& reductions,
     std::vector<std::tuple<std::string, VW::reduction_setup_fn>>& reduction_stack)
 {
   std::unordered_map<VW::reduction_setup_fn, std::string> allowlist = {{VW::reductions::gd_setup, "gd"},
-      {VW::reductions::ftrl_setup, "ftrl"}, {VW::reductions::sender_setup, "sender"}, {VW::reductions::nn_setup, "nn"},
-      {VW::reductions::oaa_setup, "oaa"}, {VW::reductions::scorer_setup, "scorer"},
+      {VW::reductions::ftrl_setup, "ftrl"},
+#ifdef VW_FEAT_NETWORKING_ENABLED
+      {VW::reductions::sender_setup, "sender"},
+#endif
+      {VW::reductions::nn_setup, "nn"}, {VW::reductions::oaa_setup, "oaa"}, {VW::reductions::scorer_setup, "scorer"},
       {VW::reductions::csldf_setup, "csoaa_ldf"},
       {VW::reductions::cb_explore_adf_greedy_setup, "cb_explore_adf_greedy"},
       {VW::reductions::cb_explore_adf_regcb_setup, "cb_explore_adf_regcb"},
@@ -146,7 +153,9 @@ void prepare_reductions(std::vector<std::tuple<std::string, VW::reduction_setup_
   reductions.push_back(VW::reductions::ftrl_setup);
   reductions.push_back(VW::reductions::freegrad_setup);
   reductions.push_back(VW::reductions::svrg_setup);
+#ifdef VW_FEAT_NETWORKING_ENABLED
   reductions.push_back(VW::reductions::sender_setup);
+#endif
   reductions.push_back(VW::reductions::gd_mf_setup);
   reductions.push_back(VW::reductions::print_setup);
   reductions.push_back(VW::reductions::noop_setup);
@@ -160,7 +169,9 @@ void prepare_reductions(std::vector<std::tuple<std::string, VW::reduction_setup_
   // Score Users
   reductions.push_back(VW::reductions::baseline_setup);
   reductions.push_back(VW::reductions::expreplay_setup<'b', VW::simple_label_parser_global>);
+#ifdef VW_FEAT_NETWORKING_ENABLED
   reductions.push_back(VW::reductions::active_setup);
+#endif
   reductions.push_back(VW::reductions::active_cover_setup);
   reductions.push_back(VW::reductions::confidence_setup);
   reductions.push_back(VW::reductions::nn_setup);
