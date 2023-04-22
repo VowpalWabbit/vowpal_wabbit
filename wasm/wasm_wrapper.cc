@@ -1,3 +1,4 @@
+#include "vw/common/text_utils.h"
 #include "vw/config/options.h"
 #include "vw/core/example.h"
 #include "vw/core/learner.h"
@@ -171,7 +172,16 @@ struct vw_model
     std::vector<std::shared_ptr<example_ptr>> example_collection;
     VW::string_view trimmed_ex_str = VW::trim_whitespace(VW::string_view(ex_str));
     std::vector<example*> examples;
-    vw_ptr->parser_runtime.example_parser->text_reader(vw_ptr.get(), trimmed_ex_str, examples);
+
+    std::vector<VW::string_view> lines;
+    // expensive but safe find()
+    VW::tokenize_expensive('\n', trimmed_ex_str, lines);
+    for (size_t i = 0; i < lines.size(); i++)
+    {
+      // Check if a new empty example needs to be added.
+      if (examples.size() < i + 1) { examples.push_back(&VW::get_unused_example(vw_ptr.get())); }
+      VW::parsers::text::read_line(*vw_ptr.get(), examples[i], lines[i]);
+    }
 
     example_collection.reserve(example_collection.size() + examples.size());
     for (auto* ex : examples)
