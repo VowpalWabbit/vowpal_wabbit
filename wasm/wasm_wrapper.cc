@@ -1,4 +1,3 @@
-#include "vw/common/text_utils.h"
 #include "vw/config/options.h"
 #include "vw/core/example.h"
 #include "vw/core/learner.h"
@@ -15,6 +14,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <string_view>
 
 std::array<std::string, 51> illegal_options = {"feature_mask", "initial_regressor", "input_feature_regularizer",
     "span_server", "unique_id", "total", "node", "span_server_port", "version", "audit", "progress", "limit_output",
@@ -173,15 +173,7 @@ struct vw_model
     VW::string_view trimmed_ex_str = VW::trim_whitespace(VW::string_view(ex_str));
     std::vector<example*> examples;
 
-    std::vector<VW::string_view> lines;
-    // expensive but safe find()
-    VW::tokenize_expensive('\n', trimmed_ex_str, lines);
-    for (size_t i = 0; i < lines.size(); i++)
-    {
-      // Check if a new empty example needs to be added.
-      if (examples.size() < i + 1) { examples.push_back(&VW::get_unused_example(vw_ptr.get())); }
-      VW::parsers::text::read_line(*vw_ptr.get(), examples[i], lines[i]);
-    }
+    vw_ptr->parser_runtime.example_parser->text_reader(vw_ptr.get(), trimmed_ex_str, examples);
 
     example_collection.reserve(example_collection.size() + examples.size());
     for (auto* ex : examples)

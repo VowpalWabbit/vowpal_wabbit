@@ -172,6 +172,10 @@
           "type": "BOOL",
           "value": "On"
         },
+        "USE_LATEST_STD": {
+          "type": "BOOL",
+          "value": "On"
+        },
         "VW_FEAT_FLATBUFFERS": {
           "type": "BOOL",
           "value": "Off"

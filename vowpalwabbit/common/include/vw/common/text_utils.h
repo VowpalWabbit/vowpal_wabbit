@@ -28,25 +28,6 @@ void tokenize(char delim, VW::string_view s, ContainerT& ret, bool allow_empty =
   if (!s.empty() || (last_space && allow_empty)) { ret.emplace_back(s.substr(0)); }
 }
 
-template <typename ContainerT>
-void tokenize_expensive(char delim, VW::string_view s, ContainerT& ret, bool allow_empty = false)
-{
-  ret.clear();
-  size_t end_pos = 0;
-  bool last_space = false;
-
-  std::string str(s.data(), s.size());
-
-  while (!s.empty() && ((end_pos = str.find(delim)) != VW::string_view::npos))
-  {
-    last_space = end_pos == 0;
-    if (allow_empty || end_pos > 0) { ret.emplace_back(s.substr(0, end_pos)); }
-    s.remove_prefix(end_pos + 1);
-    str.erase(0, end_pos + 1);
-  }
-  if (!s.empty() || (last_space && allow_empty)) { ret.emplace_back(s.substr(0)); }
-}
-
 /**
  * \brief Check if a string ends with some other string.
  * \param full_string String to check ending of
