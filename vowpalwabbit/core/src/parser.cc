@@ -37,7 +37,9 @@ typedef int socklen_t;
 // windows doesn't define SOL_TCP and use an enum for the later, so can't check for its presence with a macro.
 #  define SOL_TCP IPPROTO_TCP
 
+#  ifdef VW_FEAT_NETWORKING_ENABLED
 int daemon(int /*a*/, int /*b*/) { exit(0); }
+#  endif
 
 // Starting with v142 the fix in the else block no longer works due to mismatching linkage. Going forward we should just
 // use the actual isocpp version.
@@ -207,6 +209,7 @@ void set_json_reader(VW::workspace& all, bool dsjson = false)
   }
 }
 
+#ifdef VW_FEAT_NETWORKING_ENABLED
 void set_daemon_reader(VW::workspace& all, bool json = false, bool dsjson = false)
 {
   if (all.parser_runtime.example_parser->input.isbinary())
@@ -217,6 +220,7 @@ void set_daemon_reader(VW::workspace& all, bool json = false, bool dsjson = fals
   else if (json || dsjson) { set_json_reader(all, dsjson); }
   else { set_string_reader(all); }
 }
+#endif
 
 void VW::details::reset_source(VW::workspace& all, size_t numbits)
 {
@@ -247,6 +251,7 @@ void VW::details::reset_source(VW::workspace& all, size_t numbits)
 
   if (all.parser_runtime.example_parser->resettable == true)
   {
+#ifdef VW_FEAT_NETWORKING_ENABLED
     if (all.runtime_config.daemon)
     {
       // wait for all predictions to be sent back to client
@@ -283,6 +288,7 @@ void VW::details::reset_source(VW::workspace& all, size_t numbits)
       set_daemon_reader(all, is_currently_json_reader(all), is_currently_dsjson_reader(all));
     }
     else
+#endif
     {
       if (!input.is_resettable()) { THROW("Cannot reset source as it is a non-resettable input type.") }
       input.reset();
@@ -396,13 +402,14 @@ void VW::details::enable_sources(
   // default text reader
   all.parser_runtime.example_parser->text_reader = VW::parsers::text::read_lines;
 
+#ifdef VW_FEAT_NETWORKING_ENABLED
   if (!input_options.no_daemon && (all.runtime_config.daemon || all.reduction_state.active))
   {
-#ifdef _WIN32
+#  ifdef _WIN32
     WSAData wsaData;
     int lastError = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if (lastError != 0) THROWERRNO("WSAStartup() returned error:" << lastError);
-#endif
+#  endif
     all.parser_runtime.example_parser->bound_sock = static_cast<int>(socket(PF_INET, SOCK_STREAM, 0));
     if (all.parser_runtime.example_parser->bound_sock < 0)
     {
@@ -481,13 +488,13 @@ void VW::details::enable_sources(
     if (all.runtime_config.daemon && !all.reduction_state.active)
     {
       // See support notes here: https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Daemon-example
-#ifdef __APPLE__
+#  ifdef __APPLE__
       all.logger.warn("daemon mode is not supported on MacOS.");
-#endif
+#  endif
 
-#ifdef _WIN32
+#  ifdef _WIN32
       THROW("daemon mode is not supported on Windows");
-#else
+#  else
       fclose(stdin);
       // weights will be shared across processes, accessible to children
       all.weights.share(all.length());
@@ -559,12 +566,12 @@ void VW::details::enable_sources(
         }
       }
 
-#endif
+#  endif
     }
 
-#ifndef _WIN32
+#  ifndef _WIN32
   child:
-#endif
+#  endif
     sockaddr_in client_address;
     socklen_t size = sizeof(client_address);
     if (!all.output_config.quiet) { *(all.output_runtime.trace_message) << "calling accept" << endl; }
@@ -589,6 +596,7 @@ void VW::details::enable_sources(
         all.parser_runtime.example_parser->write_cache || all.runtime_config.daemon;
   }
   else
+#endif
   {
     if (all.parser_runtime.example_parser->input.num_files() != 0)
     {
@@ -655,7 +663,11 @@ void VW::details::enable_sources(
   if (passes > 1 && !all.parser_runtime.example_parser->resettable)
     THROW("need a cache file for multiple passes : try using  --cache or --cache_file <name>");
 
-  if (!quiet && !all.runtime_config.daemon)
+  if (!quiet
+#ifdef VW_FEAT_NETWORKING_ENABLED
+      && !all.runtime_config.daemon
+#endif
+  )
   {
     *(all.output_runtime.trace_message) << "num sources = " << all.parser_runtime.example_parser->input.num_files()
                                         << endl;

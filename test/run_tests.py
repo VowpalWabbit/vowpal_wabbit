@@ -862,6 +862,7 @@ def convert_to_test_data(
     vw_bin: str,
     spanning_tree_bin: Optional[Path],
     skipped_ids: List[int],
+    skip_network_tests: bool,
     extra_vw_options: str,
 ) -> List[TestData]:
     results: List[TestData] = []
@@ -895,6 +896,14 @@ def convert_to_test_data(
                 skip = True
                 skip_reason = "Test using spanning_tree skipped because of --skip_spanning_tree_tests argument"
 
+            if skip_network_tests and (
+                "daemon" in test["bash_command"]
+                or "spanning_tree" in test["bash_command"]
+                or "sender_test.py" in test["bash_command"]
+                or "active_test.py" in test["bash_command"]
+            ):
+                skip = True
+                skip_reason = "Tests requiring daemon or network skipped because of --skip_network_tests argument"
         elif "vw_command" in test:
             command_line = f"{vw_bin} {test['vw_command']} {extra_vw_options}"
         else:
@@ -1030,6 +1039,11 @@ def main():
         action="store_true",
     )
     parser.add_argument(
+        "--skip_network_tests",
+        help="Skip all tests that require daemon or network connection",
+        action="store_true",
+    )
+    parser.add_argument(
         "--skip_test",
         help="Skip specific test ids",
         nargs="+",
@@ -1076,6 +1090,9 @@ def main():
         default=100,
     )
     args = parser.parse_args()
+
+    if args.skip_network_tests:
+        args.skip_spanning_tree_tests = True
 
     # user did not supply dir
     temp_working_dir: Path = Path(args.working_dir)
@@ -1149,6 +1166,7 @@ def main():
         vw_bin,
         spanning_tree_bin,
         args.skip_test,
+        args.skip_network_tests,
         extra_vw_options=args.extra_options,
     )
 
@@ -1197,6 +1215,16 @@ def main():
         tests = convert_tests_for_flatbuffers(
             tests, to_flatbuff_bin, test_base_working_dir, color_enum
         )
+
+    if args.skip_network_tests:
+        for test in tests:
+            if (
+                "--active" in test.command_line
+                or "--sendto" in test.command_line
+                or "--daemon" in test.command_line
+            ):
+                test.skip = True
+                test.skip_reason = "Tests requiring daemon or network skipped because of --skip_network_tests argument"
 
     tasks: List[Future[TestOutcome]] = []
     completed_tests = Completion()
