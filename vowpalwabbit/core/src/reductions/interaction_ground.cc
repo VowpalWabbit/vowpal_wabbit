@@ -275,8 +275,8 @@ void pre_save_load_igl(VW::workspace& all, igl::igl_data& data)
   std::swap(cb_adf_data->get_gen_cs_mtr().per_model_state[0], cb_adf_data->get_gen_cs_mtr().per_model_state[1]);
 
   // Adjust pi model weights to new single-model space
-  VW::reductions::multi_model::reduce_innermost_model_weights(all.weights.dense_weights, 1,
-      all.reduction_state.total_feature_width, 2);
+  VW::reductions::multi_model::reduce_innermost_model_weights(
+      all.weights.dense_weights, data._cb_model_offset, all.reduction_state.total_feature_width, data._feature_width);
 
   for (auto& group : options.get_all_option_group_definitions())
   {
@@ -286,13 +286,13 @@ void pre_save_load_igl(VW::workspace& all, igl::igl_data& data)
     }
   }
 
-  all.initial_weights_config.num_bits = all.initial_weights_config.num_bits - static_cast<uint32_t>(
-      std::log2(all.reduction_state.total_feature_width));
+  all.initial_weights_config.num_bits =
+      all.initial_weights_config.num_bits - static_cast<uint32_t>(std::log2(all.reduction_state.total_feature_width));
   options.get_typed_option<uint32_t>("bit_precision").value(all.initial_weights_config.num_bits);
 }
 
-void output_igl_prediction(VW::workspace& all, const igl::igl_data& /* data */, const VW::multi_ex& ec_seq,
-    VW::io::logger& /* unused */)
+void output_igl_prediction(
+    VW::workspace& all, const igl::igl_data& /* data */, const VW::multi_ex& ec_seq, VW::io::logger& /* unused */)
 {
   if (!ec_seq.empty())
   {
@@ -306,8 +306,8 @@ void output_igl_prediction(VW::workspace& all, const igl::igl_data& /* data */, 
   }
 }
 
-void update_stats_igl(const VW::workspace& /* all */, VW::shared_data& sd,
-    const VW::reductions::igl::igl_data& data, const VW::multi_ex& ec_seq, VW::io::logger& /*logger*/)
+void update_stats_igl(const VW::workspace& /* all */, VW::shared_data& sd, const VW::reductions::igl::igl_data& data,
+    const VW::multi_ex& ec_seq, VW::io::logger& /*logger*/)
 {
   if (ec_seq.size() <= 0) { return; }
 

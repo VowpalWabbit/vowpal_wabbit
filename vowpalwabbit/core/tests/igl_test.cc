@@ -288,10 +288,11 @@ TEST(Igl, VerifyPredictOnlyModelEqualsToCbModel)
   };
 
   // IGL instance
-  auto igl_vw = VW::initialize(vwtest::make_args("--experimental_igl", "--coin", "--cb_explore_adf", "--dsjson", "--noconstant", "--quiet", "-q", "UA", "--predict_only_model", "-b", "18"));
+  auto igl_vw = VW::initialize(vwtest::make_args("--experimental_igl", "--coin", "--cb_explore_adf", "--dsjson",
+      "--noconstant", "--quiet", "-q", "UA", "--predict_only_model", "-b", "18"));
 
-  auto multi_vw = VW::initialize(
-    vwtest::make_args("--cb_explore_adf", "--coin", "--dsjson", "-q", "UA", "--noconstant", "--quiet", "-b", "17", "--predict_only_model"));
+  auto multi_vw = VW::initialize(vwtest::make_args("--cb_explore_adf", "--coin", "--dsjson", "-q", "UA", "--noconstant",
+      "--quiet", "-b", "17", "--predict_only_model"));
 
   // train cb model
   for (size_t i = 0; i < igl_vector.size(); i++)

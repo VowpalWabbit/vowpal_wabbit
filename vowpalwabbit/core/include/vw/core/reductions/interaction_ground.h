@@ -41,8 +41,10 @@ public:
   std::unique_ptr<ftrl> pi_ftrl;
 
   bool _predict_only_model;
+  size_t _cb_model_offset = 1;
+  size_t _feature_width = 2;
 };
-}
+}  // namespace igl
 }  // namespace reductions
 
 namespace model_utils
