@@ -274,6 +274,7 @@ TEST(Igl, SaveResume)
 
 TEST(Igl, VerifyPredictOnlyModelEqualsToCbModel)
 {
+  // clang-format off
   std::vector<std::string> igl_vector = {
       R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 4, "_labelIndex": 3, "o": [{"v": {"v=none": 1}, "_definitely_bad": false}], "a": [0, 1, 2, 3], "c": {"User": {"user=Anna": 1, "time_of_day=afternoon": 1}, "_multi": [{"Action": {"action=politics": 1}}, {"Action": {"action=sports": 1}}, {"Action": {"action=music": 1}}, {"Action": {"action=food": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
       R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 2, "_labelIndex": 1, "o": [{"v": {"v=none": 1}, "_definitely_bad": false}], "a": [0, 1, 2, 3], "c": {"User": {"user=Tom": 1, "time_of_day=morning": 1}, "_multi": [{"Action": {"action=politics": 1}}, {"Action": {"action=sports": 1}}, {"Action": {"action=music": 1}}, {"Action": {"action=food": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
@@ -286,6 +287,7 @@ TEST(Igl, VerifyPredictOnlyModelEqualsToCbModel)
       R"({"_label_cost": 0, "_label_probability": 0.3166666677221655, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v=none": 1}, "_definitely_bad": false}], "a": [0, 1, 2, 3], "c": {"User": {"user=Anna": 1, "time_of_day=morning": 1}, "_multi": [{"Action": {"action=politics": 1}}, {"Action": {"action=sports": 1}}, {"Action": {"action=music": 1}}, {"Action": {"action=food": 1}}]}, "p": [0.3166666677221655, 0.3166666677221655, 0.04999999683350349, 0.3166666677221655], "_original_label_cost": 0})",
       R"({"_label_cost": 0, "_label_probability": 0.8500000016763806, "_label_Action": 3, "_labelIndex": 2, "o": [{"v": {"v=none": 1}, "_definitely_bad": false}], "a": [0, 1, 2, 3], "c": {"User": {"user=Anna": 1, "time_of_day=afternoon": 1}, "_multi": [{"Action": {"action=politics": 1}}, {"Action": {"action=sports": 1}}, {"Action": {"action=music": 1}}, {"Action": {"action=food": 1}}]}, "p": [0.04999999944120647, 0.04999999944120647, 0.8500000016763806, 0.04999999944120647], "_original_label_cost": 0})"
   };
+  // clang-format on
 
   // IGL instance
   auto igl_vw = VW::initialize(vwtest::make_args("--experimental_igl", "--coin", "--cb_explore_adf", "--dsjson",
