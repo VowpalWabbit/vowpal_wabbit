@@ -272,6 +272,8 @@ struct vw_model : MixIn
 template <typename MixIn = vw_model_basic>
 struct cb_vw_model : MixIn
 {
+  // TODO check or restrict arguments to be cb_adf arguments
+  // should the model be renamed to cb_adf_vw_model?
   cb_vw_model(const std::string& args) : MixIn(args) {}
 
   cb_vw_model(const std::string& args, size_t _bytes, int size) : MixIn(args, _bytes, size) {}
@@ -284,21 +286,11 @@ struct cb_vw_model : MixIn
 
     auto example_list = parse(context);
     for (auto* ex : example_list) { VW::setup_example(*this->vw_ptr, ex); }
-    if (example_list.size() == 1)
-    {
-      auto* ex = example_list[0];
-      this->vw_ptr->predict(*ex);
-      auto ret = prediction_to_val(ex->pred, this->vw_ptr->l->get_output_prediction_type());
-      finish_example(example_list);
-      return ret;
-    }
-    else
-    {
-      this->vw_ptr->predict(example_list);
-      auto ret = prediction_to_val(example_list[0]->pred, this->vw_ptr->l->get_output_prediction_type());
-      finish_example(example_list);
-      return ret;
-    }
+
+    this->vw_ptr->predict(example_list);
+    auto ret = prediction_to_val(example_list[0]->pred, this->vw_ptr->l->get_output_prediction_type());
+    finish_example(example_list);
+    return ret;
   }
 
   void learn(emscripten::val example_input)
@@ -308,8 +300,7 @@ struct cb_vw_model : MixIn
     assert(!example_list.empty());
 
     unsigned int length = 0;
-    if (!example_input.hasOwnProperty("labels") ||
-        (length = example_input["labels"]["length"].as<unsigned int>()) <= 0)
+    if (!example_input.hasOwnProperty("labels") || (length = example_input["labels"]["length"].as<unsigned int>()) <= 0)
     {
       THROW("labels is missing or empty, can not learn without a label");
     }
@@ -323,6 +314,7 @@ struct cb_vw_model : MixIn
 
     for (unsigned int i = 0; i < length; i++)
     {
+      // TODO and test for index out of bounds i.e. incorrect label
       const auto& js_object = example_input["labels"][i];
       auto action = js_object["action"].as<uint32_t>();
 
@@ -332,11 +324,7 @@ struct cb_vw_model : MixIn
 
     for (auto* ex : example_list) { VW::setup_example(*this->vw_ptr, ex); }
 
-    if (example_list.size() == 1)
-    {
-      this->vw_ptr->learn(*example_list[0]);
-    }
-    else { this->vw_ptr->learn(example_list); }
+    this->vw_ptr->learn(example_list);
 
     finish_example(example_list);
   }
