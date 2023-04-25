@@ -309,9 +309,10 @@ struct cb_vw_model : MixIn
 
     for (unsigned int i = 0; i < length; i++)
     {
-      // TODO and test for index out of bounds i.e. incorrect label
       const auto& js_object = example_input["labels"][i];
       auto action = js_object["action"].as<uint32_t>();
+
+      if (action + index_offset >= example_list.size()) { THROW("action index out of bounds: " << action); }
 
       example_list[action + index_offset]->l.cb.costs.push_back(
           {js_object["cost"].as<float>(), js_object["action"].as<uint32_t>(), js_object["probability"].as<float>()});

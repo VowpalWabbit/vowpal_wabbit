@@ -120,6 +120,15 @@ describe('Call WASM VWModule', () => {
             console.error('Error caught from C++ during learn:', VWModule.getExceptionMessage(e));
         }
 
+        // try learning with a label that has an action out of bounds
+        try {
+            example.labels = [{ action: 10, cost: 1.0, probability: 0.5 }]
+            model.learn(example);
+        }
+        catch (e) {
+            console.error('Error caught from C++ during learn:', VWModule.getExceptionMessage(e));
+        }
+
         example.labels = [{ action: 0, cost: 1.0, probability: 0.5 }]
         model.learn(example);
 
