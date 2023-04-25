@@ -8,6 +8,7 @@
   "configurePresets": [
     {
       "name": "default",
+      "generator": "Ninja",
       "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
         "CMAKE_TOOLCHAIN_FILE": {
