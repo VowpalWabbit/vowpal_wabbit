@@ -342,12 +342,7 @@ private:
   void finish_example(std::vector<example*>& example_list)
   {
     assert(!example_list.empty());
-    if (example_list.size() == 1)
-    {
-      auto* ex = example_list[0];
-      this->vw_ptr->finish_example(*ex);
-    }
-    else { this->vw_ptr->finish_example(example_list); }
+    this->vw_ptr->finish_example(example_list);
   }
 };
 
