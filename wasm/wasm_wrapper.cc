@@ -285,6 +285,8 @@ struct cb_vw_model : MixIn
     // TODO else if json_context else if embeddings vector of some kind, else throw
 
     auto example_list = parse(context);
+    assert(!example_list.empty());
+
     for (auto* ex : example_list) { VW::setup_example(*this->vw_ptr, ex); }
 
     this->vw_ptr->predict(example_list);
@@ -295,7 +297,10 @@ struct cb_vw_model : MixIn
 
   void learn(emscripten::val example_input)
   {
-    std::string context = example_input["text_context"].as<std::string>();
+    std::string context;
+    if (example_input.hasOwnProperty("text_context")) { context = example_input["text_context"].as<std::string>(); }
+    // TODO else if json_context else if embeddings vector of some kind, else throw
+
     auto example_list = parse(context);
     assert(!example_list.empty());
 
