@@ -278,14 +278,9 @@ struct cb_vw_model : MixIn
 
   cb_vw_model(const std::string& args, size_t _bytes, int size) : MixIn(args, _bytes, size) {}
 
-  emscripten::val predict(emscripten::val example_input)
+  emscripten::val predict(const emscripten::val& example_input)
   {
-    std::string context;
-    if (example_input.hasOwnProperty("text_context")) { context = example_input["text_context"].as<std::string>(); }
-    // TODO else if json_context else if embeddings vector of some kind, else throw
-
-    auto example_list = parse(context);
-    assert(!example_list.empty());
+    auto example_list = parse(example_input);
 
     for (auto* ex : example_list) { VW::setup_example(*this->vw_ptr, ex); }
 
@@ -295,14 +290,9 @@ struct cb_vw_model : MixIn
     return ret;
   }
 
-  void learn(emscripten::val example_input)
+  void learn(const emscripten::val& example_input)
   {
-    std::string context;
-    if (example_input.hasOwnProperty("text_context")) { context = example_input["text_context"].as<std::string>(); }
-    // TODO else if json_context else if embeddings vector of some kind, else throw
-
-    auto example_list = parse(context);
-    assert(!example_list.empty());
+    auto example_list = parse(example_input);
 
     unsigned int length = 0;
     if (!example_input.hasOwnProperty("labels") || (length = example_input["labels"]["length"].as<unsigned int>()) <= 0)
@@ -335,12 +325,17 @@ struct cb_vw_model : MixIn
   }
 
 private:
-  std::vector<example*> parse(const std::string& ex_str)
+  std::vector<example*> parse(const emscripten::val& example_input)
   {
-    VW::string_view trimmed_ex_str = VW::trim_whitespace(VW::string_view(ex_str));
+    std::string context;
+    if (example_input.hasOwnProperty("text_context")) { context = example_input["text_context"].as<std::string>(); }
+    // TODO else if json_context else if embeddings vector of some kind, else throw
+
+    VW::string_view trimmed_ex_str = VW::trim_whitespace(VW::string_view(context));
     std::vector<example*> examples;
 
     this->vw_ptr->parser_runtime.example_parser->text_reader(this->vw_ptr.get(), trimmed_ex_str, examples);
+    assert(!examples.empty());
     return examples;
   }
 
