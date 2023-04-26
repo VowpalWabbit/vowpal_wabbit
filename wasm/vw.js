@@ -26,8 +26,6 @@ function initializeVWModule() {
         };
     });
 
-    console.log("initialized promise");
-
     return _moduleInitializationPromise;
 }
 

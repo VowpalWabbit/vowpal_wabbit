@@ -17,10 +17,8 @@
 #include <string>
 #include <string_view>
 
-// TODO separate out the test files if they become too big
-// inheritance in JS
+// TODO
 // log to file
-// figure out how to exose other functions here without having to mention the wasm module necessarily
 // args of constructors
 
 std::array<std::string, 51> illegal_options = {"feature_mask", "initial_regressor", "input_feature_regularizer",

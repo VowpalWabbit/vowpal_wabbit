@@ -3,6 +3,7 @@ const mocha = require('mocha');
 const fs = require('fs');
 const path = require('path');
 
+// TODO expose the rest of the VWModule properties via the vw.js wrapper class, and remove the need for this to be required
 const VWModule = require('../out/vw-wasm.js');
 const { initializeVWModule, VW, VWCB } = require('../vw.js');
 
