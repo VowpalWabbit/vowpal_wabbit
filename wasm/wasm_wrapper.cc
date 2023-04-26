@@ -381,29 +381,30 @@ EMSCRIPTEN_BINDINGS(vwwasm)
       .value("actionPDFValue", prediction_type_t::action_pdf_value)
       .value("activeMulticlass", prediction_type_t::active_multiclass);
 
+  emscripten::class_<vw_model_basic>("VWBasicModel")
+      .constructor<std::string>()
+      .constructor<std::string, size_t, int>()
+      .property("sumLoss", &vw_model_basic::sum_loss)
+      .property("weightedLabeledExamples", &vw_model_basic::weighted_labeled_examples)
+      .property("predictionType", &vw_model_basic::get_prediction_type);
+
   // Currently this is structured such that parse returns a vector of example but to JS that is opaque.
   // All the caller can do is pass this opaque object to the other functions. Is it possible to convert this to a JS
   // array but it involves copying the contents of the array whenever going to/from js/c++ For now it is opaque as the
   // protoyype doesnt support operations on the example itself.
-  emscripten::class_<vw_model<>>("VWModel")
+  emscripten::class_<vw_model<>, emscripten::base<vw_model_basic>>("VWModel")
       .constructor<std::string>()
       .constructor<std::string, size_t, int>()
       .function("parse", &vw_model<>::parse)
       .function("predict", &vw_model<>::predict)
       .function("learn", &vw_model<>::learn)
-      .function("finishExample", &vw_model<>::finish_example)
-      .property("sumLoss", &vw_model<>::sum_loss)
-      .property("weightedLabeledExamples", &vw_model<>::weighted_labeled_examples)
-      .property("predictionType", &vw_model<>::get_prediction_type);
+      .function("finishExample", &vw_model<>::finish_example);
 
   emscripten::register_vector<std::shared_ptr<example_ptr>>("ExamplePtrVector");
 
-  emscripten::class_<cb_vw_model<>>("CBVWModel")
+  emscripten::class_<cb_vw_model<>, emscripten::base<vw_model_basic>>("CBVWModel")
       .constructor<std::string>()
       .constructor<std::string, size_t, int>()
       .function("predict", &cb_vw_model<>::predict)
-      .function("learn", &cb_vw_model<>::learn)
-      .property("sumLoss", &cb_vw_model<>::sum_loss)
-      .property("weightedLabeledExamples", &cb_vw_model<>::weighted_labeled_examples)
-      .property("predictionType", &cb_vw_model<>::get_prediction_type);
+      .function("learn", &cb_vw_model<>::learn);
 };
