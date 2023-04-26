@@ -7,6 +7,30 @@ const ModelType =
     VWCBType: 'VWCB',
 };
 
+let _isModuleInitialized = false;
+let _moduleInitializationPromise = null;
+
+function initializeVWModule() {
+    if (_isModuleInitialized) {
+        return Promise.resolve();
+    }
+
+    if (_moduleInitializationPromise) {
+        return _moduleInitializationPromise;
+    }
+
+    _moduleInitializationPromise = new Promise((resolve) => {
+        VWWasmModule.onRuntimeInitialized = () => {
+            _isModuleInitialized = true;
+            resolve();
+        };
+    });
+
+    console.log("initialized promise");
+
+    return _moduleInitializationPromise;
+}
+
 class VWBase {
     constructor(type, { args_str, model_file } = {}) {
         if (args_str == undefined) {
@@ -93,6 +117,7 @@ class VWCB extends VWBase {
 
 module.exports =
 {
+    initializeVWModule,
     VW,
     VWCB,
 };
