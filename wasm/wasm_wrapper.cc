@@ -40,6 +40,9 @@ void validate_options(const VW::config::options_i& options)
   if (!options.get_positional_tokens().empty()) { THROW("Positional options are not allowed") }
 }
 
+struct vw_model_basic;
+
+template <typename MixIn = vw_model_basic>
 struct vw_model;
 
 struct example_ptr
@@ -49,7 +52,7 @@ struct example_ptr
     assert(VW::is_ring_example(*vw_ptr, ex));
     return std::make_shared<example_ptr>(ex, vw_ptr);
   }
-  std::shared_ptr<example_ptr> clone(const vw_model& vw_ptr) const;
+  std::shared_ptr<example_ptr> clone(const vw_model<>& vw_ptr) const;
 
   std::string to_string() const { return "Example"; }
 
@@ -148,16 +151,16 @@ emscripten::val prediction_to_val(const polyprediction& pred, prediction_type_t 
   }
 }
 
-struct vw_model
+struct vw_model_basic
 {
-  vw_model(const std::string& args)
+  vw_model_basic(const std::string& args)
   {
     std::string all_args = "--quiet --no_stdin " + args;
     vw_ptr.reset(VW::initialize(all_args));
     validate_options(*vw_ptr->options);
   }
 
-  vw_model(const std::string& args, size_t _bytes, int size)
+  vw_model_basic(const std::string& args, size_t _bytes, int size)
   {
     std::string all_args = "--quiet --no_stdin " + args;
     char* bytes = (char*)_bytes;
@@ -167,19 +170,36 @@ struct vw_model
     validate_options(*vw_ptr->options);
   }
 
+  virtual ~vw_model_basic() = default;
+
+  float sum_loss() const { return vw_ptr->sd->sum_loss; }
+  float weighted_labeled_examples() const { return vw_ptr->sd->weighted_labeled_examples; }
+
+  prediction_type_t get_prediction_type() const { return vw_ptr->l->get_output_prediction_type(); }
+
+  std::shared_ptr<vw> vw_ptr;
+};
+
+template <typename MixIn>
+struct vw_model : MixIn
+{
+  vw_model(const std::string& args) : MixIn(args) {}
+
+  vw_model(const std::string& args, size_t _bytes, int size) : MixIn(args, _bytes, size) {}
+
   std::vector<std::shared_ptr<example_ptr>> parse(const std::string& ex_str)
   {
     std::vector<std::shared_ptr<example_ptr>> example_collection;
     VW::string_view trimmed_ex_str = VW::trim_whitespace(VW::string_view(ex_str));
     std::vector<example*> examples;
 
-    vw_ptr->parser_runtime.example_parser->text_reader(vw_ptr.get(), trimmed_ex_str, examples);
+    this->vw_ptr->parser_runtime.example_parser->text_reader(this->vw_ptr.get(), trimmed_ex_str, examples);
 
     example_collection.reserve(example_collection.size() + examples.size());
     for (auto* ex : examples)
     {
-      VW::setup_example(*vw_ptr, ex);
-      example_collection.push_back(example_ptr::wrap_pooled_example(ex, vw_ptr));
+      VW::setup_example(*this->vw_ptr, ex);
+      example_collection.push_back(example_ptr::wrap_pooled_example(ex, this->vw_ptr));
     }
 
     return example_collection;
@@ -192,9 +212,9 @@ struct vw_model
     {
       auto* ex = example_list[0]->inner_ptr();
       auto prev_test_only_value = ex->test_only;
-      vw_ptr->predict(*ex);
+      this->vw_ptr->predict(*ex);
       ex->test_only = prev_test_only_value;
-      return prediction_to_val(ex->pred, vw_ptr->l->get_output_prediction_type());
+      return prediction_to_val(ex->pred, this->vw_ptr->l->get_output_prediction_type());
     }
     else
     {
@@ -206,9 +226,9 @@ struct vw_model
         raw_examples.push_back(ex->inner_ptr());
         prev_test_only_value.push_back(ex->inner_ptr()->test_only);
       }
-      vw_ptr->predict(raw_examples);
+      this->vw_ptr->predict(raw_examples);
       for (int i = 0; i < example_list.size(); i++) { raw_examples[i]->test_only = prev_test_only_value[i]; }
-      return prediction_to_val(raw_examples[0]->pred, vw_ptr->l->get_output_prediction_type());
+      return prediction_to_val(raw_examples[0]->pred, this->vw_ptr->l->get_output_prediction_type());
     }
   }
 
@@ -218,14 +238,14 @@ struct vw_model
     if (example_list.size() == 1)
     {
       auto* ex = example_list[0]->inner_ptr();
-      vw_ptr->learn(*ex);
+      this->vw_ptr->learn(*ex);
     }
     else
     {
       std::vector<example*> raw_examples;
       raw_examples.reserve(example_list.size());
       for (auto& ex : example_list) { raw_examples.push_back(ex->inner_ptr()); }
-      vw_ptr->learn(raw_examples);
+      this->vw_ptr->learn(raw_examples);
     }
   }
 
@@ -235,28 +255,99 @@ struct vw_model
     if (example_list.size() == 1)
     {
       auto* ex = example_list[0]->inner_ptr();
-      vw_ptr->finish_example(*ex);
+      this->vw_ptr->finish_example(*ex);
     }
     else
     {
       std::vector<example*> raw_examples;
       raw_examples.reserve(example_list.size());
       for (auto& ex : example_list) { raw_examples.push_back(ex->inner_ptr()); }
-      vw_ptr->finish_example(raw_examples);
+      this->vw_ptr->finish_example(raw_examples);
     }
 
     for (auto& ex_ptr : example_list) { ex_ptr->release(); }
   }
-
-  float sum_loss() const { return vw_ptr->sd->sum_loss; }
-  float weighted_labeled_examples() const { return vw_ptr->sd->weighted_labeled_examples; }
-
-  prediction_type_t get_prediction_type() const { return vw_ptr->l->get_output_prediction_type(); }
-
-  std::shared_ptr<vw> vw_ptr;
 };
 
-std::shared_ptr<example_ptr> example_ptr::clone(const vw_model& vw_ptr) const
+template <typename MixIn = vw_model_basic>
+struct cb_vw_model : MixIn
+{
+  // TODO check or restrict arguments to be cb_adf arguments
+  // should the model be renamed to cb_adf_vw_model?
+  cb_vw_model(const std::string& args) : MixIn(args) {}
+
+  cb_vw_model(const std::string& args, size_t _bytes, int size) : MixIn(args, _bytes, size) {}
+
+  emscripten::val predict(const emscripten::val& example_input)
+  {
+    auto example_list = parse(example_input);
+
+    for (auto* ex : example_list) { VW::setup_example(*this->vw_ptr, ex); }
+
+    this->vw_ptr->predict(example_list);
+    auto ret = prediction_to_val(example_list[0]->pred, this->vw_ptr->l->get_output_prediction_type());
+    finish_example(example_list);
+    return ret;
+  }
+
+  void learn(const emscripten::val& example_input)
+  {
+    auto example_list = parse(example_input);
+
+    unsigned int length = 0;
+    if (!example_input.hasOwnProperty("labels") || (length = example_input["labels"]["length"].as<unsigned int>()) <= 0)
+    {
+      THROW("labels is missing or empty, can not learn without a label");
+    }
+
+    size_t index_offset = 0;
+    if (VW::LEARNER::ec_is_example_header(
+            *example_list[0], this->vw_ptr->parser_runtime.example_parser->lbl_parser.label_type))
+    {
+      index_offset = 1;
+    }
+
+    for (unsigned int i = 0; i < length; i++)
+    {
+      const auto& js_object = example_input["labels"][i];
+      auto action = js_object["action"].as<uint32_t>();
+
+      if (action + index_offset >= example_list.size()) { THROW("action index out of bounds: " << action); }
+
+      example_list[action + index_offset]->l.cb.costs.push_back(
+          {js_object["cost"].as<float>(), js_object["action"].as<uint32_t>(), js_object["probability"].as<float>()});
+    }
+
+    for (auto* ex : example_list) { VW::setup_example(*this->vw_ptr, ex); }
+
+    this->vw_ptr->learn(example_list);
+
+    finish_example(example_list);
+  }
+
+private:
+  std::vector<example*> parse(const emscripten::val& example_input)
+  {
+    std::string context;
+    if (example_input.hasOwnProperty("text_context")) { context = example_input["text_context"].as<std::string>(); }
+    // TODO else if json_context else if embeddings vector of some kind, else throw
+
+    VW::string_view trimmed_ex_str = VW::trim_whitespace(VW::string_view(context));
+    std::vector<example*> examples;
+
+    this->vw_ptr->parser_runtime.example_parser->text_reader(this->vw_ptr.get(), trimmed_ex_str, examples);
+    assert(!examples.empty());
+    return examples;
+  }
+
+  void finish_example(std::vector<example*>& example_list)
+  {
+    assert(!example_list.empty());
+    this->vw_ptr->finish_example(example_list);
+  }
+};
+
+std::shared_ptr<example_ptr> example_ptr::clone(const vw_model<vw_model_basic>& vw_ptr) const
 {
   auto* new_ex = &VW::get_unused_example(vw_ptr.vw_ptr.get());
   VW::copy_example_data_with_label(new_ex, _example);
@@ -290,20 +381,30 @@ EMSCRIPTEN_BINDINGS(vwwasm)
       .value("actionPDFValue", prediction_type_t::action_pdf_value)
       .value("activeMulticlass", prediction_type_t::active_multiclass);
 
+  emscripten::class_<vw_model_basic>("VWBasicModel")
+      .constructor<std::string>()
+      .constructor<std::string, size_t, int>()
+      .property("sumLoss", &vw_model_basic::sum_loss)
+      .property("weightedLabeledExamples", &vw_model_basic::weighted_labeled_examples)
+      .property("predictionType", &vw_model_basic::get_prediction_type);
+
   // Currently this is structured such that parse returns a vector of example but to JS that is opaque.
   // All the caller can do is pass this opaque object to the other functions. Is it possible to convert this to a JS
   // array but it involves copying the contents of the array whenever going to/from js/c++ For now it is opaque as the
   // protoyype doesnt support operations on the example itself.
-  emscripten::class_<vw_model>("VWModel")
+  emscripten::class_<vw_model<>, emscripten::base<vw_model_basic>>("VWModel")
       .constructor<std::string>()
       .constructor<std::string, size_t, int>()
-      .function("parse", &vw_model::parse)
-      .function("predict", &vw_model::predict)
-      .function("learn", &vw_model::learn)
-      .function("finishExample", &vw_model::finish_example)
-      .property("sumLoss", &vw_model::sum_loss)
-      .property("weightedLabeledExamples", &vw_model::weighted_labeled_examples)
-      .property("predictionType", &vw_model::get_prediction_type);
+      .function("parse", &vw_model<>::parse)
+      .function("predict", &vw_model<>::predict)
+      .function("learn", &vw_model<>::learn)
+      .function("finishExample", &vw_model<>::finish_example);
 
   emscripten::register_vector<std::shared_ptr<example_ptr>>("ExamplePtrVector");
+
+  emscripten::class_<cb_vw_model<>, emscripten::base<vw_model_basic>>("CBVWModel")
+      .constructor<std::string>()
+      .constructor<std::string, size_t, int>()
+      .function("predict", &cb_vw_model<>::predict)
+      .function("learn", &cb_vw_model<>::learn);
 };
