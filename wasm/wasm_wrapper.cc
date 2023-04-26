@@ -430,7 +430,7 @@ EMSCRIPTEN_BINDINGS(vwwasm)
       .function("learn", &vw_model<>::learn)
       .function("finishExample", &vw_model<>::finish_example);
 
-  emscripten::class_<cb_vw_model<>, emscripten::base<vw_model_basic>>("CBVWModel")
+  emscripten::class_<cb_vw_model<>, emscripten::base<vw_model_basic>>("VWCBModel")
       .constructor<std::string>()
       .constructor<std::string, size_t, int>()
       .function("predict", &cb_vw_model<>::predict)

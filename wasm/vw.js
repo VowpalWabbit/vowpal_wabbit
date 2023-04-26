@@ -1,12 +1,16 @@
 const VWWasmModule = require('./out/vw-wasm.js');
 const fs = require('fs');
 
+const ModelType =
+{
+    VWType: 'VW',
+    VWCBType: 'VWCB',
+};
 
-
-class VW {
-    constructor({ args_str, model_file } = {}) {
+class VWBase {
+    constructor(type, { args_str, model_file } = {}) {
         if (args_str == undefined) {
-            console.error("Can not initialize")
+            console.error("Can not initialize vw object without args_str");
         }
 
         if (model_file !== undefined) {
@@ -14,11 +18,25 @@ class VW {
             let ptr = VWWasmModule._malloc(modelBuffer.byteLength);
             let heapBytes = new Uint8Array(VWWasmModule.HEAPU8.buffer, ptr, modelBuffer.byteLength);
             heapBytes.set(new Uint8Array(modelBuffer));
-            this._instance = new VWWasmModule.VWModel(args_str, ptr, modelBuffer.byteLength);
+            if (type == ModelType.VWType) {
+                this._instance = new VWWasmModule.VWModel(args_str, ptr, modelBuffer.byteLength);
+            } else if (type == ModelType.VWCBType) {
+                this._instance = new VWWasmModule.VWCBModel(args_str, ptr, modelBuffer.byteLength);
+            }
+            else {
+                console.error("Unknown model type");
+            }
             VWWasmModule._free(ptr);
         }
         else {
-            this._instance = new VWWasmModule.VWModel(args_str);
+            if (type == ModelType.VWType) {
+                this._instance = new VWWasmModule.VWModel(args_str);
+            } else if (type == ModelType.VWCBType) {
+                this._instance = new VWWasmModule.VWCBModel(args_str);
+            }
+            else {
+                console.error("Unknown model type");
+            }
         }
 
 
@@ -34,7 +52,7 @@ class VW {
     }
 
     saveModel(model_file) {
-        let char_vector = model2.getModel(); // todo rename
+        let char_vector = this._instance.getModel();
         const size = char_vector.size();
         const uint8Array = new Uint8Array(size);
 
@@ -56,68 +74,20 @@ class VW {
         VWWasmModule._free(ptr);
     }
 
-    delete()
-    {
+    delete() {
         this._instance.delete();
     }
 }
 
-class VWCB {
+class VW extends VWBase {
     constructor({ args_str, model_file } = {}) {
-        if (args_str == undefined) {
-            console.error("Can not initialize")
-        }
-
-        if (model_file !== undefined) {
-            let modelBuffer = fs.readFileSync(model_file);
-            let ptr = VWWasmModule._malloc(modelBuffer.byteLength);
-            let heapBytes = new Uint8Array(VWWasmModule.HEAPU8.buffer, ptr, modelBuffer.byteLength);
-            heapBytes.set(new Uint8Array(modelBuffer));
-            this._instance = new VWWasmModule.CBVWModel(args_str, ptr, modelBuffer.byteLength);
-            VWWasmModule._free(ptr);
-        }
-        else {
-            this._instance = new VWWasmModule.CBVWModel(args_str);
-        }
-
-
-        return new Proxy(this, {
-            get(target, propertyName, receiver) {
-                if (typeof target._instance[propertyName] == 'function') {
-                    return target._instance[propertyName].bind(target._instance);
-                }
-
-                return Reflect.get(target, propertyName, receiver);
-            }
-        });
+        super(ModelType.VWType, { args_str, model_file });
     }
+}
 
-    saveModel(model_file) {
-        let char_vector = this._instance.getModel(); // todo rename
-        const size = char_vector.size();
-        const uint8Array = new Uint8Array(size);
-
-        for (let i = 0; i < size; ++i) {
-            uint8Array[i] = char_vector.get(i);
-        }
-
-        fs.writeFileSync(model_file, Buffer.from(uint8Array));
-
-        char_vector.delete();
-    }
-
-    loadModel(model_file) {
-        let modelBuffer = fs.readFileSync(model_file);
-        let ptr = VWWasmModule._malloc(modelBuffer.byteLength);
-        let heapBytes = new Uint8Array(VWWasmModule.HEAPU8.buffer, ptr, modelBuffer.byteLength);
-        heapBytes.set(new Uint8Array(modelBuffer));
-        this._instance.loadModelFromBuffer(ptr, modelBuffer.byteLength);
-        VWWasmModule._free(ptr);
-    }
-
-    delete()
-    {
-        this._instance.delete();
+class VWCB extends VWBase {
+    constructor({ args_str, model_file } = {}) {
+        super(ModelType.VWCBType, { args_str, model_file });
     }
 }
 
