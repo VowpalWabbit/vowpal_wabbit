@@ -392,7 +392,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::epsilon_decay_setup(VW::se
                .help("Keep epsilon constant across models")
                .experimental())
       .add(make_option("bonferroni_denominator", bonferroni_denominator)
-                .default_value(0)
+               .default_value(0)
                .keep()
                .help("Factor to scale down significance level by, defaults to model count (bonferroni correction)")
                .experimental())

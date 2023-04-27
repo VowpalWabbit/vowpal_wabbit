@@ -103,8 +103,8 @@ TEST(EpsilonDecay, ChampChangeWIterations)
       });
 
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
-  auto ctr = simulator::_test_helper_hook(
-      std::vector<std::string>{"--epsilon_decay", "--model_count", "4", "--challenger_epsilon", "--cb_explore_adf", "--quiet", "-q", "::"},
+  auto ctr = simulator::_test_helper_hook(std::vector<std::string>{"--epsilon_decay", "--model_count", "4",
+                                              "--challenger_epsilon", "--cb_explore_adf", "--quiet", "-q", "::"},
       test_hooks, num_iterations, seed, swap_after);
 
   EXPECT_GT(ctr.back(), 0.4f);
