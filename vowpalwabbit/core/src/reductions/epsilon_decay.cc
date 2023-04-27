@@ -347,7 +347,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::epsilon_decay_setup(VW::se
   float epsilon_decay_estimator_decay;
   std::string epsilon_decay_audit_str;
   bool constant_epsilon = false;
-  bool fixed_significance_level = false;
+  uint64_t bonferroni_denominator;
   uint64_t min_champ_examples;
   float initial_epsilon;
   uint64_t shift_model_bounds;
@@ -391,9 +391,10 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::epsilon_decay_setup(VW::se
                .keep()
                .help("Keep epsilon constant across models")
                .experimental())
-      .add(make_option("fixed_significance_level", fixed_significance_level)
+      .add(make_option("bonferroni_denominator", bonferroni_denominator)
+                .default_value(0)
                .keep()
-               .help("Use fixed significance level as opposed to scaling by model count (bonferroni correction)")
+               .help("Factor to scale down significance level by, defaults to model count (bonferroni correction)")
                .experimental())
       .add(make_option("min_champ_examples", min_champ_examples)
                .default_value(0)
@@ -435,7 +436,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::epsilon_decay_setup(VW::se
 
   if (model_count < 1) { THROW("Model count must be 1 or greater"); }
 
-  if (!fixed_significance_level) { epsilon_decay_significance_level /= model_count; }
+  if (bonferroni_denominator == 0) { bonferroni_denominator = model_count; }
+  epsilon_decay_significance_level /= bonferroni_denominator;
 
   bool predict_only_model = options.was_supplied("predict_only_model");
   bool is_brentq = opt_func == "brentq";
