@@ -40,7 +40,7 @@ epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
     double epsilon_decay_significance_level, double epsilon_decay_estimator_decay, dense_parameters& weights,
     std::string epsilon_decay_audit_str, bool constant_epsilon, uint32_t& feature_width, uint64_t min_champ_examples,
     float initial_epsilon, uint64_t shift_model_bounds, bool reward_as_cost, double tol_x, bool is_brentq,
-    bool predict_only_model)
+    bool predict_only_model, bool challenger_epsilon)
     : _model_count(model_count)
     , _min_scope(min_scope)
     , _epsilon_decay_significance_level(epsilon_decay_significance_level)
@@ -54,6 +54,7 @@ epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
     , _shift_model_bounds(shift_model_bounds)
     , _reward_as_cost(reward_as_cost)
     , _predict_only_model(predict_only_model)
+    , _challenger_epsilon(challenger_epsilon)
 {
   _weight_indices.resize(model_count);
   conf_seq_estimators.reserve(model_count);
@@ -91,6 +92,18 @@ void epsilon_decay_data::update_weights(float init_ep, VW::LEARNER::learner& bas
 
     VW::action_scores champ_a_s;
 
+    // Get best action
+    uint32_t best_action = 0;
+    float best_score = 0.f;
+    for (const auto& a_s : examples[0]->pred.a_s)
+    {
+      if (a_s.score > best_score)
+      {
+        best_action = a_s.action;
+        best_score = a_s.score;
+      }
+    }
+
     // Process each model, then update the upper/lower bounds for each model
     for (int64_t model_ind = model_count - 1; model_ind >= 0; --model_ind)
     {
@@ -106,7 +119,12 @@ void epsilon_decay_data::update_weights(float init_ep, VW::LEARNER::learner& bas
       {
         if (a_s.action == labelled_action)
         {
-          float w = (logged.probability > 0) ? a_s.score / logged.probability : 0;
+          float p_pred = a_s.score;
+          if (model_ind != model_count - 1 && !_challenger_epsilon)
+          {
+            p_pred = (a_s.action == best_action) ? 1.f : 0.f;
+          }
+          float w = (logged.probability > 0) ? p_pred / logged.probability : 0;
           for (int64_t estimator_ind = 0; estimator_ind <= model_ind; ++estimator_ind)
           {
             conf_seq_estimators[model_ind][estimator_ind].update(w, r);
@@ -118,7 +136,7 @@ void epsilon_decay_data::update_weights(float init_ep, VW::LEARNER::learner& bas
             _audit_msg << "update_count: " << conf_seq_estimators[model_ind][model_ind].update_count
                        << " lb: " << conf_seq_estimators[model_ind][model_ind].lower_bound()
                        << " champ_ub: " << conf_seq_estimators[model_count - 1][model_ind].upper_bound()
-                       << " p_pred: " << a_s.score << "\n";
+                       << " p_pred: " << p_pred << "\n";
           }
           break;
         }
@@ -329,13 +347,14 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::epsilon_decay_setup(VW::se
   float epsilon_decay_estimator_decay;
   std::string epsilon_decay_audit_str;
   bool constant_epsilon = false;
-  bool fixed_significance_level = false;
+  uint64_t bonferroni_denominator;
   uint64_t min_champ_examples;
   float initial_epsilon;
   uint64_t shift_model_bounds;
   bool reward_as_cost;
   float tol_x;
   std::string opt_func = "bisect";
+  bool challenger_epsilon = false;
 
   option_group_definition new_options("[Reduction] Epsilon-Decaying Exploration");
   new_options
@@ -372,9 +391,10 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::epsilon_decay_setup(VW::se
                .keep()
                .help("Keep epsilon constant across models")
                .experimental())
-      .add(make_option("fixed_significance_level", fixed_significance_level)
+      .add(make_option("bonferroni_denominator", bonferroni_denominator)
+               .default_value(0)
                .keep()
-               .help("Use fixed significance level as opposed to scaling by model count (bonferroni correction)")
+               .help("Factor to scale down significance level by, defaults to model count (bonferroni correction)")
                .experimental())
       .add(make_option("min_champ_examples", min_champ_examples)
                .default_value(0)
@@ -405,14 +425,19 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::epsilon_decay_setup(VW::se
                .default_value("bisect")
                .keep()
                .one_of({"bisect", "brentq"})
-               .help("Optimization function for estimation)")
+               .help("Optimization function for estimation")
+               .experimental())
+      .add(make_option("challenger_epsilon", challenger_epsilon)
+               .keep()
+               .help("Use exploration for challenger model predictions")
                .experimental());
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   if (model_count < 1) { THROW("Model count must be 1 or greater"); }
 
-  if (!fixed_significance_level) { epsilon_decay_significance_level /= model_count; }
+  if (bonferroni_denominator == 0) { bonferroni_denominator = model_count; }
+  epsilon_decay_significance_level /= bonferroni_denominator;
 
   bool predict_only_model = options.was_supplied("predict_only_model");
   bool is_brentq = opt_func == "brentq";
@@ -420,7 +445,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::epsilon_decay_setup(VW::se
   auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(model_count, min_scope,
       epsilon_decay_significance_level, epsilon_decay_estimator_decay, all.weights.dense_weights,
       epsilon_decay_audit_str, constant_epsilon, all.reduction_state.total_feature_width, min_champ_examples,
-      initial_epsilon, shift_model_bounds, reward_as_cost, tol_x, is_brentq, predict_only_model);
+      initial_epsilon, shift_model_bounds, reward_as_cost, tol_x, is_brentq, predict_only_model, challenger_epsilon);
 
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs
