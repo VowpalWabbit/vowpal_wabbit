@@ -1,5 +1,5 @@
-const { initializeVWModule, VW, VWCB } = require('./vw.js');
 const VWModule = require('./out/vw-wasm.js');
+const { initializeVWModule } = require('./vw.js');
 
 // You must wait for the WASM runtime to be ready before using the module.
 
@@ -46,9 +46,10 @@ initializeVWModule().then(() => {
 
 // Delay test execution until the WASM VWModule is ready
 initializeVWModule().then(() => {
+    const vw = require('./vw.js');
     try {
         // Create a model with default options
-        let model = new VW({ args_str: "" });
+        let model = new vw.VW({ args_str: "" });
 
         let example_line = "0 | price:.23 sqft:.25 age:.05 2006";
         // For multi_ex learners, the input to parse should have newlines in it.
@@ -81,6 +82,6 @@ initializeVWModule().then(() => {
     catch (e) {
         // Exceptions that are produced by the module must be passed through
         // this transformation function to get the error info.
-        console.error(VWModule.getExceptionMessage(e));
+        console.error(vw.getExceptionMessage(e));
     }
 });
