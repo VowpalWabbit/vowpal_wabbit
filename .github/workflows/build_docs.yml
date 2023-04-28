@@ -107,6 +107,7 @@ jobs:
           pip install PyYAML
           npm install -g hbs-cli
           npm install -g glob
+          npm install -g glob-promise
       - name: Install wheel
         shell: bash
         run: |
