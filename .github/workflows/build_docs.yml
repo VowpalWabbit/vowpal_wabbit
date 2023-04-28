@@ -106,7 +106,7 @@ jobs:
           pip install -r requirements.txt
           pip install PyYAML
           npm install -g hbs-cli
-          npm install glob
+          npm install -g glob
       - name: Install wheel
         shell: bash
         run: |
