@@ -17,10 +17,6 @@
 #include <string>
 #include <string_view>
 
-// TODO
-// log to file
-// args of constructors
-
 std::array<std::string, 51> illegal_options = {"feature_mask", "initial_regressor", "input_feature_regularizer",
     "span_server", "unique_id", "total", "node", "span_server_port", "version", "audit", "progress", "limit_output",
     "dry_run", "help", "dictionary", "dictionary_path", "holdout_off", "holdout_period", "holdout_after",
@@ -165,10 +161,10 @@ struct vw_model_basic
     validate_options(*vw_ptr->options);
   }
 
-  vw_model_basic(const std::string& args_, size_t _bytes, int size)
+  vw_model_basic(const std::string& args_, size_t bytes_, int size)
   {
     args = "--quiet --no_stdin " + args_;
-    char* bytes = (char*)_bytes;
+    char* bytes = (char*)bytes_;
     io_buf io;
     io.add_file(VW::io::create_buffer_view(bytes, size));
     vw_ptr.reset(VW::initialize(args, &io));
@@ -351,6 +347,17 @@ struct cb_vw_model : MixIn
     finish_example(example_list);
   }
 
+  void learn_label_in_string(const emscripten::val& example_input)
+  {
+    auto example_list = parse(example_input);
+
+    for (auto* ex : example_list) { VW::setup_example(*this->vw_ptr, ex); }
+
+    this->vw_ptr->learn(example_list);
+
+    finish_example(example_list);
+  }
+
 private:
   std::vector<example*> parse(const emscripten::val& example_input)
   {
@@ -432,7 +439,8 @@ EMSCRIPTEN_BINDINGS(vwwasm)
       .constructor<std::string>()
       .constructor<std::string, size_t, int>()
       .function("predict", &cb_vw_model<>::predict)
-      .function("learn", &cb_vw_model<>::learn);
+      .function("learn", &cb_vw_model<>::learn)
+      .function("learnLabelInString", &cb_vw_model<>::learn_label_in_string);
 
   emscripten::register_vector<std::shared_ptr<example_ptr>>("ExamplePtrVector");
   emscripten::register_vector<char>("CharVector");

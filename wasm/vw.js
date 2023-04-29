@@ -15,8 +15,8 @@ const ProblemType =
 
 class WorkspaceBase {
     constructor(type, { args_str, model_file } = {}) {
-        if (args_str == undefined) {
-            console.error("Can not initialize vw object without args_str");
+        if (args_str === undefined) {
+            throw new Error("Can not initialize vw object without args_str");
         }
 
         if (model_file !== undefined) {
@@ -30,7 +30,7 @@ class WorkspaceBase {
                 this._instance = new VWWasmModule.VWCBModel(args_str, ptr, modelBuffer.byteLength);
             }
             else {
-                console.error("Unknown model type");
+                throw new Error("Unknown model type");
             }
             VWWasmModule._free(ptr);
         }
@@ -41,14 +41,14 @@ class WorkspaceBase {
                 this._instance = new VWWasmModule.VWCBModel(args_str);
             }
             else {
-                console.error("Unknown model type");
+                throw new Error("Unknown model type");
             }
         }
 
 
         return new Proxy(this, {
             get(target, propertyName, receiver) {
-                if (typeof target._instance[propertyName] == 'function') {
+                if (typeof target._instance[propertyName] === 'function') {
                     return target._instance[propertyName].bind(target._instance);
                 }
 
@@ -89,16 +89,78 @@ class Workspace extends WorkspaceBase {
     constructor({ args_str, model_file } = {}) {
         super(ProblemType.All, { args_str, model_file });
     }
+
+    logLine(log_file, line) {
+        fs.appendFile(log_file, line);
+    }
+
+    logLineSync(log_file, line) {
+        fs.appendFileSync(log_file, line);
+    }
 };
+
+
+function getLineFromExample(example) {
+    let context = ""
+    if (example.hasOwnProperty('text_context')) {
+        context = example.text_context;
+    }
+    else {
+        return { success: false, message: "Can not log example, there is no context available" };
+    }
+
+    const lines = context.split("\n").map((substr) => substr.trim());
+    lines.push("");
+
+    if (example.hasOwnProperty("labels") && example["labels"].length > 0) {
+        let indexOffset = 0;
+        if (context.includes("shared")) {
+            indexOffset = 1;
+        }
+
+
+        for (let i = 0; i < example["labels"].length; i++) {
+            let label = example["labels"][i];
+            if (label.action + indexOffset >= lines.length) {
+                return { success: false, message: "action index out of bounds: " + label.action };
+            }
+
+            lines[label.action + indexOffset] = label.action + ":" + label.cost + ":" + label.probability + " " + lines[label.action + indexOffset]
+        }
+    }
+    return { success: true, result: lines.join("\n") };
+}
 
 class CbWorkspace extends WorkspaceBase {
     constructor({ args_str, model_file } = {}) {
         super(ProblemType.CB, { args_str, model_file });
     }
+
+    logExample(log_file, example) {
+
+        let res = getLineFromExample(example);
+        if (res.success) {
+            fs.appendFile(log_file, res.result);
+        }
+        else {
+            console.error("Can not log example: " + res.message);
+        }
+
+    }
+
+    logExampleSync(log_file, example) {
+        let res = getLineFromExample(example);
+        if (res.success) {
+            fs.appendFileSync(log_file, res.result);
+        }
+        else {
+            console.error("Can not log example: " + res.message);
+        }
+    }
 };
 
 function getExceptionMessage(exception) {
-    VWWasmModule.getExceptionMessage(exception)
+    return VWWasmModule.getExceptionMessage(exception)
 };
 
 module.exports = new Promise((resolve) => {
@@ -127,7 +189,7 @@ module.exports = new Promise((resolve) => {
                 Prediction: Prediction,
                 getExceptionMessage: getExceptionMessage,
                 // todo hide wasm module?
-                VWWasmModule : VWWasmModule,
+                VWWasmModule: VWWasmModule,
             }
         )
     }
