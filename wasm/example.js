@@ -46,7 +46,7 @@ vwPromise.then((vw) => {
 vwPromise.then((vw) => {
     try {
         // Create a model with default options
-        let model = new vw.VW({ args_str: "" });
+        let model = new vw.Workspace({ args_str: "" });
 
         let example_line = "0 | price:.23 sqft:.25 age:.05 2006";
         // For multi_ex learners, the input to parse should have newlines in it.

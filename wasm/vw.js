@@ -5,15 +5,15 @@ const VWWasmModule = require('./out/vw-wasm.js');
 
 // internals
 
-const ModelType =
+const ProblemType =
 {
-    VWType: 'VW',
-    VWCBType: 'VWCB',
+    All: 'All',
+    CB: 'Cb',
 };
 
 // exported
 
-class VWBase {
+class WorkspaceBase {
     constructor(type, { args_str, model_file } = {}) {
         if (args_str == undefined) {
             console.error("Can not initialize vw object without args_str");
@@ -24,9 +24,9 @@ class VWBase {
             let ptr = VWWasmModule._malloc(modelBuffer.byteLength);
             let heapBytes = new Uint8Array(VWWasmModule.HEAPU8.buffer, ptr, modelBuffer.byteLength);
             heapBytes.set(new Uint8Array(modelBuffer));
-            if (type == ModelType.VWType) {
+            if (type == ProblemType.All) {
                 this._instance = new VWWasmModule.VWModel(args_str, ptr, modelBuffer.byteLength);
-            } else if (type == ModelType.VWCBType) {
+            } else if (type == ProblemType.CB) {
                 this._instance = new VWWasmModule.VWCBModel(args_str, ptr, modelBuffer.byteLength);
             }
             else {
@@ -35,9 +35,9 @@ class VWBase {
             VWWasmModule._free(ptr);
         }
         else {
-            if (type == ModelType.VWType) {
+            if (type == ProblemType.All) {
                 this._instance = new VWWasmModule.VWModel(args_str);
-            } else if (type == ModelType.VWCBType) {
+            } else if (type == ProblemType.CB) {
                 this._instance = new VWWasmModule.VWCBModel(args_str);
             }
             else {
@@ -85,15 +85,15 @@ class VWBase {
     }
 };
 
-class VW extends VWBase {
+class Workspace extends WorkspaceBase {
     constructor({ args_str, model_file } = {}) {
-        super(ModelType.VWType, { args_str, model_file });
+        super(ProblemType.All, { args_str, model_file });
     }
 };
 
-class VWCB extends VWBase {
+class CbWorkspace extends WorkspaceBase {
     constructor({ args_str, model_file } = {}) {
-        super(ModelType.VWCBType, { args_str, model_file });
+        super(ProblemType.CB, { args_str, model_file });
     }
 };
 
@@ -122,10 +122,11 @@ module.exports = new Promise((resolve) => {
 
         resolve(
             {
-                VW: VW,
-                VWCB: VWCB,
+                Workspace: Workspace,
+                CbWorkspace: CbWorkspace,
                 Prediction: Prediction,
                 getExceptionMessage: getExceptionMessage,
+                // todo hide wasm module?
                 VWWasmModule : VWWasmModule,
             }
         )
