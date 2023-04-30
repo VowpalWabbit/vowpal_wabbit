@@ -260,7 +260,7 @@ describe('Call WASM VWModule', () => {
         });
     });
 
-    it('Make action_scores prediction with CBVW', () => {
+    it('Check logging to a file and learning form it', () => {
         let model = new vw.CbWorkspace({ args_str: "--cb_explore_adf" });
         assert.equal(model.predictionType(), vw.Prediction.Type.ActionProbs);
 
@@ -272,14 +272,18 @@ describe('Call WASM VWModule', () => {
         `};
 
         let filePath = path.join(__dirname, "logfile.txt");
-        model.logExampleSync(filePath, example);
+        model.startLogStream(filePath);
+
+        model.logExampleStream(example);
         example.labels = [{ action: 0, cost: 1.0, probability: 0.5 }]
-        model.logExampleSync(filePath, example);
+        model.logExampleStream(example);
 
         example.labels = [{ action: 10, cost: 1.0, probability: 0.5 }]
-        model.logExampleSync(filePath, example);
+        assert.throws(() => model.logExampleStream(example));
 
         assert(model.sumLoss() == 0);
+
+        model.endLogStream();
         const fileStream = fs.createReadStream(filePath);
         const rl = readline.createInterface({
             input: fileStream,
@@ -313,6 +317,68 @@ describe('Call WASM VWModule', () => {
                 }
             });
         });
+
+    });
+
+
+    it('Check logging errors', () => {
+
+        let model = new vw.CbWorkspace({ args_str: "--cb_explore_adf" });
+        assert.equal(model.predictionType(), vw.Prediction.Type.ActionProbs);
+
+        let example = {
+            text_context: `shared | s_1 s_2
+            | a_1 b_1 c_1
+            | a_2 b_2 c_2
+            | a_3 b_3 c_3
+        `};
+
+
+        assert.throws(() => model.logExampleStream(example));
+
+        let filePath = path.join(__dirname, "logfile3.txt");
+        model.startLogStream(filePath);
+
+        let filePath2 = path.join(__dirname, "logfile4.txt");
+        assert.throws(() => model.startLogStream(filePath2));
+
+        // try to log sync while the file async writer is active
+        assert.throws(() => model.logExampleSync(filePath, example));
+        if (fs.existsSync(filePath)) {
+            let stats = fs.statSync(filePath);
+            assert(stats.size === 0);
+        }
+
+        // log async to a different file is ok
+        model.logExampleSync(filePath2, example);
+        let stats2 = fs.statSync(filePath2);
+        assert(stats2.size > 0);
+
+        // call close and then log sync is ok
+        model.endLogStream();
+
+        model.logExampleSync(filePath, example);
+        let stats3 = fs.statSync(filePath);
+        assert(stats3.size > 0);
+
+        model.delete();
+
+        fs.unlink(filePath, (err) => {
+            if (err) {
+                console.error('Error removing file:', err);
+            } else {
+                console.log('File removed successfully:', filePath);
+            }
+        });
+
+        fs.unlink(filePath2, (err) => {
+            if (err) {
+                console.error('Error removing file:', err);
+            } else {
+                console.log('File removed successfully:', filePath);
+            }
+        });
+
     });
 
     it('Check save load of model that clashes with existing arguments', () => {

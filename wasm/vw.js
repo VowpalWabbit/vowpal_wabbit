@@ -19,6 +19,8 @@ class WorkspaceBase {
             throw new Error("Can not initialize vw object without args_str");
         }
 
+        this._outputLogStream = null;
+
         if (model_file !== undefined) {
             let modelBuffer = fs.readFileSync(model_file);
             let ptr = VWWasmModule._malloc(modelBuffer.byteLength);
@@ -80,22 +82,50 @@ class WorkspaceBase {
         VWWasmModule._free(ptr);
     }
 
+    startLogStream(log_file) {
+        if (this._outputLogStream !== null) {
+            throw new Error("Can not start log stream, log file is already specified. Call endLogStream first if you want to change the log file. Current log file: " + this._log_file);
+        }
+        else {
+            this._log_file = log_file;
+            this._outputLogStream = fs.createWriteStream(log_file, { flags: 'a' });
+        }
+    }
+    logLineStream(line) {
+        if (this._outputLogStream !== null) {
+            this._outputLogStream.write(line);
+        }
+        else {
+            throw new Error("Can not log line, log file is not specified");
+        }
+    }
+
+    endLogStream() {
+        if (this._outputLogStream !== null) {
+            this._outputLogStream.end();
+            this._outputLogStream = null;
+            this._log_file = null;
+        }
+        else {
+            console.error("Can not close log, log file is not specified");
+        }
+    }
+
+    logLineSync(log_file, line) {
+        if (this._outputLogStream !== null && this._log_file === log_file) {
+            throw new Error("Can not call logLineSync on log file while the same file has an async log writer active. Call endLogStream first. Log file: " + log_file);
+        }
+        fs.appendFileSync(log_file, line);
+    }
+
     delete() {
         this._instance.delete();
     }
 };
 
 class Workspace extends WorkspaceBase {
-    constructor({ args_str, model_file } = {}) {
-        super(ProblemType.All, { args_str, model_file });
-    }
-
-    logLine(log_file, line) {
-        fs.appendFile(log_file, line);
-    }
-
-    logLineSync(log_file, line) {
-        fs.appendFileSync(log_file, line);
+    constructor({ args_str, model_file, log_file } = {}) {
+        super(ProblemType.All, { args_str, model_file, log_file });
     }
 };
 
@@ -106,7 +136,7 @@ function getLineFromExample(example) {
         context = example.text_context;
     }
     else {
-        return { success: false, message: "Can not log example, there is no context available" };
+        throw new Error("Can not log example, there is no context available");
     }
 
     const lines = context.split("\n").map((substr) => substr.trim());
@@ -122,41 +152,30 @@ function getLineFromExample(example) {
         for (let i = 0; i < example["labels"].length; i++) {
             let label = example["labels"][i];
             if (label.action + indexOffset >= lines.length) {
-                return { success: false, message: "action index out of bounds: " + label.action };
+                throw new Error("action index out of bounds: " + label.action);
             }
 
             lines[label.action + indexOffset] = label.action + ":" + label.cost + ":" + label.probability + " " + lines[label.action + indexOffset]
         }
     }
-    return { success: true, result: lines.join("\n") };
+    return lines.join("\n");
 }
 
 class CbWorkspace extends WorkspaceBase {
-    constructor({ args_str, model_file } = {}) {
-        super(ProblemType.CB, { args_str, model_file });
+    constructor({ args_str, model_file, log_file } = {}) {
+        super(ProblemType.CB, { args_str, model_file, log_file });
     }
 
-    logExample(log_file, example) {
-
-        let res = getLineFromExample(example);
-        if (res.success) {
-            fs.appendFile(log_file, res.result);
-        }
-        else {
-            console.error("Can not log example: " + res.message);
-        }
-
+    logExampleStream(example) {
+        let line = getLineFromExample(example);
+        this.logLineStream(line);
     }
 
     logExampleSync(log_file, example) {
-        let res = getLineFromExample(example);
-        if (res.success) {
-            fs.appendFileSync(log_file, res.result);
-        }
-        else {
-            console.error("Can not log example: " + res.message);
-        }
+        let line = getLineFromExample(example);
+        this.logLineSync(log_file, line);
     }
+
 };
 
 function getExceptionMessage(exception) {
