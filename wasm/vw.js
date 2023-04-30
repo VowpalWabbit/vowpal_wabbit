@@ -92,7 +92,7 @@ class WorkspaceBase {
         }
     }
 
-    logLineStream(line) {
+    logLineToStream(line) {
         if (this._outputLogStream !== null) {
             this._outputLogStream.write(line);
         }
@@ -167,9 +167,9 @@ class CbWorkspace extends WorkspaceBase {
         super(ProblemType.CB, { args_str, model_file, log_file });
     }
 
-    logExampleStream(example) {
+    logExampleToStream(example) {
         let ex_str = getExampleString(example);
-        this.logLineStream(ex_str);
+        this.logLineToStream(ex_str);
     }
 
     logExampleSync(log_file, example) {

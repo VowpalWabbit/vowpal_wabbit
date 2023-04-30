@@ -274,12 +274,12 @@ describe('Call WASM VWModule', () => {
         let filePath = path.join(__dirname, "logfile.txt");
         model.startLogStream(filePath);
 
-        model.logExampleStream(example);
+        model.logExampleToStream(example);
         example.labels = [{ action: 0, cost: 1.0, probability: 0.5 }]
-        model.logExampleStream(example);
+        model.logExampleToStream(example);
 
         example.labels = [{ action: 10, cost: 1.0, probability: 0.5 }]
-        assert.throws(() => model.logExampleStream(example));
+        assert.throws(() => model.logExampleToStream(example));
 
         assert(model.sumLoss() == 0);
 
@@ -334,7 +334,7 @@ describe('Call WASM VWModule', () => {
         `};
 
 
-        assert.throws(() => model.logExampleStream(example));
+        assert.throws(() => model.logExampleToStream(example));
 
         let filePath = path.join(__dirname, "logfile3.txt");
         model.startLogStream(filePath);
