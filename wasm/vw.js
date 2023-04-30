@@ -130,7 +130,6 @@ class Workspace extends WorkspaceBase {
     }
 };
 
-
 function getExampleString(example) {
     let context = ""
     if (example.hasOwnProperty('text_context')) {
@@ -148,7 +147,6 @@ function getExampleString(example) {
         if (context.includes("shared")) {
             indexOffset = 1;
         }
-
 
         for (let i = 0; i < example["labels"].length; i++) {
             let label = example["labels"][i];

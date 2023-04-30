@@ -414,4 +414,89 @@ describe('Call WASM VWModule', () => {
 
         model2.delete();
     });
+
+    it('Check samplePmf and predictAndsample', () => {
+        let example = {
+            text_context: `shared | s_1 s_2
+            | a_1 b_1 c_1
+            | a_2 b_2 c_2
+            | a_3 b_3 c_3`,
+            labels: [{ action: 0, cost: 1.0, probability: 0.5 }]
+        };
+
+        let chosen1;
+        let chosen2;
+        {
+            let model = new vw.CbWorkspace({ args_str: "--cb_explore_adf --epsilon 0.9" });
+            assert.equal(model.predictionType(), vw.Prediction.Type.ActionProbs);
+
+            model.learn(example);
+
+            let model_sumLoss = model.sumLoss();
+            assert(model_sumLoss > 0);
+
+            let prediction = model.predict(example);
+            chosen1 = model.samplePmf(prediction);
+            assert(chosen1["action"] == 0);
+            assert(chosen1["score"] > 0);
+        }
+        {
+            let model = new vw.CbWorkspace({ args_str: "--cb_explore_adf --epsilon 0.9" });
+            assert.equal(model.predictionType(), vw.Prediction.Type.ActionProbs);
+
+            model.learn(example);
+
+            let model_sumLoss = model.sumLoss();
+            assert(model_sumLoss > 0);
+
+            chosen2 = model.predictAndSample(example);
+            assert(chosen2["action"] == 0);
+            assert(chosen2["score"] > 0);
+        }
+
+        assert(chosen1["action"] == chosen2["action"]);
+        assert(chosen1["score"] == chosen2["score"]);
+
+        // check different seed
+        let chosen3;
+        {
+
+            let model = new vw.CbWorkspace({ args_str: "--cb_explore_adf --epsilon 0.9 --random_seed 10" });
+            assert.equal(model.predictionType(), vw.Prediction.Type.ActionProbs);
+
+            model.learn(example);
+
+            let model_sumLoss = model.sumLoss();
+            assert(model_sumLoss > 0);
+
+            chosen3 = model.predictAndSample(example);
+            assert(chosen3["action"] == 1);
+            assert(chosen3["score"] > 0);
+        }
+
+        assert(chosen1["action"] != chosen3["action"]);
+        assert(chosen1["score"] != chosen3["score"]);
+    });
+
+    it('Check samplePmf throws when called with wrong prediction type', () => {
+        {
+            let model = new vw.Workspace({ args_str: "" });
+            let example = model.parse("|a ab");
+            let prediction = model.predict(example);
+            assert.throws(() => model.samplePmf(prediction));
+            model.finishExample(example);
+            example.delete();
+            model.delete();
+        }
+        {
+            let model = new vw.Workspace({ args_str: "--oaa 2 --probabilities" });
+            let example = model.parse("|a ab");
+            let prediction = model.predict(example);
+            assert.throws(() => model.samplePmf(prediction));
+            model.finishExample(example);
+            example.delete();
+            model.delete();
+        }
+    });
+
 });
