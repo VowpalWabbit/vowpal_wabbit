@@ -91,12 +91,13 @@ class WorkspaceBase {
             this._outputLogStream = fs.createWriteStream(log_file, { flags: 'a' });
         }
     }
+
     logLineStream(line) {
         if (this._outputLogStream !== null) {
             this._outputLogStream.write(line);
         }
         else {
-            throw new Error("Can not log line, log file is not specified");
+            throw new Error("Can not log line, log file is not specified. Call startLogStream first.");
         }
     }
 
@@ -130,7 +131,7 @@ class Workspace extends WorkspaceBase {
 };
 
 
-function getLineFromExample(example) {
+function getExampleString(example) {
     let context = ""
     if (example.hasOwnProperty('text_context')) {
         context = example.text_context;
@@ -167,13 +168,13 @@ class CbWorkspace extends WorkspaceBase {
     }
 
     logExampleStream(example) {
-        let line = getLineFromExample(example);
-        this.logLineStream(line);
+        let ex_str = getExampleString(example);
+        this.logLineStream(ex_str);
     }
 
     logExampleSync(log_file, example) {
-        let line = getLineFromExample(example);
-        this.logLineSync(log_file, line);
+        let ex_str = getExampleString(example);
+        this.logLineSync(log_file, ex_str);
     }
 
 };
