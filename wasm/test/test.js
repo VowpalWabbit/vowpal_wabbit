@@ -518,25 +518,4 @@ describe('Call WASM VWModule', () => {
 
     });
 
-    it('Check samplePmf throws when called with wrong prediction type', () => {
-        {
-            let model = new vw.Workspace({ args_str: "" });
-            let example = model.parse("|a ab");
-            let prediction = model.predict(example);
-            assert.throws(() => model.samplePmf(prediction));
-            model.finishExample(example);
-            example.delete();
-            model.delete();
-        }
-        {
-            let model = new vw.Workspace({ args_str: "--oaa 2 --probabilities" });
-            let example = model.parse("|a ab");
-            let prediction = model.predict(example);
-            assert.throws(() => model.samplePmf(prediction));
-            model.finishExample(example);
-            example.delete();
-            model.delete();
-        }
-    });
-
 });

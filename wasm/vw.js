@@ -66,19 +66,6 @@ class WorkspaceBase {
         });
     }
 
-    samplePmf(pmf) {
-        let uuid = crypto.randomUUID();
-        let ret = this._instance._samplePmf(pmf, uuid);
-        ret["uuid"] = uuid;
-        return ret;
-    }
-
-    samplePmfWithUUID(pmf, uuid) {
-        let ret = this._instance._samplePmf(pmf, uuid);
-        ret["uuid"] = uuid;
-        return ret;
-    }
-
     saveModel(model_file) {
         let char_vector = this._instance.getModel();
         const size = char_vector.size();
@@ -183,6 +170,19 @@ function getExampleString(example) {
 class CbWorkspace extends WorkspaceBase {
     constructor({ args_str, model_file, log_file } = {}) {
         super(ProblemType.CB, { args_str, model_file, log_file });
+    }
+
+    samplePmf(pmf) {
+        let uuid = crypto.randomUUID();
+        let ret = this._instance._samplePmf(pmf, uuid);
+        ret["uuid"] = uuid;
+        return ret;
+    }
+
+    samplePmfWithUUID(pmf, uuid) {
+        let ret = this._instance._samplePmf(pmf, uuid);
+        ret["uuid"] = uuid;
+        return ret;
     }
 
     predictAndSample(example) {
