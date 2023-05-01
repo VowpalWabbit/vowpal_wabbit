@@ -27,9 +27,9 @@ class WorkspaceBase {
             let ptr = VWWasmModule._malloc(modelBuffer.byteLength);
             let heapBytes = new Uint8Array(VWWasmModule.HEAPU8.buffer, ptr, modelBuffer.byteLength);
             heapBytes.set(new Uint8Array(modelBuffer));
-            if (type == ProblemType.All) {
+            if (type === ProblemType.All) {
                 this._instance = new VWWasmModule.VWModel(args_str, ptr, modelBuffer.byteLength);
-            } else if (type == ProblemType.CB) {
+            } else if (type === ProblemType.CB) {
                 this._instance = new VWWasmModule.VWCBModel(args_str, ptr, modelBuffer.byteLength);
             }
             else {
@@ -38,9 +38,9 @@ class WorkspaceBase {
             VWWasmModule._free(ptr);
         }
         else {
-            if (type == ProblemType.All) {
+            if (type === ProblemType.All) {
                 this._instance = new VWWasmModule.VWModel(args_str);
-            } else if (type == ProblemType.CB) {
+            } else if (type === ProblemType.CB) {
                 this._instance = new VWWasmModule.VWCBModel(args_str);
             }
             else {
