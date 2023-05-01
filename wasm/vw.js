@@ -1,5 +1,6 @@
 const { log } = require('console');
 const fs = require('fs');
+const crypto = require('crypto');
 const VWWasmModule = require('./out/vw-wasm.js');
 
 
@@ -51,12 +52,31 @@ class WorkspaceBase {
         return new Proxy(this, {
             get(target, propertyName, receiver) {
                 if (typeof target._instance[propertyName] === 'function') {
+                    if (propertyName === '_samplePmf') {
+                        return undefined;
+                    }
+                    if (propertyName === '_predictAndSample') {
+                        return undefined;
+                    }
                     return target._instance[propertyName].bind(target._instance);
                 }
 
                 return Reflect.get(target, propertyName, receiver);
             }
         });
+    }
+
+    samplePmf(pmf) {
+        let uuid = crypto.randomUUID();
+        let ret = this._instance._samplePmf(pmf, uuid);
+        ret["uuid"] = uuid;
+        return ret;
+    }
+
+    samplePmfWithUUID(pmf, uuid) {
+        let ret = this._instance._samplePmf(pmf, uuid);
+        ret["uuid"] = uuid;
+        return ret;
     }
 
     saveModel(model_file) {
@@ -163,6 +183,19 @@ function getExampleString(example) {
 class CbWorkspace extends WorkspaceBase {
     constructor({ args_str, model_file, log_file } = {}) {
         super(ProblemType.CB, { args_str, model_file, log_file });
+    }
+
+    predictAndSample(example) {
+        let uuid = crypto.randomUUID();
+        let ret = this._instance._predictAndSample(example, uuid);
+        ret["uuid"] = uuid;
+        return ret;
+    }
+
+    predictAndSampleWithUUID(example, uuid) {
+        let ret = this._instance._predictAndSample(example, uuid);
+        ret["uuid"] = uuid;
+        return ret;
     }
 
     logExampleToStream(example) {

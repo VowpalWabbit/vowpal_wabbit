@@ -176,6 +176,8 @@ struct vw_model_basic
 
   virtual ~vw_model_basic() = default;
 
+  void set_sampling_seed(uint32_t seed) { _pmf_sampling_seed = seed; }
+
   void load_model_from_buffer(size_t _bytes, int size)
   {
     char* bytes = (char*)_bytes;
@@ -196,19 +198,17 @@ struct vw_model_basic
     return vec;
   }
 
-  uint32_t sample_pmf_internal(std::vector<float>& pmf)
+  uint32_t sample_pmf_internal(std::vector<float>& pmf, uint64_t seed)
   {
-    VW::details::merand48(_pmf_sampling_seed);
-
     uint32_t chosen_index = 0;
-    int ret_val = VW::explore::sample_after_normalizing(_pmf_sampling_seed, pmf.begin(), pmf.end(), chosen_index);
+    int ret_val = VW::explore::sample_after_normalizing(seed, pmf.begin(), pmf.end(), chosen_index);
 
     if (ret_val != 0) { THROW("sample_after_normalizing failed"); }
 
     return chosen_index;
   }
 
-  emscripten::val sample_pmf(const emscripten::val& a_s)
+  emscripten::val sample_pmf(const emscripten::val& a_s, const std::string& uid)
   {
     int length = 0;
     if (!a_s.hasOwnProperty("length") || (length = a_s["length"].as<int>()) <= 0)
@@ -227,7 +227,8 @@ struct vw_model_basic
       pmf[a_s[i]["action"].as<uint32_t>()] = a_s[i]["score"].as<float>();
     }
 
-    auto chosen_index = sample_pmf_internal(pmf);
+    const uint64_t seed = VW::uniform_hash(uid.data(), uid.size(), 0) + _pmf_sampling_seed;
+    auto chosen_index = sample_pmf_internal(pmf, seed);
 
     auto chosen_a_s = emscripten::val::object();
     chosen_a_s.set("action", chosen_index);
@@ -354,7 +355,7 @@ struct cb_vw_model : MixIn
     return ret;
   }
 
-  emscripten::val predict_and_sample(const emscripten::val& example_input)
+  emscripten::val predict_and_sample(const emscripten::val& example_input, const std::string& uid)
   {
     auto example_list = parse(example_input);
 
@@ -365,7 +366,8 @@ struct cb_vw_model : MixIn
     std::vector<float> pmf(example_list[0]->pred.a_s.size(), 0);
     for (const auto& as : example_list[0]->pred.a_s) { pmf[as.action] = as.score; }
 
-    auto chosen_index = this->sample_pmf_internal(pmf);
+    const uint64_t seed = VW::uniform_hash(uid.data(), uid.size(), 0) + this->_pmf_sampling_seed;
+    auto chosen_index = this->sample_pmf_internal(pmf, seed);
 
     auto chosen_a_s = emscripten::val::object();
     chosen_a_s.set("action", chosen_index);
@@ -485,7 +487,8 @@ EMSCRIPTEN_BINDINGS(vwwasm)
       .function("sumLoss", &vw_model_basic::sum_loss)
       .function("weightedLabeledExamples", &vw_model_basic::weighted_labeled_examples)
       .function("predictionType", &vw_model_basic::get_prediction_type)
-      .function("samplePmf", &vw_model_basic::sample_pmf);
+      .function("_samplePmf", &vw_model_basic::sample_pmf)
+      .function("setSamplingSeed", &vw_model_basic::set_sampling_seed);
 
   // Currently this is structured such that parse returns a vector of example but to JS that is opaque.
   // All the caller can do is pass this opaque object to the other functions. Is it possible to convert this to a JS
@@ -505,7 +508,7 @@ EMSCRIPTEN_BINDINGS(vwwasm)
       .function("predict", &cb_vw_model<>::predict)
       .function("learn", &cb_vw_model<>::learn)
       .function("learnLabelInString", &cb_vw_model<>::learn_label_in_string)
-      .function("predictAndSample", &cb_vw_model<>::predict_and_sample);
+      .function("_predictAndSample", &cb_vw_model<>::predict_and_sample);
 
   emscripten::register_vector<std::shared_ptr<example_ptr>>("ExamplePtrVector");
   emscripten::register_vector<char>("CharVector");

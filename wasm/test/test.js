@@ -215,12 +215,8 @@ describe('Call WASM VWModule', () => {
         // save load and continue learning and predicting
         let filePath = path.join(__dirname, "save_model.vw");
         model2.saveModel(filePath);
-        try {
-            model2.loadModel(filePath);
-        }
-        catch (e) {
-            console.error('Error caught while loading saved file:', vw.getExceptionMessage(e));
-        }
+        model2.loadModel(filePath);
+
         // DONE save load and continue learning and predicting
 
         model2.learn(example);
@@ -415,7 +411,65 @@ describe('Call WASM VWModule', () => {
         model2.delete();
     });
 
-    it('Check samplePmf and predictAndsample', () => {
+    it('Check samplePmf', () => {
+        let example = {
+            text_context: `shared | s_1 s_2
+            | a_1 b_1 c_1
+            | a_2 b_2 c_2
+            | a_3 b_3 c_3`,
+            labels: [{ action: 0, cost: 1.0, probability: 0.5 }]
+        };
+
+
+        let model = new vw.CbWorkspace({ args_str: "--cb_explore_adf --epsilon 0.9" });
+        assert.equal(model.predictionType(), vw.Prediction.Type.ActionProbs);
+
+        model.learn(example);
+
+        let model_sumLoss = model.sumLoss();
+        assert(model_sumLoss > 0);
+
+        let prediction = model.predict(example);
+
+        let chosen1 = model.samplePmf(prediction);
+        let uuid = chosen1["uuid"];
+        let chosen2 = model.samplePmfWithUUID(prediction, uuid);
+
+        assert(chosen1["action"] == chosen2["action"]);
+        assert(chosen1["score"] == chosen2["score"]);
+        assert(chosen1["uuid"] == chosen2["uuid"]);
+
+        model.delete();
+    });
+
+    it('Check predictAndSample', () => {
+        let example = {
+            text_context: `shared | s_1 s_2
+            | a_1 b_1 c_1
+            | a_2 b_2 c_2
+            | a_3 b_3 c_3`,
+            labels: [{ action: 0, cost: 1.0, probability: 0.5 }]
+        };
+
+        let model = new vw.CbWorkspace({ args_str: "--cb_explore_adf --epsilon 0.9" });
+        assert.equal(model.predictionType(), vw.Prediction.Type.ActionProbs);
+
+        model.learn(example);
+
+        let model_sumLoss = model.sumLoss();
+        assert(model_sumLoss > 0);
+
+        let chosen1 = model.predictAndSample(example);
+        let uuid = chosen1["uuid"];
+        let chosen2 = model.predictAndSampleWithUUID(example, uuid);
+        assert(chosen1["uuid"] == chosen2["uuid"]);
+        assert(chosen1["action"] == chosen2["action"]);
+        assert(chosen1["score"] == chosen2["score"]);
+        model.delete();
+
+    });
+
+    it('Check samplePmf and predictAndSample', () => {
         let example = {
             text_context: `shared | s_1 s_2
             | a_1 b_1 c_1
@@ -426,7 +480,11 @@ describe('Call WASM VWModule', () => {
 
         let chosen1;
         let chosen2;
+
+        let uuid = "1234";
+
         {
+
             let model = new vw.CbWorkspace({ args_str: "--cb_explore_adf --epsilon 0.9" });
             assert.equal(model.predictionType(), vw.Prediction.Type.ActionProbs);
 
@@ -435,12 +493,12 @@ describe('Call WASM VWModule', () => {
             let model_sumLoss = model.sumLoss();
             assert(model_sumLoss > 0);
 
-            let prediction = model.predict(example);
-            chosen1 = model.samplePmf(prediction);
-            assert(chosen1["action"] == 0);
-            assert(chosen1["score"] > 0);
+            chosen1 = model.predictAndSampleWithUUID(example, uuid);
+            model.delete();
         }
+
         {
+
             let model = new vw.CbWorkspace({ args_str: "--cb_explore_adf --epsilon 0.9" });
             assert.equal(model.predictionType(), vw.Prediction.Type.ActionProbs);
 
@@ -449,33 +507,15 @@ describe('Call WASM VWModule', () => {
             let model_sumLoss = model.sumLoss();
             assert(model_sumLoss > 0);
 
-            chosen2 = model.predictAndSample(example);
-            assert(chosen2["action"] == 0);
-            assert(chosen2["score"] > 0);
+            chosen2 = model.predictAndSampleWithUUID(example, uuid);
+            model.delete();
         }
 
+        assert(chosen1["uuid"] == uuid);
+        assert(chosen1["uuid"] == chosen2["uuid"]);
         assert(chosen1["action"] == chosen2["action"]);
         assert(chosen1["score"] == chosen2["score"]);
 
-        // check different seed
-        let chosen3;
-        {
-
-            let model = new vw.CbWorkspace({ args_str: "--cb_explore_adf --epsilon 0.9 --random_seed 10" });
-            assert.equal(model.predictionType(), vw.Prediction.Type.ActionProbs);
-
-            model.learn(example);
-
-            let model_sumLoss = model.sumLoss();
-            assert(model_sumLoss > 0);
-
-            chosen3 = model.predictAndSample(example);
-            assert(chosen3["action"] == 1);
-            assert(chosen3["score"] > 0);
-        }
-
-        assert(chosen1["action"] != chosen3["action"]);
-        assert(chosen1["score"] != chosen3["score"]);
     });
 
     it('Check samplePmf throws when called with wrong prediction type', () => {
