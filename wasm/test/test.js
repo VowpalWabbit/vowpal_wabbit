@@ -1,6 +1,7 @@
 const assert = require('assert');
 const mocha = require('mocha');
 const fs = require('fs');
+const readline = require('readline');
 const path = require('path');
 
 const vwPromise = require('../vw.js');
@@ -109,30 +110,14 @@ describe('Call WASM VWModule', () => {
         assert(model.sumLoss() == 0);
 
         // try learning without setting a label
-        try {
-            model.learn(example);
-        }
-        catch (e) {
-            console.error('Error caught from C++ during learn:', vw.getExceptionMessage(e));
-        }
+        assert.throws(() => model.learn(example));
 
         // try learning with an empty label
-        try {
-            example.labels = []
-            model.learn(example);
-        }
-        catch (e) {
-            console.error('Error caught from C++ during learn:', vw.getExceptionMessage(e));
-        }
+        example.labels = []
+        assert.throws(() => model.learn(example));
 
-        // try learning with a label that has an action out of bounds
-        try {
-            example.labels = [{ action: 10, cost: 1.0, probability: 0.5 }]
-            model.learn(example);
-        }
-        catch (e) {
-            console.error('Error caught from C++ during learn:', vw.getExceptionMessage(e));
-        }
+        example.labels = [{ action: 10, cost: 1.0, probability: 0.5 }]
+        assert.throws(() => model.learn(example));
 
         example.labels = [{ action: 0, cost: 1.0, probability: 0.5 }]
         model.learn(example);
@@ -275,5 +260,158 @@ describe('Call WASM VWModule', () => {
         });
     });
 
-    // it('Check save load of model that clashes with existing arguments', () => {
+    it('Check logging to a file and learning form it', () => {
+        let model = new vw.CbWorkspace({ args_str: "--cb_explore_adf" });
+        assert.equal(model.predictionType(), vw.Prediction.Type.ActionProbs);
+
+        let example = {
+            text_context: `shared | s_1 s_2
+            | a_1 b_1 c_1
+            | a_2 b_2 c_2
+            | a_3 b_3 c_3
+        `};
+
+        let filePath = path.join(__dirname, "logfile.txt");
+        model.startLogStream(filePath);
+
+        model.logExampleToStream(example);
+        example.labels = [{ action: 0, cost: 1.0, probability: 0.5 }]
+        model.logExampleToStream(example);
+
+        example.labels = [{ action: 10, cost: 1.0, probability: 0.5 }]
+        assert.throws(() => model.logExampleToStream(example));
+
+        assert(model.sumLoss() == 0);
+
+        model.endLogStream();
+        const fileStream = fs.createReadStream(filePath);
+        const rl = readline.createInterface({
+            input: fileStream,
+            crlfDelay: Infinity,
+            output: process.stdout,
+            terminal: false,
+        });
+
+        let ex = { text_context: "" };
+
+        rl.on('line', (line) => {
+            if (line.trim() === '') {
+                model.learnLabelInString(ex);
+                ex.text_context = "";
+            }
+            else {
+                ex.text_context = ex.text_context + line + "\n";
+            }
+        });
+
+        rl.on('close', () => {
+            assert(model.sumLoss() > 0);
+
+            model.delete();
+
+            fs.unlink(filePath, (err) => {
+                if (err) {
+                    console.error('Error removing file:', err);
+                } else {
+                    console.log('File removed successfully:', filePath);
+                }
+            });
+        });
+
+    });
+
+
+    it('Check logging errors', () => {
+
+        let model = new vw.CbWorkspace({ args_str: "--cb_explore_adf" });
+        assert.equal(model.predictionType(), vw.Prediction.Type.ActionProbs);
+
+        let example = {
+            text_context: `shared | s_1 s_2
+            | a_1 b_1 c_1
+            | a_2 b_2 c_2
+            | a_3 b_3 c_3
+        `};
+
+
+        assert.throws(() => model.logExampleToStream(example));
+
+        let filePath = path.join(__dirname, "logfile3.txt");
+        model.startLogStream(filePath);
+
+        let filePath2 = path.join(__dirname, "logfile4.txt");
+        assert.throws(() => model.startLogStream(filePath2));
+
+        // try to log sync while the file async writer is active
+        assert.throws(() => model.logExampleSync(filePath, example));
+        if (fs.existsSync(filePath)) {
+            let stats = fs.statSync(filePath);
+            assert(stats.size === 0);
+        }
+
+        // log async to a different file is ok
+        model.logExampleSync(filePath2, example);
+        let stats2 = fs.statSync(filePath2);
+        assert(stats2.size > 0);
+
+        // call close and then log sync is ok
+        model.endLogStream();
+
+        model.logExampleSync(filePath, example);
+        let stats3 = fs.statSync(filePath);
+        assert(stats3.size > 0);
+
+        model.delete();
+
+        fs.unlink(filePath, (err) => {
+            if (err) {
+                console.error('Error removing file:', err);
+            } else {
+                console.log('File removed successfully:', filePath);
+            }
+        });
+
+        fs.unlink(filePath2, (err) => {
+            if (err) {
+                console.error('Error removing file:', err);
+            } else {
+                console.log('File removed successfully:', filePath);
+            }
+        });
+
+    });
+
+    it('Check save load of model that clashes with existing arguments', () => {
+        let example = {
+            text_context: `shared | s_1 s_2
+                | a_1 b_1 c_1
+                | a_2 b_2 c_2
+                | a_3 b_3 c_3`,
+            labels: [{ action: 0, cost: 1.0, probability: 0.5 }]
+        };
+
+        let example2 = {
+            text_context: `shared | s1_1 s1_2
+                | a_1 b_1 c_1
+                | a_2 b_2 c_2
+                | a_3 b_3 c_3`,
+            labels: [{ action: 1, cost: 2.0, probability: 0.8 }]
+        };
+
+        let model1 = new vw.CbWorkspace({ args_str: "--cb_explore_adf --squarecb" });
+
+        model1.learn(example);
+        model1.learn(example2);
+
+        // save load and continue learning and predicting
+        let filePath = path.join(__dirname, "save_model.vw");
+        model1.saveModel(filePath);
+        model1.delete();
+
+        let model2 = new vw.CbWorkspace({ args_str: "--cats 2 --min_value 0 --max_value 1 --bandwidth 1" });
+
+        assert.throws(() => model2.loadModel(filePath));
+
+        model2.delete();
+    });
 });
