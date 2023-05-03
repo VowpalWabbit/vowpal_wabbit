@@ -3,6 +3,7 @@
 #include "vw/core/learner.h"
 #include "vw/core/parse_example.h"
 #include "vw/core/parse_primitives.h"
+#include "vw/core/parse_regressor.h"
 #include "vw/core/prediction_type.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
@@ -153,24 +154,44 @@ emscripten::val prediction_to_val(const polyprediction& pred, prediction_type_t 
 
 struct vw_model_basic
 {
-  vw_model_basic(const std::string& args)
+  vw_model_basic(const std::string& args_)
   {
-    std::string all_args = "--quiet --no_stdin " + args;
-    vw_ptr.reset(VW::initialize(all_args));
+    args = "--quiet --no_stdin " + args_;
+    vw_ptr.reset(VW::initialize(args));
     validate_options(*vw_ptr->options);
   }
 
-  vw_model_basic(const std::string& args, size_t _bytes, int size)
+  vw_model_basic(const std::string& args_, size_t bytes_, int size)
   {
-    std::string all_args = "--quiet --no_stdin " + args;
-    char* bytes = (char*)_bytes;
+    args = "--quiet --no_stdin " + args_;
+    char* bytes = (char*)bytes_;
     io_buf io;
     io.add_file(VW::io::create_buffer_view(bytes, size));
-    vw_ptr.reset(VW::initialize(all_args, &io));
+    vw_ptr.reset(VW::initialize(args, &io));
     validate_options(*vw_ptr->options);
   }
 
   virtual ~vw_model_basic() = default;
+
+  void load_model_from_buffer(size_t _bytes, int size)
+  {
+    char* bytes = (char*)_bytes;
+    io_buf io;
+    io.add_file(VW::io::create_buffer_view(bytes, size));
+    vw_ptr.reset(VW::initialize(args, &io));
+    validate_options(*vw_ptr->options);
+  }
+
+  std::vector<char> get_model()
+  {
+    VW::io_buf io_temp;
+    auto buffer = std::make_shared<std::vector<char>>();
+    io_temp.add_file(VW::io::create_vector_writer(buffer));
+    VW::details::dump_regressor(*vw_ptr, io_temp, false);
+    auto vec = *buffer.get();
+    buffer.reset();
+    return vec;
+  }
 
   float sum_loss() const { return vw_ptr->sd->sum_loss; }
   float weighted_labeled_examples() const { return vw_ptr->sd->weighted_labeled_examples; }
@@ -178,6 +199,7 @@ struct vw_model_basic
   prediction_type_t get_prediction_type() const { return vw_ptr->l->get_output_prediction_type(); }
 
   std::shared_ptr<vw> vw_ptr;
+  std::string args;
 };
 
 template <typename MixIn>
@@ -325,6 +347,17 @@ struct cb_vw_model : MixIn
     finish_example(example_list);
   }
 
+  void learn_label_in_string(const emscripten::val& example_input)
+  {
+    auto example_list = parse(example_input);
+
+    for (auto* ex : example_list) { VW::setup_example(*this->vw_ptr, ex); }
+
+    this->vw_ptr->learn(example_list);
+
+    finish_example(example_list);
+  }
+
 private:
   std::vector<example*> parse(const emscripten::val& example_input)
   {
@@ -347,7 +380,7 @@ private:
   }
 };
 
-std::shared_ptr<example_ptr> example_ptr::clone(const vw_model<vw_model_basic>& vw_ptr) const
+std::shared_ptr<example_ptr> example_ptr::clone(const vw_model<>& vw_ptr) const
 {
   auto* new_ex = &VW::get_unused_example(vw_ptr.vw_ptr.get());
   VW::copy_example_data_with_label(new_ex, _example);
@@ -381,12 +414,14 @@ EMSCRIPTEN_BINDINGS(vwwasm)
       .value("actionPDFValue", prediction_type_t::action_pdf_value)
       .value("activeMulticlass", prediction_type_t::active_multiclass);
 
-  emscripten::class_<vw_model_basic>("VWBasicModel")
+  emscripten::class_<vw_model_basic>("Basic")
       .constructor<std::string>()
       .constructor<std::string, size_t, int>()
-      .property("sumLoss", &vw_model_basic::sum_loss)
-      .property("weightedLabeledExamples", &vw_model_basic::weighted_labeled_examples)
-      .property("predictionType", &vw_model_basic::get_prediction_type);
+      .function("loadModelFromBuffer", &vw_model_basic::load_model_from_buffer)
+      .function("getModel", &vw_model_basic::get_model)
+      .function("sumLoss", &vw_model_basic::sum_loss)
+      .function("weightedLabeledExamples", &vw_model_basic::weighted_labeled_examples)
+      .function("predictionType", &vw_model_basic::get_prediction_type);
 
   // Currently this is structured such that parse returns a vector of example but to JS that is opaque.
   // All the caller can do is pass this opaque object to the other functions. Is it possible to convert this to a JS
@@ -400,11 +435,13 @@ EMSCRIPTEN_BINDINGS(vwwasm)
       .function("learn", &vw_model<>::learn)
       .function("finishExample", &vw_model<>::finish_example);
 
-  emscripten::register_vector<std::shared_ptr<example_ptr>>("ExamplePtrVector");
-
-  emscripten::class_<cb_vw_model<>, emscripten::base<vw_model_basic>>("CBVWModel")
+  emscripten::class_<cb_vw_model<>, emscripten::base<vw_model_basic>>("VWCBModel")
       .constructor<std::string>()
       .constructor<std::string, size_t, int>()
       .function("predict", &cb_vw_model<>::predict)
-      .function("learn", &cb_vw_model<>::learn);
+      .function("learn", &cb_vw_model<>::learn)
+      .function("learnLabelInString", &cb_vw_model<>::learn_label_in_string);
+
+  emscripten::register_vector<std::shared_ptr<example_ptr>>("ExamplePtrVector");
+  emscripten::register_vector<char>("CharVector");
 };
