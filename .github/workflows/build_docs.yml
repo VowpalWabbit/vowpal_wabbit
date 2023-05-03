@@ -106,8 +106,6 @@ jobs:
           pip install -r requirements.txt
           pip install PyYAML
           npm install -g handlebars
-          npm install -g glob
-          npm install -g glob-promise
       - name: Install wheel
         shell: bash
         run: |
