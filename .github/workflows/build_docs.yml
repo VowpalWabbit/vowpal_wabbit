@@ -103,7 +103,7 @@ jobs:
           pip install -r python/docs/build-requirements.txt
           pip install -r requirements.txt
           pip install PyYAML
-          npm install -g hbs-cli
+          npm install -g handlebars
       - name: Install wheel
         shell: bash
         run: |
