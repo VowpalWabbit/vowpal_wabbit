@@ -1,5 +1,6 @@
 const { log } = require('console');
 const fs = require('fs');
+const crypto = require('crypto');
 const VWWasmModule = require('./out/vw-wasm.js');
 
 
@@ -26,9 +27,9 @@ class WorkspaceBase {
             let ptr = VWWasmModule._malloc(modelBuffer.byteLength);
             let heapBytes = new Uint8Array(VWWasmModule.HEAPU8.buffer, ptr, modelBuffer.byteLength);
             heapBytes.set(new Uint8Array(modelBuffer));
-            if (type == ProblemType.All) {
+            if (type === ProblemType.All) {
                 this._instance = new VWWasmModule.VWModel(args_str, ptr, modelBuffer.byteLength);
-            } else if (type == ProblemType.CB) {
+            } else if (type === ProblemType.CB) {
                 this._instance = new VWWasmModule.VWCBModel(args_str, ptr, modelBuffer.byteLength);
             }
             else {
@@ -37,9 +38,9 @@ class WorkspaceBase {
             VWWasmModule._free(ptr);
         }
         else {
-            if (type == ProblemType.All) {
+            if (type === ProblemType.All) {
                 this._instance = new VWWasmModule.VWModel(args_str);
-            } else if (type == ProblemType.CB) {
+            } else if (type === ProblemType.CB) {
                 this._instance = new VWWasmModule.VWCBModel(args_str);
             }
             else {
@@ -51,6 +52,12 @@ class WorkspaceBase {
         return new Proxy(this, {
             get(target, propertyName, receiver) {
                 if (typeof target._instance[propertyName] === 'function') {
+                    if (propertyName === '_samplePmf') {
+                        return undefined;
+                    }
+                    if (propertyName === '_predictAndSample') {
+                        return undefined;
+                    }
                     return target._instance[propertyName].bind(target._instance);
                 }
 
@@ -130,7 +137,6 @@ class Workspace extends WorkspaceBase {
     }
 };
 
-
 function getExampleString(example) {
     let context = ""
     if (example.hasOwnProperty('text_context')) {
@@ -149,7 +155,6 @@ function getExampleString(example) {
             indexOffset = 1;
         }
 
-
         for (let i = 0; i < example["labels"].length; i++) {
             let label = example["labels"][i];
             if (label.action + indexOffset >= lines.length) {
@@ -165,6 +170,32 @@ function getExampleString(example) {
 class CbWorkspace extends WorkspaceBase {
     constructor({ args_str, model_file, log_file } = {}) {
         super(ProblemType.CB, { args_str, model_file, log_file });
+    }
+
+    samplePmf(pmf) {
+        let uuid = crypto.randomUUID();
+        let ret = this._instance._samplePmf(pmf, uuid);
+        ret["uuid"] = uuid;
+        return ret;
+    }
+
+    samplePmfWithUUID(pmf, uuid) {
+        let ret = this._instance._samplePmf(pmf, uuid);
+        ret["uuid"] = uuid;
+        return ret;
+    }
+
+    predictAndSample(example) {
+        let uuid = crypto.randomUUID();
+        let ret = this._instance._predictAndSample(example, uuid);
+        ret["uuid"] = uuid;
+        return ret;
+    }
+
+    predictAndSampleWithUUID(example, uuid) {
+        let ret = this._instance._predictAndSample(example, uuid);
+        ret["uuid"] = uuid;
+        return ret;
     }
 
     logExampleToStream(example) {
