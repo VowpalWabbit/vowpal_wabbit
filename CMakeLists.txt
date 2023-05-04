@@ -154,6 +154,7 @@ option(vw_BUILD_NET_CORE "Build .NET Core targets" OFF)
 option(vw_BUILD_NET_FRAMEWORK "Build .NET Framework targets" OFF)
 option(VW_USE_ASAN "Compile with AddressSanitizer" OFF)
 option(VW_USE_UBSAN "Compile with UndefinedBehaviorSanitizer" OFF)
+option(VW_BUILD_WASM "Add WASM target" OFF)
 
 if(VW_USE_ASAN)
   add_compile_definitions(VW_USE_ASAN)
@@ -258,6 +259,10 @@ endif()
 
 if(BUILD_BENCHMARKS)
   add_subdirectory(test/benchmarks)
+endif()
+
+if(VW_BUILD_WASM)
+  add_subdirectory(wasm)
 endif()
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
