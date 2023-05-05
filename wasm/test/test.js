@@ -107,7 +107,7 @@ describe('Call WASM VWModule', () => {
         assert(prediction[0].hasOwnProperty('action'));
         assert(prediction[0].hasOwnProperty('score'));
 
-        assert(model.sumLoss() == 0);
+        assert(model.sumLoss() === 0);
 
         // try learning without setting a label
         assert.throws(() => model.learn(example));
@@ -215,12 +215,8 @@ describe('Call WASM VWModule', () => {
         // save load and continue learning and predicting
         let filePath = path.join(__dirname, "save_model.vw");
         model2.saveModel(filePath);
-        try {
-            model2.loadModel(filePath);
-        }
-        catch (e) {
-            console.error('Error caught while loading saved file:', vw.getExceptionMessage(e));
-        }
+        model2.loadModel(filePath);
+
         // DONE save load and continue learning and predicting
 
         model2.learn(example);
@@ -281,7 +277,7 @@ describe('Call WASM VWModule', () => {
         example.labels = [{ action: 10, cost: 1.0, probability: 0.5 }]
         assert.throws(() => model.logExampleToStream(example));
 
-        assert(model.sumLoss() == 0);
+        assert(model.sumLoss() === 0);
 
         model.endLogStream();
         const fileStream = fs.createReadStream(filePath);
@@ -414,4 +410,112 @@ describe('Call WASM VWModule', () => {
 
         model2.delete();
     });
+
+    it('Check samplePmf', () => {
+        let example = {
+            text_context: `shared | s_1 s_2
+            | a_1 b_1 c_1
+            | a_2 b_2 c_2
+            | a_3 b_3 c_3`,
+            labels: [{ action: 0, cost: 1.0, probability: 0.5 }]
+        };
+
+
+        let model = new vw.CbWorkspace({ args_str: "--cb_explore_adf --epsilon 0.9" });
+        assert.equal(model.predictionType(), vw.Prediction.Type.ActionProbs);
+
+        model.learn(example);
+
+        let modelSumLoss = model.sumLoss();
+        assert(modelSumLoss > 0);
+
+        let prediction = model.predict(example);
+
+        let chosen1 = model.samplePmf(prediction);
+        let uuid = chosen1["uuid"];
+        let chosen2 = model.samplePmfWithUUID(prediction, uuid);
+
+        assert(chosen1["action"] === chosen2["action"]);
+        assert(chosen1["score"] === chosen2["score"]);
+        assert(chosen1["uuid"] === chosen2["uuid"]);
+
+        model.delete();
+    });
+
+    it('Check predictAndSample', () => {
+        let example = {
+            text_context: `shared | s_1 s_2
+            | a_1 b_1 c_1
+            | a_2 b_2 c_2
+            | a_3 b_3 c_3`,
+            labels: [{ action: 0, cost: 1.0, probability: 0.5 }]
+        };
+
+        let model = new vw.CbWorkspace({ args_str: "--cb_explore_adf --epsilon 0.9" });
+        assert.equal(model.predictionType(), vw.Prediction.Type.ActionProbs);
+
+        model.learn(example);
+
+        let modelSumLoss = model.sumLoss();
+        assert(modelSumLoss > 0);
+
+        let chosen1 = model.predictAndSample(example);
+        let uuid = chosen1["uuid"];
+        let chosen2 = model.predictAndSampleWithUUID(example, uuid);
+        assert(chosen1["uuid"] === chosen2["uuid"]);
+        assert(chosen1["action"] === chosen2["action"]);
+        assert(chosen1["score"] === chosen2["score"]);
+        model.delete();
+
+    });
+
+    it('Check samplePmf and predictAndSample', () => {
+        let example = {
+            text_context: `shared | s_1 s_2
+            | a_1 b_1 c_1
+            | a_2 b_2 c_2
+            | a_3 b_3 c_3`,
+            labels: [{ action: 0, cost: 1.0, probability: 0.5 }]
+        };
+
+        let chosen1;
+        let chosen2;
+
+        let uuid = "1234";
+
+        {
+
+            let model = new vw.CbWorkspace({ args_str: "--cb_explore_adf --epsilon 0.9" });
+            assert.equal(model.predictionType(), vw.Prediction.Type.ActionProbs);
+
+            model.learn(example);
+
+            let modelSumLoss = model.sumLoss();
+            assert(modelSumLoss > 0);
+
+            chosen1 = model.predictAndSampleWithUUID(example, uuid);
+            model.delete();
+        }
+
+        {
+
+            let model = new vw.CbWorkspace({ args_str: "--cb_explore_adf --epsilon 0.9" });
+            assert.equal(model.predictionType(), vw.Prediction.Type.ActionProbs);
+
+            model.learn(example);
+
+            let modelSumLoss = model.sumLoss();
+            assert(modelSumLoss > 0);
+
+            chosen2 = model.predictAndSampleWithUUID(example, uuid);
+            model.delete();
+        }
+
+        assert(chosen1["uuid"] === uuid);
+        assert(chosen1["uuid"] === chosen2["uuid"]);
+        assert(chosen1["action"] === chosen2["action"]);
+        assert(chosen1["score"] === chosen2["score"]);
+
+    });
+
 });
