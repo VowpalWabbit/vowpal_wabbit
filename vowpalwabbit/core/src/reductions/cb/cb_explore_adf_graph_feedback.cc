@@ -519,13 +519,11 @@ void cb_explore_adf_graph_feedback::learn(VW::LEARNER::learner& base, multi_ex& 
 void cb_explore_adf_graph_feedback::save_load(VW::io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
-  if (!read)
-  {
-    std::stringstream msg;
-    if (!read) { msg << "cb adf with graph feedback storing example counter:  = " << _counter << "\n"; }
-    VW::details::bin_text_read_write_fixed_validated(
-        io, reinterpret_cast<char*>(&_counter), sizeof(_counter), read, msg, text);
-  }
+
+  std::stringstream msg;
+  if (!read) { msg << "cb adf with graph feedback storing example counter:  = " << _counter << "\n"; }
+  VW::details::bin_text_read_write_fixed_validated(
+      io, reinterpret_cast<char*>(&_counter), sizeof(_counter), read, msg, text);
 }
 
 std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_graph_feedback_setup(
