@@ -128,7 +128,7 @@ class VWExampleLogger {
      * 
      * Takes a CB example, stringifies it by calling CBExampleToString, and appends it to the log file. Line is logged in an asynchronous manner.
      * 
-     * @param {object} example an example that will be stringified and appended to the log file
+     * @param {object} example a CB example that will be stringified and appended to the log file
      * @throws {Error} Throws an error if no logging stream has been started
      */
     logCBExampleToStream(example) {
@@ -142,7 +142,7 @@ class VWExampleLogger {
      * Every call to this function will open a new file handle, append the line and close the file handle.
      * 
      * @param {string} log_file the path to the file where the log will be appended to
-     * @param {object} example an example that will be stringified and appended to the log file
+     * @param {object} example a CB example that will be stringified and appended to the log file
      * @throws {Error} Throws an error if another logging stream has already been started
      */
     logCBExampleSync(log_file, example) {
