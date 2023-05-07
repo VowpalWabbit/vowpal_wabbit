@@ -45,7 +45,8 @@ vwPromise.then((vw) => {
     try {
         // Create a model with default options
         let model = new vw.CbWorkspace({ args_str: "--cb_explore_adf" });
-        model.startLogStream("mylogfile.txt");
+        let vwLogger = new vw.VWExampleLogger();
+        vwLogger.startLogStream("mylogfile.txt");
 
         let example = {
             text_context: `shared | s_1 s_2
@@ -60,11 +61,11 @@ vwPromise.then((vw) => {
 
         model.learn(example);
 
-        model.logExampleToStream(example);
+        vwLogger.logCBExampleToStream(example);
 
         model.saveModel("my_model.vw");
 
-        model.endLogStream();
+        vwLogger.endLogStream();
         model.delete();
 
         let model2 = new vw.CbWorkspace({ model_file: "my_model.vw" });

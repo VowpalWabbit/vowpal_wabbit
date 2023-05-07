@@ -263,6 +263,8 @@ describe('Call WASM VWModule', () => {
 
     it('Check logging to a file and learning form it', () => {
         let model = new vw.CbWorkspace({ args_str: "--cb_explore_adf" });
+        let vwLogger = new vw.VWExampleLogger();
+
         assert.equal(model.predictionType(), vw.Prediction.Type.ActionProbs);
 
         let example = {
@@ -273,18 +275,18 @@ describe('Call WASM VWModule', () => {
         `};
 
         let filePath = path.join(__dirname, "logfile.txt");
-        model.startLogStream(filePath);
+        vwLogger.startLogStream(filePath);
 
-        model.logExampleToStream(example);
+        vwLogger.logCBExampleToStream(example);
         example.labels = [{ action: 0, cost: 1.0, probability: 0.5 }]
-        model.logExampleToStream(example);
+        vwLogger.logCBExampleToStream(example);
 
         example.labels = [{ action: 10, cost: 1.0, probability: 0.5 }]
-        assert.throws(() => model.logExampleToStream(example));
+        assert.throws(() => vwLogger.logCBExampleToStream(example));
 
         assert(model.sumLoss() === 0);
 
-        model.endLogStream();
+        vwLogger.endLogStream();
         const fileStream = fs.createReadStream(filePath);
         const rl = readline.createInterface({
             input: fileStream,
@@ -325,6 +327,8 @@ describe('Call WASM VWModule', () => {
     it('Check logging errors', () => {
 
         let model = new vw.CbWorkspace({ args_str: "--cb_explore_adf" });
+        let vwLogger = new vw.VWExampleLogger();
+
         assert.equal(model.predictionType(), vw.Prediction.Type.ActionProbs);
 
         let example = {
@@ -335,30 +339,30 @@ describe('Call WASM VWModule', () => {
         `};
 
 
-        assert.throws(() => model.logExampleToStream(example));
+        assert.throws(() => vwLogger.logCBExampleToStream(example));
 
         let filePath = path.join(__dirname, "logfile3.txt");
-        model.startLogStream(filePath);
+        vwLogger.startLogStream(filePath);
 
         let filePath2 = path.join(__dirname, "logfile4.txt");
-        assert.throws(() => model.startLogStream(filePath2));
+        assert.throws(() => vwLogger.startLogStream(filePath2));
 
         // try to log sync while the file async writer is active
-        assert.throws(() => model.logExampleSync(filePath, example));
+        assert.throws(() => vwLogger.logCBExampleSync(filePath, example));
         if (fs.existsSync(filePath)) {
             let stats = fs.statSync(filePath);
             assert(stats.size === 0);
         }
 
         // log async to a different file is ok
-        model.logExampleSync(filePath2, example);
+        vwLogger.logCBExampleSync(filePath2, example);
         let stats2 = fs.statSync(filePath2);
         assert(stats2.size > 0);
 
         // call close and then log sync is ok
-        model.endLogStream();
+        vwLogger.endLogStream();
 
-        model.logExampleSync(filePath, example);
+        vwLogger.logCBExampleSync(filePath, example);
         let stats3 = fs.statSync(filePath);
         assert(stats3.size > 0);
 
