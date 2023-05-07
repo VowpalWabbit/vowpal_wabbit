@@ -347,7 +347,8 @@ arma::vec get_probs_from_coordinates(arma::mat& coordinates, const arma::vec& fh
 
   if (there_is_a_nan)
   {
-    for (size_t i = 0; i < num_actions; i++) { coordinates[i] = 1.f - fhat(i); }
+    float fhatmax = fhat.max();
+    for (size_t i = 0; i < num_actions; i++) { coordinates[i] = std::max(0.0, std::max(1.f, fhatmax) - fhat(i)); }
   }
 
   float p_sum = 0;
