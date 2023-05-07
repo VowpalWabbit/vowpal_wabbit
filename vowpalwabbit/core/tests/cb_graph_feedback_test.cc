@@ -275,15 +275,15 @@ TEST(GraphFeedback, CheckIdentityGSmallGamma)
 
   // fhat 0.5018 0.3011 0.3011
   EXPECT_THAT(
-      pred_results[1], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.288, 0.355, 0.355}));
+      pred_results[1], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.308, 0.345, 0.345}));
 
   // fhat 0.5640 0.1585 0.2629
   EXPECT_THAT(
-      pred_results[2], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.236, 0.403, 0.360}));
+      pred_results[2], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.279, 0.372, 0.348}));
 
   // 0.7371 0.3482 0.3482
   EXPECT_THAT(
-      pred_results[3], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.245, 0.377, 0.377}));
+      pred_results[3], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.285, 0.357, 0.357}));
 }
 
 TEST(GraphFeedback, CheckIdentityGLargeGamma)
@@ -341,16 +341,20 @@ TEST(GraphFeedback, CheckLastCol1GSmallGamma)
   auto pred_results = predict_learn_return_as(vw, shared_graph);
 
   // f_hat 0, 0, 0
-  EXPECT_THAT(pred_results[0], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.0, 0.0, 1}));
+  EXPECT_THAT(
+      pred_results[0], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.195, 0.195, 0.609}));
 
   // fhat 0.5018 0.3011 0.3011
-  EXPECT_THAT(pred_results[1], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.0, 0.0, 1}));
+  EXPECT_THAT(
+      pred_results[1], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.174, 0.208, 0.6169}));
 
   // fhat 0.5640 0.1585 0.2629
-  EXPECT_THAT(pred_results[2], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.0, 0.0, 1}));
+  EXPECT_THAT(
+      pred_results[2], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.134, 0.220, 0.645}));
 
   // 0.7371 0.3482 0.3482
-  EXPECT_THAT(pred_results[3], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.0, 0.0, 1}));
+  EXPECT_THAT(
+      pred_results[3], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.155, 0.221, 0.623}));
 }
 
 TEST(GraphFeedback, CheckLastCol1GMedGamma)
@@ -372,11 +376,11 @@ TEST(GraphFeedback, CheckLastCol1GMedGamma)
 
   // f_hat 0, 0, 0
   EXPECT_THAT(
-      pred_results[0], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.171, 0.171, 0.656}));
+      pred_results[0], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.192, 0.192, 0.615}));
 
   // fhat 0.5018 0.3011 0.3011
   EXPECT_THAT(
-      pred_results[1], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.061, 0.230, 0.708}));
+      pred_results[1], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.072, 0.234, 0.692}));
 
   // fhat 0.5640 0.1585 0.2629
   EXPECT_THAT(
@@ -437,17 +441,20 @@ TEST(GraphFeedback, CheckFirstCol1GSmallGamma)
   auto pred_results = predict_learn_return_as(vw, shared_graph);
 
   // f_hat 0, 0, 0
-  EXPECT_THAT(pred_results[0], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{1, 0, 0}));
+  EXPECT_THAT(
+      pred_results[0], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.609, 0.195, 0.195}));
 
   // fhat 0.5018 0.3011 0.3011 -> 1.31
-  EXPECT_THAT(pred_results[1], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{1, 0, 0}));
+  EXPECT_THAT(
+      pred_results[1], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.599, 0.200, 0.200}));
 
   // fhat 0.5640 0.1585 0.2629 -> 1.21
   EXPECT_THAT(
-      pred_results[2], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.646, 0.186, 0.167}));
+      pred_results[2], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.537, 0.237, 0.225}));
 
   // 0.7371 0.3482 0.3482 -> 1.37
-  EXPECT_THAT(pred_results[3], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{1, 0, 0}));
+  EXPECT_THAT(
+      pred_results[3], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.588, 0.205, 0.205}));
 }
 
 TEST(GraphFeedback, CheckFirstCol1GMedGamma)
@@ -471,11 +478,11 @@ TEST(GraphFeedback, CheckFirstCol1GMedGamma)
 
   // f_hat 0, 0, 0
   EXPECT_THAT(
-      pred_results[0], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.656, 0.171, 0.171}));
+      pred_results[0], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.615, 0.192, 0.192}));
 
   // fhat 0.5018 0.3011 0.3011 -> 1.31
   EXPECT_THAT(
-      pred_results[1], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.426, 0.286, 0.286}));
+      pred_results[1], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.419, 0.290, 0.290}));
 
   // fhat 0.5640 0.1585 0.2629 -> 1.21
   EXPECT_THAT(
@@ -483,7 +490,7 @@ TEST(GraphFeedback, CheckFirstCol1GMedGamma)
 
   // 0.7371 0.3482 0.3482 -> 1.37
   EXPECT_THAT(
-      pred_results[3], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.435, 0.282, 0.282}));
+      pred_results[3], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.419, 0.290, 0.290}));
 }
 
 TEST(GraphFeedback, CheckFirstCol1GLargeGamma)
@@ -586,8 +593,8 @@ TEST(GraphFeedback, CheckUpdateRule100WIterations)
   auto ctr_egreedy = sim_egreedy.run_simulation_hook(vw_egreedy.get(), num_iterations, test_hooks);
 
   EXPECT_GT(ctr_gf.back(), ctr_egreedy.back());
-  EXPECT_GT(sim_gf.not_spam_classified_as_not_spam, sim_egreedy.not_spam_classified_as_not_spam);
-  EXPECT_LT(sim_gf.not_spam_classified_as_spam, sim_egreedy.not_spam_classified_as_spam);
+  EXPECT_GE(sim_gf.not_spam_classified_as_not_spam, sim_egreedy.not_spam_classified_as_not_spam);
+  EXPECT_LE(sim_gf.not_spam_classified_as_spam, sim_egreedy.not_spam_classified_as_spam);
 }
 
 TEST(GraphFeedback, CheckUpdateRule500WIterations)

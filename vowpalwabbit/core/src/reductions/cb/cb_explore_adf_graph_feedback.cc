@@ -336,23 +336,13 @@ arma::vec get_probs_from_coordinates(arma::mat& coordinates, const arma::vec& fh
   // optimization go off the charts; it should be rare but we need to guard against it
 
   size_t num_actions = coordinates.n_rows - 1;
-  auto count_zeros = 0;
-  bool there_is_a_one = false;
   bool there_is_a_nan = false;
 
   for (size_t i = 0; i < num_actions; i++)
   {
-    if (VW::math::are_same(static_cast<float>(coordinates[i]), 0.f) || coordinates[i] < 0.f)
-    {
-      coordinates[i] = 0.f;
-      count_zeros++;
-    }
-    if (coordinates[i] > 1.f)
-    {
-      coordinates[i] = 1.f;
-      there_is_a_one = true;
-    }
     if (std::isnan(coordinates[i])) { there_is_a_nan = true; }
+    // clip to [0,1]
+    coordinates[i] = std::max(0., std::min(coordinates[i], 1.));
   }
 
   if (there_is_a_nan)
@@ -360,27 +350,11 @@ arma::vec get_probs_from_coordinates(arma::mat& coordinates, const arma::vec& fh
     for (size_t i = 0; i < num_actions; i++) { coordinates[i] = 1.f - fhat(i); }
   }
 
-  if (there_is_a_one)
-  {
-    for (size_t i = 0; i < num_actions; i++)
-    {
-      if (coordinates[i] != 1.f) { coordinates[i] = 0.f; }
-    }
-  }
-
   float p_sum = 0;
   for (size_t i = 0; i < num_actions; i++) { p_sum += coordinates[i]; }
 
-  if (!VW::math::are_same(p_sum, 1.f))
-  {
-    float rest = 1.f - p_sum;
-    float rest_each = rest / (num_actions - count_zeros);
-    for (size_t i = 0; i < num_actions; i++)
-    {
-      if (coordinates[i] == 0.f) { continue; }
-      else { coordinates[i] = coordinates[i] + rest_each; }
-    }
-  }
+  // normalize
+  for (size_t i = 0; i < num_actions; i++) { coordinates[i] = coordinates[i] / p_sum; }
 
   float sum = 0;
   arma::vec probs(num_actions);
