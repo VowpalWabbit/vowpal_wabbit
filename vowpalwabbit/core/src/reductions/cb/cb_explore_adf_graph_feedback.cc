@@ -327,7 +327,7 @@ arma::vec get_probs_from_coordinates(arma::mat& coordinates, const arma::vec& fh
  
     float fhatmax = fhat_positives.max();
 
-    for (size_t i = 0; i < num_actions; i++) { coordinates[i] = fhatmax - fhat_positives(i); }
+    for (size_t i = 0; i < num_actions; i++) { coordinates[i] = (fhatmax - fhat_positives(i)); }
   }
 
   float p_sum = 0;
