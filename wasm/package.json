@@ -1,9 +1,11 @@
 {
   "devDependencies": {
+    "jsdoc-to-markdown": "^8.0.0",
     "mocha": "^9.1.2"
   },
   "scripts": {
     "test1": "mocha --delay",
-    "test": "node --experimental-wasm-threads ./node_modules/mocha/bin/mocha --delay"
+    "test": "node --experimental-wasm-threads ./node_modules/mocha/bin/mocha --delay",
+    "docs": "jsdoc2md ./out/*.js > documentation.md"
   }
 }
