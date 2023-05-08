@@ -94,10 +94,11 @@ class ConstrainedFunctionType
   const arma::vec& _fhat;
   const arma::sp_mat& _G;
   const float _gamma;
+  size_t _extra_constraints;
 
 public:
   ConstrainedFunctionType(const arma::vec& scores, const arma::sp_mat& G, const float gamma)
-      : _fhat(scores), _G(G), _gamma(gamma)
+      : _fhat(scores), _G(G), _gamma(gamma), _extra_constraints(scores.size())
   {
   }
 
@@ -121,7 +122,7 @@ public:
   }
 
   // Get the number of constraints on the objective function.
-  size_t NumConstraints() const { return _fhat.size() + 4; }
+  size_t NumConstraints() const { return _fhat.size() + 2 + _extra_constraints; }
 
   // Evaluate constraint i at the parameters x.  If the constraint is
   // unsatisfied, a value greater than 0 should be returned.  If the constraint
@@ -149,7 +150,7 @@ public:
 
         auto Ga_times_p = arma::dot(Ga, p);
 
-        float denominator = Ga_times_p;
+        float denominator = Ga_times_p * _gamma;
         auto nominator = (eyea(index) - p(index)) * (eyea(index) - p(index));
         sum += (nominator / denominator);
       }
@@ -158,29 +159,19 @@ public:
     }
     else if (i == _fhat.size())
     {
-      if (arma::all(p >= 0.f)) { return 0.f; }
-      double neg_sum = 0.;
-      for (size_t i = 0; i < p.n_rows; i++)
-      {
-        if (p(i) < 0) { neg_sum += p(i); }
-      }
-      // negative probabilities are really really bad
-      return -1000.f * _gamma * neg_sum;
-    }
-    else if (i == _fhat.size() + 1)
-    {
-      if (arma::sum(p) <= 1.f) { return 0.f; }
-      return arma::sum(p) - 1.f;
-    }
-    else if (i == _fhat.size() + 2)
-    {
       if (arma::sum(p) >= 1.f) { return 0.f; }
       return 1.f - arma::sum(p);
     }
-    else if (i == _fhat.size() + 3)
+    else if (i == _fhat.size() + 1)
     {
-      if ((z / _gamma) > 0.f) { return 0.f; }
-      return 0.f - (z / _gamma);
+      if (z > 0.f) { return 0.f; }
+      return -1.f * z;
+    }
+    else if (i > _fhat.size() + 1)
+    {
+      size_t index = i - _fhat.size() - 2;
+      if (p[index] >= 0.f) { return 0.f; }
+      return -1.f * p[index];
     }
     return 0.;
   }
@@ -225,7 +216,7 @@ public:
             auto c = Ga_times_p - b * p(index);
             auto nominator = -1.f * ((eyea(index) - p(index)) * (eyea(index) * b + b * p(index) + 2.f * c));
 
-            sum += (nominator / denominator);
+            sum += (nominator / (_gamma * denominator));
           }
           else
           {
@@ -234,7 +225,7 @@ public:
 
             auto nominator = -1.f * ((a * b));
             auto denominator = Ga_times_p * Ga_times_p;
-            sum += nominator / denominator;
+            sum += nominator / (_gamma * denominator);
           }
         }
 
@@ -250,32 +241,6 @@ public:
     }
     else if (i == _fhat.size())
     {
-      // all positives
-      g.set_size(_fhat.n_rows + 1, 1);
-      g.ones();
-
-      for (size_t i = 0; i < p.n_rows; ++i)
-      {
-        if (p(i) < 0.f)
-        {
-          for (size_t i = 0; i < _fhat.size(); i++) { g[i] = -1.f; }
-        }
-      }
-
-      g[_fhat.size()] = 0.f;
-    }
-    else if (i == _fhat.size() + 1)
-    {
-      // sum
-      g.set_size(_fhat.n_rows + 1, 1);
-      g.ones();
-
-      if (constraint == 0.f) { g = -1.f * g; }
-
-      g[_fhat.size()] = 0.f;
-    }
-    else if (i == _fhat.size() + 2)
-    {
       // sum
       g.set_size(_fhat.n_rows + 1, 1);
       g.ones();
@@ -284,12 +249,22 @@ public:
 
       g[_fhat.size()] = 0.f;
     }
-    else if (i == _fhat.size() + 3)
+    else if (i == _fhat.size() + 1)
     {
       g.set_size(_fhat.n_rows + 1, 1);
       g.ones();
 
-      if ((z / _gamma) < 0.f) { g[_fhat.size()] = -1.f; }
+      if (z < 0.f) { g[_fhat.size()] = -1.f; }
+    }
+    else if (i > _fhat.size() + 1)
+    {
+      size_t index = i - _fhat.size() - 2;
+      // all positives
+      g.set_size(_fhat.n_rows + 1, 1);
+      g.zeros();
+
+      if (p(index) < 0.f) { g(index) = -1.f; }
+      else { g(index) = 1.f; }
     }
   }
 };
@@ -313,7 +288,7 @@ std::pair<arma::mat, arma::vec> set_initial_coordinates(const arma::vec& fhat, f
 {
   // find fhat min
   auto min_fhat = fhat.min();
-  arma::vec gammafhat = gamma * (fhat - min_fhat);
+  arma::vec gammafhat = (fhat - min_fhat);
 
   // initial p can be uniform random
   arma::mat coordinates(gammafhat.size() + 1, 1);
@@ -321,7 +296,7 @@ std::pair<arma::mat, arma::vec> set_initial_coordinates(const arma::vec& fhat, f
 
   // initial z can be 1
   // but also be nice if all fhat's are zero
-  float z = gamma * (1 - (min_fhat == 0 ? 1.f / fhat.size() : min_fhat));
+  float z = 1;
 
   coordinates[gammafhat.size()] = z;
 
@@ -347,8 +322,12 @@ arma::vec get_probs_from_coordinates(arma::mat& coordinates, const arma::vec& fh
 
   if (there_is_a_nan)
   {
-    float fhatmax = fhat.max();
-    for (size_t i = 0; i < num_actions; i++) { coordinates[i] = std::max(0.0, std::max(1.f, fhatmax) - fhat(i)); }
+    auto min_fhat = fhat.min();
+    arma::vec fhat_positives = (fhat - min_fhat);
+ 
+    float fhatmax = fhat_positives.max();
+
+    for (size_t i = 0; i < num_actions; i++) { coordinates[i] = fhatmax - fhat_positives(i); }
   }
 
   float p_sum = 0;
