@@ -7,3 +7,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/out/")
 add_executable(vw-wasm wasm_wrapper.cc)
 set_target_properties(vw-wasm PROPERTIES LINK_FLAGS "-fexceptions -s WASM=1 -s SINGLE_FILE=1 -s NO_DYNAMIC_EXECUTION=1 --bind -s ALLOW_MEMORY_GROWTH=1 -s MAXIMUM_MEMORY=4GB -s EXPORTED_FUNCTIONS=\"['_malloc', '_free']\"")
 target_link_libraries(vw-wasm PUBLIC vw_explore vw_core "-fexceptions")
+
+add_executable(vw-wasm-plugin wasm_wrapper.cc)
+set_target_properties(vw-wasm-plugin PROPERTIES LINK_FLAGS "-fexceptions -s WASM=1 -s SINGLE_FILE=1 -s NO_DYNAMIC_EXECUTION=1 --bind -s ALLOW_MEMORY_GROWTH=1 -s MAXIMUM_MEMORY=4GB -s EXPORTED_FUNCTIONS=\"['_malloc', '_free']\" -s MODULARIZE=1 -s EXPORT_NAME=\"vwWasmModule\"")
+target_link_libraries(vw-wasm-plugin PUBLIC vw_explore vw_core "-fexceptions")
