@@ -98,8 +98,6 @@ class ConstrainedFunctionType
   const double _gamma;
   const double ALMOST_ZERO = 1e-6;
   const double epsilon = 1e-3;
-  size_t internal_counter = 0;
-  arma::mat _p;
 
 public:
   ConstrainedFunctionType(const arma::vec& scores, const arma::sp_mat& G, const double gamma)
@@ -110,47 +108,21 @@ public:
   // Return the objective function f(x) for the given x.
   double Evaluate(const arma::mat& x)
   {
-    internal_counter++;
-    // if (std::isnan(x[0]))
-    // {
-    //   std::cout << internal_counter << std::endl;
-    //   _p.print("prev x");
-    // }
     arma::mat p(x.n_rows - 1, 1);
     for (size_t i = 0; i < p.n_rows; ++i) { p[i] = x[i]; }
 
     auto z = x[x.n_rows - 1];
 
-    // _p = p;
-
     return (arma::dot(p, _fhat) + z);
   }
 
   // Compute the gradient of f(x) for the given x and store the result in g.
-  void Gradient(const arma::mat& x, arma::mat& g)
+  void Gradient(const arma::mat&, arma::mat& g)
   {
     g.set_size(_fhat.n_rows + 1, 1);
     g.zeros();
     for (size_t i = 0; i < _fhat.n_rows; ++i) { g[i] = _fhat(i); }
     g[_fhat.n_rows] = 1.0;
-
-    // arma::mat g_numerical;
-    // NumericalGradient(x, g_numerical);
-    // g_numerical[_fhat.n_rows] = 1.0;
-
-    // // compare g with g_numerical
-    // // compare g with g_numerical
-    // arma::vec diff = g_numerical - g;
-    // arma::vec sum = g_numerical + g;
-    // double diffNorm = arma::norm(diff, 2);
-    // double sumNorm = arma::norm(sum, 2);
-
-    // // if ((diffNorm / sumNorm) > 1e-7)
-    // // // if (!arma::approx_equal(g_numerical, g, "absdiff", 1e-5))
-    // // {
-    // //   g.print("g");
-    // //   g_numerical.print("g_numerical");
-    // // }
   }
 
   void NumericalGradient(const arma::mat& x, arma::mat& g)
@@ -197,23 +169,23 @@ public:
         auto f_x = (eyea(index) - p(index)) * (eyea(index) - p(index));
         sum += (f_x / g_x);
       }
-      if (sum <= _gamma * (fhata + z)) { return 0.f; }
+      if (sum <= _gamma * (fhata + z)) { return 0.0; }
       return sum - _gamma * (fhata + z);
     }
     else if (i == _fhat.size())
     {
-      if (arma::sum(p) >= (1.f - 1e-3)) { return 0.f; }
-      return (1.f - 1e-3) - arma::sum(p);
+      if (arma::sum(p) >= (1.0 - 1e-3)) { return 0.0; }
+      return (1.0 - 1e-3) - arma::sum(p);
     }
     else if (i == _fhat.size() + 1)
     {
-      if (arma::sum(p) <= (1.f + 1e-3)) { return 0.f; }
-      return arma::sum(p) - (1.f + 1e-3);
+      if (arma::sum(p) <= (1.0 + 1e-3)) { return 0.0; }
+      return arma::sum(p) - (1.0 + 1e-3);
     }
     else if (i == _fhat.size() + 2)
     {
-      if (z > 0.f) { return 0.f; }
-      return -1.f * z;
+      if (z > 0.0) { return 0.0; }
+      return -1.0 * z;
     }
     else if (i > _fhat.size() + 2 && i < 2 * _fhat.size() + 3)
     {
@@ -227,8 +199,8 @@ public:
     else if (i > 2 * _fhat.size() + 2)
     {
       size_t index = i - 2 * _fhat.size() - 3;
-      if (p[index] >= 0.f) { return 0.f; }
-      return -1.f * p[index];
+      if (p[index] >= 0.0) { return 0.0; }
+      return -1.0 * p[index];
     }
     return 0.;
   }
@@ -272,7 +244,7 @@ public:
     {
       g.zeros();
 
-      g[_fhat.size()] = 1.f;
+      g[_fhat.size()] = 1.0;
 
       arma::vec eyea = arma::zeros<arma::vec>(p.n_rows);
       eyea(i) = 1;
@@ -287,9 +259,6 @@ public:
           if (index == coord_i)
           {
             auto g_x = Ga_times_p;
-            // float g_x = 0;
-            // // analytical version of _G.row(index) * p.t()
-            // for (size_t j = 0; j < p.n_rows; j++) { g_x += _G.row(index)(j) * p(j); }
 
             auto g_x_der = _G.row(index)(index);
             auto f_x = (eyea(index) - p(index)) * (eyea(index) - p(index));
@@ -303,9 +272,6 @@ public:
           {
             auto a = (eyea(index) - p(index)) * (eyea(index) - p(index));
             auto g_x = Ga_times_p;
-            // float g_x = 0;
-            // // analytical version of _G.row(index) * p.t()
-            // for (size_t j = 0; j < p.n_rows; j++) { g_x += _G.row(index)(j) * p(j); }
             auto g_x_der = _G.row(index)(coord_i);
 
             auto der = (-1. * a * g_x_der) / (g_x * g_x);
@@ -317,60 +283,40 @@ public:
         g[coord_i] = sum;
       }
 
-      g[_fhat.size()] = -1.f * _gamma;
+      g[_fhat.size()] = -1.0 * _gamma;
     }
     else if (i == _fhat.size())
     {
       // sum
       g.ones();
-      g = -1.f * g;
+      g = -1.0 * g;
 
-      g[_fhat.size()] = 0.f;
+      g[_fhat.size()] = 0.0;
     }
     else if (i == _fhat.size() + 1)
     {
       g.ones();
-      g[_fhat.size()] = 0.f;
+      g[_fhat.size()] = 0.0;
     }
     else if (i == _fhat.size() + 2)
     {
       g.zeros();
-      g[_fhat.size()] = -1.f;
+      g[_fhat.size()] = -1.0;
     }
     else if (i > _fhat.size() + 2 && i < 2 * _fhat.size() + 3)
     {
       g.zeros();
       size_t index = i - _fhat.size() - 3;
-      for (size_t j = 0; j < _fhat.size(); ++j) { g(j) = -1.f * _G(index, j); }
-      g[_fhat.size()] = 0.f;
+      for (size_t j = 0; j < _fhat.size(); ++j) { g(j) = -1.0 * _G(index, j); }
+      g[_fhat.size()] = 0.0;
     }
     else if (i > 2 * _fhat.size() + 2)
     {
       size_t index = i - 2 * _fhat.size() - 3;
       // all positives
       g.zeros();
-      g(index) = -1.f;
+      g(index) = -1.0;
     }
-
-    // arma::mat g_numerical;
-    // NumericalGradientConstraint(i, x, g_numerical);
-    // g_numerical[_fhat.n_rows] = g[_fhat.n_rows];
-
-    // g = g_numerical;
-
-    // // compare g with g_numerical
-    // arma::vec diff = g_numerical - g;
-    // arma::vec sum = g_numerical + g;
-    // double diffNorm = arma::norm(diff, 2);
-    // double sumNorm = arma::norm(sum, 2);
-
-    // if ((diffNorm / sumNorm) > 1e-7)
-    // // if (!arma::approx_equal(g_numerical, g, "absdiff", 1e-5))
-    // {
-    //   std::cout << "i: " << i << std::endl;
-    //   g.print("g constraint");
-    //   g_numerical.print("g_numerical constraint");
-    // }
   }
 };
 
@@ -389,23 +335,23 @@ bool valid_graph(const std::vector<VW::cb_graph_feedback::triplet>& triplets, si
   return false;
 }
 
-std::pair<arma::mat, arma::vec> set_initial_coordinates(const arma::vec& fhat, float gamma)
+std::pair<arma::mat, arma::vec> set_initial_coordinates(const arma::vec& fhat)
 {
   // find fhat min
   auto min_fhat = fhat.min();
-  arma::vec gammafhat = (fhat - min_fhat);
+  arma::vec positivefhat = (fhat - min_fhat);
 
   // initial p can be uniform random
-  arma::mat coordinates(gammafhat.size() + 1, 1);
-  for (size_t i = 0; i < gammafhat.size(); i++) { coordinates[i] = 1.f / gammafhat.size(); }
+  arma::mat coordinates(positivefhat.size() + 1, 1);
+  for (size_t i = 0; i < positivefhat.size(); i++) { coordinates[i] = 1.0 / positivefhat.size(); }
 
   // initial z can be 1
   // but also be nice if all fhat's are zero
-  float z = 1;
+  double z = 1;
 
-  coordinates[gammafhat.size()] = z;
+  coordinates[positivefhat.size()] = z;
 
-  return {coordinates, gammafhat};
+  return {coordinates, positivefhat};
 }
 
 arma::vec get_probs_from_coordinates(
@@ -467,20 +413,17 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
   for (auto& as : a_s) { fhat(as.action) = as.score; }
   const float gamma = _gamma_scale * static_cast<float>(std::pow(_counter, _gamma_exponent));
 
-  auto coord_gammafhat = set_initial_coordinates(fhat, gamma);
-  arma::mat coordinates = std::get<0>(coord_gammafhat);
-  arma::vec gammafhat = std::get<1>(coord_gammafhat);
+  auto coord_positivefhat = set_initial_coordinates(fhat);
+  arma::mat coordinates = std::get<0>(coord_positivefhat);
+  arma::vec positivefhat = std::get<1>(coord_positivefhat);
 
-  ConstrainedFunctionType f(gammafhat, G, gamma);
+  ConstrainedFunctionType f(positivefhat, G, gamma);
 
-  // feenableexcept(FE_INVALID | FE_OVERFLOW);
   ens::AugLagrangian optimizer;
-  // auto& lbfgs = optimizer.LBFGS();
-  // lbfgs.Factr() = 1e-6;
+
   optimizer.Optimize(f, coordinates);
 
   arma::vec probs = get_probs_from_coordinates(coordinates, fhat, *_all, _counter, gamma);
-  // probs.print("probs");
 
   // set the new probabilities in the example
   for (auto& as : a_s) { as.score = probs(as.action); }
