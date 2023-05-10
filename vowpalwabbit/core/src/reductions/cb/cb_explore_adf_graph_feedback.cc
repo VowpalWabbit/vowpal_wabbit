@@ -19,10 +19,12 @@
 #include "vw/core/setup_base.h"
 #include "vw/core/vw_math.h"
 #include "vw/explore/explore.h"
-
+// #define ENS_PRINT_INFO
 #include <algorithm>
 #define ARMA_DONT_USE_BLAS
 #define ARMA_DONT_USE_LAPACK
+#include <fenv.h>
+
 #include <armadillo>
 #include <cmath>
 #include <ensmallen.hpp>
@@ -93,32 +95,76 @@ class ConstrainedFunctionType
 {
   const arma::vec& _fhat;
   const arma::sp_mat& _G;
-  const float _gamma;
-  const double GP_LIMIT = 1e-6;
+  const double _gamma;
+  const double ALMOST_ZERO = 1e-6;
+  const double epsilon = 1e-3;
+  size_t internal_counter = 0;
+  arma::mat _p;
 
 public:
-  ConstrainedFunctionType(const arma::vec& scores, const arma::sp_mat& G, const float gamma)
+  ConstrainedFunctionType(const arma::vec& scores, const arma::sp_mat& G, const double gamma)
       : _fhat(scores), _G(G), _gamma(gamma)
   {
   }
 
   // Return the objective function f(x) for the given x.
-  double Evaluate(const arma::mat& x) const
+  double Evaluate(const arma::mat& x)
   {
+    internal_counter++;
+    // if (std::isnan(x[0]))
+    // {
+    //   std::cout << internal_counter << std::endl;
+    //   _p.print("prev x");
+    // }
     arma::mat p(x.n_rows - 1, 1);
     for (size_t i = 0; i < p.n_rows; ++i) { p[i] = x[i]; }
 
-    float z = x[x.n_rows - 1];
+    auto z = x[x.n_rows - 1];
+
+    // _p = p;
 
     return (arma::dot(p, _fhat) + z);
   }
 
   // Compute the gradient of f(x) for the given x and store the result in g.
-  void Gradient(const arma::mat&, arma::mat& g) const
+  void Gradient(const arma::mat& x, arma::mat& g)
   {
     g.set_size(_fhat.n_rows + 1, 1);
+    g.zeros();
     for (size_t i = 0; i < _fhat.n_rows; ++i) { g[i] = _fhat(i); }
-    g[_fhat.n_rows] = 1.f;
+    g[_fhat.n_rows] = 1.0;
+
+    // arma::mat g_numerical;
+    // NumericalGradient(x, g_numerical);
+    // g_numerical[_fhat.n_rows] = 1.0;
+
+    // // compare g with g_numerical
+    // // compare g with g_numerical
+    // arma::vec diff = g_numerical - g;
+    // arma::vec sum = g_numerical + g;
+    // double diffNorm = arma::norm(diff, 2);
+    // double sumNorm = arma::norm(sum, 2);
+
+    // // if ((diffNorm / sumNorm) > 1e-7)
+    // // // if (!arma::approx_equal(g_numerical, g, "absdiff", 1e-5))
+    // // {
+    // //   g.print("g");
+    // //   g_numerical.print("g_numerical");
+    // // }
+  }
+
+  void NumericalGradient(const arma::mat& x, arma::mat& g)
+  {
+    g.set_size(_fhat.n_rows + 1, 1);
+    g.zeros();
+    for (size_t i = 0; i < _fhat.n_rows; ++i)
+    {
+      arma::mat x_i_plus = x;
+      x_i_plus(i) += epsilon;
+      arma::mat x_i_minus = x;
+      x_i_minus(i) -= epsilon;
+      g(i) = (Evaluate(x_i_plus) - Evaluate(x_i_minus)) / (2.0 * epsilon);
+    }
   }
 
   // Get the number of constraints on the objective function.
@@ -128,43 +174,41 @@ public:
   // unsatisfied, a value greater than 0 should be returned.  If the constraint
   // is satisfied, 0 should be returned.  The optimizer will add this value to
   // its overall objective that it is trying to minimize.
-  double EvaluateConstraint(const size_t i, const arma::mat& x) const
+  double EvaluateConstraint(const size_t i, const arma::mat& x)
   {
     arma::vec p(x.n_rows - 1);
     for (size_t i = 0; i < p.n_rows; ++i) { p(i) = x[i]; }
 
-    float z = x[x.n_rows - 1];
+    auto z = x[x.n_rows - 1];
 
     if (i < _fhat.size())
     {
       arma::vec eyea = arma::zeros<arma::vec>(p.n_rows);
-      eyea(i) = 1.f;
+      eyea(i) = 1;
 
       auto fhata = _fhat(i);
 
-      double sum = 0.f;
+      double sum = 0;
       for (size_t index = 0; index < p.n_rows; index++)
       {
-        auto Ga_times_p = arma::dot(_G.row(index), p.t());
-        if (Ga_times_p > GP_LIMIT)
-        {
-          float denominator = Ga_times_p;
-          auto nominator = (eyea(index) - p(index)) * (eyea(index) - p(index));
-          sum += (nominator / denominator);
-        }
+        auto Ga_times_p = std::max(arma::dot(_G.row(index), p.t()), ALMOST_ZERO);
+
+        auto g_x = Ga_times_p;
+        auto f_x = (eyea(index) - p(index)) * (eyea(index) - p(index));
+        sum += (f_x / g_x);
       }
       if (sum <= _gamma * (fhata + z)) { return 0.f; }
-      else { return sum - _gamma * (fhata + z); }
+      return sum - _gamma * (fhata + z);
     }
     else if (i == _fhat.size())
     {
-      if (arma::sum(p) >= 1.f) { return 0.f; }
-      return 1.f - arma::sum(p);
+      if (arma::sum(p) >= (1.f - 1e-3)) { return 0.f; }
+      return (1.f - 1e-3) - arma::sum(p);
     }
     else if (i == _fhat.size() + 1)
     {
-      if (arma::sum(p) <= 1.f) { return 0.f; }
-      return arma::sum(p) - 1.f;
+      if (arma::sum(p) <= (1.f + 1e-3)) { return 0.f; }
+      return arma::sum(p) - (1.f + 1e-3);
     }
     else if (i == _fhat.size() + 2)
     {
@@ -177,8 +221,8 @@ public:
 
       auto Gpa = arma::dot(_G.row(index), p.t());
 
-      if (Gpa > GP_LIMIT) { return 0; }
-      return GP_LIMIT - Gpa;
+      if (Gpa >= ALMOST_ZERO) { return 0; }
+      return ALMOST_ZERO - Gpa;
     }
     else if (i > 2 * _fhat.size() + 2)
     {
@@ -189,20 +233,36 @@ public:
     return 0.;
   }
 
+  void NumericalGradientConstraint(const size_t i, const arma::mat& x, arma::mat& g)
+  {
+    g.set_size(_fhat.n_rows + 1, 1);
+    g.zeros();
+
+    if (EvaluateConstraint(i, x) <= 0.0) { return; }
+    for (size_t j = 0; j < _fhat.n_rows; ++j)
+    {
+      arma::mat x_j_plus = x;
+      x_j_plus(j) += epsilon;
+      arma::mat x_j_minus = x;
+      x_j_minus(j) -= epsilon;
+      double cp = EvaluateConstraint(i, x_j_plus);
+      double cm = EvaluateConstraint(i, x_j_minus);
+      g(j) = (cp - cm) / (2.0 * epsilon);
+    }
+  }
+
   // Evaluate the gradient of constraint i at the parameters x, storing the
   // result in the given matrix g.  If the constraint is not satisfied, the
   // gradient should be set in such a way that the gradient points in the
   // direction where the constraint would be satisfied.
-  void GradientConstraint(const size_t i, const arma::mat& x, arma::mat& g) const
+  void GradientConstraint(const size_t i, const arma::mat& x, arma::mat& g)
   {
     arma::vec p(x.n_rows - 1);
     for (size_t i = 0; i < p.n_rows; ++i) { p(i) = x[i]; }
 
-    float z = x[x.n_rows - 1];
     g.set_size(_fhat.n_rows + 1, 1);
 
-    double constraint = EvaluateConstraint(i, x);
-    if (constraint == 0.f)
+    if (EvaluateConstraint(i, x) <= 0)
     {
       g.zeros();
       return;
@@ -215,36 +275,42 @@ public:
       g[_fhat.size()] = 1.f;
 
       arma::vec eyea = arma::zeros<arma::vec>(p.n_rows);
-      eyea(i) = 1.f;
+      eyea(i) = 1;
 
       for (size_t coord_i = 0; coord_i < _fhat.size(); coord_i++)
       {
-        double sum = 0.f;
+        double sum = 0;
         for (size_t index = 0; index < p.n_rows; index++)
         {
-          auto Ga_times_p = arma::dot(_G.row(index), p.t());
+          auto Ga_times_p = std::max(arma::dot(_G.row(index), p.t()), ALMOST_ZERO);
 
-          if (Ga_times_p > GP_LIMIT)
+          if (index == coord_i)
           {
-            if (index == coord_i)
-            {
-              float denominator = Ga_times_p * Ga_times_p;
+            auto g_x = Ga_times_p;
+            // float g_x = 0;
+            // // analytical version of _G.row(index) * p.t()
+            // for (size_t j = 0; j < p.n_rows; j++) { g_x += _G.row(index)(j) * p(j); }
 
-              auto b = _G.row(index)(index);
-              auto c = Ga_times_p - b * p(index);
-              auto nominator = -1.f * ((eyea(index) - p(index)) * (eyea(index) * b + b * p(index) + 2.f * c));
+            auto g_x_der = _G.row(index)(index);
+            auto f_x = (eyea(index) - p(index)) * (eyea(index) - p(index));
+            auto f_x_der = -2. * (eyea(index) - p(index));
 
-              sum += (nominator / (denominator));
-            }
-            else
-            {
-              auto a = (eyea(index) - p(index)) * (eyea(index) - p(index));
-              auto b = _G.row(index)(coord_i);
+            auto quotient_rule = (g_x * f_x_der - f_x * g_x_der) / (g_x * g_x);
 
-              auto nominator = -1.f * ((a * b));
-              auto denominator = Ga_times_p * Ga_times_p;
-              sum += nominator / (denominator);
-            }
+            sum += quotient_rule;
+          }
+          else
+          {
+            auto a = (eyea(index) - p(index)) * (eyea(index) - p(index));
+            auto g_x = Ga_times_p;
+            // float g_x = 0;
+            // // analytical version of _G.row(index) * p.t()
+            // for (size_t j = 0; j < p.n_rows; j++) { g_x += _G.row(index)(j) * p(j); }
+            auto g_x_der = _G.row(index)(coord_i);
+
+            auto der = (-1. * a * g_x_der) / (g_x * g_x);
+
+            sum += der;
           }
         }
 
@@ -273,8 +339,9 @@ public:
     }
     else if (i > _fhat.size() + 2 && i < 2 * _fhat.size() + 3)
     {
+      g.zeros();
       size_t index = i - _fhat.size() - 3;
-      g(index) = _G(index, index);
+      for (size_t j = 0; j < _fhat.size(); ++j) { g(j) = -1.f * _G(index, j); }
       g[_fhat.size()] = 0.f;
     }
     else if (i > 2 * _fhat.size() + 2)
@@ -284,6 +351,26 @@ public:
       g.zeros();
       g(index) = -1.f;
     }
+
+    // arma::mat g_numerical;
+    // NumericalGradientConstraint(i, x, g_numerical);
+    // g_numerical[_fhat.n_rows] = g[_fhat.n_rows];
+
+    // g = g_numerical;
+
+    // // compare g with g_numerical
+    // arma::vec diff = g_numerical - g;
+    // arma::vec sum = g_numerical + g;
+    // double diffNorm = arma::norm(diff, 2);
+    // double sumNorm = arma::norm(sum, 2);
+
+    // if ((diffNorm / sumNorm) > 1e-7)
+    // // if (!arma::approx_equal(g_numerical, g, "absdiff", 1e-5))
+    // {
+    //   std::cout << "i: " << i << std::endl;
+    //   g.print("g constraint");
+    //   g_numerical.print("g_numerical constraint");
+    // }
   }
 };
 
@@ -321,12 +408,17 @@ std::pair<arma::mat, arma::vec> set_initial_coordinates(const arma::vec& fhat, f
   return {coordinates, gammafhat};
 }
 
-arma::vec get_probs_from_coordinates(arma::mat& coordinates, const arma::vec& fhat, VW::workspace& all, size_t _counter)
+arma::vec get_probs_from_coordinates(
+    arma::mat& coordinates, const arma::vec& fhat, VW::workspace& all, size_t _counter, double gamma)
 {
   // constraints are enforcers but they can be broken, so we need to check that probs are positive and sum to 1
 
   // we also have to check for nan's because some starting points combined with some gammas might make the constraint
   // optimization go off the charts; it should be rare but we need to guard against it
+
+  // fhat.print("fhat");
+  // coordinates.print("coordinates");
+  // std::cout << "gamma: " << gamma << std::endl;
 
   size_t num_actions = coordinates.n_rows - 1;
   bool there_is_a_nan = false;
@@ -340,7 +432,7 @@ arma::vec get_probs_from_coordinates(arma::mat& coordinates, const arma::vec& fh
 
   if (there_is_a_nan)
   {
-    std::cout << "counter" << _counter << std::endl;
+    std::cout << "counter: " << _counter << " gamma: " << gamma << std::endl;
     fhat.print("fhat with nan's");
   }
 
@@ -381,10 +473,14 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
 
   ConstrainedFunctionType f(gammafhat, G, gamma);
 
+  // feenableexcept(FE_INVALID | FE_OVERFLOW);
   ens::AugLagrangian optimizer;
+  // auto& lbfgs = optimizer.LBFGS();
+  // lbfgs.Factr() = 1e-6;
   optimizer.Optimize(f, coordinates);
 
-  arma::vec probs = get_probs_from_coordinates(coordinates, fhat, *_all, _counter);
+  arma::vec probs = get_probs_from_coordinates(coordinates, fhat, *_all, _counter, gamma);
+  // probs.print("probs");
 
   // set the new probabilities in the example
   for (auto& as : a_s) { as.score = probs(as.action); }
