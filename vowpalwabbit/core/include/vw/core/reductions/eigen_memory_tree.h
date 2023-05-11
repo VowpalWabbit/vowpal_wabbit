@@ -41,13 +41,22 @@ enum class emt_router_type : uint32_t
   EIGEN = 2
 };
 
+enum class emt_initial_type : uint32_t
+{
+  EUCLIDEAN = 1,
+  GAUSSIAN = 2,
+  COSINE = 3,
+  NONE = 4
+};
+
 emt_scorer_type emt_scorer_type_from_string(VW::string_view val);
 emt_router_type emt_router_type_from_string(VW::string_view val);
+emt_initial_type emt_initial_type_from_string(VW::string_view val);
 
+float emt_initial(emt_initial_type initial_type, emt_feats f1, emt_feats f2);
 float emt_median(std::vector<float>&);
 float emt_inner(const emt_feats&, const emt_feats&);
 float emt_norm(const emt_feats&);
-void emt_abs(emt_feats&);
 void emt_scale(emt_feats&, float);
 void emt_normalize(emt_feats&);
 emt_feats emt_scale_add(float, const emt_feats&, float, const emt_feats&);
@@ -112,6 +121,7 @@ struct emt_tree
   uint32_t leaf_split = 100;
   emt_scorer_type scorer_type = emt_scorer_type::SELF_CONSISTENT_RANK;
   emt_router_type router_type = emt_router_type::EIGEN;
+  emt_initial_type initial_type = emt_initial_type::COSINE;
 
   std::unique_ptr<VW::example> ex;  // we create one of these which we re-use so we don't have to reallocate examples
   std::unique_ptr<std::vector<std::vector<VW::namespace_index>>> empty_interactions_for_ex;
@@ -125,7 +135,7 @@ struct emt_tree
   std::unique_ptr<emt_lru> bounder = nullptr;
 
   emt_tree(VW::workspace* all, std::shared_ptr<VW::rand_state> random_state, uint32_t leaf_split,
-      emt_scorer_type scorer_type, emt_router_type router_type, uint64_t tree_bound);
+      emt_scorer_type scorer_type, emt_router_type router_type, emt_initial_type initial_type, uint64_t tree_bound);
 };
 
 }  // namespace eigen_memory_tree
