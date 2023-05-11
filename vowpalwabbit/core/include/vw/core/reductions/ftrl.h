@@ -40,6 +40,12 @@ public:
   std::vector<VW::reductions::details::gd_per_model_state> gd_per_model_states;
 };
 
+namespace model_utils
+{
+size_t read_model_field(io_buf&, VW::reductions::ftrl&);
+size_t write_model_field(io_buf&, VW::reductions::ftrl&, const std::string&, bool);
+}  // namespace model_utils
+
 std::shared_ptr<VW::LEARNER::learner> ftrl_setup(VW::setup_base_i& stack_builder);
 }
 }  // namespace VW

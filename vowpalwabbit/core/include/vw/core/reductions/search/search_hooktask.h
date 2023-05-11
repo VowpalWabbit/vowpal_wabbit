@@ -2,7 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #pragma once
-#include "search.h"
+#ifdef VW_FEAT_SEARCH_ENABLED
+#  include "search.h"
 
 namespace HookTask
 {
@@ -28,3 +29,5 @@ public:
   size_t num_actions = 0;                 // cache for easy access
 };
 }  // namespace HookTask
+
+#endif

@@ -60,6 +60,10 @@
         "CMAKE_BUILD_TYPE": {
           "type": "STRING",
           "value": "Debug"
+        },
+        "VW_FEAT_CB_GRAPH_FEEDBACK": {
+          "type": "BOOL",
+          "value": "On"
         }
       }
     },
@@ -70,6 +74,10 @@
         "CMAKE_BUILD_TYPE": {
           "type": "STRING",
           "value": "Release"
+        },
+        "VW_FEAT_CB_GRAPH_FEEDBACK": {
+          "type": "BOOL",
+          "value": "On"
         }
       }
     },
@@ -86,6 +94,10 @@
           "value": "On"
         },
         "VW_FEAT_CSV": {
+          "type": "BOOL",
+          "value": "On"
+        },
+        "VW_FEAT_CB_GRAPH_FEEDBACK": {
           "type": "BOOL",
           "value": "On"
         }
@@ -144,6 +156,58 @@
         "VW_USE_UBSAN": {
           "type": "BOOL",
           "value": "On"
+        }
+      }
+    },
+    {
+      "name": "wasm",
+      "description": "CMAKE_TOOLCHAIN_FILE has to be passed explicitly since emcmake overwrites it if we define it here.",
+      "inherits": "default",
+      "cacheVariables": {
+        "VCPKG_CHAINLOAD_TOOLCHAIN_FILE":
+        {
+          "type": "FILEPATH",
+          "value": "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake"
+        },
+        "VW_BUILD_WASM": {
+          "type": "BOOL",
+          "value": "On"
+        },
+        "USE_LATEST_STD": {
+          "type": "BOOL",
+          "value": "On"
+        },
+        "VW_FEAT_FLATBUFFERS": {
+          "type": "BOOL",
+          "value": "Off"
+        },
+        "VW_FEAT_CSV": {
+          "type": "BOOL",
+          "value": "Off"
+        },
+        "VW_FEAT_LDA": {
+          "type": "BOOL",
+          "value": "Off"
+        },
+        "VW_FEAT_SEARCH": {
+          "type": "BOOL",
+          "value": "Off"
+        },
+        "VW_FEAT_NETWORKING": {
+          "type": "BOOL",
+          "value": "Off"
+        },
+        "BUILD_TESTING": {
+          "type": "BOOL",
+          "value": "Off"
+        },
+        "VW_BUILD_VW_C_WRAPPER": {
+          "type": "BOOL",
+          "value": "Off"
+        },
+        "VCPKG_TARGET_TRIPLET": {
+          "type": "STRING",
+          "value": "wasm32-emscripten"
         }
       }
     }

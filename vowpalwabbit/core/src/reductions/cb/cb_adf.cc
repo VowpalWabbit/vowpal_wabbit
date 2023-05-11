@@ -55,14 +55,15 @@ VW::cb_class VW::get_observed_cost_or_default_cb_adf(const VW::multi_ex& example
   return known_cost;
 }
 // Validates a multiline example collection as a valid sequence for action dependent features format.
-VW::example* VW::test_cb_adf_sequence(const VW::multi_ex& ec_seq)
+VW::example* VW::test_cb_adf_sequence(const VW::multi_ex& ec_seq, bool allow_multiple_costs)
 {
   if (ec_seq.empty()) THROW("cb_adf: At least one action must be provided for an example to be valid.");
 
   uint32_t count = 0;
   VW::example* ret = nullptr;
-  for (auto* ec : ec_seq)
+  for (size_t i = 0; i < ec_seq.size(); i++)
   {
+    auto* ec = ec_seq[i];
     // Check if there is more than one cost for this example.
     if (ec->l.cb.costs.size() > 1)
     {
@@ -77,7 +78,14 @@ VW::example* VW::test_cb_adf_sequence(const VW::multi_ex& ec_seq)
     {
       ret = ec;
       count += 1;
-      if (count > 1) THROW("cb_adf: badly formatted example, only one line can have a cost");
+      if (!allow_multiple_costs)
+      {
+        if (count > 1) THROW("cb_adf: badly formatted example, only one line can have a cost");
+      }
+      else
+      {
+        if (ec->l.cb.costs[0].action == i) { return ret; }
+      }
     }
   }
 
@@ -268,7 +276,7 @@ void VW::reductions::cb_adf::predict(learner& base, VW::multi_ex& ec_seq)
   _offset = ec_seq[0]->ft_offset;
   _offset_index = _offset / _all->weights.stride();
   _gen_cs_dr.known_cost = VW::get_observed_cost_or_default_cb_adf(ec_seq);  // need to set for test case
-  details::gen_cs_test_example(ec_seq, _cs_labels);                     // create test labels.
+  details::gen_cs_test_example(ec_seq, _cs_labels);                         // create test labels.
   details::cs_ldf_learn_or_predict<false>(base, ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
 }
 

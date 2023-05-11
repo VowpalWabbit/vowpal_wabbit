@@ -88,9 +88,9 @@ float igl_sim::true_reward(const std::string& user, const std::string& action)
   return (ground_truth_enjoy.at(user) == action) - (ground_truth_hate.at(user) == action);
 }
 
-std::vector<float> igl_sim::run_simulation(VW::workspace* igl_vw, size_t num_iterations)
+std::vector<float> igl_sim::run_simulation(VW::workspace* igl_vw, size_t shift, size_t num_iterations)
 {
-  for (size_t i = 0; i < num_iterations; i++)
+  for (size_t i = shift; i < shift + num_iterations; i++)
   {
     // 1. In each simulation choose a user
     std::string user = choose_user();
@@ -122,9 +122,9 @@ std::vector<float> igl_sim::run_simulation(VW::workspace* igl_vw, size_t num_ite
     igl_vw->finish_example(examples);
 
     // 6 - calculate ctr
-    if ((i != 0) && ((i & (i - 1)) == 0)) { ctr.push_back(true_reward_sum / static_cast<float>(i)); }
+    ctr.push_back(true_reward_sum / static_cast<float>(i));
   }
-  ctr.push_back(true_reward_sum / static_cast<float>(num_iterations));
+
   return ctr;
 }
 }  // namespace igl_simulator

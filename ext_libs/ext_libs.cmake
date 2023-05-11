@@ -44,13 +44,16 @@ else()
   target_include_directories(RapidJSON SYSTEM INTERFACE "${CMAKE_CURRENT_LIST_DIR}/rapidjson/include")
 endif()
 
-if(VW_BOOST_MATH_SYS_DEP)
-  find_package(Boost REQUIRED)
-  set(boost_math_target Boost::boost)
-else()
-  set(BOOST_MATH_STANDALONE ON CACHE BOOL "Use Boost math vendored dep in standalone mode" FORCE)
-  add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/boost_math EXCLUDE_FROM_ALL)
-  set(boost_math_target Boost::math)
+# Boost math only required if LDA is enabled.
+if(VW_FEAT_LDA)
+  if(VW_BOOST_MATH_SYS_DEP)
+    find_package(Boost REQUIRED)
+    set(boost_math_target Boost::boost)
+  else()
+    set(BOOST_MATH_STANDALONE ON CACHE BOOL "Use Boost math vendored dep in standalone mode" FORCE)
+    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/boost_math EXCLUDE_FROM_ALL)
+    set(boost_math_target Boost::math)
+  endif()
 endif()
 
 if(VW_ZLIB_SYS_DEP)
@@ -117,4 +120,11 @@ else()
   # This submodule is placed into a nested subdirectory since it exposes its
   # header at the root of the repo rather than its own nested sse2neon/ dir
   target_include_directories(sse2neon SYSTEM INTERFACE "${CMAKE_CURRENT_LIST_DIR}/sse2neon")
+endif()
+
+if(VW_FEAT_CB_GRAPH_FEEDBACK)
+  add_library(mlpack_ensmallen INTERFACE)
+  target_include_directories(mlpack_ensmallen SYSTEM INTERFACE ${CMAKE_CURRENT_LIST_DIR}/armadillo-code/include)
+
+  target_include_directories(mlpack_ensmallen SYSTEM INTERFACE ${CMAKE_CURRENT_LIST_DIR}/ensmallen/include)
 endif()

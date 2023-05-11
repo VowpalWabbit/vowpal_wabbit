@@ -1,0 +1,30 @@
+creating quadratic features for pairs: UA
+predictions = igl_2.pred
+Enabling FTRL based optimization
+Algorithm used: Coin Betting
+ftrl_alpha = 4
+ftrl_beta = 1
+using no cache
+Reading datafile = train-sets/igl_3states_2.dsjson
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 10
+power_t = 0.5
+cb_type = mtr
+Enabled learners: ftrl-Coin Betting, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, experimental_igl, shared_feature_merger
+Input label = CB_WITH_OBSERVATIONS
+Output pred = ACTION_PROBS
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+-1.00000 -1.00000            1            1.0      0:-1:0.32         0:0.32       21
+-0.50000 0.000000            2            2.0       1:0:0.32         0:0.32       21
+-0.25000 0.000000            4            4.0       3:0:0.05         2:0.85       21
+-0.25000 -0.25000            8            8.0       2:0:0.85         0:0.45       21
+
+finished run
+number of examples = 10
+weighted example sum = 10.000000
+weighted label sum = 0.000000
+average loss = -0.305882
+total feature number = 280

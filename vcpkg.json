@@ -3,9 +3,7 @@
   "name": "vowpal-wabbit",
   "version": "9.8.0",
   "dependencies": [
-    "boost-math",
     "eigen3",
-    "flatbuffers",
     "fmt",
     "rapidjson",
     "spdlog",
@@ -16,6 +14,10 @@
     "tests": {
       "description": "Build Tests",
       "dependencies": ["gtest"]
+    },
+    "lda": {
+      "description": "Enable LDA reduction",
+      "dependencies": ["boost-math"]
     },
     "flatbuffers": {
       "description": "Enable flatbuffers support",

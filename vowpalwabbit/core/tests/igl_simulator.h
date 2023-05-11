@@ -20,7 +20,7 @@ class igl_sim : public simulator::cb_sim
 
 public:
   igl_sim(uint64_t seed = 0);
-  std::vector<float> run_simulation(VW::workspace* igl_vw, size_t num_iterations);
+  std::vector<float> run_simulation(VW::workspace* igl_vw, size_t shift, size_t num_iterations);
   std::string sample_feedback(const std::map<std::string, float>& probs);
   std::string get_feedback(const std::string& pref, const std::string& chosen_action);
   float true_reward(const std::string& user, const std::string& action);

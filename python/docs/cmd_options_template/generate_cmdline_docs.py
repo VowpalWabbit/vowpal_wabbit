@@ -58,7 +58,7 @@ def main():
 
     base_dir = Path(__file__).resolve().parent
     cmd = [
-        "hbs",
+        "handlebars",
         "--stdin",
         "--helper",
         str(base_dir / "helpers") + "/*.js",
@@ -67,7 +67,7 @@ def main():
         "--extension",
         "rst",
         "--output",
-        str(resolved_out_dir),
+        str(resolved_out_dir / "output.rst"),
         "--",
         str(resolved_template),
     ]

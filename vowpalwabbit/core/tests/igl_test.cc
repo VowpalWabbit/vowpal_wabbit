@@ -216,18 +216,110 @@ TEST(Igl, VerifyRewardModelWeightsWithLabelAndWeight)
   EXPECT_EQ(sl_weights, igl_weights[0]);
 }
 
-TEST(Igl, TrainingCoverges)
+TEST(Igl, TrainingConverges)
 {
   std::vector<std::string> igl_args = {"--cb_explore_adf", "--epsilon", "0.2", "--dsjson", "--coin",
       "--experimental_igl", "--noconstant", "-b", "19", "-q", "UA", "--quiet"};
 
   const size_t num_iterations = 2500;
-  const size_t seed = 777;
+  const size_t seed = 378123;
 
   auto igl_vw = VW::initialize(vwtest::make_args(igl_args));
 
   igl_simulator::igl_sim sim(seed);
-  auto ctr_vector = sim.run_simulation(igl_vw.get(), num_iterations);
+  auto ctr_vector = sim.run_simulation(igl_vw.get(), 1, num_iterations);
 
-  EXPECT_GT(ctr_vector.back(), 0.5f);
+  EXPECT_GT(ctr_vector.back(), 0.6f);
+}
+
+TEST(Igl, SaveResume)
+{
+  std::vector<std::string> igl_args = {"--cb_explore_adf", "--epsilon", "0.2", "--dsjson", "--coin",
+      "--experimental_igl", "--noconstant", "-b", "19", "-q", "UA", "--quiet"};
+
+  const size_t num_iterations = 500;
+  const size_t seed = 777;
+
+  auto igl_no_save = VW::initialize(vwtest::make_args(igl_args));
+
+  igl_simulator::igl_sim sim(seed);
+  auto ctr_vector = sim.run_simulation(igl_no_save.get(), 1, num_iterations);
+
+  // save_resume
+  const size_t split = num_iterations / 2;
+  auto igl_first = VW::initialize(VW::make_unique<VW::config::options_cli>(igl_args));
+  igl_simulator::igl_sim sim_split(seed);
+  sim_split.run_simulation(igl_first.get(), 1, split);
+
+  auto backing_vector = std::make_shared<std::vector<char>>();
+  {
+    VW::io_buf io_writer;
+    io_writer.add_file(VW::io::create_vector_writer(backing_vector));
+    VW::save_predictor(*igl_first, io_writer);
+    io_writer.flush();
+  }
+
+  igl_first->finish();
+  igl_first.reset();
+
+  auto igl_second = VW::initialize(VW::make_unique<VW::config::options_cli>(igl_args),
+      VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
+
+  // continue
+  auto ctr_save_resume = sim_split.run_simulation(igl_second.get(), split + 1, split);
+  igl_second->finish();
+
+  EXPECT_EQ(ctr_vector, ctr_save_resume);
+}
+
+TEST(Igl, VerifyPredictOnlyModelEqualsToCbModel)
+{
+  // clang-format off
+  std::vector<std::string> igl_vector = {
+      R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 4, "_labelIndex": 3, "o": [{"v": {"v=none": 1}, "_definitely_bad": false}], "a": [0, 1, 2, 3], "c": {"User": {"user=Anna": 1, "time_of_day=afternoon": 1}, "_multi": [{"Action": {"action=politics": 1}}, {"Action": {"action=sports": 1}}, {"Action": {"action=music": 1}}, {"Action": {"action=food": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
+      R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 2, "_labelIndex": 1, "o": [{"v": {"v=none": 1}, "_definitely_bad": false}], "a": [0, 1, 2, 3], "c": {"User": {"user=Tom": 1, "time_of_day=morning": 1}, "_multi": [{"Action": {"action=politics": 1}}, {"Action": {"action=sports": 1}}, {"Action": {"action=music": 1}}, {"Action": {"action=food": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
+      R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 3, "_labelIndex": 2, "o": [{"v": {"v=click": 1}, "_definitely_bad": false}], "a": [0, 1, 2, 3], "c": {"User": {"user=Tom": 1, "time_of_day=afternoon": 1}, "_multi": [{"Action": {"action=politics": 1}}, {"Action": {"action=sports": 1}}, {"Action": {"action=music": 1}}, {"Action": {"action=food": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
+      R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 3, "_labelIndex": 2, "o": [{"v": {"v=like": 1}, "_definitely_bad": false}], "a": [0, 1, 2, 3], "c": {"User": {"user=Tom": 1, "time_of_day=afternoon": 1}, "_multi": [{"Action": {"action=politics": 1}}, {"Action": {"action=sports": 1}}, {"Action": {"action=music": 1}}, {"Action": {"action=food": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": -0.5})",
+      R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 2, "_labelIndex": 1, "o": [{"v": {"v=skip": 1}, "_definitely_bad": false}], "a": [0, 1, 2, 3], "c": {"User": {"user=Tom": 1, "time_of_day=afternoon": 1}, "_multi": [{"Action": {"action=politics": 1}}, {"Action": {"action=sports": 1}}, {"Action": {"action=music": 1}}, {"Action": {"action=food": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
+      R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 3, "_labelIndex": 2, "o": [{"v": {"v=none": 1}, "_definitely_bad": false}], "a": [0, 1, 2, 3], "c": {"User": {"user=Anna": 1, "time_of_day=morning": 1}, "_multi": [{"Action": {"action=politics": 1}}, {"Action": {"action=sports": 1}}, {"Action": {"action=music": 1}}, {"Action": {"action=food": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
+      R"({"_label_cost": -1, "_label_probability": 0.8500000016763806, "_label_Action": 3, "_labelIndex": 2, "o": [{"v": {"v=click": 1}, "_definitely_bad": false}], "a": [0, 1, 2, 3], "c": {"User": {"user=Tom": 1, "time_of_day=afternoon": 1}, "_multi": [{"Action": {"action=politics": 1}}, {"Action": {"action=sports": 1}}, {"Action": {"action=music": 1}}, {"Action": {"action=food": 1}}]}, "p": [0.04999999944120647, 0.04999999944120647, 0.8500000016763806, 0.04999999944120647], "_original_label_cost": -0.5})",
+      R"({"_label_cost": 0, "_label_probability": 0.8500000016763806, "_label_Action": 3, "_labelIndex": 2, "o": [{"v": {"v=none": 1}, "_definitely_bad": false}], "a": [0, 1, 2, 3], "c": {"User": {"user=Anna": 1, "time_of_day=morning": 1}, "_multi": [{"Action": {"action=politics": 1}}, {"Action": {"action=sports": 1}}, {"Action": {"action=music": 1}}, {"Action": {"action=food": 1}}]}, "p": [0.04999999944120647, 0.04999999944120647, 0.8500000016763806, 0.04999999944120647], "_original_label_cost": 0})",
+      R"({"_label_cost": 0, "_label_probability": 0.3166666677221655, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v=none": 1}, "_definitely_bad": false}], "a": [0, 1, 2, 3], "c": {"User": {"user=Anna": 1, "time_of_day=morning": 1}, "_multi": [{"Action": {"action=politics": 1}}, {"Action": {"action=sports": 1}}, {"Action": {"action=music": 1}}, {"Action": {"action=food": 1}}]}, "p": [0.3166666677221655, 0.3166666677221655, 0.04999999683350349, 0.3166666677221655], "_original_label_cost": 0})",
+      R"({"_label_cost": 0, "_label_probability": 0.8500000016763806, "_label_Action": 3, "_labelIndex": 2, "o": [{"v": {"v=none": 1}, "_definitely_bad": false}], "a": [0, 1, 2, 3], "c": {"User": {"user=Anna": 1, "time_of_day=afternoon": 1}, "_multi": [{"Action": {"action=politics": 1}}, {"Action": {"action=sports": 1}}, {"Action": {"action=music": 1}}, {"Action": {"action=food": 1}}]}, "p": [0.04999999944120647, 0.04999999944120647, 0.8500000016763806, 0.04999999944120647], "_original_label_cost": 0})"
+  };
+  // clang-format on
+
+  // IGL instance
+  auto igl_vw = VW::initialize(vwtest::make_args("--experimental_igl", "--coin", "--cb_explore_adf", "--dsjson",
+      "--noconstant", "--quiet", "-q", "UA", "--predict_only_model", "-b", "18"));
+
+  auto multi_vw = VW::initialize(vwtest::make_args("--cb_explore_adf", "--coin", "--dsjson", "-q", "UA", "--noconstant",
+      "--quiet", "-b", "17", "--predict_only_model"));
+
+  // train cb model
+  for (size_t i = 0; i < igl_vector.size(); i++)
+  {
+    auto multi_ex = igl_vector[i];
+    auto examples = vwtest::parse_dsjson(*multi_vw, multi_ex);
+    VW::setup_examples(*multi_vw, examples);
+    multi_vw->learn(examples);
+    multi_vw->finish_example(examples);
+  }
+
+  separate_weights_vector multi_weights = get_separate_weights(std::move(multi_vw));
+
+  // train IGL
+  for (auto& ex : igl_vector)
+  {
+    auto examples = vwtest::parse_dsjson(*igl_vw, ex);
+    VW::setup_examples(*igl_vw, examples);
+
+    igl_vw->learn(examples);
+    igl_vw->finish_example(examples);
+  }
+
+  std::vector<separate_weights_vector> igl_weights = split_weights(std::move(igl_vw));
+
+  EXPECT_GT(multi_weights.size(), 0);
+  EXPECT_EQ(multi_weights, igl_weights[1]);
 }

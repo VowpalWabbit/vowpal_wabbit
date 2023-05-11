@@ -39,6 +39,7 @@ jobs:
           -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
           -DVW_FEAT_FLATBUFFERS=Off
           -DVW_FEAT_CSV=On
+          -DVW_FEAT_CB_GRAPH_FEEDBACK=On
           -DRAPIDJSON_SYS_DEP=Off
           -DFMT_SYS_DEP=Off
           -DSPDLOG_SYS_DEP=Off
@@ -77,6 +78,7 @@ jobs:
           -DUSE_LATEST_STD=On
           -DVW_FEAT_FLATBUFFERS=Off
           -DVW_FEAT_CSV=On
+          -DVW_FEAT_CB_GRAPH_FEEDBACK=On
           -DRAPIDJSON_SYS_DEP=Off
           -DFMT_SYS_DEP=Off
           -DSPDLOG_SYS_DEP=Off
@@ -109,6 +111,7 @@ jobs:
           -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
           -DVW_FEAT_FLATBUFFERS=Off
           -DVW_FEAT_CSV=On
+          -DVW_FEAT_CB_GRAPH_FEEDBACK=On
           -DRAPIDJSON_SYS_DEP=Off
           -DFMT_SYS_DEP=Off
           -DSPDLOG_SYS_DEP=Off

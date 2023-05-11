@@ -584,8 +584,9 @@ Weight Options:
                                             experimental)
     --epsilon_decay_audit arg               Epsilon decay audit file name (type: str, experimental)
     --constant_epsilon                      Keep epsilon constant across models (type: bool, keep, experimental)
-    --fixed_significance_level              Use fixed significance level as opposed to scaling by model count
-                                            (bonferroni correction) (type: bool, keep, experimental)
+    --bonferroni_denominator arg            Factor to scale down significance level by, defaults to model
+                                            count (bonferroni correction) (type: uint, default: 0, keep,
+                                            experimental)
     --min_champ_examples arg                Minimum number of examples for any challenger to become champion
                                             (type: uint, default: 0, keep, experimental)
     --initial_epsilon arg                   Initial epsilon value (type: float, default: 1, keep, experimental)
@@ -596,8 +597,10 @@ Weight Options:
                                             experimental)
     --tol_x arg                             Tolerance for estimation optimization (type: float, default:
                                             1e-06, keep, experimental)
-    --opt_func arg                          Optimization function for estimation) (type: str, default: bisect,
+    --opt_func arg                          Optimization function for estimation (type: str, default: bisect,
                                             choices {bisect, brentq}, keep, experimental)
+    --challenger_epsilon                    Use exploration for challenger model predictions (type: bool,
+                                            keep, experimental)
 [Reduction] Error Correcting Tournament Options:
     --ect arg                               Error correcting tournament with <k> labels (type: uint, keep,
                                             necessary)
@@ -622,6 +625,14 @@ Weight Options:
                                             uint, keep, necessary)
     --replay_m_count arg                    How many times (in expectation) should each example be played
                                             (default: 1 = permuting) (type: uint, default: 1)
+[Reduction] Experimental: Contextual Bandit Exploration with ADF with graph feedback Options:
+    --cb_explore_adf                        Online explore-exploit for a contextual bandit problem with multiline
+                                            action dependent features (type: bool, keep, necessary)
+    --gamma_scale arg                       Sets CB with graph feedback gamma parameter to gamma=[gamma_scale]*[num
+                                            examples]^1/2 (type: float, default: 1, keep)
+    --gamma_exponent arg                    Exponent on [num examples] in CB with graph feedback parameter
+                                            gamma (type: float, default: 0.5, keep)
+    --graph_feedback                        Graph feedback pdf (type: bool, keep, necessary, experimental)
 [Reduction] Experimental: Contextual Bandit Exploration with ADF with large action space filtering Options:
     --cb_explore_adf                        Online explore-exploit for a contextual bandit problem with multiline
                                             action dependent features (type: bool, keep, necessary)

@@ -18,6 +18,7 @@ cmake -S "%vwRoot%" -B "%vwRoot%\build" -G "Visual Studio 16 2019" -A "x64" ^
     -Dvw_BUILD_NET_FRAMEWORK=On ^
     -DVW_FEAT_FLATBUFFERS=On ^
     -DVW_FEAT_CSV=On ^
+    -DVW_FEAT_CB_GRAPH_FEEDBACK=On ^
     -Dvw_BUILD_NET_FRAMEWORK=On ^
     -DRAPIDJSON_SYS_DEP=Off ^
     -DFMT_SYS_DEP=Off ^

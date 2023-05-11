@@ -40,7 +40,7 @@ var skipList = new[] { 13, 32, 39, 258, 40, 259, 41, 260, 59, 60, 61, 66, 68, 90
     256, 299, 300, 306, 310, 311, 327, 328, 329, 330, 331, 367, 368, 396, 397, 398, // DSJSON not supported
     383, 389, 390, 391, 392, 393, // no data file
     400, 404, // positional args
-    405, 406, 407, 411, 415, 417 // DSJSON not supported
+    405, 406, 407, 411, 415, 417, 456, 457, 458, 459, 460, 461, 462 // DSJSON not supported
     };
 
 var outputModels = new Dictionary<string, TestCase>();

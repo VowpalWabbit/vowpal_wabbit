@@ -1,0 +1,45 @@
+name: Wasm
+
+on:
+  push:
+    branches:
+      - master
+      - 'releases/**'
+  pull_request:
+    branches:
+      - '*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  job:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - uses: lukka/get-cmake@latest
+      - uses: mymindstorm/setup-emsdk@v11
+      - uses: actions/setup-node@v3
+        with:
+            node-version: 16
+      - name: Configure
+        run: emcmake cmake --preset wasm -G Ninja -DCMAKE_BUILD_TYPE=MinSizeRel -DCMAKE_TOOLCHAIN_FILE=$(pwd)/ext_libs/vcpkg/scripts/buildsystems/vcpkg.cmake
+      - name: Build
+        run: cmake --build build --target vw-wasm
+      - name: Copy vw.js to out
+        run: |
+          cp wasm/vw.js wasm/out/
+          sed -i 's#''./out/vw-wasm.js''#./vw-wasm.js#' wasm/out/vw.js
+      - name: Build vw-wasm for browser plugin
+        run: cmake --build build --target vw-wasm-plugin
+      - uses: actions/upload-artifact@v3
+        with:
+          path: wasm/out
+      - name: Test
+        working-directory: wasm
+        run: |
+          npm install
+          npm test

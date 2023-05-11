@@ -211,6 +211,84 @@ private:
 };
 
 template <bool audit>
+class ArrayToGraphState : public BaseState<audit>
+{
+public:
+  BaseState<audit>* return_state;
+  VW::cb_graph_feedback::triplet graph_triplet;
+
+  ArrayToGraphState() : BaseState<audit>("ArrayToGraphObject"), graph_triplet(0, 0, -1.f) {}
+
+  BaseState<audit>* StartObject(Context<audit>& ctx) override
+  {
+    obj_return_state = ctx.previous_state;
+    return this;
+  }
+
+  BaseState<audit>* Key(Context<audit>& ctx, const char* str, rapidjson::SizeType len, bool /* copy */) override
+  {
+    ctx.key = str;
+    ctx.key_length = len;
+    return this;
+  }
+
+  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType len, bool) override
+  {
+    ctx.error() << "Unexpected token: std::string('" << str << "' len: " << len << ")";
+    return nullptr;
+  }
+
+  BaseState<audit>* StartArray(Context<audit>& ctx) override
+  {
+    return_state = ctx.previous_state;
+    graph_triplet = VW::cb_graph_feedback::triplet(0, 0, -1.f);
+    return this;
+  }
+
+  BaseState<audit>* EndArray(Context<audit>&, rapidjson::SizeType) override { return return_state; }
+
+  BaseState<audit>* Float(Context<audit>& ctx, float v) override
+  {
+    if (!_stricmp(ctx.key, "val")) { graph_triplet.val = v; }
+    else
+    {
+      ctx.error() << "Unsupported label property: '" << ctx.key << "' len: " << ctx.key_length;
+      return nullptr;
+    }
+
+    return this;
+  }
+
+  BaseState<audit>* Uint(Context<audit>& ctx, unsigned v) override
+  {
+    if (!_stricmp(ctx.key, "val")) { graph_triplet.val = v; }
+    else if (!_stricmp(ctx.key, "row")) { graph_triplet.row = v; }
+    else if (!_stricmp(ctx.key, "col")) { graph_triplet.col = v; }
+    else
+    {
+      ctx.error() << "Unsupported label property: '" << ctx.key << "' len: " << ctx.key_length;
+      return nullptr;
+    }
+    return this;
+  }
+
+  BaseState<audit>* EndObject(Context<audit>& ctx, rapidjson::SizeType) override
+  {
+    auto& graph_reduction_features =
+        ctx.ex->ex_reduction_features.template get<VW::cb_graph_feedback::reduction_features>();
+    if (graph_triplet.val != -1.f)
+    {
+      graph_reduction_features.push_triplet(graph_triplet.row, graph_triplet.col, graph_triplet.val);
+    }
+    graph_triplet = VW::cb_graph_feedback::triplet(0, 0, -1.f);
+    return obj_return_state;
+  }
+
+private:
+  BaseState<audit>* obj_return_state;
+};
+
+template <bool audit>
 class LabelObjectState : public BaseState<audit>
 {
 public:
@@ -934,6 +1012,7 @@ public:
 
       // TODO: _multi in _multi...
       if (ctx.key_length == 6 && !strcmp(ctx.key, "_multi")) { return &ctx.multi_state; }
+      if (ctx.key_length == 6 && !strcmp(ctx.key, "_graph")) { return &ctx.array_to_graph_state; }
 
       if (ctx.key_length == 6 && !strcmp(ctx.key, "_slots")) { return &ctx.slots_state; }
 
@@ -1623,6 +1702,7 @@ public:
   ArrayState<audit> array_state;
   SlotsState<audit> slots_state;
   ArrayToPdfState<audit> array_pdf_state;
+  ArrayToGraphState<audit> array_to_graph_state;
 
   // DecisionServiceState
   DecisionServiceState<audit> decision_service_state;

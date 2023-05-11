@@ -1,0 +1,19 @@
+Version 9.8.0
+Id
+Min label:-1
+Max label:0
+bits:17
+lda:0
+0 ngram:
+0 skip:
+options: --cb_adf --cb_explore_adf --cb_type mtr --coin --csoaa_ldf multiline --csoaa_rank --noconstant --quadratic UA
+Checksum: 120930475
+event_sum 20
+action_sum 80
+:0
+User^user=Anna:10769:0.118738
+User^time_of_day=afternoon:65137:-0.296296
+User^time_of_day=afternoon*Action^action=music:77985:-0.296296
+User^user=Anna*Action^action=music:99201:0.118738
+User^time_of_day=morning:112514:0.118738
+Action^action=music:113474:-0.175758
