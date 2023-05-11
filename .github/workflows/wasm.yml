@@ -33,6 +33,8 @@ jobs:
         run: |
           cp wasm/vw.js wasm/out/
           sed -i 's#''./out/vw-wasm.js''#./vw-wasm.js#' wasm/out/vw.js
+      - name: Build vw-wasm for browser plugin
+        run: cmake --build build --target vw-wasm-plugin
       - uses: actions/upload-artifact@v3
         with:
           path: wasm/out

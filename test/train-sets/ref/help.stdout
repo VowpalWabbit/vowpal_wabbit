@@ -567,6 +567,8 @@ Weight Options:
     --emt_scorer arg                        Indicates the type of scorer to use (type: str, default: self_consistent_rank,
                                             choices {distance, not_self_consistent_rank, random, self_consistent_rank},
                                             keep)
+    --emt_initial arg                       Indicates how to initialize scorer (type: str, default: cosine,
+                                            choices {cosine, euclidean, gaussian, none}, keep)
     --emt_router arg                        Indicates the type of router to use (type: str, default: eigen,
                                             choices {eigen, random}, keep)
 [Reduction] Epsilon-Decaying Exploration Options:
