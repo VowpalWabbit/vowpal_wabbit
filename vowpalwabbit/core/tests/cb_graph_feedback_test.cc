@@ -208,7 +208,6 @@ TEST(GraphFeedback, PostedPriceAuctionBidding)
     EXPECT_THAT(pred_results[1], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.953, 0.046}));
     EXPECT_GT(pred_results[1][0], pred_results[1][1]);
   }
-
 }
 
 std::vector<std::vector<float>> predict_learn_return_as(VW::workspace& vw, const std::string& shared_graph)
