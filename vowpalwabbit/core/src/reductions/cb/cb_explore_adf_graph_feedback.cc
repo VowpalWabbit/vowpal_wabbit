@@ -33,6 +33,42 @@
 
 using namespace VW::cb_explore_adf;
 
+// potential bug in the ensmallen library
+// below method template specialization to be removed once/if that is resolved and the library is updated
+// https://github.com/mlpack/ensmallen/issues/365
+namespace ens
+{
+class L_BFGS;
+
+template <>
+double L_BFGS::ChooseScalingFactor(const size_t iterationNum, const arma::Mat<double>& gradient,
+    const arma::Cube<double>& s, const arma::Cube<double>& y)
+{
+  typedef typename arma::Cube<double>::elem_type CubeElemType;
+
+  double scalingFactor;
+  if (iterationNum > 0)
+  {
+    int previousPos = (iterationNum - 1) % numBasis;
+    // Get s and y matrices once instead of multiple times.
+    const arma::Mat<CubeElemType>& sMat = s.slice(previousPos);
+    const arma::Mat<CubeElemType>& yMat = y.slice(previousPos);
+
+    double max_y = arma::abs(yMat).max();
+
+    if (max_y == 0.0) { scalingFactor = 0.0; }
+    else
+    {
+      auto z = yMat / max_y;
+      scalingFactor = (dot(sMat, z) / max_y) / dot(z, z);
+    }
+  }
+  else { scalingFactor = 1.0 / sqrt(dot(gradient, gradient)); }
+
+  return scalingFactor;
+}
+}  // namespace ens
+
 namespace VW
 {
 namespace cb_explore_adf
