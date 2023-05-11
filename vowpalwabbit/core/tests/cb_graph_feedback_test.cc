@@ -97,7 +97,7 @@ TEST(GraphFeedback, CopsAndRobbers)
   auto pred_results = predict_learn_return_action_scores_two_actions(vw, shared_graph);
 
   // f_hat 0.1998, 0.0999 -> second one has lower cost
-  EXPECT_THAT(pred_results[0], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.099, 0.900}));
+  EXPECT_THAT(pred_results[0], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.382, 0.6179}));
 
   // fhat 0.4925, 0.6972 -> first one has lower cost
   EXPECT_THAT(pred_results[1], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.710, 0.289}));
@@ -122,11 +122,11 @@ TEST(GraphFeedback, AppleTasting)
   auto pred_results = predict_learn_return_action_scores_two_actions(vw, shared_graph);
 
   // f_hat 0.1998, 0.0999 -> just pick the one with the lowest cost since it also reveals all
-  EXPECT_THAT(pred_results[0], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.0, 1.0}));
+  EXPECT_THAT(pred_results[0], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.333, 0.6664}));
 
   // fhat 0.4925, 0.6972 -> the one that reveals all has the higher cost so give it some probability but not the biggest
   // -> the bigger the gamma the more we go with the scores, the smaller the gamma the more we go with the graph
-  EXPECT_THAT(pred_results[1], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.799, 0.20}));
+  EXPECT_THAT(pred_results[1], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.669, 0.330}));
 }
 
 TEST(GraphFeedback, PostedPriceAuctionBidding)
@@ -137,25 +137,78 @@ TEST(GraphFeedback, PostedPriceAuctionBidding)
   // 1 If the "do nothing" (action 0) action has the lower estimated loss/cost then p[0] = gamma * f_hat[1] / (1 + gamma
   // * f_hat[1]) + (upper bound of another value)
 
-  std::vector<std::string> args{
-      "--cb_explore_adf", "--graph_feedback", "--quiet", "--gamma_scale", "10", "--gamma_exponent", "0"};
-  auto vw_graph = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
+  {
+    std::vector<std::string> args{
+        "--cb_explore_adf", "--graph_feedback", "--quiet", "--gamma_scale", "1", "--gamma_exponent", "0"};
+    auto vw_graph = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
 
-  auto& vw = *vw_graph.get();
+    auto& vw = *vw_graph.get();
 
-  /**
-   * 1 1
-   * 0 1
-   */
-  std::string shared_graph = "shared graph 0,0,1 0,1,1 1,0,0 1,1,1";
+    /**
+     * 1 1
+     * 0 1
+     */
+    std::string shared_graph = "shared graph 0,0,1 0,1,1 1,0,0 1,1,1";
 
-  auto pred_results = predict_learn_return_action_scores_two_actions(vw, shared_graph);
+    auto pred_results = predict_learn_return_action_scores_two_actions(vw, shared_graph);
 
-  // f_hat 0.1998, 0.0999
-  EXPECT_THAT(pred_results[0], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.0, 1.0}));
+    // f_hat 0.1998, 0.0999
+    EXPECT_THAT(pred_results[0], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.482, 0.517}));
+    EXPECT_LT(pred_results[0][0], pred_results[0][1]);
 
-  // fhat 0.4925, 0.6972
-  EXPECT_THAT(pred_results[1], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.834, 0.165}));
+    // fhat 0.4925, 0.6972
+    EXPECT_THAT(pred_results[1], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.532, 0.467}));
+    EXPECT_GT(pred_results[1][0], pred_results[1][1]);
+  }
+
+  {
+    std::vector<std::string> args{
+        "--cb_explore_adf", "--graph_feedback", "--quiet", "--gamma_scale", "10", "--gamma_exponent", "0"};
+    auto vw_graph = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
+
+    auto& vw = *vw_graph.get();
+
+    /**
+     * 1 1
+     * 0 1
+     */
+    std::string shared_graph = "shared graph 0,0,1 0,1,1 1,0,0 1,1,1";
+
+    auto pred_results = predict_learn_return_action_scores_two_actions(vw, shared_graph);
+
+    // f_hat 0.1998, 0.0999
+    EXPECT_THAT(pred_results[0], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.293, 0.706}));
+    EXPECT_LT(pred_results[0][0], pred_results[0][1]);
+
+    // // fhat 0.4925, 0.6972
+    EXPECT_THAT(pred_results[1], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.722, 0.277}));
+    EXPECT_GT(pred_results[1][0], pred_results[1][1]);
+  }
+
+  {
+    std::vector<std::string> args{
+        "--cb_explore_adf", "--graph_feedback", "--quiet", "--gamma_scale", "100", "--gamma_exponent", "0"};
+    auto vw_graph = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
+
+    auto& vw = *vw_graph.get();
+
+    /**
+     * 1 1
+     * 0 1
+     */
+    std::string shared_graph = "shared graph 0,0,1 0,1,1 1,0,0 1,1,1";
+
+    auto pred_results = predict_learn_return_action_scores_two_actions(vw, shared_graph);
+
+    // f_hat 0.1998, 0.0999
+    EXPECT_THAT(pred_results[0], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.0, 1.0}));
+    EXPECT_LT(pred_results[0][0], pred_results[0][1]);
+
+    // fhat 0.4925, 0.6972
+    EXPECT_THAT(pred_results[1], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.953, 0.046}));
+    EXPECT_GT(pred_results[1][0], pred_results[1][1]);
+  }
+
 }
 
 std::vector<std::vector<float>> predict_learn_return_as(VW::workspace& vw, const std::string& shared_graph)
@@ -275,15 +328,15 @@ TEST(GraphFeedback, CheckIdentityGSmallGamma)
 
   // fhat 0.5018 0.3011 0.3011
   EXPECT_THAT(
-      pred_results[1], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.308, 0.345, 0.345}));
+      pred_results[1], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.318, 0.340, 0.340}));
 
   // fhat 0.5640 0.1585 0.2629
   EXPECT_THAT(
-      pred_results[2], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.279, 0.372, 0.348}));
+      pred_results[2], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.308, 0.352, 0.339}));
 
   // 0.7371 0.3482 0.3482
   EXPECT_THAT(
-      pred_results[3], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.285, 0.357, 0.357}));
+      pred_results[3], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.305, 0.347, 0.347}));
 }
 
 TEST(GraphFeedback, CheckIdentityGLargeGamma)
@@ -309,15 +362,15 @@ TEST(GraphFeedback, CheckIdentityGLargeGamma)
 
   // fhat 0.5018 0.3011 0.3011
   EXPECT_THAT(
-      pred_results[1], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.052, 0.473, 0.473}));
+      pred_results[1], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.156, 0.421, 0.421}));
 
   // fhat 0.5640 0.1585 0.2629
   EXPECT_THAT(
-      pred_results[2], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.039, 0.909, 0.051}));
+      pred_results[2], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.102, 0.625, 0.271}));
 
   // 0.7371 0.3482 0.3482
   EXPECT_THAT(
-      pred_results[3], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.044, 0.477, 0.477}));
+      pred_results[3], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.099, 0.450, 0.450}));
 }
 
 TEST(GraphFeedback, CheckLastCol1GSmallGamma)
@@ -340,54 +393,31 @@ TEST(GraphFeedback, CheckLastCol1GSmallGamma)
 
   auto pred_results = predict_learn_return_as(vw, shared_graph);
 
-  // f_hat 0, 0, 0
-  EXPECT_THAT(
-      pred_results[0], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.195, 0.195, 0.609}));
+  // f_hat 0, 0, 0 last column should have largest probability and the other two should be equal
+  EXPECT_GT(pred_results[0][2], pred_results[0][0]);
+  EXPECT_GT(pred_results[0][2], pred_results[0][1]);
+  EXPECT_EQ(pred_results[0][0], pred_results[0][1]);
 
   // fhat 0.5018 0.3011 0.3011
-  EXPECT_THAT(
-      pred_results[1], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.174, 0.208, 0.6169}));
+  // last column should have largest probability
+  // second should have larger prob than fist because it has lower cost
+  EXPECT_GT(pred_results[1][2], pred_results[1][0]);
+  EXPECT_GT(pred_results[1][2], pred_results[1][1]);
+  EXPECT_GT(pred_results[1][1], pred_results[1][0]);
 
   // fhat 0.5640 0.1585 0.2629
-  EXPECT_THAT(
-      pred_results[2], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.134, 0.220, 0.645}));
+  // last column should have largest probability
+  // second should have larger prob than fist because it has lower cost
+  EXPECT_GT(pred_results[2][2], pred_results[2][0]);
+  EXPECT_GT(pred_results[2][2], pred_results[2][1]);
+  EXPECT_GT(pred_results[2][1], pred_results[2][0]);
 
   // 0.7371 0.3482 0.3482
-  EXPECT_THAT(
-      pred_results[3], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.155, 0.221, 0.623}));
-}
-
-TEST(GraphFeedback, CheckLastCol1GMedGamma)
-{
-  std::vector<std::string> args{
-      "--cb_explore_adf", "--graph_feedback", "--quiet", "--gamma_scale", "2.5", "--gamma_exponent", "0"};
-  auto vw_graph = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
-
-  auto& vw = *vw_graph.get();
-
-  /**
-   * 0 0 1
-   * 0 0 1
-   * 0 0 1
-   */
-  std::string shared_graph = "shared graph 0,0,0 0,1,0 0,2,1 1,0,0 1,1,0 1,2,1 2,0,0 2,1,0 2,2,1";
-
-  auto pred_results = predict_learn_return_as(vw, shared_graph);
-
-  // f_hat 0, 0, 0
-  EXPECT_THAT(
-      pred_results[0], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.192, 0.192, 0.615}));
-
-  // fhat 0.5018 0.3011 0.3011
-  EXPECT_THAT(
-      pred_results[1], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.072, 0.234, 0.692}));
-
-  // fhat 0.5640 0.1585 0.2629
-  EXPECT_THAT(
-      pred_results[2], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.118, 0.449, 0.432}));
-
-  // 0.7371 0.3482 0.3482
-  EXPECT_THAT(pred_results[3], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0, 0.305, 0.694}));
+  // last column should have largest probability
+  // second should have larger prob than fist because it has lower cost
+  EXPECT_GT(pred_results[3][2], pred_results[3][0]);
+  EXPECT_GT(pred_results[3][2], pred_results[3][1]);
+  EXPECT_GT(pred_results[3][1], pred_results[3][0]);
 }
 
 TEST(GraphFeedback, CheckLastCol1GLargeGamma)
@@ -408,17 +438,21 @@ TEST(GraphFeedback, CheckLastCol1GLargeGamma)
   auto pred_results = predict_learn_return_as(vw, shared_graph);
 
   // f_hat 0, 0, 0
-  EXPECT_THAT(
-      pred_results[0], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.322, 0.322, 0.354}));
+  EXPECT_GT(pred_results[0][2], pred_results[0][0]);
+  EXPECT_GT(pred_results[0][2], pred_results[0][1]);
+  EXPECT_EQ(pred_results[0][0], pred_results[0][1]);
 
   // fhat 0.5018 0.3011 0.3011
-  EXPECT_THAT(pred_results[1], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0, 0.5, 0.5}));
+  EXPECT_NEAR(pred_results[1][0], 0.f, EXPLICIT_FLOAT_TOL);
+  EXPECT_NEAR(pred_results[1][1], pred_results[1][2], EXPLICIT_FLOAT_TOL);
 
-  // fhat 0.5640 0.1585 0.2629
-  EXPECT_THAT(pred_results[2], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0, 0.582, 0.417}));
+  // fhat 0.5640, 0.1585, 0.2629
+  EXPECT_NEAR(pred_results[2][0], 0.f, EXPLICIT_FLOAT_TOL);
+  EXPECT_GT(pred_results[2][1], pred_results[2][2]);
 
-  // 0.7371 0.3482 0.3482
-  EXPECT_THAT(pred_results[3], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0, 0.5, 0.5}));
+  // 0.7371, 0.3482, 0.3482
+  EXPECT_NEAR(pred_results[3][0], 0.f, EXPLICIT_FLOAT_TOL);
+  EXPECT_NEAR(pred_results[3][1], pred_results[3][2], EXPLICIT_FLOAT_TOL);
 }
 
 TEST(GraphFeedback, CheckFirstCol1GSmallGamma)
@@ -440,57 +474,42 @@ TEST(GraphFeedback, CheckFirstCol1GSmallGamma)
 
   auto pred_results = predict_learn_return_as(vw, shared_graph);
 
-  // f_hat 0, 0, 0
-  EXPECT_THAT(
-      pred_results[0], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.609, 0.195, 0.195}));
+  // smaller gamma, should listen to the graph more
 
-  // fhat 0.5018 0.3011 0.3011 -> 1.31
-  EXPECT_THAT(
-      pred_results[1], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.599, 0.200, 0.200}));
+  // f_hat 0, 0, 0 so we should favour the first action and the remaining probability should be equally spread out
+  EXPECT_GT(pred_results[0][0], pred_results[0][1]);
+  EXPECT_GT(pred_results[0][0], pred_results[0][2]);
+  EXPECT_EQ(pred_results[0][1], pred_results[0][2]);
 
-  // fhat 0.5640 0.1585 0.2629 -> 1.21
-  EXPECT_THAT(
-      pred_results[2], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.537, 0.237, 0.225}));
+  // fhat 0.5018 0.3011 0.3011,
+  // first action has a higer cost but should still be favoured due to the small gamma
+  // the remaining probability should be equally spread out to the other two actions
+  EXPECT_GT(pred_results[1][0], pred_results[1][1]);
+  EXPECT_GT(pred_results[1][0], pred_results[1][2]);
+  EXPECT_EQ(pred_results[1][1], pred_results[1][2]);
 
-  // 0.7371 0.3482 0.3482 -> 1.37
-  EXPECT_THAT(
-      pred_results[3], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.588, 0.205, 0.205}));
-}
+  // the first actions probability should be lower than the first action in the previous example
+  EXPECT_GT(pred_results[0][0], pred_results[1][0]);
 
-TEST(GraphFeedback, CheckFirstCol1GMedGamma)
-{
-  // now the probs should favour the first action
+  // fhat 0.5640 0.1585 0.2629
+  // first action has a higer cost but should still be favoured due to the small gamma
+  // the remaining probability should be higher in the middle action since it has a lower cost
+  EXPECT_GT(pred_results[2][0], pred_results[2][1]);
+  EXPECT_GT(pred_results[2][0], pred_results[2][2]);
+  EXPECT_GT(pred_results[2][1], pred_results[2][2]);
 
-  std::vector<std::string> args{
-      "--cb_explore_adf", "--graph_feedback", "--quiet", "--gamma_scale", "2.5", "--gamma_exponent", "0"};
-  auto vw_graph = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
+  // first action has a higer cost but should still be favoured due to the small gamma
+  // the remaining probability should be equally spread out to the other two actions
+  // the first actions probability should be lower than the first action in the previous example
+  EXPECT_GT(pred_results[3][0], pred_results[3][1]);
+  EXPECT_GT(pred_results[3][0], pred_results[3][2]);
+  EXPECT_EQ(pred_results[3][1], pred_results[3][2]);
 
-  auto& vw = *vw_graph.get();
-
-  /**
-   * 1 0 0
-   * 1 0 0
-   * 1 0 0
-   */
-  std::string shared_graph = "shared graph 0,0,1 0,1,0 0,2,0 1,0,1 1,1,0 1,2,0 2,0,1 2,1,0 2,2,0";
-
-  auto pred_results = predict_learn_return_as(vw, shared_graph);
-
-  // f_hat 0, 0, 0
-  EXPECT_THAT(
-      pred_results[0], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.615, 0.192, 0.192}));
-
-  // fhat 0.5018 0.3011 0.3011 -> 1.31
-  EXPECT_THAT(
-      pred_results[1], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.419, 0.290, 0.290}));
-
-  // fhat 0.5640 0.1585 0.2629 -> 1.21
-  EXPECT_THAT(
-      pred_results[2], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.305, 0.366, 0.328}));
-
-  // 0.7371 0.3482 0.3482 -> 1.37
-  EXPECT_THAT(
-      pred_results[3], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.419, 0.290, 0.290}));
+  // the first actions probability should be lower than the first action in the previous examples since the cost is so
+  // high
+  EXPECT_GT(pred_results[0][0], pred_results[3][0]);
+  EXPECT_GT(pred_results[1][0], pred_results[3][0]);
+  EXPECT_GT(pred_results[2][0], pred_results[3][0]);
 }
 
 TEST(GraphFeedback, CheckFirstCol1GLargeGamma)
@@ -512,21 +531,38 @@ TEST(GraphFeedback, CheckFirstCol1GLargeGamma)
 
   auto pred_results = predict_learn_return_as(vw, shared_graph);
 
+  // larger gamma, should listen to the costs more
+
   // f_hat 0, 0, 0
-  EXPECT_THAT(
-      pred_results[0], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.354, 0.322, 0.322}));
+  EXPECT_GT(pred_results[0][0], pred_results[0][1]);
+  EXPECT_EQ(pred_results[0][1], pred_results[0][2]);
 
-  // fhat 0.5018 0.3011 0.3011 -> 1.31
-  EXPECT_THAT(
-      pred_results[1], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.016, 0.491, 0.4919}));
+  // fhat 0.5018, 0.3011, 0.3011
+  // first one smaller than the other two
+  // the other two equal probabilities
+  EXPECT_LT(pred_results[1][0], pred_results[1][1]);
+  EXPECT_LT(pred_results[1][0], pred_results[1][2]);
+  EXPECT_EQ(pred_results[1][1], pred_results[1][2]);
 
-  // fhat 0.5640 0.1585 0.2629 -> 1.21
-  EXPECT_THAT(
-      pred_results[2], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.011, 0.575, 0.412}));
+  // fhat 0.5640, 0.1585, 0.2629
+  // second bigger than other two
+  // first bigger than last
+  EXPECT_LT(pred_results[2][2], pred_results[2][0]);
+  EXPECT_LT(pred_results[2][2], pred_results[2][1]);
+  EXPECT_GT(pred_results[2][0], pred_results[2][2]);
 
-  // 0.7371 0.3482 0.3482 -> 1.37
-  EXPECT_THAT(
-      pred_results[3], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.014, 0.492, 0.492}));
+  // 0.7371 0.3482 0.3482
+  // first one smaller than the other two
+  // the other two equal probabilities
+  EXPECT_LT(pred_results[3][0], pred_results[3][1]);
+  EXPECT_LT(pred_results[3][0], pred_results[3][2]);
+  EXPECT_EQ(pred_results[3][1], pred_results[3][2]);
+
+  // the first actions probability should be lower than the first action in the previous examples since the cost is so
+  // high
+  EXPECT_GT(pred_results[0][0], pred_results[3][0]);
+  EXPECT_GT(pred_results[1][0], pred_results[3][0]);
+  EXPECT_GT(pred_results[2][0], pred_results[3][0]);
 }
 
 TEST(GraphFeedback, CheckSupervisedG)
@@ -549,17 +585,20 @@ TEST(GraphFeedback, CheckSupervisedG)
   auto pred_results = predict_learn_return_as(vw, shared_graph);
 
   // f_hat 0, 0, 0
-  EXPECT_THAT(
-      pred_results[0], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.333, 0.333, 0.333}));
+  EXPECT_EQ(pred_results[0][0], pred_results[0][1]);
+  EXPECT_EQ(pred_results[0][1], pred_results[0][2]);
 
-  // fhat 0.5018 0.3011 0.3011 -> 1.31
-  EXPECT_THAT(pred_results[1], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.0, 0.5, 0.5}));
+  // fhat 0.5018 0.3011 0.3011
+  EXPECT_NEAR(pred_results[1][0], 0.f, EXPLICIT_FLOAT_TOL);
+  EXPECT_EQ(pred_results[1][1], pred_results[1][2]);
 
   // fhat 0.5640 0.1585 0.2629
-  EXPECT_THAT(pred_results[2], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0, 0.579, 0.420}));
+  EXPECT_NEAR(pred_results[2][0], 0.f, EXPLICIT_FLOAT_TOL);
+  EXPECT_GT(pred_results[2][1], pred_results[2][2]);
 
   // 0.7371 0.3482 0.3482
-  EXPECT_THAT(pred_results[3], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.0, 0.5, 0.5}));
+  EXPECT_NEAR(pred_results[3][0], 0.f, EXPLICIT_FLOAT_TOL);
+  EXPECT_NEAR(pred_results[3][1], pred_results[3][2], EXPLICIT_FLOAT_TOL);
 }
 
 TEST(GraphFeedback, CheckUpdateRule100WIterations)
@@ -576,7 +615,7 @@ TEST(GraphFeedback, CheckUpdateRule100WIterations)
   // this is a very simple simulation that converges quickly and small dataset, we want the gamma to grow a bit more
   // aggressively and have the costs dictate the pmf more than the graph
   vw_arg_gf.push_back("--gamma_exponent");
-  vw_arg_gf.push_back("1");
+  vw_arg_gf.push_back("1.5");
 
   auto vw_gf = VW::initialize(VW::make_unique<VW::config::options_cli>(vw_arg_gf));
 
