@@ -374,7 +374,7 @@ arma::vec get_probs_from_coordinates(arma::mat& coordinates, VW::workspace& all)
 
   for (size_t i = 0; i < num_actions; i++)
   {
-    if (std::isnan(coordinates[i])) { THROW("nan encountered in the final coordinates"); }
+    if (std::isnan(coordinates[i])) { continue; }
     // clip to [0,1]
     coordinates[i] = std::max(0., std::min(coordinates[i], 1.));
   }
