@@ -1,4 +1,3 @@
-const { log } = require('console');
 const fs = require('fs');
 const crypto = require('crypto');
 const VWWasmModule = require('./out/vw-wasm.js');
@@ -152,9 +151,28 @@ class VWExampleLogger {
 };
 
 class WorkspaceBase {
-    constructor(type, { args_str, model_file } = {}) {
-        if (args_str === undefined && model_file === undefined) {
-            throw new Error("Can not initialize vw object without args_str or a model_file");
+    constructor(type, { args_str, model_file, model_array = [] } = {}) {
+
+        let vwModelConstructor = null;
+        if (type === ProblemType.All) {
+            vwModelConstructor = VWWasmModule.VWModel;
+        } else if (type === ProblemType.CB) {
+            vwModelConstructor = VWWasmModule.VWCBModel;
+        }
+        else {
+            throw new Error("Unknown model type");
+        }
+
+        const [model_array_ptr, model_array_len] = model_array;
+
+        let model_array_defined = model_array_ptr !== undefined && model_array_len !== undefined && model_array_ptr !== null && model_array_len > 0;
+
+        if (args_str === undefined && model_file === undefined && !model_array_defined) {
+            throw new Error("Can not initialize vw object without args_str or a model_file or a model_array");
+        }
+
+        if (model_file !== undefined && model_array_defined) {
+            throw new Error("Can not initialize vw object with both model_file and model_array");
         }
 
         this._args_str = args_str;
@@ -167,43 +185,36 @@ class WorkspaceBase {
             let ptr = VWWasmModule._malloc(modelBuffer.byteLength);
             let heapBytes = new Uint8Array(VWWasmModule.HEAPU8.buffer, ptr, modelBuffer.byteLength);
             heapBytes.set(new Uint8Array(modelBuffer));
-            if (type === ProblemType.All) {
-                this._instance = new VWWasmModule.VWModel(this._args_str, ptr, modelBuffer.byteLength);
-            } else if (type === ProblemType.CB) {
-                this._instance = new VWWasmModule.VWCBModel(this._args_str, ptr, modelBuffer.byteLength);
-            }
-            else {
-                throw new Error("Unknown model type");
-            }
+
+            this._instance = new vwModelConstructor(this._args_str, ptr, modelBuffer.byteLength);
+
             VWWasmModule._free(ptr);
         }
+        else if (model_array_defined) {
+            this._instance = new vwModelConstructor(this._args_str, model_array_ptr, model_array_len);
+        }
         else {
-            if (type === ProblemType.All) {
-                this._instance = new VWWasmModule.VWModel(this._args_str);
-            } else if (type === ProblemType.CB) {
-                this._instance = new VWWasmModule.VWCBModel(this._args_str);
-            }
-            else {
-                throw new Error("Unknown model type");
-            }
+            this._instance = new vwModelConstructor(this._args_str);
         }
 
+        return this;
+    }
 
-        return new Proxy(this, {
-            get(target, propertyName, receiver) {
-                if (typeof target._instance[propertyName] === 'function') {
-                    if (propertyName === '_samplePmf') {
-                        return undefined;
-                    }
-                    if (propertyName === '_predictAndSample') {
-                        return undefined;
-                    }
-                    return target._instance[propertyName].bind(target._instance);
-                }
+    /**
+     * Returns the enum value of the prediction type corresponding to the problem type of the model
+     * @returns enum value of prediction type
+     */
+    predictionType() {
+        return this._instance.predictionType();
+    }
 
-                return Reflect.get(target, propertyName, receiver);
-            }
-        });
+    /**
+     * The current total sum of the progressive validation loss
+     * 
+     * @returns {number} the sum of all losses accumulated by the model
+     */
+    sumLoss() {
+        return this._instance.sumLoss();
     }
 
     /**
@@ -212,7 +223,7 @@ class WorkspaceBase {
      * 
      * @param {string} model_file the path to the file where the model will be saved 
      */
-    saveModel(model_file) {
+    saveModelToFile(model_file) {
         let char_vector = this._instance.getModel();
         const size = char_vector.size();
         const uint8Array = new Uint8Array(size);
@@ -226,19 +237,51 @@ class WorkspaceBase {
         char_vector.delete();
     }
 
+
+    /**
+     * Gets the VW model in binary format as a Uint8Array that can be saved to a file.
+     * There is no need to delete or free the array returned by this function. 
+     * If the same array is however used to re-load the model into VW, then the array needs to be stored in wasm memory (see loadModelFromArray)
+     * 
+     * @returns {Uint8Array} the VW model in binary format
+     */
+    getModelAsArray() {
+        let char_vector = this._instance.getModel();
+        const size = char_vector.size();
+        const uint8Array = new Uint8Array(size);
+        for (let i = 0; i < size; ++i) {
+            uint8Array[i] = char_vector.get(i);
+        }
+        char_vector.delete();
+
+        return uint8Array;
+    }
+
     /**
      * 
      * Takes a file location and loads the VW model from the file.
      * 
      * @param {string} model_file the path to the file where the model will be loaded from
      */
-    loadModel(model_file) {
+    loadModelFromFile(model_file) {
         let modelBuffer = fs.readFileSync(model_file);
         let ptr = VWWasmModule._malloc(modelBuffer.byteLength);
         let heapBytes = new Uint8Array(VWWasmModule.HEAPU8.buffer, ptr, modelBuffer.byteLength);
         heapBytes.set(new Uint8Array(modelBuffer));
         this._instance.loadModelFromBuffer(ptr, modelBuffer.byteLength);
         VWWasmModule._free(ptr);
+    }
+
+    /**
+     * Takes a model in an array binary format and loads it into the VW instance.
+     * The memory must be allocated via the WebAssembly module's _malloc function and should later be freed via the _free function.
+     * 
+     * @param {*} model_array_ptr the pre-loaded model's array pointer
+     *  The memory must be allocated via the WebAssembly module's _malloc function and should later be freed via the _free function. 
+     * @param {number} model_array_len the pre-loaded model's array length
+     */
+    loadModelFromArray(model_array_ptr, model_array_len) {
+        this._instance.loadModelFromBuffer(model_array_ptr, model_array_len);
     }
 
     /**
@@ -262,12 +305,56 @@ class Workspace extends WorkspaceBase {
      * @constructor
      * @param {string} [args_str] - The arguments that are used to initialize Vowpal Wabbit (optional)
      * @param {string} [model_file] - The path to the file where the model will be loaded from (optional)
-     * @throws {Error} Throws an error if both of the string arguments and the model file are missing,
-     *  or throws an error if both string arguments and a model file are provided, and the string arguments
-     *  and arguments defined in the model clash
+     * @param {tuple} [model_array] - The pre-loaded model's array pointer and length (optional).
+     *  The memory must be allocated via the WebAssembly module's _malloc function and should later be freed via the _free function.
+     * @throws {Error} Throws an error if:
+     * - no argument is provided
+     * - both string arguments and a model file are provided, and the string arguments and arguments defined in the model clash
+     * - both string arguments and a model array are provided, and the string arguments and arguments defined in the model clash
+     * - both a model file and a model array are provided
      */
-    constructor({ args_str, model_file, log_file } = {}) {
-        super(ProblemType.All, { args_str, model_file, log_file });
+    constructor({ args_str, model_file, model_array } = {}) {
+        super(ProblemType.All, { args_str, model_file, model_array });
+    }
+
+    /**
+     * Parse a line of text into a VW example. 
+     * The example can then be used for prediction or learning. 
+     * finishExample() must be called and then delete() on the example, when it is no longer needed.
+     * 
+     * @param {string} line 
+     * @returns a parsed vw example that can be used for prediction or learning
+     */
+    parse(line) {
+        return this._instance.parse(line);
+    }
+
+    /**
+     * Calls vw predict on the example and returns the prediction.
+     * 
+     * @param {object} example returned from parse()
+     * @returns the prediction with a type corresponding to the reduction that was used
+     */
+    predict(example) {
+        return this._instance.predict(example);
+    }
+
+    /**
+     * Calls vw learn on the example and updates the model
+     * 
+     * @param {object} example returned from parse()
+     */
+    learn(example) {
+        return this._instance.learn(example);
+    }
+
+    /**
+     * Cleans the example and returns it to the pool of available examples. delete() must also be called on the example object
+     * 
+     * @param {object} example returned from parse()
+     */
+    finishExample(example) {
+        return this._instance.finishExample(example);
     }
 };
 
@@ -300,7 +387,7 @@ class Workspace extends WorkspaceBase {
  *  model.learn(example);
  *  vwLogger.logCBExampleToStream(example);
  *  
- *  model.saveModel("my_model.vw");
+ *  model.saveModelToFile("my_model.vw");
  *  vwLogger.endLogStream();
  *  model.delete();
  * 
@@ -318,13 +405,86 @@ class CbWorkspace extends WorkspaceBase {
      * @constructor
      * @param {string} [args_str] - The arguments that are used to initialize Vowpal Wabbit (optional)
      * @param {string} [model_file] - The path to the file where the model will be loaded from (optional)
-     * @throws {Error} Throws an error if both of the string arguments and the model file are missing,
-     *  or throws an error if both string arguments and a model file are provided, and the string arguments
-     *  and arguments defined in the model clash
+     * @param {tuple} [model_array] - The pre-loaded model's array pointer and length (optional).
+     *  The memory must be allocated via the WebAssembly module's _malloc function and should later be freed via the _free function.
+     * @throws {Error} Throws an error if:
+     * - no argument is provided
+     * - both string arguments and a model file are provided, and the string arguments and arguments defined in the model clash
+     * - both string arguments and a model array are provided, and the string arguments and arguments defined in the model clash
+     * - both a model file and a model array are provided
      */
 
-    constructor({ args_str, model_file, log_file } = {}) {
-        super(ProblemType.CB, { args_str, model_file, log_file });
+    constructor({ args_str, model_file, model_array } = {}) {
+        super(ProblemType.CB, { args_str, model_file, model_array });
+        this._ex = "";
+    }
+
+    /**
+     * Takes a CB example and returns an array of (action, score) pairs, representing the probability mass function over the available actions
+     * The returned pmf can be used with samplePmf to sample an action
+     * 
+     * Example must have the following properties:
+     * - text_context: a string representing the context
+     * 
+     * @param {object} example the example object that will be used for prediction
+     * @returns {array} probability mass function, an array of action,score pairs that was returned by predict
+     */
+    predict(example) {
+        return this._instance.predict(example);
+    }
+
+    /**
+     * Takes a CB example and uses it to update the model
+     * 
+     * Example must have the following properties:
+     * - text_context: a string representing the context
+     * - labels: an array of label objects (usually one), each label object must have the following properties:
+     *  - action: the action index
+     *  - cost: the cost of the action
+     *  - probability: the probability of the action
+     * 
+     * A label object should have more than one labels only if a reduction that accepts multiple labels was used (e.g. graph_feedback)
+     * 
+     * 
+     * @param {object} example the example object that will be used for prediction
+     */
+    learn(example) {
+        return this._instance.learn(example);
+    }
+
+    /**
+     * Accepts a CB example (in text format) line by line. Once a full CB example is passed in it will call learnFromString.
+     * This is intended to be used with files that have CB examples, that were logged using logCBExampleToStream and are being read line by line.
+     * 
+     * @param {string} line a string representing a line from a CB example in text Vowpal Wabbit format
+     */
+    addLine(line) {
+        if (line.trim() === '') {
+            this.learnFromString(this._ex);
+            this._ex = "";
+        }
+        else {
+            this._ex = this._ex + line + "\n";
+        }
+
+    }
+
+    /**
+     * Takes a full multiline CB example in text format and uses it to update the model. This is intended to be used with examples that are logged to a file using logCBExampleToStream.
+     * 
+     * @param {string} example a string representing the CB example in text Vowpal Wabbit format
+     * @throws {Error} Throws an error if the example is an object with a label and/or a text_context
+     */
+    learnFromString(example) {
+        if (example.hasOwnProperty("labels") || example.hasOwnProperty("text_context")) {
+            throw new Error("Example should not have a label or a text_context when using learnFromString, the label and context should just be in the string");
+        }
+
+        let ex = {
+            text_context: example
+        }
+
+        return this._instance.learnFromString(ex);
     }
 
     /**
@@ -435,6 +595,7 @@ module.exports = new Promise((resolve) => {
                 Prediction: Prediction,
                 VWExampleLogger, VWExampleLogger,
                 getExceptionMessage: getExceptionMessage,
+                wasmModule: VWWasmModule
             }
         )
     }
