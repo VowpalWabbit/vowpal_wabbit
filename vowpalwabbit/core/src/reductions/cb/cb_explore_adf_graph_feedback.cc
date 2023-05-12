@@ -53,14 +53,7 @@ double L_BFGS::ChooseScalingFactor(const size_t iterationNum, const arma::Mat<do
     const arma::Mat<CubeElemType>& sMat = s.slice(previousPos);
     const arma::Mat<CubeElemType>& yMat = y.slice(previousPos);
 
-    double max_y = arma::abs(yMat).max();
-
-    if (max_y == 0.0) { scalingFactor = 0.0; }
-    else
-    {
-      auto z = yMat / max_y;
-      scalingFactor = (dot(sMat, z) / max_y) / dot(z, z);
-    }
+    scalingFactor = dot(sMat, yMat) / std::max(1e-12, dot(yMat, yMat));
   }
   else { scalingFactor = 1.0 / sqrt(dot(gradient, gradient)); }
 
