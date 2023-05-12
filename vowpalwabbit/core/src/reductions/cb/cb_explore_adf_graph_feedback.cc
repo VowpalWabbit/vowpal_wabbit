@@ -5,6 +5,7 @@
 #include "vw/core/reductions/cb/cb_explore_adf_graph_feedback.h"
 
 #include "vw/common/random.h"
+#include "vw/common/vw_exception.h"
 #include "vw/config/options.h"
 #include "vw/core/gd_predict.h"
 #include "vw/core/global_data.h"
@@ -414,11 +415,17 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
   arma::mat coordinates = std::get<0>(coord_positivefhat);
   arma::vec positivefhat = std::get<1>(coord_positivefhat);
 
+  _all->_fhat.clear();
+  for (size_t i = 0; i < fhat.size(); i++) { _all->_fhat.push_back(fhat(i)); }
+  _all->_gamma = gamma;
+
   ConstrainedFunctionType f(positivefhat, G, gamma);
   ens::AugLagrangian optimizer;
   optimizer.Optimize(f, coordinates);
 
   arma::vec probs = get_probs_from_coordinates(coordinates, *_all);
+  // probs.print("probs");
+  // std::cout << "z: " << coordinates[positivefhat.size()] << std::endl;
 
   // set the new probabilities in the example
   for (auto& as : a_s) { as.score = probs(as.action); }
@@ -590,9 +597,9 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_graph_feedb
   using explore_type = cb_explore_adf_base<cb_explore_adf_graph_feedback>;
 
   size_t problem_multiplier = 1;
-  bool with_metrics = options.was_supplied("extra_metrics");
 
-  auto data = VW::make_unique<explore_type>(with_metrics, gamma_scale, gamma_exponent, &all);
+  auto data = VW::make_unique<explore_type>(
+      all.output_runtime.global_metrics.are_metrics_enabled(), gamma_scale, gamma_exponent, &all);
   data->set_allow_multiple_costs(true);
 
   auto l = VW::LEARNER::make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,

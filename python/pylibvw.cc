@@ -1122,6 +1122,18 @@ double get_sum_loss(vw_ptr vw) { return vw->sd->sum_loss; }
 double get_holdout_sum_loss(vw_ptr vw) { return vw->sd->holdout_sum_loss; }
 double get_weighted_examples(vw_ptr vw) { return vw->sd->weighted_examples(); }
 
+py::list get_fhat(vw_ptr vw)
+{
+  py::list l;
+  for (const auto& v : vw->_fhat) { l.append(v); }
+  return l;
+}
+
+float get_gamma(vw_ptr vw)
+{
+  return vw->_gamma;
+}
+
 bool search_should_output(search_ptr _sch) { return _sch->output().good(); }
 void search_output(search_ptr _sch, std::string s) { _sch->output() << s; }
 
@@ -1414,6 +1426,8 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("_get_label_type", &my_get_label_type, "return parse label type")
       .def("_get_prediction_type", &my_get_prediction_type, "return prediction type")
       .def("get_sum_loss", &get_sum_loss, "return the total cumulative loss suffered so far")
+      .def("get_gamma", &get_gamma, "return the total cumulative loss suffered so far")
+      .def("get_fhat", &get_fhat, "return the total cumulative loss suffered so far")
       .def("get_holdout_sum_loss", &get_holdout_sum_loss, "return the total cumulative holdout loss suffered so far")
       .def("get_weighted_examples", &get_weighted_examples, "return the total weight of examples so far")
 

@@ -342,6 +342,9 @@ public:
   std::string id;
   std::string feature_mask;
 
+  std::vector<float> _fhat;
+  float _gamma;
+
   size_t length() { return (static_cast<size_t>(1)) << initial_weights_config.num_bits; };
 
   void (*print_by_ref)(VW::io::writer*, float, float, const v_array<char>&, VW::io::logger&);
