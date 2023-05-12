@@ -489,30 +489,8 @@ void cb_explore_adf_graph_feedback::predict_or_learn_impl(VW::LEARNER::learner& 
       if (ex->l.cb.costs.size() > 0)
       {
         float stashed_probability = ex->l.cb.costs[0].probability;
-
-        // calculate the probability for this action, if it is the action that was not chosen
-        auto chosen_action = ex->l.cb.costs[0].action;
-        auto current_action = i;
-
-        if (chosen_action != current_action)
-        {
-          // get the graph probability
-          auto graph_prob = G.row(chosen_action)(current_action);
-
-          // sanity checks
-          if (graph_prob == 0. || cb_labels[chosen_action].size() == 0 ||
-              cb_labels[chosen_action][0].probability <= 0.f)
-          {
-            // this should not happen, input is probably wrong
-            continue;
-          }
-
-          auto chosen_prob = cb_labels[chosen_action][0].probability;
-          ex->l.cb.costs[0].probability = chosen_prob * graph_prob;
-        }
-
+        ex->l.cb.costs[0].probability = 1;
         base.learn(examples);
-
         ex->l.cb.costs[0].probability = stashed_probability;
       }
     }
@@ -600,7 +578,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_graph_feedb
                .set_print_update(explore_type::print_update)
                .set_persist_metrics(explore_type::persist_metrics)
                .set_save_load(explore_type::save_load)
-               .set_learn_returns_prediction(base->learn_returns_prediction)
+               .set_learn_returns_prediction(false)
                .build();
   return l;
 }
