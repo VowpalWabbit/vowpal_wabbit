@@ -365,57 +365,61 @@ describe('Call WASM VWModule', () => {
     });
 
     it('Check logging to a file and learning form it', () => {
-        let model = new vw.CbWorkspace({ args_str: "--cb_explore_adf" });
-        let vwLogger = new vw.VWExampleLogger();
+        try {
+            let model = new vw.CbWorkspace({ args_str: "--cb_explore_adf" });
+            let vwLogger = new vw.VWExampleLogger();
 
-        assert.equal(model.predictionType(), vw.Prediction.Type.ActionProbs);
+            assert.equal(model.predictionType(), vw.Prediction.Type.ActionProbs);
 
-        let example = {
-            text_context: `shared | s_1 s_2
-            | a_1 b_1 c_1
-            | a_2 b_2 c_2
-            | a_3 b_3 c_3
-        `};
+            let example = {
+                text_context: `shared | s_1 s_2
+                | a_1 b_1 c_1
+                | a_2 b_2 c_2
+                | a_3 b_3 c_3
+            `};
 
-        let filePath = path.join(__dirname, "logfile.txt");
-        vwLogger.startLogStream(filePath);
+            let filePath = path.join(__dirname, "logfile.txt");
+            vwLogger.startLogStream(filePath);
 
-        vwLogger.logCBExampleToStream(example);
-        example.labels = [{ action: 0, cost: 1.0, probability: 0.5 }]
-        vwLogger.logCBExampleToStream(example);
+            vwLogger.logCBExampleToStream(example);
+            example.labels = [{ action: 0, cost: 1.0, probability: 0.5 }]
+            vwLogger.logCBExampleToStream(example);
 
-        example.labels = [{ action: 10, cost: 1.0, probability: 0.5 }]
-        assert.throws(() => vwLogger.logCBExampleToStream(example));
+            example.labels = [{ action: 10, cost: 1.0, probability: 0.5 }]
+            assert.throws(() => vwLogger.logCBExampleToStream(example));
 
-        assert(model.sumLoss() === 0);
+            assert(model.sumLoss() === 0);
 
-        vwLogger.endLogStream();
+            vwLogger.endLogStream();
 
-        const fileStream = fs.createReadStream(filePath);
-        const rl = readline.createInterface({
-            input: fileStream,
-            crlfDelay: Infinity,
-            output: process.stdout,
-            terminal: false,
-        });
-
-
-        rl.on('line', model.addLine.bind(model));
-
-        rl.on('close', () => {
-            assert(model.sumLoss() > 0);
-
-            model.delete();
-
-            fs.unlink(filePath, (err) => {
-                if (err) {
-                    console.error('Error removing file:', err);
-                } else {
-                    console.log('File removed successfully:', filePath);
-                }
+            const fileStream = fs.createReadStream(filePath);
+            const rl = readline.createInterface({
+                input: fileStream,
+                crlfDelay: Infinity,
+                output: process.stdout,
+                terminal: false,
             });
-        });
 
+
+            rl.on('line', model.addLine.bind(model));
+
+            rl.on('close', () => {
+                assert(model.sumLoss() > 0);
+
+                model.delete();
+
+                fs.unlink(filePath, (err) => {
+                    if (err) {
+                        console.error('Error removing file:', err);
+                    } else {
+                        console.log('File removed successfully:', filePath);
+                    }
+                });
+            });
+        } catch (err) {
+            console.log(vw.getExceptionMessage(err));
+            throw new Error("vw test failed");
+        }
     });
 
 
