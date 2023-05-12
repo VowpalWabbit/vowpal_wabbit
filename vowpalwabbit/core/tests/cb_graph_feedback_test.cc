@@ -39,7 +39,7 @@ std::vector<std::vector<float>> predict_learn_return_action_scores_two_actions(
     VW::multi_ex examples;
 
     examples.push_back(VW::read_example(vw, shared_graph + " | s_1 s_2"));
-    examples.push_back(VW::read_example(vw, "0:0.199:0.4 | a_1 b_1 c_1"));
+    examples.push_back(VW::read_example(vw, "0:0.2:0.4 | a_1 b_1 c_1"));
     examples.push_back(VW::read_example(vw, "| a_2 b_2 c_2"));
 
     vw.learn(examples);
@@ -60,7 +60,7 @@ std::vector<std::vector<float>> predict_learn_return_action_scores_two_actions(
 
     examples.push_back(VW::read_example(vw, shared_graph + " | s_1 s_2"));
     examples.push_back(VW::read_example(vw, "| a_1 b_1 c_1"));
-    examples.push_back(VW::read_example(vw, "1:1.1:0.4 | a_2 b_2 c_2"));
+    examples.push_back(VW::read_example(vw, "1:0.8:0.4 | a_2 b_2 c_2"));
 
     vw.learn(examples);
     vw.predict(examples);
@@ -218,7 +218,7 @@ std::vector<std::vector<float>> predict_learn_return_as(VW::workspace& vw, const
     VW::multi_ex examples;
 
     examples.push_back(VW::read_example(vw, shared_graph + " | s_1 s_2"));
-    examples.push_back(VW::read_example(vw, "0:2:0.4 | a_1 b_1 c_1"));
+    examples.push_back(VW::read_example(vw, "0:0.8:0.4 | a_1 b_1 c_1"));
     examples.push_back(VW::read_example(vw, "| a_2 b_2 c_2"));
     examples.push_back(VW::read_example(vw, "| a_100"));
 
@@ -240,7 +240,7 @@ std::vector<std::vector<float>> predict_learn_return_as(VW::workspace& vw, const
 
     examples.push_back(VW::read_example(vw, shared_graph + " | s_1 s_2"));
     examples.push_back(VW::read_example(vw, "| b_1 c_1 d_1"));
-    examples.push_back(VW::read_example(vw, "1:0.05:0.4 | b_2 c_2 d_2"));
+    examples.push_back(VW::read_example(vw, "1:0.1:0.4 | b_2 c_2 d_2"));
     examples.push_back(VW::read_example(vw, "| a_100"));
 
     vw.predict(examples);
@@ -260,7 +260,7 @@ std::vector<std::vector<float>> predict_learn_return_as(VW::workspace& vw, const
     VW::multi_ex examples;
 
     examples.push_back(VW::read_example(vw, shared_graph + " | s_1 s_2"));
-    examples.push_back(VW::read_example(vw, "0:1.1:0.4 | a_1 b_1 c_1"));
+    examples.push_back(VW::read_example(vw, "0:0.8:0.4 | a_1 b_1 c_1"));
     examples.push_back(VW::read_example(vw, "| a_2 b_2 c_2"));
     examples.push_back(VW::read_example(vw, "| a_100"));
 
@@ -365,7 +365,7 @@ TEST(GraphFeedback, CheckIdentityGLargeGamma)
 
   // fhat 0.5640 0.1585 0.2629
   EXPECT_THAT(
-      pred_results[2], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.101, 0.64, 0.25}));
+      pred_results[2], testing::Pointwise(FloatNear(EXPLICIT_FLOAT_TOL), std::vector<float>{0.102, 0.625, 0.271}));
 
   // 0.7371 0.3482 0.3482
   EXPECT_THAT(
@@ -631,6 +631,8 @@ TEST(GraphFeedback, CheckUpdateRule100WIterations)
   auto ctr_egreedy = sim_egreedy.run_simulation_hook(vw_egreedy.get(), num_iterations, test_hooks);
 
   EXPECT_GT(ctr_gf.back(), ctr_egreedy.back());
+  EXPECT_GE(sim_gf.not_spam_classified_as_not_spam, sim_egreedy.not_spam_classified_as_not_spam);
+  EXPECT_LE(sim_gf.not_spam_classified_as_spam, sim_egreedy.not_spam_classified_as_spam);
 }
 
 TEST(GraphFeedback, CheckUpdateRule500WIterations)
@@ -659,4 +661,6 @@ TEST(GraphFeedback, CheckUpdateRule500WIterations)
   auto ctr_egreedy = sim_egreedy.run_simulation_hook(vw_egreedy.get(), num_iterations, test_hooks);
 
   EXPECT_GT(ctr_gf.back(), ctr_egreedy.back());
+  EXPECT_GT(sim_gf.not_spam_classified_as_not_spam, sim_egreedy.not_spam_classified_as_not_spam);
+  EXPECT_LT(sim_gf.not_spam_classified_as_spam, sim_egreedy.not_spam_classified_as_spam);
 }

@@ -486,13 +486,7 @@ void cb_explore_adf_graph_feedback::predict_or_learn_impl(VW::LEARNER::learner& 
           });
 
       // if there is another label then learn, otherwise skip
-      if (ex->l.cb.costs.size() > 0)
-      {
-        float stashed_probability = ex->l.cb.costs[0].probability;
-        ex->l.cb.costs[0].probability = 1;
-        base.learn(examples);
-        ex->l.cb.costs[0].probability = stashed_probability;
-      }
+      if (ex->l.cb.costs.size() > 0) { base.learn(examples); }
     }
   }
   else
