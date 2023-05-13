@@ -1,6 +1,6 @@
 const fs = require('fs');
 const crypto = require('crypto');
-const VWWasmModule = require('./out/vw-wasm.js');
+const VWWasmModule = require('./vw-wasm.js');
 
 
 // internals
