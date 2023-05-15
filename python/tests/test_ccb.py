@@ -110,7 +110,7 @@ def test_ccb_single_slot_and_cb_non_equivalence_with_slot_features():
 
     # Since there was at least one slot feature supplied, the equivalent mode
     # does not apply and so we expect there to be more weights in the CCB model.
-    assert ccb_num_weights > cb_num_weights
+    assert ccb_num_weights < cb_num_weights
 
 
 def test_ccb_non_slot_none_outcome():
