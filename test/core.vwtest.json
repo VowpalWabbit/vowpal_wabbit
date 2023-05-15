@@ -5927,5 +5927,71 @@
     "depends_on": [
       456
     ]
+  },
+  {
+    "id": 458,
+    "desc": "Spin off igl model to lower bitsize to cb_explore",
+    "vw_command": "--experimental_igl --coin --cb_explore_adf -d train-sets/igl_3states_1.dsjson --dsjson --noconstant -q UA --predict_only_model -b 18 -f igl_spinoff.vw",
+    "diff_files": {
+      "stderr": "train-sets/ref/igl_3states_spinoff_save.stderr"
+    },
+    "input_files": [
+      "train-sets/igl_3states_1.dsjson"
+    ]
+  },
+  {
+    "id": 459,
+    "desc": "Load spun off igl model with cb_explore and output invert hash",
+    "vw_command": "--cb_explore_adf --coin -q UA -d train-sets/igl_3states_1.dsjson --dsjson --noconstant -i igl_spinoff.vw -b 17 --invert_hash igl_spinoff.inv --predict_only_model",
+    "diff_files": {
+      "stderr": "train-sets/ref/igl_3states_spinoff_load.stderr",
+      "igl_spinoff.inv": "pred-sets/ref/igl_spinoff.inv"
+    },
+    "input_files": [
+      "train-sets/igl_3states_1.dsjson",
+      "igl_spinoff.vw"
+    ],
+    "depends_on": [
+      458
+    ]
+  },
+  {
+    "id": 460,
+    "desc": "Generate similar model to spun off igl using standard cb_explore_adf",
+    "vw_command": "--cb_explore_adf --coin --dsjson -q UA -d train-sets/igl_3states_1.dsjson --noconstant -f igl_spinoff_cb.vw -b 17 --predict_only_model",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_similar_igl_spinoff_save.stderr"
+    },
+    "input_files": [
+      "train-sets/igl_3states_1.dsjson"
+    ]
+  },
+  {
+    "id": 461,
+    "desc": "Check that standard cb_explore_adf model has same invert hash as igl spinoff",
+    "vw_command": "--cb_explore_adf --coin -q UA --dsjson -d train-sets/igl_3states_1.dsjson --noconstant -i igl_spinoff_cb.vw -b 17 --invert_hash igl_spinoff_cb.inv --predict_only_model",
+    "diff_files": {
+      "stderr": "train-sets/ref/igl_spinoff_load.stderr",
+      "igl_spinoff_cb.inv": "pred-sets/ref/igl_spinoff.inv"
+    },
+    "input_files": [
+      "train-sets/igl_3states_1.dsjson",
+      "igl_spinoff_cb.vw"
+    ],
+    "depends_on": [
+      460
+    ]
+  },
+  {
+    "id": 462,
+    "desc": "Check that binary model files are identical between standard cb_explore_adf and igl spinoff",
+    "bash_command": "diff igl_spinoff.vw igl_spinoff_cb.vw",
+    "input_files": [
+      "igl_spinoff.vw",
+      "igl_spinoff_cb.vw"
+    ],
+    "depends_on": [
+      458, 460
+    ]
   }
 ]

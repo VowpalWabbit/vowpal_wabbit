@@ -44,3 +44,8 @@ cmake --build build --target vw-wasm
 ```sh
 npm test
 ```
+
+### Build docs
+``` sh
+npm run docs
+```
