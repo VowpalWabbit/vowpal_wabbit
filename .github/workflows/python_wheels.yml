@@ -10,6 +10,7 @@ on:
     branches:
       - master
       - 'releases/**'
+      - rlos2023/test
   pull_request:
     branches:
       - '*'
