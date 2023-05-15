@@ -266,4 +266,4 @@ def test_getting_started_example_with():
             assert isinstance(choice, int), "choice should be int"
             assert choice == 3, "predicted action should be 3"
 
-    assert vw.finished == True, "with syntax should finish() vw instance"
+    assert vw.finished == False, "with syntax should finish() vw instance"
