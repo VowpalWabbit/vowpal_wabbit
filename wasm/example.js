@@ -63,7 +63,7 @@ vwPromise.then((vw) => {
 
         vwLogger.logCBExampleToStream(example);
 
-        model.saveModel("my_model.vw");
+        model.saveModelToFile("my_model.vw");
 
         vwLogger.endLogStream();
         model.delete();

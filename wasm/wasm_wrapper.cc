@@ -415,7 +415,7 @@ struct cb_vw_model : MixIn
     finish_example(example_list);
   }
 
-  void learn_label_in_string(const emscripten::val& example_input)
+  void learn_from_string(const emscripten::val& example_input)
   {
     auto example_list = parse(example_input);
 
@@ -510,7 +510,7 @@ EMSCRIPTEN_BINDINGS(vwwasm)
       .constructor<std::string, size_t, int>()
       .function("predict", &cb_vw_model<>::predict)
       .function("learn", &cb_vw_model<>::learn)
-      .function("learnLabelInString", &cb_vw_model<>::learn_label_in_string)
+      .function("learnFromString", &cb_vw_model<>::learn_from_string)
       .function("_predictAndSample", &cb_vw_model<>::predict_and_sample)
       .function("_samplePmf", &cb_vw_model<>::sample_pmf)
       .function("setSamplingSeed", &cb_vw_model<>::set_sampling_seed);
