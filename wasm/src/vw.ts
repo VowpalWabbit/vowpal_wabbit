@@ -96,7 +96,7 @@ class VWExampleLogger {
      * @returns {string} the string representation of the CB example
      * @throws {Error} Throws an error if the example is malformed
      */
-    CBExampleToString(example: any): string {
+    CBExampleToString(example: { text_context: string, labels: Array<{ action: number, cost: number, probability: number }> }): string {
         let context = ""
         if (example.hasOwnProperty('text_context')) {
             context = example.text_context;
@@ -105,7 +105,8 @@ class VWExampleLogger {
             throw new Error("Can not log example, there is no context available");
         }
 
-        const lines = context.split("\n").map((substr) => substr.trim());
+        const lines = context.trim().split("\n").map((substr) => substr.trim());
+        lines.push("");
         lines.push("");
 
         if (example.hasOwnProperty("labels") && example["labels"].length > 0) {
@@ -133,7 +134,7 @@ class VWExampleLogger {
      * @param {object} example a CB example that will be stringified and appended to the log file
      * @throws {Error} Throws an error if no logging stream has been started
      */
-    logCBExampleToStream(example: any) {
+    logCBExampleToStream(example: { text_context: string, labels: Array<{ action: number, cost: number, probability: number }> }) {
         let ex_str = this.CBExampleToString(example);
         this.logLineToStream(ex_str);
     }
@@ -147,7 +148,7 @@ class VWExampleLogger {
      * @param {object} example a CB example that will be stringified and appended to the log file
      * @throws {Error} Throws an error if another logging stream has already been started
      */
-    logCBExampleSync(log_file: string, example: any) {
+    logCBExampleSync(log_file: string, example: { text_context: string, labels: Array<{ action: number, cost: number, probability: number }> }) {
         let ex_str = this.CBExampleToString(example);
         this.logLineSync(log_file, ex_str);
     }
