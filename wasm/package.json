@@ -3,9 +3,14 @@
   "version": "0.0.1",
   "description": "wasm bindings for vowpal wabbit",
   "exports": {
-    "require": "./vw.js"
+    "require": "./dist/vw.js"
   },
-  "main": "\"\"",
+  "main": "dist/vw.js",
+  "files": [
+    "dist/",
+    "src/**/*.ts",
+    "!src/**/*.cc"
+  ],
   "devDependencies": {
     "@types/node": "^20.2.1",
     "jsdoc-to-markdown": "^8.0.0",
@@ -16,7 +21,7 @@
     "postinstall": "npm run build",
     "build": "tsc",
     "test": "node --experimental-wasm-threads ./node_modules/mocha/bin/mocha --delay",
-    "docs": "jsdoc2md ./vw.js > documentation.md"
+    "docs": "jsdoc2md ./dist/vw.js > documentation.md"
   },
   "dependencies": {
     "out": "^1.1.0"

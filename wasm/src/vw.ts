@@ -1,7 +1,7 @@
 import fs from 'fs';
 import crypto from 'crypto';
 
-const VWWasmModule = require('./out/vw-wasm.js');
+const VWWasmModule = require('./vw-wasm.js');
 
 // internals
 
@@ -579,4 +579,4 @@ module.exports = new Promise((resolve) => {
             }
         )
     })
-})
+});

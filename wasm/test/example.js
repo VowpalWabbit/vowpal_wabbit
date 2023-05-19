@@ -1,4 +1,4 @@
-const vwPromise = require('./vw.js');
+const vwPromise = require('vowpalwabbit');
 const fs = require('fs');
 
 // Delay test execution until the WASM VWModule is ready

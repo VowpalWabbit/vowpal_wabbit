@@ -67,7 +67,7 @@ Closes the logging stream. Logs a warning to the console if there is no logging 
 <a name="VWExampleLogger+logLineSync"></a>
 
 ### vwExampleLogger.logLineSync(log_file, line)
-Takes a string and appends it to the log file. Line is logged in a synchronous manner. 
+Takes a string and appends it to the log file. Line is logged in a synchronous manner.
 Every call to this function will open a new file handle, append the line and close the file handle.
 
 **Kind**: instance method of [<code>VWExampleLogger</code>](#VWExampleLogger)  
@@ -175,8 +175,8 @@ Can accept either or both string arguments and a model file.
 <a name="Workspace+parse"></a>
 
 ### workspace.parse(line) ⇒
-Parse a line of text into a VW example. 
-The example can then be used for prediction or learning. 
+Parse a line of text into a VW example.
+The example can then be used for prediction or learning.
 finishExample() must be called and then delete() on the example, when it is no longer needed.
 
 **Kind**: instance method of [<code>Workspace</code>](#Workspace)  
@@ -252,7 +252,7 @@ Takes a file location and stores the VW model in binary format in the file.
 
 ### workspace.getModelAsArray() ⇒ <code>Uint8Array</code>
 Gets the VW model in binary format as a Uint8Array that can be saved to a file.
-There is no need to delete or free the array returned by this function. 
+There is no need to delete or free the array returned by this function.
 If the same array is however used to re-load the model into VW, then the array needs to be stored in wasm memory (see loadModelFromArray)
 
 **Kind**: instance method of [<code>Workspace</code>](#Workspace)  
@@ -281,7 +281,7 @@ The memory must be allocated via the WebAssembly module's _malloc function and s
 
 | Param | Type | Description |
 | --- | --- | --- |
-| model_array_ptr | <code>\*</code> | the pre-loaded model's array pointer  The memory must be allocated via the WebAssembly module's _malloc function and should later be freed via the _free function. |
+| model_array_ptr | <code>number</code> | the pre-loaded model's array pointer  The memory must be allocated via the WebAssembly module's _malloc function and should later be freed via the _free function. |
 | model_array_len | <code>number</code> | the pre-loaded model's array length |
 
 <a name="WorkspaceBase+delete"></a>
@@ -300,7 +300,6 @@ A Wrapper around the Wowpal Wabbit C++ library for Contextual Bandit exploration
 **Extends**: <code>WorkspaceBase</code>  
 
 * [CbWorkspace](#CbWorkspace) ⇐ <code>WorkspaceBase</code>
-    * [new CbWorkspace([args_str], [model_file], [model_array])](#new_CbWorkspace_new)
     * [.predict(example)](#CbWorkspace+predict) ⇒ <code>array</code>
     * [.learn(example)](#CbWorkspace+learn)
     * [.addLine(line)](#CbWorkspace+addLine)
@@ -317,62 +316,6 @@ A Wrapper around the Wowpal Wabbit C++ library for Contextual Bandit exploration
     * [.loadModelFromArray(model_array_ptr, model_array_len)](#WorkspaceBase+loadModelFromArray)
     * [.delete()](#WorkspaceBase+delete)
 
-<a name="new_CbWorkspace_new"></a>
-
-### new CbWorkspace([args_str], [model_file], [model_array])
-Creates a new Vowpal Wabbit workspace for Contextual Bandit exploration algorithms.
-Can accept either or both string arguments and a model file.
-
-**Throws**:
-
-- <code>Error</code> Throws an error if:
-- no argument is provided
-- both string arguments and a model file are provided, and the string arguments and arguments defined in the model clash
-- both string arguments and a model array are provided, and the string arguments and arguments defined in the model clash
-- both a model file and a model array are provided
-
-
-| Param | Type | Description |
-| --- | --- | --- |
-| [args_str] | <code>string</code> | The arguments that are used to initialize Vowpal Wabbit (optional) |
-| [model_file] | <code>string</code> | The path to the file where the model will be loaded from (optional) |
-| [model_array] | <code>tuple</code> | The pre-loaded model's array pointer and length (optional).  The memory must be allocated via the WebAssembly module's _malloc function and should later be freed via the _free function. |
-
-**Example**  
-```js
-const vwPromise = require('./vw.js');
-// require returns a promise because we need to wait for the wasm module to be initialized
-
-vwPromise.then((vw) => {    
- let model = new vw.CbWorkspace({ args_str: "--cb_explore_adf" });
- let vwLogger = new vw.VWExampleLogger();
-
- vwLogger.startLogStream("mylogfile.txt");
-
- let example = {
-     text_context: `shared | s_1 s_2
-         | a_1 b_1 c_1
-         | a_2 b_2 c_2
-         | a_3 b_3 c_3`,
-     };
-
- let prediction = model.predictAndSample(example);
- 
- example.labels = [{ action: prediction["action"], cost: 1.0, probability: prediction["score"] }];
-
- model.learn(example);
- vwLogger.logCBExampleToStream(example);
- 
- model.saveModelToFile("my_model.vw");
- vwLogger.endLogStream();
- model.delete();
-
- let model2 = new vw.CbWorkspace({ model_file: "my_model.vw" });
- console.log(model2.predict(example));
- console.log(model2.predictAndSample(example));
- model2.delete();
-});
-```
 <a name="CbWorkspace+predict"></a>
 
 ### cbWorkspace.predict(example) ⇒ <code>array</code>
@@ -551,7 +494,7 @@ Takes a file location and stores the VW model in binary format in the file.
 
 ### cbWorkspace.getModelAsArray() ⇒ <code>Uint8Array</code>
 Gets the VW model in binary format as a Uint8Array that can be saved to a file.
-There is no need to delete or free the array returned by this function. 
+There is no need to delete or free the array returned by this function.
 If the same array is however used to re-load the model into VW, then the array needs to be stored in wasm memory (see loadModelFromArray)
 
 **Kind**: instance method of [<code>CbWorkspace</code>](#CbWorkspace)  
@@ -580,7 +523,7 @@ The memory must be allocated via the WebAssembly module's _malloc function and s
 
 | Param | Type | Description |
 | --- | --- | --- |
-| model_array_ptr | <code>\*</code> | the pre-loaded model's array pointer  The memory must be allocated via the WebAssembly module's _malloc function and should later be freed via the _free function. |
+| model_array_ptr | <code>number</code> | the pre-loaded model's array pointer  The memory must be allocated via the WebAssembly module's _malloc function and should later be freed via the _free function. |
 | model_array_len | <code>number</code> | the pre-loaded model's array length |
 
 <a name="WorkspaceBase+delete"></a>
