@@ -1,11 +1,35 @@
 {
+  "name": "vowpalwabbit",
+  "version": "0.0.1",
+  "description": "wasm bindings for vowpal wabbit",
+  "exports": {
+    "require": "./vw.js"
+  },
+  "main": "\"\"",
   "devDependencies": {
     "jsdoc-to-markdown": "^8.0.0",
     "mocha": "^9.1.2"
   },
   "scripts": {
-    "test1": "mocha --delay",
     "test": "node --experimental-wasm-threads ./node_modules/mocha/bin/mocha --delay",
-    "docs": "jsdoc2md ./out/*.js > documentation.md"
-  }
+    "docs": "jsdoc2md ./vw.js > documentation.md"
+  },
+  "dependencies": {
+    "out": "^1.1.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/VowpalWabbit/vowpal_wabbit/wasm"
+  },
+  "keywords": [
+    "vowpal",
+    "wabbit",
+    "wasm",
+    "contextual",
+    "bandits",
+    "reinforcement",
+    "learning"
+  ],
+  "author": "olgavrou",
+  "license": "BSD-3-Clause"
 }

@@ -1,4 +1,5 @@
 const vwPromise = require('./vw.js');
+const fs = require('fs');
 
 // Delay test execution until the WASM VWModule is ready
 vwPromise.then((vw) => {
@@ -43,10 +44,12 @@ vwPromise.then((vw) => {
 
 vwPromise.then((vw) => {
     try {
+        let logFile = "mylogfile.txt";
+        let modelFile = "my_model.vw";
         // Create a model with default options
         let model = new vw.CbWorkspace({ args_str: "--cb_explore_adf" });
         let vwLogger = new vw.VWExampleLogger();
-        vwLogger.startLogStream("mylogfile.txt");
+        vwLogger.startLogStream(logFile);
 
         let example = {
             text_context: `shared | s_1 s_2
@@ -63,19 +66,38 @@ vwPromise.then((vw) => {
 
         vwLogger.logCBExampleToStream(example);
 
-        model.saveModelToFile("my_model.vw");
+        model.saveModelToFile(modelFile);
 
         vwLogger.endLogStream();
         model.delete();
 
-        let model2 = new vw.CbWorkspace({ model_file: "my_model.vw" });
+        let model2 = new vw.CbWorkspace({ model_file: modelFile });
         console.log(model2.predict(example));
         console.log(model2.predictAndSample(example));
         model2.delete();
+
+        fs.unlink(logFile, (err) => {
+            if (err) {
+                console.error('Error removing file:', err);
+            } else {
+                console.log('File removed successfully:', logFile);
+            }
+        });
+
+        fs.unlink(modelFile, (err) => {
+            if (err) {
+                console.error('Error removing file:', err);
+            } else {
+                console.log('File removed successfully:', modelFile);
+            }
+        });
     }
     catch (e) {
         // Exceptions that are produced by the module must be passed through
         // this transformation function to get the error info.
-        console.error(vw.getExceptionMessage(e));
+        if (e instanceof WebAssembly.RuntimeError) {
+            console.error(vw.getExceptionMessage(e));
+        }
+        else { console.error(e); }
     }
-});
+}).catch(err => { console.log(err) });

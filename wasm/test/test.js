@@ -517,6 +517,14 @@ describe('Call WASM VWModule', () => {
         assert.throws(() => model2.loadModelFromFile(filePath));
 
         model2.delete();
+
+        fs.unlink(filePath, (err) => {
+            if (err) {
+                console.error('Error removing file:', err);
+            } else {
+                console.log('File removed successfully:', filePath);
+            }
+        });
     });
 
     it('Check samplePmf', () => {
