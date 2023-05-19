@@ -150,15 +150,15 @@ class VWExampleLogger {
 };
 
 module.exports = new Promise((resolve) => {
-    VWWasmModule().then(instance => {
+    VWWasmModule().then(moduleInstance => {
         class WorkspaceBase {
             constructor(type, { args_str, model_file, model_array = [] } = {}) {
         
                 let vwModelConstructor = null;
                 if (type === ProblemType.All) {
-                    vwModelConstructor = instance.VWModel;
+                    vwModelConstructor = moduleInstance.VWModel;
                 } else if (type === ProblemType.CB) {
-                    vwModelConstructor = instance.VWCBModel;
+                    vwModelConstructor = moduleInstance.VWCBModel;
                 }
                 else {
                     throw new Error("Unknown model type");
@@ -183,13 +183,13 @@ module.exports = new Promise((resolve) => {
         
                 if (model_file !== undefined) {
                     let modelBuffer = fs.readFileSync(model_file);
-                    let ptr = instance._malloc(modelBuffer.byteLength);
-                    let heapBytes = new Uint8Array(instance.HEAPU8.buffer, ptr, modelBuffer.byteLength);
+                    let ptr = moduleInstance._malloc(modelBuffer.byteLength);
+                    let heapBytes = new Uint8Array(moduleInstance.HEAPU8.buffer, ptr, modelBuffer.byteLength);
                     heapBytes.set(new Uint8Array(modelBuffer));
         
                     this._instance = new vwModelConstructor(this._args_str, ptr, modelBuffer.byteLength);
         
-                    instance._free(ptr);
+                    moduleInstance._free(ptr);
                 }
                 else if (model_array_defined) {
                     this._instance = new vwModelConstructor(this._args_str, model_array_ptr, model_array_len);
@@ -266,11 +266,11 @@ module.exports = new Promise((resolve) => {
              */
             loadModelFromFile(model_file) {
                 let modelBuffer = fs.readFileSync(model_file);
-                let ptr = instance._malloc(modelBuffer.byteLength);
-                let heapBytes = new Uint8Array(instance.HEAPU8.buffer, ptr, modelBuffer.byteLength);
+                let ptr = moduleInstance._malloc(modelBuffer.byteLength);
+                let heapBytes = new Uint8Array(moduleInstance.HEAPU8.buffer, ptr, modelBuffer.byteLength);
                 heapBytes.set(new Uint8Array(modelBuffer));
                 this._instance.loadModelFromBuffer(ptr, modelBuffer.byteLength);
-                instance._free(ptr);
+                moduleInstance._free(ptr);
             }
         
             /**
@@ -363,40 +363,6 @@ module.exports = new Promise((resolve) => {
          * A Wrapper around the Wowpal Wabbit C++ library for Contextual Bandit exploration algorithms.
          * @class
          * @extends WorkspaceBase
-         * @example
-         * 
-         * const vwPromise = require('./vw.js');
-         * // require returns a promise because we need to wait for the wasm module to be initialized
-         * 
-         * vwPromise.then((vw) => {    
-         *  let model = new vw.CbWorkspace({ args_str: "--cb_explore_adf" });
-         *  let vwLogger = new vw.VWExampleLogger();
-         * 
-         *  vwLogger.startLogStream("mylogfile.txt");
-         * 
-         *  let example = {
-         *      text_context: `shared | s_1 s_2
-         *          | a_1 b_1 c_1
-         *          | a_2 b_2 c_2
-         *          | a_3 b_3 c_3`,
-         *      };
-         * 
-         *  let prediction = model.predictAndSample(example);
-         *  
-         *  example.labels = [{ action: prediction["action"], cost: 1.0, probability: prediction["score"] }];
-         * 
-         *  model.learn(example);
-         *  vwLogger.logCBExampleToStream(example);
-         *  
-         *  model.saveModelToFile("my_model.vw");
-         *  vwLogger.endLogStream();
-         *  model.delete();
-         * 
-         *  let model2 = new vw.CbWorkspace({ model_file: "my_model.vw" });
-         *  console.log(model2.predict(example));
-         *  console.log(model2.predictAndSample(example));
-         *  model2.delete();
-         * });
          */
         class CbWorkspace extends WorkspaceBase {
             /**
@@ -567,23 +533,23 @@ module.exports = new Promise((resolve) => {
         };
         
         function getExceptionMessage(exception) {
-            return instance.getExceptionMessage(exception)
+            return moduleInstance.getExceptionMessage(exception)
         };
 
         class Prediction {
             static Type = {
-                Scalar: instance.PredictionType.scalar,
-                Scalars: instance.PredictionType.scalars,
-                ActionScores: instance.PredictionType.action_scores,
-                Pdf: instance.PredictionType.pdf,
-                ActionProbs: instance.PredictionType.action_probs,
-                MultiClass: instance.PredictionType.multiclass,
-                MultiLabels: instance.PredictionType.multilabels,
-                Prob: instance.PredictionType.prob,
-                MultiClassProb: instance.PredictionType.multiclassprob,
-                DecisionProbs: instance.PredictionType.decision_probs,
-                ActionPdfValue: instance.PredictionType.ActionPdfValue,
-                ActiveMultiClass: instance.PredictionType.activeMultiClass,
+                Scalar: moduleInstance.PredictionType.scalar,
+                Scalars: moduleInstance.PredictionType.scalars,
+                ActionScores: moduleInstance.PredictionType.action_scores,
+                Pdf: moduleInstance.PredictionType.pdf,
+                ActionProbs: moduleInstance.PredictionType.action_probs,
+                MultiClass: moduleInstance.PredictionType.multiclass,
+                MultiLabels: moduleInstance.PredictionType.multilabels,
+                Prob: moduleInstance.PredictionType.prob,
+                MultiClassProb: moduleInstance.PredictionType.multiclassprob,
+                DecisionProbs: moduleInstance.PredictionType.decision_probs,
+                ActionPdfValue: moduleInstance.PredictionType.ActionPdfValue,
+                ActiveMultiClass: moduleInstance.PredictionType.activeMultiClass,
             };
         };
 
@@ -594,7 +560,7 @@ module.exports = new Promise((resolve) => {
                 Prediction: Prediction,
                 VWExampleLogger, VWExampleLogger,
                 getExceptionMessage: getExceptionMessage,
-                wasmModule: instance
+                wasmModule: moduleInstance
             }
         )
     })
