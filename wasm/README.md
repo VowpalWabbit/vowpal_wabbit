@@ -183,7 +183,7 @@ There is also the option of stringifying an example for user-handled logging:
 
 Synchronous logging options are also available [see API documentation](documentation.md#VWExampleLogger)
 
-### How-To train a model from a file
+### How-To train a model with data from a file
 
 ```(js)
 const vwPromise = require('vowpalwabbit');
@@ -207,6 +207,25 @@ vwPromise.then((vw) => {
         model.delete();
     });
 });
+```
+
+### How-To handle errors
+
+Some function calls with throw if something went wrong or if they were called incorrectly. There are two type of errors that can be thrown: native JavaScript errors and WebAssembly runtime errors.
+
+When logging an error to the console there needs to be a check of the error type and the logging needs to be handled accordingly:
+
+```(js)
+try {}
+catch (e)
+{
+    if (e instanceof WebAssembly.RuntimeError) {
+            console.error(vw.getExceptionMessage(e));
+    }
+    else {
+        console.error(e);
+    }
+}
 ```
 
 ### How-To use a generic VW model (non Contextual Bandit specific functionality)

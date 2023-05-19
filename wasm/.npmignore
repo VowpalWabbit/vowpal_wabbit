@@ -1,3 +1,6 @@
 test/
 *.md
 example.js
+node_modules
+*.txt
+*.cc

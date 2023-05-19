@@ -12,7 +12,7 @@
   },
   "scripts": {
     "test": "node --experimental-wasm-threads ./node_modules/mocha/bin/mocha --delay",
-    "docs": "jsdoc2md ./out/*.js > documentation.md"
+    "docs": "jsdoc2md ./vw.js > documentation.md"
   },
   "dependencies": {
     "out": "^1.1.0"
