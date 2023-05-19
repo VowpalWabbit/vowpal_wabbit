@@ -153,7 +153,7 @@ vowpalwabbit/parser/flatbuffer/generated/example_generated.h
 test/flatbuffer/*.predict
 test/flatbuffer/*.stderr
 node_modules
-wasm/vw-wasm.js
+wasm/vw.js
 wasm/package-lock.json
 
 /.vs
