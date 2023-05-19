@@ -19,7 +19,7 @@ Full API reference [here](documentation.md#CbWorkspace)
 Require returns a promise because we need to wait for the WASM module to be initialized before including and using the VowpalWabbit JS code
 
 ```(js)
-const vwPromise = require('vowpalwabbit');
+const vwPromise = require('@vowpalwabbit/vowpalwabbit');
 
 vwPromise.then((vw) => {
     let model = new vw.CbWorkspace({ args_str: "--cb_explore_adf" });
@@ -32,7 +32,7 @@ A VW model needs to be deleted after we are done with its usage to return the aq
 ### How-To call learn and predict on a Contextual Bandit model
 
 ```(js)
-const vwPromise = require('vowpalwabbit');
+const vwPromise = require('@vowpalwabbit/vowpalwabbit');
 
 vwPromise.then((vw) => {
     let model = new vw.CbWorkspace({ args_str: "--cb_explore_adf" });
@@ -90,7 +90,7 @@ There are two ways to save/load a model
 Node's `fs` will be used to access the file and save/loading is blocking
 
 ```(js)
-const vwPromise = require('vowpalwabbit');
+const vwPromise = require('@vowpalwabbit/vowpalwabbit');
 
 vwPromise.then((vw) => {
     let model = new vw.CbWorkspace({ args_str: "--cb_explore_adf" });
@@ -154,7 +154,7 @@ A model can be loaded from a file either during model construction (shown above)
 A log stream can be started which will create and use a `fs` write stream:
 
 ```(js)
-const vwPromise = require('vowpalwabbit');
+const vwPromise = require('@vowpalwabbit/vowpalwabbit');
 
 vwPromise.then((vw) => {
 
@@ -186,7 +186,7 @@ Synchronous logging options are also available [see API documentation](documenta
 ### How-To train a model with data from a file
 
 ```(js)
-const vwPromise = require('vowpalwabbit');
+const vwPromise = require('@vowpalwabbit/vowpalwabbit');
 
 vwPromise.then((vw) => {
 
@@ -235,7 +235,7 @@ Full API reference [here](documentation.md#Workspace)
 #### Simple regression example
 
 ```(js)
-const vwPromise = require('vowpalwabbit');
+const vwPromise = require('@vowpalwabbit/vowpalwabbit');
 
 vwPromise.then((vw) => {
 
@@ -251,7 +251,7 @@ vwPromise.then((vw) => {
 #### CCB example
 
 ```(js)
-const vwPromise = require('vowpalwabbit');
+const vwPromise = require('@vowpalwabbit/vowpalwabbit');
 
 vwPromise.then((vw) => {
 
