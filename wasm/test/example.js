@@ -95,8 +95,34 @@ vwPromise.then((vw) => {
     catch (e) {
         // Exceptions that are produced by the module must be passed through
         // this transformation function to get the error info.
-        if (e instanceof WebAssembly.RuntimeError) {
-            console.error(vw.getExceptionMessage(e));
+        if (e.name === 'VWError') {
+            console.error(vw.getExceptionMessage(e.stack));
+        }
+        else { console.error(e); }
+    }
+}).catch(err => { console.log(err) });
+
+vwPromise.then((vw) => {
+    try {
+        let model = new vw.CbWorkspace({ args_str: "--cb_explore_adf" });
+
+        let example = {
+            text_context: `shared | s_1 s_2
+            | a_1 b_1 c_1
+            | a_2 b_2 c_2
+            | a_3 b_3 c_3`,
+        };
+    
+        // model learn without a label should throw
+        model.learn(example);
+
+        model.delete();
+    }
+    catch (e) {
+        // Exceptions that are produced by the module must be passed through
+        // this transformation function to get the error info.
+        if (e.name === 'VWError') {
+            console.error(vw.getExceptionMessage(e.stack));
         }
         else { console.error(e); }
     }

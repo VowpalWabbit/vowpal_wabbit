@@ -211,7 +211,7 @@ vwPromise.then((vw) => {
 
 ### How-To handle errors
 
-Some function calls with throw if something went wrong or if they were called incorrectly. There are two type of errors that can be thrown: native JavaScript errors and WebAssembly runtime errors.
+Some function calls with throw if something went wrong or if they were called incorrectly. There are two type of errors that can be thrown: native JavaScript errors and WebAssembly runtime errors which are wrapped in a VWError object.
 
 When logging an error to the console there needs to be a check of the error type and the logging needs to be handled accordingly:
 
@@ -219,7 +219,7 @@ When logging an error to the console there needs to be a check of the error type
 try {}
 catch (e)
 {
-    if (e instanceof WebAssembly.RuntimeError) {
+    if (e.name === 'VWError') {
             console.error(vw.getExceptionMessage(e));
     }
     else {
