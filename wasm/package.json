@@ -7,10 +7,14 @@
   },
   "main": "\"\"",
   "devDependencies": {
+    "@types/node": "^20.2.1",
     "jsdoc-to-markdown": "^8.0.0",
-    "mocha": "^9.1.2"
+    "mocha": "^9.1.2",
+    "typescript": "^5.0.4"
   },
   "scripts": {
+    "postinstall": "npm run build",
+    "build": "tsc",
     "test": "node --experimental-wasm-threads ./node_modules/mocha/bin/mocha --delay",
     "docs": "jsdoc2md ./vw.js > documentation.md"
   },
