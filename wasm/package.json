@@ -1,6 +1,6 @@
 {
   "name": "@vowpalwabbit/vowpalwabbit",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "wasm bindings for vowpal wabbit",
   "exports": {
     "require": "./dist/vw.js"
@@ -18,7 +18,7 @@
     "typescript": "^5.0.4"
   },
   "scripts": {
-    "postinstall": "npm run build",
+    "prepublish": "npm run build",
     "build": "tsc",
     "test": "node --experimental-wasm-threads ./node_modules/mocha/bin/mocha --delay",
     "docs": "jsdoc2md ./dist/vw.js > documentation.md"
@@ -28,7 +28,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/VowpalWabbit/vowpal_wabbit/wasm"
+    "url": "https://github.com/VowpalWabbit/vowpal_wabbit.git",
+    "directory": "wasm"
   },
   "keywords": [
     "vowpal",

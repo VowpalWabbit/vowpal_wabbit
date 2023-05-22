@@ -2,10 +2,6 @@
 
 Javascript bindings for [VowpalWabbit](https://vowpalwabbit.org/)
 
-## Installation
-
-Download the artifact from WASM CI and run `npm install <path to artifact file>`
-
 ## Documentation
 
 [API documentation](documentation.md)
@@ -211,7 +207,7 @@ vwPromise.then((vw) => {
 
 ### How-To handle errors
 
-Some function calls with throw if something went wrong or if they were called incorrectly. There are two type of errors that can be thrown: native JavaScript errors and WebAssembly runtime errors which are wrapped in a VWError object.
+Some function calls with throw if something went wrong or if they were called incorrectly. There are two type of errors that can be thrown: native JavaScript errors and WebAssembly runtime errors, the latter which are wrapped in a VWError object.
 
 When logging an error to the console there needs to be a check of the error type and the logging needs to be handled accordingly:
 
