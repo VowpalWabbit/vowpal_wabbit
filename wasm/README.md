@@ -2,10 +2,6 @@
 
 Javascript bindings for [VowpalWabbit](https://vowpalwabbit.org/)
 
-## Installation
-
-Download the artifact from WASM CI and run `npm install <path to artifact file>`
-
 ## Documentation
 
 [API documentation](documentation.md)
@@ -19,7 +15,7 @@ Full API reference [here](documentation.md#CbWorkspace)
 Require returns a promise because we need to wait for the WASM module to be initialized before including and using the VowpalWabbit JS code
 
 ```(js)
-const vwPromise = require('vowpalwabbit');
+const vwPromise = require('@vowpalwabbit/vowpalwabbit');
 
 vwPromise.then((vw) => {
     let model = new vw.CbWorkspace({ args_str: "--cb_explore_adf" });
@@ -32,7 +28,7 @@ A VW model needs to be deleted after we are done with its usage to return the aq
 ### How-To call learn and predict on a Contextual Bandit model
 
 ```(js)
-const vwPromise = require('vowpalwabbit');
+const vwPromise = require('@vowpalwabbit/vowpalwabbit');
 
 vwPromise.then((vw) => {
     let model = new vw.CbWorkspace({ args_str: "--cb_explore_adf" });
@@ -90,7 +86,7 @@ There are two ways to save/load a model
 Node's `fs` will be used to access the file and save/loading is blocking
 
 ```(js)
-const vwPromise = require('vowpalwabbit');
+const vwPromise = require('@vowpalwabbit/vowpalwabbit');
 
 vwPromise.then((vw) => {
     let model = new vw.CbWorkspace({ args_str: "--cb_explore_adf" });
@@ -154,7 +150,7 @@ A model can be loaded from a file either during model construction (shown above)
 A log stream can be started which will create and use a `fs` write stream:
 
 ```(js)
-const vwPromise = require('vowpalwabbit');
+const vwPromise = require('@vowpalwabbit/vowpalwabbit');
 
 vwPromise.then((vw) => {
 
@@ -186,7 +182,7 @@ Synchronous logging options are also available [see API documentation](documenta
 ### How-To train a model with data from a file
 
 ```(js)
-const vwPromise = require('vowpalwabbit');
+const vwPromise = require('@vowpalwabbit/vowpalwabbit');
 
 vwPromise.then((vw) => {
 
@@ -211,7 +207,7 @@ vwPromise.then((vw) => {
 
 ### How-To handle errors
 
-Some function calls with throw if something went wrong or if they were called incorrectly. There are two type of errors that can be thrown: native JavaScript errors and WebAssembly runtime errors.
+Some function calls with throw if something went wrong or if they were called incorrectly. There are two type of errors that can be thrown: native JavaScript errors and WebAssembly runtime errors, the latter which are wrapped in a VWError object.
 
 When logging an error to the console there needs to be a check of the error type and the logging needs to be handled accordingly:
 
@@ -219,7 +215,7 @@ When logging an error to the console there needs to be a check of the error type
 try {}
 catch (e)
 {
-    if (e instanceof WebAssembly.RuntimeError) {
+    if (e.name === 'VWError') {
             console.error(vw.getExceptionMessage(e));
     }
     else {
@@ -235,7 +231,7 @@ Full API reference [here](documentation.md#Workspace)
 #### Simple regression example
 
 ```(js)
-const vwPromise = require('vowpalwabbit');
+const vwPromise = require('@vowpalwabbit/vowpalwabbit');
 
 vwPromise.then((vw) => {
 
@@ -251,7 +247,7 @@ vwPromise.then((vw) => {
 #### CCB example
 
 ```(js)
-const vwPromise = require('vowpalwabbit');
+const vwPromise = require('@vowpalwabbit/vowpalwabbit');
 
 vwPromise.then((vw) => {
 

@@ -13,6 +13,14 @@ const ProblemType =
 
 // exported
 
+class VWError extends Error {
+    constructor(message: string, originalError: any) {
+        super(message);
+        this.name = 'VWError';
+        this.stack = originalError;
+    }
+}
+
 /**
  * A class that helps facilitate the stringification of Vowpal Wabbit examples, and the logging of Vowpal Wabbit examples to a file.
  * @class
@@ -349,18 +357,28 @@ module.exports = new Promise((resolve) => {
              * 
              * @param {object} example returned from parse()
              * @returns the prediction with a type corresponding to the reduction that was used
+             * @throws {VWError} Throws an error if the example is not well defined
              */
             predict(example: object) {
-                return this._instance.predict(example);
+                try {
+                    return this._instance.predict(example);
+                } catch (e: any) {
+                    throw new VWError(e.message, e);
+                }
             }
 
             /**
              * Calls vw learn on the example and updates the model
              * 
              * @param {object} example returned from parse()
+             * @throws {VWError} Throws an error if the example is not well defined
              */
             learn(example: object) {
-                return this._instance.learn(example);
+                try {
+                    return this._instance.learn(example);
+                } catch (e: any) {
+                    throw new VWError(e.message, e);
+                }
             }
 
             /**
@@ -411,9 +429,14 @@ module.exports = new Promise((resolve) => {
              * 
              * @param {object} example the example object that will be used for prediction
              * @returns {array} probability mass function, an array of action,score pairs that was returned by predict
+             * @throws {VWError} Throws an error if the example text_context is missing from the example
              */
             predict(example: object) {
-                return this._instance.predict(example);
+                try {
+                    return this._instance.predict(example);
+                } catch (e: any) {
+                    throw new VWError(e.message, e);
+                }
             }
 
             /**
@@ -430,9 +453,15 @@ module.exports = new Promise((resolve) => {
              * 
              * 
              * @param {object} example the example object that will be used for prediction
+             * @throws {VWError} Throws an error if the example does not have the required properties to learn
              */
             learn(example: object) {
-                return this._instance.learn(example);
+                try {
+                    return this._instance.learn(example);
+                }
+                catch (e: any) {
+                    throw new VWError(e.message, e);
+                }
             }
 
             /**
@@ -480,13 +509,18 @@ module.exports = new Promise((resolve) => {
              * - action: the action index that was sampled
              * - score: the score of the action that was sampled
              * - uuid: the uuid that was passed to the predict function
-             * @throws {Error} Throws an error if the input is not an array of action,score pairs
+             * @throws {VWError} Throws an error if the input is not an array of action,score pairs
              */
             samplePmf(pmf: Array<number>): object {
                 let uuid = crypto.randomUUID();
-                let ret = this._instance._samplePmf(pmf, uuid);
-                ret["uuid"] = uuid;
-                return ret;
+                try {
+                    let ret = this._instance._samplePmf(pmf, uuid);
+                    ret["uuid"] = uuid;
+                    return ret;
+                }
+                catch (e: any) {
+                    throw new VWError(e.message, e);
+                }
             }
 
             /**
@@ -500,12 +534,16 @@ module.exports = new Promise((resolve) => {
              * - action: the action index that was sampled
              * - score: the score of the action that was sampled
              * - uuid: the uuid that was passed to the predict function
-             * @throws {Error} Throws an error if the input is not an array of action,score pairs
+             * @throws {VWError} Throws an error if the input is not an array of action,score pairs
              */
             samplePmfWithUUID(pmf: Array<number>, uuid: string): object {
-                let ret = this._instance._samplePmf(pmf, uuid);
-                ret["uuid"] = uuid;
-                return ret;
+                try {
+                    let ret = this._instance._samplePmf(pmf, uuid);
+                    ret["uuid"] = uuid;
+                    return ret;
+                } catch (e: any) {
+                    throw new VWError(e.message, e);
+                }
             }
 
             /**
@@ -519,13 +557,17 @@ module.exports = new Promise((resolve) => {
              * - action: the action index that was sampled
              * - score: the score of the action that was sampled
              * - uuid: the uuid that was passed to the predict function
-             * @throws {Error} if there is no text_context field in the example
+             * @throws {VWError} if there is no text_context field in the example
              */
             predictAndSample(example: object): object {
-                let uuid = crypto.randomUUID();
-                let ret = this._instance._predictAndSample(example, uuid);
-                ret["uuid"] = uuid;
-                return ret;
+                try {
+                    let uuid = crypto.randomUUID();
+                    let ret = this._instance._predictAndSample(example, uuid);
+                    ret["uuid"] = uuid;
+                    return ret;
+                } catch (e: any) {
+                    throw new VWError(e.message, e);
+                }
             }
 
             /**
@@ -539,12 +581,16 @@ module.exports = new Promise((resolve) => {
              * - action: the action index that was sampled
              * - score: the score of the action that was sampled
              * - uuid: the uuid that was passed to the predict function
-             * @throws {Error} if there is no text_context field in the example
+             * @throws {VWError} if there is no text_context field in the example
              */
             predictAndSampleWithUUID(example: object, uuid: string): object {
-                let ret = this._instance._predictAndSample(example, uuid);
-                ret["uuid"] = uuid;
-                return ret;
+                try {
+                    let ret = this._instance._predictAndSample(example, uuid);
+                    ret["uuid"] = uuid;
+                    return ret;
+                } catch (e: any) {
+                    throw new VWError(e.message, e);
+                }
             }
         };
 

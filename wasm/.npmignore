@@ -1,8 +1,5 @@
 test/
-*.md
-example.js
+developer_readme.md
 node_modules
 *.txt
 *.cc
-*.ts
-!*.d.ts

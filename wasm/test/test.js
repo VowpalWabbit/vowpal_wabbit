@@ -4,7 +4,7 @@ const fs = require('fs');
 const readline = require('readline');
 const path = require('path');
 
-const vwPromise = require('vowpalwabbit');
+const vwPromise = require('@vowpalwabbit/vowpalwabbit');
 let vw;
 
 async function run() {
