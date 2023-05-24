@@ -3,60 +3,39 @@ from vw_executor.vw_opts import Grid
 from numpy.testing import assert_allclose
 import pandas as pd
 import numpy as np
-import random
-
-with open("regression1.txt", "w") as f:
-    for i in range(10000):
-        x = random.uniform(1, 100)
-        y = 5
-        f.write(f"{y} |f x:{x}\n")
+import pytest
+import os
+from test_helper import json_to_dict_list, dynamic_function_call, get_function_object
 
 
-def core_test(files, grid, outputs, job_assert):
-    vw = Vw(".vw_cache", reset=True)
+def cleanup_data_file():
+    script_directory = os.path.dirname(os.path.realpath(__file__))
+    # List all files in the directory
+    files = os.listdir(script_directory)
+    # Iterate over the files and remove the ones with .txt extension
+    for file in files:
+        if file.endswith(".txt"):
+            file_path = os.path.join(script_directory, file)
+            os.remove(file_path)
+    
+@pytest.fixture
+def test_dict(request):
+    resource = request.param
+    yield resource  # 
+    cleanup_data_file()
+
+
+def core_test(files, grid, outputs, job_assert, job_assert_args):
+    vw = Vw(".vw_cache", reset=True, handler=None)
     result = vw.train(files, grid, outputs)
-    job_assert(result)
+    for j in result:
+        job_assert(j, *job_assert_args)
 
-
-def test_regression_weight():
+@pytest.mark.parametrize('test_dict', json_to_dict_list("pytest.json"), indirect=True)
+def test_all(test_dict):
     options = Grid(
-        {
-            "#base": ["-P 50000 --preserve_performance_counters --save_resume "],
-            "#reg": ["", "--coin", "--ftrl", "--pistol"],
-        }
+      test_dict['grid'],
     )
-
-    def assert_job(job):
-        tolerance = 1
-        constant = 5
-        for j in job:
-            assert j.status.value == 3
-            data = j.outputs["--readable_model"]
-            with open(data[0], "r") as f:
-                data = f.readlines()
-            data = [i.strip() for i in data]
-            weight_b = float(data[-1].split(":")[1].split(" ")[0])
-            weight_x1 = float(data[-2].split(":")[1].split(" ")[0])
-            print(f"Running for command {j.opts}")
-            print(weight_x1, weight_b)
-            err_msg = (
-                lambda w, we, wName: f"assert fail for {wName}: actual: {w}, expected {we}"
-            )
-            assert np.isclose(weight_b, constant, atol=tolerance), err_msg(
-                weight_b, constant, "Bias"
-            )
-            assert np.isclose(weight_x1, 0, atol=tolerance), err_msg(
-                weight_x1, 0, "w_x1"
-            )
-
-            # checking prediction
-            # predictions = j.outputs['-p']
-            # with open(predictions[0], "r") as f:
-            #     predictions = f.readlines()
-            #     predictions = [float(i) for i in predictions[1:]]
-            # assert assert_allclose(predictions, [5]*len(predictions)), "predicted value should be 5"
-
-    core_test("regression1.txt", options, ["--readable_model", "-p"], assert_job)
-
-
-test_regression_weight()
+    data = dynamic_function_call("data_generation", test_dict['data_func'], *test_dict["data_func_args"])
+    assert_job = get_function_object("assert_job", test_dict['assert_func'])
+    core_test(data, options, ["--readable_model", "-p"], assert_job, test_dict['assert_func_args'])
