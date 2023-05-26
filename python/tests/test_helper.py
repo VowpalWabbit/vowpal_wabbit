@@ -7,18 +7,10 @@ import os
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
 def json_to_dict_list(file):
-    res = []
     with open(current_dir + "/" + file, 'r') as file:
         # Load the JSON data
-        json_data = json.load(file)
-        # Iterate over each item in the array
-        for item in json_data:
-            # Convert item to a dictionary
-            item_dict = dict(item)
-            res.append(item_dict)
-            # Process the dictionary as needed
-    return res
-
+        return json.load(file)
+        
 
 def dynamic_function_call(module_name, function_name, *args, **kwargs):
     try:

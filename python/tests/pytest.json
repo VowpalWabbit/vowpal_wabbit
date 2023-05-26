@@ -3,11 +3,12 @@
         "data_func": "constant_function",
         "data_func_args": [2000,5,1,100],
         "assert_func": "assert_prediction",
-        "assert_func_args": [[5, 0],1],
+        "assert_func_args": [5,1],
         "grid":   {
             "#base": ["-P 50000 --preserve_performance_counters --save_resume "],
             "#reg": ["", "--coin"]
-        }
+        },
+        "output": ["--readable_model", "-p"]
     },
     {
         "data_func": "constant_function",
@@ -17,7 +18,8 @@
         "grid":   {
             "#base": ["-P 50000 --preserve_performance_counters --save_resume "],
             "#reg": ["", "--coin"]
-        }
+        },
+        "output": ["--readable_model", "-p"]
     },
     {
         "data_func": "constant_function",
@@ -25,8 +27,9 @@
         "assert_func": "assert_weight",
         "assert_func_args": [[5, 0],1],
         "grid":   {
-            "#base": ["-P 100000000000 --preserve_performance_counters --save_resume --learning_rate 0.000000000001"],
+            "#base": ["-P 1 --preserve_performance_counters --save_resume --learning_rate 0.000000000001"],
             "#reg": ["", "--coin", "--ftrl", "--pistol"]
-        }
+        },
+        "output": ["--readable_model", "-p"]
     }
 ]

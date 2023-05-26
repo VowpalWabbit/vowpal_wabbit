@@ -19,7 +19,7 @@ def cleanup_data_file():
             os.remove(file_path)
     
 @pytest.fixture
-def test_dict(request):
+def test_description(request):
     resource = request.param
     yield resource  # 
     cleanup_data_file()
@@ -31,11 +31,11 @@ def core_test(files, grid, outputs, job_assert, job_assert_args):
     for j in result:
         job_assert(j, *job_assert_args)
 
-@pytest.mark.parametrize('test_dict', json_to_dict_list("pytest.json"), indirect=True)
-def test_all(test_dict):
+@pytest.mark.parametrize('test_description', json_to_dict_list("pytest.json"), indirect=True)
+def test_all(test_description):
     options = Grid(
-      test_dict['grid'],
+      test_description['grid'],
     )
-    data = dynamic_function_call("data_generation", test_dict['data_func'], *test_dict["data_func_args"])
-    assert_job = get_function_object("assert_job", test_dict['assert_func'])
-    core_test(data, options, ["--readable_model", "-p"], assert_job, test_dict['assert_func_args'])
+    data = dynamic_function_call("data_generation", test_description['data_func'], *test_description["data_func_args"])
+    assert_job = get_function_object("assert_job", test_description['assert_func'])
+    core_test(data, options, test_description['output'], assert_job, test_description['assert_func_args'])
