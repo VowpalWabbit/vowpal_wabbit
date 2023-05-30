@@ -2,6 +2,7 @@ import json
 import importlib
 import pytest
 import os
+import itertools
 
 # Get the current directory
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -59,3 +60,8 @@ def generate_pytest_from_json(filepath):
         test_function = generate_test_function(test_case)
         globals()[test_function.__name__] = test_function
     
+
+def generate_string_combinations(*lists):
+    combinations = list(itertools.product(*lists))
+    combinations = [''.join(combination) for combination in combinations]
+    return combinations

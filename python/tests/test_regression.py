@@ -5,8 +5,24 @@ import pandas as pd
 import numpy as np
 import pytest
 import os
-from test_helper import json_to_dict_list, dynamic_function_call, get_function_object
+from test_helper import json_to_dict_list, dynamic_function_call, get_function_object, generate_string_combinations
 
+CURR_DICT = os.path.dirname(os.path.abspath(__file__))
+
+def combine_list_cmds_grids(cmds, base_grid):
+    list_of_key_val = []
+    grids = []
+    for key, value in cmds.items():
+        value = [i for i in value if i != ""]
+        if str(value).isdigit():
+            list_of_key_val.append([f" {key} {format(li, '.5f').rstrip('0').rstrip('.') }" for li in value])
+        else:
+            list_of_key_val.append([f" {key} {li}" for li in value])
+    for new_cmd in generate_string_combinations([base_grid["#base"][0]], *list_of_key_val):
+        tmp_grid = base_grid.copy()
+        tmp_grid["#base"][0] = new_cmd
+        grids.append(tmp_grid)
+    return grids
 
 def cleanup_data_file():
     script_directory = os.path.dirname(os.path.realpath(__file__))
@@ -26,16 +42,29 @@ def test_description(request):
 
 
 def core_test(files, grid, outputs, job_assert, job_assert_args):
-    vw = Vw(".vw_cache", reset=True, handler=None)
+    vw = Vw(CURR_DICT + "/.vw_cache", reset=True, handler=None)
     result = vw.train(files, grid, outputs)
     for j in result:
-        job_assert(j, *job_assert_args)
+        job_assert(j, **job_assert_args)
+
 
 @pytest.mark.parametrize('test_description', json_to_dict_list("pytest.json"), indirect=True)
 def test_all(test_description):
-    options = Grid(
-      test_description['grid'],
-    )
-    data = dynamic_function_call("data_generation", test_description['data_func'], *test_description["data_func_args"])
-    assert_job = get_function_object("assert_job", test_description['assert_func'])
-    core_test(data, options, test_description['output'], assert_job, test_description['assert_func_args'])
+    
+    mutiply = test_description.get("*", None)
+    plus = test_description.get("+", None)
+
+    base_grid = test_description['grid']
+    grids = []
+    if mutiply:
+        grids = combine_list_cmds_grids(mutiply, base_grid)
+    else:
+        grids.append(base_grid)
+    
+    for grid in grids:
+        options = Grid(
+            grid
+        )
+        data = dynamic_function_call("data_generation", test_description['data_func'], *test_description["data_func_args"])
+        assert_job = get_function_object("assert_job", test_description['assert_func'])
+        core_test(data, options, test_description['output'], assert_job, test_description['assert_func_args'])
