@@ -49,3 +49,12 @@ npm test
 ``` sh
 npm run docs
 ```
+
+### Release on npm
+
+1. Update the version in package.json
+2. Change all version references in README.md (relative links will be broken until merged to master and the tag is cut)
+3. Update the table in README.md to point to latest VW version and tag
+4. Commit changes to master
+5. Tag the release as `wasm_v.major.minor.patch`
+6. Publish to npm `npm publish --access public` (you need to sign into your npm account first and have access to the vowpalwabbit organisation)

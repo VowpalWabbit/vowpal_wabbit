@@ -2,15 +2,20 @@
 
 Javascript bindings for [VowpalWabbit](https://vowpalwabbit.org/)
 
+| npmjs version | Vowpal Wabbit version | Vowpal Wabbit tag |
+|----------|----------|----------|
+| 0.0.3   | 9.8.0   | wasm_v0.0.3 |
+| 0.0.4   | 9.8.0   | wasm_v0.0.4 |
+
 ## Documentation
 
-[API documentation](documentation.md)
+[API documentation](https://github.com/VowpalWabbit/vowpal_wabbit/blob/wasm_v0.0.4/wasm/documentation.md)
 
 ## Examples and How-To
 
 ### How-To include the dependency and initialize a Contextual Bandit ADF model
 
-Full API reference [here](documentation.md#CbWorkspace)
+Full API reference [here](https://github.com/VowpalWabbit/vowpal_wabbit/blob/wasm_v0.0.4/wasm/documentation.md#CbWorkspace)
 
 Require returns a promise because we need to wait for the WASM module to be initialized before including and using the VowpalWabbit JS code
 
@@ -177,7 +182,7 @@ There is also the option of stringifying an example for user-handled logging:
     let cbAsString = CBExampleToString(example);
 ```
 
-Synchronous logging options are also available [see API documentation](documentation.md#VWExampleLogger)
+Synchronous logging options are also available [see API documentation](https://github.com/VowpalWabbit/vowpal_wabbit/blob/wasm_v0.0.4/wasm/documentation.md#VWExampleLogger)
 
 ### How-To train a model with data from a file
 
@@ -226,7 +231,7 @@ catch (e)
 
 ### How-To use a generic VW model (non Contextual Bandit specific functionality)
 
-Full API reference [here](documentation.md#Workspace)
+Full API reference [here](https://github.com/VowpalWabbit/vowpal_wabbit/blob/wasm_v0.0.4/wasm/documentation.md#Workspace)
 
 #### Simple regression example
 
