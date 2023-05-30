@@ -1,6 +1,4 @@
-import fs from 'fs';
-import crypto from 'crypto';
-
+const { v4: uuidv4 } = require('uuid');
 const VWWasmModule = require('./vw-wasm.js');
 
 // internals
@@ -21,154 +19,15 @@ class VWError extends Error {
     }
 }
 
-/**
- * A class that helps facilitate the stringification of Vowpal Wabbit examples, and the logging of Vowpal Wabbit examples to a file.
- * @class
- */
-class VWExampleLogger {
-    _outputLogStream: fs.WriteStream | null;
-    _log_file: string | null;
-
-    constructor() {
-        this._outputLogStream = null;
-        this._log_file = null;
-    }
-
-    /**
-     * 
-     * Starts a log stream to the specified file. Any new logs will be appended to the file.
-     * 
-     * @param {string} log_file the path to the file where the log will be appended to
-     * @throws {Error} Throws an error if another logging stream has already been started
-     */
-    startLogStream(log_file: string) {
-        if (this._outputLogStream !== null) {
-            throw new Error("Can not start log stream, another log stream is currently active. Call endLogStream first if you want to change the log file. Current log file: " + this._log_file);
-        }
-        else {
-            this._log_file = log_file;
-            this._outputLogStream = fs.createWriteStream(log_file, { flags: 'a' });
-        }
-    }
-
-    /**
-     * Takes a string and appends it to the log file. Line is logged in an asynchronous manner.
-     * 
-     * @param {string} line the line to be appended to the log file
-     * @throws {Error} Throws an error if no logging stream has been started
-     */
-    logLineToStream(line: string) {
-        if (this._outputLogStream !== null) {
-            this._outputLogStream.write(line);
-        }
-        else {
-            throw new Error("Can not log line, log file is not specified. Call startLogStream first.");
-        }
-    }
-
-    /**
-     * Closes the logging stream. Logs a warning to the console if there is no logging stream active, but does not throw
-     */
-    endLogStream() {
-        if (this._outputLogStream !== null) {
-            this._outputLogStream.end();
-            this._outputLogStream = null;
-            this._log_file = null;
-        }
-        else {
-            console.warn("Can not close log, log file is not specified");
-        }
-    }
-
-    /**
-     * 
-     * Takes a string and appends it to the log file. Line is logged in a synchronous manner. 
-     * Every call to this function will open a new file handle, append the line and close the file handle.
-     * 
-     * @param {string} log_file the path to the file where the log will be appended to
-     * @param {string} line the line to be appended to the log file
-     * @throws {Error} Throws an error if another logging stream has already been started
-     */
-    logLineSync(log_file: string, line: string) {
-        if (this._outputLogStream !== null && this._log_file === log_file) {
-            throw new Error("Can not call logLineSync on log file while the same file has an async log writer active. Call endLogStream first. Log file: " + log_file);
-        }
-        fs.appendFileSync(log_file, line);
-    }
-
-    /**
-     * 
-     * Takes a CB example and returns the string representation of it
-     * 
-     * @param {object} example a CB example that will be stringified
-     * @returns {string} the string representation of the CB example
-     * @throws {Error} Throws an error if the example is malformed
-     */
-    CBExampleToString(example: { text_context: string, labels: Array<{ action: number, cost: number, probability: number }> }): string {
-        let context = ""
-        if (example.hasOwnProperty('text_context')) {
-            context = example.text_context;
-        }
-        else {
-            throw new Error("Can not log example, there is no context available");
-        }
-
-        const lines = context.trim().split("\n").map((substr) => substr.trim());
-        lines.push("");
-        lines.push("");
-
-        if (example.hasOwnProperty("labels") && example["labels"].length > 0) {
-            let indexOffset = 0;
-            if (context.includes("shared")) {
-                indexOffset = 1;
-            }
-
-            for (let i = 0; i < example["labels"].length; i++) {
-                let label = example["labels"][i];
-                if (label.action + indexOffset >= lines.length) {
-                    throw new Error("action index out of bounds: " + label.action);
-                }
-
-                lines[label.action + indexOffset] = label.action + ":" + label.cost + ":" + label.probability + " " + lines[label.action + indexOffset]
-            }
-        }
-        return lines.join("\n");
-    }
-
-    /**
-     * 
-     * Takes a CB example, stringifies it by calling CBExampleToString, and appends it to the log file. Line is logged in an asynchronous manner.
-     * 
-     * @param {object} example a CB example that will be stringified and appended to the log file
-     * @throws {Error} Throws an error if no logging stream has been started
-     */
-    logCBExampleToStream(example: { text_context: string, labels: Array<{ action: number, cost: number, probability: number }> }) {
-        let ex_str = this.CBExampleToString(example);
-        this.logLineToStream(ex_str);
-    }
-
-    /**
-     * 
-     * Takes a CB example, stringifies it by calling CBExampleToString, and appends it to the log file. Example is logged in a synchronous manner.
-     * Every call to this function will open a new file handle, append the line and close the file handle.
-     * 
-     * @param {string} log_file the path to the file where the log will be appended to
-     * @param {object} example a CB example that will be stringified and appended to the log file
-     * @throws {Error} Throws an error if another logging stream has already been started
-     */
-    logCBExampleSync(log_file: string, example: { text_context: string, labels: Array<{ action: number, cost: number, probability: number }> }) {
-        let ex_str = this.CBExampleToString(example);
-        this.logLineSync(log_file, ex_str);
-    }
-};
-
-module.exports = new Promise((resolve) => {
+export default new Promise((resolve) => {
     VWWasmModule().then((moduleInstance: any) => {
         class WorkspaceBase {
             _args_str: string | undefined;
             _instance: any;
+            _readSync: Function;
+            _writeSync: Function;
 
-            constructor(type: string, { args_str, model_file, model_array }:
+            constructor(type: string, readSync: Function, writeSync: Function, { args_str, model_file, model_array }:
                 { args_str?: string, model_file?: string, model_array?: [number | undefined, number | undefined] } = {}) {
 
                 let vwModelConstructor = null;
@@ -180,6 +39,9 @@ module.exports = new Promise((resolve) => {
                 else {
                     throw new Error("Unknown model type");
                 }
+
+                this._readSync = readSync;
+                this._writeSync = writeSync;
 
                 let model_array_ptr: number | undefined = undefined;
                 let model_array_len: number | undefined = undefined;
@@ -203,7 +65,7 @@ module.exports = new Promise((resolve) => {
                 }
 
                 if (model_file !== undefined) {
-                    let modelBuffer = fs.readFileSync(model_file);
+                    let modelBuffer = readSync(model_file);
                     let ptr = moduleInstance._malloc(modelBuffer.byteLength);
                     let heapBytes = new Uint8Array(moduleInstance.HEAPU8.buffer, ptr, modelBuffer.byteLength);
                     heapBytes.set(new Uint8Array(modelBuffer));
@@ -254,7 +116,7 @@ module.exports = new Promise((resolve) => {
                     uint8Array[i] = char_vector.get(i);
                 }
 
-                fs.writeFileSync(model_file, Buffer.from(uint8Array));
+                this._writeSync(model_file, Buffer.from(uint8Array));
 
                 char_vector.delete();
             }
@@ -286,7 +148,7 @@ module.exports = new Promise((resolve) => {
              * @param {string} model_file the path to the file where the model will be loaded from
              */
             loadModelFromFile(model_file: string) {
-                let modelBuffer = fs.readFileSync(model_file);
+                let modelBuffer = this._readSync(model_file);
                 let ptr = moduleInstance._malloc(modelBuffer.byteLength);
                 let heapBytes = new Uint8Array(moduleInstance.HEAPU8.buffer, ptr, modelBuffer.byteLength);
                 heapBytes.set(new Uint8Array(modelBuffer));
@@ -317,6 +179,7 @@ module.exports = new Promise((resolve) => {
         /**
          * A Wrapper around the Wowpal Wabbit C++ library.
          * @class
+         * @private
          * @extends WorkspaceBase
          */
         class Workspace extends WorkspaceBase {
@@ -325,6 +188,8 @@ module.exports = new Promise((resolve) => {
              * Can accept either or both string arguments and a model file.
              * 
              * @constructor
+             * @param {Function} readSync - A function that reads a file synchronously and returns a buffer
+             * @param {Function} writeSync - A function that writes a buffer to a file synchronously
              * @param {string} [args_str] - The arguments that are used to initialize Vowpal Wabbit (optional)
              * @param {string} [model_file] - The path to the file where the model will be loaded from (optional)
              * @param {tuple} [model_array] - The pre-loaded model's array pointer and length (optional).
@@ -335,9 +200,9 @@ module.exports = new Promise((resolve) => {
              * - both string arguments and a model array are provided, and the string arguments and arguments defined in the model clash
              * - both a model file and a model array are provided
              */
-            constructor({ args_str, model_file, model_array }:
+            constructor(readSync: Function, writeSync: Function, { args_str, model_file, model_array }:
                 { args_str?: string, model_file?: string, model_array?: [number | undefined, number | undefined] } = {}) {
-                super(ProblemType.All, { args_str, model_file, model_array });
+                super(ProblemType.All, readSync, writeSync, { args_str, model_file, model_array });
             }
 
             /**
@@ -394,6 +259,7 @@ module.exports = new Promise((resolve) => {
         /**
          * A Wrapper around the Wowpal Wabbit C++ library for Contextual Bandit exploration algorithms.
          * @class
+         * @private
          * @extends WorkspaceBase
          */
         class CbWorkspace extends WorkspaceBase {
@@ -402,6 +268,8 @@ module.exports = new Promise((resolve) => {
              * Can accept either or both string arguments and a model file.
              * 
              * @constructor
+             * @param {Function} readSync - A function that reads a file synchronously and returns a buffer
+             * @param {Function} writeSync - A function that writes a buffer to a file synchronously
              * @param {string} [args_str] - The arguments that are used to initialize Vowpal Wabbit (optional)
              * @param {string} [model_file] - The path to the file where the model will be loaded from (optional)
              * @param {tuple} [model_array] - The pre-loaded model's array pointer and length (optional).
@@ -414,9 +282,9 @@ module.exports = new Promise((resolve) => {
              */
 
             _ex: string;
-            constructor({ args_str, model_file, model_array }:
+            constructor(readSync: Function, writeSync: Function, { args_str, model_file, model_array }:
                 { args_str?: string, model_file?: string, model_array?: [number | undefined, number | undefined] } = {}) {
-                super(ProblemType.CB, { args_str, model_file, model_array });
+                super(ProblemType.CB, readSync, writeSync, { args_str, model_file, model_array });
                 this._ex = "";
             }
 
@@ -512,7 +380,7 @@ module.exports = new Promise((resolve) => {
              * @throws {VWError} Throws an error if the input is not an array of action,score pairs
              */
             samplePmf(pmf: Array<number>): object {
-                let uuid = crypto.randomUUID();
+                let uuid = uuidv4();
                 try {
                     let ret = this._instance._samplePmf(pmf, uuid);
                     ret["uuid"] = uuid;
@@ -561,7 +429,7 @@ module.exports = new Promise((resolve) => {
              */
             predictAndSample(example: object): object {
                 try {
-                    let uuid = crypto.randomUUID();
+                    let uuid = uuidv4();
                     let ret = this._instance._predictAndSample(example, uuid);
                     ret["uuid"] = uuid;
                     return ret;
@@ -620,7 +488,6 @@ module.exports = new Promise((resolve) => {
                 Workspace: Workspace,
                 CbWorkspace: CbWorkspace,
                 Prediction: Prediction,
-                VWExampleLogger: VWExampleLogger,
                 getExceptionMessage: getExceptionMessage,
                 wasmModule: moduleInstance
             }
