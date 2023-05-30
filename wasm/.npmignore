@@ -1,0 +1,5 @@
+test/
+developer_readme.md
+node_modules
+*.txt
+*.cc
