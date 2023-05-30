@@ -168,7 +168,7 @@ A model can be loaded from a file either during model construction (shown above)
     }
 ```
 
-### How-To log examples into a file or stringify examples for user-handled logging
+### How-To log examples into a file or stringify examples for user-handled logging (currently available for nodejs environments only)
 
 A log stream can be started which will create and use a `fs` write stream:
 

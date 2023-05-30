@@ -53,8 +53,9 @@ npm run docs
 ### Release on npm
 
 1. Update the version in package.json
-2. Change all version references in README.md (relative links will be broken until merged to master and the tag is cut)
-3. Update the table in README.md to point to latest VW version and tag
-4. Commit changes to master
-5. Tag the release as `wasm_v.major.minor.patch`
-6. Publish to npm `npm publish --access public` (you need to sign into your npm account first and have access to the vowpalwabbit organisation)
+2. Run `npm run docs` and check in the new `documentation.md` if it has changed
+3. Change all version references in README.md (relative links will be broken until merged to master and the tag is cut)
+4. Update the table in README.md to point to latest VW version and tag
+5. Commit changes to master
+6. Tag the release as `wasm_v.major.minor.patch`
+7. Publish to npm `npm publish --access public` (you need to sign into your npm account first and have access to the vowpalwabbit organisation)
