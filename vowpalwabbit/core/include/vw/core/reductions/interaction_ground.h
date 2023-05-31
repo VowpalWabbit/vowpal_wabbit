@@ -21,9 +21,13 @@ namespace reductions
  */
 std::shared_ptr<VW::LEARNER::learner> interaction_ground_setup(VW::setup_base_i& stack_builder);
 
-class interaction_ground_data
+namespace igl
+{
+class igl_data
 {
 public:
+  igl_data(bool predict_only_model);
+
   std::shared_ptr<VW::LEARNER::learner> ik_learner = nullptr;
   VW::example ik_ex;
 
@@ -35,12 +39,17 @@ public:
   std::unique_ptr<VW::workspace> ik_all;
   ftrl* ik_ftrl;  // automatically save resume
   std::unique_ptr<ftrl> pi_ftrl;
+
+  bool _predict_only_model;
+  size_t _cb_model_offset = 1;
+  size_t _feature_width = 2;
 };
+}  // namespace igl
 }  // namespace reductions
 
 namespace model_utils
 {
-size_t write_model_field(io_buf&, const VW::reductions::interaction_ground_data&, const std::string&, bool);
-size_t read_model_field(io_buf&, VW::reductions::interaction_ground_data&);
+size_t write_model_field(io_buf&, const VW::reductions::igl::igl_data&, const std::string&, bool);
+size_t read_model_field(io_buf&, VW::reductions::igl::igl_data&);
 }  // namespace model_utils
 }  // namespace VW

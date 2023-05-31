@@ -92,18 +92,6 @@ void epsilon_decay_data::update_weights(float init_ep, VW::LEARNER::learner& bas
 
     VW::action_scores champ_a_s;
 
-    // Get best action
-    uint32_t best_action = 0;
-    float best_score = 0.f;
-    for (const auto& a_s : examples[0]->pred.a_s)
-    {
-      if (a_s.score > best_score)
-      {
-        best_action = a_s.action;
-        best_score = a_s.score;
-      }
-    }
-
     // Process each model, then update the upper/lower bounds for each model
     for (int64_t model_ind = model_count - 1; model_ind >= 0; --model_ind)
     {
@@ -122,6 +110,17 @@ void epsilon_decay_data::update_weights(float init_ep, VW::LEARNER::learner& bas
           float p_pred = a_s.score;
           if (model_ind != model_count - 1 && !_challenger_epsilon)
           {
+            // Get best action
+            uint32_t best_action = 0;
+            float best_score = 0.f;
+            for (const auto& a_s : examples[0]->pred.a_s)
+            {
+              if (a_s.score > best_score)
+              {
+                best_action = a_s.action;
+                best_score = a_s.score;
+              }
+            }
             p_pred = (a_s.action == best_action) ? 1.f : 0.f;
           }
           float w = (logged.probability > 0) ? p_pred / logged.probability : 0;

@@ -7,6 +7,7 @@
 #include "vw/core/prediction_type.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
+#include "vw/explore/explore.h"
 
 #include <emscripten/bind.h>
 #include <emscripten/val.h>
@@ -96,7 +97,7 @@ emscripten::val to_js_type(const v_array<uint32_t>& array)
   return emscripten::val::array(array.begin(), array.end());
 }
 
-emscripten::val to_js_type(const v_array<ACTION_SCORE::action_score>& action_scores_array)
+emscripten::val to_js_type(const v_array<VW::action_score>& action_scores_array)
 {
   return emscripten::val::array(action_scores_array.begin(), action_scores_array.end());
 }
@@ -294,11 +295,56 @@ struct vw_model : MixIn
 template <typename MixIn = vw_model_basic>
 struct cb_vw_model : MixIn
 {
-  // TODO check or restrict arguments to be cb_adf arguments
-  // should the model be renamed to cb_adf_vw_model?
-  cb_vw_model(const std::string& args) : MixIn(args) {}
+  cb_vw_model(const std::string& args) : MixIn(args)
+  {
+    _pmf_sampling_seed = this->vw_ptr->get_random_state()->get_current_state();
+  }
 
-  cb_vw_model(const std::string& args, size_t _bytes, int size) : MixIn(args, _bytes, size) {}
+  cb_vw_model(const std::string& args, size_t _bytes, int size) : MixIn(args, _bytes, size)
+  {
+    _pmf_sampling_seed = this->vw_ptr->get_random_state()->get_current_state();
+  }
+
+  void set_sampling_seed(uint32_t seed) { _pmf_sampling_seed = seed; }
+
+  uint32_t sample_pmf_internal(std::vector<float>& pmf, uint64_t seed)
+  {
+    uint32_t chosen_index = 0;
+    int ret_val = VW::explore::sample_after_normalizing(seed, pmf.begin(), pmf.end(), chosen_index);
+
+    if (ret_val != 0) { THROW("sample_after_normalizing failed"); }
+
+    return chosen_index;
+  }
+
+  emscripten::val sample_pmf(const emscripten::val& a_s, const std::string& uid)
+  {
+    int length = 0;
+    if (!a_s.hasOwnProperty("length") || (length = a_s["length"].as<int>()) <= 0)
+    {
+      THROW("sample_pmf expects an array of {action, score} pairs");
+    }
+
+    std::vector<float> pmf(length, 0);
+
+    for (int i = 0; i < length; i++)
+    {
+      if (!a_s[i].hasOwnProperty("action") || !a_s[i].hasOwnProperty("score"))
+      {
+        THROW("sample_pmf expects an array of {action, score} pairs");
+      }
+      pmf[a_s[i]["action"].as<uint32_t>()] = a_s[i]["score"].as<float>();
+    }
+
+    const uint64_t seed = VW::uniform_hash(uid.data(), uid.size(), 0) + _pmf_sampling_seed;
+    auto chosen_index = sample_pmf_internal(pmf, seed);
+
+    auto chosen_a_s = emscripten::val::object();
+    chosen_a_s.set("action", chosen_index);
+    chosen_a_s.set("score", pmf[chosen_index]);
+
+    return chosen_a_s;
+  }
 
   emscripten::val predict(const emscripten::val& example_input)
   {
@@ -310,6 +356,28 @@ struct cb_vw_model : MixIn
     auto ret = prediction_to_val(example_list[0]->pred, this->vw_ptr->l->get_output_prediction_type());
     finish_example(example_list);
     return ret;
+  }
+
+  emscripten::val predict_and_sample(const emscripten::val& example_input, const std::string& uid)
+  {
+    auto example_list = parse(example_input);
+
+    for (auto* ex : example_list) { VW::setup_example(*this->vw_ptr, ex); }
+
+    this->vw_ptr->predict(example_list);
+
+    std::vector<float> pmf(example_list[0]->pred.a_s.size(), 0);
+    for (const auto& as : example_list[0]->pred.a_s) { pmf[as.action] = as.score; }
+
+    const uint64_t seed = VW::uniform_hash(uid.data(), uid.size(), 0) + _pmf_sampling_seed;
+    auto chosen_index = this->sample_pmf_internal(pmf, seed);
+
+    auto chosen_a_s = emscripten::val::object();
+    chosen_a_s.set("action", chosen_index);
+    chosen_a_s.set("score", pmf[chosen_index]);
+
+    finish_example(example_list);
+    return chosen_a_s;
   }
 
   void learn(const emscripten::val& example_input)
@@ -347,7 +415,7 @@ struct cb_vw_model : MixIn
     finish_example(example_list);
   }
 
-  void learn_label_in_string(const emscripten::val& example_input)
+  void learn_from_string(const emscripten::val& example_input)
   {
     auto example_list = parse(example_input);
 
@@ -378,6 +446,8 @@ private:
     assert(!example_list.empty());
     this->vw_ptr->finish_example(example_list);
   }
+
+  uint64_t _pmf_sampling_seed;
 };
 
 std::shared_ptr<example_ptr> example_ptr::clone(const vw_model<>& vw_ptr) const
@@ -440,7 +510,10 @@ EMSCRIPTEN_BINDINGS(vwwasm)
       .constructor<std::string, size_t, int>()
       .function("predict", &cb_vw_model<>::predict)
       .function("learn", &cb_vw_model<>::learn)
-      .function("learnLabelInString", &cb_vw_model<>::learn_label_in_string);
+      .function("learnFromString", &cb_vw_model<>::learn_from_string)
+      .function("_predictAndSample", &cb_vw_model<>::predict_and_sample)
+      .function("_samplePmf", &cb_vw_model<>::sample_pmf)
+      .function("setSamplingSeed", &cb_vw_model<>::set_sampling_seed);
 
   emscripten::register_vector<std::shared_ptr<example_ptr>>("ExamplePtrVector");
   emscripten::register_vector<char>("CharVector");
