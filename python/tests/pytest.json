@@ -1,0 +1,54 @@
+[
+    {
+        "data_func": "constant_function",
+        "data_func_args": [2000,5,1,100],
+        "assert_func": "assert_prediction",
+        "assert_func_args": {
+            "expected_value": 5,
+            "threshold":0.5
+        },
+        "grid":   {
+            "#base": ["-P 50000 --preserve_performance_counters --save_resume "],
+            "#reg": ["", "--coin"]
+        },
+        "output": ["--readable_model", "-p"]
+    },
+    {
+        "data_func": "constant_function",
+        "data_func_args": [2000,5,1,100],
+        "assert_func": "assert_weight",
+        "assert_func_args": {
+            "expected_weights":[5, 0],
+            "atol": 1,
+            "rtol": 0.01
+        },
+        "grid":   {
+            "#base": ["-P 50000 --preserve_performance_counters --save_resume "],
+            "#reg": ["", "--coin"]
+        },
+        "output": ["--readable_model", "-p"]
+    },
+    {
+        "data_func": "constant_function",
+        "data_func_args": [2000,5,1,100],
+        "assert_func": "assert_weight",
+        "assert_func_args": {
+            "expected_weights":[5, 0],
+            "atol": 100,
+            "rtol": 10
+        },
+        "grid":   {
+            "#base": ["-P 1 --preserve_performance_counters --save_resume"],
+            "#reg": ["", "--coin", "--ftrl", "--pistol"]
+        },
+        "output": ["--readable_model", "-p"],
+        "*" : {
+            "--learning_rate": [0.01, 0.001, 0.1],
+            "--loss_function": ["absolute", "quantile"],
+            "--power_t": [0.2, 0.5, ""]
+        },
+        "+" :{
+            "--learning_rate": [0.01, 0.001, 0.1]
+        }
+    }
+]
