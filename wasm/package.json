@@ -1,11 +1,24 @@
 {
   "name": "@vowpalwabbit/vowpalwabbit",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "wasm bindings for vowpal wabbit",
   "exports": {
-    "require": "./dist/vw.js"
+    ".": {
+      "node": {
+        "require": "./dist/vwnode.js"
+      },
+      "browser": {
+        "import": "./dist/vwbrowser.js"
+      },
+      "default": "./dist/vwnode.js"
+    },
+    "./package.json": "./package.json"
   },
-  "main": "dist/vw.js",
+  "main": "dist/vwnode.js",
+  "module": "./dist/vwnode.js",
+  "browser": {
+    "./dist/vwbrowser.js": "./dist/vwbrowser.js"
+  },
   "files": [
     "dist/",
     "src/**/*.ts",
@@ -21,10 +34,11 @@
     "prepublish": "npm run build",
     "build": "tsc",
     "test": "node --experimental-wasm-threads ./node_modules/mocha/bin/mocha --delay",
-    "docs": "jsdoc2md ./dist/vw.js > documentation.md"
+    "docs": "jsdoc2md ./dist/vw*.js > documentation.md"
   },
   "dependencies": {
-    "out": "^1.1.0"
+    "out": "^1.1.0",
+    "uuid": "^9.0.0"
   },
   "repository": {
     "type": "git",
