@@ -1,6 +1,6 @@
 {
   "name": "@vowpalwabbit/vowpalwabbit",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "wasm bindings for vowpal wabbit",
   "exports": {
     ".": {
@@ -20,7 +20,7 @@
     "./dist/vwbrowser.js": "./dist/vwbrowser.js"
   },
   "files": [
-    "dist/",
+    "dist/**/*.js",
     "src/**/*.ts",
     "!src/**/*.cc"
   ],
@@ -32,6 +32,7 @@
   },
   "scripts": {
     "prepublish": "npm run build",
+    "prepublishOnly": "npm install && npm test",
     "build": "tsc",
     "test": "node --experimental-wasm-threads ./node_modules/mocha/bin/mocha --delay",
     "docs": "jsdoc2md ./dist/vw*.js > documentation.md"
