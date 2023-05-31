@@ -58,4 +58,5 @@ npm run docs
 4. Update the table in README.md to point to latest VW version and tag
 5. Commit changes to master
 6. Tag the release as `wasm_v.major.minor.patch`
-7. Publish to npm `npm publish --access public` (you need to sign into your npm account first and have access to the vowpalwabbit organisation)
+7. Run `cmake` to pick up any new `vw-wasm.js` changes
+8. Publish to npm `npm publish --access public` (you need to sign into your npm account first and have access to the vowpalwabbit organisation)
