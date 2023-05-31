@@ -31,10 +31,43 @@
 
 using namespace VW::cb_explore_adf;
 
+// potential bug in the ensmallen library
+// below method template specialization to be removed once/if that is resolved and the library is updated
+// https://github.com/mlpack/ensmallen/issues/365
+namespace ens
+{
+class L_BFGS;
+
+template <>
+double L_BFGS::ChooseScalingFactor(const size_t iterationNum, const arma::Mat<double>& gradient,
+    const arma::Cube<double>& s, const arma::Cube<double>& y)
+{
+  typedef typename arma::Cube<double>::elem_type CubeElemType;
+
+  double scalingFactor;
+  if (iterationNum > 0)
+  {
+    int previousPos = (iterationNum - 1) % numBasis;
+    // Get s and y matrices once instead of multiple times.
+    const arma::Mat<CubeElemType>& sMat = s.slice(previousPos);
+    const arma::Mat<CubeElemType>& yMat = y.slice(previousPos);
+
+    scalingFactor = dot(sMat, yMat) / std::max(1e-12, dot(yMat, yMat));
+  }
+  else { scalingFactor = 1.0 / sqrt(dot(gradient, gradient)); }
+
+  return scalingFactor;
+}
+}  // namespace ens
+
 namespace VW
 {
 namespace cb_explore_adf
 {
+constexpr double ALMOST_ZERO = 1e-6;
+constexpr double EPSILON = 1e-3;
+constexpr double GAMMA_CUTOFF = 1.0;
+
 class cb_explore_adf_graph_feedback
 {
 public:
@@ -93,294 +126,257 @@ class ConstrainedFunctionType
 {
   const arma::vec& _fhat;
   const arma::sp_mat& _G;
-  const float _gamma;
+  const double _gamma;
 
 public:
-  ConstrainedFunctionType(const arma::vec& scores, const arma::sp_mat& G, const float gamma)
+  ConstrainedFunctionType(const arma::vec& scores, const arma::sp_mat& G, const double gamma)
       : _fhat(scores), _G(G), _gamma(gamma)
   {
   }
 
   // Return the objective function f(x) for the given x.
-  double Evaluate(const arma::mat& x) const
+  double Evaluate(const arma::mat& x)
   {
     arma::mat p(x.n_rows - 1, 1);
-    for (size_t i = 0; i < p.n_rows; ++i) { p[i] = x[i]; }
+    for (size_t i = 0; i < x.n_rows - 1; ++i) { p[i] = x[i]; }
 
-    float z = x[x.n_rows - 1];
+    auto z = x[x.n_rows - 1];
 
-    return (arma::dot(p, _fhat) + z);
+    return (arma::dot(_fhat, p) + z);
   }
 
   // Compute the gradient of f(x) for the given x and store the result in g.
-  void Gradient(const arma::mat&, arma::mat& g) const
+  void Gradient(const arma::mat& x, arma::mat& g)
+  {
+    g.set_size(x.n_rows, 1);
+    g.zeros();
+    for (size_t i = 0; i < x.n_rows - 1; ++i) { g[i] = _fhat[i]; }
+    g[x.n_rows - 1] = 1.0;
+  }
+
+  void NumericalGradient(const arma::mat& x, arma::mat& g)
   {
     g.set_size(_fhat.n_rows + 1, 1);
-    for (size_t i = 0; i < _fhat.n_rows; ++i) { g[i] = _fhat(i); }
-    g[_fhat.n_rows] = 1.f;
+    g.zeros();
+    for (size_t i = 0; i < _fhat.n_rows; ++i)
+    {
+      arma::mat x_i_plus = x;
+      x_i_plus(i) += EPSILON;
+      arma::mat x_i_minus = x;
+      x_i_minus(i) -= EPSILON;
+      g(i) = (Evaluate(x_i_plus) - Evaluate(x_i_minus)) / (2.0 * EPSILON);
+    }
   }
 
   // Get the number of constraints on the objective function.
-  size_t NumConstraints() const { return _fhat.size() + 4; }
+  size_t NumConstraints() const { return 3 * _fhat.size() + 2; }
 
   // Evaluate constraint i at the parameters x.  If the constraint is
   // unsatisfied, a value greater than 0 should be returned.  If the constraint
   // is satisfied, 0 should be returned.  The optimizer will add this value to
   // its overall objective that it is trying to minimize.
-  double EvaluateConstraint(const size_t i, const arma::mat& x) const
+  double EvaluateConstraint(const size_t i, const arma::mat& x)
   {
     arma::vec p(x.n_rows - 1);
-    for (size_t i = 0; i < p.n_rows; ++i) { p(i) = x[i]; }
+    for (size_t i = 0; i < x.n_rows - 1; ++i) { p[i] = x[i]; }
 
-    float z = x[x.n_rows - 1];
+    double z = x[x.n_rows - 1];
 
     if (i < _fhat.size())
     {
       arma::vec eyea = arma::zeros<arma::vec>(p.n_rows);
-      eyea(i) = 1.f;
+      eyea(i) = 1;
 
-      auto fhata = _fhat(i);
+      double fhata = _fhat(i);
 
-      double sum = 0.f;
+      double sum = 0;
       for (size_t index = 0; index < p.n_rows; index++)
       {
-        arma::vec Ga(_G.row(index).n_cols);
-        for (size_t j = 0; j < _G.row(index).n_cols; j++) { Ga(j) = _G.row(index)(j); }
+        double Ga_times_p = std::max(arma::dot(_G.row(index), p.t()), ALMOST_ZERO);
 
-        auto Ga_times_p = arma::dot(Ga, p);
-
-        float denominator = Ga_times_p;
-        auto nominator = (eyea(index) - p(index)) * (eyea(index) - p(index));
-        sum += (nominator / denominator);
+        double g_x = Ga_times_p;
+        double f_x = (eyea(index) - p(index)) * (eyea(index) - p(index));
+        sum += (f_x / g_x);
       }
-      if (sum <= (fhata + z)) { return 0.f; }
-      else { return sum - (fhata + z); }
+
+      double lhs = _gamma < GAMMA_CUTOFF ? sum : sum / _gamma;
+      double rhs = _gamma < GAMMA_CUTOFF ? _gamma * (fhata + z) : (fhata + z);
+      if (lhs <= rhs) { return 0.0; }
+      return lhs - rhs;
     }
     else if (i == _fhat.size())
     {
-      if (arma::all(p >= 0.f)) { return 0.f; }
-      double neg_sum = 0.;
-      for (size_t i = 0; i < p.n_rows; i++)
-      {
-        if (p(i) < 0) { neg_sum += p(i); }
-      }
-      // negative probabilities are really really bad
-      return -1000.f * _gamma * neg_sum;
+      if (arma::sum(p) >= (1.0 - 1e-3)) { return 0.0; }
+      return (1.0 - 1e-3) - arma::sum(p);
     }
     else if (i == _fhat.size() + 1)
     {
-      if (arma::sum(p) <= 1.f) { return 0.f; }
-      return arma::sum(p) - 1.f;
+      if (arma::sum(p) <= (1.0 + 1e-3)) { return 0.0; }
+      return arma::sum(p) - (1.0 + 1e-3);
     }
-    else if (i == _fhat.size() + 2)
+    else if (i > _fhat.size() + 1 && i < 2 * _fhat.size() + 2)
     {
-      if (arma::sum(p) >= 1.f) { return 0.f; }
-      return 1.f - arma::sum(p);
+      size_t index = i - _fhat.size() - 2;
+
+      double Gpa = arma::dot(_G.row(index), p.t());
+
+      if (Gpa >= ALMOST_ZERO) { return 0; }
+      return ALMOST_ZERO - Gpa;
     }
-    else if (i == _fhat.size() + 3)
+    else if (i >= 2 * _fhat.size() + 2)
     {
-      if ((z / _gamma) > 0.f) { return 0.f; }
-      return 0.f - (z / _gamma);
+      size_t index = i - 2 * _fhat.size() - 2;
+      if (p[index] >= 0.0) { return 0.0; }
+      return -1.0 * p[index];
     }
-    return 0.;
+    return 0.0;
+  }
+
+  void NumericalGradientConstraint(const size_t i, const arma::mat& x, arma::mat& g)
+  {
+    g.set_size(_fhat.n_rows + 1, 1);
+    g.zeros();
+
+    for (size_t j = 0; j < _fhat.n_rows; ++j)
+    {
+      arma::mat x_j_plus = x;
+      x_j_plus(j) += EPSILON;
+      arma::mat x_j_minus = x;
+      x_j_minus(j) -= EPSILON;
+      double cp = EvaluateConstraint(i, x_j_plus);
+      double cm = EvaluateConstraint(i, x_j_minus);
+      g(j) = (cp - cm) / (2.0 * EPSILON);
+    }
   }
 
   // Evaluate the gradient of constraint i at the parameters x, storing the
   // result in the given matrix g.  If the constraint is not satisfied, the
   // gradient should be set in such a way that the gradient points in the
   // direction where the constraint would be satisfied.
-  void GradientConstraint(const size_t i, const arma::mat& x, arma::mat& g) const
+  void GradientConstraint(const size_t i, const arma::mat& x, arma::mat& g)
   {
     arma::vec p(x.n_rows - 1);
     for (size_t i = 0; i < p.n_rows; ++i) { p(i) = x[i]; }
 
-    float z = x[x.n_rows - 1];
+    g.set_size(_fhat.n_rows + 1, 1);
 
-    double constraint = EvaluateConstraint(i, x);
+    if (EvaluateConstraint(i, x) <= 0)
+    {
+      g.zeros();
+      return;
+    }
 
     if (i < _fhat.size())
     {
-      g.set_size(_fhat.n_rows + 1, 1);
       g.zeros();
 
-      g[_fhat.size()] = 1.f;
+      g[_fhat.size()] = 1.0;
 
       arma::vec eyea = arma::zeros<arma::vec>(p.n_rows);
-      eyea(i) = 1.f;
+      eyea(i) = 1;
 
       for (size_t coord_i = 0; coord_i < _fhat.size(); coord_i++)
       {
-        double sum = 0.f;
+        double sum = 0;
         for (size_t index = 0; index < p.n_rows; index++)
         {
-          arma::vec Ga(_G.row(index).n_cols);
-          for (size_t j = 0; j < _G.row(index).n_cols; j++) { Ga(j) = _G.row(index)(j); }
-          auto Ga_times_p = arma::dot(Ga, p);
+          double Ga_times_p = arma::dot(_G.row(index), p.t());
 
-          if (index == coord_i)
-          {
-            float denominator = Ga_times_p * Ga_times_p;
+          double g_x = std::max(Ga_times_p, ALMOST_ZERO);
 
-            auto b = _G.row(index)(index);
-            auto c = Ga_times_p - b * p(index);
-            auto nominator = -1.f * ((eyea(index) - p(index)) * (eyea(index) * b + b * p(index) + 2.f * c));
+          double g_x_der = Ga_times_p > ALMOST_ZERO ? _G.row(index)(coord_i) : 0.0;
+          double f_x = (eyea(index) - p(index)) * (eyea(index) - p(index));
+          double f_x_der = index == coord_i ? -2. * (eyea(index) - p(index)) : 0.0;
 
-            sum += (nominator / denominator);
-          }
-          else
-          {
-            auto a = (eyea(index) - p(index)) * (eyea(index) - p(index));
-            auto b = _G.row(index)(coord_i);
+          double quotient_rule = (g_x * f_x_der - f_x * g_x_der) / (g_x * g_x);
 
-            auto nominator = -1.f * ((a * b));
-            auto denominator = Ga_times_p * Ga_times_p;
-            sum += nominator / denominator;
-          }
+          sum += quotient_rule;
         }
 
-        g[coord_i] = sum;
+        g[coord_i] = _gamma < GAMMA_CUTOFF ? sum : sum / _gamma;
       }
 
-      if (constraint == 0.f)
-      {
-        g = -1.f * g;
-        // restore original point not concerned with the constraint
-        g[_fhat.size()] = 1.f;
-      }
+      g[_fhat.size()] = _gamma < GAMMA_CUTOFF ? -1.0 * _gamma : -1.0;
     }
     else if (i == _fhat.size())
     {
-      // all positives
-      g.set_size(_fhat.n_rows + 1, 1);
+      // sum
       g.ones();
+      g = -1.0 * g;
 
-      for (size_t i = 0; i < p.n_rows; ++i)
-      {
-        if (p(i) < 0.f)
-        {
-          for (size_t i = 0; i < _fhat.size(); i++) { g[i] = -1.f; }
-        }
-      }
-
-      g[_fhat.size()] = 0.f;
+      g[_fhat.size()] = 0.0;
     }
     else if (i == _fhat.size() + 1)
     {
-      // sum
-      g.set_size(_fhat.n_rows + 1, 1);
       g.ones();
-
-      if (constraint == 0.f) { g = -1.f * g; }
-
-      g[_fhat.size()] = 0.f;
+      g[_fhat.size()] = 0.0;
     }
-    else if (i == _fhat.size() + 2)
+    else if (i > _fhat.size() + 1 && i < 2 * _fhat.size() + 2)
     {
-      // sum
-      g.set_size(_fhat.n_rows + 1, 1);
-      g.ones();
-
-      if (constraint != 0.f) { g = -1.f * g; }
-
-      g[_fhat.size()] = 0.f;
+      g.zeros();
+      size_t index = i - _fhat.size() - 2;
+      for (size_t j = 0; j < _fhat.size(); ++j) { g(j) = -1.0 * _G(index, j); }
+      g[_fhat.size()] = 0.0;
     }
-    else if (i == _fhat.size() + 3)
+    else if (i >= 2 * _fhat.size() + 2)
     {
-      g.set_size(_fhat.n_rows + 1, 1);
-      g.ones();
-
-      if ((z / _gamma) < 0.f) { g[_fhat.size()] = -1.f; }
+      size_t index = i - 2 * _fhat.size() - 2;
+      // all positives
+      g.zeros();
+      g(index) = -1.0;
     }
   }
 };
 
-bool valid_graph(const std::vector<VW::cb_graph_feedback::triplet>& triplets, size_t dim)
+std::vector<VW::cb_graph_feedback::triplet> get_valid_graph(
+    const std::vector<VW::cb_graph_feedback::triplet>& triplets, size_t dim)
 {
-  // return false if all triplet vals are zero
-  size_t at_least_one_non_zero = 0;
+  std::vector<VW::cb_graph_feedback::triplet> valid_triplets;
   for (auto& triplet : triplets)
   {
-    if (triplet.row >= dim || triplet.col >= dim) { return false; }
-    if (triplet.val != 0.f) { at_least_one_non_zero++; }
+    if (triplet.row < dim && triplet.col < dim) { valid_triplets.push_back(triplet); }
   }
 
-  if (at_least_one_non_zero > 0) { return true; }
-
-  return false;
+  return valid_triplets;
+  ;
 }
 
-std::pair<arma::mat, arma::vec> set_initial_coordinates(const arma::vec& fhat, float gamma)
+std::pair<arma::mat, arma::vec> set_initial_coordinates(const arma::vec& fhat, double gamma)
 {
   // find fhat min
   auto min_fhat = fhat.min();
-  arma::vec gammafhat = gamma * (fhat - min_fhat);
+  arma::vec positivefhat = (fhat - min_fhat);
 
   // initial p can be uniform random
-  arma::mat coordinates(gammafhat.size() + 1, 1);
-  for (size_t i = 0; i < gammafhat.size(); i++) { coordinates[i] = 1.f / gammafhat.size(); }
+  arma::mat coordinates(positivefhat.size() + 1, 1);
+  for (size_t i = 0; i < positivefhat.size(); i++) { coordinates[i] = 1.0 / positivefhat.size(); }
 
-  // initial z can be 1
-  // but also be nice if all fhat's are zero
-  float z = gamma * (1 - (min_fhat == 0 ? 1.f / fhat.size() : min_fhat));
+  // initial z
+  double z = gamma < GAMMA_CUTOFF ? 1.0 : (1.0 / gamma);
 
-  coordinates[gammafhat.size()] = z;
+  coordinates[positivefhat.size()] = z;
 
-  return {coordinates, gammafhat};
+  return {coordinates, positivefhat};
 }
 
-arma::vec get_probs_from_coordinates(arma::mat& coordinates, const arma::vec& fhat, VW::workspace& all)
+arma::vec get_probs_from_coordinates(arma::mat& coordinates, VW::workspace& all)
 {
   // constraints are enforcers but they can be broken, so we need to check that probs are positive and sum to 1
 
-  // we also have to check for nan's because some starting points combined with some gammas might make the constraint
-  // optimization go off the charts; it should be rare but we need to guard against it
-
   size_t num_actions = coordinates.n_rows - 1;
-  auto count_zeros = 0;
-  bool there_is_a_one = false;
-  bool there_is_a_nan = false;
 
   for (size_t i = 0; i < num_actions; i++)
   {
-    if (VW::math::are_same(static_cast<float>(coordinates[i]), 0.f) || coordinates[i] < 0.f)
-    {
-      coordinates[i] = 0.f;
-      count_zeros++;
-    }
-    if (coordinates[i] > 1.f)
-    {
-      coordinates[i] = 1.f;
-      there_is_a_one = true;
-    }
-    if (std::isnan(coordinates[i])) { there_is_a_nan = true; }
-  }
-
-  if (there_is_a_nan)
-  {
-    for (size_t i = 0; i < num_actions; i++) { coordinates[i] = 1.f - fhat(i); }
-  }
-
-  if (there_is_a_one)
-  {
-    for (size_t i = 0; i < num_actions; i++)
-    {
-      if (coordinates[i] != 1.f) { coordinates[i] = 0.f; }
-    }
+    if (std::isnan(coordinates[i])) { continue; }
+    // clip to [0,1]
+    coordinates[i] = std::max(0., std::min(coordinates[i], 1.));
   }
 
   float p_sum = 0;
   for (size_t i = 0; i < num_actions; i++) { p_sum += coordinates[i]; }
 
-  if (!VW::math::are_same(p_sum, 1.f))
-  {
-    float rest = 1.f - p_sum;
-    float rest_each = rest / (num_actions - count_zeros);
-    for (size_t i = 0; i < num_actions; i++)
-    {
-      if (coordinates[i] == 0.f) { continue; }
-      else { coordinates[i] = coordinates[i] + rest_each; }
-    }
-  }
+  // normalize
+  for (size_t i = 0; i < num_actions; i++) { coordinates[i] = coordinates[i] / p_sum; }
 
   float sum = 0;
   arma::vec probs(num_actions);
@@ -405,18 +401,17 @@ void cb_explore_adf_graph_feedback::update_example_prediction(multi_ex& examples
   arma::vec fhat(a_s.size());
 
   for (auto& as : a_s) { fhat(as.action) = as.score; }
-  const float gamma = _gamma_scale * static_cast<float>(std::pow(_counter, _gamma_exponent));
+  const double gamma = static_cast<double>(_gamma_scale) * static_cast<double>(std::pow(_counter, _gamma_exponent));
 
-  auto coord_gammafhat = set_initial_coordinates(fhat, gamma);
-  arma::mat coordinates = std::get<0>(coord_gammafhat);
-  arma::vec gammafhat = std::get<1>(coord_gammafhat);
+  auto coord_positivefhat = set_initial_coordinates(fhat, gamma);
+  arma::mat coordinates = std::get<0>(coord_positivefhat);
+  arma::vec positivefhat = std::get<1>(coord_positivefhat);
 
-  ConstrainedFunctionType f(gammafhat, G, gamma);
-
+  ConstrainedFunctionType f(positivefhat, G, gamma);
   ens::AugLagrangian optimizer;
   optimizer.Optimize(f, coordinates);
 
-  arma::vec probs = get_probs_from_coordinates(coordinates, fhat, *_all);
+  arma::vec probs = get_probs_from_coordinates(coordinates, *_all);
 
   // set the new probabilities in the example
   for (auto& as : a_s) { as.score = probs(as.action); }
@@ -429,28 +424,25 @@ arma::sp_mat get_graph(const VW::cb_graph_feedback::reduction_features& graph_re
 {
   arma::sp_mat G(num_actions, num_actions);
 
-  if (valid_graph(graph_reduction_features.triplets, num_actions))
+  auto valid_graph = get_valid_graph(graph_reduction_features.triplets, num_actions);
+  if (valid_graph.size() != graph_reduction_features.triplets.size())
   {
-    arma::umat locations(2, graph_reduction_features.triplets.size());
-
-    arma::vec values(graph_reduction_features.triplets.size());
-
-    for (size_t i = 0; i < graph_reduction_features.triplets.size(); i++)
-    {
-      const auto& triplet = graph_reduction_features.triplets[i];
-      locations(0, i) = triplet.row;
-      locations(1, i) = triplet.col;
-      values(i) = triplet.val;
-    }
-
-    G = arma::sp_mat(true, locations, values, num_actions, num_actions);
+    logger.warn("The graph provided is invalid, any coordinates that are out of bounds will be ignored");
   }
-  else
+
+  arma::umat locations(2, valid_graph.size());
+
+  arma::vec values(valid_graph.size());
+
+  for (size_t i = 0; i < valid_graph.size(); i++)
   {
-    logger.warn("The graph provided is invalid, replacing with identity graph");
-    G = arma::speye<arma::sp_mat>(num_actions, num_actions);
+    const auto& triplet = valid_graph[i];
+    locations(0, i) = triplet.row;
+    locations(1, i) = triplet.col;
+    values(i) = triplet.val;
   }
-  return G;
+
+  return arma::sp_mat(true, locations, values, num_actions, num_actions);
 }
 
 template <bool is_learn>
@@ -494,35 +486,7 @@ void cb_explore_adf_graph_feedback::predict_or_learn_impl(VW::LEARNER::learner& 
           });
 
       // if there is another label then learn, otherwise skip
-      if (ex->l.cb.costs.size() > 0)
-      {
-        float stashed_probability = ex->l.cb.costs[0].probability;
-
-        // calculate the probability for this action, if it is the action that was not chosen
-        auto chosen_action = ex->l.cb.costs[0].action;
-        auto current_action = i;
-
-        if (chosen_action != current_action)
-        {
-          // get the graph probability
-          auto graph_prob = G.row(chosen_action)(current_action);
-
-          // sanity checks
-          if (graph_prob == 0. || cb_labels[chosen_action].size() == 0 ||
-              cb_labels[chosen_action][0].probability <= 0.f)
-          {
-            // this should not happen, input is probably wrong
-            continue;
-          }
-
-          auto chosen_prob = cb_labels[chosen_action][0].probability;
-          ex->l.cb.costs[0].probability = chosen_prob * graph_prob;
-        }
-
-        base.learn(examples);
-
-        ex->l.cb.costs[0].probability = stashed_probability;
-      }
+      if (ex->l.cb.costs.size() > 0) { base.learn(examples); }
     }
   }
   else
@@ -545,13 +509,11 @@ void cb_explore_adf_graph_feedback::learn(VW::LEARNER::learner& base, multi_ex& 
 void cb_explore_adf_graph_feedback::save_load(VW::io_buf& io, bool read, bool text)
 {
   if (io.num_files() == 0) { return; }
-  if (!read)
-  {
-    std::stringstream msg;
-    if (!read) { msg << "cb adf with graph feedback storing example counter:  = " << _counter << "\n"; }
-    VW::details::bin_text_read_write_fixed_validated(
-        io, reinterpret_cast<char*>(&_counter), sizeof(_counter), read, msg, text);
-  }
+
+  std::stringstream msg;
+  if (!read) { msg << "cb adf with graph feedback storing example counter:  = " << _counter << "\n"; }
+  VW::details::bin_text_read_write_fixed_validated(
+      io, reinterpret_cast<char*>(&_counter), sizeof(_counter), read, msg, text);
 }
 
 std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_graph_feedback_setup(
@@ -610,7 +572,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_graph_feedb
                .set_print_update(explore_type::print_update)
                .set_persist_metrics(explore_type::persist_metrics)
                .set_save_load(explore_type::save_load)
-               .set_learn_returns_prediction(base->learn_returns_prediction)
+               .set_learn_returns_prediction(false)
                .build();
   return l;
 }
