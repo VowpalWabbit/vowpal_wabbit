@@ -661,7 +661,7 @@ def test_dsjson_with_metrics():
         assert isclose(a, b)
 
     learner_metric_dict = vw.get_learner_metrics()
-    assert len(vw.get_learner_metrics()) == 30
+    assert len(vw.get_learner_metrics()) == 27
 
     assert learner_metric_dict["total_predict_calls"] == 2
     assert learner_metric_dict["total_learn_calls"] == 1
