@@ -136,12 +136,6 @@ void predict_or_learn(metrics_data& data, T& base, E& ec)
 
 void additional_metrics(VW::workspace& all, VW::metric_sink& sink)
 {
-  sink.set_float("sum_loss", all.sd->sum_loss);
-  sink.set_float("weighted_labeled_examples", all.sd->weighted_labeled_examples);
-  if (all.sd->weighted_labeled_examples != 0.0f)
-  {
-    sink.set_float("avg_loss", all.sd->sum_loss / all.sd->weighted_labeled_examples);
-  }
   sink.set_uint("total_log_calls", all.logger.get_log_count());
 
   std::vector<std::string> enabled_learners;
