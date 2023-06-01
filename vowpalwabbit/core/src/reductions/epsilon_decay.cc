@@ -5,7 +5,6 @@
 #include "vw/core/reductions/epsilon_decay.h"
 
 #include "vw/config/options.h"
-#include "vw/core/estimators/distributionally_robust.h"
 #include "vw/core/global_data.h"
 #include "vw/core/label_type.h"
 #include "vw/core/learner.h"
@@ -374,13 +373,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::epsilon_decay_setup(VW::se
                .experimental())
       .add(make_option("epsilon_decay_significance_level", epsilon_decay_significance_level)
                .keep()
-               .default_value(VW::details::DEFAULT_ALPHA)
+               .default_value(VW::details::CS_ROBUST_DEFAULT_ALPHA)
                .help("Set significance level for champion change")
-               .experimental())
-      .add(make_option("epsilon_decay_estimator_decay", epsilon_decay_estimator_decay)
-               .keep()
-               .default_value(VW::details::CRESSEREAD_DEFAULT_TAU)
-               .help("Time constant for count decay")
                .experimental())
       .add(make_option("epsilon_decay_audit", epsilon_decay_audit_str)
                .default_value("")

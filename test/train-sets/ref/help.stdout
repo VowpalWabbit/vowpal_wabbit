@@ -580,8 +580,6 @@ Weight Options:
                                             100, keep, experimental)
     --epsilon_decay_significance_level arg  Set significance level for champion change (type: float, default:
                                             0.05, keep, experimental)
-    --epsilon_decay_estimator_decay arg     Time constant for count decay (type: float, default: 1, keep,
-                                            experimental)
     --epsilon_decay_audit arg               Epsilon decay audit file name (type: str, experimental)
     --constant_epsilon                      Keep epsilon constant across models (type: bool, keep, experimental)
     --bonferroni_denominator arg            Factor to scale down significance level by, defaults to model
