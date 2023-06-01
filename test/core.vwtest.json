@@ -5993,5 +5993,16 @@
     "depends_on": [
       458, 460
     ]
+  },
+  {
+    "id": 463,
+    "desc": "Spin off epsilon decay model to lower bitsize to cb_explore with explore eval",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -b 18 --predict_only_model --epsilon_decay --model_count 2 --explore_eval",
+    "diff_files": {
+      "stderr": "train-sets/ref/spin_off_ep_dec_w_explore_eval.stderr"
+    },
+    "input_files": [
+      "train-sets/automl_spin_off.txt"
+    ]
   }
 ]
