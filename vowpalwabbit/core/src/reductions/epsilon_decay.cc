@@ -5,7 +5,6 @@
 #include "vw/core/reductions/epsilon_decay.h"
 
 #include "vw/config/options.h"
-#include "vw/core/estimators/distributionally_robust.h"
 #include "vw/core/global_data.h"
 #include "vw/core/label_type.h"
 #include "vw/core/learner.h"
