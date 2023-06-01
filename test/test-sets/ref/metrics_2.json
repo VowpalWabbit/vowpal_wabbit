@@ -1,1 +1,1 @@
-{"sfm_count_learn_example_with_shared":0,"total_learn_calls":1000,"total_log_calls":2,"total_predict_calls":0,"avg_loss":0.13250449299812318,"sum_loss":132.50448608398438,"weighted_labeled_examples":1000.0}
+{"sfm_count_learn_example_with_shared":0,"total_learn_calls":1000,"total_log_calls":2,"total_predict_calls":0}
