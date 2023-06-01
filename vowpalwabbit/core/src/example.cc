@@ -48,6 +48,9 @@ float VW::example::get_total_sum_feat_sq()
 
 float collision_cleanup(VW::features& fs)
 {
+  // Input must be sorted.
+  assert(std::is_sorted(fs.indices.begin(), fs.indices.end()));
+
   // This loops over the sequence of feature values and their indexes
   // when an index is repeated this combines them by adding their values.
   // This assumes that fs is sorted (which is the case in `flatten_sort_example`).
@@ -105,46 +108,23 @@ void vec_ffs_store(full_features_and_source& p, float fx, uint64_t fi)
 }
 namespace VW
 {
-flat_example* flatten_example(VW::workspace& all, example* ec)
-{
-  flat_example& fec = VW::details::calloc_or_throw<flat_example>();
-  fec.l = ec->l;
-  fec.tag = ec->tag;
-  fec.ex_reduction_features = ec->ex_reduction_features;
-  fec.example_counter = ec->example_counter;
-  fec.ft_offset = ec->ft_offset;
-  fec.num_features = ec->num_features;
 
+void flatten_features(VW::workspace& all, example& ec, features& fs)
+{
+  fs.clear();
   full_features_and_source ffs;
+  ffs.fs = std::move(fs);
   ffs.stride_shift = all.weights.stride_shift();
   if (all.weights.not_null())
-  {  // TODO:temporary fix. all.weights is not initialized at this point in some cases.
+  {
+    // TODO:temporary fix. all.weights is not initialized at this point in some cases.
     ffs.mask = all.weights.mask() >> all.weights.stride_shift();
   }
   else { ffs.mask = static_cast<uint64_t>(LONG_MAX) >> all.weights.stride_shift(); }
-  VW::foreach_feature<full_features_and_source, uint64_t, vec_ffs_store>(all, *ec, ffs);
-
-  std::swap(fec.fs, ffs.fs);
-
-  return &fec;
-}
-
-flat_example* flatten_sort_example(VW::workspace& all, example* ec)
-{
-  flat_example* fec = flatten_example(all, ec);
-  fec->fs.sort(all.parse_mask);
-  fec->total_sum_feat_sq = collision_cleanup(fec->fs);
-  return fec;
-}
-
-void free_flatten_example(flat_example* fec)
-{
-  // note: The label memory should be freed by by freeing the original example.
-  if (fec)
-  {
-    fec->fs.~features();
-    free(fec);
-  }
+  VW::foreach_feature<full_features_and_source, uint64_t, vec_ffs_store>(all, ec, ffs);
+  ffs.fs.sort(all.runtime_state.parse_mask);
+  ffs.fs.sum_feat_sq = collision_cleanup(ffs.fs);
+  fs = std::move(ffs.fs);
 }
 
 void return_multiple_example(VW::workspace& all, VW::multi_ex& examples)
@@ -157,7 +137,7 @@ namespace details
 void clean_example(VW::workspace& all, example& ec)
 {
   VW::empty_example(all, ec);
-  all.example_parser->example_pool.return_object(&ec);
+  all.parser_runtime.example_parser->example_pool.return_object(&ec);
 }
 void truncate_example_namespace(VW::example& ec, VW::namespace_index ns, const features& fs)
 {
@@ -213,42 +193,6 @@ void truncate_example_namespaces_from_example(VW::example& target, const VW::exa
   }
 }
 }  // namespace details
-
-namespace model_utils
-{
-size_t read_model_field(io_buf& io, flat_example& fe, VW::label_parser& lbl_parser)
-{
-  size_t bytes = 0;
-  lbl_parser.default_label(fe.l);
-  bytes += lbl_parser.read_cached_label(fe.l, fe.ex_reduction_features, io);
-  bytes += read_model_field(io, fe.tag);
-  bytes += read_model_field(io, fe.example_counter);
-  bytes += read_model_field(io, fe.ft_offset);
-  bytes += read_model_field(io, fe.global_weight);
-  bytes += read_model_field(io, fe.num_features);
-  bytes += read_model_field(io, fe.total_sum_feat_sq);
-  unsigned char index = 0;
-  bytes += ::VW::parsers::cache::details::read_cached_index(io, index);
-  bool sorted = true;
-  bytes += ::VW::parsers::cache::details::read_cached_features(io, fe.fs, sorted);
-  return bytes;
-}
-size_t write_model_field(io_buf& io, const flat_example& fe, const std::string& upstream_name, bool text,
-    VW::label_parser& lbl_parser, uint64_t parse_mask)
-{
-  size_t bytes = 0;
-  lbl_parser.cache_label(fe.l, fe.ex_reduction_features, io, upstream_name + "_label", text);
-  bytes += write_model_field(io, fe.tag, upstream_name + "_tag", text);
-  bytes += write_model_field(io, fe.example_counter, upstream_name + "_example_counter", text);
-  bytes += write_model_field(io, fe.ft_offset, upstream_name + "_ft_offset", text);
-  bytes += write_model_field(io, fe.global_weight, upstream_name + "_global_weight", text);
-  bytes += write_model_field(io, fe.num_features, upstream_name + "_num_features", text);
-  bytes += write_model_field(io, fe.total_sum_feat_sq, upstream_name + "_total_sum_feat_sq", text);
-  ::VW::parsers::cache::details::cache_index(io, 0);
-  ::VW::parsers::cache::details::cache_features(io, fe.fs, parse_mask);
-  return bytes;
-}
-}  // namespace model_utils
 }  // namespace VW
 
 namespace VW

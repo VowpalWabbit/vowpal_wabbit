@@ -9,9 +9,9 @@
 #include "vw/core/label_parser.h"
 #include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
+#include "vw/core/model_utils.h"
 #include "vw/core/parse_regressor.h"
 #include "vw/core/parser.h"
-#include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/simple_label.h"
@@ -24,6 +24,7 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 using namespace VW::math;
+using namespace VW::reductions;
 
 #define W_XT 0  // current parameter
 #define W_ZT 1  // in proximal is "accumulated z(t) = z(t-1) + g(t) + sigma*w(t)", in general is the dual weight vector
@@ -32,34 +33,33 @@ using namespace VW::math;
 #define W_WE 4  // Wealth
 #define W_MG 5  // maximum gradient
 
+namespace VW
+{
+namespace reductions
+{
+namespace model_utils
+{
+size_t write_model_field(io_buf& io, ftrl& ftrl_data, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  bytes += VW::model_utils::write_model_field(
+      io, ftrl_data.gd_per_model_states, upstream_name + ".gd_per_model_states", text);
+  return bytes;
+}
+
+size_t read_model_field(io_buf& io, ftrl& ftrl_data)
+{
+  size_t bytes = 0;
+  ftrl_data.gd_per_model_states.clear();
+  bytes += VW::model_utils::read_model_field(io, ftrl_data.gd_per_model_states);
+  return bytes;
+}
+}  // namespace model_utils
+}  // namespace reductions
+}  // namespace VW
+
 namespace
 {
-class ftrl_update_data
-{
-public:
-  float update = 0.f;
-  float ftrl_alpha = 0.f;
-  float ftrl_beta = 0.f;
-  float l1_lambda = 0.f;
-  float l2_lambda = 0.f;
-  float predict = 0.f;
-  float normalized_squared_norm_x = 0.f;
-  float average_squared_norm_x = 0.f;
-};
-
-class ftrl
-{
-public:
-  VW::workspace* all = nullptr;  // features, finalize, l1, l2,
-  float ftrl_alpha = 0.f;
-  float ftrl_beta = 0.f;
-  ftrl_update_data data;
-  size_t no_win_counter = 0;
-  size_t early_stop_thres = 0;
-  uint32_t ftrl_size = 0;
-  std::vector<VW::reductions::details::per_model_state> per_model_states;
-};
-
 class uncertainty
 {
 public:
@@ -257,10 +257,10 @@ void coin_betting_predict(ftrl& b, VW::example& ec)
   VW::foreach_feature<ftrl_update_data, inner_coin_betting_predict>(*b.all, ec, b.data, num_features_from_interactions);
   ec.num_features_from_interactions = num_features_from_interactions;
 
-  b.per_model_states[0].normalized_sum_norm_x += (static_cast<double>(ec.weight)) * b.data.normalized_squared_norm_x;
-  b.per_model_states[0].total_weight += ec.weight;
-  b.data.average_squared_norm_x =
-      (static_cast<float>((b.per_model_states[0].normalized_sum_norm_x + 1e-6) / b.per_model_states[0].total_weight));
+  b.gd_per_model_states[0].normalized_sum_norm_x += (static_cast<double>(ec.weight)) * b.data.normalized_squared_norm_x;
+  b.gd_per_model_states[0].total_weight += ec.weight;
+  b.data.average_squared_norm_x = (static_cast<float>(
+      (b.gd_per_model_states[0].normalized_sum_norm_x + 1e-6) / b.gd_per_model_states[0].total_weight));
 
   ec.partial_prediction = b.data.predict / b.data.average_squared_norm_x;
 
@@ -282,19 +282,22 @@ void update_state_and_predict_pistol(ftrl& b, VW::example& ec)
 
 void update_after_prediction_proximal(ftrl& b, VW::example& ec)
 {
-  b.data.update = b.all->loss->first_derivative(b.all->sd.get(), ec.pred.scalar, ec.l.simple.label) * ec.weight;
+  b.data.update =
+      b.all->loss_config.loss->first_derivative(b.all->sd.get(), ec.pred.scalar, ec.l.simple.label) * ec.weight;
   VW::foreach_feature<ftrl_update_data, inner_update_proximal>(*b.all, ec, b.data);
 }
 
 void update_after_prediction_pistol(ftrl& b, VW::example& ec)
 {
-  b.data.update = b.all->loss->first_derivative(b.all->sd.get(), ec.pred.scalar, ec.l.simple.label) * ec.weight;
+  b.data.update =
+      b.all->loss_config.loss->first_derivative(b.all->sd.get(), ec.pred.scalar, ec.l.simple.label) * ec.weight;
   VW::foreach_feature<ftrl_update_data, inner_update_pistol_post>(*b.all, ec, b.data);
 }
 
 void coin_betting_update_after_prediction(ftrl& b, VW::example& ec)
 {
-  b.data.update = b.all->loss->first_derivative(b.all->sd.get(), ec.pred.scalar, ec.l.simple.label) * ec.weight;
+  b.data.update =
+      b.all->loss_config.loss->first_derivative(b.all->sd.get(), ec.pred.scalar, ec.l.simple.label) * ec.weight;
   VW::foreach_feature<ftrl_update_data, inner_coin_betting_update_after_prediction>(*b.all, ec, b.data);
 }
 
@@ -335,7 +338,7 @@ void save_load(ftrl& b, VW::io_buf& model_file, bool read, bool text)
 
   if (model_file.num_files() != 0)
   {
-    bool resume = all->save_resume;
+    bool resume = all->output_model_config.save_resume;
     std::stringstream msg;
     msg << ":" << resume << "\n";
     VW::details::bin_text_read_write_fixed(
@@ -343,7 +346,7 @@ void save_load(ftrl& b, VW::io_buf& model_file, bool read, bool text)
 
     if (resume)
     {
-      VW::details::save_load_online_state_gd(*all, model_file, read, text, b.per_model_states, nullptr, b.ftrl_size);
+      VW::details::save_load_online_state_gd(*all, model_file, read, text, b.gd_per_model_states, nullptr, b.ftrl_size);
     }
     else { VW::details::save_load_regressor_gd(*all, model_file, read, text); }
   }
@@ -353,14 +356,15 @@ void end_pass(ftrl& g)
 {
   VW::workspace& all = *g.all;
 
-  if (!all.holdout_set_off)
+  if (!all.passes_config.holdout_set_off)
   {
     if (VW::details::summarize_holdout_set(all, g.no_win_counter))
     {
-      VW::details::finalize_regressor(all, all.final_regressor_name);
+      VW::details::finalize_regressor(all, all.output_model_config.final_regressor_name);
     }
     if ((g.early_stop_thres == g.no_win_counter) &&
-        ((all.check_holdout_every_n_passes <= 1) || ((all.current_pass % all.check_holdout_every_n_passes) == 0)))
+        ((all.passes_config.check_holdout_every_n_passes <= 1) ||
+            ((all.passes_config.current_pass % all.passes_config.check_holdout_every_n_passes) == 0)))
     {
       VW::details::set_done(all);
     }
@@ -415,10 +419,10 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::ftrl_setup(VW::setup_base_
 
   b->all = &all;
   b->no_win_counter = 0;
-  auto single_model_state = VW::reductions::details::per_model_state();
+  auto single_model_state = VW::reductions::details::gd_per_model_state();
   single_model_state.normalized_sum_norm_x = 0;
   single_model_state.total_weight = 0.;
-  b->per_model_states.emplace_back(single_model_state);
+  b->gd_per_model_states.emplace_back(single_model_state);
 
   std::string algorithm_name;
   void (*learn_ptr)(ftrl&, VW::example&) = nullptr;
@@ -430,7 +434,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::ftrl_setup(VW::setup_base_
     b->ftrl_alpha = options.was_supplied("ftrl_alpha") ? b->ftrl_alpha : 0.005f;
     b->ftrl_beta = options.was_supplied("ftrl_beta") ? b->ftrl_beta : 0.1f;
     algorithm_name = "Proximal-FTRL";
-    learn_ptr = all.audit || all.hash_inv ? learn_proximal<true> : learn_proximal<false>;
+    learn_ptr = all.output_config.audit || all.output_config.hash_inv ? learn_proximal<true> : learn_proximal<false>;
     all.weights.stride_shift(2);  // NOTE: for more parameter storage
     b->ftrl_size = 3;
   }
@@ -439,7 +443,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::ftrl_setup(VW::setup_base_
     b->ftrl_alpha = options.was_supplied("ftrl_alpha") ? b->ftrl_alpha : 1.0f;
     b->ftrl_beta = options.was_supplied("ftrl_beta") ? b->ftrl_beta : 0.5f;
     algorithm_name = "PiSTOL";
-    learn_ptr = all.audit || all.hash_inv ? learn_pistol<true> : learn_pistol<false>;
+    learn_ptr = all.output_config.audit || all.output_config.hash_inv ? learn_pistol<true> : learn_pistol<false>;
     all.weights.stride_shift(2);  // NOTE: for more parameter storage
     b->ftrl_size = 4;
     learn_returns_prediction = true;
@@ -449,7 +453,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::ftrl_setup(VW::setup_base_
     b->ftrl_alpha = options.was_supplied("ftrl_alpha") ? b->ftrl_alpha : 4.0f;
     b->ftrl_beta = options.was_supplied("ftrl_beta") ? b->ftrl_beta : 1.0f;
     algorithm_name = "Coin Betting";
-    learn_ptr = all.audit || all.hash_inv ? learn_coin_betting<true> : learn_coin_betting<false>;
+    learn_ptr =
+        all.output_config.audit || all.output_config.hash_inv ? learn_coin_betting<true> : learn_coin_betting<false>;
     all.weights.stride_shift(3);  // NOTE: for more parameter storage
     b->ftrl_size = 6;
     learn_returns_prediction = true;
@@ -457,32 +462,32 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::ftrl_setup(VW::setup_base_
 
   b->data.ftrl_alpha = b->ftrl_alpha;
   b->data.ftrl_beta = b->ftrl_beta;
-  b->data.l1_lambda = b->all->l1_lambda;
-  b->data.l2_lambda = b->all->l2_lambda;
+  b->data.l1_lambda = b->all->loss_config.l1_lambda;
+  b->data.l2_lambda = b->all->loss_config.l2_lambda;
 
-  if (!all.quiet)
+  if (!all.output_config.quiet)
   {
-    *(all.trace_message) << "Enabling FTRL based optimization" << std::endl;
-    *(all.trace_message) << "Algorithm used: " << algorithm_name << std::endl;
-    *(all.trace_message) << "ftrl_alpha = " << b->ftrl_alpha << std::endl;
-    *(all.trace_message) << "ftrl_beta = " << b->ftrl_beta << std::endl;
+    *(all.output_runtime.trace_message) << "Enabling FTRL based optimization" << std::endl;
+    *(all.output_runtime.trace_message) << "Algorithm used: " << algorithm_name << std::endl;
+    *(all.output_runtime.trace_message) << "ftrl_alpha = " << b->ftrl_alpha << std::endl;
+    *(all.output_runtime.trace_message) << "ftrl_beta = " << b->ftrl_beta << std::endl;
   }
 
-  if (!all.holdout_set_off)
+  if (!all.passes_config.holdout_set_off)
   {
     all.sd->holdout_best_loss = FLT_MAX;
     b->early_stop_thres = options.get_typed_option<uint64_t>("early_terminate").value();
   }
 
-  auto predict_ptr = (all.audit || all.hash_inv) ? predict<true> : predict<false>;
-  auto multipredict_ptr = (all.audit || all.hash_inv) ? multipredict<true> : multipredict<false>;
-  std::string name_addition = (all.audit || all.hash_inv) ? "-audit" : "";
+  auto predict_ptr = (all.output_config.audit || all.output_config.hash_inv) ? predict<true> : predict<false>;
+  auto multipredict_ptr =
+      (all.output_config.audit || all.output_config.hash_inv) ? multipredict<true> : multipredict<false>;
+  std::string name_addition = (all.output_config.audit || all.output_config.hash_inv) ? "-audit" : "";
 
   auto l = VW::LEARNER::make_bottom_learner(std::move(b), learn_ptr, predict_ptr,
       stack_builder.get_setupfn_name(ftrl_setup) + "-" + algorithm_name + name_addition, VW::prediction_type_t::SCALAR,
       VW::label_type_t::SIMPLE)
                .set_learn_returns_prediction(learn_returns_prediction)
-               .set_params_per_weight(VW::details::UINT64_ONE << all.weights.stride_shift())
                .set_sensitivity(sensitivity)
                .set_multipredict(multipredict_ptr)
                .set_save_load(save_load)

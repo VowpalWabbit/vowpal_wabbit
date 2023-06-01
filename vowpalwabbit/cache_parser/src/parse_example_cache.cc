@@ -214,9 +214,9 @@ int VW::parsers::cache::read_example_from_cache(VW::workspace* all, io_buf& inpu
   // (As opposed to being unable to get the next bytes while midway through reading an example)
   if (input.buf_read(unused_read_ptr, sizeof(uint64_t)) < sizeof(uint64_t)) { return 0; }
 
-  all->example_parser->lbl_parser.default_label(examples[0]->l);
-  size_t total =
-      all->example_parser->lbl_parser.read_cached_label(examples[0]->l, examples[0]->ex_reduction_features, input);
+  all->parser_runtime.example_parser->lbl_parser.default_label(examples[0]->l);
+  size_t total = all->parser_runtime.example_parser->lbl_parser.read_cached_label(
+      examples[0]->l, examples[0]->ex_reduction_features, input);
   if (total == 0) { THROW("Ran out of cache while reading example. File may be truncated."); }
 
   size_t tag_size = details::read_cached_tag(input, examples[0]->tag);

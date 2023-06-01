@@ -388,23 +388,23 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_squarecb_se
   if (options.was_supplied("large_action_space")) { store_gamma_in_reduction_features = true; }
 
   // Set explore_type
-  size_t problem_multiplier = 1;
+  size_t feature_width = 1;
 
-  auto base = require_multiline(stack_builder.setup_base_learner(problem_multiplier));
-  all.example_parser->lbl_parser = VW::cb_label_parser_global;
+  auto base = require_multiline(stack_builder.setup_base_learner(feature_width));
 
   if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_squarecb>;
-  auto data = VW::make_unique<explore_type>(all.global_metrics.are_metrics_enabled(), gamma_scale, gamma_exponent, elim,
-      c0, min_cb_cost, max_cb_cost, all.model_file_ver, epsilon, store_gamma_in_reduction_features);
+  auto data = VW::make_unique<explore_type>(all.output_runtime.global_metrics.are_metrics_enabled(), gamma_scale,
+      gamma_exponent, elim, c0, min_cb_cost, max_cb_cost, all.runtime_state.model_file_ver, epsilon,
+      store_gamma_in_reduction_features);
   auto l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_squarecb_setup))
                .set_input_label_type(VW::label_type_t::CB)
                .set_output_label_type(VW::label_type_t::CB)
                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
-               .set_params_per_weight(problem_multiplier)
+               .set_feature_width(feature_width)
                .set_output_example_prediction(explore_type::output_example_prediction)
                .set_update_stats(explore_type::update_stats)
                .set_print_update(explore_type::print_update)

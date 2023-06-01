@@ -37,7 +37,7 @@ if(WARNINGS)
   if(WIN32)
     set(WARNING_OPTIONS /W4)
   else()
-    set(WARNING_OPTIONS -Wall -Wextra -Wpedantic)
+    set(WARNING_OPTIONS -Wall -Wextra -Wpedantic -Wswitch)
   endif()
 endif(WARNINGS)
 

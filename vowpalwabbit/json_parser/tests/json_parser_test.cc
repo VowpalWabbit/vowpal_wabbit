@@ -408,7 +408,7 @@ TEST(ParseJson, TextDoesNotChangeInput)
 
   VW::multi_ex examples;
   examples.push_back(&VW::get_unused_example(ccb_vw.get()));
-  ccb_vw->example_parser->text_reader(
+  ccb_vw->parser_runtime.example_parser->text_reader(
       ccb_vw.get(), VW::string_view(json_text.c_str(), strlen(json_text.c_str())), examples);
 
   EXPECT_EQ(json_text, json_text_copy);

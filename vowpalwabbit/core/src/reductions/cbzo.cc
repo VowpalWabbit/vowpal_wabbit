@@ -46,38 +46,38 @@ public:
 };
 
 // uint64_t index variant of VW::get_weight
-inline float get_weight(VW::workspace& all, uint64_t index, uint32_t offset)
+inline float get_weight(VW::workspace& all, uint64_t index)
 {
-  return (&all.weights[(index) << all.weights.stride_shift()])[offset];
+  return all.weights[(index) << all.weights.stride_shift()];
 }
 
 // uint64_t index variant of VW::set_weight
-inline void set_weight(VW::workspace& all, uint64_t index, uint32_t offset, float value)
+inline void set_weight(VW::workspace& all, uint64_t index, float value)
 {
-  (&all.weights[(index) << all.weights.stride_shift()])[offset] = value;
+  all.weights[(index) << all.weights.stride_shift()] = value;
 }
 
 float l1_grad(VW::workspace& all, uint64_t fi)
 {
-  if (all.no_bias && fi == VW::details::CONSTANT) { return 0.0f; }
+  if (all.loss_config.no_bias && fi == VW::details::CONSTANT) { return 0.0f; }
 
-  float fw = get_weight(all, fi, 0);
-  return fw >= 0.0f ? all.l1_lambda : -all.l1_lambda;
+  float fw = get_weight(all, fi);
+  return fw >= 0.0f ? all.loss_config.l1_lambda : -all.loss_config.l1_lambda;
 }
 
 float l2_grad(VW::workspace& all, uint64_t fi)
 {
-  if (all.no_bias && fi == VW::details::CONSTANT) { return 0.0f; }
+  if (all.loss_config.no_bias && fi == VW::details::CONSTANT) { return 0.0f; }
 
-  float fw = get_weight(all, fi, 0);
-  return all.l2_lambda * fw;
+  float fw = get_weight(all, fi);
+  return all.loss_config.l2_lambda * fw;
 }
 
 inline void accumulate_dotprod(float& dotprod, float x, float& fw) { dotprod += x * fw; }
 
 inline float constant_inference(VW::workspace& all)
 {
-  float wt = get_weight(all, VW::details::CONSTANT, 0);
+  float wt = get_weight(all, VW::details::CONSTANT);
   return wt;
 }
 
@@ -102,34 +102,34 @@ float inference(VW::workspace& all, VW::example& ec)
 template <bool feature_mask_off>
 void constant_update(cbzo& data, VW::example& ec)
 {
-  float fw = get_weight(*data.all, VW::details::CONSTANT, 0);
+  float fw = get_weight(*data.all, VW::details::CONSTANT);
   if (feature_mask_off || fw != 0.0f)
   {
     float action_centroid = inference<CONSTANT_POLICY>(*data.all, ec);
     float grad = ec.l.cb_cont.costs[0].cost / (ec.l.cb_cont.costs[0].action - action_centroid);
-    float update =
-        -data.all->eta * (grad + l1_grad(*data.all, VW::details::CONSTANT) + l2_grad(*data.all, VW::details::CONSTANT));
+    float update = -data.all->update_rule_config.eta *
+        (grad + l1_grad(*data.all, VW::details::CONSTANT) + l2_grad(*data.all, VW::details::CONSTANT));
 
-    set_weight(*data.all, VW::details::CONSTANT, 0, fw + update);
+    set_weight(*data.all, VW::details::CONSTANT, fw + update);
   }
 }
 
 template <bool feature_mask_off>
 void linear_per_feature_update(linear_update_data& upd_data, float x, uint64_t fi)
 {
-  float fw = get_weight(*upd_data.all, fi, 0);
+  float fw = get_weight(*upd_data.all, fi);
 
   if (feature_mask_off || fw != 0.0f)
   {
     float update = upd_data.mult * (upd_data.part_grad * x + (l1_grad(*upd_data.all, fi) + l2_grad(*upd_data.all, fi)));
-    set_weight(*upd_data.all, fi, 0, fw + update);
+    set_weight(*upd_data.all, fi, fw + update);
   }
 }
 
 template <bool feature_mask_off>
 void linear_update(cbzo& data, VW::example& ec)
 {
-  float mult = -data.all->eta;
+  float mult = -data.all->update_rule_config.eta;
 
   float action_centroid = inference<LINEAR_POLICY>(*data.all, ec);
   float part_grad = ec.l.cb_cont.costs[0].cost / (ec.l.cb_cont.costs[0].action - action_centroid);
@@ -161,9 +161,9 @@ void set_minmax(VW::shared_data* sd, float label, bool min_fixed, bool max_fixed
 
 void print_audit_features(VW::workspace& all, VW::example& ec)
 {
-  if (all.audit)
+  if (all.output_config.audit)
   {
-    all.print_text_by_ref(all.stdout_adapter.get(),
+    all.print_text_by_ref(all.output_runtime.stdout_adapter.get(),
         VW::to_string(ec.pred.pdf, std::numeric_limits<float>::max_digits10), ec.tag, all.logger);
   }
 
@@ -236,7 +236,10 @@ void save_load(cbzo& data, VW::io_buf& model_file, bool read, bool text)
   if (read)
   {
     VW::details::initialize_regressor(all);
-    if (data.all->initial_constant != 0.0f) { set_weight(all, VW::details::CONSTANT, 0, data.all->initial_constant); }
+    if (data.all->feature_tweaks_config.initial_constant != 0.0f)
+    {
+      set_weight(all, VW::details::CONSTANT, data.all->feature_tweaks_config.initial_constant);
+    }
   }
   if (model_file.num_files() > 0) { save_load_regressor(all, model_file, read, text); }
 }
@@ -258,17 +261,20 @@ void output_example_prediction_cbzo(
     VW::workspace& all, const cbzo& /* data */, const VW::example& ec, VW::io::logger& logger)
 {
   auto pred_repr = VW::to_string(ec.pred.pdf, std::numeric_limits<float>::max_digits10);
-  for (auto& sink : all.final_prediction_sink) { all.print_text_by_ref(sink.get(), pred_repr, ec.tag, logger); }
+  for (auto& sink : all.output_runtime.final_prediction_sink)
+  {
+    all.print_text_by_ref(sink.get(), pred_repr, ec.tag, logger);
+  }
 }
 
 void print_update_cbzo(VW::workspace& all, VW::shared_data& sd, const cbzo& /* data */, const VW::example& ec,
     VW::io::logger& /* unused */)
 {
-  if (sd.weighted_examples() >= sd.dump_interval && !all.quiet)
+  if (sd.weighted_examples() >= sd.dump_interval && !all.output_config.quiet)
   {
     const auto& costs = ec.l.cb_cont.costs;
-    sd.print_update(*all.trace_message, all.holdout_set_off, all.current_pass,
-        ec.test_only ? "unknown" : VW::to_string(costs[0]),
+    sd.print_update(*all.output_runtime.trace_message, all.passes_config.holdout_set_off,
+        all.passes_config.current_pass, ec.test_only ? "unknown" : VW::to_string(costs[0]),
         VW::to_string(ec.pred.pdf, VW::details::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION), ec.get_num_features());
   }
 }
@@ -279,20 +285,20 @@ void (*get_learn(VW::workspace& all, uint8_t policy, bool feature_mask_off))(cbz
   {
     if (feature_mask_off)
     {
-      if (all.audit || all.hash_inv) { return learn<CONSTANT_POLICY, true, true>; }
+      if (all.output_config.audit || all.output_config.hash_inv) { return learn<CONSTANT_POLICY, true, true>; }
       else { return learn<CONSTANT_POLICY, true, false>; }
     }
-    else if (all.audit || all.hash_inv) { return learn<CONSTANT_POLICY, false, true>; }
+    else if (all.output_config.audit || all.output_config.hash_inv) { return learn<CONSTANT_POLICY, false, true>; }
     else { return learn<CONSTANT_POLICY, false, false>; }
   }
   else if (policy == LINEAR_POLICY)
   {
     if (feature_mask_off)
     {
-      if (all.audit || all.hash_inv) { return learn<LINEAR_POLICY, true, true>; }
+      if (all.output_config.audit || all.output_config.hash_inv) { return learn<LINEAR_POLICY, true, true>; }
       else { return learn<LINEAR_POLICY, true, false>; }
     }
-    else if (all.audit || all.hash_inv) { return learn<LINEAR_POLICY, false, true>; }
+    else if (all.output_config.audit || all.output_config.hash_inv) { return learn<LINEAR_POLICY, false, true>; }
     else { return learn<LINEAR_POLICY, false, false>; }
   }
   else
@@ -303,12 +309,12 @@ void (*get_predict(VW::workspace& all, uint8_t policy))(cbzo&, VW::example&)
 {
   if (policy == CONSTANT_POLICY)
   {
-    if (all.audit || all.hash_inv) { return predict<CONSTANT_POLICY, true>; }
+    if (all.output_config.audit || all.output_config.hash_inv) { return predict<CONSTANT_POLICY, true>; }
     else { return predict<CONSTANT_POLICY, false>; }
   }
   else if (policy == LINEAR_POLICY)
   {
-    if (all.audit || all.hash_inv) { return predict<LINEAR_POLICY, true>; }
+    if (all.output_config.audit || all.output_config.hash_inv) { return predict<LINEAR_POLICY, true>; }
     else { return predict<LINEAR_POLICY, false>; }
   }
   else
@@ -339,7 +345,10 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cbzo_setup(VW::setup_base_
                .one_of({"linear", "constant"})
                .keep()
                .help("Policy/Model to Learn"))
-      .add(make_option("radius", data->radius).default_value(0.1f).keep(all.save_resume).help("Exploration Radius"));
+      .add(make_option("radius", data->radius)
+               .default_value(0.1f)
+               .keep(all.output_model_config.save_resume)
+               .help("Exploration Radius"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
@@ -362,14 +371,12 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cbzo_setup(VW::setup_base_
     }
   }
 
-  all.example_parser->lbl_parser = cb_continuous::the_label_parser;
   data->all = &all;
   data->min_prediction_supplied = options.was_supplied("min_prediction");
   data->max_prediction_supplied = options.was_supplied("max_prediction");
 
   auto l = make_bottom_learner(std::move(data), get_learn(all, policy, feature_mask_off), get_predict(all, policy),
       stack_builder.get_setupfn_name(cbzo_setup), prediction_type_t::PDF, label_type_t::CONTINUOUS)
-               .set_params_per_weight(0)
                .set_save_load(save_load)
                .set_output_example_prediction(output_example_prediction_cbzo)
                .set_print_update(print_update_cbzo)

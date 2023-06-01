@@ -510,6 +510,10 @@ public:
     return all_extents_complete;
   }
 };
+
+/// Both fs1 and fs2 must be sorted.
+/// Most often used with VW::flatten_features
+float features_dot_product(const features& fs1, const features& fs2);
 }  // namespace VW
 
 using feature_value VW_DEPRECATED("Moved into VW namespace. Will be removed in VW 10.") = VW::feature_value;

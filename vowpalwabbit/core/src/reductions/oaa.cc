@@ -215,7 +215,8 @@ void predict(oaa& o, VW::LEARNER::learner& base, VW::example& ec)
     {
       for (uint32_t i = 1; i <= o.k; i++) { output_string_stream << ' ' << i << ':' << o.pred[i - 1].scalar; }
     }
-    o.all->print_text_by_ref(o.all->raw_prediction.get(), output_string_stream.str(), ec.tag, o.all->logger);
+    o.all->print_text_by_ref(
+        o.all->output_runtime.raw_prediction.get(), output_string_stream.str(), ec.tag, o.all->logger);
   }
 
   // The predictions are an array of scores (as opposed to a single index of a
@@ -318,7 +319,10 @@ void output_example_prediction_oaa(
     output_string_stream << ':' << ec.pred.scalars[i];
   }
   const auto ss_str = output_string_stream.str();
-  for (auto& sink : all.final_prediction_sink) { all.print_text_by_ref(sink.get(), ss_str, ec.tag, all.logger); }
+  for (auto& sink : all.output_runtime.final_prediction_sink)
+  {
+    all.print_text_by_ref(sink.get(), ss_str, ec.tag, all.logger);
+  }
 }
 }  // namespace
 
@@ -326,7 +330,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::oaa_setup(VW::setup_base_i
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
-  auto data = VW::make_unique<oaa>(all.logger, all.indexing);
+  auto data = VW::make_unique<oaa>(all.logger, all.runtime_state.indexing);
   bool probabilities = false;
   bool scores = false;
   option_group_definition new_options("[Reduction] One Against All");
@@ -335,7 +339,10 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::oaa_setup(VW::setup_base_i
                .help("Subsample this number of negative examples when learning"))
       .add(make_option("probabilities", probabilities).help("Predict probabilities of all classes"))
       .add(make_option("scores", scores).help("Output raw scores per class"))
-      .add(make_option("indexing", all.indexing).one_of({0, 1}).keep().help("Choose between 0 or 1-indexing"));
+      .add(make_option("indexing", all.runtime_state.indexing)
+               .one_of({0, 1})
+               .keep()
+               .help("Choose between 0 or 1-indexing"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
@@ -390,7 +397,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::oaa_setup(VW::setup_base_i
     pred_type = VW::prediction_type_t::SCALARS;
     if (probabilities)
     {
-      auto loss_function_type = all.loss->get_type();
+      auto loss_function_type = all.loss_config.loss->get_type();
       if (loss_function_type != "logistic")
       {
         all.logger.out_warn("--probabilities should be used only with --loss_function=logistic, currently using: {}",
@@ -419,7 +426,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::oaa_setup(VW::setup_base_i
     update_stats_func = VW::details::update_stats_multiclass_label<oaa>;
     output_example_prediction_func = VW::details::output_example_prediction_multiclass_label<oaa>;
     print_update_func = VW::details::print_update_multiclass_label<oaa>;
-    if (all.raw_prediction != nullptr)
+    if (all.output_runtime.raw_prediction != nullptr)
     {
       learn_ptr = learn<PRINT_ALL, !SCORES, !PROBABILITIES>;
       pred_ptr = predict<PRINT_ALL, !SCORES, !PROBABILITIES>;
@@ -432,8 +439,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::oaa_setup(VW::setup_base_i
       name_addition = "";
     }
   }
-
-  all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
 
   if (data_ptr->num_subsample > 0)
   {
@@ -455,7 +460,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::oaa_setup(VW::setup_base_i
 
   auto l = make_reduction_learner(
       std::move(data), base, learn_ptr, pred_ptr, stack_builder.get_setupfn_name(oaa_setup) + name_addition)
-               .set_params_per_weight(k_value)
+               .set_feature_width(k_value)
                .set_input_label_type(VW::label_type_t::MULTICLASS)
                .set_output_label_type(VW::label_type_t::SIMPLE)
                .set_input_prediction_type(VW::prediction_type_t::SCALAR)

@@ -172,7 +172,7 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_learnFr
   {
     VW::multi_ex ex_coll;
     ex_coll.push_back(&VW::get_unused_example(all));
-    all->example_parser->text_reader(
+    all->parser_runtime.example_parser->text_reader(
         all, VW::string_view(exampleStringGuard.c_str(), exampleStringGuard.length()), ex_coll);
     VW::setup_examples(*all, ex_coll);
     return callLearner<true>(env, all, ex_coll);
@@ -212,7 +212,7 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_predict
   {
     VW::multi_ex ex_coll;
     ex_coll.push_back(&VW::get_unused_example(all));
-    all->example_parser->text_reader(
+    all->parser_runtime.example_parser->text_reader(
         all, VW::string_view(exampleStringGuard.c_str(), exampleStringGuard.length()), ex_coll);
     VW::setup_examples(*all, ex_coll);
     return callLearner<false>(env, all, ex_coll);
@@ -230,9 +230,9 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_performRem
 
   try
   {
-    if (all->numpasses > 1)
+    if (all->runtime_config.numpasses > 1)
     {
-      all->do_reset_source = true;
+      all->runtime_state.do_reset_source = true;
       VW::start_parser(*all);
       VW::LEARNER::generic_driver(*all);
       VW::end_parser(*all);
@@ -293,7 +293,8 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getArgu
   jmethodID ctor = env->GetMethodID(clazz, "<init>", "(IILjava/lang/String;DD)V");
   CHECK_JNI_EXCEPTION(nullptr);
 
-  return env->NewObject(clazz, ctor, all->num_bits, all->hash_seed, args, all->eta, all->power_t);
+  return env->NewObject(clazz, ctor, all->initial_weights_config.num_bits, all->runtime_config.hash_seed, args,
+      all->update_rule_config.eta, all->update_rule_config.power_t);
 }
 
 JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getOutputPredictionType(
@@ -318,15 +319,15 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getPerf
   float bestConstantLoss;
   long totalNumberOfFeatures;
 
-  if (all->current_pass == 0)
+  if (all->passes_config.current_pass == 0)
     numberOfExamplesPerPass = all->sd->example_number;
   else
-    numberOfExamplesPerPass = all->sd->example_number / all->current_pass;
+    numberOfExamplesPerPass = all->sd->example_number / all->passes_config.current_pass;
 
   weightedExampleSum = all->sd->weighted_examples();
   weightedLabelSum = all->sd->weighted_labels;
 
-  if (all->holdout_set_off)
+  if (all->passes_config.holdout_set_off)
     if (all->sd->weighted_labeled_examples > 0)
       averageLoss = all->sd->sum_loss / all->sd->weighted_labeled_examples;
     else
@@ -336,7 +337,7 @@ JNIEXPORT jobject JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_getPerf
   else
     averageLoss = all->sd->holdout_best_loss;
 
-  VW::get_best_constant(*all->loss, *all->sd, bestConstant, bestConstantLoss);
+  VW::get_best_constant(*all->loss_config.loss, *all->sd, bestConstant, bestConstantLoss);
   totalNumberOfFeatures = all->sd->total_features;
 
   jclass clazz = env->FindClass("org/vowpalwabbit/spark/VowpalWabbitPerformanceStatistics");
@@ -358,11 +359,11 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitNative_endPass(JN
     // note: this code duplication seems bound for trouble
     // from parse_dispatch_loop.h:26
     // from learner.cc:41
-    VW::details::reset_source(*all, all->num_bits);
-    all->do_reset_source = false;
-    all->passes_complete++;
+    VW::details::reset_source(*all, all->initial_weights_config.num_bits);
+    all->runtime_state.do_reset_source = false;
+    all->runtime_state.passes_complete++;
 
-    all->current_pass++;
+    all->passes_config.current_pass++;
     all->l->end_pass();
   }
   catch (...)
@@ -410,8 +411,8 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_initiali
   try
   {
     example* ex = new VW::example;
-    ex->interactions = &all->interactions;
-    ex->extent_interactions = &all->extent_interactions;
+    ex->interactions = &all->feature_tweaks_config.interactions;
+    ex->extent_interactions = &all->feature_tweaks_config.extent_interactions;
 
     if (isEmpty)
     {
@@ -419,7 +420,7 @@ JNIEXPORT jlong JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_initiali
       VW::parsers::text::read_line(*all, ex, &empty);
     }
     else
-      all->example_parser->lbl_parser.default_label(ex->l);
+      all->parser_runtime.example_parser->lbl_parser.default_label(ex->l);
 
     return reinterpret_cast<jlong>(new VowpalWabbitExampleWrapper(all, ex));
   }
@@ -451,7 +452,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_clear(JNI
   try
   {
     VW::empty_example(*all, *ex);
-    all->example_parser->lbl_parser.default_label(ex->l);
+    all->parser_runtime.example_parser->lbl_parser.default_label(ex->l);
   }
   catch (...)
   {
@@ -479,7 +480,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_addToName
     double* values0 = (double*)valuesGuard.data();
 
     int size = env->GetArrayLength(values);
-    int mask = (1 << all->num_bits) - 1;
+    int mask = (1 << all->initial_weights_config.num_bits) - 1;
 
     // pre-allocate
     features->values.reserve(features->values.capacity() + size);
@@ -521,7 +522,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_addToName
     double* values0 = (double*)valuesGuard.data();
 
     int size = env->GetArrayLength(indices);
-    int mask = (1 << all->num_bits) - 1;
+    int mask = (1 << all->initial_weights_config.num_bits) - 1;
 
     // pre-allocate
     features->values.reserve(features->values.capacity() + size);
@@ -572,7 +573,7 @@ JNIEXPORT void JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_setDefaul
 
   try
   {
-    all->example_parser->lbl_parser.default_label(ex->l);
+    all->parser_runtime.example_parser->lbl_parser.default_label(ex->l);
   }
   catch (...)
   {
@@ -882,7 +883,7 @@ JNIEXPORT jstring JNICALL Java_org_vowpalwabbit_spark_VowpalWabbitExample_toStri
     std::ostringstream ostr;
 
     ostr << "VowpalWabbitExample(label=";
-    auto lp = all->example_parser->lbl_parser;
+    auto lp = all->parser_runtime.example_parser->lbl_parser;
 
     if (!memcmp(&lp, &VW::simple_label_parser_global, sizeof(lp)))
     {

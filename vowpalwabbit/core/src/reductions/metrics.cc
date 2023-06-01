@@ -146,13 +146,13 @@ void additional_metrics(VW::workspace& all, VW::metric_sink& sink)
 
   std::vector<std::string> enabled_learners;
   if (all.l != nullptr) { all.l->get_enabled_learners(enabled_learners); }
-  insert_dsjson_metrics(all.example_parser->metrics.get(), sink, enabled_learners);
+  insert_dsjson_metrics(all.parser_runtime.example_parser->metrics.get(), sink, enabled_learners);
 }
 }  // namespace
 
 void VW::reductions::output_metrics(VW::workspace& all)
 {
-  metrics_collector& manager = all.global_metrics;
+  metrics_collector& manager = all.output_runtime.global_metrics;
   if (manager.are_metrics_enabled())
   {
     std::string filename = all.options->get_typed_option<std::string>("extra_metrics").value();
@@ -176,10 +176,10 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::metrics_setup(VW::setup_ba
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   if (out_file.empty()) THROW("extra_metrics argument (output filename) is missing.");
-  all.global_metrics = VW::metrics_collector(true);
+  all.output_runtime.global_metrics = VW::metrics_collector(true);
 
   auto* all_ptr = stack_builder.get_all_pointer();
-  all.global_metrics.register_metrics_callback(
+  all.output_runtime.global_metrics.register_metrics_callback(
       [all_ptr](VW::metric_sink& sink) -> void { additional_metrics(*all_ptr, sink); });
 
   auto base = stack_builder.setup_base_learner();

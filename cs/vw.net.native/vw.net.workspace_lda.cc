@@ -3,18 +3,21 @@
 #include "vw/config/options.h"
 #include "vw/core/reductions/lda_core.h"
 
-API int WorkspaceGetTopicCount(vw_net_native::workspace_context* workspace) { return (int)workspace->vw->lda; }
+API int WorkspaceGetTopicCount(vw_net_native::workspace_context* workspace)
+{
+  return (int)workspace->vw->reduction_state.lda;
+}
 
 API uint64_t WorkspaceGetTopicSize(vw_net_native::workspace_context* workspace)
 {
-  return 1ULL << workspace->vw->num_bits;
+  return 1ULL << workspace->vw->initial_weights_config.num_bits;
 }
 
 template <typename T>
 int64_t fill_topic_allocation(vw_net_native::workspace_context* workspace, T& weights, float** topic_weight_buffers,
     size_t buffer_size, size_t buffers_count)
 {
-  int topic_count = (int)workspace->vw->lda;
+  int topic_count = (int)workspace->vw->reduction_state.lda;
   uint64_t topic_size = WorkspaceGetTopicSize(workspace);
   vw_net_native::dotnet_size_t returned = static_cast<vw_net_native::dotnet_size_t>(topic_count * topic_size);
 

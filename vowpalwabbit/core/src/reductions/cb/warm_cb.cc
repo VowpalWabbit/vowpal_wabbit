@@ -138,12 +138,15 @@ void finish(warm_cb& data)
 {
   uint32_t argmin = find_min(data.cumulative_costs);
 
-  if (!data.all->quiet)
+  if (!data.all->output_config.quiet)
   {
-    *(data.all->trace_message) << "average variance estimate = " << data.cumu_var / data.inter_iter << std::endl;
-    *(data.all->trace_message) << "theoretical average variance = " << data.num_actions / data.epsilon << std::endl;
-    *(data.all->trace_message) << "last lambda chosen = " << data.lambdas[argmin] << " among lambdas ranging from "
-                               << data.lambdas[0] << " to " << data.lambdas[data.choices_lambda - 1] << std::endl;
+    *(data.all->output_runtime.trace_message)
+        << "average variance estimate = " << data.cumu_var / data.inter_iter << std::endl;
+    *(data.all->output_runtime.trace_message)
+        << "theoretical average variance = " << data.num_actions / data.epsilon << std::endl;
+    *(data.all->output_runtime.trace_message)
+        << "last lambda chosen = " << data.lambdas[argmin] << " among lambdas ranging from " << data.lambdas[0]
+        << " to " << data.lambdas[data.choices_lambda - 1] << std::endl;
   }
 }
 
@@ -589,8 +592,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::warm_cb_setup(VW::setup_ba
     options.insert("lr_multiplier", ss.str());
   }
 
-  size_t ws = data->choices_lambda;
-  auto base = require_multiline(stack_builder.setup_base_learner(ws));
+  size_t feature_width = data->choices_lambda;
+  auto base = require_multiline(stack_builder.setup_base_learner(feature_width));
   // Note: the current version of warm start CB can only support epsilon-greedy exploration
   // We need to wait for the epsilon value to be passed from the base
   // cb_explore learner, if there is one
@@ -617,7 +620,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::warm_cb_setup(VW::setup_ba
     update_stats_func = VW::details::update_stats_cs_label<warm_cb>;
     output_example_prediction_func = VW::details::output_example_prediction_cs_label<warm_cb>;
     print_update_func = VW::details::print_update_cs_label<warm_cb>;
-    all.example_parser->lbl_parser = VW::cs_label_parser_global;
     label_type = VW::label_type_t::CS;
   }
   else
@@ -627,7 +629,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::warm_cb_setup(VW::setup_ba
     update_stats_func = VW::details::update_stats_multiclass_label<warm_cb>;
     output_example_prediction_func = VW::details::output_example_prediction_multiclass_label<warm_cb>;
     print_update_func = VW::details::print_update_multiclass_label<warm_cb>;
-    all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
     label_type = VW::label_type_t::MULTICLASS;
   }
 
@@ -637,7 +638,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::warm_cb_setup(VW::setup_ba
                .set_output_label_type(VW::label_type_t::CB)
                .set_input_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
-               .set_params_per_weight(ws)
+               .set_feature_width(feature_width)
                .set_learn_returns_prediction(true)
                .set_update_stats(update_stats_func)
                .set_output_example_prediction(output_example_prediction_func)

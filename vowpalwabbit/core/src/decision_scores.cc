@@ -29,8 +29,8 @@ void print_update(VW::workspace& all, const VW::multi_ex& slots, const VW::decis
     pred_ss << delim << slot[0].action;
     delim = ",";
   }
-  all.sd->print_update(
-      *all.trace_message, all.holdout_set_off, all.current_pass, label_print_func(slots), pred_ss.str(), num_features);
+  all.sd->print_update(*all.output_runtime.trace_message, all.passes_config.holdout_set_off,
+      all.passes_config.current_pass, label_print_func(slots), pred_ss.str(), num_features);
 }
 
 namespace VW

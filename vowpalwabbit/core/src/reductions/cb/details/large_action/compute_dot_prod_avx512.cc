@@ -2,7 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#ifdef BUILD_LAS_WITH_SIMD
+#ifdef VW_FEAT_LAS_SIMD_ENABLED
 
 #  include "compute_dot_prod_simd.h"
 #  include "kernel_impl.h"
@@ -67,8 +67,8 @@ float compute_dot_prod_avx512(uint64_t column_index, VW::workspace* _all, uint64
   const __m512i weights_masks = _mm512_set1_epi64(weights_mask);
   const __m512i offsets = _mm512_set1_epi64(offset);
 
-  const bool ignore_some_linear = _all->ignore_some_linear;
-  const auto& ignore_linear = _all->ignore_linear;
+  const bool ignore_some_linear = _all->feature_tweaks_config.ignore_some_linear;
+  const auto& ignore_linear = _all->feature_tweaks_config.ignore_linear;
   for (auto i = ex->begin(); i != ex->end(); ++i)
   {
     if (ignore_some_linear && ignore_linear[i.index()]) { continue; }
@@ -115,7 +115,7 @@ float compute_dot_prod_avx512(uint64_t column_index, VW::workspace* _all, uint64
           "Generic interactions are not supported yet in large action space with SIMD implementations");
     }
 
-    const bool same_namespace = (!_all->permutations && (ns[0] == ns[1]));
+    const bool same_namespace = (!_all->feature_tweaks_config.permutations && (ns[0] == ns[1]));
     const size_t num_features_ns0 = ex->feature_space[ns[0]].size();
     const size_t num_features_ns1 = ex->feature_space[ns[1]].size();
     const auto& ns0_indices = ex->feature_space[ns[0]].indices;

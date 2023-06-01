@@ -444,15 +444,15 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::log_multi_setup(VW::setup_
 
   std::string loss_function = "quantile";
   float loss_parameter = 0.5;
-  all.loss = get_loss_function(all, loss_function, loss_parameter);
+  all.loss_config.loss = get_loss_function(all, loss_function, loss_parameter);
 
   data->max_predictors = data->k - 1;
   init_tree(*data.get());
 
-  size_t ws = data->max_predictors;
-  auto l = make_reduction_learner(std::move(data), require_singleline(stack_builder.setup_base_learner(ws)), learn,
-      predict, stack_builder.get_setupfn_name(log_multi_setup))
-               .set_params_per_weight(ws)
+  size_t feature_width = data->max_predictors;
+  auto l = make_reduction_learner(std::move(data), require_singleline(stack_builder.setup_base_learner(feature_width)),
+      learn, predict, stack_builder.get_setupfn_name(log_multi_setup))
+               .set_feature_width(feature_width)
                .set_update_stats(VW::details::update_stats_multiclass_label<log_multi>)
                .set_output_example_prediction(VW::details::output_example_prediction_multiclass_label<log_multi>)
                .set_print_update(VW::details::print_update_multiclass_label<log_multi>)
@@ -462,8 +462,5 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::log_multi_setup(VW::setup_
                .set_input_label_type(VW::label_type_t::MULTICLASS)
                .set_output_label_type(VW::label_type_t::SIMPLE)
                .build();
-
-  all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
-
   return l;
 }

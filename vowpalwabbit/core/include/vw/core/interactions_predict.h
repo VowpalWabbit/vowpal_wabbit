@@ -495,7 +495,7 @@ inline void generate_interactions(const std::vector<std::vector<VW::namespace_in
         },
         cache.in_process_frames, cache.frame_pool);
   }
-}  // foreach interaction in all.interactions
+}  // foreach interaction in all.feature_tweaks_config.interactions
 
 }  // namespace VW
 

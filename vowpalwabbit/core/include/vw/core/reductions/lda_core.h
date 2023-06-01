@@ -9,6 +9,8 @@
 
 #include <memory>
 
+#ifdef VW_FEAT_LDA_ENABLED
+
 namespace VW
 {
 namespace reductions
@@ -20,3 +22,5 @@ void get_top_weights(VW::workspace* all, int top_words_count, int topic, std::ve
 }
 }  // namespace reductions
 }  // namespace VW
+
+#endif

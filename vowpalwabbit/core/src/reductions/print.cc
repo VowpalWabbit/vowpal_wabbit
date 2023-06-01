@@ -24,9 +24,9 @@ public:
 
 void print_feature(VW::workspace& all, float value, uint64_t index)
 {
-  (*all.trace_message) << index;
-  if (value != 1.) { (*all.trace_message) << ":" << value; }
-  (*all.trace_message) << " ";
+  (*all.output_runtime.trace_message) << index;
+  if (value != 1.) { (*all.output_runtime.trace_message) << ":" << value; }
+  (*all.output_runtime.trace_message) << " ";
 }
 
 void learn(print& p, VW::example& ec)
@@ -35,22 +35,25 @@ void learn(print& p, VW::example& ec)
   auto& all = *p.all;
   if (ec.l.simple.label != FLT_MAX)
   {
-    (*all.trace_message) << ec.l.simple.label << " ";
+    (*all.output_runtime.trace_message) << ec.l.simple.label << " ";
     const auto& simple_red_features = ec.ex_reduction_features.template get<VW::simple_label_reduction_features>();
     if (ec.weight != 1 || simple_red_features.initial != 0)
     {
-      (*all.trace_message) << ec.weight << " ";
-      if (simple_red_features.initial != 0) { (*all.trace_message) << simple_red_features.initial << " "; }
+      (*all.output_runtime.trace_message) << ec.weight << " ";
+      if (simple_red_features.initial != 0)
+      {
+        (*all.output_runtime.trace_message) << simple_red_features.initial << " ";
+      }
     }
   }
   if (!ec.tag.empty())
   {
-    (*all.trace_message) << '\'';
-    (*all.trace_message).write(ec.tag.begin(), ec.tag.size());
+    (*all.output_runtime.trace_message) << '\'';
+    (*all.output_runtime.trace_message).write(ec.tag.begin(), ec.tag.size());
   }
-  (*all.trace_message) << "| ";
+  (*all.output_runtime.trace_message) << "| ";
   VW::foreach_feature<VW::workspace, uint64_t, print_feature>(*(p.all), ec, *p.all);
-  (*all.trace_message) << std::endl;
+  (*all.output_runtime.trace_message) << std::endl;
 }
 }  // namespace
 

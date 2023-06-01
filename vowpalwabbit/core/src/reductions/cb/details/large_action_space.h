@@ -41,7 +41,7 @@ public:
   Eigen::MatrixXf Z;
 
   two_pass_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size, size_t thread_pool_size,
-      size_t block_size, bool use_explicit_simd);
+      size_t block_size, size_t action_cache_slack, bool use_explicit_simd);
   void run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U, Eigen::VectorXf& S,
       Eigen::MatrixXf& _V);
   bool generate_Y(const multi_ex& examples, const std::vector<float>& shrink_factors);
@@ -65,7 +65,7 @@ public:
   std::unordered_map<uint64_t, Eigen::VectorXf> cached_example_hashes;
 
   one_pass_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t total_size, size_t thread_pool_size,
-      size_t block_size, bool use_explicit_simd);
+      size_t block_size, size_t action_cache_slack, bool use_explicit_simd);
   void run(const multi_ex& examples, const std::vector<float>& shrink_factors, Eigen::MatrixXf& U, Eigen::VectorXf& S,
       Eigen::MatrixXf& _V);
   void generate_AOmega(const multi_ex& examples, const std::vector<float>& shrink_factors);
@@ -73,7 +73,7 @@ public:
   // for testing purposes only
   void _test_only_set_rank(uint64_t rank);
   bool _set_testing_components = false;
-#ifdef BUILD_LAS_WITH_SIMD
+#ifdef VW_FEAT_LAS_SIMD_ENABLED
   bool _test_only_use_simd() { return _use_simd != simd_type::NO_SIMD; }
 #endif
 
@@ -83,7 +83,8 @@ private:
   uint64_t _seed;
   thread_pool _thread_pool;
   size_t _block_size;
-#ifdef BUILD_LAS_WITH_SIMD
+  size_t _action_cache_slack;
+#ifdef VW_FEAT_LAS_SIMD_ENABLED
   enum class simd_type
   {
     NO_SIMD,
@@ -155,7 +156,7 @@ public:
   Eigen::MatrixXf _V;
 
   cb_explore_adf_large_action_space(uint64_t d, float c, bool apply_shrink_factor, VW::workspace* all, uint64_t seed,
-      size_t total_size, size_t thread_pool_size, size_t block_size, bool use_explicit_simd,
+      size_t total_size, size_t thread_pool_size, size_t block_size, size_t action_cache_slack, bool use_explicit_simd,
       implementation_type impl_type);
 
   ~cb_explore_adf_large_action_space() = default;

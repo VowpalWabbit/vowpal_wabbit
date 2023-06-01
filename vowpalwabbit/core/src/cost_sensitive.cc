@@ -127,7 +127,7 @@ void parse_label(VW::cs_label& ld, VW::label_parser_reuse_mem& reuse_mem, const 
 
 void VW::details::print_cs_update_multiclass(VW::workspace& all, bool is_test, size_t num_features, uint32_t prediction)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.output_config.quiet && !all.reduction_state.bfgs)
   {
     std::string label_buf;
     if (is_test) { label_buf = "unknown"; }
@@ -138,13 +138,13 @@ void VW::details::print_cs_update_multiclass(VW::workspace& all, bool is_test, s
       std::ostringstream pred_buf;
       pred_buf << all.sd->ldict->get(prediction);
 
-      all.sd->print_update(
-          *all.trace_message, all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(), num_features);
+      all.sd->print_update(*all.output_runtime.trace_message, all.passes_config.holdout_set_off,
+          all.passes_config.current_pass, label_buf, pred_buf.str(), num_features);
     }
     else
     {
-      all.sd->print_update(
-          *all.trace_message, all.holdout_set_off, all.current_pass, label_buf, prediction, num_features);
+      all.sd->print_update(*all.output_runtime.trace_message, all.passes_config.holdout_set_off,
+          all.passes_config.current_pass, label_buf, prediction, num_features);
     }
   }
 }
@@ -152,7 +152,7 @@ void VW::details::print_cs_update_multiclass(VW::workspace& all, bool is_test, s
 void VW::details::print_cs_update_action_scores(
     VW::workspace& all, bool is_test, size_t num_features, const VW::action_scores& action_scores)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.output_config.quiet && !all.reduction_state.bfgs)
   {
     std::string label_buf;
     if (is_test) { label_buf = "unknown"; }
@@ -162,15 +162,15 @@ void VW::details::print_cs_update_action_scores(
     if (all.sd->ldict) { pred_buf << all.sd->ldict->get(action_scores[0].action); }
     else { pred_buf << action_scores[0].action; }
     pred_buf << ".....";
-    all.sd->print_update(
-        *all.trace_message, all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(), num_features);
+    all.sd->print_update(*all.output_runtime.trace_message, all.passes_config.holdout_set_off,
+        all.passes_config.current_pass, label_buf, pred_buf.str(), num_features);
   }
 }
 
 void VW::details::print_cs_update(VW::workspace& all, bool is_test, const VW::example& ec, const VW::multi_ex* ec_seq,
     bool action_scores, uint32_t prediction)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.output_config.quiet && !all.reduction_state.bfgs)
   {
     size_t num_current_features = ec.get_num_features();
     // for csoaa_ldf we want features from the whole (multiline example),
@@ -203,14 +203,14 @@ void VW::details::print_cs_update(VW::workspace& all, bool is_test, const VW::ex
       }
       else { pred_buf << ec.pred.a_s[0].action; }
       if (action_scores) { pred_buf << "....."; }
-      all.sd->print_update(
-          *all.trace_message, all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(), num_current_features);
+      all.sd->print_update(*all.output_runtime.trace_message, all.passes_config.holdout_set_off,
+          all.passes_config.current_pass, label_buf, pred_buf.str(), num_current_features);
       ;
     }
     else
     {
-      all.sd->print_update(
-          *all.trace_message, all.holdout_set_off, all.current_pass, label_buf, prediction, num_current_features);
+      all.sd->print_update(*all.output_runtime.trace_message, all.passes_config.holdout_set_off,
+          all.passes_config.current_pass, label_buf, prediction, num_current_features);
     }
   }
 }
@@ -243,7 +243,7 @@ void VW::details::output_cs_example(
 
   all.sd->update(ec.test_only, !label.is_test_label(), loss, ec.weight, ec.get_num_features());
 
-  for (auto& sink : all.final_prediction_sink)
+  for (auto& sink : all.output_runtime.final_prediction_sink)
   {
     if (!all.sd->ldict)
     {
@@ -256,7 +256,7 @@ void VW::details::output_cs_example(
     }
   }
 
-  if (all.raw_prediction != nullptr)
+  if (all.output_runtime.raw_prediction != nullptr)
   {
     std::stringstream output_string_stream;
     for (unsigned int i = 0; i < label.costs.size(); i++)
@@ -265,7 +265,7 @@ void VW::details::output_cs_example(
       if (i > 0) { output_string_stream << ' '; }
       output_string_stream << cl.class_index << ':' << cl.partial_prediction;
     }
-    all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
+    all.print_text_by_ref(all.output_runtime.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
   }
 
   print_cs_update(all, label.is_test_label(), ec, nullptr, false, multiclass_prediction);
@@ -318,7 +318,7 @@ void VW::details::output_example_prediction_cs_label(
   const auto& label = ec.l.cs;
   const auto multiclass_prediction = ec.pred.multiclass;
 
-  for (auto& sink : all.final_prediction_sink)
+  for (auto& sink : all.output_runtime.final_prediction_sink)
   {
     if (!all.sd->ldict)
     {
@@ -331,7 +331,7 @@ void VW::details::output_example_prediction_cs_label(
     }
   }
 
-  if (all.raw_prediction != nullptr)
+  if (all.output_runtime.raw_prediction != nullptr)
   {
     std::stringstream output_string_stream;
     for (unsigned int i = 0; i < label.costs.size(); i++)
@@ -340,7 +340,7 @@ void VW::details::output_example_prediction_cs_label(
       if (i > 0) { output_string_stream << ' '; }
       output_string_stream << cl.class_index << ':' << cl.partial_prediction;
     }
-    all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
+    all.print_text_by_ref(all.output_runtime.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
   }
 }
 void VW::details::print_update_cs_label(

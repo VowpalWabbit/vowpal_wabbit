@@ -9,7 +9,7 @@ cd $REPO_DIR
 rm -rf build
 cmake -S . -B build -G Ninja \
     -DBUILD_TESTING=On \
-    -DBUILD_FLATBUFFERS=Off \
+    -DVW_FEAT_FLATBUFFERS=Off \
     -DRAPIDJSON_SYS_DEP=Off \
     -DFMT_SYS_DEP=Off \
     -DSPDLOG_SYS_DEP=Off \

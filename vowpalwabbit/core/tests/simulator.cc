@@ -13,11 +13,130 @@
 
 namespace simulator
 {
-cb_sim::cb_sim(uint64_t seed, bool use_default_ns)
+cb_sim_gf_filtering::cb_sim_gf_filtering(
+    bool is_graph, uint64_t seed, bool use_default_ns, std::vector<std::string> actions)
+    : cb_sim(seed, use_default_ns, actions), is_graph(is_graph)
+{
+}
+
+float cb_sim_gf_filtering::get_reaction(
+    const std::map<std::string, std::string>& context, const std::string& action, bool, bool, float)
+{
+  float reward = 0.f;
+  if (action == "spam")
+  {
+    reward = MARKED_AS_SPAM;
+
+    if (context.at("user") == "Tom")
+    {
+      // Tom gets a lot of spam in the evenings
+      if (context.at("time_of_day") == "morning") { not_spam_classified_as_spam++; }
+      if (context.at("time_of_day") == "afternoon") { spam_classified_as_spam++; }
+    }
+    else if (context.at("user") == "Anna")
+    {
+      // Anna gets a lot of spam in the mornings
+      if (context.at("time_of_day") == "morning") { spam_classified_as_spam++; }
+      if (context.at("time_of_day") == "afternoon") { not_spam_classified_as_spam++; }
+    }
+  }
+  else
+  {
+    // action is not_spam
+
+    if (context.at("user") == "Tom")
+    {
+      // Tom gets a lot of spam in the evenings
+      if (context.at("time_of_day") == "morning")
+      {
+        reward = NOT_SPAM_CATEGORIZED_AS_NOT_SPAM;
+        not_spam_classified_as_not_spam++;
+      }
+      else if (context.at("time_of_day") == "afternoon")
+      {
+        reward = SPAM_CATEGORIZED_AS_NOT_SPAM;
+        spam_classified_as_not_spam++;
+      }
+    }
+    else if (context.at("user") == "Anna")
+    {
+      // Anna gets a lot of spam in the mornings
+      if (context.at("time_of_day") == "morning")
+      {
+        reward = SPAM_CATEGORIZED_AS_NOT_SPAM;
+        spam_classified_as_not_spam++;
+      }
+      else if (context.at("time_of_day") == "afternoon")
+      {
+        reward = NOT_SPAM_CATEGORIZED_AS_NOT_SPAM;
+        not_spam_classified_as_not_spam++;
+      }
+    }
+  }
+
+  return reward;
+}
+
+std::vector<std::string> cb_sim_gf_filtering::to_vw_example_format(
+    const std::map<std::string, std::string>& context, const std::string& chosen_action, float cost, float prob)
+{
+  /**
+   * ------ set the cost on both actions ------
+   *
+   * spam is action 0
+   * not spam is action 1
+   * if something is categorized as spam we never get here or we get here with an empty chosen action (i.e. predict and
+   * we don't care about the label)
+   *
+   * so if we are setting the label the example has been categorized (correctly or not) as not_spam (i.e. action 1)
+   *
+   * in that case the cost of that action should be set as-is, and the cost of the opposite action
+   * (i.e. action 0) should be set as an opposite cost. So if action 1 was categorized correctly as not spam that means
+   * we want to learn that these features get a low cost for action 1 but the same features for the opposite action
+   * (action 0) should get a high cost, and vice versa
+   *
+   *
+   * all label (a:c:p) triplets should have the chosen action in the "a", their own cost in "c", and the chosen
+   * probability at "p"
+   */
+
+  std::vector<std::string> multi_ex_str;
+  multi_ex_str.push_back(fmt::format(
+      "shared {} |{} user={} time_of_day={}", graph, user_ns, context.at("user"), context.at("time_of_day")));
+  for (size_t action_index = 0; action_index < actions.size(); action_index++)
+  {
+    const auto& action = actions[action_index];
+    std::ostringstream ex;
+    if (!chosen_action.empty())
+    {
+      if (action == chosen_action) { ex << fmt::format("{}:{}:{} ", action_index, cost, prob); }
+      else if (is_graph)
+      {
+        float cost_of_categorizing_as_spam = 0.f;
+        if (cost == NOT_SPAM_CATEGORIZED_AS_NOT_SPAM)
+        {
+          // this not a spam message, if we had categorized it as spam (action 0) this would have been not great
+          cost_of_categorizing_as_spam = NOT_SPAM_CATEGORIZED_AS_SPAM;
+        }
+        if (cost == SPAM_CATEGORIZED_AS_NOT_SPAM)
+        {
+          // this is a spam message, if we had categorized it as spam that would be great
+          cost_of_categorizing_as_spam = SPAM_CATEGORIZED_AS_SPAM;
+        }
+        ex << fmt::format("{}:{}:{} ", action_index, cost_of_categorizing_as_spam, prob);
+      }
+    }
+    ex << fmt::format("|{} article={}", action_ns, action);
+    multi_ex_str.push_back(ex.str());
+  }
+  return multi_ex_str;
+}
+
+cb_sim::cb_sim(uint64_t seed, bool use_default_ns, std::vector<std::string> actions)
     : users({"Tom", "Anna"})
     , times_of_day({"morning", "afternoon"})
-    //, actions({"politics", "sports", "music", "food", "finance", "health", "camping"})
-    , actions({"politics", "sports", "music"})
+    // , actions({"politics", "sports", "music", "food", "finance", "health", "camping"})
+    , actions(actions)
     , user_ns("User")
     , action_ns(use_default_ns ? "" : "Action")
 {
@@ -84,17 +203,28 @@ std::pair<int, float> cb_sim::sample_custom_pmf(std::vector<float>& pmf)
   THROW("Error: No prob selected");
 }
 
-std::pair<std::string, float> cb_sim::get_action(VW::workspace* vw, const std::map<std::string, std::string>& context)
+VW::multi_ex cb_sim::build_vw_examples(VW::workspace* vw, std::map<std::string, std::string>& context)
 {
-  std::vector<std::string> multi_ex_str = cb_sim::to_vw_example_format(context, "");
+  std::vector<std::string> multi_ex_str = to_vw_example_format(context, "");
   VW::multi_ex examples;
   for (const std::string& ex : multi_ex_str) { examples.push_back(VW::read_example(*vw, ex)); }
-  vw->predict(examples);
 
-  auto const& scores = examples[0]->pred.a_s;
+  return examples;
+}
+
+VW::action_scores cb_sim::get_action_scores(VW::workspace* vw, VW::multi_ex examples)
+{
+  vw->predict(examples);
+  auto& scores = examples[0]->pred.a_s;
+  vw->finish_example(examples);
+
+  return scores;
+}
+
+std::pair<std::string, float> cb_sim::get_action(VW::action_scores scores)
+{
   std::vector<float> ordered_scores(scores.size());
   for (auto const& action_score : scores) { ordered_scores[action_score.action] = action_score.score; }
-  vw->finish_example(examples);
 
   std::pair<int, float> pmf_sample = sample_custom_pmf(ordered_scores);
   return std::make_pair(actions[pmf_sample.first], pmf_sample.second);
@@ -135,6 +265,8 @@ std::vector<float> cb_sim::run_simulation_hook(VW::workspace* vw, size_t num_ite
   bool swap_reward = false;
   auto swap_after_iter = swap_after.begin();
 
+  size_t update_count = shift;
+
   for (size_t i = shift; i < shift + num_iterations; ++i)
   {
     if (swap_after_iter != swap_after.end())
@@ -158,13 +290,27 @@ std::vector<float> cb_sim::run_simulation_hook(VW::workspace* vw, size_t num_ite
     {
       context.insert(std::pair<std::string, std::string>(std::to_string(j), std::to_string(j)));
     }
-    auto action_prob = get_action(vw, context);
+    auto examples = build_vw_examples(vw, context);
+    auto a_s = get_action_scores(vw, examples);
+    auto action_prob = get_action(a_s);
     auto chosen_action = action_prob.first;
     auto prob = action_prob.second;
 
     // 4. Get cost of the action we chose
     // Check for reward swap
     float cost = get_reaction(context, chosen_action, add_noise, swap_reward, scale_reward);
+
+    // cost of FLT_MAX signals that we should skip anything to do with this example, like it does not exist (i.e. we
+    // have no feedback for it)
+    if (cost == FLT_MAX)
+    {
+      // keep the ctr up to date (no updates since we are skipping)
+      ctr.push_back(-1 * cost_sum / static_cast<float>(update_count));
+      continue;
+    }
+
+    update_count++;
+
     cost_sum += cost;
 
     if (do_learn)
@@ -184,7 +330,7 @@ std::vector<float> cb_sim::run_simulation_hook(VW::workspace* vw, size_t num_ite
     }
 
     // We negate this so that on the plot instead of minimizing cost, we are maximizing reward
-    ctr.push_back(-1 * cost_sum / static_cast<float>(i));
+    ctr.push_back(-1 * cost_sum / static_cast<float>(update_count));
   }
 
   // avoid silently failing: ensure that all callbacks

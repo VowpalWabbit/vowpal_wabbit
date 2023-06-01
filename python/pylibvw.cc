@@ -345,9 +345,9 @@ py::dict get_learner_metrics(vw_ptr all)
 {
   py::dict dictionary;
 
-  if (all->global_metrics.are_metrics_enabled())
+  if (all->output_runtime.global_metrics.are_metrics_enabled())
   {
-    auto metrics = all->global_metrics.collect_metrics(all->l.get());
+    auto metrics = all->output_runtime.global_metrics.collect_metrics(all->l.get());
 
     python_dict_writer writer(dictionary);
     metrics.visit(writer);
@@ -365,7 +365,7 @@ void my_save(vw_ptr all, std::string name) { VW::save_predictor(*all, name); }
 
 search_ptr get_search_ptr(vw_ptr all)
 {
-  return boost::shared_ptr<Search::search>((Search::search*)(all->searchstr), dont_delete_me);
+  return boost::shared_ptr<Search::search>((Search::search*)(all->reduction_state.searchstr), dont_delete_me);
 }
 
 py::object get_options(vw_ptr all, py::object py_class, bool enabled_only)
@@ -412,7 +412,7 @@ VW::label_parser* get_label_parser(VW::workspace* all, size_t labelType)
   switch (labelType)
   {
     case lDEFAULT:
-      return all ? &all->example_parser->lbl_parser : NULL;
+      return all ? &all->parser_runtime.example_parser->lbl_parser : NULL;
     case lBINARY:  // or #lSIMPLE
       return &VW::simple_label_parser_global;
     case lMULTICLASS:
@@ -438,7 +438,7 @@ VW::label_parser* get_label_parser(VW::workspace* all, size_t labelType)
 
 size_t my_get_label_type(VW::workspace* all)
 {
-  VW::label_parser* lp = &all->example_parser->lbl_parser;
+  VW::label_parser* lp = &all->parser_runtime.example_parser->lbl_parser;
   if (lp->parse_label == VW::simple_label_parser_global.parse_label) { return lSIMPLE; }
   else if (lp->parse_label == VW::multiclass_label_parser_global.parse_label) { return lMULTICLASS; }
   else if (lp->parse_label == VW::cs_label_parser_global.parse_label) { return lCOST_SENSITIVE; }
@@ -497,8 +497,8 @@ VW::example* my_empty_example0(vw_ptr vw, size_t labelType)
   VW::label_parser* lp = get_label_parser(&*vw, labelType);
   VW::example* ec = new VW::example;
   lp->default_label(ec->l);
-  ec->interactions = &vw->interactions;
-  ec->extent_interactions = &vw->extent_interactions;
+  ec->interactions = &vw->feature_tweaks_config.interactions;
+  ec->extent_interactions = &vw->feature_tweaks_config.extent_interactions;
   return ec;
 }
 
@@ -567,7 +567,7 @@ py::list my_parse(vw_ptr& all, char* str)
 {
   VW::multi_ex examples;
   examples.push_back(&VW::get_unused_example(all.get()));
-  all->example_parser->text_reader(all.get(), VW::string_view(str, strlen(str)), examples);
+  all->parser_runtime.example_parser->text_reader(all.get(), VW::string_view(str, strlen(str)), examples);
 
   py::list example_collection;
   for (auto* ex : examples)
@@ -716,7 +716,8 @@ void ex_push_feature_dict(example_ptr ec, vw_ptr vw, unsigned char ns_first_lett
     {
       key_chars = (const char*)PyUnicode_1BYTE_DATA(key);
       key_size = PyUnicode_GET_LENGTH(key);
-      feat_index = vw->example_parser->hasher(key_chars, key_size, ns_hash) & vw->parse_mask;
+      feat_index =
+          vw->parser_runtime.example_parser->hasher(key_chars, key_size, ns_hash) & vw->runtime_state.parse_mask;
     }
     else if (PyLong_Check(key)) { feat_index = (feature_index)PyLong_AsUnsignedLongLong(key); }
     else
@@ -811,14 +812,15 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
   ae->reset_total_sum_feat_sq();
   ae->loss = 0.;
 
-  if (all.ignore_some) { THROW("Cannot unsetup example when some namespaces are ignored"); }
+  if (all.feature_tweaks_config.ignore_some) { THROW("Cannot unsetup example when some namespaces are ignored"); }
 
-  if (all.skip_gram_transformer != nullptr && !all.skip_gram_transformer->get_initial_ngram_definitions().empty())
+  if (all.feature_tweaks_config.skip_gram_transformer != nullptr &&
+      !all.feature_tweaks_config.skip_gram_transformer->get_initial_ngram_definitions().empty())
   {
     THROW("Cannot unsetup example when ngrams are in use");
   }
 
-  if (all.add_constant)
+  if (all.feature_tweaks_config.add_constant)
   {
     ae->feature_space[VW::details::CONSTANT_NAMESPACE].clear();
     int hit_constant = -1;
@@ -840,7 +842,7 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
     }
   }
 
-  uint32_t multiplier = all.wpp << all.weights.stride_shift();
+  uint32_t multiplier = all.reduction_state.total_feature_width << all.weights.stride_shift();
   if (multiplier != 1)  // make room for per-feature information.
     for (auto ns : ae->indices)
       for (auto& idx : ae->feature_space[ns].indices) idx /= multiplier;
@@ -848,10 +850,10 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
 
 void ex_set_label_string(example_ptr ec, vw_ptr vw, std::string label, size_t labelType)
 {  // SPEEDUP: if it's already set properly, don't modify
-  VW::label_parser& old_lp = vw->example_parser->lbl_parser;
-  vw->example_parser->lbl_parser = *get_label_parser(&*vw, labelType);
+  VW::label_parser& old_lp = vw->parser_runtime.example_parser->lbl_parser;
+  vw->parser_runtime.example_parser->lbl_parser = *get_label_parser(&*vw, labelType);
   VW::parse_example_label(*vw, *ec, label);
-  vw->example_parser->lbl_parser = old_lp;
+  vw->parser_runtime.example_parser->lbl_parser = old_lp;
 }
 
 float ex_get_simplelabel_label(example_ptr ec) { return ec->l.simple.label; }
@@ -1656,7 +1658,8 @@ BOOST_PYTHON_MODULE(pylibvw)
 
   py::class_<Search::search, search_ptr>("search")
       .def("set_options", &Search::search::set_options, "Set global search options (auto conditioning, etc.)")
-      //.def("set_num_learners", &Search::search::set_num_learners, "Set the total number of learners you want to
+      //.def("set_total_feature_width", &Search::search::set_total_feature_width, "Set the total number of learners you
+      // want to
       // train")
       .def("get_history_length", &Search::search::get_history_length,
           "Get the value specified by --search_history_length")

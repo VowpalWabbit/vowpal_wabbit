@@ -185,7 +185,7 @@ void update_stats_mwt(const VW::workspace& /* all */, VW::shared_data& sd, const
 void output_example_prediction_mwt(
     VW::workspace& all, const mwt& /* data */, const VW::example& ec, VW::io::logger& /* unused */)
 {
-  for (auto& sink : all.final_prediction_sink)
+  for (auto& sink : all.output_runtime.final_prediction_sink)
   {
     VW::details::print_scalars(sink.get(), ec.pred.scalars, ec.tag, all.logger);
   }
@@ -195,7 +195,7 @@ void print_update_mwt(
     VW::workspace& all, VW::shared_data& /* sd */, const mwt& data, const VW::example& ec, VW::io::logger& /* unused */)
 {
   const bool should_print_driver_update =
-      all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs;
+      all.sd->weighted_examples() >= all.sd->dump_interval && !all.output_config.quiet && !all.reduction_state.bfgs;
 
   if (should_print_driver_update && data.learn)
   {
@@ -206,8 +206,8 @@ void print_update_mwt(
     if (data.optional_observation.first) { label_buf = "unknown"; }
     else { label_buf = " known"; }
 
-    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_buf,
-        static_cast<uint32_t>(pred), num_features);
+    all.sd->print_update(*all.output_runtime.trace_message, all.passes_config.holdout_set_off,
+        all.passes_config.current_pass, label_buf, static_cast<uint32_t>(pred), num_features);
   }
 }
 
@@ -331,7 +331,5 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::mwt_setup(VW::setup_base_i
                .set_update_stats(::update_stats_mwt)
                .set_print_update(::print_update_mwt)
                .build();
-
-  all.example_parser->lbl_parser = VW::cb_label_parser_global;
   return l;
 }

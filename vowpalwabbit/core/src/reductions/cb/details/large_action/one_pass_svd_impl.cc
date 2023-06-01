@@ -53,9 +53,15 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
   const uint64_t sampling_slack = 10;
   auto p = std::min(num_actions, static_cast<size_t>(_d + sampling_slack));
 
-  if (static_cast<Eigen::Index>(num_actions) != AOmega.rows() || static_cast<Eigen::Index>(p) != AOmega.cols())
+  auto& red_features =
+      examples[0]->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
+  auto* shared_example = red_features.shared_example;
+
+  if (static_cast<Eigen::Index>(p) != AOmega.cols() ||
+      cached_example_hashes.size() > (num_actions + _action_cache_slack))
   {
-    // we need to recompute the AOmega matrix if the number of actions has changed
+    // we need to recompute the cache if the column size has changed
+    // or if we have been caching too many actions (rough heuristic to avoid caching too many actions)
     cached_example_hashes.clear();
   }
 
@@ -63,11 +69,14 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
   // hash is without the shared features which will be removed anyway before calculating AOmega
   for (size_t i = 0; i < examples.size(); ++i)
   {
+    if (shared_example != nullptr)
+    {
+      VW::details::truncate_example_namespaces_from_example(*examples[i], *shared_example);
+    }
     if (cached_example_hashes.find(examples[i]->get_or_calculate_order_independent_feature_space_hash()) ==
         cached_example_hashes.end())
     {
       cached_example_hashes.clear();
-      break;
     }
   }
 
@@ -76,7 +85,7 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
   AOmega.resize(num_actions, p);
 
   auto compute_dot_prod = compute_dot_prod_scalar;
-#ifdef BUILD_LAS_WITH_SIMD
+#ifdef VW_FEAT_LAS_SIMD_ENABLED
   switch (_use_simd)
   {
     case (simd_type::AVX512):
@@ -101,17 +110,11 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
       if (cached_example_hashes.find(ex->get_or_calculate_order_independent_feature_space_hash()) ==
           cached_example_hashes.end())
       {
-        auto& red_features = ex->ex_reduction_features.template get<VW::large_action_space::las_reduction_features>();
-        auto* shared_example = red_features.shared_example;
-        if (shared_example != nullptr) { VW::details::truncate_example_namespaces_from_example(*ex, *shared_example); }
-
         for (uint64_t col = 0; col < p; ++col)
         {
           float final_dot_prod = compute_dot_prod(col, _all, _seed, ex);
           AOmega(row_index, col) = final_dot_prod * shrink_factors[row_index] * scaling_factor;
         }
-
-        if (shared_example != nullptr) { VW::details::append_example_namespaces_from_example(*ex, *shared_example); }
       }
       else
       {
@@ -151,6 +154,7 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
     {
       cached_example_hashes.emplace(ex->feature_space_hash, AOmega.row(i) / shrink_factors[i]);
     }
+    if (shared_example != nullptr) { VW::details::append_example_namespaces_from_example(*ex, *shared_example); }
   }
 }
 
@@ -168,10 +172,15 @@ void one_pass_svd_impl::run(const multi_ex& examples, const std::vector<float>& 
 }
 
 one_pass_svd_impl::one_pass_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t, size_t thread_pool_size,
-    size_t block_size, bool use_explicit_simd)
-    : _all(all), _d(d), _seed(seed), _thread_pool(thread_pool_size), _block_size(block_size)
+    size_t block_size, size_t action_cache_slack, bool use_explicit_simd)
+    : _all(all)
+    , _d(d)
+    , _seed(seed)
+    , _thread_pool(thread_pool_size)
+    , _block_size(block_size)
+    , _action_cache_slack(action_cache_slack)
 {
-#ifdef BUILD_LAS_WITH_SIMD
+#ifdef VW_FEAT_LAS_SIMD_ENABLED
   _use_simd = simd_type::NO_SIMD;
   if (use_explicit_simd)
   {

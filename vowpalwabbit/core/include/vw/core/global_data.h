@@ -70,7 +70,7 @@ namespace flatbuffer
 class parser;
 }
 
-#ifdef VW_BUILD_CSV
+#ifdef VW_FEAT_CSV_ENABLED
 namespace csv
 {
 class csv_parser;
@@ -102,115 +102,13 @@ public:
   uint64_t offset;
   uint64_t stride_shift;
 };
-}  // namespace details
 
-class workspace
+class feature_tweaks_config
 {
 public:
-  std::shared_ptr<VW::shared_data> sd;
-
-  std::unique_ptr<parser> example_parser;
-  std::thread parse_thread;
-
-  all_reduce_type selected_all_reduce_type;
-  std::unique_ptr<all_reduce_base> all_reduce;
-
-  bool chain_hash_json = false;
-
-  std::shared_ptr<VW::LEARNER::learner> l;  // the top level learner
-
-  void learn(example&);
-  void learn(multi_ex&);
-  void predict(example&);
-  void predict(multi_ex&);
-  void finish_example(example&);
-  void finish_example(multi_ex&);
-
-  /// This is used to perform finalization steps the driver/cli would normally do.
-  /// If using VW in library mode, this call is optional.
-  /// Some things this function does are: print summary, finalize regressor, output metrics, etc
-  void finish();
-
-  /**
-   * @brief Generate a JSON string with the current model state and invert hash
-   * lookup table. Bottom learner in use must be gd and workspace.hash_inv must
-   * be true. This function is experimental and subject to change.
-   *
-   * @return std::string JSON formatted string
-   */
-  std::string dump_weights_to_json_experimental();
-
-  // Function to set min_label and max_label in shared_data
-  // Should be bound to a VW::shared_data pointer upon creating the function
-  // May be nullptr, so you must check before calling it
-  std::function<void(float)> set_minmax;
-
-  uint64_t current_pass;
-
-  uint32_t num_bits;  // log_2 of the number of features.
-  bool default_bits;
-
-  uint32_t hash_seed;
-
-#ifdef BUILD_FLATBUFFERS
-  std::unique_ptr<VW::parsers::flatbuffer::parser> flat_converter;
-#endif
-
-  VW::metrics_collector global_metrics;
-
-  // Experimental field.
-  // Generic parser interface to make it possible to use any external parser.
-  std::unique_ptr<VW::details::input_parser> custom_parser;
-
-  std::string data_filename;
-
-  bool daemon;
-
-  bool save_per_pass;
-  float initial_weight;
+  bool add_constant;
   float initial_constant;
-
-  bool bfgs;
-
-  bool save_resume;
-  bool preserve_performance_counters;
-  std::string id;
-
-  VW::version_struct model_file_ver;
-  bool vw_is_main = false;  // true if vw is executable; false in library mode
-
-  // error reporting
-  std::shared_ptr<details::trace_message_wrapper> trace_message_wrapper_context;
-  std::shared_ptr<std::ostream> trace_message;
-
-  std::unique_ptr<VW::config::options_i, options_deleter_type> options;
-
-  void* /*Search::search*/ searchstr;
-
-  uint32_t wpp;
-
-  std::unique_ptr<VW::io::writer> stdout_adapter;
-
-  std::vector<std::string> initial_regressors;
-
-  std::string feature_mask;
-
-  std::string per_feature_regularizer_input;
-  std::string per_feature_regularizer_output;
-  std::string per_feature_regularizer_text;
-
-  float l1_lambda;  // the level of l_1 regularization to impose.
-  float l2_lambda;  // the level of l_2 regularization to impose.
-  bool no_bias;     // no bias in regularization
-  float power_t;    // the power on learning rate decay.
-  int reg_mode;
-
-  size_t pass_length;
-  size_t numpasses;
-  size_t passes_complete;
-  uint64_t parse_mask;  // 1 << num_bits -1
-  bool permutations;    // if true - permutations of features generated instead of simple combinations. false by default
-
+  bool permutations;  // if true - permutations of features generated instead of simple combinations. false by default
   // Referenced by examples as their set of interactions. Can be overriden by learners.
   std::vector<std::vector<namespace_index>> interactions;
   std::vector<std::vector<extent_term>> extent_interactions;
@@ -239,77 +137,220 @@ public:
   // This array is required to be value initialized so that the std::vectors are constructed.
   std::array<std::vector<std::shared_ptr<details::feature_dict>>, NUM_NAMESPACES>
       namespace_dictionaries{};  // each namespace has a list of dictionaries attached to it
+};
 
-  VW::io::logger logger;
-  bool quiet;
-  bool audit;  // should I print lots of debugging information?
-  std::shared_ptr<std::vector<char>> audit_buffer;
-  std::unique_ptr<VW::io::writer> audit_writer;
-  bool training;  // Should I train if lable data is available?
-  bool active;
-  bool invariant_updates;  // Should we use importance aware/safe updates
-  bool random_weights;
-  bool random_positive_weights;  // for initialize_regressor w/ new_mf
-  bool normal_weights;
-  bool tnormal_weights;
-  bool add_constant;
-  bool nonormalize;
-  bool do_reset_source;
+class output_model_config
+{
+public:
+  std::string final_regressor_name;
+  std::string text_regressor_name;
+  std::string inv_hash_regressor_name;
+  std::string json_weights_file_name;
+  bool dump_json_weights_include_feature_names = false;
+  bool dump_json_weights_include_extra_online_state = false;
+  bool save_resume;
+  bool preserve_performance_counters;
+  bool save_per_pass;
+  std::string per_feature_regularizer_output;
+  std::string per_feature_regularizer_text;
+};
+
+class passes_config
+{
+public:
+  uint64_t current_pass;
   bool holdout_set_off;
   bool early_terminate;
   uint32_t holdout_period;
   uint32_t holdout_after;
   size_t check_holdout_every_n_passes;  // default: 1, but search might want to set it higher if you spend multiple
                                         // passes learning a single policy
+};
 
-  VW::details::generate_interactions_object_cache generate_interactions_object_cache_state;
-
+class initial_weights_config
+{
+public:
+  uint32_t num_bits;      // log_2 of the number of features.
   size_t normalized_idx;  // offset idx where the norm is stored (1 or 2 depending on whether adaptive is true)
+  std::vector<std::string> initial_regressors;
+  float initial_weight;
+  bool random_weights;
+  bool random_positive_weights;  // for initialize_regressor w/ new_mf
+  bool normal_weights;
+  bool tnormal_weights;
+  std::string per_feature_regularizer_input;
+};
 
+class update_rule_config
+{
+public:
+  // runtime accounting variables.
+  float initial_t;
+  float power_t;  // the power on learning rate decay.
+  float eta;      // learning rate control.
+  float eta_decay_rate;
+};
+
+class loss_config
+{
+public:
+  std::unique_ptr<loss_function> loss;
+  float l1_lambda;  // the level of l_1 regularization to impose.
+  float l2_lambda;  // the level of l_2 regularization to impose.
+  bool no_bias;     // no bias in regularization
+  int reg_mode;
+};
+
+class reduction_state
+{
+public:
+  bool active;
+  bool bfgs;
   uint32_t lda;
+  // hack to support cb model loading into ccb learner
+  bool is_ccb_input_model = false;
+  void* /*Search::search*/ searchstr;
+  bool invariant_updates;  // Should we use importance aware/safe updates, gd only
+  uint32_t total_feature_width;
+};
 
-  std::string text_regressor_name;
-  std::string inv_hash_regressor_name;
-  std::string json_weights_file_name;
-  bool dump_json_weights_include_feature_names = false;
-  bool dump_json_weights_include_extra_online_state = false;
+class runtime_config
+{
+public:
+#ifdef VW_FEAT_NETWORKING_ENABLED
+  bool daemon;
+#endif
+  bool vw_is_main = false;  // true if vw is executable; false in library mode
+  bool training;            // Should I train if lable data is available?
+  size_t pass_length;
+  size_t numpasses;
+  bool default_bits;
+  all_reduce_type selected_all_reduce_type;
+  uint32_t hash_seed;
+};
 
-  size_t length() { return (static_cast<size_t>(1)) << num_bits; };
+class runtime_state
+{
+public:
+  VW::version_struct model_file_ver;
+  size_t passes_complete;
+  // Default value of 2 follows behavior of 1-indexing and can change to 0-indexing if detected
+  uint32_t indexing = 2;  // for 0 or 1 indexing
+  // bool nonormalize; not used?
+  bool do_reset_source;
+  std::unique_ptr<all_reduce_base> all_reduce;
+  VW::details::generate_interactions_object_cache generate_interactions_object_cache_state;
+  uint64_t parse_mask;  // 1 << num_bits -1
+};
+
+class parser_runtime
+{
+public:
+  std::string data_filename;
+  std::unique_ptr<parser> example_parser;
+  // Experimental field.
+  // Generic parser interface to make it possible to use any external parser.
+  std::unique_ptr<VW::details::input_parser> custom_parser;
+  std::thread parse_thread;
+  size_t max_examples;  // for TLC
+  bool chain_hash_json = false;
+#ifdef VW_FEAT_FLATBUFFERS_ENABLED
+  std::unique_ptr<VW::parsers::flatbuffer::parser> flat_converter;
+#endif
+};
+
+class output_config
+{
+public:
+  bool quiet;
+  bool audit;  // should I print lots of debugging information?
+  bool hash_inv;
+  bool print_invert;
+  bool hexfloat_weights;
+};
+
+class output_runtime
+{
+public:
+  // error reporting
+  std::shared_ptr<details::trace_message_wrapper> trace_message_wrapper_context;
+  std::shared_ptr<std::ostream> trace_message;
+
+  std::unique_ptr<VW::io::writer> stdout_adapter;
+
+  std::map<uint64_t, VW::details::invert_hash_info> index_name_map;
+  std::shared_ptr<std::vector<char>> audit_buffer;
+  std::unique_ptr<VW::io::writer> audit_writer;
+  VW::metrics_collector global_metrics;
 
   // Prediction output
   std::vector<std::unique_ptr<VW::io::writer>> final_prediction_sink;  // set to send global predictions to.
   std::unique_ptr<VW::io::writer> raw_prediction;                      // file descriptors for text output.
+};
+}  // namespace details
+
+class workspace
+{
+public:
+  parameters weights;
+  std::shared_ptr<VW::LEARNER::learner> l;  // the top level learner
+  std::unique_ptr<VW::config::options_i, options_deleter_type> options;
+  std::shared_ptr<VW::shared_data> sd;
+
+  void learn(example&);
+  void learn(multi_ex&);
+  void predict(example&);
+  void predict(multi_ex&);
+  void finish_example(example&);
+  void finish_example(multi_ex&);
+
+  /// This is used to perform finalization steps the driver/cli would normally do.
+  /// If using VW in library mode, this call is optional.
+  /// Some things this function does are: print summary, finalize regressor, output metrics, etc
+  void finish();
+
+  /**
+   * @brief Generate a JSON string with the current model state and invert hash
+   * lookup table. Bottom learner in use must be gd and workspace.hash_inv must
+   * be true. This function is experimental and subject to change.
+   *
+   * @return std::string JSON formatted string
+   */
+  std::string dump_weights_to_json_experimental();
+
+  details::feature_tweaks_config feature_tweaks_config;  // feature related configs
+  details::initial_weights_config initial_weights_config;
+  details::update_rule_config update_rule_config;
+  details::loss_config loss_config;
+  details::passes_config passes_config;
+  details::output_model_config output_model_config;
+
+  details::parser_runtime parser_runtime;
+  details::runtime_config runtime_config;
+  details::runtime_state runtime_state;
+  details::reduction_state reduction_state;
+
+  details::output_config output_config;
+  VW::io::logger logger;
+  details::output_runtime output_runtime;
+
+  // Function to set min_label and max_label in shared_data
+  // Should be bound to a VW::shared_data pointer upon creating the function
+  // May be nullptr, so you must check before calling it
+  std::function<void(float)> set_minmax;
+
+  std::string id;
+  std::string feature_mask;
+
+  size_t length() { return (static_cast<size_t>(1)) << initial_weights_config.num_bits; };
 
   void (*print_by_ref)(VW::io::writer*, float, float, const v_array<char>&, VW::io::logger&);
   void (*print_text_by_ref)(VW::io::writer*, const std::string&, const v_array<char>&, VW::io::logger&);
-  std::unique_ptr<loss_function> loss;
 
-  // runtime accounting variables.
-  float initial_t;
-  float eta;  // learning rate control.
-  float eta_decay_rate;
-
-  std::string final_regressor_name;
-
-  parameters weights;
-
-  size_t max_examples;  // for TLC
-
-  bool hash_inv;
-  bool print_invert;
-  bool hexfloat_weights;
-
-  std::map<uint64_t, VW::details::invert_hash_info> index_name_map;
-
-  // hack to support cb model loading into ccb learner
-  bool is_ccb_input_model = false;
-
-  // Default value of 2 follows behavior of 1-indexing and can change to 0-indexing if detected
-  uint32_t indexing = 2;  // for 0 or 1 indexing
-
-  explicit workspace(VW::io::logger logger);
-  ~workspace();
   std::shared_ptr<VW::rand_state> get_random_state() { return _random_state_sp; }
+  explicit workspace(VW::io::logger logger);
+
+  ~workspace();
 
   workspace(const VW::workspace&) = delete;
   VW::workspace& operator=(const VW::workspace&) = delete;

@@ -1,4 +1,4 @@
-Version 9.7.0
+Version 9.8.0
 Id 
 Min label:-1
 Max label:0
@@ -1780,15 +1780,8 @@ _automl_config_manager_index_queue[161].first = -12
 _automl_config_manager_index_queue[161].second = 3
 _automl_config_manager_index_queue[162].first = -12
 _automl_config_manager_index_queue[162].second = 2
-_automl_config_manager_per_live_model_state_uint64.size() = 6
-_automl_config_manager_per_live_model_state_uint64[0] = 3
-_automl_config_manager_per_live_model_state_uint64[1] = 36
-_automl_config_manager_per_live_model_state_uint64[2] = 3
-_automl_config_manager_per_live_model_state_uint64[3] = 36
-_automl_config_manager_per_live_model_state_uint64[4] = 3
-_automl_config_manager_per_live_model_state_uint64[5] = 36
-event_sum 0
-action_sum 0
+event_sum 3
+action_sum 36
 :1
 initial_t 0
 norm normalizer 98.9861

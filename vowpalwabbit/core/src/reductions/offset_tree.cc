@@ -279,12 +279,12 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::offset_tree_setup(VW::setu
   auto otree = VW::make_unique<VW::reductions::offset_tree::offset_tree>(num_actions);
   otree->init();
 
-  size_t ws = otree->learner_count();
-  auto base = stack_builder.setup_base_learner(ws);
+  size_t feature_width = otree->learner_count();
+  auto base = stack_builder.setup_base_learner(feature_width);
 
   auto l = make_reduction_learner(
       std::move(otree), require_singleline(base), learn, predict, stack_builder.get_setupfn_name(offset_tree_setup))
-               .set_params_per_weight(ws)
+               .set_feature_width(feature_width)
                .set_input_prediction_type(prediction_type_t::ACTION_PROBS)
                .set_output_prediction_type(prediction_type_t::ACTION_PROBS)
                .set_input_label_type(label_type_t::CB)

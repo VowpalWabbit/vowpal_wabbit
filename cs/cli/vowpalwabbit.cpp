@@ -32,16 +32,16 @@ VowpalWabbit::VowpalWabbit(VowpalWabbitSettings^ settings)
   }
 
   if (settings->ParallelOptions != nullptr)
-  { m_vw->selected_all_reduce_type = all_reduce_type::THREAD;
+  { m_vw->runtime_config.selected_all_reduce_type = all_reduce_type::THREAD;
     auto total = settings->ParallelOptions->MaxDegreeOfParallelism;
 
     if (settings->Root == nullptr)
-    { m_vw->all_reduce.reset(new all_reduce_threads(total, settings->Node));
+    { m_vw->runtime_state.all_reduce.reset(new all_reduce_threads(total, settings->Node));
     }
     else
-    { auto parent_all_reduce = (all_reduce_threads*)settings->Root->m_vw->all_reduce.get();
+    { auto parent_all_reduce = (all_reduce_threads*)settings->Root->m_vw->runtime_state.all_reduce.get();
 
-      m_vw->all_reduce.reset(new all_reduce_threads(parent_all_reduce, total, settings->Node));
+      m_vw->runtime_state.all_reduce.reset(new all_reduce_threads(parent_all_reduce, total, settings->Node));
     }
   }
 
@@ -64,9 +64,9 @@ void VowpalWabbit::Driver()
 }
 
 void VowpalWabbit::RunMultiPass()
-{ if (m_vw->numpasses > 1)
+{ if (m_vw->runtime_config.numpasses > 1)
   { try
-    { m_vw->do_reset_source = true;
+    { m_vw->runtime_state.do_reset_source = true;
       VW::start_parser(*m_vw);
       LEARNER::generic_driver(*m_vw);
       VW::end_parser(*m_vw);
@@ -79,17 +79,17 @@ VowpalWabbitPerformanceStatistics^ VowpalWabbit::PerformanceStatistics::get()
 { // see parse_args.cc:finish(...)
   auto stats = gcnew VowpalWabbitPerformanceStatistics();
 
-  if (m_vw->current_pass == 0)
+  if (m_vw->passes_config.current_pass == 0)
   { stats->NumberOfExamplesPerPass = m_vw->sd->example_number;
   }
   else
-  { stats->NumberOfExamplesPerPass = m_vw->sd->example_number / m_vw->current_pass;
+  { stats->NumberOfExamplesPerPass = m_vw->sd->example_number / m_vw->passes_config.current_pass;
   }
 
   stats->WeightedExampleSum = m_vw->sd->weighted_examples();
   stats->WeightedLabelSum = m_vw->sd->weighted_labels;
 
-  if (m_vw->holdout_set_off)
+  if (m_vw->passes_config.holdout_set_off)
 	  if (m_vw->sd->weighted_labeled_examples > 0)
 		  stats->AverageLoss = m_vw->sd->sum_loss / m_vw->sd->weighted_labeled_examples;
 	  else
@@ -100,7 +100,7 @@ VowpalWabbitPerformanceStatistics^ VowpalWabbit::PerformanceStatistics::get()
 	  stats->AverageLoss = m_vw->sd->holdout_best_loss;
 
   float best_constant; float best_constant_loss;
-  if (get_best_constant(*m_vw->loss, *m_vw->sd, best_constant, best_constant_loss))
+  if (get_best_constant(*m_vw->loss_config.loss, *m_vw->sd, best_constant, best_constant_loss))
   { stats->BestConstant = best_constant;
     if (best_constant_loss != FLT_MIN)
     { stats->BestConstantLoss = best_constant_loss;
@@ -124,7 +124,7 @@ uint64_t VowpalWabbit::HashSpace(String^ s)
 }
 
 uint64_t VowpalWabbit::HashFeature(String^ s, size_t u)
-{ auto newHash = m_hasher(s, u) & m_vw->parse_mask;
+{ auto newHash = m_hasher(s, u) & m_vw->runtime_state.parse_mask;
 
 #ifdef _DEBUG
   auto oldHash = HashFeatureNative(s, u);
@@ -321,7 +321,7 @@ List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<By
 
 			VW::parsers::json::decision_service_interaction interaction;
 
-			if (m_vw->audit)
+			if (m_vw->output_config.audit)
 				VW::parsers::json::read_line_decision_service_json<true>(*m_vw, examples, reinterpret_cast<char*>(data), length, copyJson, std::bind(get_example_from_pool, &state), &interaction);
 			else
 				VW::parsers::json::read_line_decision_service_json<false>(*m_vw, examples, reinterpret_cast<char*>(data), length, copyJson, std::bind(get_example_from_pool, &state), &interaction);
@@ -385,7 +385,7 @@ List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<By
 
 			  interior_ptr<ParseJsonState^> state_ptr = &state;
 
-			  if (m_vw->audit)
+			  if (m_vw->output_config.audit)
 				VW::parsers::json::read_line_json<true>(*m_vw, examples, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()), (size_t)bytes->Length, std::bind(get_example_from_pool, &state));
 			  else
 				VW::parsers::json::read_line_json<false>(*m_vw, examples, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()), (size_t)bytes->Length, std::bind(get_example_from_pool, &state));
@@ -793,7 +793,7 @@ VowpalWabbitExample^ VowpalWabbit::GetOrCreateNativeExample()
   { try
     {
       auto ex = new VW::example;
-      m_vw->example_parser->lbl_parser.default_label(ex->l);
+      m_vw->parser_runtime.example_parser->lbl_parser.default_label(ex->l);
       return gcnew VowpalWabbitExample(this, ex);
     }
     CATCHRETHROW
@@ -801,7 +801,7 @@ VowpalWabbitExample^ VowpalWabbit::GetOrCreateNativeExample()
 
   try
   { VW::empty_example(*m_vw, *ex->m_example);
-    m_vw->example_parser->lbl_parser.default_label(ex->m_example->l);
+    m_vw->parser_runtime.example_parser->lbl_parser.default_label(ex->m_example->l);
 
     return ex;
   }
@@ -833,9 +833,9 @@ void VowpalWabbit::ReturnExampleToPool(VowpalWabbitExample^ ex)
 }
 
 cli::array<List<VowpalWabbitFeature^>^>^ VowpalWabbit::GetTopicAllocation(int top)
-{ uint64_t length = (uint64_t)1 << m_vw->num_bits;
+{ uint64_t length = (uint64_t)1 << m_vw->initial_weights_config.num_bits;
   // using jagged array to enable LINQ
-  auto K = (int)m_vw->lda;
+  auto K = (int)m_vw->reduction_state.lda;
   auto allocation = gcnew cli::array<List<VowpalWabbitFeature^>^>(K);
 
   // TODO: better way of peaking into lda?
@@ -858,10 +858,10 @@ cli::array<List<VowpalWabbitFeature^>^>^ VowpalWabbit::GetTopicAllocation(int to
 template<typename T>
 cli::array<cli::array<float>^>^ VowpalWabbit::FillTopicAllocation(T& weights)
 {
-	uint64_t length = (uint64_t)1 << m_vw->num_bits;
+	uint64_t length = (uint64_t)1 << m_vw->initial_weights_config.num_bits;
 
 	// using jagged array to enable LINQ
-	auto K = (int)m_vw->lda;
+	auto K = (int)m_vw->reduction_state.lda;
 	auto allocation = gcnew cli::array<cli::array<float>^>(K);
 	for (int k = 0; k < K; k++)
 		allocation[k] = gcnew cli::array<float>((int)length);

@@ -62,7 +62,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::count_label_setup(VW::setu
   if (base == nullptr) { return nullptr; }
 
   auto* all = stack_builder.get_all_pointer();
-  auto base_label_type = all->example_parser->lbl_parser.label_type;
+  auto base_label_type = base->get_input_label_type();
   if (dont_output_best_constant)
   {
     if (base_label_type != label_type_t::SIMPLE)

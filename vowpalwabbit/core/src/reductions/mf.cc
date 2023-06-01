@@ -21,8 +21,6 @@ class mf
 public:
   size_t rank = 0;
 
-  uint32_t increment = 0;
-
   // array to cache w*x, (l^k * x_l) and (r^k * x_r)
   // [ w*(1,x_l,x_r) , l^1*x_l, r^1*x_r, l^2*x_l, r^2*x_2, ... ]
   VW::v_array<float> sub_predictions;
@@ -202,17 +200,18 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::mf_setup(VW::setup_base_i&
   data->all = &all;
   // store global pairs in local data structure and clear global pairs
   // for eventual calls to base learner
-  auto non_pair_count = std::count_if(all.interactions.begin(), all.interactions.end(),
-      [](const std::vector<unsigned char>& interaction) { return interaction.size() != 2; });
+  auto non_pair_count =
+      std::count_if(all.feature_tweaks_config.interactions.begin(), all.feature_tweaks_config.interactions.end(),
+          [](const std::vector<unsigned char>& interaction) { return interaction.size() != 2; });
   if (non_pair_count > 0) { THROW("can only use pairs with new_mf"); }
 
-  all.random_positive_weights = true;
+  all.initial_weights_config.random_positive_weights = true;
 
-  size_t ws = 2 * data->rank + 1;
+  size_t feature_width = 2 * data->rank + 1;
 
-  auto l = make_reduction_learner(std::move(data), require_singleline(stack_builder.setup_base_learner(ws)), learn,
-      predict<false>, stack_builder.get_setupfn_name(mf_setup))
-               .set_params_per_weight(ws)
+  auto l = make_reduction_learner(std::move(data), require_singleline(stack_builder.setup_base_learner(feature_width)),
+      learn, predict<false>, stack_builder.get_setupfn_name(mf_setup))
+               .set_feature_width(feature_width)
                .set_output_prediction_type(VW::prediction_type_t::SCALAR)
                .build();
 

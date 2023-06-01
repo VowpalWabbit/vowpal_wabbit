@@ -110,7 +110,7 @@ void VW::details::update_stats_multilabel(const VW::workspace& all, const VW::ex
 
 void VW::details::output_example_prediction_multilabel(VW::workspace& all, const VW::example& ec)
 {
-  for (auto& sink : all.final_prediction_sink)
+  for (auto& sink : all.output_runtime.final_prediction_sink)
   {
     if (sink != nullptr)
     {
@@ -131,14 +131,14 @@ void VW::details::print_update_multilabel(VW::workspace& all, const VW::example&
 {
   const auto& ld = ec.l.multilabels;
   const bool is_test = ld.is_test();
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.output_config.quiet && !all.reduction_state.bfgs)
   {
     std::stringstream label_string;
     if (is_test) { label_string << "unknown"; }
     else { label_string << VW::to_string(ec.l.multilabels); }
 
-    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_string.str(),
-        VW::to_string(ec.pred.multilabels), ec.get_num_features());
+    all.sd->print_update(*all.output_runtime.trace_message, all.passes_config.holdout_set_off,
+        all.passes_config.current_pass, label_string.str(), VW::to_string(ec.pred.multilabels), ec.get_num_features());
   }
 }
 

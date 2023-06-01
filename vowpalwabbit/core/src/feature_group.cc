@@ -297,3 +297,28 @@ void VW::features::end_ns_extent()
     }
   }
 }
+
+float VW::features_dot_product(const features& fs1, const features& fs2)
+{
+  assert(std::is_sorted(fs1.indices.begin(), fs1.indices.end()));
+  assert(std::is_sorted(fs2.indices.begin(), fs2.indices.end()));
+
+  float dotprod = 0;
+  if (fs2.indices.empty()) { return 0.f; }
+
+  for (size_t idx1 = 0, idx2 = 0; idx1 < fs1.size() && idx2 < fs2.size(); idx1++)
+  {
+    uint64_t ec1pos = fs1.indices[idx1];
+    uint64_t ec2pos = fs2.indices[idx2];
+    if (ec1pos < ec2pos) { continue; }
+
+    while (ec1pos > ec2pos && ++idx2 < fs2.size()) { ec2pos = fs2.indices[idx2]; }
+
+    if (ec1pos == ec2pos)
+    {
+      dotprod += fs1.values[idx1] * fs2.values[idx2];
+      ++idx2;
+    }
+  }
+  return dotprod;
+}

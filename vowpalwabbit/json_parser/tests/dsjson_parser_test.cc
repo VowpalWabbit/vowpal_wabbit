@@ -833,3 +833,239 @@ TEST(ParseDsjson, SlatesDomParser)
   VW::finish_example(*slates_vw, slates_examples);
   VW::finish_example(*ccb_vw, ccb_examples);
 }
+
+TEST(ParseDsjson, IglWithDefinitelyBadFlag)
+{
+  std::string json_text = R"(
+{
+  "o": [
+    {
+      "o_feature": "some value",
+      "_definitely_bad": true
+    }
+  ],
+  "c": {
+    "shared_feature": 1
+  }
+}
+  )";
+
+  auto vw = VW::initialize(vwtest::make_args(
+      "--dsjson", "--experimental_igl", "--chain_hash", "--coin", "--cb_adf", "--no_stdin", "--quiet"));
+  auto examples = vwtest::parse_dsjson(*vw, json_text);
+
+  EXPECT_EQ(examples.size(), 2);
+  EXPECT_EQ(examples[1]->l.cb_with_observations.is_observation, true);
+  EXPECT_EQ(examples[1]->l.cb_with_observations.is_definitely_bad, true);
+  VW::finish_example(*vw, examples);
+}
+
+TEST(ParseDsjson, CbWithObservations)
+{
+  std::string json_text = R"(
+{
+  "_label_cost": -1,
+  "_label_probability": 0.8166667,
+  "_label_Action": 2,
+  "_labelIndex": 1,
+  "Version": "1",
+  "EventId": "0074434d3a3a46529f65de8a59631939",
+  "o": [
+    {
+      "v": 1.0,
+      "EventId": "0000001",
+      "ActionTaken": false
+    },
+    {
+      "observation_ns": {
+        "observation_feature": "x"
+      }
+    }
+  ],
+  "a": [
+    2,
+    1,
+    3
+  ],
+  "c": {
+    "shared_ns": {
+      "shared_feature": 1
+    },
+    "_multi": [
+      {
+        "b_action": {
+          "c_feature": 1,
+          "d_feature": "strng"
+        },
+        "c_action": [
+          {
+            "e_feature": "some_value"
+          },
+          {
+            "f_ns": {
+              "g_feature": 0.994963765
+            }
+          }
+        ]
+      },
+      {
+        "d_action": {
+          "h_feature": 0,
+          "i_feature": "strng"
+        }
+      },
+      {
+        "_tag": "tag",
+        "e_action": {
+          "f1": 1,
+          "f2": "strng"
+        }
+      }
+    ],
+    "other_shared_ns": {
+      "another_shared_feature": 2
+    }
+  },
+  "p": [
+    0.816666663,
+    0.183333333,
+    0.183333333
+  ],
+  "VWState": {
+    "m": "096200c6c41e42bbb879c12830247637/0639c12bea464192828b250ffc389657"
+  }
+}
+)";
+
+  auto vw = VW::initialize(vwtest::make_args(
+      "--dsjson", "--experimental_igl", "--chain_hash", "--coin", "--cb_adf", "--no_stdin", "--quiet"));
+  auto examples = vwtest::parse_dsjson(*vw, json_text);
+
+  EXPECT_EQ(examples.size(), 5);
+
+  // Shared example
+  EXPECT_EQ(examples[0]->l.cb_with_observations.event.costs.size(), 1);
+  EXPECT_FLOAT_EQ(examples[0]->l.cb_with_observations.event.costs[0].probability, -1.f);
+  EXPECT_FLOAT_EQ(examples[0]->l.cb_with_observations.event.costs[0].cost, FLT_MAX);
+  // Shared example namespace
+  EXPECT_THAT(examples[0]->indices, ::testing::ElementsAre('s', 'o'));
+  // Shared example features and values
+  EXPECT_EQ(examples[0]->feature_space['s'].indices.size(), 1);
+  EXPECT_EQ(examples[0]->feature_space['s'].indices[0],
+      VW::hash_feature(*vw, "shared_feature", VW::hash_space(*vw, "shared_ns")));
+  EXPECT_EQ(examples[0]->feature_space['s'].values[0], 1);
+
+  EXPECT_EQ(examples[0]->feature_space['o'].indices.size(), 1);
+  EXPECT_EQ(examples[0]->feature_space['o'].indices[0],
+      VW::hash_feature(*vw, "another_shared_feature", VW::hash_space(*vw, "other_shared_ns")));
+  EXPECT_EQ(examples[0]->feature_space['o'].values[0], 2);
+
+  // Action examples
+  EXPECT_EQ(examples[1]->l.cb_with_observations.event.costs.size(), 0);
+  EXPECT_EQ(examples[2]->l.cb_with_observations.event.costs.size(), 1);
+  EXPECT_FLOAT_EQ(examples[2]->l.cb_with_observations.event.costs[0].probability, 0.8166667f);
+  EXPECT_EQ(examples[2]->l.cb_with_observations.event.costs[0].action, 2);
+  EXPECT_FLOAT_EQ(examples[2]->l.cb_with_observations.event.costs[0].cost, -1.0);  // cost is not used
+  EXPECT_EQ(examples[3]->l.cb_with_observations.event.costs.size(), 0);
+  // Compare action example namespace
+  EXPECT_THAT(examples[1]->indices, ::testing::ElementsAre('b', 'c', 'f'));
+  EXPECT_EQ(examples[1]->feature_space['b'].indices.size(), 2);
+  EXPECT_EQ(
+      examples[1]->feature_space['b'].indices[0], VW::hash_feature(*vw, "c_feature", VW::hash_space(*vw, "b_action")));
+  EXPECT_EQ(examples[1]->feature_space['b'].values[0], 1);
+  EXPECT_EQ(examples[1]->feature_space['b'].indices[1],
+      VW::chain_hash(*vw, "d_feature", "strng", VW::hash_space(*vw, "b_action")));
+  EXPECT_EQ(examples[1]->feature_space['b'].values[1], 1);
+
+  EXPECT_EQ(examples[1]->feature_space['c'].indices.size(), 1);
+  EXPECT_EQ(examples[1]->feature_space['c'].indices[0],
+      VW::chain_hash(*vw, "e_feature", "some_value", VW::hash_space(*vw, "c_action")));
+  EXPECT_EQ(examples[1]->feature_space['c'].values[0], 1);
+
+  EXPECT_EQ(examples[1]->feature_space['f'].indices.size(), 1);
+  EXPECT_EQ(
+      examples[1]->feature_space['f'].indices[0], VW::hash_feature(*vw, "g_feature", VW::hash_space(*vw, "f_ns")));
+  EXPECT_FLOAT_EQ(examples[1]->feature_space['f'].values[0], 0.994963765f);
+
+  EXPECT_THAT(examples[2]->indices, ::testing::ElementsAre('d'));
+  EXPECT_EQ(examples[2]->feature_space['d'].indices.size(), 1);
+  EXPECT_EQ(examples[2]->feature_space['d'].indices[0],
+      VW::chain_hash(*vw, "i_feature", "strng", VW::hash_space(*vw, "d_action")));
+  EXPECT_EQ(examples[2]->feature_space['d'].values[0], 1);
+
+  EXPECT_THAT(examples[3]->indices, ::testing::ElementsAre('e'));
+  EXPECT_EQ(examples[3]->feature_space['e'].indices.size(), 2);
+  EXPECT_EQ(examples[3]->feature_space['e'].indices[0], VW::hash_feature(*vw, "f1", VW::hash_space(*vw, "e_action")));
+  EXPECT_EQ(examples[3]->feature_space['e'].values[0], 1);
+  EXPECT_EQ(
+      examples[3]->feature_space['e'].indices[1], VW::chain_hash(*vw, "f2", "strng", VW::hash_space(*vw, "e_action")));
+  EXPECT_EQ(examples[3]->feature_space['e'].values[0], 1);
+
+  // Observation examples
+  EXPECT_EQ(examples[4]->l.cb_with_observations.event.costs.size(), 0);
+
+  // Compare observation example namespace
+  EXPECT_THAT(examples[4]->indices, ::testing::ElementsAre(' ', 'o'));
+  EXPECT_EQ(examples[4]->feature_space[' '].indices.size(), 2);  // TODO: should remove EventID and ActionTaken
+  EXPECT_EQ(examples[4]->feature_space[' '].indices[0], VW::hash_feature(*vw, "v", VW::hash_space(*vw, " ")));
+  EXPECT_EQ(examples[4]->feature_space[' '].values[0], 1);
+
+  EXPECT_EQ(examples[4]->feature_space['o'].indices.size(), 1);
+  EXPECT_EQ(examples[4]->feature_space['o'].indices[0],
+      VW::chain_hash(*vw, "observation_feature", "x", VW::hash_space(*vw, "observation_ns")));
+  EXPECT_EQ(examples[4]->feature_space['o'].indices.size(), 1);
+
+  VW::finish_example(*vw, examples);
+}
+
+TEST(ParseDsjson, CbWithObservationsNoLabel)
+{
+  std::string json_text = R"(
+  {
+    "a": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "c": {
+      "User": {
+        "user=Anna": 1,
+        "time_of_day=afternoon": 1
+      },
+      "_multi": [
+        {
+          "Action": {
+            "action=politics": 1
+          }
+        },
+        {
+          "Action": {
+            "action=sports": 1
+          }
+        },
+        {
+          "Action": {
+            "action=finance": 1
+          }
+        },
+        {
+          "Action": {
+            "action=camping": 1
+          }
+        }
+      ]
+    }
+  })";
+
+  auto vw = VW::initialize(vwtest::make_args(
+      "--dsjson", "--experimental_igl", "--chain_hash", "--coin", "--cb_explore_adf", "--no_stdin", "--quiet"));
+  auto examples = vwtest::parse_dsjson(*vw, json_text);
+
+  EXPECT_EQ(examples.size(), 5);
+
+  EXPECT_EQ(examples[0]->l.cb_with_observations.event.costs.size(), 1);
+  EXPECT_FLOAT_EQ(examples[0]->l.cb_with_observations.event.costs[0].probability, -1.f);
+  EXPECT_FLOAT_EQ(examples[0]->l.cb_with_observations.event.costs[0].cost, FLT_MAX);
+  VW::finish_example(*vw, examples);
+}

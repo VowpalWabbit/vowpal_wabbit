@@ -43,7 +43,7 @@
 #include <iostream>
 #include <sstream>
 
-#ifdef BUILD_FLATBUFFERS
+#ifdef VW_FEAT_FLATBUFFERS_ENABLED
 #  include "vw/fb_parser/parse_example_flatbuffer.h"
 #endif
 
@@ -84,7 +84,7 @@ void workspace::learn(example& ec)
 {
   if (l->is_multiline()) THROW("This learner does not support single-line examples.");
 
-  if (ec.test_only || !training) { VW::LEARNER::require_singleline(l)->predict(ec); }
+  if (ec.test_only || !runtime_config.training) { VW::LEARNER::require_singleline(l)->predict(ec); }
   else
   {
     if (l->learn_returns_prediction) { VW::LEARNER::require_singleline(l)->learn(ec); }
@@ -100,7 +100,7 @@ void workspace::learn(multi_ex& ec)
 {
   if (!l->is_multiline()) THROW("This learner does not support multi-line example.");
 
-  if (!training) { VW::LEARNER::require_multiline(l)->predict(ec); }
+  if (!runtime_config.training) { VW::LEARNER::require_multiline(l)->predict(ec); }
   else
   {
     if (l->learn_returns_prediction) { VW::LEARNER::require_multiline(l)->learn(ec); }
@@ -259,23 +259,25 @@ std::string workspace::dump_weights_to_json_experimental()
     THROW("dump_weights_to_json is currently only supported for KSVM base learner. The current base learner is "
         << current->get_name());
   }
-  if (dump_json_weights_include_feature_names && !hash_inv)
+  if (output_model_config.dump_json_weights_include_feature_names && !output_config.hash_inv)
   {
     THROW("hash_inv == true is required to dump weights to json including feature names");
   }
-  if (dump_json_weights_include_extra_online_state && !save_resume)
+  if (output_model_config.dump_json_weights_include_extra_online_state && !output_model_config.save_resume)
   {
     THROW("save_resume == true is required to dump weights to json including feature names");
   }
-  if (dump_json_weights_include_extra_online_state && current->get_name() != "gd")
+  if (output_model_config.dump_json_weights_include_extra_online_state && current->get_name() != "gd")
   {
     THROW("including extra online state is only allowed with GD as base learner");
   }
 
-  return weights.sparse ? dump_weights_to_json_weight_typed(weights.sparse_weights, index_name_map, weights,
-                              dump_json_weights_include_feature_names, dump_json_weights_include_extra_online_state)
-                        : dump_weights_to_json_weight_typed(weights.dense_weights, index_name_map, weights,
-                              dump_json_weights_include_feature_names, dump_json_weights_include_extra_online_state);
+  return weights.sparse ? dump_weights_to_json_weight_typed(weights.sparse_weights, output_runtime.index_name_map,
+                              weights, output_model_config.dump_json_weights_include_feature_names,
+                              output_model_config.dump_json_weights_include_extra_online_state)
+                        : dump_weights_to_json_weight_typed(weights.dense_weights, output_runtime.index_name_map,
+                              weights, output_model_config.dump_json_weights_include_feature_names,
+                              output_model_config.dump_json_weights_include_extra_online_state);
 }
 }  // namespace VW
 
@@ -311,23 +313,25 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
   _random_state_sp = std::make_shared<VW::rand_state>();
   sd = std::make_shared<shared_data>();
   // Default is stderr.
-  trace_message = std::make_shared<std::ostream>(std::cout.rdbuf());
+  output_runtime.trace_message = std::make_shared<std::ostream>(std::cout.rdbuf());
 
-  loss = nullptr;
+  loss_config.loss = nullptr;
 
-  reg_mode = 0;
-  current_pass = 0;
+  loss_config.reg_mode = 0;
+  passes_config.current_pass = 0;
 
-  bfgs = false;
-  no_bias = false;
-  active = false;
-  num_bits = 18;
-  default_bits = true;
-  daemon = false;
-  save_resume = true;
-  preserve_performance_counters = false;
+  reduction_state.bfgs = false;
+  loss_config.no_bias = false;
+  reduction_state.active = false;
+  initial_weights_config.num_bits = 18;
+  runtime_config.default_bits = true;
+#ifdef VW_FEAT_NETWORKING_ENABLED
+  runtime_config.daemon = false;
+#endif
+  output_model_config.save_resume = true;
+  output_model_config.preserve_performance_counters = false;
 
-  random_positive_weights = false;
+  initial_weights_config.random_positive_weights = false;
 
   weights.sparse = false;
 
@@ -338,79 +342,81 @@ workspace::workspace(VW::io::logger logger) : options(nullptr, nullptr), logger(
     if (label != FLT_MAX) { this->sd->max_label = std::max(this->sd->max_label, label); }
   };
 
-  power_t = 0.5f;
-  eta = 0.5f;  // default learning rate for normalized adaptive updates, this is switched to 10 by default for the other
-               // updates (see parse_args.cc)
-  numpasses = 1;
+  update_rule_config.power_t = 0.5f;
+  update_rule_config.eta = 0.5f;  // default learning rate for normalized adaptive updates, this is switched to 10 by
+                                  // default for the other updates (see parse_args.cc)
+  runtime_config.numpasses = 1;
 
   print_by_ref = VW::details::print_result_by_ref;
   print_text_by_ref = print_raw_text_by_ref;
-  lda = 0;
-  random_weights = false;
-  normal_weights = false;
-  tnormal_weights = false;
-  per_feature_regularizer_input = "";
-  per_feature_regularizer_output = "";
-  per_feature_regularizer_text = "";
+  reduction_state.lda = 0;
+  initial_weights_config.random_weights = false;
+  initial_weights_config.normal_weights = false;
+  initial_weights_config.tnormal_weights = false;
+  initial_weights_config.per_feature_regularizer_input = "";
+  output_model_config.per_feature_regularizer_output = "";
+  output_model_config.per_feature_regularizer_text = "";
 
-  stdout_adapter = VW::io::open_stdout();
+  output_runtime.stdout_adapter = VW::io::open_stdout();
 
-  searchstr = nullptr;
+  reduction_state.searchstr = nullptr;
 
-  nonormalize = false;
-  l1_lambda = 0.0;
-  l2_lambda = 0.0;
+  // nonormalize = false;
+  loss_config.l1_lambda = 0.0;
+  loss_config.l2_lambda = 0.0;
 
-  eta_decay_rate = 1.0;
-  initial_weight = 0.0;
-  initial_constant = 0.0;
+  update_rule_config.eta_decay_rate = 1.0;
+  initial_weights_config.initial_weight = 0.0;
+  feature_tweaks_config.initial_constant = 0.0;
 
   for (size_t i = 0; i < NUM_NAMESPACES; i++)
   {
-    limit[i] = INT_MAX;
-    affix_features[i] = 0;
-    spelling_features[i] = 0;
+    feature_tweaks_config.limit[i] = INT_MAX;
+    feature_tweaks_config.affix_features[i] = 0;
+    feature_tweaks_config.spelling_features[i] = 0;
   }
 
-  invariant_updates = true;
-  normalized_idx = 2;
+  feature_tweaks_config.add_constant = true;
 
-  add_constant = true;
-  audit = false;
-  audit_writer = VW::io::open_stdout();
+  reduction_state.invariant_updates = true;
+  initial_weights_config.normalized_idx = 2;
 
-  pass_length = std::numeric_limits<size_t>::max();
-  passes_complete = 0;
+  output_config.audit = false;
+  output_runtime.audit_writer = VW::io::open_stdout();
 
-  save_per_pass = false;
+  runtime_config.pass_length = std::numeric_limits<size_t>::max();
+  runtime_state.passes_complete = 0;
 
-  do_reset_source = false;
-  holdout_set_off = true;
-  holdout_after = 0;
-  check_holdout_every_n_passes = 1;
-  early_terminate = false;
+  output_model_config.save_per_pass = false;
 
-  max_examples = std::numeric_limits<size_t>::max();
+  runtime_state.do_reset_source = false;
+  passes_config.holdout_set_off = true;
+  passes_config.holdout_after = 0;
+  passes_config.check_holdout_every_n_passes = 1;
+  passes_config.early_terminate = false;
 
-  hash_inv = false;
-  print_invert = false;
-  hexfloat_weights = false;
+  parser_runtime.max_examples = std::numeric_limits<size_t>::max();
+
+  output_config.hash_inv = false;
+  output_config.print_invert = false;
+  output_config.hexfloat_weights = false;
 }
 VW_WARNING_STATE_POP
 
 void workspace::finish()
 {
   // also update VowpalWabbit::PerformanceStatistics::get() (vowpalwabbit.cpp)
-  if (!quiet && !options->was_supplied("audit_regressor"))
+  if (!output_config.quiet && !options->was_supplied("audit_regressor"))
   {
-    sd->print_summary(*trace_message, *sd, *loss, current_pass, holdout_set_off);
+    sd->print_summary(*output_runtime.trace_message, *sd, *loss_config.loss, passes_config.current_pass,
+        passes_config.holdout_set_off);
   }
 
-  details::finalize_regressor(*this, final_regressor_name);
+  details::finalize_regressor(*this, output_model_config.final_regressor_name);
   if (options->was_supplied("dump_json_weights_experimental"))
   {
     auto content = dump_weights_to_json_experimental();
-    auto writer = VW::io::open_file_writer(json_weights_file_name);
+    auto writer = VW::io::open_file_writer(output_model_config.json_weights_file_name);
     writer->write(content.c_str(), content.length());
   }
   VW::reductions::output_metrics(*this);
@@ -422,7 +428,7 @@ void workspace::finish()
 workspace::~workspace()
 {
   // TODO: migrate all finalization into parser destructor
-  if (example_parser != nullptr) { VW::details::free_parser(*this); }
+  if (parser_runtime.example_parser != nullptr) { VW::details::free_parser(*this); }
 }
 
 }  // namespace VW

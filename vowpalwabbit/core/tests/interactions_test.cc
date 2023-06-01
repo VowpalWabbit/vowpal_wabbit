@@ -59,13 +59,13 @@ void eval_count_of_generated_ft_naive(
     VW::workspace& all, VW::example_predict& ec, size_t& new_features_cnt, float& new_features_value)
 {
   // Only makes sense to do this when not in permutations mode.
-  assert(!all.permutations);
+  assert(!all.feature_tweaks_config.permutations);
 
   new_features_cnt = 0;
   new_features_value = 0.;
 
   auto interactions = VW::details::compile_interactions<generate_func, leave_duplicate_interactions>(
-      all.interactions, std::set<VW::namespace_index>(ec.indices.begin(), ec.indices.end()));
+      all.feature_tweaks_config.interactions, std::set<VW::namespace_index>(ec.indices.begin(), ec.indices.end()));
 
   VW::v_array<float> results;
 
@@ -73,7 +73,7 @@ void eval_count_of_generated_ft_naive(
   size_t ignored = 0;
   ec.interactions = &interactions;
   VW::generate_interactions<eval_gen_data, uint64_t, ft_cnt, false, nullptr>(all, ec, dat, ignored);
-  ec.interactions = &all.interactions;
+  ec.interactions = &all.feature_tweaks_config.interactions;
 }
 
 template <VW::generate_func_t<VW::extent_term> generate_func, bool leave_duplicate_interactions>
@@ -81,7 +81,7 @@ void eval_count_of_generated_ft_naive(
     VW::workspace& all, VW::example_predict& ec, size_t& new_features_cnt, float& new_features_value)
 {
   // Only makes sense to do this when not in permutations mode.
-  assert(!all.permutations);
+  assert(!all.feature_tweaks_config.permutations);
 
   new_features_cnt = 0;
   new_features_value = 0.;
@@ -95,7 +95,7 @@ void eval_count_of_generated_ft_naive(
   }
 
   auto interactions = VW::details::compile_extent_interactions<generate_func, leave_duplicate_interactions>(
-      all.extent_interactions, seen_extents);
+      all.feature_tweaks_config.extent_interactions, seen_extents);
 
   VW::v_array<float> results;
 
@@ -103,7 +103,7 @@ void eval_count_of_generated_ft_naive(
   size_t ignored = 0;
   ec.extent_interactions = &interactions;
   VW::generate_interactions<eval_gen_data, uint64_t, ft_cnt, false, nullptr>(all, ec, dat, ignored);
-  ec.extent_interactions = &all.extent_interactions;
+  ec.extent_interactions = &all.feature_tweaks_config.extent_interactions;
 }
 
 inline void noop_func(float& /* unused_dat */, const float /* ft_weight */, const uint64_t /* ft_idx */) {}
@@ -120,12 +120,13 @@ TEST(Interactions, EvalCountOfGeneratedFtTest)
 
   auto interactions =
       VW::details::compile_interactions<VW::details::generate_namespace_combinations_with_repetition, false>(
-          vw->interactions, std::set<VW::namespace_index>(ex->indices.begin(), ex->indices.end()));
+          vw->feature_tweaks_config.interactions,
+          std::set<VW::namespace_index>(ex->indices.begin(), ex->indices.end()));
   ex->interactions = &interactions;
-  ex->extent_interactions = &vw->extent_interactions;
+  ex->extent_interactions = &vw->feature_tweaks_config.extent_interactions;
   float fast_features_value = VW::eval_sum_ft_squared_of_generated_ft(
-      vw->permutations, *ex->interactions, *ex->extent_interactions, ex->feature_space);
-  ex->interactions = &vw->interactions;
+      vw->feature_tweaks_config.permutations, *ex->interactions, *ex->extent_interactions, ex->feature_space);
+  ex->interactions = &vw->feature_tweaks_config.interactions;
 
   EXPECT_FLOAT_EQ(naive_features_value, fast_features_value);
 
@@ -147,8 +148,8 @@ TEST(Interactions, EvalCountOfGeneratedFtExtentsCombinationsTest)
       false>(*vw, *ex, naive_features_count, naive_features_value);
 
   float fast_features_value = VW::eval_sum_ft_squared_of_generated_ft(
-      vw->permutations, *ex->interactions, *ex->extent_interactions, ex->feature_space);
-  ex->interactions = &vw->interactions;
+      vw->feature_tweaks_config.permutations, *ex->interactions, *ex->extent_interactions, ex->feature_space);
+  ex->interactions = &vw->feature_tweaks_config.interactions;
 
   EXPECT_FLOAT_EQ(naive_features_value, fast_features_value);
 
@@ -169,7 +170,7 @@ TEST(Interactions, EvalCountOfGeneratedFtExtentsPermutationsTest)
   eval_count_of_generated_ft_naive<VW::details::generate_namespace_combinations_with_repetition<VW::extent_term>,
       false>(*vw, *ex, naive_features_count, naive_features_value);
   float fast_features_value = VW::eval_sum_ft_squared_of_generated_ft(
-      vw->permutations, *ex->interactions, *ex->extent_interactions, ex->feature_space);
+      vw->feature_tweaks_config.permutations, *ex->interactions, *ex->extent_interactions, ex->feature_space);
 
   EXPECT_FLOAT_EQ(naive_features_value, fast_features_value);
 

@@ -7,6 +7,7 @@
 #include "simulator.h"
 #include "vw/core/automl_impl.h"
 #include "vw/core/estimators/confidence_sequence_robust.h"
+#include "vw/core/interactions.h"
 #include "vw/core/metric_sink.h"
 #include "vw/core/vw_fwd.h"
 
@@ -212,7 +213,7 @@ TEST(Automl, Assert0thEventMetricsWIterations)
   test_hooks.emplace(zero,
       [&metric_name, &zero](cb_sim&, VW::workspace& all, VW::multi_ex&)
       {
-        auto metrics = all.global_metrics.collect_metrics(all.l.get());
+        auto metrics = all.output_runtime.global_metrics.collect_metrics(all.l.get());
 
         EXPECT_EQ(metrics.get_uint(metric_name), zero);
         return true;
@@ -222,7 +223,7 @@ TEST(Automl, Assert0thEventMetricsWIterations)
   test_hooks.emplace(num_iterations,
       [&metric_name, &num_iterations](cb_sim&, VW::workspace& all, VW::multi_ex&)
       {
-        auto metrics = all.global_metrics.collect_metrics(all.l.get());
+        auto metrics = all.output_runtime.global_metrics.collect_metrics(all.l.get());
 
         EXPECT_EQ(metrics.get_uint(metric_name), num_iterations);
         return true;
@@ -696,7 +697,7 @@ TEST(Automl, QbaseUnittestWIterations)
         }
         EXPECT_EQ(prio_queue.size(), 0);
         EXPECT_EQ(estimators.size(), 11);
-        const interaction_vec_t expected2 = {
+        interaction_vec_t expected2 = {
             {'B', 'C', 'C'},
             {'A', 'A'},
             {'A', 'B'},
@@ -705,6 +706,7 @@ TEST(Automl, QbaseUnittestWIterations)
             {'B', 'C'},
             {'C', 'C'},
         };
+        std::sort(expected2.begin(), expected2.end(), VW::details::sort_interactions_comparator);
         EXPECT_EQ(estimators[2].first.config_index, 9);
         EXPECT_EQ(estimators[2].first.live_interactions, expected2);
 
@@ -797,8 +799,9 @@ TEST(Automl, QuadcubicUnitTest)
       set_ns_list_t{{'A', 'A', 'A'}, {'B', 'B', 'B'}, {'C', 'C', 'C'}}, 4000, config_type::Interaction);
   ns_based_config::apply_config_to_interactions(false, ns_counter, "both", test_config_exclusion, interactions);
 
-  const interaction_vec_t expected2{{'A', 'A', 'A'}, {'B', 'B', 'B'}, {'C', 'C', 'C'}, {'A', 'A'}, {'A', 'B'},
-      {'A', 'C'}, {'B', 'B'}, {'B', 'C'}, {'C', 'C'}};
+  interaction_vec_t expected2{{'A', 'A', 'A'}, {'B', 'B', 'B'}, {'C', 'C', 'C'}, {'A', 'A'}, {'A', 'B'}, {'A', 'C'},
+      {'B', 'B'}, {'B', 'C'}, {'C', 'C'}};
+  std::sort(expected2.begin(), expected2.end(), VW::details::sort_interactions_comparator);
 
   EXPECT_EQ(interactions, expected2);
 }

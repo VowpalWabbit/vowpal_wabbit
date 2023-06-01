@@ -28,8 +28,9 @@ class epsilon_decay_data
 public:
   epsilon_decay_data(uint64_t model_count, uint64_t min_scope, double epsilon_decay_significance_level,
       double epsilon_decay_estimator_decay, dense_parameters& weights, std::string epsilon_decay_audit_str,
-      bool constant_epsilon, uint32_t& wpp, uint64_t _min_champ_examples, float initial_epsilon,
-      uint64_t shift_model_bounds, bool reward_as_cost, double tol_x, bool is_brentq, bool predict_only_model);
+      bool constant_epsilon, uint32_t& feature_width, uint64_t _min_champ_examples, float initial_epsilon,
+      uint64_t shift_model_bounds, bool reward_as_cost, double tol_x, bool is_brentq, bool predict_only_model,
+      bool challenger_epsilon);
   void update_weights(float init_ep, VW::LEARNER::learner& base, VW::multi_ex& examples);
   void promote_model(int64_t model_ind, int64_t swap_dist);
   void rebalance_greater_models(int64_t model_ind, int64_t swap_dist, int64_t model_count);
@@ -49,17 +50,13 @@ public:
   std::stringstream _audit_msg;
   uint64_t _global_counter = 1;
   bool _constant_epsilon;
-  uint32_t& _wpp;
+  uint32_t& _feature_width;
   uint64_t _min_champ_examples;
   float _initial_epsilon;
   uint64_t _shift_model_bounds;
   bool _reward_as_cost;
   bool _predict_only_model;
-
-  // TODO: delete all this, gd and cb_adf must respect ft_offset, see header import of automl.cc
-  std::vector<uint64_t> per_live_model_state_uint64;
-  uint64_t* _cb_adf_event_sum = nullptr;
-  uint64_t* _cb_adf_action_sum = nullptr;
+  bool _challenger_epsilon;
 };
 
 }  // namespace epsilon_decay

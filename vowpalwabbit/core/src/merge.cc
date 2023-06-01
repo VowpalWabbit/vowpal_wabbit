@@ -49,7 +49,7 @@ void validate_compatibility(const std::vector<const VW::workspace*>& workspaces,
   bool at_least_one_has_no_preserve = false;
   for (const auto* model : workspaces)
   {
-    if ((!model->preserve_performance_counters) && (model->sd->weighted_labeled_examples == 0.f))
+    if ((!model->output_model_config.preserve_performance_counters) && (model->sd->weighted_labeled_examples == 0.f))
     {
       at_least_one_has_no_preserve = true;
       break;

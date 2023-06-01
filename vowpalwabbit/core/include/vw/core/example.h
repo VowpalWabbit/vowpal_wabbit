@@ -8,6 +8,7 @@
 #include "vw/core/active_multiclass_prediction.h"
 #include "vw/core/cb.h"
 #include "vw/core/cb_continuous_label.h"
+#include "vw/core/cb_with_observations_label.h"
 #include "vw/core/ccb_label.h"
 #include "vw/core/constant.h"
 #include "vw/core/cost_sensitive.h"
@@ -48,6 +49,7 @@ public:
   VW::slates::label slates;
   VW::cb_eval_label cb_eval;
   VW::multilabel_label multilabels;
+  VW::cb_with_observations_label cb_with_observations;
 };
 
 struct no_pred
@@ -143,26 +145,8 @@ private:
 
 class workspace;
 
-class flat_example
-{
-public:
-  polylabel l;
-  reduction_features ex_reduction_features;
-
-  VW::v_array<char> tag;  // An identifier for the example.
-
-  size_t example_counter;
-  uint64_t ft_offset;
-  float global_weight;
-
-  size_t num_features;      // precomputed, cause it's fast&easy.
-  float total_sum_feat_sq;  // precomputed, cause it's kind of fast & easy.
-  features fs;              // all the features
-};
-
-flat_example* flatten_example(VW::workspace& all, example* ec);
-flat_example* flatten_sort_example(VW::workspace& all, example* ec);
-void free_flatten_example(flat_example* fec);
+// TODO: make workspace and example const
+void flatten_features(VW::workspace& all, example& ec, features& fs);
 
 inline bool example_is_newline(const example& ec) { return ec.is_newline; }
 
@@ -194,13 +178,6 @@ void truncate_example_namespace(VW::example& ec, VW::namespace_index ns, const f
 void append_example_namespaces_from_example(VW::example& target, const VW::example& source);
 void truncate_example_namespaces_from_example(VW::example& target, const VW::example& source);
 }  // namespace details
-
-namespace model_utils
-{
-size_t read_model_field(io_buf& io, flat_example& fe, VW::label_parser& lbl_parser);
-size_t write_model_field(io_buf& io, const flat_example& fe, const std::string& upstream_name, bool text,
-    VW::label_parser& lbl_parser, uint64_t parse_mask);
-}  // namespace model_utils
 }  // namespace VW
 
 // Deprecated compat definitions
@@ -209,18 +186,6 @@ using polylabel VW_DEPRECATED("polylabel moved into VW namespace") = VW::polylab
 using polyprediction VW_DEPRECATED("polyprediction moved into VW namespace") = VW::polyprediction;
 using example VW_DEPRECATED("example moved into VW namespace") = VW::example;
 using multi_ex VW_DEPRECATED("multi_ex moved into VW namespace") = VW::multi_ex;
-using flat_example VW_DEPRECATED("flat_example moved into VW namespace") = VW::flat_example;
-
-VW_DEPRECATED("flatten_example moved into VW namespace")
-inline VW::flat_example* flatten_example(VW::workspace& all, VW::example* ec) { return VW::flatten_example(all, ec); }
-
-VW_DEPRECATED("flatten_sort_example moved into VW namespace")
-inline VW::flat_example* flatten_sort_example(VW::workspace& all, VW::example* ec)
-{
-  return VW::flatten_sort_example(all, ec);
-}
-VW_DEPRECATED("free_flatten_example moved into VW namespace")
-inline void free_flatten_example(VW::flat_example* fec) { return VW::free_flatten_example(fec); }
 
 VW_DEPRECATED("example_is_newline moved into VW namespace")
 inline bool example_is_newline(const VW::example& ec) { return VW::example_is_newline(ec); }

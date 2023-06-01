@@ -29,13 +29,13 @@ public:
 
   std::string get_setupfn_name(reduction_setup_fn setup) override;
 
-  size_t get_ppw() override { return _ppw; }
+  size_t get_feature_width_above() override { return _feature_width_above; }
 
 private:
   VW::config::options_i* _options_impl = nullptr;
   VW::workspace* _all_ptr = nullptr;
   std::shared_ptr<VW::LEARNER::learner> _base;
-  size_t _ppw = 1;
+  size_t _feature_width_above = 1;
 
 protected:
   std::vector<std::tuple<std::string, reduction_setup_fn>> _reduction_stack;

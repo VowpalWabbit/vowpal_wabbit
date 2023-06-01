@@ -202,18 +202,18 @@ void update_stats_slates(const VW::workspace& /* all */, VW::shared_data& sd,
 void output_example_prediction_slates(VW::workspace& all, const VW::reductions::slates_data& /* data */,
     const VW::multi_ex& ec_seq, VW::io::logger& /* unused */)
 {
-  for (auto& sink : all.final_prediction_sink)
+  for (auto& sink : all.output_runtime.final_prediction_sink)
   {
     VW::print_decision_scores(sink.get(), ec_seq[VW::details::SHARED_EX_INDEX]->pred.decision_scores, all.logger);
   }
-  VW::details::global_print_newline(all.final_prediction_sink, all.logger);
+  VW::details::global_print_newline(all.output_runtime.final_prediction_sink, all.logger);
 }
 
 void print_update_slates(VW::workspace& all, VW::shared_data& /* sd */, const VW::reductions::slates_data& /* data */,
     const VW::multi_ex& ec_seq, VW::io::logger& /* unused */)
 {
   const bool should_print_driver_update =
-      all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs;
+      all.sd->weighted_examples() >= all.sd->dump_interval && !all.output_config.quiet && !all.reduction_state.bfgs;
 
   if (!should_print_driver_update) { return; }
 
@@ -247,7 +247,6 @@ void learn_or_predict(VW::reductions::slates_data& data, VW::LEARNER::learner& b
 std::shared_ptr<VW::LEARNER::learner> VW::reductions::slates_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
-  VW::workspace& all = *stack_builder.get_all_pointer();
   auto data = VW::make_unique<slates_data>();
   bool slates_option = false;
   option_group_definition new_options("[Reduction] Slates");
@@ -262,7 +261,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::slates_setup(VW::setup_bas
   }
 
   auto base = require_multiline(stack_builder.setup_base_learner());
-  all.example_parser->lbl_parser = VW::slates::slates_label_parser;
   auto l = make_reduction_learner(std::move(data), base, learn_or_predict<true>, learn_or_predict<false>,
       stack_builder.get_setupfn_name(slates_setup))
                .set_learn_returns_prediction(base->learn_returns_prediction)

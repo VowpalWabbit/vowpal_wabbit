@@ -43,7 +43,7 @@ void learn_multi_ex(multi_ex& ec_seq, VW::workspace& all)
 
 void end_pass(example& ec, VW::workspace& all)
 {
-  all.current_pass++;
+  all.passes_config.current_pass++;
   all.l->end_pass();
 
   VW::finish_example(all, ec);
@@ -52,14 +52,17 @@ void end_pass(example& ec, VW::workspace& all)
 void save(example& ec, VW::workspace& all)
 {
   // save state command
-  std::string final_regressor_name = all.final_regressor_name;
+  std::string final_regressor_name = all.output_model_config.final_regressor_name;
 
   if ((ec.tag).size() >= 6 && (ec.tag)[4] == '_')
   {
     final_regressor_name = std::string(ec.tag.begin() + 5, (ec.tag).size() - 5);
   }
 
-  if (!all.quiet) { *(all.trace_message) << "saving regressor to " << final_regressor_name << std::endl; }
+  if (!all.output_config.quiet)
+  {
+    *(all.output_runtime.trace_message) << "saving regressor to " << final_regressor_name << std::endl;
+  }
   VW::details::save_predictor(all, final_regressor_name, 0);
 
   VW::finish_example(all, ec);
@@ -69,7 +72,7 @@ void save(example& ec, VW::workspace& all)
 inline bool example_is_newline_not_header(example& ec, VW::workspace& all)
 {
   // If we are using CCB, test against CCB implementation otherwise fallback to previous behavior.
-  const bool is_header = ec_is_example_header(ec, all.example_parser->lbl_parser.label_type);
+  const bool is_header = ec_is_example_header(ec, all.parser_runtime.example_parser->lbl_parser.label_type);
   return example_is_newline(ec) && !is_header;
 }
 
@@ -80,10 +83,10 @@ bool inline is_save_cmd(example* ec)
 
 void drain_examples(VW::workspace& all)
 {
-  if (all.early_terminate)
+  if (all.passes_config.early_terminate)
   {  // drain any extra examples from parser.
     example* ec = nullptr;
-    while ((ec = VW::get_example(all.example_parser.get())) != nullptr) { VW::finish_example(all, *ec); }
+    while ((ec = VW::get_example(all.parser_runtime.example_parser.get())) != nullptr) { VW::finish_example(all, *ec); }
   }
   all.l->end_examples();
 }
@@ -195,7 +198,7 @@ private:
   bool complete_multi_ex(example* ec)
   {
     auto& master = _context.get_master();
-    const bool is_test_ec = master.example_parser->lbl_parser.test_label(ec->l);
+    const bool is_test_ec = master.parser_runtime.example_parser->lbl_parser.test_label(ec->l);
     const bool is_newline = (example_is_newline_not_header(*ec, master) && is_test_ec);
 
     if (!is_newline && !ec->end_pass) { _ec_seq.push_back(ec); }
@@ -228,7 +231,11 @@ class ready_examples_queue
 public:
   ready_examples_queue(VW::workspace& master) : _master(master) {}
 
-  example* pop() { return !_master.early_terminate ? VW::get_example(_master.example_parser.get()) : nullptr; }
+  example* pop()
+  {
+    return !_master.passes_config.early_terminate ? VW::get_example(_master.parser_runtime.example_parser.get())
+                                                  : nullptr;
+  }
 
 private:
   VW::workspace& _master;
@@ -321,6 +328,10 @@ void generic_driver_onethread(VW::workspace& all)
 bool ec_is_example_header(const example& ec, label_type_t label_type)
 {
   if (label_type == VW::label_type_t::CB) { return VW::ec_is_example_header_cb(ec); }
+  else if (label_type == VW::label_type_t::CB_WITH_OBSERVATIONS)
+  {
+    return VW::ec_is_example_header_cb_with_observations(ec);
+  }
   else if (label_type == VW::label_type_t::CCB) { return reductions::ccb::ec_is_example_header(ec); }
   else if (label_type == VW::label_type_t::CS) { return VW::is_cs_example_header(ec); }
   return false;
@@ -366,19 +377,19 @@ void learner::debug_log_message(polymorphic_ex ex, const std::string& msg)
 void learner::learn(polymorphic_ex ec, size_t i)
 {
   assert(is_multiline() == ec.is_multiline());
-  details::increment_offset(ec, increment, i);
+  details::increment_offset(ec, feature_width_below, i);
   debug_log_message(ec, "learn");
   _learn_f(ec);
-  details::decrement_offset(ec, increment, i);
+  details::decrement_offset(ec, feature_width_below, i);
 }
 
 void learner::predict(polymorphic_ex ec, size_t i)
 {
   assert(is_multiline() == ec.is_multiline());
-  details::increment_offset(ec, increment, i);
+  details::increment_offset(ec, feature_width_below, i);
   debug_log_message(ec, "predict");
   _predict_f(ec);
-  details::decrement_offset(ec, increment, i);
+  details::decrement_offset(ec, feature_width_below, i);
 }
 
 void learner::multipredict(polymorphic_ex ec, size_t lo, size_t count, polyprediction* pred, bool finalize_predictions)
@@ -386,7 +397,7 @@ void learner::multipredict(polymorphic_ex ec, size_t lo, size_t count, polypredi
   assert(is_multiline() == ec.is_multiline());
   if (_multipredict_f == nullptr)
   {
-    details::increment_offset(ec, increment, lo);
+    details::increment_offset(ec, feature_width_below, lo);
     debug_log_message(ec, "multipredict");
     for (size_t c = 0; c < count; c++)
     {
@@ -399,34 +410,34 @@ void learner::multipredict(polymorphic_ex ec, size_t lo, size_t count, polypredi
       else { pred[c].scalar = static_cast<VW::example&>(ec).partial_prediction; }
       // pred[c].scalar = finalize_prediction ec.partial_prediction; // TODO: this breaks for complex labels because =
       // doesn't do deep copy! // note works if ec.partial_prediction, but only if finalize_prediction is run????
-      details::increment_offset(ec, increment, 1);
+      details::increment_offset(ec, feature_width_below, 1);
     }
-    details::decrement_offset(ec, increment, lo + count);
+    details::decrement_offset(ec, feature_width_below, lo + count);
   }
   else
   {
-    details::increment_offset(ec, increment, lo);
+    details::increment_offset(ec, feature_width_below, lo);
     debug_log_message(ec, "multipredict");
-    _multipredict_f(ec, count, increment, pred, finalize_predictions);
-    details::decrement_offset(ec, increment, lo);
+    _multipredict_f(ec, count, feature_width_below, pred, finalize_predictions);
+    details::decrement_offset(ec, feature_width_below, lo);
   }
 }
 
 void learner::update(polymorphic_ex ec, size_t i)
 {
   assert(is_multiline() == ec.is_multiline());
-  details::increment_offset(ec, increment, i);
+  details::increment_offset(ec, feature_width_below, i);
   debug_log_message(ec, "update");
   _update_f(ec);
-  details::decrement_offset(ec, increment, i);
+  details::decrement_offset(ec, feature_width_below, i);
 }
 
 float learner::sensitivity(example& ec, size_t i)
 {
-  details::increment_offset(ec, increment, i);
+  details::increment_offset(ec, feature_width_below, i);
   debug_log_message(ec, "sensitivity");
   const float ret = _sensitivity_f(ec);
-  details::decrement_offset(ec, increment, i);
+  details::decrement_offset(ec, feature_width_below, i);
   return ret;
 }
 
@@ -729,30 +740,30 @@ void VW::LEARNER::details::debug_decrement_depth(polymorphic_ex ex)
   }
 }
 
-void VW::LEARNER::details::increment_offset(polymorphic_ex ex, const size_t increment, const size_t i)
+void VW::LEARNER::details::increment_offset(polymorphic_ex ex, const size_t feature_width_below, const size_t i)
 {
   if (ex.is_multiline())
   {
-    for (auto& ec : static_cast<VW::multi_ex&>(ex)) { ec->ft_offset += static_cast<uint32_t>(increment * i); }
+    for (auto& ec : static_cast<VW::multi_ex&>(ex)) { ec->ft_offset += static_cast<uint32_t>(feature_width_below * i); }
   }
-  else { static_cast<VW::example&>(ex).ft_offset += static_cast<uint32_t>(increment * i); }
+  else { static_cast<VW::example&>(ex).ft_offset += static_cast<uint32_t>(feature_width_below * i); }
   debug_increment_depth(ex);
 }
 
-void VW::LEARNER::details::decrement_offset(polymorphic_ex ex, const size_t increment, const size_t i)
+void VW::LEARNER::details::decrement_offset(polymorphic_ex ex, const size_t feature_width_below, const size_t i)
 {
   if (ex.is_multiline())
   {
     for (auto ec : static_cast<VW::multi_ex&>(ex))
     {
-      assert(ec->ft_offset >= increment * i);
-      ec->ft_offset -= static_cast<uint32_t>(increment * i);
+      assert(ec->ft_offset >= feature_width_below * i);
+      ec->ft_offset -= static_cast<uint32_t>(feature_width_below * i);
     }
   }
   else
   {
-    assert(static_cast<VW::example&>(ex).ft_offset >= increment * i);
-    static_cast<VW::example&>(ex).ft_offset -= static_cast<uint32_t>(increment * i);
+    assert(static_cast<VW::example&>(ex).ft_offset >= feature_width_below * i);
+    static_cast<VW::example&>(ex).ft_offset -= static_cast<uint32_t>(feature_width_below * i);
   }
   debug_decrement_depth(ex);
 }

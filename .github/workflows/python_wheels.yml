@@ -10,10 +10,12 @@ on:
     branches:
       - master
       - 'releases/**'
+      - rlos2023/test
   pull_request:
     branches:
       - '*'
-
+      - rlos2023/test
+      
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
@@ -70,8 +72,8 @@ jobs:
         shell: bash
         run: |
           pip install -r requirements.txt
-          pip install pytest twine
-          pip install built_wheel/*.whl
+          pip install pytest vw-executor twine
+          pip install --force-reinstall built_wheel/*.whl
           twine check built_wheel/*.whl
           python -m pytest ./python/tests/
           python ./python/tests/run_doctest.py
@@ -133,7 +135,7 @@ jobs:
         shell: bash
         run: |
           pip install -r requirements.txt
-          pip install pytest
+          pip install pytest vw-executor
       - name: Run unit tests
         shell: bash
         run: |
@@ -212,8 +214,8 @@ jobs:
             source .env/bin/activate && \
             pip install --upgrade pip && \
             pip install -r requirements.txt && \
-            pip install pytest twine && \
-            pip install built_wheel/*.whl && \
+            pip install pytest vw-executor twine && \
+            pip install --force-reinstall built_wheel/*.whl && \
             twine check built_wheel/*.whl && \
             python --version && \
             python -m pytest ./python/tests/ && \
@@ -272,8 +274,8 @@ jobs:
         shell: bash
         run: |
           pip install -r requirements.txt
-          pip install pytest twine
-          pip install built_wheel/*.whl
+          pip install pytest vw-executor twine
+          pip install --force-reinstall built_wheel/*.whl
           twine check built_wheel/*.whl
           python -m pytest ./python/tests/
           python ./python/tests/run_doctest.py
@@ -361,8 +363,8 @@ jobs:
           export wheel_file="${wheel_files[0]}"
           echo Installing ${wheel_file}...
           pip install -r requirements.txt
-          pip install pytest twine
-          pip install ${wheel_file}
+          pip install pytest vw-executor twine
+          pip install --force-reinstall ${wheel_file}
           twine check ${wheel_file}
           python -m pytest .\\python\\tests\\
           python .\\python\\tests\\run_doctest.py

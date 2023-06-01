@@ -237,7 +237,7 @@ void predict_or_learn_cover(cb_explore& data, learner& base, VW::example& ec)
 void print_update_cb_explore(
     VW::workspace& all, VW::shared_data& sd, bool is_test, const VW::example& ec, std::stringstream& pred_string)
 {
-  if ((sd.weighted_examples() >= all.sd->dump_interval) && !all.quiet && !all.bfgs)
+  if ((sd.weighted_examples() >= all.sd->dump_interval) && !all.output_config.quiet && !all.reduction_state.bfgs)
   {
     std::stringstream label_string;
     if (is_test) { label_string << "unknown"; }
@@ -246,8 +246,8 @@ void print_update_cb_explore(
       const auto& cost = ec.l.cb.costs[0];
       label_string << cost.action << ":" << cost.cost << ":" << cost.probability;
     }
-    sd.print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_string.str(), pred_string.str(),
-        ec.get_num_features());
+    sd.print_update(*all.output_runtime.trace_message, all.passes_config.holdout_set_off,
+        all.passes_config.current_pass, label_string.str(), pred_string.str(), ec.get_num_features());
   }
 }
 
@@ -297,7 +297,10 @@ void output_example_prediction_cb_explore(
   std::stringstream ss;
 
   for (const auto& act_score : ec.pred.a_s) { ss << std::fixed << act_score.score << " "; }
-  for (auto& sink : all.final_prediction_sink) { all.print_text_by_ref(sink.get(), ss.str(), ec.tag, logger); }
+  for (auto& sink : all.output_runtime.final_prediction_sink)
+  {
+    all.print_text_by_ref(sink.get(), ss.str(), ec.tag, logger);
+  }
 }
 
 void print_update_cb_explore(
@@ -369,7 +372,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_setup(VW::setup
   if (data->epsilon < 0.0 || data->epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
 
   data->cbcs.cb_type = VW::cb_type_t::DR;
-  data->model_file_version = all.model_file_ver;
+  data->model_file_version = all.runtime_state.model_file_ver;
 
   size_t params_per_weight = 1;
   if (options.was_supplied("cover")) { params_per_weight = data->cover_size + 1; }
@@ -429,7 +432,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_setup(VW::setup
                .set_output_label_type(VW::label_type_t::CB)
                .set_input_prediction_type(VW::prediction_type_t::MULTICLASS)
                .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
-               .set_params_per_weight(params_per_weight)
+               .set_feature_width(params_per_weight)
                .set_update_stats(::update_stats_cb_explore)
                .set_output_example_prediction(::output_example_prediction_cb_explore)
                .set_print_update(::print_update_cb_explore)

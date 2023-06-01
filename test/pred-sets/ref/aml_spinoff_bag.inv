@@ -1,4 +1,4 @@
-Version 9.7.0
+Version 9.8.0
 Id 
 Min label:-1
 Max label:0
@@ -8,8 +8,8 @@ lda:0
 0 skip:
 options: --bag 4 --cb_adf --cb_explore_adf --cb_type mtr --csoaa_ldf multiline --csoaa_rank --interactions AA --interactions AB --interactions AC --interactions AD --interactions AE --interactions AF --interactions BB --interactions BC --interactions BD --interactions BE --interactions BF --interactions CC --interactions CD --interactions CE --interactions CF --interactions DD --interactions DE --interactions DF --interactions EE --interactions EF --interactions FF --noconstant --random_seed 9179422484841000272
 Checksum: 3172229801
-event_sum 22
-action_sum 66
+event_sum 6
+action_sum 18
 :0
 E^236*E^642:0:-0.015755
 E^236*E^642[1]:1:-0.015755

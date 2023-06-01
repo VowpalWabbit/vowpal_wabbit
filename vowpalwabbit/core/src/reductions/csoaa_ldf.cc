@@ -528,12 +528,15 @@ void output_example_prediction_csoaa_ldf_rank(
     VW::workspace& all, const ldf& /* data */, const VW::multi_ex& ec_seq, VW::io::logger& logger)
 {
   const auto& head_ec = *ec_seq[0];
-  for (auto& sink : all.final_prediction_sink)
+  for (auto& sink : all.output_runtime.final_prediction_sink)
   {
     VW::details::print_action_score(sink.get(), head_ec.pred.a_s, head_ec.tag, logger);
   }
-  if (all.raw_prediction != nullptr) { csoaa_ldf_print_raw(all, all.raw_prediction.get(), ec_seq, logger); }
-  VW::details::global_print_newline(all.final_prediction_sink, logger);
+  if (all.output_runtime.raw_prediction != nullptr)
+  {
+    csoaa_ldf_print_raw(all, all.output_runtime.raw_prediction.get(), ec_seq, logger);
+  }
+  VW::details::global_print_newline(all.output_runtime.final_prediction_sink, logger);
 }
 
 void print_update_csoaa_ldf_rank(VW::workspace& all, VW::shared_data& /* sd */, const ldf& /* data */,
@@ -596,20 +599,23 @@ void update_stats_csoaa_ldf_prob(const VW::workspace& all, VW::shared_data& sd, 
   // (ec.test_only) OR (COST_SENSITIVE::example_is_test(ec))
   // What should be the "ec"? data.ec_seq[0]?
   // Based on parse_args.cc (where "average multiclass log loss") is printed,
-  // I decided to try yet another way: (!all.holdout_set_off).
-  if (!all.holdout_set_off) { sd.holdout_multiclass_log_loss += multiclass_log_loss; }
+  // I decided to try yet another way: (!all.passes_config.holdout_set_off).
+  if (!all.passes_config.holdout_set_off) { sd.holdout_multiclass_log_loss += multiclass_log_loss; }
   else { sd.multiclass_log_loss += multiclass_log_loss; }
 }
 
 void output_example_prediction_csoaa_ldf_prob(
     VW::workspace& all, const ldf& /* data */, const VW::multi_ex& ec_seq, VW::io::logger& logger)
 {
-  for (auto& sink : all.final_prediction_sink)
+  for (auto& sink : all.output_runtime.final_prediction_sink)
   {
     for (const auto prob : ec_seq[0]->pred.scalars) { all.print_by_ref(sink.get(), prob, 0, ec_seq[0]->tag, logger); }
   }
-  if (all.raw_prediction != nullptr) { csoaa_ldf_print_raw(all, all.raw_prediction.get(), ec_seq, logger); }
-  VW::details::global_print_newline(all.final_prediction_sink, logger);
+  if (all.output_runtime.raw_prediction != nullptr)
+  {
+    csoaa_ldf_print_raw(all, all.output_runtime.raw_prediction.get(), ec_seq, logger);
+  }
+  VW::details::global_print_newline(all.output_runtime.final_prediction_sink, logger);
 }
 
 void print_update_csoaa_ldf_prob(VW::workspace& all, VW::shared_data& /* sd */, const ldf& /* data */,
@@ -655,9 +661,15 @@ void update_stats_csoaa_ldf_multiclass(const VW::workspace& /* all */, VW::share
 void output_example_prediction_csoaa_ldf_multiclass(
     VW::workspace& all, const ldf& /* data */, const VW::multi_ex& ec_seq, VW::io::logger& logger)
 {
-  for (auto& sink : all.final_prediction_sink) { csoaa_ldf_multiclass_printline(all, sink.get(), ec_seq, logger); }
-  if (all.raw_prediction != nullptr) { csoaa_ldf_print_raw(all, all.raw_prediction.get(), ec_seq, logger); }
-  VW::details::global_print_newline(all.final_prediction_sink, logger);
+  for (auto& sink : all.output_runtime.final_prediction_sink)
+  {
+    csoaa_ldf_multiclass_printline(all, sink.get(), ec_seq, logger);
+  }
+  if (all.output_runtime.raw_prediction != nullptr)
+  {
+    csoaa_ldf_print_raw(all, all.output_runtime.raw_prediction.get(), ec_seq, logger);
+  }
+  VW::details::global_print_newline(all.output_runtime.final_prediction_sink, logger);
 }
 
 void print_update_csoaa_ldf_multiclass(VW::workspace& all, VW::shared_data& /* sd */, const ldf& /* data */,
@@ -728,7 +740,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::csldf_setup(VW::setup_base
   else if (ldf_arg == "multiline-classifier" || ldf_arg == "mc") { ld->treat_as_classifier = true; }
   else
   {
-    if (all.training) THROW("ldf requires either m/multiline or mc/multiline-classifier");
+    if (all.runtime_config.training) THROW("ldf requires either m/multiline or mc/multiline-classifier");
     if ((ldf_arg == "singleline" || ldf_arg == "s") || (ldf_arg == "singleline-classifier" || ldf_arg == "sc"))
       THROW(
           "ldf requires either m/multiline or mc/multiline-classifier.  s/sc/singleline/singleline-classifier is no "
@@ -738,7 +750,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::csldf_setup(VW::setup_base
   if (ld->is_probabilities)
   {
     all.sd->report_multiclass_log_loss = true;
-    auto loss_function_type = all.loss->get_type();
+    auto loss_function_type = all.loss_config.loss->get_type();
     if (loss_function_type != "logistic")
     {
       all.logger.out_warn(
@@ -750,7 +762,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::csldf_setup(VW::setup_base
     }
   }
 
-  all.example_parser->emptylines_separate_examples = true;  // TODO: check this to be sure!!!  !ld->is_singleline;
+  all.parser_runtime.example_parser->emptylines_separate_examples =
+      true;  // TODO: check this to be sure!!!  !ld->is_singleline;
 
   ld->label_features.max_load_factor(0.25);
   ld->label_features.reserve(256);
@@ -802,8 +815,5 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::csldf_setup(VW::setup_base
                .set_output_example_prediction(output_example_prediction_func)
                .set_print_update(print_update_func)
                .build();
-
-  all.example_parser->lbl_parser = VW::cs_label_parser_global;
-
   return l;
 }

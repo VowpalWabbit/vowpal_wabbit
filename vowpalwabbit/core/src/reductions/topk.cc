@@ -132,14 +132,17 @@ void update_stats_topk(const VW::workspace& /* all */, VW::shared_data& sd, cons
 void output_example_prediction_topk(
     VW::workspace& all, const topk& data, const VW::multi_ex& ec_seq, VW::io::logger& logger)
 {
-  for (auto& sink : all.final_prediction_sink) { print_result(sink.get(), data.get_container_view(), ec_seq, logger); }
+  for (auto& sink : all.output_runtime.final_prediction_sink)
+  {
+    print_result(sink.get(), data.get_container_view(), ec_seq, logger);
+  }
 }
 
 void print_update_topk(VW::workspace& all, VW::shared_data& sd, const topk& /* data */, const VW::multi_ex& ec_seq,
     VW::io::logger& /* unused */)
 {
   const bool should_print_driver_update =
-      all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs;
+      all.sd->weighted_examples() >= all.sd->dump_interval && !all.output_config.quiet && !all.reduction_state.bfgs;
 
   if (should_print_driver_update)
   {
@@ -162,8 +165,8 @@ void print_update_topk(VW::workspace& all, VW::shared_data& sd, const topk& /* d
       sep = ",";
     }
 
-    sd.print_update(
-        *all.trace_message, all.holdout_set_off, all.current_pass, label_ss.str(), pred_ss.str(), num_features);
+    sd.print_update(*all.output_runtime.trace_message, all.passes_config.holdout_set_off,
+        all.passes_config.current_pass, label_ss.str(), pred_ss.str(), num_features);
   }
 }
 

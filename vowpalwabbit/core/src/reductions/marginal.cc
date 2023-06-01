@@ -127,7 +127,7 @@ void make_marginal(data& sm, VW::example& ec)
             expert e = {0, 0, 1.};
             sm.expert_state.insert(std::make_pair(key, std::make_pair(e, e)));
           }
-          if (sm.m_all->hash_inv)
+          if (sm.m_all->output_config.hash_inv)
           {
             std::ostringstream ss;
             std::vector<VW::audit_strings>& sn = sm.temp[n].space_names;
@@ -149,7 +149,7 @@ void make_marginal(data& sm, VW::example& ec)
           if VW_STD17_CONSTEXPR (is_learn)
           {
             const float label = ec.l.simple.label;
-            sm.alg_loss += weight * sm.m_all->loss->get_loss(sm.m_all->sd.get(), marginal_pred, label);
+            sm.alg_loss += weight * sm.m_all->loss_config.loss->get_loss(sm.m_all->sd.get(), marginal_pred, label);
           }
         }
       }
@@ -184,7 +184,8 @@ void compute_expert_loss(data& sm, VW::example& ec)
   if VW_STD17_CONSTEXPR (is_learn)
   {
     const float label = ec.l.simple.label;
-    sm.alg_loss += sm.net_feature_weight * sm.m_all->loss->get_loss(sm.m_all->sd.get(), sm.feature_pred, label);
+    sm.alg_loss +=
+        sm.net_feature_weight * sm.m_all->loss_config.loss->get_loss(sm.m_all->sd.get(), sm.feature_pred, label);
     sm.alg_loss *= inv_weight;
   }
 }
@@ -212,9 +213,10 @@ void update_marginal(data& sm, VW::example& ec)
         if (sm.compete)  // now update weights, before updating marginals
         {
           expert_pair& e = sm.expert_state[key];
-          const float regret1 =
-              sm.alg_loss - sm.m_all->loss->get_loss(sm.m_all->sd.get(), static_cast<float>(m.first / m.second), label);
-          const float regret2 = sm.alg_loss - sm.m_all->loss->get_loss(sm.m_all->sd.get(), sm.feature_pred, label);
+          const float regret1 = sm.alg_loss -
+              sm.m_all->loss_config.loss->get_loss(sm.m_all->sd.get(), static_cast<float>(m.first / m.second), label);
+          const float regret2 =
+              sm.alg_loss - sm.m_all->loss_config.loss->get_loss(sm.m_all->sd.get(), sm.feature_pred, label);
 
           e.first.regret += regret1 * weight;
           e.first.abs_regret += regret1 * regret1 * weight;  // fabs(regret1);
@@ -300,7 +302,7 @@ void save_load(data& sm, VW::io_buf& io, bool read, bool text)
     if (!read)
     {
       index = iter->first >> stride_shift;
-      if (sm.m_all->hash_inv) { msg << sm.inverse_hashes[iter->first]; }
+      if (sm.m_all->output_config.hash_inv) { msg << sm.inverse_hashes[iter->first]; }
       else { msg << index; }
       msg << ":";
     }

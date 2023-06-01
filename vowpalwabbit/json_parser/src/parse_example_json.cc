@@ -211,6 +211,84 @@ private:
 };
 
 template <bool audit>
+class ArrayToGraphState : public BaseState<audit>
+{
+public:
+  BaseState<audit>* return_state;
+  VW::cb_graph_feedback::triplet graph_triplet;
+
+  ArrayToGraphState() : BaseState<audit>("ArrayToGraphObject"), graph_triplet(0, 0, -1.f) {}
+
+  BaseState<audit>* StartObject(Context<audit>& ctx) override
+  {
+    obj_return_state = ctx.previous_state;
+    return this;
+  }
+
+  BaseState<audit>* Key(Context<audit>& ctx, const char* str, rapidjson::SizeType len, bool /* copy */) override
+  {
+    ctx.key = str;
+    ctx.key_length = len;
+    return this;
+  }
+
+  BaseState<audit>* String(Context<audit>& ctx, const char* str, rapidjson::SizeType len, bool) override
+  {
+    ctx.error() << "Unexpected token: std::string('" << str << "' len: " << len << ")";
+    return nullptr;
+  }
+
+  BaseState<audit>* StartArray(Context<audit>& ctx) override
+  {
+    return_state = ctx.previous_state;
+    graph_triplet = VW::cb_graph_feedback::triplet(0, 0, -1.f);
+    return this;
+  }
+
+  BaseState<audit>* EndArray(Context<audit>&, rapidjson::SizeType) override { return return_state; }
+
+  BaseState<audit>* Float(Context<audit>& ctx, float v) override
+  {
+    if (!_stricmp(ctx.key, "val")) { graph_triplet.val = v; }
+    else
+    {
+      ctx.error() << "Unsupported label property: '" << ctx.key << "' len: " << ctx.key_length;
+      return nullptr;
+    }
+
+    return this;
+  }
+
+  BaseState<audit>* Uint(Context<audit>& ctx, unsigned v) override
+  {
+    if (!_stricmp(ctx.key, "val")) { graph_triplet.val = v; }
+    else if (!_stricmp(ctx.key, "row")) { graph_triplet.row = v; }
+    else if (!_stricmp(ctx.key, "col")) { graph_triplet.col = v; }
+    else
+    {
+      ctx.error() << "Unsupported label property: '" << ctx.key << "' len: " << ctx.key_length;
+      return nullptr;
+    }
+    return this;
+  }
+
+  BaseState<audit>* EndObject(Context<audit>& ctx, rapidjson::SizeType) override
+  {
+    auto& graph_reduction_features =
+        ctx.ex->ex_reduction_features.template get<VW::cb_graph_feedback::reduction_features>();
+    if (graph_triplet.val != -1.f)
+    {
+      graph_reduction_features.push_triplet(graph_triplet.row, graph_triplet.col, graph_triplet.val);
+    }
+    graph_triplet = VW::cb_graph_feedback::triplet(0, 0, -1.f);
+    return obj_return_state;
+  }
+
+private:
+  BaseState<audit>* obj_return_state;
+};
+
+template <bool audit>
 class LabelObjectState : public BaseState<audit>
 {
 public:
@@ -401,11 +479,20 @@ public:
     }
     else if (found_cb)
     {
-      auto& ld = ctx.ex->l.cb;
-      ld.costs.push_back(cb_label);
+      if (ctx._label_parser.label_type == VW::label_type_t::CB_WITH_OBSERVATIONS)
+      {
+        auto& ld = ctx.ex->l.cb_with_observations;
+        ld.event.costs.push_back(cb_label);
+        cb_label = VW::cb_class{};
+      }
+      else
+      {
+        auto& ld = ctx.ex->l.cb;
+        ld.costs.push_back(cb_label);
 
-      found_cb = false;
-      cb_label = VW::cb_class{};
+        found_cb = false;
+        cb_label = VW::cb_class{};
+      }
     }
     else if (found_cb_continuous)
     {
@@ -590,6 +677,12 @@ public:
 
       ld->costs.push_back(f);
     }
+    else if (ctx._label_parser.label_type == VW::label_type_t::CB_WITH_OBSERVATIONS)
+    {
+      VW::cb_with_observations_label* ld = &(*ctx.examples)[0]->l.cb_with_observations;
+      VW::cb_class f;
+      ld->event.costs.push_back(f);
+    }
     else if (ctx._label_parser.label_type == VW::label_type_t::CCB)
     {
       auto* ld = &ctx.ex->l.conditional_contextual_bandit;
@@ -601,7 +694,7 @@ public:
       ld.type = VW::slates::example_type::SHARED;
     }
     else
-      THROW("label type is not CB, CCB or slates")
+      THROW("label type is not CB, CB_WITH_OBSERVATIONS, CCB or slates")
 
     return this;
   }
@@ -634,6 +727,45 @@ public:
     ctx.ex = (*ctx.examples)[0];
 
     return &ctx.default_state;
+  }
+};
+
+template <bool audit>
+class ObservationState : public BaseState<audit>
+{
+public:
+  ObservationState() : BaseState<audit>("Observation") {}
+
+  BaseState<audit>* StartArray(Context<audit>& /*ctx*/) override { return this; }
+
+  // NO_SANITIZE_UNDEFINED needed because ctx.example_factory function pointer may be typecasted
+  BaseState<audit>* NO_SANITIZE_UNDEFINED StartObject(Context<audit>& ctx) override
+  {
+    // setup default namespace
+    ctx.PushNamespace(" ", this);
+
+    return &ctx.default_state;
+  }
+
+  BaseState<audit>* EndArray(Context<audit>& ctx, rapidjson::SizeType) override
+  {
+    // return to shared example
+    ctx.ex = (*ctx.examples)[0];
+    return &ctx.decision_service_state;
+  }
+};
+
+template <bool audit>
+class DefinitelyBadState : public BaseState<audit>
+{
+public:
+  DefinitelyBadState() : BaseState<audit>("DefinitelyBad") {}
+
+  BaseState<audit>* Bool(Context<audit>& ctx, bool b) override
+  {
+    if (b) { ctx.observation_example->l.cb_with_observations.is_definitely_bad = true; }
+
+    return ctx.previous_state;
   }
 };
 
@@ -880,6 +1012,7 @@ public:
 
       // TODO: _multi in _multi...
       if (ctx.key_length == 6 && !strcmp(ctx.key, "_multi")) { return &ctx.multi_state; }
+      if (ctx.key_length == 6 && !strcmp(ctx.key, "_graph")) { return &ctx.array_to_graph_state; }
 
       if (ctx.key_length == 6 && !strcmp(ctx.key, "_slots")) { return &ctx.slots_state; }
 
@@ -933,6 +1066,11 @@ public:
       {
         ctx.uint_dedup_state.return_state = this;
         return &ctx.uint_dedup_state;
+      }
+
+      else if (ctx.key_length == 15 && !strncmp(str, "_definitely_bad", 15))
+      {
+        if ((ctx.return_path.back())->name == ctx.o_state.name) { return &ctx.definitely_bad_state; }
       }
 
       return Ignore(ctx, length);
@@ -991,6 +1129,11 @@ public:
   {
     BaseState<audit>* return_state = ctx.PopNamespace();
 
+    if (!strcmp(return_state->name, ctx.o_state.name))
+    {
+      return return_state;  // return to observation state
+    }
+
     if (ctx.namespace_path.empty())
     {
       int label_index = ctx.label_index_state.index;
@@ -1016,6 +1159,8 @@ public:
       // inject label
       ctx.label_object_state.EndObject(ctx, memberCount);
 
+      // inject observation examples
+      if (ctx.observation_example != nullptr) { ctx.examples->push_back(ctx.observation_example); }
       // If we are in CCB mode and there have been no slots. Check label cost, prob and action were passed. In that
       // case this is CB, so generate a single slot with this info.
       if (ctx._label_parser.label_type == VW::label_type_t::CCB)
@@ -1244,7 +1389,7 @@ public:
 
     if (ctx.dedup_examples->find(i) == ctx.dedup_examples->end()) { THROW("dedup id not found: " << i); }
 
-    auto* stored_ex = (*ctx.dedup_examples)[i];
+    auto* stored_ex = ctx.dedup_examples->at(i);
 
     new_ex->indices = stored_ex->indices;
     for (auto& ns : new_ex->indices) { new_ex->feature_space[ns] = stored_ex->feature_space[ns]; }
@@ -1409,6 +1554,20 @@ public:
           ctx.key = " ";
           ctx.key_length = 1;
           return &ctx.default_state;
+        case 'o':
+          if (ctx._label_parser.label_type == VW::label_type_t::CB_WITH_OBSERVATIONS)
+          {
+            ctx.key = " ";
+            ctx.key_length = 1;
+
+            // allocate new example
+            ctx.ex = &ctx.example_factory();
+            ctx._label_parser.default_label(ctx.ex->l);
+            ctx.ex->l.cb_with_observations.is_observation = true;
+            ctx.observation_example = ctx.ex;
+
+            return &ctx.o_state;
+          }
       }
     }
     else if (length == 3 && !strcmp(str, "pdf"))
@@ -1512,10 +1671,11 @@ public:
   std::vector<VW::parsers::json::details::namespace_builder<audit>> namespace_path;
   std::vector<BaseState<audit>*> return_path;
 
-  std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr;
+  const std::unordered_map<uint64_t, VW::example*>* dedup_examples;
   std::unordered_map<std::string, std::set<std::string>>* ignore_features = nullptr;
 
   VW::multi_ex* examples;
+  VW::example* observation_example = nullptr;
   VW::example* ex;
   rapidjson::InsituStringStream* stream;
   const char* stream_end;
@@ -1536,10 +1696,13 @@ public:
   TextState<audit> text_state;
   TagState<audit> tag_state;
   MultiState<audit> multi_state;
+  ObservationState<audit> o_state;
+  DefinitelyBadState<audit> definitely_bad_state;
   IgnoreState<audit> ignore_state;
   ArrayState<audit> array_state;
   SlotsState<audit> slots_state;
   ArrayToPdfState<audit> array_pdf_state;
+  ArrayToGraphState<audit> array_to_graph_state;
 
   // DecisionServiceState
   DecisionServiceState<audit> decision_service_state;
@@ -1633,7 +1796,7 @@ public:
       bool chain_hash, VW::label_parser_reuse_mem* reuse_mem, const VW::named_labels* ldict, VW::io::logger* logger,
       VW::multi_ex* examples, rapidjson::InsituStringStream* stream, const char* stream_end,
       VW::example_factory_t example_factory, std::unordered_map<std::string, std::set<std::string>>* ignore_features,
-      std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr)
+      const std::unordered_map<uint64_t, VW::example*>* dedup_examples = nullptr)
   {
     ctx.init(lbl_parser, hash_func, hash_seed, parse_mask, chain_hash, reuse_mem, ldict, logger);
     ctx.examples = examples;
@@ -1693,7 +1856,7 @@ void VW::parsers::json::read_line_json(const VW::label_parser& lbl_parser, hash_
     uint64_t parse_mask, bool chain_hash, VW::label_parser_reuse_mem* reuse_mem, const VW::named_labels* ldict,
     VW::multi_ex& examples, char* line, size_t length, example_factory_t example_factory, VW::io::logger& logger,
     std::unordered_map<std::string, std::set<std::string>>* ignore_features,
-    std::unordered_map<uint64_t, VW::example*>* dedup_examples)
+    const std::unordered_map<uint64_t, VW::example*>* dedup_examples)
 {
   if (lbl_parser.label_type == VW::label_type_t::SLATES)
   {
@@ -1731,11 +1894,12 @@ void VW::parsers::json::read_line_json(const VW::label_parser& lbl_parser, hash_
 
 template <bool audit>
 void VW::parsers::json::read_line_json(VW::workspace& all, VW::multi_ex& examples, char* line, size_t length,
-    example_factory_t example_factory, std::unordered_map<uint64_t, VW::example*>* dedup_examples)
+    example_factory_t example_factory, const std::unordered_map<uint64_t, VW::example*>* dedup_examples)
 {
-  return read_line_json<audit>(all.example_parser->lbl_parser, all.example_parser->hasher, all.hash_seed,
-      all.parse_mask, all.chain_hash_json, &all.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), examples,
-      line, length, std::move(example_factory), all.logger, &all.ignore_features_dsjson, dedup_examples);
+  return read_line_json<audit>(all.parser_runtime.example_parser->lbl_parser, all.parser_runtime.example_parser->hasher,
+      all.runtime_config.hash_seed, all.runtime_state.parse_mask, all.parser_runtime.chain_hash_json,
+      &all.parser_runtime.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), examples, line, length,
+      std::move(example_factory), all.logger, &all.feature_tweaks_config.ignore_features_dsjson, dedup_examples);
 }
 
 inline bool apply_pdrop(VW::label_type_t label_type, float pdrop, VW::multi_ex& examples, VW::io::logger& logger)
@@ -1768,11 +1932,12 @@ bool VW::parsers::json::read_line_decision_service_json(VW::workspace& all, VW::
     size_t length, bool copy_line, example_factory_t example_factory,
     VW::parsers::json::decision_service_interaction* data)
 {
-  if (all.example_parser->lbl_parser.label_type == VW::label_type_t::SLATES)
+  if (all.parser_runtime.example_parser->lbl_parser.label_type == VW::label_type_t::SLATES)
   {
     VW::parsers::json::details::parse_slates_example_dsjson<audit>(
         all, examples, line, length, std::move(example_factory), data);
-    return apply_pdrop(all.example_parser->lbl_parser.label_type, data->probability_of_drop, examples, all.logger);
+    return apply_pdrop(
+        all.parser_runtime.example_parser->lbl_parser.label_type, data->probability_of_drop, examples, all.logger);
   }
 
   std::vector<char> line_vec;
@@ -1786,9 +1951,10 @@ bool VW::parsers::json::read_line_decision_service_json(VW::workspace& all, VW::
   json_parser<audit> parser;
 
   VWReaderHandler<audit>& handler = parser.handler;
-  handler.init(all.example_parser->lbl_parser, all.example_parser->hasher, all.hash_seed, all.parse_mask,
-      all.chain_hash_json, &all.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), &all.logger, &examples,
-      &ss, line + length, example_factory, &all.ignore_features_dsjson);
+  handler.init(all.parser_runtime.example_parser->lbl_parser, all.parser_runtime.example_parser->hasher,
+      all.runtime_config.hash_seed, all.runtime_state.parse_mask, all.parser_runtime.chain_hash_json,
+      &all.parser_runtime.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), &all.logger, &examples, &ss,
+      line + length, example_factory, &all.feature_tweaks_config.ignore_features_dsjson);
 
   handler.ctx.SetStartStateToDecisionService(data);
   handler.ctx.decision_service_data = data;
@@ -1803,7 +1969,7 @@ bool VW::parsers::json::read_line_decision_service_json(VW::workspace& all, VW::
     // The stack of namespaces must be drained so there are no half extents left around.
     while (!handler.ctx.namespace_path.empty()) { handler.ctx.PopNamespace(); }
 
-    if (all.example_parser->strict_parse)
+    if (all.parser_runtime.example_parser->strict_parse)
     {
       THROW("JSON parser error at " << result.Offset() << ": " << GetParseError_En(result.Code())
                                     << ". "
@@ -1819,14 +1985,15 @@ bool VW::parsers::json::read_line_decision_service_json(VW::workspace& all, VW::
     }
   }
 
-  return apply_pdrop(all.example_parser->lbl_parser.label_type, data->probability_of_drop, examples, all.logger);
+  return apply_pdrop(
+      all.parser_runtime.example_parser->lbl_parser.label_type, data->probability_of_drop, examples, all.logger);
 }
 
 template <bool audit>
 bool VW::parsers::json::details::parse_line_json(
     VW::workspace* all, char* line, size_t num_chars, VW::multi_ex& examples)
 {
-  if (all->example_parser->decision_service_json)
+  if (all->parser_runtime.example_parser->decision_service_json)
   {
     // Skip lines that do not start with "{"
     if (line[0] != '{') { return false; }
@@ -1840,53 +2007,58 @@ bool VW::parsers::json::details::parse_line_json(
     {
       VW::return_multiple_example(*all, examples);
       examples.push_back(&VW::get_unused_example(all));
-      if (all->example_parser->metrics) { all->example_parser->metrics->line_parse_error++; }
+      if (all->parser_runtime.example_parser->metrics)
+      {
+        all->parser_runtime.example_parser->metrics->line_parse_error++;
+      }
       return false;
     }
 
-    if (all->example_parser->metrics)
+    if (all->parser_runtime.example_parser->metrics)
     {
       if (!interaction.event_id.empty())
       {
-        if (all->example_parser->metrics->first_event_id.empty())
+        if (all->parser_runtime.example_parser->metrics->first_event_id.empty())
         {
-          all->example_parser->metrics->first_event_id = std::move(interaction.event_id);
+          all->parser_runtime.example_parser->metrics->first_event_id = std::move(interaction.event_id);
         }
-        else { all->example_parser->metrics->last_event_id = std::move(interaction.event_id); }
+        else { all->parser_runtime.example_parser->metrics->last_event_id = std::move(interaction.event_id); }
       }
 
       if (!interaction.timestamp.empty())
       {
-        if (all->example_parser->metrics->first_event_time.empty())
+        if (all->parser_runtime.example_parser->metrics->first_event_time.empty())
         {
-          all->example_parser->metrics->first_event_time = std::move(interaction.timestamp);
+          all->parser_runtime.example_parser->metrics->first_event_time = std::move(interaction.timestamp);
         }
-        else { all->example_parser->metrics->last_event_time = std::move(interaction.timestamp); }
+        else { all->parser_runtime.example_parser->metrics->last_event_time = std::move(interaction.timestamp); }
       }
 
       // Technically the aggregation operation here is supposed to be user-defined
       // but according to Casey, the only operation used is Sum
       // The _original_label_cost element is found either at the top level OR under
       // the _outcomes node (for CCB)
-      all->example_parser->metrics->dsjson_sum_cost_original += interaction.original_label_cost;
-      all->example_parser->metrics->dsjson_sum_cost_original_first_slot += interaction.original_label_cost_first_slot;
+      all->parser_runtime.example_parser->metrics->dsjson_sum_cost_original += interaction.original_label_cost;
+      all->parser_runtime.example_parser->metrics->dsjson_sum_cost_original_first_slot +=
+          interaction.original_label_cost_first_slot;
       if (!interaction.actions.empty())
       {
         // APS requires this metric for CB (baseline action is 1)
         if (interaction.actions[0] == 1)
         {
-          all->example_parser->metrics->dsjson_sum_cost_original_baseline += interaction.original_label_cost;
+          all->parser_runtime.example_parser->metrics->dsjson_sum_cost_original_baseline +=
+              interaction.original_label_cost;
         }
 
         if (!interaction.baseline_actions.empty())
         {
           if (interaction.actions[0] == interaction.baseline_actions[0])
           {
-            all->example_parser->metrics->dsjson_number_of_label_equal_baseline_first_slot++;
-            all->example_parser->metrics->dsjson_sum_cost_original_label_equal_baseline_first_slot +=
+            all->parser_runtime.example_parser->metrics->dsjson_number_of_label_equal_baseline_first_slot++;
+            all->parser_runtime.example_parser->metrics->dsjson_sum_cost_original_label_equal_baseline_first_slot +=
                 interaction.original_label_cost_first_slot;
           }
-          else { all->example_parser->metrics->dsjson_number_of_label_not_equal_baseline_first_slot++; }
+          else { all->parser_runtime.example_parser->metrics->dsjson_number_of_label_not_equal_baseline_first_slot++; }
         }
       }
     }
@@ -1896,7 +2068,10 @@ bool VW::parsers::json::details::parse_line_json(
     // for counterfactual. (@marco)
     if (interaction.skip_learn)
     {
-      if (all->example_parser->metrics) { all->example_parser->metrics->number_of_skipped_events++; }
+      if (all->parser_runtime.example_parser->metrics)
+      {
+        all->parser_runtime.example_parser->metrics->number_of_skipped_events++;
+      }
       VW::return_multiple_example(*all, examples);
       examples.push_back(&VW::get_unused_example(all));
       return false;
@@ -1905,7 +2080,10 @@ bool VW::parsers::json::details::parse_line_json(
     // let's ask to continue reading data until we find a line with actions provided
     if (interaction.actions.size() == 0 && all->l->is_multiline())
     {
-      if (all->example_parser->metrics) { all->example_parser->metrics->number_of_events_zero_actions++; }
+      if (all->parser_runtime.example_parser->metrics)
+      {
+        all->parser_runtime.example_parser->metrics->number_of_events_zero_actions++;
+      }
       VW::return_multiple_example(*all, examples);
       examples.push_back(&VW::get_unused_example(all));
       return false;
@@ -1991,17 +2169,17 @@ template void VW::parsers::json::read_line_json<true>(const VW::label_parser& lb
     uint64_t hash_seed, uint64_t parse_mask, bool chain_hash, VW::label_parser_reuse_mem* reuse_mem,
     const VW::named_labels* ldict, VW::multi_ex& examples, char* line, size_t length, example_factory_t example_factory,
     VW::io::logger& logger, std::unordered_map<std::string, std::set<std::string>>* ignore_features,
-    std::unordered_map<uint64_t, VW::example*>* dedup_examples);
+    const std::unordered_map<uint64_t, VW::example*>* dedup_examples);
 template void VW::parsers::json::read_line_json<false>(const VW::label_parser& lbl_parser, hash_func_t hash_func,
     uint64_t hash_seed, uint64_t parse_mask, bool chain_hash, VW::label_parser_reuse_mem* reuse_mem,
     const VW::named_labels* ldict, VW::multi_ex& examples, char* line, size_t length, example_factory_t example_factory,
     VW::io::logger& logger, std::unordered_map<std::string, std::set<std::string>>* ignore_features,
-    std::unordered_map<uint64_t, VW::example*>* dedup_examples);
+    const std::unordered_map<uint64_t, VW::example*>* dedup_examples);
 
 template void VW::parsers::json::read_line_json<true>(VW::workspace& all, VW::multi_ex& examples, char* line,
-    size_t length, example_factory_t example_factory, std::unordered_map<uint64_t, VW::example*>* dedup_examples);
+    size_t length, example_factory_t example_factory, const std::unordered_map<uint64_t, VW::example*>* dedup_examples);
 template void VW::parsers::json::read_line_json<false>(VW::workspace& all, VW::multi_ex& examples, char* line,
-    size_t length, example_factory_t example_factory, std::unordered_map<uint64_t, VW::example*>* dedup_examples);
+    size_t length, example_factory_t example_factory, const std::unordered_map<uint64_t, VW::example*>* dedup_examples);
 
 template bool VW::parsers::json::read_line_decision_service_json<true>(VW::workspace& all, VW::multi_ex& examples,
     char* line, size_t length, bool copy_line, example_factory_t example_factory,

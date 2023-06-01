@@ -37,7 +37,7 @@ public:
 
   std::string get_setupfn_name(reduction_setup_fn) override { return ""; }
 
-  size_t get_ppw() override { return 1; }
+  size_t get_feature_width_above() override { return 1; }
 
 private:
   std::shared_ptr<VW::LEARNER::learner> _cached;

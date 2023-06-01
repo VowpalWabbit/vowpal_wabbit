@@ -75,7 +75,7 @@ void initialize_regressor(VW::workspace& all, T& weights)
   // Regressor is already initialized.
   if (weights.not_null()) { return; }
 
-  size_t length = (static_cast<size_t>(1)) << all.num_bits;
+  size_t length = (static_cast<size_t>(1)) << all.initial_weights_config.num_bits;
   try
   {
     uint32_t ss = weights.stride_shift();
@@ -84,35 +84,37 @@ void initialize_regressor(VW::workspace& all, T& weights)
   }
   catch (const VW::vw_exception&)
   {
-    THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>");
+    THROW(" Failed to allocate weight array with " << all.initial_weights_config.num_bits
+                                                   << " bits: try decreasing -b <bits>");
   }
   if (weights.mask() == 0)
   {
-    THROW(" Failed to allocate weight array with " << all.num_bits << " bits: try decreasing -b <bits>");
+    THROW(" Failed to allocate weight array with " << all.initial_weights_config.num_bits
+                                                   << " bits: try decreasing -b <bits>");
   }
-  else if (all.initial_weight != 0.)
+  else if (all.initial_weights_config.initial_weight != 0.)
   {
-    auto initial_weight = all.initial_weight;
+    auto initial_weight = all.initial_weights_config.initial_weight;
     auto initial_value_weight_initializer = [initial_weight](VW::weight* weights, uint64_t /*index*/)
     { weights[0] = initial_weight; };
     weights.set_default(initial_value_weight_initializer);
   }
-  else if (all.random_positive_weights)
+  else if (all.initial_weights_config.random_positive_weights)
   {
     auto rand_state = *all.get_random_state();
     auto random_positive = [&rand_state](VW::weight* weights, uint64_t)
     { weights[0] = 0.1f * rand_state.get_and_update_random(); };
     weights.set_default(random_positive);
   }
-  else if (all.random_weights)
+  else if (all.initial_weights_config.random_weights)
   {
     auto rand_state = *all.get_random_state();
     auto random_neg_pos = [&rand_state](VW::weight* weights, uint64_t)
     { weights[0] = rand_state.get_and_update_random() - 0.5f; };
     weights.set_default(random_neg_pos);
   }
-  else if (all.normal_weights) { weights.set_default(&initialize_weights_as_polar_normal); }
-  else if (all.tnormal_weights)
+  else if (all.initial_weights_config.normal_weights) { weights.set_default(&initialize_weights_as_polar_normal); }
+  else if (all.initial_weights_config.tnormal_weights)
   {
     weights.set_default(&initialize_weights_as_polar_normal);
     truncate(all, weights);
@@ -149,15 +151,16 @@ void VW::details::save_load_header(VW::workspace& all, VW::io_buf& model_file, b
       buff2[std::min(v_length, DEFAULT_BUF_SIZE) - 1] = '\0';
     }
     bytes_read_write += VW::details::bin_text_read_write(model_file, buff2.data(), v_length, read, msg, text);
-    all.model_file_ver = VW::version_struct{buff2.data()};  // stored in all to check save_resume fix in gd
+    all.runtime_state.model_file_ver =
+        VW::version_struct{buff2.data()};  // stored in all to check save_resume fix in gd
     VW::validate_version(all);
 
-    if (all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_CHAINED_HASH)
+    if (all.runtime_state.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_CHAINED_HASH)
     {
       model_file.verify_hash(true);
     }
 
-    if (all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_ID)
+    if (all.runtime_state.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_ID)
     {
       v_length = all.id.length() + 1;
 
@@ -186,8 +189,8 @@ void VW::details::save_load_header(VW::workspace& all, VW::io_buf& model_file, b
     bytes_read_write += VW::details::bin_text_read_write_fixed_validated(
         model_file, reinterpret_cast<char*>(&all.sd->max_label), sizeof(all.sd->max_label), read, msg, text);
 
-    msg << "bits:" << all.num_bits << "\n";
-    uint32_t local_num_bits = all.num_bits;
+    msg << "bits:" << all.initial_weights_config.num_bits << "\n";
+    uint32_t local_num_bits = all.initial_weights_config.num_bits;
     bytes_read_write += VW::details::bin_text_read_write_fixed_validated(
         model_file, reinterpret_cast<char*>(&local_num_bits), sizeof(local_num_bits), read, msg, text);
 
@@ -201,12 +204,12 @@ void VW::details::save_load_header(VW::workspace& all, VW::io_buf& model_file, b
 
     VW::validate_default_bits(all, local_num_bits);
 
-    all.default_bits = false;
-    all.num_bits = local_num_bits;
+    all.runtime_config.default_bits = false;
+    all.initial_weights_config.num_bits = local_num_bits;
 
     VW::validate_num_bits(all);
 
-    if (all.model_file_ver < VW::version_definitions::VERSION_FILE_WITH_INTERACTIONS_IN_FO)
+    if (all.runtime_state.model_file_ver < VW::version_definitions::VERSION_FILE_WITH_INTERACTIONS_IN_FO)
     {
       if (!read) THROW("cannot write legacy format");
 
@@ -224,9 +227,10 @@ void VW::details::save_load_header(VW::workspace& all, VW::io_buf& model_file, b
         // Only the read path is implemented since this is for old version read support.
         bytes_read_write += VW::details::bin_text_read_write_fixed_validated(model_file, pair, 2, read, msg, text);
         std::vector<VW::namespace_index> temp(pair, *(&pair + 1));
-        if (std::count(all.interactions.begin(), all.interactions.end(), temp) == 0)
+        if (std::count(all.feature_tweaks_config.interactions.begin(), all.feature_tweaks_config.interactions.end(),
+                temp) == 0)
         {
-          all.interactions.emplace_back(temp.begin(), temp.end());
+          all.feature_tweaks_config.interactions.emplace_back(temp.begin(), temp.end());
         }
       }
 
@@ -248,16 +252,17 @@ void VW::details::save_load_header(VW::workspace& all, VW::io_buf& model_file, b
         bytes_read_write += VW::details::bin_text_read_write_fixed_validated(model_file, triple, 3, read, msg, text);
 
         std::vector<VW::namespace_index> temp(triple, *(&triple + 1));
-        if (count(all.interactions.begin(), all.interactions.end(), temp) == 0)
+        if (count(all.feature_tweaks_config.interactions.begin(), all.feature_tweaks_config.interactions.end(), temp) ==
+            0)
         {
-          all.interactions.emplace_back(temp.begin(), temp.end());
+          all.feature_tweaks_config.interactions.emplace_back(temp.begin(), temp.end());
         }
       }
 
       msg << "\n";
       bytes_read_write += VW::details::bin_text_read_write_fixed_validated(model_file, nullptr, 0, read, msg, text);
 
-      if (all.model_file_ver >=
+      if (all.runtime_state.model_file_ver >=
           VW::version_definitions::VERSION_FILE_WITH_INTERACTIONS)  // && < VERSION_FILE_WITH_INTERACTIONS_IN_FO
                                                                     // (previous if)
       {
@@ -283,9 +288,10 @@ void VW::details::save_load_header(VW::workspace& all, VW::io_buf& model_file, b
           if (size != inter_len) { THROW("Failed to read interaction from model file."); }
 
           std::vector<VW::namespace_index> temp(buff2.data(), buff2.data() + size);
-          if (count(all.interactions.begin(), all.interactions.end(), temp) == 0)
+          if (count(all.feature_tweaks_config.interactions.begin(), all.feature_tweaks_config.interactions.end(),
+                  temp) == 0)
           {
-            all.interactions.emplace_back(buff2.data(), buff2.data() + inter_len);
+            all.feature_tweaks_config.interactions.emplace_back(buff2.data(), buff2.data() + inter_len);
           }
         }
 
@@ -294,7 +300,7 @@ void VW::details::save_load_header(VW::workspace& all, VW::io_buf& model_file, b
       }
     }
 
-    if (all.model_file_ver <= VW::version_definitions::VERSION_FILE_WITH_RANK_IN_HEADER)
+    if (all.runtime_state.model_file_ver <= VW::version_definitions::VERSION_FILE_WITH_RANK_IN_HEADER)
     {
       // to fix compatibility that was broken in 7.9
       uint32_t rank = 0;
@@ -320,12 +326,12 @@ void VW::details::save_load_header(VW::workspace& all, VW::io_buf& model_file, b
       }
     }
 
-    msg << "lda:" << all.lda << "\n";
-    bytes_read_write += VW::details::bin_text_read_write_fixed_validated(
-        model_file, reinterpret_cast<char*>(&all.lda), sizeof(all.lda), read, msg, text);
+    msg << "lda:" << all.reduction_state.lda << "\n";
+    bytes_read_write += VW::details::bin_text_read_write_fixed_validated(model_file,
+        reinterpret_cast<char*>(&all.reduction_state.lda), sizeof(all.reduction_state.lda), read, msg, text);
 
     // TODO: validate ngram_len?
-    auto* g_transformer = all.skip_gram_transformer.get();
+    auto* g_transformer = all.feature_tweaks_config.skip_gram_transformer.get();
     uint32_t ngram_len =
         (g_transformer != nullptr) ? static_cast<uint32_t>(g_transformer->get_initial_ngram_definitions().size()) : 0;
     msg << ngram_len << " ngram:";
@@ -454,9 +460,10 @@ void VW::details::save_load_header(VW::workspace& all, VW::io_buf& model_file, b
     }
 
     // Read/write checksum if required by version
-    if (all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_HASH)
+    if (all.runtime_state.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_HASH)
     {
-      uint32_t check_sum = (all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_CHAINED_HASH)
+      uint32_t check_sum =
+          (all.runtime_state.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_CHAINED_HASH)
           ? model_file.hash()
           : static_cast<uint32_t>(VW::uniform_hash(model_file.buffer_start(), bytes_read_write, 0));
 
@@ -469,7 +476,7 @@ void VW::details::save_load_header(VW::workspace& all, VW::io_buf& model_file, b
       if (check_sum_saved != check_sum) { THROW("Checksum is inconsistent, file is possibly corrupted."); }
     }
 
-    if (all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_CHAINED_HASH)
+    if (all.runtime_state.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_CHAINED_HASH)
     {
       model_file.verify_hash(false);
     }
@@ -508,26 +515,29 @@ void VW::details::save_predictor(VW::workspace& all, const std::string& reg_name
 {
   std::stringstream filename;
   filename << reg_name;
-  if (all.save_per_pass) { filename << "." << current_pass; }
+  if (all.output_model_config.save_per_pass) { filename << "." << current_pass; }
   dump_regressor(all, filename.str(), false);
 }
 
 void VW::details::finalize_regressor(VW::workspace& all, const std::string& reg_name)
 {
-  if (!all.early_terminate)
+  if (!all.passes_config.early_terminate)
   {
-    if (all.per_feature_regularizer_output.length() > 0)
+    if (all.output_model_config.per_feature_regularizer_output.length() > 0)
     {
-      dump_regressor(all, all.per_feature_regularizer_output, false);
+      dump_regressor(all, all.output_model_config.per_feature_regularizer_output, false);
     }
     else { dump_regressor(all, reg_name, false); }
-    if (all.per_feature_regularizer_text.length() > 0) { dump_regressor(all, all.per_feature_regularizer_text, true); }
+    if (all.output_model_config.per_feature_regularizer_text.length() > 0)
+    {
+      dump_regressor(all, all.output_model_config.per_feature_regularizer_text, true);
+    }
     else
     {
-      dump_regressor(all, all.text_regressor_name, true);
-      all.print_invert = true;
-      dump_regressor(all, all.inv_hash_regressor_name, true);
-      all.print_invert = false;
+      dump_regressor(all, all.output_model_config.text_regressor_name, true);
+      all.output_config.print_invert = true;
+      dump_regressor(all, all.output_model_config.inv_hash_regressor_name, true);
+      all.output_config.print_invert = false;
     }
   }
 }
@@ -539,9 +549,9 @@ void VW::details::read_regressor_file(
   {
     io_temp.add_file(VW::io::open_file_reader(all_intial[0]));
 
-    if (!all.quiet)
+    if (!all.output_config.quiet)
     {
-      // *(all.trace_message) << "initial_regressor = " << regs[0] << std::endl;
+      // *(all.output_runtime.trace_message) << "initial_regressor = " << regs[0] << std::endl;
       if (all_intial.size() > 1)
       {
         all.logger.err_warn("Ignoring remaining {} initial regressors", (all_intial.size() - 1));

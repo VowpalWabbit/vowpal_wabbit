@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "vw/core/automl_impl.h"
-#include "vw/core/reductions/conditional_contextual_bandit.h"
+#include "vw/core/interactions.h"
 
 namespace VW
 {
@@ -180,11 +180,34 @@ void ns_based_config::apply_config_to_interactions(const bool ccb_on,
     }
   }
 
+  // expanded version/equivalent of ccb::insert_ccb_interactions(interactions, ...);
+  // we cannot use that function since it relies on WILDCARD_NAMESPACE and on generate_interactions reduction
+  // which we don't use in automl stack
+  //
+  // CCB adds the following interactions:
+  //   1. Every existing interaction + VW::details::CCB_ID_NAMESPACE
+  //   2. wildcard_namespace + VW::details::CCB_ID_NAMESPACE
   if (ccb_on)
   {
-    std::vector<std::vector<extent_term>> empty;
-    ccb::insert_ccb_interactions(interactions, empty);
+    auto total = interactions.size();
+    auto reserve_size = 2 * total + ns_counter.size();
+    interactions.reserve(reserve_size);
+    for (size_t i = 0; i < total; ++i)
+    {
+      auto copy = interactions[i];
+      copy.push_back(VW::details::CCB_ID_NAMESPACE);
+      interactions.emplace_back(std::move(copy));
+    }
+
+    for (auto it = ns_counter.begin(); it != ns_counter.end(); ++it)
+    {
+      interactions.emplace_back(std::vector<namespace_index>{(*it).first, VW::details::CCB_ID_NAMESPACE});
+    }
+
+    assert(interactions.size() == reserve_size);
   }
+
+  std::sort(interactions.begin(), interactions.end(), VW::details::sort_interactions_comparator);
 }
 
 // Helper function to insert new configs from oracle into map of configs as well as index_queue.
