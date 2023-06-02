@@ -58,7 +58,7 @@ public:
 
   VW::cb_class* known_cost() { return &_gen_cs_dr.known_cost; }
   const VW::cb_class* known_cost() const { return &_gen_cs_dr.known_cost; }
-  const bool per_model_save_load() const { return _per_model_save_load; }
+  bool per_model_save_load() const { return _per_model_save_load; }
 
 private:
   void learn_ips(VW::LEARNER::learner& base, VW::multi_ex& examples);
