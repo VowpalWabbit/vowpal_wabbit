@@ -1115,7 +1115,7 @@ void VW::details::save_load_online_state_gd(VW::workspace& all, VW::io_buf& mode
       sizeof(all.update_rule_config.initial_t), read, msg, text);
 
   assert(pms.size() >= 1);
-  if (g->per_model_save_load)
+  if (g != nullptr && g->per_model_save_load)
   {
     for (size_t ind = 0; ind < pms.size(); ++ind)
     {
@@ -1186,7 +1186,7 @@ void VW::details::save_load_online_state_gd(VW::workspace& all, VW::io_buf& mode
     // restore some data to allow save_resume work more accurate
 
     // fix average loss
-    if (g->per_model_save_load)
+    if (g != nullptr && g->per_model_save_load)
     {
       for (size_t ind = 0; ind < pms.size(); ++ind)
       {

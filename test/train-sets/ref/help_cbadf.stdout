@@ -225,6 +225,7 @@ Weight Options:
                                             (type: float, default: 0, keep)
     --cb_type arg                           Contextual bandit method to use (type: str, default: mtr, choices
                                             {dm, dr, ips, mtr, sm}, keep)
+    --per_model_save_load                   Save and load per model state (type: bool)
 [Reduction] Contextual Bandit with Action Dependent Features Options:
     --cb_adf                                Do Contextual Bandit learning with multiline action dependent
                                             features (type: bool, keep, necessary)
@@ -234,6 +235,7 @@ Weight Options:
                                             (type: float, default: 0, keep)
     --cb_type arg                           Contextual bandit method to use (type: str, default: mtr, choices
                                             {dm, dr, ips, mtr, sm}, keep)
+    --per_model_save_load                   Save and load per model state (type: bool)
 [Reduction] Contextual Bandit: cb -> cb_adf Options:
     --cb_to_cbadf arg                       Flag is unused and has no effect. It should not be passed. The
                                             cb_to_cbadf reduction is automatically enabled if cb, cb_explore
@@ -273,6 +275,7 @@ Weight Options:
                                             default: 0)
     --l2_state arg                          Amount of accumulated implicit l2 regularization (type: float,
                                             default: 1)
+    --per_model_save_load                   Save and load per model state (type: bool)
 [Reduction] Scorer Options:
     --link arg                              Specify the link function (type: str, default: identity, choices
                                             {glf1, identity, logistic, poisson}, keep)
