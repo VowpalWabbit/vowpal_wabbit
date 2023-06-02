@@ -456,7 +456,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_adf_setup(VW::setup_bas
                .help("Contextual bandit method to use"))
       .add(make_option("per_model_save_load", per_model_save_load)
                .allow_override()
-               .help("Save and load per model state"));;
+               .help("Save and load per model state"));
+  ;
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
@@ -510,7 +511,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_adf_setup(VW::setup_bas
 
   if (options.was_supplied("baseline") && check_baseline_enabled) { options.insert("check_enabled", ""); }
 
-  auto ld = VW::make_unique<VW::reductions::cb_adf>(cb_type, rank_all, clip_p, no_predict, feature_width_above, per_model_save_load, &all);
+  auto ld = VW::make_unique<VW::reductions::cb_adf>(
+      cb_type, rank_all, clip_p, no_predict, feature_width_above, per_model_save_load, &all);
 
   auto base = require_multiline(stack_builder.setup_base_learner(feature_width));
 

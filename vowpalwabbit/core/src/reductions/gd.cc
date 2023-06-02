@@ -1191,8 +1191,8 @@ void VW::details::save_load_online_state_gd(VW::workspace& all, VW::io_buf& mode
       for (size_t ind = 0; ind < pms.size(); ++ind)
       {
         msg << "total_weight_" << ind << " " << pms[ind].total_weight << "\n";
-        VW::details::bin_text_read_write_fixed(
-            model_file, reinterpret_cast<char*>(&pms[ind].total_weight), sizeof(pms[ind].total_weight), read, msg, text);
+        VW::details::bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&pms[ind].total_weight),
+            sizeof(pms[ind].total_weight), read, msg, text);
       }
     }
     else
