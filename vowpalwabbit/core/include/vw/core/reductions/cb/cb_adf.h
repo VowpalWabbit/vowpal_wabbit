@@ -26,13 +26,14 @@ public:
   void predict(VW::LEARNER::learner& base, VW::multi_ex& ec_seq);
   bool update_statistics(const VW::example& ec, const VW::multi_ex& ec_seq, VW::shared_data& sd) const;
 
-  cb_adf(VW::cb_type_t cb_type, bool rank_all, float clip_p, bool no_predict, size_t feature_width_above,
+  cb_adf(VW::cb_type_t cb_type, bool rank_all, float clip_p, bool no_predict, size_t feature_width_above, bool per_model_save_load,
       VW::workspace* all)
       : _no_predict(no_predict)
       , _rank_all(rank_all)
       , _clip_p(clip_p)
       , _gen_cs_mtr(feature_width_above)
       , _cb_type(cb_type)
+      , _per_model_save_load(per_model_save_load)
       , _all(all)
   {
   }
@@ -57,6 +58,7 @@ public:
 
   VW::cb_class* known_cost() { return &_gen_cs_dr.known_cost; }
   const VW::cb_class* known_cost() const { return &_gen_cs_dr.known_cost; }
+  const bool per_model_save_load() const { return _per_model_save_load; }
 
 private:
   void learn_ips(VW::LEARNER::learner& base, VW::multi_ex& examples);
@@ -84,6 +86,7 @@ private:
   VW::details::cb_to_cs_adf_dr _gen_cs_dr;
   VW::details::cb_to_cs_adf_mtr _gen_cs_mtr;
   VW::cb_type_t _cb_type;
+  bool _per_model_save_load;
 
   VW::workspace* _all = nullptr;
 };
