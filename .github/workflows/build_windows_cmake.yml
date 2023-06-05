@@ -40,11 +40,12 @@ jobs:
           submodules: recursive
       - name: Show vcpkg root
         run: |
+          echo "VCPKG_ROOT_VW=${{ env.VCPKG_ROOT }}" >> $GITHUB_ENV
           ls "${{ env.VCPKG_ROOT }}"
       - uses: ilammy/msvc-dev-cmd@v1
       - name: Show vcpkg root again
         run: |
-          ls "${{ env.VCPKG_ROOT }}"
+          ls "${{ env.VCPKG_ROOT_VW }}"
       - name: Bootstrap vcpkg
         run: |
           if (!(Test-Path "${{ env.VCPKG_ROOT }}\vcpkg.exe")) {
