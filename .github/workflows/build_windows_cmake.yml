@@ -50,7 +50,7 @@ jobs:
             ${{ env.VCPKG_REF }}-${{ matrix.os }}-vcpkg-cache-invalidate-0
       - uses: ilammy/msvc-dev-cmd@v1
       - name: Bootstrap vcpkg
-        run: ${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.bat
+        run: \&${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.bat
       - name: Install vcpkg dependencies
         run: ${{ env.VCPKG_ROOT }}/vcpkg.exe --triplet x64-windows install zlib flatbuffers
       - name: Generate project files
