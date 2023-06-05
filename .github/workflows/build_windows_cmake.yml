@@ -25,7 +25,7 @@ jobs:
       CMAKE_BUILD_DIR: ${{ github.workspace }}/vw/build
       SOURCE_DIR: ${{ github.workspace }}/vw
       VCPKG_ROOT: ${{ github.workspace }}/vcpkg
-      VCPKG_REF: f14984af3738e69f197bf0e647a8dca12de92996
+      VCPKG_REF: 501db0f
 
     steps:
       - uses: actions/checkout@v2
