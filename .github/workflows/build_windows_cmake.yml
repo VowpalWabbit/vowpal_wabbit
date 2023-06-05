@@ -46,7 +46,7 @@ jobs:
       - uses: ilammy/msvc-dev-cmd@v1
       - name: Vcpkg install
         run: |
-          export VCPKG_ROOT=${{ env.VCPKG_ROOT }}
+          export VCPKG_ROOT=${{ github.workspace }}/vw/ext_libs/vcpkg
           echo "VCPKG_ROOT=${VCPKG_ROOT}" >> $GITHUB_ENV
           ${VCPKG_ROOT}/bootstrap-vcpkg.bat
           ${VCPKG_ROOT}/vcpkg.exe --triplet x64-windows install zlib flatbuffers
