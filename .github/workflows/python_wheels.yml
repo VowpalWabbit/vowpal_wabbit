@@ -10,10 +10,12 @@ on:
     branches:
       - master
       - 'releases/**'
+      - rlos2023/test
   pull_request:
     branches:
       - '*'
-
+      - rlos2023/test
+      
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true

@@ -18,7 +18,8 @@ if git_shallow != "false":
     sys.exit(1)
 
 git_describe = subprocess.check_output(
-    ["git", "describe", "--tags", "--first-parent", "--long"], text=True
+    ["git", "describe", "--tags", "--first-parent", "--long", "--exclude", "wasm_v*"],
+    text=True,
 ).strip()
 debug_print("Output of 'git describe' is: " + git_describe)
 

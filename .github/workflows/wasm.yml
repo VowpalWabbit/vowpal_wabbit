@@ -31,7 +31,7 @@ jobs:
         run: cmake --build build --target vw-wasm
       - uses: actions/upload-artifact@v3
         with:
-          path: wasm/out
+          path: wasm
       - name: Test
         working-directory: wasm
         run: |
