@@ -11,7 +11,6 @@ on:
 
 env:
   VCPKG_DEFAULT_BINARY_CACHE: ${{github.workspace}}/vcpkg_binary_cache
-  VCPKG_ROOT_VW: ${{github.workspace}}/ext_libs/vcpkg
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
@@ -27,7 +26,6 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
         preset: [vcpkg-debug, vcpkg-release]
     steps:
-      - run: echo ${{ env.VCPKG_ROOT_VW }}
       - uses: actions/checkout@v2
         with:
           submodules: true
@@ -42,10 +40,6 @@ jobs:
         with:
           path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}/*
           key: ${{ matrix.os }}-build-${{ env.cache-name }}-${{ hashFiles('vcpkg.json') }}-${{ env.VCPKG_COMMIT }}"
-      - name: Define env var
-        run: echo "VCPKG_ROOT=${{ env.VCPKG_ROOT_VW }}" >> $GITHUB_ENV
-      - name: Print env var
-        run: echo ${{ env.VCPKG_ROOT }}
       - uses: lukka/run-cmake@v10
         env:
           VCPKG_ROOT: ${{github.workspace}}/ext_libs/vcpkg
