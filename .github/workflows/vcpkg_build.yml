@@ -47,6 +47,8 @@ jobs:
       - name: Print env var
         run: echo ${{ env.VCPKG_ROOT }}
       - uses: lukka/run-cmake@v10
+        env:
+          VCPKG_ROOT: ${{github.workspace}}/ext_libs/vcpkg
         with:
           cmakeListsTxtPath: "${{ github.workspace }}/CMakeLists.txt"
           configurePreset: "${{ matrix.preset }}"
