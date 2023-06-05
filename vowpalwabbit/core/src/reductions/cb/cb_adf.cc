@@ -455,6 +455,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_adf_setup(VW::setup_bas
                .one_of({"ips", "dm", "dr", "mtr", "sm"})
                .help("Contextual bandit method to use"))
       .add(make_option("per_model_save_load", per_model_save_load)
+               .keep()
                .allow_override()
                .help("Save and load per model state"));
   ;

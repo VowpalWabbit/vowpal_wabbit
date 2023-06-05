@@ -1488,6 +1488,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i&
                .default_value(L2_STATE_DEFAULT)
                .help("Amount of accumulated implicit l2 regularization"))
       .add(make_option("per_model_save_load", per_model_save_load)
+               .keep()
                .allow_override()
                .help("Save and load per model state"));
   options.add_and_parse(new_options);
