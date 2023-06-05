@@ -44,8 +44,8 @@ jobs:
           key: |
             ${{ env.VCPKG_REF }}-${{ matrix.os }}-vcpkg-cache-invalidate-0
       - uses: ilammy/msvc-dev-cmd@v1
-        env:
-          VCPKG_ROOT: ${{github.workspace}}/ext_libs/vcpkg
+      - name: Set VCPKG_ROOT
+        run: echo "VCPKG_ROOT=${{github.workspace}}/vw/ext_libs/vcpkg" >> $GITHUB_ENV
       - name: Bootstrap vcpkg
         run: ${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.bat
       - name: Install vcpkg dependencies
