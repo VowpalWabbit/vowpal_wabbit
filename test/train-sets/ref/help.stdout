@@ -461,7 +461,7 @@ Weight Options:
                                             (type: float, default: 0, keep)
     --cb_type arg                           Contextual bandit method to use (type: str, default: mtr, choices
                                             {dm, dr, ips, mtr, sm}, keep)
-    --per_model_save_load                   Save and load per model state (type: bool)
+    --per_model_save_load                   Save and load per model state (type: bool, keep)
 [Reduction] Contextual Bandit: cb -> cb_adf Options:
     --cb_to_cbadf arg                       Flag is unused and has no effect. It should not be passed. The
                                             cb_to_cbadf reduction is automatically enabled if cb, cb_explore
@@ -706,7 +706,7 @@ Weight Options:
                                             default: 0)
     --l2_state arg                          Amount of accumulated implicit l2 regularization (type: float,
                                             default: 1)
-    --per_model_save_load                   Save and load per model state (type: bool)
+    --per_model_save_load                   Save and load per model state (type: bool, keep)
 [Reduction] Interact via Elementwise Multiplication Options:
     --interact arg                          Put weights on feature products from namespaces <n1> and <n2>
                                             (type: str, keep, necessary)
