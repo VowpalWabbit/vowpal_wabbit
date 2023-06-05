@@ -42,6 +42,9 @@ jobs:
         run: |
           ls "${{ env.VCPKG_ROOT }}"
       - uses: ilammy/msvc-dev-cmd@v1
+      - name: Show vcpkg root again
+        run: |
+          ls "${{ env.VCPKG_ROOT }}"
       - name: Bootstrap vcpkg
         run: |
           if (!(Test-Path "${{ env.VCPKG_ROOT }}\vcpkg.exe")) {
