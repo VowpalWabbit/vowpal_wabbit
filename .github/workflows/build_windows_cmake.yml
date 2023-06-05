@@ -37,6 +37,7 @@ jobs:
           path: 'vcpkg'
           repository: 'microsoft/vcpkg'
           ref: ${{ env.VCPKG_REF }}
+          submodules: recursive
       - name: Restore vcpkg and build artifacts
         uses: actions/cache@v3
         with:
