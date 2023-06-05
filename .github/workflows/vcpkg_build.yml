@@ -11,6 +11,7 @@ on:
 
 env:
   VCPKG_DEFAULT_BINARY_CACHE: ${{github.workspace}}/vcpkg_binary_cache
+  VCPKG_ROOT: ${{github.workspace}}/ext_libs/vcpkg
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
@@ -26,6 +27,7 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
         preset: [vcpkg-debug, vcpkg-release]
     steps:
+      - run: echo ${{ env.VCPKG_ROOT }}
       - uses: actions/checkout@v2
         with:
           submodules: true
