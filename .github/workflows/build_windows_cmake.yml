@@ -46,7 +46,6 @@ jobs:
         with:
           path: |
             ${{ env.VCPKG_ROOT }}/installed/
-            ${{ env.VCPKG_ROOT }}
             !${{ env.VCPKG_ROOT }}/buildtrees
             !${{ env.VCPKG_ROOT }}/packages
             !${{ env.VCPKG_ROOT }}/downloads
