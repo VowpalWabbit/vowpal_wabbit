@@ -51,6 +51,8 @@ jobs:
           path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}/*
           key: ${{ matrix.os }}-build-${{ env.cache-name }}-${{ hashFiles('vcpkg.json') }}-${{ env.VCPKG_COMMIT }}"
       - uses: lukka/run-cmake@v10
+        env:
+          VCPKG_ROOT: ${{github.workspace}}/ext_libs/vcpkg
         with:
           cmakeListsTxtPath: "${{ github.workspace }}/CMakeLists.txt"
           configurePreset: "${{ matrix.preset }}"
@@ -90,6 +92,8 @@ jobs:
           path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}/*
           key: ${{ matrix.os }}-build-${{ env.cache-name }}-${{ hashFiles('vcpkg.json') }}-${{ env.VCPKG_COMMIT }}"
       - uses: lukka/run-cmake@v10
+        env:
+          VCPKG_ROOT: ${{github.workspace}}/ext_libs/vcpkg
         with:
           cmakeListsTxtPath: "${{ github.workspace }}/CMakeLists.txt"
           configurePreset: "${{ matrix.preset }}"
