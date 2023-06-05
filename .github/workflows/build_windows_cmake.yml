@@ -41,16 +41,6 @@ jobs:
       - name: Show vcpkg root
         run: |
           ls "${{ env.VCPKG_ROOT }}"
-      - name: Restore vcpkg and build artifacts
-        uses: actions/cache@v3
-        with:
-          path: |
-            ${{ env.VCPKG_ROOT }}/installed/
-            !${{ env.VCPKG_ROOT }}/buildtrees
-            !${{ env.VCPKG_ROOT }}/packages
-            !${{ env.VCPKG_ROOT }}/downloads
-          key: |
-            ${{ env.VCPKG_REF }}-${{ matrix.os }}-vcpkg-cache-invalidate-0
       - uses: ilammy/msvc-dev-cmd@v1
       - name: Bootstrap vcpkg
         run: |
