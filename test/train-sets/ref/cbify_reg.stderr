@@ -9,7 +9,7 @@ Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
-Enabled reductions: ftrl-Coin Betting, scorer-identity, binary, cats_tree, get_pmf, pmf_to_pdf, cb_explore_pdf, cats_pdf, sample_pdf, cats, cbify-reg, count_label
+Enabled learners: ftrl-Coin Betting, scorer-identity, binary, cats_tree, get_pmf, pmf_to_pdf, cb_explore_pdf, cats_pdf, sample_pdf, cats, cbify-reg, count_label
 Input label = SIMPLE
 Output pred = SCALAR
 average  since         example        example        current        current  current

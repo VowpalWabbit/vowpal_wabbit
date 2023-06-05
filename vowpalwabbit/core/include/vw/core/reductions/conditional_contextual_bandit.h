@@ -8,13 +8,14 @@
 #include "vw/core/multi_ex.h"
 #include "vw/core/vw_fwd.h"
 
+#include <memory>
 #include <string>
 
 namespace VW
 {
 namespace reductions
 {
-VW::LEARNER::base_learner* ccb_explore_adf_setup(VW::setup_base_i& stack_builder);
+std::shared_ptr<VW::LEARNER::learner> ccb_explore_adf_setup(VW::setup_base_i& stack_builder);
 
 namespace ccb
 {

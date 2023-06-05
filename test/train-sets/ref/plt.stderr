@@ -8,7 +8,7 @@ Num weight bits = 18
 learning rate = 10
 initial_t = 0
 power_t = 0.5
-Enabled reductions: gd, scorer-identity, plt
+Enabled learners: gd, scorer-identity, plt
 Input label = MULTILABEL
 Output pred = MULTILABELS
 average  since         example        example        current        current  current

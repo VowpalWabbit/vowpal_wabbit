@@ -13,7 +13,7 @@ if(LTO)
 endif()
 
 if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
-  if(NOT "arm64" STREQUAL "${CMAKE_OSX_ARCHITECTURES}")
+  if(NOT "arm64" IN_LIST CMAKE_OSX_ARCHITECTURES)
     # Use sse2 by default. Change to latest simd extensions such as avx512 on supported architecture.
     set(LINUX_X86_64_OPT_FLAGS -msse2 -mfpmath=sse)
     if(UNIX AND NOT APPLE)
@@ -37,7 +37,7 @@ if(WARNINGS)
   if(WIN32)
     set(WARNING_OPTIONS /W4)
   else()
-    set(WARNING_OPTIONS -Wall -Wextra -Wpedantic)
+    set(WARNING_OPTIONS -Wall -Wextra -Wpedantic -Wswitch)
   endif()
 endif(WARNINGS)
 

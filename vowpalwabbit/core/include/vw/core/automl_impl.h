@@ -8,6 +8,7 @@
 #include "vw/core/learner.h"
 
 #include <fstream>
+#include <functional>
 #include <queue>
 
 namespace VW
@@ -98,7 +99,7 @@ public:
       const std::string& interaction_type, const ns_based_config& config, interaction_vec_t& interactions);
 };
 
-using priority_func = float(const ns_based_config&, const std::map<namespace_index, uint64_t>&);
+using priority_func = std::function<float(const ns_based_config&, const std::map<namespace_index, uint64_t>&)>;
 
 template <typename oracle_impl>
 class config_oracle
@@ -113,12 +114,12 @@ public:
   // Stores all configs in consideration
   std::vector<ns_based_config> configs;
 
-  priority_func* calc_priority;
+  priority_func calc_priority;
   const uint64_t default_lease;
   uint64_t valid_config_size = 0;
   oracle_impl _impl;
 
-  config_oracle(uint64_t default_lease, priority_func* calc_priority, const std::string& interaction_type,
+  config_oracle(uint64_t default_lease, priority_func calc_priority, const std::string& interaction_type,
       const std::string& oracle_type, std::shared_ptr<VW::rand_state>& rand_state, config_type conf_type);
 
   void gen_configs(const interaction_vec_t& champ_interactions, const std::map<namespace_index, uint64_t>& ns_counter);
@@ -210,21 +211,12 @@ public:
   dense_parameters& weights;
   double automl_significance_level;
   VW::io::logger* logger;
-  uint32_t& wpp;
+  uint32_t& feature_width;
   const bool _ccb_on;
   config_oracle_impl _config_oracle;
   bool reward_as_cost;
   double tol_x;
   bool is_brentq;
-
-  // TODO: delete all this, gd and cb_adf must respect ft_offset, see header import of automl.cc
-  std::vector<double> per_live_model_state_double;
-  std::vector<uint64_t> per_live_model_state_uint64;
-  double* _gd_normalized = nullptr;
-  double* _gd_total_weight = nullptr;
-  double* _sd_gravity = nullptr;
-  uint64_t* _cb_adf_event_sum = nullptr;
-  uint64_t* _cb_adf_action_sum = nullptr;
 
   // Stores all namespaces currently seen
   std::map<namespace_index, uint64_t> ns_counter;
@@ -238,11 +230,11 @@ public:
 
   interaction_config_manager(uint64_t global_lease, uint64_t max_live_configs,
       std::shared_ptr<VW::rand_state> rand_state, uint64_t priority_challengers, const std::string& interaction_type,
-      const std::string& oracle_type, dense_parameters& weights, priority_func* calc_priority,
-      double automl_significance_level, VW::io::logger* logger, uint32_t& wpp, bool ccb_on, config_type conf_type,
-      std::string trace_prefix, bool reward_as_cost, double tol_x, bool is_brentq);
+      const std::string& oracle_type, dense_parameters& weights, priority_func calc_priority,
+      double automl_significance_level, VW::io::logger* logger, uint32_t& feature_width, bool ccb_on,
+      config_type conf_type, std::string trace_prefix, bool reward_as_cost, double tol_x, bool is_brentq);
 
-  void do_learning(VW::LEARNER::multi_learner& base, multi_ex& ec, uint64_t live_slot);
+  void do_learning(VW::LEARNER::learner& base, multi_ex& ec, uint64_t live_slot);
   void persist(metric_sink& metrics, bool verbose);
 
   // Public Chacha functions
@@ -265,7 +257,7 @@ private:
 bool count_namespaces(const multi_ex& ecs, std::map<namespace_index, uint64_t>& ns_counter);
 void apply_config(example* ec, interaction_vec_t* live_interactions);
 bool is_allowed_to_remove(const namespace_index ns);
-void clear_non_champ_weights(dense_parameters& weights, uint32_t total, uint32_t& wpp);
+void clear_non_champ_weights(dense_parameters& weights, uint32_t total, uint32_t& feature_width);
 bool worse();
 
 // all possible states of automl
@@ -281,7 +273,7 @@ public:
   automl_state current_state = automl_state::Experimenting;
   std::unique_ptr<CMType> cm;
   VW::io::logger* logger;
-  LEARNER::multi_learner* adf_learner = nullptr;  //  re-use print from cb_explore_adf
+  LEARNER::learner* adf_learner = nullptr;  //  re-use print from cb_explore_adf
   bool debug_reverse_learning_order = false;
   const bool should_save_predict_only_model;
   std::unique_ptr<std::ofstream> log_file;
@@ -298,8 +290,8 @@ public:
     }
   }
   // This fn gets called before learning any example
-  void one_step(VW::LEARNER::multi_learner& base, multi_ex& ec, VW::cb_class& logged, uint64_t labelled_action);
-  void offset_learn(VW::LEARNER::multi_learner& base, multi_ex& ec, VW::cb_class& logged, uint64_t labelled_action);
+  void one_step(VW::LEARNER::learner& base, multi_ex& ec, VW::cb_class& logged, uint64_t labelled_action);
+  void offset_learn(VW::LEARNER::learner& base, multi_ex& ec, VW::cb_class& logged, uint64_t labelled_action);
 };
 }  // namespace automl
 

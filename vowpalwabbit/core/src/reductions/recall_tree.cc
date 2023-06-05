@@ -251,7 +251,7 @@ void remove_node_id_feature(recall_tree& /* b */, uint32_t /* cn */, VW::example
   ec.indices.pop_back();
 }
 
-uint32_t oas_predict(recall_tree& b, single_learner& base, uint32_t cn, VW::example& ec)
+uint32_t oas_predict(recall_tree& b, learner& base, uint32_t cn, VW::example& ec)
 {
   VW::multiclass_label mc = ec.l.multi;
   uint32_t save_pred = ec.pred.multiclass;
@@ -308,7 +308,7 @@ bool stop_recurse_check(recall_tree& b, uint32_t parent, uint32_t child)
   return b.bern_hyper > 0 && b.nodes[parent].recall_lbest >= b.nodes[child].recall_lbest;
 }
 
-predict_type predict_from(recall_tree& b, single_learner& base, VW::example& ec, uint32_t cn)
+predict_type predict_from(recall_tree& b, learner& base, VW::example& ec, uint32_t cn)
 {
   VW::multiclass_label mc = ec.l.multi;
   uint32_t save_pred = ec.pred.multiclass;
@@ -332,14 +332,14 @@ predict_type predict_from(recall_tree& b, single_learner& base, VW::example& ec,
   return predict_type(cn, oas_predict(b, base, cn, ec));
 }
 
-void predict(recall_tree& b, single_learner& base, VW::example& ec)
+void predict(recall_tree& b, learner& base, VW::example& ec)
 {
   predict_type pred = predict_from(b, base, ec, 0);
 
   ec.pred.multiclass = pred.class_prediction;
 }
 
-float train_node(recall_tree& b, single_learner& base, VW::example& ec, uint32_t cn)
+float train_node(recall_tree& b, learner& base, VW::example& ec, uint32_t cn)
 {
   VW::multiclass_label mc = ec.l.multi;
   uint32_t save_pred = ec.pred.multiclass;
@@ -386,9 +386,9 @@ float train_node(recall_tree& b, single_learner& base, VW::example& ec, uint32_t
   return save_scalar;
 }
 
-void learn(recall_tree& b, single_learner& base, VW::example& ec)
+void learn(recall_tree& b, learner& base, VW::example& ec)
 {
-  if (b.all->training && ec.l.multi.label != static_cast<uint32_t>(-1))  // if training the tree
+  if (b.all->runtime_config.training && ec.l.multi.label != static_cast<uint32_t>(-1))  // if training the tree
   {
     uint32_t cn = 0;
 
@@ -509,7 +509,7 @@ void save_load_tree(recall_tree& b, VW::io_buf& model_file, bool read, bool text
 
 }  // namespace
 
-base_learner* VW::reductions::recall_tree_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::recall_tree_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -537,31 +537,29 @@ base_learner* VW::reductions::recall_tree_setup(VW::setup_base_i& stack_builder)
 
   init_tree(*tree.get());
 
-  if (!all.quiet)
+  if (!all.output_config.quiet)
   {
-    *(all.trace_message) << "recall_tree:"
-                         << " node_only = " << tree->node_only << " bern_hyper = " << tree->bern_hyper
-                         << " max_depth = " << tree->max_depth << " routing = "
-                         << (all.training ? (tree->randomized_routing ? "randomized" : "deterministic")
-                                          : "n/a testonly")
-                         << std::endl;
+    *(all.output_runtime.trace_message) << "recall_tree:"
+                                        << " node_only = " << tree->node_only << " bern_hyper = " << tree->bern_hyper
+                                        << " max_depth = " << tree->max_depth << " routing = "
+                                        << (all.runtime_config.training
+                                                   ? (tree->randomized_routing ? "randomized" : "deterministic")
+                                                   : "n/a testonly")
+                                        << std::endl;
   }
 
-  size_t ws = tree->max_routers + tree->k;
-  auto* l = make_reduction_learner(std::move(tree), as_singleline(stack_builder.setup_base_learner()), learn, predict,
-      stack_builder.get_setupfn_name(recall_tree_setup))
-                .set_params_per_weight(ws)
-                .set_update_stats(VW::details::update_stats_multiclass_label<recall_tree>)
-                .set_output_example_prediction(VW::details::output_example_prediction_multiclass_label<recall_tree>)
-                .set_print_update(VW::details::print_update_multiclass_label<recall_tree>)
-                .set_save_load(save_load_tree)
-                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
-                .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
-                .set_input_label_type(VW::label_type_t::MULTICLASS)
-                .set_output_label_type(VW::label_type_t::SIMPLE)
-                .build();
-
-  all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
-
-  return make_base(*l);
+  size_t feature_width = tree->max_routers + tree->k;
+  auto l = make_reduction_learner(std::move(tree), require_singleline(stack_builder.setup_base_learner(feature_width)),
+      learn, predict, stack_builder.get_setupfn_name(recall_tree_setup))
+               .set_feature_width(feature_width)
+               .set_update_stats(VW::details::update_stats_multiclass_label<recall_tree>)
+               .set_output_example_prediction(VW::details::output_example_prediction_multiclass_label<recall_tree>)
+               .set_print_update(VW::details::print_update_multiclass_label<recall_tree>)
+               .set_save_load(save_load_tree)
+               .set_input_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
+               .set_input_label_type(VW::label_type_t::MULTICLASS)
+               .set_output_label_type(VW::label_type_t::SIMPLE)
+               .build();
+  return l;
 }

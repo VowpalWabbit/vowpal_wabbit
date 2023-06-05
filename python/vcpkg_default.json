@@ -1,6 +1,12 @@
 {
-    "name": "demo",
-    "version": "1.0.0",
-    "builtin-baseline": "773516ecf6014d89cc69b11bb54605ad4be56694",
-    "dependencies": [ "zlib","boost-python","python3","flatbuffers" ]
+  "name": "demo",
+  "version": "1.0.0",
+  "builtin-baseline": "773516ecf6014d89cc69b11bb54605ad4be56694",
+  "dependencies": ["zlib", "boost-python", "python3", "flatbuffers"],
+  "features": {
+    "lda": {
+      "description": "",
+      "dependencies": []
+    }
+  }
 }

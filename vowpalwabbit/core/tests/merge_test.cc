@@ -41,8 +41,8 @@ TEST(Merge, AddSubtractModelDelta)
   // Test that (base + (new - base)) == new
   auto delta = *vw_new - *vw_base;
   auto base_plus_delta = *vw_base + delta;
-  const auto* sd1 = vw_new->sd;
-  const auto* sd2 = base_plus_delta->sd;
+  const auto sd1 = vw_new->sd;
+  const auto sd2 = base_plus_delta->sd;
   EXPECT_FLOAT_EQ(sd1->weighted_labeled_examples, sd2->weighted_labeled_examples);
   EXPECT_FLOAT_EQ(sd1->weighted_unlabeled_examples, sd2->weighted_unlabeled_examples);
   EXPECT_FLOAT_EQ(sd1->weighted_labels, sd2->weighted_labels);
@@ -76,9 +76,9 @@ TEST(Merge, MergeSimpleModel)
 
   // check that weight values got merged
   EXPECT_FALSE(result->weights.sparse);
-  EXPECT_EQ(result->num_bits, vw1->num_bits);
-  EXPECT_EQ(result->num_bits, vw2->num_bits);
-  const size_t length = static_cast<size_t>(1) << result->num_bits;
+  EXPECT_EQ(result->initial_weights_config.num_bits, vw1->initial_weights_config.num_bits);
+  EXPECT_EQ(result->initial_weights_config.num_bits, vw2->initial_weights_config.num_bits);
+  const size_t length = static_cast<size_t>(1) << result->initial_weights_config.num_bits;
   const auto& vw1_weights = vw1->weights.dense_weights;
   const auto& vw2_weights = vw2->weights.dense_weights;
   const auto& result_weights = result->weights.dense_weights;
@@ -194,10 +194,15 @@ TEST(Merge, MergeCbModel)
   auto* vw_merged_cb_adf = reinterpret_cast<VW::reductions::cb_adf*>(
       result->l->get_learner_by_name_prefix("cb_adf")->get_internal_type_erased_data_pointer_test_use_only());
 
-  EXPECT_EQ(vw_merged_cb_adf->get_gen_cs().event_sum,
-      vw1_cb_adf->get_gen_cs().event_sum + vw2_cb_adf->get_gen_cs().event_sum);
-  EXPECT_EQ(vw_merged_cb_adf->get_gen_cs().action_sum,
-      vw1_cb_adf->get_gen_cs().action_sum + vw2_cb_adf->get_gen_cs().action_sum);
+  for (size_t i = 0; i < vw1_cb_adf->get_gen_cs_mtr().per_model_state.size(); i++)
+  {
+    EXPECT_EQ(vw_merged_cb_adf->get_gen_cs_mtr().per_model_state[i].event_sum,
+        vw1_cb_adf->get_gen_cs_mtr().per_model_state[i].event_sum +
+            vw2_cb_adf->get_gen_cs_mtr().per_model_state[i].event_sum);
+    EXPECT_EQ(vw_merged_cb_adf->get_gen_cs_mtr().per_model_state[i].action_sum,
+        vw1_cb_adf->get_gen_cs_mtr().per_model_state[i].action_sum +
+            vw2_cb_adf->get_gen_cs_mtr().per_model_state[i].action_sum);
+  }
 }
 
 TEST(Merge, MergeCbModelDelta)
@@ -309,11 +314,17 @@ TEST(Merge, MergeCbModelDelta)
       reinterpret_cast<VW::reductions::cb_adf*>(result_delta_merge->l->get_learner_by_name_prefix("cb_adf")
                                                     ->get_internal_type_erased_data_pointer_test_use_only());
   EXPECT_FLOAT_EQ(result_delta_merge->sd->weighted_labeled_examples, 4.f);
-  EXPECT_EQ(delta_merged_cb_adf->get_gen_cs().event_sum,
-      vw1_cb_adf->get_gen_cs().event_sum + vw2_cb_adf->get_gen_cs().event_sum - vw_base_cb_adf->get_gen_cs().event_sum);
-  EXPECT_EQ(delta_merged_cb_adf->get_gen_cs().action_sum,
-      vw1_cb_adf->get_gen_cs().action_sum + vw2_cb_adf->get_gen_cs().action_sum -
-          vw_base_cb_adf->get_gen_cs().action_sum);
+  for (size_t i = 0; i < vw_base_cb_adf->get_gen_cs_mtr().per_model_state.size(); i++)
+  {
+    EXPECT_EQ(delta_merged_cb_adf->get_gen_cs_mtr().per_model_state[i].event_sum,
+        vw1_cb_adf->get_gen_cs_mtr().per_model_state[i].event_sum +
+            vw2_cb_adf->get_gen_cs_mtr().per_model_state[i].event_sum -
+            vw_base_cb_adf->get_gen_cs_mtr().per_model_state[i].event_sum);
+    EXPECT_EQ(delta_merged_cb_adf->get_gen_cs_mtr().per_model_state[i].action_sum,
+        vw1_cb_adf->get_gen_cs_mtr().per_model_state[i].action_sum +
+            vw2_cb_adf->get_gen_cs_mtr().per_model_state[i].action_sum -
+            vw_base_cb_adf->get_gen_cs_mtr().per_model_state[i].action_sum);
+  }
 
   // merge workspaces directly without deltas
   std::vector<const VW::workspace*> workspaces{vw1.get(), vw2.get()};
@@ -323,8 +334,13 @@ TEST(Merge, MergeCbModelDelta)
       reinterpret_cast<VW::reductions::cb_adf*>(result_model_merge->l->get_learner_by_name_prefix("cb_adf")
                                                     ->get_internal_type_erased_data_pointer_test_use_only());
   EXPECT_FLOAT_EQ(result_delta_merge->sd->weighted_labeled_examples, result_model_merge->sd->weighted_labeled_examples);
-  EXPECT_EQ(delta_merged_cb_adf->get_gen_cs().event_sum, model_merged_cb_adf->get_gen_cs().event_sum);
-  EXPECT_EQ(delta_merged_cb_adf->get_gen_cs().action_sum, model_merged_cb_adf->get_gen_cs().action_sum);
+  for (size_t i = 0; i < vw_base_cb_adf->get_gen_cs_mtr().per_model_state.size(); i++)
+  {
+    EXPECT_EQ(delta_merged_cb_adf->get_gen_cs_mtr().per_model_state[i].event_sum,
+        model_merged_cb_adf->get_gen_cs_mtr().per_model_state[i].event_sum);
+    EXPECT_EQ(delta_merged_cb_adf->get_gen_cs_mtr().per_model_state[i].action_sum,
+        model_merged_cb_adf->get_gen_cs_mtr().per_model_state[i].action_sum);
+  }
 }
 
 TEST(Merge, SerializeDeserializeDelta)
@@ -355,8 +371,8 @@ TEST(Merge, SerializeDeserializeDelta)
   // Test that (base + (new - base)) == new
   auto delta = *vw_new - *vw_base;
   auto base_plus_delta = *vw_base + delta;
-  const auto* sd1 = vw_new->sd;
-  const auto* sd2 = base_plus_delta->sd;
+  const auto sd1 = vw_new->sd;
+  const auto sd2 = base_plus_delta->sd;
   EXPECT_FLOAT_EQ(sd1->weighted_labeled_examples, sd2->weighted_labeled_examples);
   EXPECT_FLOAT_EQ(sd1->weighted_unlabeled_examples, sd2->weighted_unlabeled_examples);
   EXPECT_FLOAT_EQ(sd1->weighted_labels, sd2->weighted_labels);

@@ -28,7 +28,7 @@ bool called_learn_predict = false;
 
 // minimal predict/learn fn for test_reduction_setup
 template <bool is_learn>
-void predict_or_learn(char&, VW::LEARNER::single_learner& base, VW::example& ec)
+void predict_or_learn(VW::LEARNER::learner& base, VW::example& ec)
 {
   called_learn_predict = true;
 
@@ -37,7 +37,7 @@ void predict_or_learn(char&, VW::LEARNER::single_learner& base, VW::example& ec)
 }
 
 // minimal setup function for reduction
-VW::LEARNER::base_learner* test_reduction_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> test_reduction_setup(VW::setup_base_i& stack_builder)
 {
   EXPECT_TRUE(added_to_learner == false);
   EXPECT_TRUE(called_learn_predict == false);
@@ -45,14 +45,14 @@ VW::LEARNER::base_learner* test_reduction_setup(VW::setup_base_i& stack_builder)
   auto base = stack_builder.setup_base_learner();
   EXPECT_TRUE(base->is_multiline() == false);
 
-  auto ret = VW::LEARNER::make_no_data_reduction_learner(as_singleline(base), predict_or_learn<true>,
+  auto ret = VW::LEARNER::make_no_data_reduction_learner(require_singleline(base), predict_or_learn<true>,
       predict_or_learn<false>, stack_builder.get_setupfn_name(test_reduction_setup))
                  .set_learn_returns_prediction(base->learn_returns_prediction)
                  .build();
 
   added_to_learner = true;
 
-  return make_base(*ret);
+  return ret;
 }
 
 void reset_test_state()

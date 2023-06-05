@@ -63,11 +63,11 @@ constexpr inline bool example_is_test(VW::example& ec) { return ec.l.simple.labe
 
 void reset_seed(lrq_state& lrq)
 {
-  if (lrq.all->bfgs) { lrq.seed = lrq.initial_seed; }
+  if (lrq.all->reduction_state.bfgs) { lrq.seed = lrq.initial_seed; }
 }
 
 template <bool is_learn>
-void predict_or_learn(lrq_state& lrq, single_learner& base, VW::example& ec)
+void predict_or_learn(lrq_state& lrq, learner& base, VW::example& ec)
 {
   VW::workspace& all = *lrq.all;
 
@@ -133,7 +133,7 @@ void predict_or_learn(lrq_state& lrq, single_learner& base, VW::example& ec)
 
               right_fs.push_back(scale * *lw * lfx * rfx, rwindex);
 
-              if (all.audit || all.hash_inv)
+              if (all.output_config.audit || all.output_config.hash_inv)
               {
                 std::stringstream new_feature_buffer;
                 new_feature_buffer << right << '^' << right_fs.space_names[rfn].name << '^' << n;
@@ -171,7 +171,7 @@ void predict_or_learn(lrq_state& lrq, single_learner& base, VW::example& ec)
 }
 }  // namespace
 
-base_learner* VW::reductions::lrq_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::lrq_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -197,20 +197,20 @@ base_learner* VW::reductions::lrq_setup(VW::setup_base_i& stack_builder)
 
   lrq->initial_seed = lrq->seed = all.get_random_state()->get_current_state() | 8675309;
 
-  if (!all.quiet)
+  if (!all.output_config.quiet)
   {
-    *(all.trace_message) << "creating low rank quadratic features for pairs: ";
-    if (lrq->dropout) { *(all.trace_message) << "(using dropout) "; }
+    *(all.output_runtime.trace_message) << "creating low rank quadratic features for pairs: ";
+    if (lrq->dropout) { *(all.output_runtime.trace_message) << "(using dropout) "; }
   }
 
   for (std::string const& i : lrq->lrpairs)
   {
-    if (!all.quiet)
+    if (!all.output_config.quiet)
     {
       if ((i.length() < 3) || !valid_int(i.c_str() + 2))
         THROW("Low-rank quadratic features must involve two sets and a rank: " << i);
 
-      *(all.trace_message) << i << " ";
+      *(all.output_runtime.trace_message) << i << " ";
     }
     // TODO: colon-syntax
 
@@ -222,18 +222,18 @@ base_learner* VW::reductions::lrq_setup(VW::setup_base_i& stack_builder)
     maxk = std::max(maxk, k);
   }
 
-  if (!all.quiet) { *(all.trace_message) << std::endl; }
+  if (!all.output_config.quiet) { *(all.output_runtime.trace_message) << std::endl; }
 
-  all.wpp = all.wpp * static_cast<uint64_t>(1 + maxk);
-  auto base = stack_builder.setup_base_learner();
+  all.reduction_state.total_feature_width = all.reduction_state.total_feature_width * static_cast<uint64_t>(1 + maxk);
+  auto base = stack_builder.setup_base_learner(1 + maxk);
 
-  auto* l = make_reduction_learner(std::move(lrq), as_singleline(base), predict_or_learn<true>, predict_or_learn<false>,
-      stack_builder.get_setupfn_name(lrq_setup))
-                .set_params_per_weight(1 + maxk)
-                .set_learn_returns_prediction(base->learn_returns_prediction)
-                .set_end_pass(reset_seed)
-                .build();
+  auto l = make_reduction_learner(std::move(lrq), require_singleline(base), predict_or_learn<true>,
+      predict_or_learn<false>, stack_builder.get_setupfn_name(lrq_setup))
+               .set_feature_width(1 + maxk)
+               .set_learn_returns_prediction(base->learn_returns_prediction)
+               .set_end_pass(reset_seed)
+               .build();
 
   // TODO: leaks memory ?
-  return make_base(*l);
+  return l;
 }

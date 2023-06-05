@@ -150,7 +150,7 @@ void VowpalWabbitBase::InternalDispose()
   try
   { if (m_vw != nullptr)
     {
-      VW::details::reset_source(*m_vw, m_vw->num_bits);
+      VW::details::reset_source(*m_vw, m_vw->initial_weights_config.num_bits);
 
       // make sure don't try to free m_vw twice in case VW::finish throws.
       VW::workspace* vw_tmp = m_vw;
@@ -187,7 +187,7 @@ void VowpalWabbitBase::Reload([System::Runtime::InteropServices::Optional] Strin
 
   try
   {
-    VW::details::reset_source(*m_vw, m_vw->num_bits);
+    VW::details::reset_source(*m_vw, m_vw->initial_weights_config.num_bits);
 
     auto buffer = std::make_shared<std::vector<char>>();
     {
@@ -225,7 +225,7 @@ void VowpalWabbitBase::ID::set(String^ value)
 }
 
 void VowpalWabbitBase::SaveModel()
-{ std::string name = m_vw->final_regressor_name;
+{ std::string name = m_vw->output_model_config.final_regressor_name;
   if (name.empty())
   { return;
   }

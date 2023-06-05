@@ -30,17 +30,14 @@ public:
   ~cb_explore_adf_greedy() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing
-  void predict(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
-  {
-    predict_or_learn_impl<false>(base, examples);
-  }
-  void learn(VW::LEARNER::multi_learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
+  void predict(VW::LEARNER::learner& base, VW::multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
+  void learn(VW::LEARNER::learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
 
 private:
   float _epsilon;
   bool _first_only;
   template <bool is_learn>
-  void predict_or_learn_impl(VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
+  void predict_or_learn_impl(VW::LEARNER::learner& base, VW::multi_ex& examples);
   void update_example_prediction(VW::multi_ex& examples);
 };
 
@@ -69,7 +66,7 @@ void cb_explore_adf_greedy::update_example_prediction(VW::multi_ex& examples)
 }
 
 template <bool is_learn>
-void cb_explore_adf_greedy::predict_or_learn_impl(VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
+void cb_explore_adf_greedy::predict_or_learn_impl(VW::LEARNER::learner& base, VW::multi_ex& examples)
 {
   // Explore uniform random an epsilon fraction of the time.
   if (is_learn)
@@ -85,7 +82,7 @@ void cb_explore_adf_greedy::predict_or_learn_impl(VW::LEARNER::multi_learner& ba
 }
 }  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_greedy_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_greedy_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -116,7 +113,8 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_greedy_setup(VW::setup
   // This basically runs if none of the other explore strategies are used
   bool use_greedy = !(options.was_supplied("first") || options.was_supplied("bag") || options.was_supplied("cover") ||
       options.was_supplied("regcb") || options.was_supplied("regcbopt") || options.was_supplied("squarecb") ||
-      options.was_supplied("rnd") || options.was_supplied("softmax") || options.was_supplied("synthcover"));
+      options.was_supplied("rnd") || options.was_supplied("softmax") || options.was_supplied("synthcover") ||
+      options.was_supplied("graph_feedback"));
 
   if (!cb_explore_adf_option || !use_greedy) { return nullptr; }
 
@@ -127,27 +125,41 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_greedy_setup(VW::setup
     options.insert("no_predict", "");
   }
 
-  size_t problem_multiplier = 1;
+  size_t feature_width = 1;
 
-  VW::LEARNER::multi_learner* base = as_multiline(stack_builder.setup_base_learner());
-  all.example_parser->lbl_parser = VW::cb_label_parser_global;
+  auto base = require_multiline(stack_builder.setup_base_learner(feature_width));
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_greedy>;
-  auto data = VW::make_unique<explore_type>(all.global_metrics.are_metrics_enabled(), epsilon, first_only);
+  auto data =
+      VW::make_unique<explore_type>(all.output_runtime.global_metrics.are_metrics_enabled(), epsilon, first_only);
+
+  VW::label_type_t input_label_type;
+  VW::label_type_t output_label_type;
+
+  if (base->get_input_label_type() == VW::label_type_t::CB_WITH_OBSERVATIONS)
+  {
+    input_label_type = VW::label_type_t::CB_WITH_OBSERVATIONS;
+    output_label_type = VW::label_type_t::CB_WITH_OBSERVATIONS;
+  }
+  else
+  {
+    input_label_type = VW::label_type_t::CB;
+    output_label_type = VW::label_type_t::CB;
+  }
 
   if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
-  auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
+  auto l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_greedy_setup))
-                .set_learn_returns_prediction(base->learn_returns_prediction)
-                .set_input_label_type(VW::label_type_t::CB)
-                .set_output_label_type(VW::label_type_t::CB)
-                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
-                .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
-                .set_params_per_weight(problem_multiplier)
-                .set_output_example_prediction(explore_type::output_example_prediction)
-                .set_update_stats(explore_type::update_stats)
-                .set_print_update(explore_type::print_update)
-                .set_persist_metrics(explore_type::persist_metrics)
-                .build();
-  return make_base(*l);
+               .set_learn_returns_prediction(base->learn_returns_prediction)
+               .set_input_label_type(input_label_type)
+               .set_output_label_type(output_label_type)
+               .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+               .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
+               .set_feature_width(feature_width)
+               .set_output_example_prediction(explore_type::output_example_prediction)
+               .set_update_stats(explore_type::update_stats)
+               .set_print_update(explore_type::print_update)
+               .set_persist_metrics(explore_type::persist_metrics)
+               .build();
+  return l;
 }

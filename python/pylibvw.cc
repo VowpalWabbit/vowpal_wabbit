@@ -81,15 +81,15 @@ class OptionManager : VW::config::typed_option_visitor
   // see pyvw.py class VWOption
   py::object m_py_opt_class;
   VW::config::options_i& m_opt;
-  std::vector<std::string>& m_enabled_reductions;
+  std::vector<std::string>& m_enabled_learners;
   std::string default_group_name;
 
   py::object* m_visitor_output_var;
 
 public:
-  OptionManager(VW::config::options_i& options, std::vector<std::string>& enabled_reductions, py::object py_class)
+  OptionManager(VW::config::options_i& options, std::vector<std::string>& enabled_learners, py::object py_class)
       : m_opt(options)
-      , m_enabled_reductions(enabled_reductions)
+      , m_enabled_learners(enabled_learners)
       , m_option_group_dic(options.get_collection_of_options())
       , m_py_opt_class(py_class)
   {
@@ -197,7 +197,7 @@ public:
     while (it != m_option_group_dic.end())
     {
       auto reduction_enabled =
-          std::find(m_enabled_reductions.begin(), m_enabled_reductions.end(), it->first) != m_enabled_reductions.end();
+          std::find(m_enabled_learners.begin(), m_enabled_learners.end(), it->first) != m_enabled_learners.end();
 
       if (((it->first).compare(default_group_name) != 0) && enabled_only && !reduction_enabled)
       {
@@ -345,9 +345,9 @@ py::dict get_learner_metrics(vw_ptr all)
 {
   py::dict dictionary;
 
-  if (all->global_metrics.are_metrics_enabled())
+  if (all->output_runtime.global_metrics.are_metrics_enabled())
   {
-    auto metrics = all->global_metrics.collect_metrics(all->l);
+    auto metrics = all->output_runtime.global_metrics.collect_metrics(all->l.get());
 
     python_dict_writer writer(dictionary);
     metrics.visit(writer);
@@ -365,14 +365,14 @@ void my_save(vw_ptr all, std::string name) { VW::save_predictor(*all, name); }
 
 search_ptr get_search_ptr(vw_ptr all)
 {
-  return boost::shared_ptr<Search::search>((Search::search*)(all->searchstr), dont_delete_me);
+  return boost::shared_ptr<Search::search>((Search::search*)(all->reduction_state.searchstr), dont_delete_me);
 }
 
 py::object get_options(vw_ptr all, py::object py_class, bool enabled_only)
 {
-  std::vector<std::string> enabled_reductions;
-  if (all->l) all->l->get_enabled_reductions(enabled_reductions);
-  auto opt_manager = OptionManager(*all->options, enabled_reductions, py_class);
+  std::vector<std::string> enabled_learners;
+  if (all->l) all->l->get_enabled_learners(enabled_learners);
+  auto opt_manager = OptionManager(*all->options, enabled_learners, py_class);
   return opt_manager.get_vw_option_pyobjects(enabled_only);
 }
 
@@ -391,14 +391,14 @@ std::string get_arguments(vw_ptr all)
   return serializer.str();
 }
 
-py::list get_enabled_reductions(vw_ptr all)
+py::list get_enabled_learners(vw_ptr all)
 {
-  py::list py_enabled_reductions;
-  std::vector<std::string> enabled_reductions;
-  if (all->l) all->l->get_enabled_reductions(enabled_reductions);
-  for (auto ex : enabled_reductions) { py_enabled_reductions.append(ex); }
+  py::list py_enabled_learners;
+  std::vector<std::string> enabled_learners;
+  if (all->l) all->l->get_enabled_learners(enabled_learners);
+  for (auto ex : enabled_learners) { py_enabled_learners.append(ex); }
 
-  return py_enabled_reductions;
+  return py_enabled_learners;
 }
 
 predictor_ptr get_predictor(search_ptr _sch, ptag my_tag)
@@ -412,7 +412,7 @@ VW::label_parser* get_label_parser(VW::workspace* all, size_t labelType)
   switch (labelType)
   {
     case lDEFAULT:
-      return all ? &all->example_parser->lbl_parser : NULL;
+      return all ? &all->parser_runtime.example_parser->lbl_parser : NULL;
     case lBINARY:  // or #lSIMPLE
       return &VW::simple_label_parser_global;
     case lMULTICLASS:
@@ -438,7 +438,7 @@ VW::label_parser* get_label_parser(VW::workspace* all, size_t labelType)
 
 size_t my_get_label_type(VW::workspace* all)
 {
-  VW::label_parser* lp = &all->example_parser->lbl_parser;
+  VW::label_parser* lp = &all->parser_runtime.example_parser->lbl_parser;
   if (lp->parse_label == VW::simple_label_parser_global.parse_label) { return lSIMPLE; }
   else if (lp->parse_label == VW::multiclass_label_parser_global.parse_label) { return lMULTICLASS; }
   else if (lp->parse_label == VW::cs_label_parser_global.parse_label) { return lCOST_SENSITIVE; }
@@ -497,8 +497,8 @@ VW::example* my_empty_example0(vw_ptr vw, size_t labelType)
   VW::label_parser* lp = get_label_parser(&*vw, labelType);
   VW::example* ec = new VW::example;
   lp->default_label(ec->l);
-  ec->interactions = &vw->interactions;
-  ec->extent_interactions = &vw->extent_interactions;
+  ec->interactions = &vw->feature_tweaks_config.interactions;
+  ec->extent_interactions = &vw->feature_tweaks_config.extent_interactions;
   return ec;
 }
 
@@ -529,17 +529,17 @@ multi_ex unwrap_example_list(py::list& ec)
   return ex_coll;
 }
 
-void my_finish_example(vw_ptr all, example_ptr ec) { as_singleline(all->l)->finish_example(*all, *ec); }
+void my_finish_example(vw_ptr all, example_ptr ec) { all->l->finish_example(*all, *ec); }
 
 void my_finish_multi_ex(vw_ptr& all, py::list& ec)
 {
   auto ex_col = unwrap_example_list(ec);
-  as_multiline(all->l)->finish_example(*all, ex_col);
+  all->l->finish_example(*all, ex_col);
 }
 
 void my_learn(vw_ptr all, example_ptr ec)
 {
-  if (ec->test_only) { as_singleline(all->l)->predict(*ec); }
+  if (ec->test_only) { all->l->predict(*ec); }
   else { all->learn(*ec.get()); }
 }
 
@@ -547,7 +547,7 @@ std::string my_json_weights(vw_ptr all) { return all->dump_weights_to_json_exper
 
 float my_predict(vw_ptr all, example_ptr ec)
 {
-  as_singleline(all->l)->predict(*ec);
+  all->l->predict(*ec);
   return ec->partial_prediction;
 }
 
@@ -560,14 +560,14 @@ void predict_or_learn(vw_ptr& all, py::list& ec)
   if (learn)
     all->learn(ex_coll);
   else
-    as_multiline(all->l)->predict(ex_coll);
+    all->l->predict(ex_coll);
 }
 
 py::list my_parse(vw_ptr& all, char* str)
 {
   VW::multi_ex examples;
   examples.push_back(&VW::get_unused_example(all.get()));
-  all->example_parser->text_reader(all.get(), VW::string_view(str, strlen(str)), examples);
+  all->parser_runtime.example_parser->text_reader(all.get(), VW::string_view(str, strlen(str)), examples);
 
   py::list example_collection;
   for (auto* ex : examples)
@@ -624,10 +624,8 @@ void ex_push_feature(example_ptr ec, unsigned char ns, feature_index fid, float 
 }
 
 // List[Union[Tuple[Union[str,int], float], str,int]]
-void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list& a)
+void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns_first_letter, uint64_t ns_hash, py::list& a)
 {  // warning: assumes namespace exists!
-  char ns_str[2] = {(char)ns, 0};
-  uint64_t ns_hash = VW::hash_space(*vw, ns_str);
   size_t count = 0;
   for (ssize_t i = 0; i < len(a); i++)
   {
@@ -678,7 +676,7 @@ void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list&
       }
       if (got)
       {
-        ec->feature_space[ns].push_back(f.x, f.weight_index);
+        ec->feature_space[ns_first_letter].push_back(f.x, f.weight_index);
         count++;
       }
     }
@@ -688,11 +686,9 @@ void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list&
 }
 
 // Dict[Union[str,int],Union[int,float]]
-void ex_push_feature_dict(example_ptr ec, vw_ptr vw, unsigned char ns, PyObject* o)
+void ex_push_feature_dict(example_ptr ec, vw_ptr vw, unsigned char ns_first_letter, uint64_t ns_hash, PyObject* o)
 {
   // warning: assumes namespace exists!
-  char ns_str[2] = {(char)ns, 0};
-  uint64_t ns_hash = VW::hash_space(*vw, ns_str);
   size_t count = 0;
   const char* key_chars;
 
@@ -720,7 +716,8 @@ void ex_push_feature_dict(example_ptr ec, vw_ptr vw, unsigned char ns, PyObject*
     {
       key_chars = (const char*)PyUnicode_1BYTE_DATA(key);
       key_size = PyUnicode_GET_LENGTH(key);
-      feat_index = vw->example_parser->hasher(key_chars, key_size, ns_hash) & vw->parse_mask;
+      feat_index =
+          vw->parser_runtime.example_parser->hasher(key_chars, key_size, ns_hash) & vw->runtime_state.parse_mask;
     }
     else if (PyLong_Check(key)) { feat_index = (feature_index)PyLong_AsUnsignedLongLong(key); }
     else
@@ -729,7 +726,7 @@ void ex_push_feature_dict(example_ptr ec, vw_ptr vw, unsigned char ns, PyObject*
       continue;
     }
 
-    ec->feature_space[ns].push_back(feat_value, feat_index);
+    ec->feature_space[ns_first_letter].push_back(feat_value, feat_index);
     count++;
   }
 
@@ -759,15 +756,18 @@ void ex_push_dictionary(example_ptr ec, vw_ptr vw, PyObject* o)
   {
     py::extract<std::string> ns_e(ns_raw);
     if (ns_e().length() < 1) continue;
-    unsigned char ns = ns_e()[0];
 
-    ex_ensure_namespace_exists(ec, ns);
+    std::string ns_full = ns_e();
+    unsigned char ns_first_letter = ns_full[0];
+    uint64_t ns_hash = VW::hash_space(*vw, ns_full);
 
-    if (PyDict_Check(feats)) { ex_push_feature_dict(ec, vw, ns, feats); }
+    ex_ensure_namespace_exists(ec, ns_first_letter);
+
+    if (PyDict_Check(feats)) { ex_push_feature_dict(ec, vw, ns_first_letter, ns_hash, feats); }
     else
     {
       py::list list = py::extract<py::list>(feats);
-      ex_push_feature_list(ec, vw, ns, list);
+      ex_push_feature_list(ec, vw, ns_first_letter, ns_hash, list);
     }
   }
 }
@@ -812,14 +812,15 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
   ae->reset_total_sum_feat_sq();
   ae->loss = 0.;
 
-  if (all.ignore_some) { THROW("Cannot unsetup example when some namespaces are ignored"); }
+  if (all.feature_tweaks_config.ignore_some) { THROW("Cannot unsetup example when some namespaces are ignored"); }
 
-  if (all.skip_gram_transformer != nullptr && !all.skip_gram_transformer->get_initial_ngram_definitions().empty())
+  if (all.feature_tweaks_config.skip_gram_transformer != nullptr &&
+      !all.feature_tweaks_config.skip_gram_transformer->get_initial_ngram_definitions().empty())
   {
     THROW("Cannot unsetup example when ngrams are in use");
   }
 
-  if (all.add_constant)
+  if (all.feature_tweaks_config.add_constant)
   {
     ae->feature_space[VW::details::CONSTANT_NAMESPACE].clear();
     int hit_constant = -1;
@@ -841,7 +842,7 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
     }
   }
 
-  uint32_t multiplier = all.wpp << all.weights.stride_shift();
+  uint32_t multiplier = all.reduction_state.total_feature_width << all.weights.stride_shift();
   if (multiplier != 1)  // make room for per-feature information.
     for (auto ns : ae->indices)
       for (auto& idx : ae->feature_space[ns].indices) idx /= multiplier;
@@ -849,10 +850,10 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
 
 void ex_set_label_string(example_ptr ec, vw_ptr vw, std::string label, size_t labelType)
 {  // SPEEDUP: if it's already set properly, don't modify
-  VW::label_parser& old_lp = vw->example_parser->lbl_parser;
-  vw->example_parser->lbl_parser = *get_label_parser(&*vw, labelType);
+  VW::label_parser& old_lp = vw->parser_runtime.example_parser->lbl_parser;
+  vw->parser_runtime.example_parser->lbl_parser = *get_label_parser(&*vw, labelType);
   VW::parse_example_label(*vw, *ec, label);
-  vw->example_parser->lbl_parser = old_lp;
+  vw->parser_runtime.example_parser->lbl_parser = old_lp;
 }
 
 float ex_get_simplelabel_label(example_ptr ec) { return ec->l.simple.label; }
@@ -1421,7 +1422,11 @@ BOOST_PYTHON_MODULE(pylibvw)
       .def("audit_example", &my_audit_example, "print example audit information")
       .def("get_id", &get_model_id, "return the model id")
       .def("get_arguments", &get_arguments, "return the arguments after resolving all dependencies")
-      .def("get_enabled_reductions", &get_enabled_reductions, "return the list of names of the enabled reductions")
+
+      // this returns all learners, not just reduction learners, but the API was originally called
+      // get_enabled_reductions
+      .def("get_enabled_learners", &get_enabled_learners, "return the list of names of the enabled learners")
+      .def("get_enabled_reductions", &get_enabled_learners, "return the list of names of the enabled learners")
 
       .def("learn_multi", &my_learn_multi_ex, "given a list pyvw examples, learn (and predict) on those examples")
       .def("predict_multi", &my_predict_multi_ex, "given a list of pyvw examples, predict on that example")
@@ -1653,7 +1658,8 @@ BOOST_PYTHON_MODULE(pylibvw)
 
   py::class_<Search::search, search_ptr>("search")
       .def("set_options", &Search::search::set_options, "Set global search options (auto conditioning, etc.)")
-      //.def("set_num_learners", &Search::search::set_num_learners, "Set the total number of learners you want to
+      //.def("set_total_feature_width", &Search::search::set_total_feature_width, "Set the total number of learners you
+      // want to
       // train")
       .def("get_history_length", &Search::search::get_history_length,
           "Get the value specified by --search_history_length")

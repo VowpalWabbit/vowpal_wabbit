@@ -67,7 +67,7 @@ public:
   bool use_domination = false;
 
   VW::workspace* all = nullptr;  // statistics, loss
-  VW::LEARNER::base_learner* l = nullptr;
+  VW::LEARNER::learner* l = nullptr;
 
   VW::v_array<lq_data> query_data;
 
@@ -100,8 +100,8 @@ float binary_search(float fhat, float delta, float sens, float tol)
 }
 
 template <bool is_learn, bool is_simulation>
-inline void inner_loop(cs_active& cs_a, single_learner& base, VW::example& ec, uint32_t i, float cost,
-    uint32_t& prediction, float& score, float& partial_prediction, bool query_this_label, bool& query_needed)
+inline void inner_loop(cs_active& cs_a, learner& base, VW::example& ec, uint32_t i, float cost, uint32_t& prediction,
+    float& score, float& partial_prediction, bool query_this_label, bool& query_needed)
 {
   base.predict(ec, i - 1);
   if (is_learn)
@@ -152,7 +152,7 @@ inline void inner_loop(cs_active& cs_a, single_learner& base, VW::example& ec, u
   VW_ADD_PASSTHROUGH_FEATURE(ec, i, ec.partial_prediction);
 }
 
-inline void find_cost_range(cs_active& cs_a, single_learner& base, VW::example& ec, uint32_t i, float delta, float eta,
+inline void find_cost_range(cs_active& cs_a, learner& base, VW::example& ec, uint32_t i, float delta, float eta,
     float& min_pred, float& max_pred, bool& is_range_large)
 {
   float tol = 1e-6f;
@@ -188,7 +188,7 @@ inline void find_cost_range(cs_active& cs_a, single_learner& base, VW::example& 
 }
 
 template <bool is_learn, bool is_simulation>
-void predict_or_learn(cs_active& cs_a, single_learner& base, VW::example& ec)
+void predict_or_learn(cs_active& cs_a, learner& base, VW::example& ec)
 {
   VW::cs_label ld = ec.l.cs;
 
@@ -196,25 +196,29 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, VW::example& ec)
   {
     // save regressor
     std::stringstream filename;
-    filename << cs_a.all->final_regressor_name << "." << ec.example_counter << "." << cs_a.all->sd->queries << "."
-             << cs_a.num_any_queries;
+    filename << cs_a.all->output_model_config.final_regressor_name << "." << ec.example_counter << "."
+             << cs_a.all->sd->queries << "." << cs_a.num_any_queries;
     VW::save_predictor(*(cs_a.all), filename.str());
-    *(cs_a.all->trace_message) << endl << "Number of examples with at least one query = " << cs_a.num_any_queries;
+    *(cs_a.all->output_runtime.trace_message)
+        << endl
+        << "Number of examples with at least one query = " << cs_a.num_any_queries;
     // Double label query budget
     cs_a.min_labels *= 2;
 
     for (size_t i = 0; i < cs_a.examples_by_queries.size(); i++)
     {
-      *(cs_a.all->trace_message) << endl
-                                 << "examples with " << i << " labels queried = " << cs_a.examples_by_queries[i];
+      *(cs_a.all->output_runtime.trace_message)
+          << endl
+          << "examples with " << i << " labels queried = " << cs_a.examples_by_queries[i];
     }
 
-    *(cs_a.all->trace_message) << endl << "labels outside of cost range = " << cs_a.labels_outside_range;
-    *(cs_a.all->trace_message) << endl
-                               << "average distance to range = "
-                               << cs_a.distance_to_range / (static_cast<float>(cs_a.labels_outside_range));
-    *(cs_a.all->trace_message) << endl
-                               << "average range = " << cs_a.range / (static_cast<float>(cs_a.labels_outside_range));
+    *(cs_a.all->output_runtime.trace_message) << endl << "labels outside of cost range = " << cs_a.labels_outside_range;
+    *(cs_a.all->output_runtime.trace_message)
+        << endl
+        << "average distance to range = " << cs_a.distance_to_range / (static_cast<float>(cs_a.labels_outside_range));
+    *(cs_a.all->output_runtime.trace_message)
+        << endl
+        << "average range = " << cs_a.range / (static_cast<float>(cs_a.labels_outside_range));
   }
 
   if (cs_a.all->sd->queries >= cs_a.max_labels * cs_a.num_classes) { return; }
@@ -340,7 +344,7 @@ void output_example_prediction_cs_active(
   const auto& label = ec.l.cs;
   const auto multiclass_prediction = ec.pred.active_multiclass.predicted_class;
 
-  for (auto& sink : all.final_prediction_sink)
+  for (auto& sink : all.output_runtime.final_prediction_sink)
   {
     if (!all.sd->ldict)
     {
@@ -353,7 +357,7 @@ void output_example_prediction_cs_active(
     }
   }
 
-  if (all.raw_prediction != nullptr)
+  if (all.output_runtime.raw_prediction != nullptr)
   {
     std::stringstream output_string_stream;
     for (unsigned int i = 0; i < label.costs.size(); i++)
@@ -362,7 +366,7 @@ void output_example_prediction_cs_active(
       if (i > 0) { output_string_stream << ' '; }
       output_string_stream << cl.class_index << ':' << cl.partial_prediction;
     }
-    all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
+    all.print_text_by_ref(all.output_runtime.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
   }
 }
 
@@ -376,7 +380,7 @@ void print_update_cs_active(VW::workspace& all, VW::shared_data& /* sd */, const
 }
 }  // namespace
 
-base_learner* VW::reductions::cs_active_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::cs_active_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -421,7 +425,7 @@ base_learner* VW::reductions::cs_active_setup(VW::setup_base_i& stack_builder)
   data->all = &all;
   data->t = 1;
 
-  auto loss_function_type = all.loss->get_type();
+  auto loss_function_type = all.loss_config.loss->get_type();
   if (loss_function_type != "squared") THROW("non-squared loss can't be used with --cs_active");
 
   if (options.was_supplied("lda")) THROW("lda can't be combined with active learning");
@@ -434,12 +438,16 @@ base_learner* VW::reductions::cs_active_setup(VW::setup_base_i& stack_builder)
 
   if (!options.was_supplied("adax")) { all.logger.err_warn("--cs_active should be used with --adax"); }
 
-  all.set_minmax(all.sd, data->cost_max);
-  all.set_minmax(all.sd, data->cost_min);
+  if (all.set_minmax)
+  {
+    all.set_minmax(data->cost_max);
+    all.set_minmax(data->cost_min);
+  }
+
   for (uint32_t i = 0; i < data->num_classes + 1; i++) { data->examples_by_queries.push_back(0); }
 
-  void (*learn_ptr)(cs_active & cs_a, single_learner & base, VW::example & ec);
-  void (*predict_ptr)(cs_active & cs_a, single_learner & base, VW::example & ec);
+  void (*learn_ptr)(cs_active & cs_a, learner & base, VW::example & ec);
+  void (*predict_ptr)(cs_active & cs_a, learner & base, VW::example & ec);
   std::string name_addition;
 
   if (simulation)
@@ -455,23 +463,18 @@ base_learner* VW::reductions::cs_active_setup(VW::setup_base_i& stack_builder)
     name_addition = "";
   }
 
-  size_t ws = data->num_classes;
-  auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()), learn_ptr,
-      predict_ptr, stack_builder.get_setupfn_name(cs_active_setup) + name_addition)
-                .set_params_per_weight(ws)
-                .set_learn_returns_prediction(true)
-                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
-                .set_output_prediction_type(VW::prediction_type_t::ACTIVE_MULTICLASS)
-                .set_input_label_type(VW::label_type_t::CS)
-                .set_output_label_type(VW::label_type_t::SIMPLE)
-                .set_output_example_prediction(output_example_prediction_cs_active)
-                .set_print_update(print_update_cs_active)
-                .set_update_stats(update_stats_cs_active)
-                .build();
-
-  // Label parser set to cost sensitive label parser
-  all.example_parser->lbl_parser = VW::cs_label_parser_global;
-  base_learner* b = make_base(*l);
-  all.cost_sensitive = b;
-  return b;
+  size_t feature_width = data->num_classes;
+  auto l = make_reduction_learner(std::move(data), require_singleline(stack_builder.setup_base_learner(feature_width)),
+      learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cs_active_setup) + name_addition)
+               .set_feature_width(feature_width)
+               .set_learn_returns_prediction(true)
+               .set_input_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_output_prediction_type(VW::prediction_type_t::ACTIVE_MULTICLASS)
+               .set_input_label_type(VW::label_type_t::CS)
+               .set_output_label_type(VW::label_type_t::SIMPLE)
+               .set_output_example_prediction(output_example_prediction_cs_active)
+               .set_print_update(print_update_cs_active)
+               .set_update_stats(update_stats_cs_active)
+               .build();
+  return l;
 }

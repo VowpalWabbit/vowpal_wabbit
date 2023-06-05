@@ -33,12 +33,12 @@ namespace VW
 {
 namespace reductions
 {
-void cbify_adf_data::init_adf_data(std::size_t num_actions_, std::size_t increment_,
+void cbify_adf_data::init_adf_data(std::size_t num_actions_, std::size_t feature_width_below_,
     std::vector<std::vector<VW::namespace_index>>& interactions,
     std::vector<std::vector<extent_term>>& extent_interactions)
 {
   this->num_actions = num_actions_;
-  this->increment = increment_;
+  this->feature_width_below = feature_width_below_;
 
   ecs.resize(num_actions_);
   for (size_t a = 0; a < num_actions_; ++a)
@@ -51,7 +51,7 @@ void cbify_adf_data::init_adf_data(std::size_t num_actions_, std::size_t increme
   }
 
   // cache mask for copy routine
-  uint64_t total = num_actions_ * increment_;
+  uint64_t total = num_actions_ * feature_width_below_;
   uint64_t power_2 = 0;
 
   while (total > 0)
@@ -89,7 +89,7 @@ void cbify_adf_data::copy_example_to_adf(parameters& weights, VW::example& ec)
       {
         auto rawidx = idx;
         rawidx -= rawidx & custom_index_mask;
-        rawidx += a * increment;
+        rawidx += a * feature_width_below;
         idx = rawidx & mask;
       }
     }
@@ -199,7 +199,7 @@ float get_01_loss(cbify& data, float chosen_action, float label)
 // discretized continuous action space predict_or_learn. Non-afd workflow only
 // Receives Regression example as input, sends cb example to base learn/predict which is cb_explore
 template <bool is_learn>
-void predict_or_learn_regression_discrete(cbify& data, single_learner& base, VW::example& ec)
+void predict_or_learn_regression_discrete(cbify& data, learner& base, VW::example& ec)
 {
   VW_DBG(ec) << "cbify_reg: #### is_learn = " << is_learn << VW::debug::simple_label_to_string(ec)
              << VW::debug::features_to_string(ec) << std::endl;
@@ -267,7 +267,7 @@ void predict_or_learn_regression_discrete(cbify& data, single_learner& base, VW:
 // continuous action space predict_or_learn. Non-afd workflow only
 // Receives Regression example as input, sends cb_continuous example to base learn/predict
 template <bool is_learn>
-void predict_or_learn_regression(cbify& data, single_learner& base, VW::example& ec)
+void predict_or_learn_regression(cbify& data, learner& base, VW::example& ec)
 {
   VW_DBG(ec) << "cbify_reg: #### is_learn = " << is_learn << VW::debug::simple_label_to_string(ec)
              << VW::debug::features_to_string(ec) << std::endl;
@@ -344,7 +344,7 @@ void predict_or_learn_regression(cbify& data, single_learner& base, VW::example&
 }
 
 template <bool is_learn, bool use_cs>
-void predict_or_learn(cbify& data, single_learner& base, VW::example& ec)
+void predict_or_learn(cbify& data, learner& base, VW::example& ec)
 {
   // Store the multiclass or cost-sensitive input label
   VW::multiclass_label ld;
@@ -382,7 +382,7 @@ void predict_or_learn(cbify& data, single_learner& base, VW::example& ec)
 }
 
 template <bool use_cs>
-void predict_adf(cbify& data, multi_learner& base, VW::example& ec)
+void predict_adf(cbify& data, learner& base, VW::example& ec)
 {
   const auto save_label = ec.l;
 
@@ -400,7 +400,7 @@ void predict_adf(cbify& data, multi_learner& base, VW::example& ec)
 }
 
 template <bool use_cs>
-void learn_adf(cbify& data, multi_learner& base, VW::example& ec)
+void learn_adf(cbify& data, learner& base, VW::example& ec)
 {
   auto& out_ec = *data.adf_data.ecs[0];
   VW::multiclass_label ld;
@@ -426,7 +426,7 @@ void learn_adf(cbify& data, multi_learner& base, VW::example& ec)
   base.learn(data.adf_data.ecs);
 }
 
-void do_actual_predict_ldf(cbify& data, multi_learner& base, VW::multi_ex& ec_seq)
+void do_actual_predict_ldf(cbify& data, learner& base, VW::multi_ex& ec_seq)
 {
   // change label and pred data for cb
   if (data.cs_costs.size() < ec_seq.size()) { data.cs_costs.resize(ec_seq.size()); }
@@ -463,7 +463,7 @@ void do_actual_predict_ldf(cbify& data, multi_learner& base, VW::multi_ex& ec_se
   }
 }
 
-void do_actual_learning_ldf(cbify& data, multi_learner& base, VW::multi_ex& ec_seq)
+void do_actual_learning_ldf(cbify& data, learner& base, VW::multi_ex& ec_seq)
 {
   VW::cb_class cl;
 
@@ -555,12 +555,12 @@ void output_example_prediction_cbify_ldf(
     if (VW::example_is_newline(ec)) { continue; }
     if (VW::is_cs_example_header(ec)) { continue; }
 
-    for (const auto& sink : all.final_prediction_sink)
+    for (const auto& sink : all.output_runtime.final_prediction_sink)
     {
       all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag, logger);
     }
 
-    if (all.raw_prediction != nullptr)
+    if (all.output_runtime.raw_prediction != nullptr)
     {
       std::string output_string;
       std::stringstream output_string_stream(output_string);
@@ -569,15 +569,15 @@ void output_example_prediction_cbify_ldf(
         if (i > 0) { output_string_stream << ' '; }
         output_string_stream << costs[i].class_index << ':' << costs[i].partial_prediction;
       }
-      all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
+      all.print_text_by_ref(all.output_runtime.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
     }
   }
 
   // To output a newline.
-  if (all.raw_prediction != nullptr)
+  if (all.output_runtime.raw_prediction != nullptr)
   {
     VW::v_array<char> empty;
-    all.print_text_by_ref(all.raw_prediction.get(), "", empty, all.logger);
+    all.print_text_by_ref(all.output_runtime.raw_prediction.get(), "", empty, all.logger);
   }
 }
 
@@ -632,7 +632,7 @@ void output_example_prediction_cbify_reg_continuous(
     strm << "ERR Too many costs found. Expecting one." << std::endl;
   }
   const std::string str = strm.str();
-  for (auto& f : all.final_prediction_sink) { f->write(str.c_str(), str.size()); }
+  for (auto& f : all.output_runtime.final_prediction_sink) { f->write(str.c_str(), str.size()); }
 }
 
 void update_stats_cbify_reg_discrete(const VW::workspace& /* all */, VW::shared_data& sd, const cbify& data,
@@ -652,7 +652,7 @@ void update_stats_cbify_reg_discrete(const VW::workspace& /* all */, VW::shared_
 
 }  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::cbify_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -757,7 +757,7 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
     options.insert("lr_multiplier", ss.str());
   }
 
-  learner<cbify, VW::example>* l;
+  std::shared_ptr<learner> l;
   VW::learner_update_stats_func<cbify, VW::example>* update_stats_func = nullptr;
   VW::learner_output_example_prediction_func<cbify, VW::example>* output_example_prediction_func = nullptr;
   VW::learner_print_update_func<cbify, VW::example>* print_update_func = nullptr;
@@ -772,13 +772,14 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
     out_label_type = VW::label_type_t::CB;
     in_pred_type = VW::prediction_type_t::MULTICLASS;
     out_pred_type = VW::prediction_type_t::MULTICLASS;
-    void (*learn_ptr)(cbify&, multi_learner&, VW::example&);
-    void (*predict_ptr)(cbify&, multi_learner&, VW::example&);
-    multi_learner* base = as_multiline(stack_builder.setup_base_learner());
+    void (*learn_ptr)(cbify&, learner&, VW::example&);
+    void (*predict_ptr)(cbify&, learner&, VW::example&);
+    auto base = require_multiline(stack_builder.setup_base_learner());
 
     if (data->use_adf)
     {
-      data->adf_data.init_adf_data(num_actions, base->increment, all.interactions, all.extent_interactions);
+      data->adf_data.init_adf_data(num_actions, base->feature_width_below, all.feature_tweaks_config.interactions,
+          all.feature_tweaks_config.extent_interactions);
     }
 
     if (use_cs)
@@ -790,7 +791,6 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
       output_example_prediction_func = VW::details::output_example_prediction_cs_label<cbify>;
       print_update_func = VW::details::print_update_cs_label<cbify>;
       name_addition = "-adf-cs";
-      all.example_parser->lbl_parser = VW::cs_label_parser_global;
     }
     else
     {
@@ -801,7 +801,6 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
       output_example_prediction_func = VW::details::output_example_prediction_multiclass_label<cbify>;
       print_update_func = VW::details::print_update_multiclass_label<cbify>;
       name_addition = "-adf";
-      all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
     }
     l = make_reduction_learner(
         std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cbify_setup) + name_addition)
@@ -816,14 +815,13 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
   }
   else
   {
-    void (*learn_ptr)(cbify&, single_learner&, VW::example&);
-    void (*predict_ptr)(cbify&, single_learner&, VW::example&);
-    single_learner* base = as_singleline(stack_builder.setup_base_learner());
+    void (*learn_ptr)(cbify&, learner&, VW::example&);
+    void (*predict_ptr)(cbify&, learner&, VW::example&);
+    auto base = require_singleline(stack_builder.setup_base_learner());
     if (use_reg)
     {
       in_label_type = VW::label_type_t::SIMPLE;
       out_pred_type = VW::prediction_type_t::SCALAR;
-      all.example_parser->lbl_parser = simple_label_parser_global;
       if (use_discrete)
       {
         out_label_type = VW::label_type_t::CB;
@@ -863,7 +861,6 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
       output_example_prediction_func = VW::details::output_example_prediction_cs_label<cbify>;
       print_update_func = VW::details::print_update_cs_label<cbify>;
       name_addition = "-cs";
-      all.example_parser->lbl_parser = VW::cs_label_parser_global;
     }
     else
     {
@@ -877,25 +874,29 @@ VW::LEARNER::base_learner* VW::reductions::cbify_setup(VW::setup_base_i& stack_b
       output_example_prediction_func = VW::details::output_example_prediction_multiclass_label<cbify>;
       print_update_func = VW::details::print_update_multiclass_label<cbify>;
       name_addition = "";
-      all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
     }
-    l = make_reduction_learner(
+    auto builder = make_reduction_learner(
         std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cbify_setup) + name_addition)
-            .set_input_label_type(in_label_type)
-            .set_output_label_type(out_label_type)
-            .set_input_prediction_type(in_pred_type)
-            .set_output_prediction_type(out_pred_type)
-            .set_learn_returns_prediction(true)
-            .set_update_stats(update_stats_func)
-            .set_output_example_prediction(output_example_prediction_func)
-            .set_print_update(print_update_func)
-            .build();
+                       .set_input_label_type(in_label_type)
+                       .set_output_label_type(out_label_type)
+                       .set_input_prediction_type(in_pred_type)
+                       .set_output_prediction_type(out_pred_type)
+                       .set_learn_returns_prediction(true)
+                       .set_update_stats(update_stats_func)
+                       .set_print_update(print_update_func);
+
+    // output_example_prediction_func is not used in the case of use_discrete
+    if (output_example_prediction_func != nullptr)
+    {
+      builder.set_output_example_prediction(output_example_prediction_func);
+    }
+    l = builder.build();
   }
 
-  return make_base(*l);
+  return l;
 }
 
-VW::LEARNER::base_learner* VW::reductions::cbifyldf_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::cbifyldf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -928,18 +929,17 @@ VW::LEARNER::base_learner* VW::reductions::cbifyldf_setup(VW::setup_base_i& stac
     options.insert("lr_multiplier", ss.str());
   }
 
-  multi_learner* base = as_multiline(stack_builder.setup_base_learner());
-  auto* l = make_reduction_learner(std::move(data), base, do_actual_learning_ldf, do_actual_predict_ldf,
+  auto base = require_multiline(stack_builder.setup_base_learner());
+  auto l = make_reduction_learner(std::move(data), base, do_actual_learning_ldf, do_actual_predict_ldf,
       stack_builder.get_setupfn_name(cbifyldf_setup))
-                .set_input_label_type(VW::label_type_t::CS)
-                .set_output_label_type(VW::label_type_t::CB)
-                .set_input_prediction_type(VW::prediction_type_t::ACTION_PROBS)
-                .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
-                .set_output_example_prediction(output_example_prediction_cbify_ldf)
-                .set_print_update(print_update_cbify_ldf)
-                .set_update_stats(update_stats_cbify_ldf)
-                .build();
-  all.example_parser->lbl_parser = VW::cs_label_parser_global;
+               .set_input_label_type(VW::label_type_t::CS)
+               .set_output_label_type(VW::label_type_t::CB)
+               .set_input_prediction_type(VW::prediction_type_t::ACTION_PROBS)
+               .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
+               .set_output_example_prediction(output_example_prediction_cbify_ldf)
+               .set_print_update(print_update_cbify_ldf)
+               .set_update_stats(update_stats_cbify_ldf)
+               .build();
 
-  return make_base(*l);
+  return l;
 }

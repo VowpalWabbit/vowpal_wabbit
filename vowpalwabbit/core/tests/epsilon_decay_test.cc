@@ -21,13 +21,13 @@ namespace epsilon_decay_test
 epsilon_decay_data* get_epsilon_decay_data(VW::workspace& all)
 {
   std::vector<std::string> e_r;
-  all.l->get_enabled_reductions(e_r);
+  all.l->get_enabled_learners(e_r);
   if (std::find(e_r.begin(), e_r.end(), "epsilon_decay") == e_r.end())
   {
-    THROW("Epsilon decay not found in enabled reductions");
+    THROW("Epsilon decay not found in enabled learners");
   }
 
-  VW::LEARNER::multi_learner* epsilon_decay_learner = as_multiline(all.l->get_learner_by_name_prefix("epsilon_decay"));
+  VW::LEARNER::learner* epsilon_decay_learner = require_multiline(all.l->get_learner_by_name_prefix("epsilon_decay"));
 
   return (epsilon_decay_data*)epsilon_decay_learner->get_internal_type_erased_data_pointer_test_use_only();
 }
@@ -44,8 +44,8 @@ TEST(EpsilonDecay, ThrowIfNoExplore)
         catch (const VW::vw_exception& e)
         {
           EXPECT_STREQ(
-              "Input prediction type: prediction_type_t::ACTION_PROBS of reduction: epsilon_decay does not match "
-              "output prediction type: prediction_type_t::ACTION_SCORES of base reduction: cb_adf.",
+              "Input prediction type: prediction_type_t::ACTION_PROBS of learner: epsilon_decay does not match "
+              "output prediction type: prediction_type_t::ACTION_SCORES of base learner: cb_adf.",
               e.what());
           throw;
         }
@@ -103,8 +103,8 @@ TEST(EpsilonDecay, ChampChangeWIterations)
       });
 
   // we initialize the reduction pointing to position 0 as champ, that config is hard-coded to empty
-  auto ctr = simulator::_test_helper_hook(
-      std::vector<std::string>{"--epsilon_decay", "--model_count", "4", "--cb_explore_adf", "--quiet", "-q", "::"},
+  auto ctr = simulator::_test_helper_hook(std::vector<std::string>{"--epsilon_decay", "--model_count", "4",
+                                              "--challenger_epsilon", "--cb_explore_adf", "--quiet", "-q", "::"},
       test_hooks, num_iterations, seed, swap_after);
 
   EXPECT_GT(ctr.back(), 0.4f);
@@ -252,9 +252,10 @@ TEST(EpsilonDecay, ScoreBoundsUnit)
 {
   // Initialize epsilon_decay_data class with 5 models
   uint64_t num_models = 5;
-  uint32_t wpp = 8;
+  uint32_t feature_width = 8;
   VW::dense_parameters dense_weights(num_models);
-  epsilon_decay_data ep_data(num_models, 100, .05, .1, dense_weights, "", false, wpp, 0, 1.f, 0, false, 1e-6, "bisect");
+  epsilon_decay_data ep_data(
+      num_models, 100, .05, .1, dense_weights, "", false, feature_width, 0, 1.f, 0, false, 1e-6, "bisect", false, true);
 
   // Set update counts to fixed values with expected horizon bound violation
   size_t score_idx = 0;
@@ -337,9 +338,10 @@ TEST(EpsilonDecay, HorizonBoundsUnit)
 {
   // Initialize epsilon_decay_data class with 5 models
   uint64_t num_models = 5;
-  uint32_t wpp = 8;
+  uint32_t feature_width = 8;
   VW::dense_parameters dense_weights(num_models);
-  epsilon_decay_data ep_data(num_models, 100, .05, .1, dense_weights, "", false, wpp, 0, 1.f, 0, false, 1e-6, "bisect");
+  epsilon_decay_data ep_data(
+      num_models, 100, .05, .1, dense_weights, "", false, feature_width, 0, 1.f, 0, false, 1e-6, "bisect", false, true);
 
   // Set update counts to fixed values with expected horizon bound violation
   size_t score_idx = 0;

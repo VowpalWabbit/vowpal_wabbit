@@ -26,7 +26,7 @@ public:
 
   bool are_metrics_enabled() const;
   void register_metrics_callback(const metrics_callback_fn& callback);
-  VW::metric_sink collect_metrics(LEARNER::base_learner* l = nullptr) const;
+  VW::metric_sink collect_metrics(LEARNER::learner* l = nullptr) const;
 
 private:
   bool _are_metrics_enabled;

@@ -94,7 +94,7 @@ jobs:
           cmakeListsTxtPath: "${{ github.workspace }}/CMakeLists.txt"
           configurePreset: "${{ matrix.preset }}"
       - name: Build
-        run: cmake --build build -t vw_cli_bin spanning_tree vw_core_test
+        run: cmake --build build -t vw_cli_bin vw_spanning_tree vw_spanning_tree_bin vw_core_test
       - name: Run unit tests
         run: ./build/vowpalwabbit/core/vw_core_test --gtest_filter=-\*WIiterations
       - name: Run python test script

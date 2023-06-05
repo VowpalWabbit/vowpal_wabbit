@@ -23,7 +23,7 @@ using namespace VW::config;
 namespace
 {
 template <bool is_learn, VW::generate_func_t<VW::namespace_index> generate_func, bool leave_duplicate_interactions>
-void transform_single_ex(VW::interactions_generator& data, VW::LEARNER::single_learner& base, VW::example& ec)
+void transform_single_ex(VW::interactions_generator& data, VW::LEARNER::learner& base, VW::example& ec)
 {
   // We pass *ec.interactions here BUT the contract is that this does not change...
   data.update_interactions_if_new_namespace_seen<generate_func, leave_duplicate_interactions>(
@@ -45,7 +45,7 @@ void transform_single_ex(VW::interactions_generator& data, VW::LEARNER::single_l
 
 template <bool is_learn, VW::generate_func_t<VW::namespace_index> generate_func,
     VW::generate_func_t<VW::extent_term> generate_func_extents, bool leave_duplicate_interactions>
-void transform_single_ex(VW::interactions_generator& data, VW::LEARNER::single_learner& base, VW::example& ec)
+void transform_single_ex(VW::interactions_generator& data, VW::LEARNER::learner& base, VW::example& ec)
 {
   // We pass *ec.interactions here BUT the contract is that this does not change...
   data.update_interactions_if_new_namespace_seen<generate_func, leave_duplicate_interactions>(
@@ -75,7 +75,7 @@ void transform_single_ex(VW::interactions_generator& data, VW::LEARNER::single_l
 
 template <VW::generate_func_t<VW::namespace_index> generate_func,
     VW::generate_func_t<VW::extent_term> generate_func_extents, bool leave_duplicate_interactions>
-void update(VW::interactions_generator& data, VW::LEARNER::single_learner& base, VW::example& ec)
+void update(VW::interactions_generator& data, VW::LEARNER::learner& base, VW::example& ec)
 {
   // We pass *ec.interactions here BUT the contract is that this does not change...
   data.update_interactions_if_new_namespace_seen<generate_func, leave_duplicate_interactions>(
@@ -103,7 +103,7 @@ void update(VW::interactions_generator& data, VW::LEARNER::single_learner& base,
 }
 
 template <VW::generate_func_t<VW::namespace_index> generate_func, bool leave_duplicate_interactions>
-void update(VW::interactions_generator& data, VW::LEARNER::single_learner& base, VW::example& ec)
+void update(VW::interactions_generator& data, VW::LEARNER::learner& base, VW::example& ec)
 {
   // We pass *ec.interactions here BUT the contract is that this does not change...
   data.update_interactions_if_new_namespace_seen<generate_func, leave_duplicate_interactions>(
@@ -123,8 +123,8 @@ void update(VW::interactions_generator& data, VW::LEARNER::single_learner& base,
 }
 
 template <VW::generate_func_t<VW::namespace_index> generate_func, bool leave_duplicate_interactions>
-inline void multipredict(VW::interactions_generator& data, VW::LEARNER::single_learner& base, VW::example& ec,
-    size_t count, size_t, VW::polyprediction* pred, bool finalize_predictions)
+inline void multipredict(VW::interactions_generator& data, VW::LEARNER::learner& base, VW::example& ec, size_t count,
+    size_t, VW::polyprediction* pred, bool finalize_predictions)
 {
   // We pass *ec.interactions here BUT the contract is that this does not change...
   data.update_interactions_if_new_namespace_seen<generate_func, leave_duplicate_interactions>(
@@ -145,8 +145,8 @@ inline void multipredict(VW::interactions_generator& data, VW::LEARNER::single_l
 
 template <VW::generate_func_t<VW::namespace_index> generate_func,
     VW::generate_func_t<VW::extent_term> generate_func_extents, bool leave_duplicate_interactions>
-inline void multipredict(VW::interactions_generator& data, VW::LEARNER::single_learner& base, VW::example& ec,
-    size_t count, size_t, VW::polyprediction* pred, bool finalize_predictions)
+inline void multipredict(VW::interactions_generator& data, VW::LEARNER::learner& base, VW::example& ec, size_t count,
+    size_t, VW::polyprediction* pred, bool finalize_predictions)
 {
   // We pass *ec.interactions here BUT the contract is that this does not change...
   data.update_interactions_if_new_namespace_seen<generate_func, leave_duplicate_interactions>(
@@ -174,7 +174,7 @@ inline void multipredict(VW::interactions_generator& data, VW::LEARNER::single_l
 }
 }  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::generate_interactions_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::generate_interactions_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -187,7 +187,7 @@ VW::LEARNER::base_learner* VW::reductions::generate_interactions_setup(VW::setup
   options.add_and_parse(new_options);
 
   auto interactions_spec_contains_wildcards = false;
-  for (const auto& inter : all.interactions)
+  for (const auto& inter : all.feature_tweaks_config.interactions)
   {
     if (VW::contains_wildcard(inter))
     {
@@ -197,7 +197,7 @@ VW::LEARNER::base_learner* VW::reductions::generate_interactions_setup(VW::setup
   }
 
   auto interactions_spec_contains_extent_wildcards = false;
-  for (const auto& inter : all.extent_interactions)
+  for (const auto& inter : all.feature_tweaks_config.extent_interactions)
   {
     if (VW::contains_wildcard(inter))
     {
@@ -205,6 +205,8 @@ VW::LEARNER::base_learner* VW::reductions::generate_interactions_setup(VW::setup
       break;
     }
   }
+
+  if (options.was_supplied("automl")) { return nullptr; }
 
   // If there are no wildcards, then no expansion is required.
   // ccb_explore_adf adds a wildcard post setup and so this reduction must be turned on.
@@ -216,9 +218,9 @@ VW::LEARNER::base_learner* VW::reductions::generate_interactions_setup(VW::setup
 
   if (options.was_supplied("large_action_space")) { store_in_reduction_features = true; }
 
-  using learn_pred_func_t = void (*)(VW::interactions_generator&, VW::LEARNER::single_learner&, VW::example&);
-  using multipredict_func_t = void (*)(VW::interactions_generator&, VW::LEARNER::single_learner&, VW::example&, size_t,
-      size_t, VW::polyprediction*, bool);
+  using learn_pred_func_t = void (*)(VW::interactions_generator&, VW::LEARNER::learner&, VW::example&);
+  using multipredict_func_t = void (*)(
+      VW::interactions_generator&, VW::LEARNER::learner&, VW::example&, size_t, size_t, VW::polyprediction*, bool);
   learn_pred_func_t learn_func;
   learn_pred_func_t pred_func;
   learn_pred_func_t update_func;
@@ -323,12 +325,12 @@ VW::LEARNER::base_learner* VW::reductions::generate_interactions_setup(VW::setup
 
   auto data = VW::make_unique<VW::interactions_generator>();
   data->store_in_reduction_features = store_in_reduction_features;
-  auto* base = as_singleline(stack_builder.setup_base_learner());
-  auto* l = VW::LEARNER::make_reduction_learner(
+  auto base = require_singleline(stack_builder.setup_base_learner());
+  auto l = make_reduction_learner(
       std::move(data), base, learn_func, pred_func, stack_builder.get_setupfn_name(generate_interactions_setup))
-                .set_learn_returns_prediction(base->learn_returns_prediction)
-                .set_update(update_func)
-                .set_multipredict(multipredict_func)
-                .build();
-  return VW::LEARNER::make_base(*l);
+               .set_learn_returns_prediction(base->learn_returns_prediction)
+               .set_update(update_func)
+               .set_multipredict(multipredict_func)
+               .build();
+  return l;
 }

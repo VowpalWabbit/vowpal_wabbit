@@ -10,21 +10,21 @@ Num weight bits = 18
 learning rate = 10
 initial_t = 10
 power_t = 0.5
-Enabled reductions: gd, scorer-identity, plt -prob
+Enabled learners: gd, scorer-identity, plt -prob
 Input label = MULTILABEL
 Output pred = ACTION_PROBS
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
-0.000000 0.000000            1            1.0            0,1              1        2
-0.000000 0.000000            2            2.0            1,2            2,1        2
-0.000000 0.000000            4            4.0            3,4            4,3        2
-0.000000 0.000000            8            8.0              8              8        2
+1.655385 1.655385            1            1.0            0,1              1        2
+2.160409 2.665433            2            2.0            1,2            2,1        2
+1.881014 1.601619            4            4.0            3,4            4,3        2
+1.582159 1.283305            8            8.0              8              8        2
 
 finished run
 number of examples = 10
 weighted example sum = 10.000000
 weighted label sum = 0.000000
-average loss = 0.000000
+average loss = 1.375444
 total feature number = 20
 hamming loss = 0.200000
 micro-precision = 1.000000

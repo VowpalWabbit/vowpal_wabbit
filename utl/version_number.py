@@ -18,7 +18,8 @@ if git_shallow != "false":
     sys.exit(1)
 
 git_describe = subprocess.check_output(
-    ["git", "describe", "--tags", "--first-parent", "--long"], text=True
+    ["git", "describe", "--tags", "--first-parent", "--long", "--exclude", "wasm_v*"],
+    text=True,
 ).strip()
 debug_print("Output of 'git describe' is: " + git_describe)
 
@@ -26,6 +27,10 @@ r = re.compile(
     r"^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<tag>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?-(?P<commit>\d+)-g(?P<hash>[0-9a-fA-F]+)$"
 )
 m = r.match(git_describe)
+
+if m is None:
+    debug_print("Error: 'git describe' output did not match regex!")
+    sys.exit(1)
 
 major = m.group("major")
 minor = m.group("minor")

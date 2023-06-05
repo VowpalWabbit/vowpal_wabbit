@@ -12,9 +12,9 @@ namespace VW
 {
 void validate_version(VW::workspace& all)
 {
-  if (all.model_file_ver < VW::version_definitions::LAST_COMPATIBLE_VERSION)
-    THROW("Model has possibly incompatible version! " << all.model_file_ver.to_string());
-  if (all.model_file_ver > VW::VERSION)
+  if (all.runtime_state.model_file_ver < VW::version_definitions::LAST_COMPATIBLE_VERSION)
+    THROW("Model has possibly incompatible version! " << all.runtime_state.model_file_ver.to_string());
+  if (all.runtime_state.model_file_ver > VW::VERSION)
   {
     all.logger.err_warn("Model version is more recent than VW version. This may not work.");
   }
@@ -27,13 +27,14 @@ void validate_min_max_label(VW::workspace& all)
 
 void validate_default_bits(VW::workspace& all, uint32_t local_num_bits)
 {
-  if (all.default_bits != true && all.num_bits != local_num_bits)
-    THROW("-b bits mismatch: command-line " << all.num_bits << " != " << local_num_bits << " stored in model");
+  if (all.runtime_config.default_bits != true && all.initial_weights_config.num_bits != local_num_bits)
+    THROW("-b bits mismatch: command-line " << all.initial_weights_config.num_bits << " != " << local_num_bits
+                                            << " stored in model");
 }
 
 void validate_num_bits(VW::workspace& all)
 {
-  if (all.num_bits > sizeof(size_t) * 8 - 3)
+  if (all.initial_weights_config.num_bits > sizeof(size_t) * 8 - 3)
     THROW("Only " << sizeof(size_t) * 8 - 3 << " or fewer bits allowed.  If this is a serious limit, speak up.");
 }
 }  // namespace VW

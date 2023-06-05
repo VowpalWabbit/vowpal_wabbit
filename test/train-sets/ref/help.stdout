@@ -567,6 +567,8 @@ Weight Options:
     --emt_scorer arg                        Indicates the type of scorer to use (type: str, default: self_consistent_rank,
                                             choices {distance, not_self_consistent_rank, random, self_consistent_rank},
                                             keep)
+    --emt_initial arg                       Indicates how to initialize scorer (type: str, default: cosine,
+                                            choices {cosine, euclidean, gaussian, none}, keep)
     --emt_router arg                        Indicates the type of router to use (type: str, default: eigen,
                                             choices {eigen, random}, keep)
 [Reduction] Epsilon-Decaying Exploration Options:
@@ -578,12 +580,11 @@ Weight Options:
                                             100, keep, experimental)
     --epsilon_decay_significance_level arg  Set significance level for champion change (type: float, default:
                                             0.05, keep, experimental)
-    --epsilon_decay_estimator_decay arg     Time constant for count decay (type: float, default: 1, keep,
-                                            experimental)
     --epsilon_decay_audit arg               Epsilon decay audit file name (type: str, experimental)
     --constant_epsilon                      Keep epsilon constant across models (type: bool, keep, experimental)
-    --fixed_significance_level              Use fixed significance level as opposed to scaling by model count
-                                            (bonferroni correction) (type: bool, keep, experimental)
+    --bonferroni_denominator arg            Factor to scale down significance level by, defaults to model
+                                            count (bonferroni correction) (type: uint, default: 0, keep,
+                                            experimental)
     --min_champ_examples arg                Minimum number of examples for any challenger to become champion
                                             (type: uint, default: 0, keep, experimental)
     --initial_epsilon arg                   Initial epsilon value (type: float, default: 1, keep, experimental)
@@ -594,8 +595,10 @@ Weight Options:
                                             experimental)
     --tol_x arg                             Tolerance for estimation optimization (type: float, default:
                                             1e-06, keep, experimental)
-    --opt_func arg                          Optimization function for estimation) (type: str, default: bisect,
+    --opt_func arg                          Optimization function for estimation (type: str, default: bisect,
                                             choices {bisect, brentq}, keep, experimental)
+    --challenger_epsilon                    Use exploration for challenger model predictions (type: bool,
+                                            keep, experimental)
 [Reduction] Error Correcting Tournament Options:
     --ect arg                               Error correcting tournament with <k> labels (type: uint, keep,
                                             necessary)
@@ -620,6 +623,14 @@ Weight Options:
                                             uint, keep, necessary)
     --replay_m_count arg                    How many times (in expectation) should each example be played
                                             (default: 1 = permuting) (type: uint, default: 1)
+[Reduction] Experimental: Contextual Bandit Exploration with ADF with graph feedback Options:
+    --cb_explore_adf                        Online explore-exploit for a contextual bandit problem with multiline
+                                            action dependent features (type: bool, keep, necessary)
+    --gamma_scale arg                       Sets CB with graph feedback gamma parameter to gamma=[gamma_scale]*[num
+                                            examples]^1/2 (type: float, default: 1, keep)
+    --gamma_exponent arg                    Exponent on [num examples] in CB with graph feedback parameter
+                                            gamma (type: float, default: 0.5, keep)
+    --graph_feedback                        Graph feedback pdf (type: bool, keep, necessary, experimental)
 [Reduction] Experimental: Contextual Bandit Exploration with ADF with large action space filtering Options:
     --cb_explore_adf                        Online explore-exploit for a contextual bandit problem with multiline
                                             action dependent features (type: bool, keep, necessary)
@@ -639,6 +650,11 @@ Weight Options:
                                             with quadratic interactions. (x86 Linux only) (type: bool, experimental)
     --two_pass_svd                          A more accurate svd that is much slower than the default (one
                                             pass svd) (type: bool, experimental)
+    --action_cache_slack arg                If actions do not change between example calls then some calculations
+                                            for this algorithm are cached. If action cache size exceeds the
+                                            number of active actions plus action_cache_slack, then the cache
+                                            will be cleared. Setting this to -1 disables any caching (type:
+                                            uint, default: 50, keep, experimental)
 [Reduction] Explore Evaluation Options:
     --explore_eval                          Evaluate explore_eval adf policies (type: bool, keep, necessary)
     --multiplier arg                        Multiplier used to make all rejection sample probabilities <=

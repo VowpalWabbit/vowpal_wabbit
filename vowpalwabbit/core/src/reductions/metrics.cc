@@ -25,7 +25,7 @@ using namespace rapidjson;
 namespace
 {
 void insert_dsjson_metrics(const VW::details::dsjson_metrics* ds_metrics, VW::metric_sink& metrics,
-    const std::vector<std::string>& enabled_reductions)
+    const std::vector<std::string>& enabled_learners)
 {
   // ds_metrics is nullptr when --dsjson is disabled
   if (ds_metrics != nullptr)
@@ -38,7 +38,7 @@ void insert_dsjson_metrics(const VW::details::dsjson_metrics* ds_metrics, VW::me
     metrics.set_string("last_event_id", ds_metrics->last_event_id);
     metrics.set_string("last_event_time", ds_metrics->last_event_time);
     metrics.set_float("dsjson_sum_cost_original", ds_metrics->dsjson_sum_cost_original);
-    if (std::find(enabled_reductions.begin(), enabled_reductions.end(), "ccb_explore_adf") != enabled_reductions.end())
+    if (std::find(enabled_learners.begin(), enabled_learners.end(), "ccb_explore_adf") != enabled_learners.end())
     {
       metrics.set_float("dsjson_sum_cost_original_first_slot", ds_metrics->dsjson_sum_cost_original_first_slot);
       metrics.set_uint("dsjson_number_label_equal_baseline_first_slot",
@@ -133,28 +133,28 @@ void predict_or_learn(metrics_data& data, T& base, E& ec)
     base.predict(ec);
   }
 }
-}  // namespace
 
-void VW::reductions::additional_metrics(VW::workspace& all, VW::metric_sink& sink)
+void additional_metrics(VW::workspace& all, VW::metric_sink& sink)
 {
   sink.set_uint("total_log_calls", all.logger.get_log_count());
 
-  std::vector<std::string> enabled_reductions;
-  if (all.l != nullptr) { all.l->get_enabled_reductions(enabled_reductions); }
-  insert_dsjson_metrics(all.example_parser->metrics.get(), sink, enabled_reductions);
+  std::vector<std::string> enabled_learners;
+  if (all.l != nullptr) { all.l->get_enabled_learners(enabled_learners); }
+  insert_dsjson_metrics(all.parser_runtime.example_parser->metrics.get(), sink, enabled_learners);
 }
+}  // namespace
 
 void VW::reductions::output_metrics(VW::workspace& all)
 {
-  metrics_collector& manager = all.global_metrics;
+  metrics_collector& manager = all.output_runtime.global_metrics;
   if (manager.are_metrics_enabled())
   {
     std::string filename = all.options->get_typed_option<std::string>("extra_metrics").value();
-    list_to_json_file(filename, manager.collect_metrics(all.l), all.logger);
+    list_to_json_file(filename, manager.collect_metrics(all.l.get()), all.logger);
   }
 }
 
-VW::LEARNER::base_learner* VW::reductions::metrics_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::metrics_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -170,30 +170,32 @@ VW::LEARNER::base_learner* VW::reductions::metrics_setup(VW::setup_base_i& stack
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   if (out_file.empty()) THROW("extra_metrics argument (output filename) is missing.");
-  all.global_metrics = VW::metrics_collector(true);
+  all.output_runtime.global_metrics = VW::metrics_collector(true);
 
-  auto* base_learner = stack_builder.setup_base_learner();
+  auto* all_ptr = stack_builder.get_all_pointer();
+  all.output_runtime.global_metrics.register_metrics_callback(
+      [all_ptr](VW::metric_sink& sink) -> void { additional_metrics(*all_ptr, sink); });
 
-  if (base_learner->is_multiline())
+  auto base = stack_builder.setup_base_learner();
+
+  if (base->is_multiline())
   {
-    auto* l = make_reduction_learner(std::move(data), as_multiline(base_learner),
-        predict_or_learn<true, multi_learner, multi_ex>, predict_or_learn<false, multi_learner, multi_ex>,
-        stack_builder.get_setupfn_name(metrics_setup))
-                  .set_output_prediction_type(base_learner->get_output_prediction_type())
-                  .set_learn_returns_prediction(base_learner->learn_returns_prediction)
-                  .set_persist_metrics(persist)
-                  .build();
-    return make_base(*l);
+    auto l = make_reduction_learner(std::move(data), require_multiline(base), predict_or_learn<true, learner, multi_ex>,
+        predict_or_learn<false, learner, multi_ex>, stack_builder.get_setupfn_name(metrics_setup))
+                 .set_output_prediction_type(base->get_output_prediction_type())
+                 .set_learn_returns_prediction(base->learn_returns_prediction)
+                 .set_persist_metrics(persist)
+                 .build();
+    return l;
   }
   else
   {
-    auto* l = make_reduction_learner(std::move(data), as_singleline(base_learner),
-        predict_or_learn<true, single_learner, example>, predict_or_learn<false, single_learner, example>,
-        stack_builder.get_setupfn_name(metrics_setup))
-                  .set_output_prediction_type(base_learner->get_output_prediction_type())
-                  .set_learn_returns_prediction(base_learner->learn_returns_prediction)
-                  .set_persist_metrics(persist)
-                  .build();
-    return make_base(*l);
+    auto l = make_reduction_learner(std::move(data), require_singleline(base), predict_or_learn<true, learner, example>,
+        predict_or_learn<false, learner, example>, stack_builder.get_setupfn_name(metrics_setup))
+                 .set_output_prediction_type(base->get_output_prediction_type())
+                 .set_learn_returns_prediction(base->learn_returns_prediction)
+                 .set_persist_metrics(persist)
+                 .build();
+    return l;
   }
 }

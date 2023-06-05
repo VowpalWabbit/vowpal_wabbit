@@ -249,7 +249,7 @@ void inject_slot_id(ccb_data& data, VW::example* shared, size_t id)
     index = VW::hash_feature(*data.all, current_index_str, data.id_namespace_hash);
 
     // To maintain indices consistent with what the parser does we must scale.
-    index *= static_cast<uint64_t>(data.all->wpp) << data.base_learner_stride_shift;
+    index *= static_cast<uint64_t>(data.all->reduction_state.total_feature_width) << data.base_learner_stride_shift;
     data.slot_id_hashes[id] = index;
   }
   else { index = data.slot_id_hashes[id]; }
@@ -373,7 +373,7 @@ VW_WARNING_STATE_POP
 // iterate over slots contained in the multi-example, and for each slot, build a cb example and perform a
 // cb_explore_adf call.
 template <bool is_learn>
-void learn_or_predict(ccb_data& data, multi_learner& base, VW::multi_ex& examples)
+void learn_or_predict(ccb_data& data, learner& base, VW::multi_ex& examples)
 {
   clear_all(data);
   // split shared, actions and slots
@@ -428,7 +428,8 @@ void learn_or_predict(ccb_data& data, multi_learner& base, VW::multi_ex& example
   // that the cache will be invalidated.
   if (!previously_should_augment_with_slot_info && should_augment_with_slot_info)
   {
-    insert_ccb_interactions(data.all->interactions, data.all->extent_interactions);
+    insert_ccb_interactions(
+        data.all->feature_tweaks_config.interactions, data.all->feature_tweaks_config.extent_interactions);
   }
 
   // This will overwrite the labels with CB.
@@ -455,7 +456,10 @@ void learn_or_predict(ccb_data& data, multi_learner& base, VW::multi_ex& example
 
       if (should_augment_with_slot_info)
       {
-        if (data.all->audit || data.all->hash_inv) { inject_slot_id<true>(data, data.shared, slot_id); }
+        if (data.all->output_config.audit || data.all->output_config.hash_inv)
+        {
+          inject_slot_id<true>(data, data.shared, slot_id);
+        }
         else { inject_slot_id<false>(data, data.shared, slot_id); }
       }
 
@@ -506,7 +510,7 @@ void learn_or_predict(ccb_data& data, multi_learner& base, VW::multi_ex& example
 
       if (should_augment_with_slot_info)
       {
-        if (data.all->audit || data.all->hash_inv) { remove_slot_id<true>(data.shared); }
+        if (data.all->output_config.audit || data.all->output_config.hash_inv) { remove_slot_id<true>(data.shared); }
         else { remove_slot_id<false>(data.shared); }
       }
 
@@ -569,11 +573,11 @@ void output_example_prediction_ccb(
   if (!ec_seq.empty() && !data.no_pred)
   {
     // Print predictions
-    for (auto& sink : all.final_prediction_sink)
+    for (auto& sink : all.output_runtime.final_prediction_sink)
     {
       VW::print_decision_scores(sink.get(), ec_seq[VW::details::SHARED_EX_INDEX]->pred.decision_scores, all.logger);
     }
-    VW::details::global_print_newline(all.final_prediction_sink, all.logger);
+    VW::details::global_print_newline(all.output_runtime.final_prediction_sink, all.logger);
   }
 }
 
@@ -581,7 +585,7 @@ void print_update_ccb(VW::workspace& all, shared_data& /* sd */, const ccb_data&
     VW::io::logger& /* unused */)
 {
   const bool should_print_driver_update =
-      all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs;
+      all.sd->weighted_examples() >= all.sd->dump_interval && !all.output_config.quiet && !all.reduction_state.bfgs;
 
   if (should_print_driver_update && !ec_seq.empty() && !data.no_pred)
   {
@@ -623,11 +627,12 @@ void save_load(ccb_data& sm, VW::io_buf& io, bool read, bool text)
 
   if (read && sm.has_seen_multi_slot_example)
   {
-    insert_ccb_interactions(sm.all->interactions, sm.all->extent_interactions);
+    insert_ccb_interactions(
+        sm.all->feature_tweaks_config.interactions, sm.all->feature_tweaks_config.extent_interactions);
   }
 }
 }  // namespace
-base_learner* VW::reductions::ccb_explore_adf_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::ccb_explore_adf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -636,7 +641,7 @@ base_learner* VW::reductions::ccb_explore_adf_setup(VW::setup_base_i& stack_buil
   bool all_slots_loss_report = false;
   std::string type_string = "mtr";
 
-  data->is_ccb_input_model = all.is_ccb_input_model;
+  data->is_ccb_input_model = all.reduction_state.is_ccb_input_model;
 
   option_group_definition new_options("[Reduction] Conditional Contextual Bandit Exploration with ADF");
   new_options
@@ -684,8 +689,7 @@ base_learner* VW::reductions::ccb_explore_adf_setup(VW::setup_base_i& stack_buil
     options.add_and_parse(new_options);
   }
 
-  auto* base = as_multiline(stack_builder.setup_base_learner());
-  all.example_parser->lbl_parser = VW::ccb_label_parser_global;
+  auto base = require_multiline(stack_builder.setup_base_learner());
 
   // Stash the base learners stride_shift so we can properly add a feature
   // later.
@@ -694,26 +698,26 @@ base_learner* VW::reductions::ccb_explore_adf_setup(VW::setup_base_i& stack_buil
   // Extract from lower level reductions
   data->shared = nullptr;
   data->all = &all;
-  data->model_file_version = all.model_file_ver;
+  data->model_file_version = all.runtime_state.model_file_ver;
 
   data->id_namespace_str = "_id";
   data->id_namespace_audit_str = "_ccb_slot_index";
   data->id_namespace_hash = VW::hash_space(all, data->id_namespace_str);
 
-  auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, learn_or_predict<true>, learn_or_predict<false>,
+  auto l = make_reduction_learner(std::move(data), base, learn_or_predict<true>, learn_or_predict<false>,
       stack_builder.get_setupfn_name(ccb_explore_adf_setup))
-                .set_learn_returns_prediction(true)
-                .set_input_prediction_type(VW::prediction_type_t::ACTION_PROBS)
-                .set_output_prediction_type(VW::prediction_type_t::DECISION_PROBS)
-                .set_input_label_type(VW::label_type_t::CCB)
-                .set_output_label_type(VW::label_type_t::CB)
-                .set_output_example_prediction(output_example_prediction_ccb)
-                .set_print_update(::print_update_ccb)
-                .set_update_stats(update_stats_ccb)
-                .set_cleanup_example(cleanup_example_ccb)
-                .set_save_load(save_load)
-                .build();
-  return make_base(*l);
+               .set_learn_returns_prediction(true)
+               .set_input_prediction_type(VW::prediction_type_t::ACTION_PROBS)
+               .set_output_prediction_type(VW::prediction_type_t::DECISION_PROBS)
+               .set_input_label_type(VW::label_type_t::CCB)
+               .set_output_label_type(VW::label_type_t::CB)
+               .set_output_example_prediction(output_example_prediction_ccb)
+               .set_print_update(::print_update_ccb)
+               .set_update_stats(update_stats_ccb)
+               .set_cleanup_example(cleanup_example_ccb)
+               .set_save_load(save_load)
+               .build();
+  return l;
 }
 
 // CCB adds the following interactions:

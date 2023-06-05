@@ -9,7 +9,7 @@ learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 cb_type = mtr
-Enabled reductions: gd, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_squarecb, shared_feature_merger
+Enabled learners: gd, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_squarecb, shared_feature_merger
 Input label = CB
 Output pred = ACTION_PROBS
 average  since         example        example        current        current  current

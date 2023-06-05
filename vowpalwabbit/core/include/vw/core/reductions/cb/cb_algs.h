@@ -19,7 +19,7 @@ namespace VW
 namespace reductions
 {
 // TODO: extend to handle CSOAA_LDF and WAP_LDF
-VW::LEARNER::base_learner* cb_algs_setup(VW::setup_base_i& stack_builder);
+std::shared_ptr<VW::LEARNER::learner> cb_algs_setup(VW::setup_base_i& stack_builder);
 }  // namespace reductions
 }  // namespace VW
 
@@ -28,7 +28,7 @@ namespace VW
 {
 template <bool is_learn>
 float get_cost_pred(
-    VW::LEARNER::single_learner* scorer, const VW::cb_class& known_cost, VW::example& ec, uint32_t index, uint32_t base)
+    VW::LEARNER::learner* scorer, const VW::cb_class& known_cost, VW::example& ec, uint32_t index, uint32_t base)
 {
   VW_DBG(ec) << "get_cost_pred:" << is_learn << std::endl;
 
@@ -101,7 +101,7 @@ namespace CB_ALGS  // NOLINT
 template <bool is_learn>
 VW_DEPRECATED("Moved into VW namespace.")
 float get_cost_pred(
-    VW::LEARNER::single_learner* scorer, const VW::cb_class& known_cost, VW::example& ec, uint32_t index, uint32_t base)
+    VW::LEARNER::learner* scorer, const VW::cb_class& known_cost, VW::example& ec, uint32_t index, uint32_t base)
 {
   return VW::get_cost_pred<is_learn>(scorer, known_cost, ec, index, base);
 }

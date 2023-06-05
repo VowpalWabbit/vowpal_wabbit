@@ -25,7 +25,7 @@ void VW::reductions::cb_actions_mask::update_predictions(multi_ex& examples, siz
 }
 
 template <bool is_learn>
-void learn_or_predict(VW::reductions::cb_actions_mask& data, VW::LEARNER::multi_learner& base, VW::multi_ex& examples)
+void learn_or_predict(VW::reductions::cb_actions_mask& data, VW::LEARNER::learner& base, VW::multi_ex& examples)
 {
   auto initial_action_size = examples.size();
   if (is_learn)
@@ -46,22 +46,22 @@ void learn_or_predict(VW::reductions::cb_actions_mask& data, VW::LEARNER::multi_
   }
 }
 
-VW::LEARNER::base_learner* VW::reductions::cb_actions_mask_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_actions_mask_setup(VW::setup_base_i& stack_builder)
 {
   VW::config::options_i& options = *stack_builder.get_options();
   auto data = VW::make_unique<VW::reductions::cb_actions_mask>();
 
   if (!options.was_supplied("large_action_space")) { return nullptr; }
 
-  auto* base = as_multiline(stack_builder.setup_base_learner());
+  auto base = require_multiline(stack_builder.setup_base_learner());
 
-  auto* l = VW::LEARNER::make_reduction_learner(std::move(data), base, learn_or_predict<true>, learn_or_predict<false>,
+  auto l = make_reduction_learner(std::move(data), base, learn_or_predict<true>, learn_or_predict<false>,
       stack_builder.get_setupfn_name(cb_actions_mask_setup))
-                .set_input_label_type(VW::label_type_t::CB)
-                .set_output_label_type(VW::label_type_t::CB)
-                .set_input_prediction_type(VW::prediction_type_t::ACTION_PROBS)
-                .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
-                .set_learn_returns_prediction(base->learn_returns_prediction)
-                .build();
-  return VW::LEARNER::make_base(*l);
+               .set_input_label_type(VW::label_type_t::CB)
+               .set_output_label_type(VW::label_type_t::CB)
+               .set_input_prediction_type(VW::prediction_type_t::ACTION_PROBS)
+               .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
+               .set_learn_returns_prediction(base->learn_returns_prediction)
+               .build();
+  return l;
 }

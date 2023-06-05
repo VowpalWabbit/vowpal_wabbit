@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include "vw/core/vw_string_view_fmt.h"
+
 #include "vw/common/future_compat.h"
 #include "vw/common/string_view.h"
 #include "vw/core/action_score.h"

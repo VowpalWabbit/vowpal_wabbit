@@ -9,11 +9,13 @@
 #include "vw/core/learner_fwd.h"
 #include "vw/core/vw_fwd.h"
 
+#include <memory>
+
 namespace VW
 {
 namespace reductions
 {
-LEARNER::base_learner* pmf_to_pdf_setup(VW::setup_base_i& stack_builder);
+std::shared_ptr<VW::LEARNER::learner> pmf_to_pdf_setup(VW::setup_base_i& stack_builder);
 class pmf_to_pdf_reduction
 {
 public:
@@ -27,7 +29,7 @@ public:
   float min_value = 0.f;
   float max_value = 0.f;
   bool first_only = false;
-  LEARNER::single_learner* _p_base = nullptr;
+  LEARNER::learner* _p_base = nullptr;
 
 private:
   void transform_prediction(example& ec);

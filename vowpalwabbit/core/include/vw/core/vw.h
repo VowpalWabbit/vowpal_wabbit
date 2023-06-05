@@ -28,6 +28,7 @@
 
 #include "vw/common/future_compat.h"
 #include "vw/common/hash.h"
+#include "vw/core/error_reporting.h"
 #include "vw/core/global_data.h"
 #include "vw/core/hashstring.h"
 #include "vw/core/parser.h"
@@ -38,7 +39,7 @@
 
 namespace VW
 {
-using driver_output_func_t = void (*)(void*, const std::string&);
+using driver_output_func_t = VW::trace_message_t;
 
 /*    Caveats:
     (1) Some commandline parameters do not make sense as a library.
@@ -126,7 +127,7 @@ std::unique_ptr<VW::workspace> initialize(std::unique_ptr<config::options_i> opt
 /// to be used with caution. Reduction data is not shared, therefore this
 /// function is unsafe to use for situations where reduction state is required
 /// for proper operation such as marginal and cb_adf. Learn on a seeded instance
-/// is unsafe, and prediction is also potentiaslly unsafe.
+/// is unsafe, and prediction is also potentially unsafe.
 std::unique_ptr<VW::workspace> seed_vw_model(VW::workspace& vw_model, const std::vector<std::string>& extra_args,
     driver_output_func_t driver_output_func = nullptr, void* driver_output_func_context = nullptr,
     VW::io::logger* custom_logger = nullptr);
@@ -250,7 +251,7 @@ float get_confidence(example* ec);
 feature* get_features(VW::workspace& all, example* ec, size_t& feature_number);
 void return_features(feature* f);
 
-void add_constant_feature(VW::workspace& all, example* ec);
+void add_constant_feature(const VW::workspace& all, example* ec);
 void add_label(example* ec, float label, float weight = 1, float base = 0);
 
 // notify VW that you are done with the example.
@@ -281,7 +282,7 @@ void save_predictor(VW::workspace& all, io_buf& buf);
 // First create the hash of a namespace.
 inline uint64_t hash_space(VW::workspace& all, const std::string& s)
 {
-  return all.example_parser->hasher(s.data(), s.length(), all.hash_seed);
+  return all.parser_runtime.example_parser->hasher(s.data(), s.length(), all.runtime_config.hash_seed);
 }
 inline uint64_t hash_space_static(const std::string& s, const std::string& hash)
 {
@@ -289,12 +290,12 @@ inline uint64_t hash_space_static(const std::string& s, const std::string& hash)
 }
 inline uint64_t hash_space_cstr(VW::workspace& all, const char* fstr)
 {
-  return all.example_parser->hasher(fstr, strlen(fstr), all.hash_seed);
+  return all.parser_runtime.example_parser->hasher(fstr, strlen(fstr), all.runtime_config.hash_seed);
 }
 // Then use it as the seed for hashing features.
 inline uint64_t hash_feature(VW::workspace& all, const std::string& s, uint64_t u)
 {
-  return all.example_parser->hasher(s.data(), s.length(), u) & all.parse_mask;
+  return all.parser_runtime.example_parser->hasher(s.data(), s.length(), u) & all.runtime_state.parse_mask;
 }
 inline uint64_t hash_feature_static(const std::string& s, uint64_t u, const std::string& h, uint32_t num_bits)
 {
@@ -304,15 +305,15 @@ inline uint64_t hash_feature_static(const std::string& s, uint64_t u, const std:
 
 inline uint64_t hash_feature_cstr(VW::workspace& all, const char* fstr, uint64_t u)
 {
-  return all.example_parser->hasher(fstr, strlen(fstr), u) & all.parse_mask;
+  return all.parser_runtime.example_parser->hasher(fstr, strlen(fstr), u) & all.runtime_state.parse_mask;
 }
 
 inline uint64_t chain_hash(VW::workspace& all, const std::string& name, const std::string& value, uint64_t u)
 {
   // chain hash is hash(feature_value, hash(feature_name, namespace_hash)) & parse_mask
-  return all.example_parser->hasher(
-             value.data(), value.length(), all.example_parser->hasher(name.data(), name.length(), u)) &
-      all.parse_mask;
+  return all.parser_runtime.example_parser->hasher(
+             value.data(), value.length(), all.parser_runtime.example_parser->hasher(name.data(), name.length(), u)) &
+      all.runtime_state.parse_mask;
 }
 
 inline uint64_t chain_hash_static(

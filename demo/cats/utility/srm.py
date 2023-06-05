@@ -12,14 +12,13 @@ class SRM:
         self.hh = h * (max_val - min_val) / k
 
     def calc(self):
-
         data_file = open(self.data_file_name, "r")
         predict_file = open(self.predict_file_name, "r")
 
         N = 0
         _loss_acc = 0.0
 
-        for (data_line, predict_line) in zip(data_file, predict_file):
+        for data_line, predict_line in zip(data_file, predict_file):
             # Get data
             pred = self.get_predict_action(predict_line)
             logd, L_s, P_s = self.get_logged_data(data_line)

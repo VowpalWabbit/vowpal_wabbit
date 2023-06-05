@@ -6,7 +6,7 @@ learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 decay_learning_rate = 1
-Enabled reductions: lda
+Enabled learners: lda
 Input label = NOLABEL
 Output pred = SCALARS
 average  since         example        example        current        current  current

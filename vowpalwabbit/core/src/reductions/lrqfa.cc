@@ -47,7 +47,7 @@ inline float cheesyrand(uint64_t x)
 constexpr inline bool example_is_test(VW::example& ec) { return ec.l.simple.label == FLT_MAX; }
 
 template <bool is_learn>
-void predict_or_learn(lrqfa_state& lrq, single_learner& base, VW::example& ec)
+void predict_or_learn(lrqfa_state& lrq, learner& base, VW::example& ec)
 {
   VW::workspace& all = *lrq.all;
 
@@ -102,7 +102,7 @@ void predict_or_learn(lrqfa_state& lrq, single_learner& base, VW::example& ec)
               uint64_t rwindex = (rindex + (static_cast<uint64_t>(lfd_id * k + n) << stride_shift));
 
               rfs.push_back(*lw * lfx * rfx, rwindex);
-              if (all.audit || all.hash_inv)
+              if (all.output_config.audit || all.output_config.hash_inv)
               {
                 std::stringstream new_feature_buffer;
                 new_feature_buffer << right << '^' << rfs.space_names[rfn].name << '^' << n;
@@ -134,13 +134,13 @@ void predict_or_learn(lrqfa_state& lrq, single_learner& base, VW::example& ec)
       VW::namespace_index right = i;
       auto& rfs = ec.feature_space[right];
       rfs.values.resize(lrq.orig_size[right]);
-      if (all.audit || all.hash_inv) { rfs.space_names.resize(lrq.orig_size[right]); }
+      if (all.output_config.audit || all.output_config.hash_inv) { rfs.space_names.resize(lrq.orig_size[right]); }
     }
   }
 }
 }  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::lrqfa_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::lrqfa_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -164,15 +164,15 @@ VW::LEARNER::base_learner* VW::reductions::lrqfa_setup(VW::setup_base_i& stack_b
   int fd_id = 0;
   for (char i : lrq->field_name) { lrq->field_id[static_cast<int>(i)] = fd_id++; }
 
-  all.wpp = all.wpp * static_cast<uint64_t>(1 + lrq->k);
-  auto base = stack_builder.setup_base_learner();
-  size_t ws = 1 + lrq->field_name.size() * lrq->k;
+  all.reduction_state.total_feature_width = all.reduction_state.total_feature_width * static_cast<uint64_t>(1 + lrq->k);
+  size_t feature_width = 1 + lrq->field_name.size() * lrq->k;
+  auto base = stack_builder.setup_base_learner(feature_width);
 
-  auto* l = make_reduction_learner(std::move(lrq), as_singleline(base), predict_or_learn<true>, predict_or_learn<false>,
-      stack_builder.get_setupfn_name(lrqfa_setup))
-                .set_params_per_weight(ws)
-                .set_learn_returns_prediction(base->learn_returns_prediction)
-                .build();
+  auto l = make_reduction_learner(std::move(lrq), require_singleline(base), predict_or_learn<true>,
+      predict_or_learn<false>, stack_builder.get_setupfn_name(lrqfa_setup))
+               .set_feature_width(feature_width)
+               .set_learn_returns_prediction(base->learn_returns_prediction)
+               .build();
 
-  return make_base(*l);
+  return l;
 }

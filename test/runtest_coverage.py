@@ -21,7 +21,7 @@ def get_all_options():
 def to_json():
     config = get_all_options()
     for name, config_group in config.items():
-        for (group_name, options) in config_group:
+        for group_name, options in config_group:
             for option in options:
                 option._type = str(type(option._default_value).__name__)
 
@@ -40,7 +40,7 @@ def get_config_of_vw_cmd(test):
 
 
 def update_option(config, name, group_name, option_name):
-    for (g_n, options) in config[name]:
+    for g_n, options in config[name]:
         if g_n == group_name:
             for option in options:
                 if option.name == option_name:
@@ -51,7 +51,7 @@ def update_option(config, name, group_name, option_name):
 
 def merge_config(tracker, b):
     for name, config_group in b.items():
-        for (group_name, options) in config_group:
+        for group_name, options in config_group:
             for option in options:
                 if option.value_supplied:
                     tracker = update_option(tracker, name, group_name, option.name)
@@ -64,7 +64,7 @@ def print_non_supplied(config):
     without_default = []
 
     for name, config_group in config.items():
-        for (group_name, options) in config_group:
+        for group_name, options in config_group:
             for option in options:
                 if not option.value_supplied:
                     default_val_str = ""

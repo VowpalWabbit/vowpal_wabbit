@@ -21,7 +21,7 @@ jobs:
           submodules: recursive
       - name: Build C++ VW binary
         run: |
-          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_EXPERIMENTAL_BINDING=On -DBUILD_FLATBUFFERS=On -DVW_BUILD_CSV=On
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_EXPERIMENTAL_BINDING=On -DVW_FEAT_FLATBUFFERS=On -DVW_FEAT_CSV=On -DVW_FEAT_CB_GRAPH_FEEDBACK=On
           cmake --build build
       - name: Upload vw binary
         uses: actions/upload-artifact@v2
@@ -54,7 +54,7 @@ jobs:
     needs: build-valgrind
     strategy:
       matrix:
-        test-segment: ["..100", "101..200", "201..300", "301.."]
+        test-segment: ["..100", "101..200", "201..300", "301..400", "401.."]
     container:
       image: vowpalwabbit/ubuntu2004-build:latest
     runs-on: ubuntu-latest

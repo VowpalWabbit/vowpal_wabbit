@@ -1,0 +1,26 @@
+final_regressor = models/ep_dec_spin_off_cb.m
+using no cache
+Reading datafile = train-sets/automl_spin_off.txt
+num sources = 1
+Num weight bits = 17
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+cb_type = mtr
+Enabled learners: gd, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, shared_feature_merger
+Input label = CB
+Output pred = ACTION_PROBS
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+-0.33333 -0.33333            1            1.0         0:-1:1         0:0.33      209
+-0.33333 -0.33333            2            2.0         1:-1:1         0:0.33      294
+-0.41250 -0.49166            4            4.0         1:-1:1         1:0.97      278
+-0.45208 -0.49166            8            8.0         0:-1:1         1:0.97      253
+-0.47187 -0.49166           16           16.0         0:-1:1         0:0.97      109
+
+finished run
+number of examples = 18
+weighted example sum = 18.000000
+weighted label sum = 0.000000
+average loss = -0.474074
+total feature number = 4724

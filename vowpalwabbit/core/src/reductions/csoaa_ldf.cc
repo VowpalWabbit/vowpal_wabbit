@@ -110,7 +110,7 @@ void unsubtract_example(VW::example* ec, VW::io::logger& logger)
   ec->indices.pop_back();
 }
 
-void make_single_prediction(ldf& data, single_learner& base, VW::example& ec)
+void make_single_prediction(ldf& data, learner& base, VW::example& ec)
 {
   uint64_t old_offset = ec.ft_offset;
 
@@ -154,7 +154,7 @@ bool test_ldf_sequence(const VW::multi_ex& ec_seq, VW::io::logger& logger)
   return is_test;
 }
 
-void do_actual_learning_wap(ldf& data, single_learner& base, VW::multi_ex& ec_seq)
+void do_actual_learning_wap(ldf& data, learner& base, VW::multi_ex& ec_seq)
 {
   VW_DBG(ec_seq) << "do_actual_learning_wap()" << std::endl;
 
@@ -226,7 +226,7 @@ void do_actual_learning_wap(ldf& data, single_learner& base, VW::multi_ex& ec_se
   }
 }
 
-void do_actual_learning_oaa(ldf& data, single_learner& base, VW::multi_ex& ec_seq)
+void do_actual_learning_oaa(ldf& data, learner& base, VW::multi_ex& ec_seq)
 {
   VW_DBG(ec_seq) << "do_actual_learning_oaa()" << std::endl;
 
@@ -297,7 +297,7 @@ void do_actual_learning_oaa(ldf& data, single_learner& base, VW::multi_ex& ec_se
  * 2) verify no labels in the middle of data
  * 3) learn_or_predict(data) with rest
  */
-void learn_csoaa_ldf(ldf& data, single_learner& base, VW::multi_ex& ec_seq_all)
+void learn_csoaa_ldf(ldf& data, learner& base, VW::multi_ex& ec_seq_all)
 {
   if (ec_seq_all.empty())
   {
@@ -340,7 +340,7 @@ void convert_to_probabilities(const VW::multi_ex& ec_seq, VW::v_array<float>& pr
  * 2) verify no labels in the middle of data
  * 3) learn_or_predict(data) with rest
  */
-void predict_csoaa_ldf(ldf& data, single_learner& base, VW::multi_ex& ec_seq_all)
+void predict_csoaa_ldf(ldf& data, learner& base, VW::multi_ex& ec_seq_all)
 {
   if (ec_seq_all.empty())
   {
@@ -370,7 +370,7 @@ void predict_csoaa_ldf(ldf& data, single_learner& base, VW::multi_ex& ec_seq_all
   }
 }
 
-void predict_csoaa_ldf_probabilities(ldf& data, single_learner& base, VW::multi_ex& ec_seq_all)
+void predict_csoaa_ldf_probabilities(ldf& data, learner& base, VW::multi_ex& ec_seq_all)
 {
   if (ec_seq_all.empty())
   {
@@ -390,7 +390,7 @@ void predict_csoaa_ldf_probabilities(ldf& data, single_learner& base, VW::multi_
  * 2) verify no labels in the middle of data
  * 3) learn_or_predict(data) with rest
  */
-void predict_csoaa_ldf_rank(ldf& data, single_learner& base, VW::multi_ex& ec_seq_all)
+void predict_csoaa_ldf_rank(ldf& data, learner& base, VW::multi_ex& ec_seq_all)
 {
   data.ft_offset = ec_seq_all[0]->ft_offset;
   if (ec_seq_all.empty())
@@ -528,12 +528,15 @@ void output_example_prediction_csoaa_ldf_rank(
     VW::workspace& all, const ldf& /* data */, const VW::multi_ex& ec_seq, VW::io::logger& logger)
 {
   const auto& head_ec = *ec_seq[0];
-  for (auto& sink : all.final_prediction_sink)
+  for (auto& sink : all.output_runtime.final_prediction_sink)
   {
     VW::details::print_action_score(sink.get(), head_ec.pred.a_s, head_ec.tag, logger);
   }
-  if (all.raw_prediction != nullptr) { csoaa_ldf_print_raw(all, all.raw_prediction.get(), ec_seq, logger); }
-  VW::details::global_print_newline(all.final_prediction_sink, logger);
+  if (all.output_runtime.raw_prediction != nullptr)
+  {
+    csoaa_ldf_print_raw(all, all.output_runtime.raw_prediction.get(), ec_seq, logger);
+  }
+  VW::details::global_print_newline(all.output_runtime.final_prediction_sink, logger);
 }
 
 void print_update_csoaa_ldf_rank(VW::workspace& all, VW::shared_data& /* sd */, const ldf& /* data */,
@@ -596,20 +599,23 @@ void update_stats_csoaa_ldf_prob(const VW::workspace& all, VW::shared_data& sd, 
   // (ec.test_only) OR (COST_SENSITIVE::example_is_test(ec))
   // What should be the "ec"? data.ec_seq[0]?
   // Based on parse_args.cc (where "average multiclass log loss") is printed,
-  // I decided to try yet another way: (!all.holdout_set_off).
-  if (!all.holdout_set_off) { sd.holdout_multiclass_log_loss += multiclass_log_loss; }
+  // I decided to try yet another way: (!all.passes_config.holdout_set_off).
+  if (!all.passes_config.holdout_set_off) { sd.holdout_multiclass_log_loss += multiclass_log_loss; }
   else { sd.multiclass_log_loss += multiclass_log_loss; }
 }
 
 void output_example_prediction_csoaa_ldf_prob(
     VW::workspace& all, const ldf& /* data */, const VW::multi_ex& ec_seq, VW::io::logger& logger)
 {
-  for (auto& sink : all.final_prediction_sink)
+  for (auto& sink : all.output_runtime.final_prediction_sink)
   {
     for (const auto prob : ec_seq[0]->pred.scalars) { all.print_by_ref(sink.get(), prob, 0, ec_seq[0]->tag, logger); }
   }
-  if (all.raw_prediction != nullptr) { csoaa_ldf_print_raw(all, all.raw_prediction.get(), ec_seq, logger); }
-  VW::details::global_print_newline(all.final_prediction_sink, logger);
+  if (all.output_runtime.raw_prediction != nullptr)
+  {
+    csoaa_ldf_print_raw(all, all.output_runtime.raw_prediction.get(), ec_seq, logger);
+  }
+  VW::details::global_print_newline(all.output_runtime.final_prediction_sink, logger);
 }
 
 void print_update_csoaa_ldf_prob(VW::workspace& all, VW::shared_data& /* sd */, const ldf& /* data */,
@@ -655,9 +661,15 @@ void update_stats_csoaa_ldf_multiclass(const VW::workspace& /* all */, VW::share
 void output_example_prediction_csoaa_ldf_multiclass(
     VW::workspace& all, const ldf& /* data */, const VW::multi_ex& ec_seq, VW::io::logger& logger)
 {
-  for (auto& sink : all.final_prediction_sink) { csoaa_ldf_multiclass_printline(all, sink.get(), ec_seq, logger); }
-  if (all.raw_prediction != nullptr) { csoaa_ldf_print_raw(all, all.raw_prediction.get(), ec_seq, logger); }
-  VW::details::global_print_newline(all.final_prediction_sink, logger);
+  for (auto& sink : all.output_runtime.final_prediction_sink)
+  {
+    csoaa_ldf_multiclass_printline(all, sink.get(), ec_seq, logger);
+  }
+  if (all.output_runtime.raw_prediction != nullptr)
+  {
+    csoaa_ldf_print_raw(all, all.output_runtime.raw_prediction.get(), ec_seq, logger);
+  }
+  VW::details::global_print_newline(all.output_runtime.final_prediction_sink, logger);
 }
 
 void print_update_csoaa_ldf_multiclass(VW::workspace& all, VW::shared_data& /* sd */, const ldf& /* data */,
@@ -669,7 +681,7 @@ void print_update_csoaa_ldf_multiclass(VW::workspace& all, VW::shared_data& /* s
 }
 }  // namespace
 
-base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -728,7 +740,7 @@ base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
   else if (ldf_arg == "multiline-classifier" || ldf_arg == "mc") { ld->treat_as_classifier = true; }
   else
   {
-    if (all.training) THROW("ldf requires either m/multiline or mc/multiline-classifier");
+    if (all.runtime_config.training) THROW("ldf requires either m/multiline or mc/multiline-classifier");
     if ((ldf_arg == "singleline" || ldf_arg == "s") || (ldf_arg == "singleline-classifier" || ldf_arg == "sc"))
       THROW(
           "ldf requires either m/multiline or mc/multiline-classifier.  s/sc/singleline/singleline-classifier is no "
@@ -738,7 +750,7 @@ base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
   if (ld->is_probabilities)
   {
     all.sd->report_multiclass_log_loss = true;
-    auto loss_function_type = all.loss->get_type();
+    auto loss_function_type = all.loss_config.loss->get_type();
     if (loss_function_type != "logistic")
     {
       all.logger.out_warn(
@@ -750,12 +762,13 @@ base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
     }
   }
 
-  all.example_parser->emptylines_separate_examples = true;  // TODO: check this to be sure!!!  !ld->is_singleline;
+  all.parser_runtime.example_parser->emptylines_separate_examples =
+      true;  // TODO: check this to be sure!!!  !ld->is_singleline;
 
   ld->label_features.max_load_factor(0.25);
   ld->label_features.reserve(256);
 
-  single_learner* base = as_singleline(stack_builder.setup_base_learner());
+  auto base = require_singleline(stack_builder.setup_base_learner());
   VW::learner_update_stats_func<ldf, VW::multi_ex>* update_stats_func = nullptr;
   VW::learner_output_example_prediction_func<ldf, VW::multi_ex>* output_example_prediction_func = nullptr;
   VW::learner_print_update_func<ldf, VW::multi_ex>* print_update_func = nullptr;
@@ -763,7 +776,7 @@ base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
   std::string name = stack_builder.get_setupfn_name(csldf_setup);
   std::string name_addition;
   VW::prediction_type_t pred_type;
-  void (*pred_ptr)(ldf&, single_learner&, VW::multi_ex&);
+  void (*pred_ptr)(ldf&, learner&, VW::multi_ex&);
   if (ld->rank)
   {
     name_addition = "-rank";
@@ -792,18 +805,15 @@ base_learner* VW::reductions::csldf_setup(VW::setup_base_i& stack_builder)
     print_update_func = print_update_csoaa_ldf_multiclass;
   }
 
-  auto* l = make_reduction_learner(std::move(ld), base, learn_csoaa_ldf, pred_ptr, name + name_addition)
-                .set_end_pass(end_pass)
-                .set_input_label_type(VW::label_type_t::CS)
-                .set_output_label_type(VW::label_type_t::SIMPLE)
-                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
-                .set_output_prediction_type(pred_type)
-                .set_update_stats(update_stats_func)
-                .set_output_example_prediction(output_example_prediction_func)
-                .set_print_update(print_update_func)
-                .build();
-
-  all.example_parser->lbl_parser = VW::cs_label_parser_global;
-  all.cost_sensitive = make_base(*l);
-  return all.cost_sensitive;
+  auto l = make_reduction_learner(std::move(ld), base, learn_csoaa_ldf, pred_ptr, name + name_addition)
+               .set_end_pass(end_pass)
+               .set_input_label_type(VW::label_type_t::CS)
+               .set_output_label_type(VW::label_type_t::SIMPLE)
+               .set_input_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_output_prediction_type(pred_type)
+               .set_update_stats(update_stats_func)
+               .set_output_example_prediction(output_example_prediction_func)
+               .set_print_update(print_update_func)
+               .build();
+  return l;
 }

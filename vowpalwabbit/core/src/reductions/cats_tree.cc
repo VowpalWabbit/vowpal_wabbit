@@ -156,7 +156,7 @@ void cats_tree::init(uint32_t num_actions, uint32_t bandwidth) { _binary_tree.bu
 
 int32_t cats_tree::learner_count() const { return _binary_tree.internal_node_count(); }
 
-uint32_t cats_tree::predict(LEARNER::single_learner& base, example& ec)
+uint32_t cats_tree::predict(LEARNER::learner& base, example& ec)
 {
   const vector<tree_node>& nodes = _binary_tree.nodes;
 
@@ -215,7 +215,7 @@ float cats_tree::return_cost(const tree_node& w)
   else { return 0; }
 }
 
-void cats_tree::learn(LEARNER::single_learner& base, example& ec)
+void cats_tree::learn(LEARNER::learner& base, example& ec)
 {
   const float saved_weight = ec.weight;
   auto saved_pred = stash_guard(ec.pred);
@@ -298,7 +298,7 @@ void cats_tree::learn(LEARNER::single_learner& base, example& ec)
   ec.weight = saved_weight;
 }
 
-void cats_tree::set_trace_message(std::ostream* vw_ostream, bool quiet)
+void cats_tree::set_trace_message(std::shared_ptr<std::ostream> vw_ostream, bool quiet)
 {
   _trace_stream = vw_ostream;
   _quiet = quiet;
@@ -315,7 +315,7 @@ std::string cats_tree::tree_stats_to_string() { return _binary_tree.tree_stats_t
 }  // namespace VW
 namespace
 {
-void predict(VW::reductions::cats::cats_tree& ot, single_learner& base, VW::example& ec)
+void predict(VW::reductions::cats::cats_tree& ot, learner& base, VW::example& ec)
 {
   VW_DBG(ec) << "tree_c: before tree.predict() " << VW::debug::multiclass_pred_to_string(ec)
              << VW::debug::features_to_string(ec) << std::endl;
@@ -324,7 +324,7 @@ void predict(VW::reductions::cats::cats_tree& ot, single_learner& base, VW::exam
              << VW::debug::features_to_string(ec) << std::endl;
 }
 
-void learn(VW::reductions::cats::cats_tree& tree, single_learner& base, VW::example& ec)
+void learn(VW::reductions::cats::cats_tree& tree, learner& base, VW::example& ec)
 {
   VW_DBG(ec) << "tree_c: before tree.learn() " << VW::debug::cb_label_to_string(ec) << VW::debug::features_to_string(ec)
              << std::endl;
@@ -334,7 +334,7 @@ void learn(VW::reductions::cats::cats_tree& tree, single_learner& base, VW::exam
 }
 }  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::cats_tree_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::cats_tree_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -360,18 +360,17 @@ VW::LEARNER::base_learner* VW::reductions::cats_tree_setup(VW::setup_base_i& sta
 
   auto tree = VW::make_unique<VW::reductions::cats::cats_tree>();
   tree->init(num_actions, bandwidth);
-  tree->set_trace_message(all.trace_message.get(), all.quiet);
+  tree->set_trace_message(all.output_runtime.trace_message, all.output_config.quiet);
 
-  base_learner* base = stack_builder.setup_base_learner();
-  int32_t params_per_weight = tree->learner_count();
-  auto* l = make_reduction_learner(
-      std::move(tree), as_singleline(base), learn, predict, stack_builder.get_setupfn_name(cats_tree_setup))
-                .set_params_per_weight(params_per_weight)
-                .set_input_label_type(VW::label_type_t::CB)
-                .set_output_label_type(VW::label_type_t::SIMPLE)
-                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
-                .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
-                .build();
-  all.example_parser->lbl_parser = VW::cb_label_parser_global;
-  return make_base(*l);
+  int32_t feature_width = tree->learner_count();
+  auto base = stack_builder.setup_base_learner(feature_width);
+  auto l = make_reduction_learner(
+      std::move(tree), require_singleline(base), learn, predict, stack_builder.get_setupfn_name(cats_tree_setup))
+               .set_feature_width(feature_width)
+               .set_input_label_type(VW::label_type_t::CB)
+               .set_output_label_type(VW::label_type_t::SIMPLE)
+               .set_input_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
+               .build();
+  return l;
 }

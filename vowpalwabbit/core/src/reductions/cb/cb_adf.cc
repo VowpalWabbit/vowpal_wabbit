@@ -55,14 +55,15 @@ VW::cb_class VW::get_observed_cost_or_default_cb_adf(const VW::multi_ex& example
   return known_cost;
 }
 // Validates a multiline example collection as a valid sequence for action dependent features format.
-VW::example* VW::test_cb_adf_sequence(const VW::multi_ex& ec_seq)
+VW::example* VW::test_cb_adf_sequence(const VW::multi_ex& ec_seq, bool allow_multiple_costs)
 {
   if (ec_seq.empty()) THROW("cb_adf: At least one action must be provided for an example to be valid.");
 
   uint32_t count = 0;
   VW::example* ret = nullptr;
-  for (auto* ec : ec_seq)
+  for (size_t i = 0; i < ec_seq.size(); i++)
   {
+    auto* ec = ec_seq[i];
     // Check if there is more than one cost for this example.
     if (ec->l.cb.costs.size() > 1)
     {
@@ -77,22 +78,32 @@ VW::example* VW::test_cb_adf_sequence(const VW::multi_ex& ec_seq)
     {
       ret = ec;
       count += 1;
-      if (count > 1) THROW("cb_adf: badly formatted example, only one line can have a cost");
+      if (!allow_multiple_costs)
+      {
+        if (count > 1) THROW("cb_adf: badly formatted example, only one line can have a cost");
+      }
+      else
+      {
+        if (ec->l.cb.costs[0].action == i) { return ret; }
+      }
     }
   }
 
   return ret;
 }
 
-const VW::version_struct* VW::reductions::cb_adf::get_model_file_ver() const { return &_all->model_file_ver; }
+const VW::version_struct* VW::reductions::cb_adf::get_model_file_ver() const
+{
+  return &_all->runtime_state.model_file_ver;
+}
 
-void VW::reductions::cb_adf::learn_ips(multi_learner& base, VW::multi_ex& examples)
+void VW::reductions::cb_adf::learn_ips(learner& base, VW::multi_ex& examples)
 {
   details::gen_cs_example_ips(examples, _cs_labels, _all->logger, _clip_p);
   details::cs_ldf_learn_or_predict<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, true, _offset);
 }
 
-void VW::reductions::cb_adf::learn_sm(multi_learner& base, VW::multi_ex& examples)
+void VW::reductions::cb_adf::learn_sm(learner& base, VW::multi_ex& examples)
 {
   details::gen_cs_test_example(examples, _cs_labels);  // create test labels.
   details::cs_ldf_learn_or_predict<false>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
@@ -182,20 +193,20 @@ void VW::reductions::cb_adf::learn_sm(multi_learner& base, VW::multi_ex& example
   }
 }
 
-void VW::reductions::cb_adf::learn_dr(multi_learner& base, VW::multi_ex& examples)
+void VW::reductions::cb_adf::learn_dr(learner& base, VW::multi_ex& examples)
 {
-  details::gen_cs_example_dr<true>(gen_cs, examples, _cs_labels, _clip_p);
+  details::gen_cs_example_dr<true>(_gen_cs_dr, examples, _cs_labels, _clip_p);
   details::cs_ldf_learn_or_predict<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, true, _offset);
 }
 
-void VW::reductions::cb_adf::learn_dm(multi_learner& base, VW::multi_ex& examples)
+void VW::reductions::cb_adf::learn_dm(learner& base, VW::multi_ex& examples)
 {
   details::gen_cs_example_dm(examples, _cs_labels);
   details::cs_ldf_learn_or_predict<true>(base, examples, _cb_labels, _cs_labels, _prepped_cs_labels, true, _offset);
 }
 
 template <bool PREDICT>
-void VW::reductions::cb_adf::learn_mtr(multi_learner& base, VW::multi_ex& examples)
+void VW::reductions::cb_adf::learn_mtr(learner& base, VW::multi_ex& examples)
 {
   if (PREDICT)  // first get the prediction to return
   {
@@ -207,21 +218,22 @@ void VW::reductions::cb_adf::learn_mtr(multi_learner& base, VW::multi_ex& exampl
   // Train on _one_ action (which requires up to 3 examples).
   // We must go through the cost sensitive classifier layer to get
   // proper feature handling.
-  gen_cs_example_mtr(gen_cs, examples, _cs_labels);
-  uint32_t nf = static_cast<uint32_t>(examples[gen_cs.mtr_example]->num_features);
-  float old_weight = examples[gen_cs.mtr_example]->weight;
-  const float clipped_p = std::max(examples[gen_cs.mtr_example]->l.cb.costs[0].probability, _clip_p);
-  examples[gen_cs.mtr_example]->weight *=
-      1.f / clipped_p * (static_cast<float>(gen_cs.event_sum) / static_cast<float>(gen_cs.action_sum));
+  gen_cs_example_mtr(_gen_cs_mtr, examples, _cs_labels, _offset_index);
+  uint32_t nf = static_cast<uint32_t>(examples[_gen_cs_mtr.mtr_example]->num_features);
+  float old_weight = examples[_gen_cs_mtr.mtr_example]->weight;
+  const float clipped_p = std::max(examples[_gen_cs_mtr.mtr_example]->l.cb.costs[0].probability, _clip_p);
+  examples[_gen_cs_mtr.mtr_example]->weight *= 1.f / clipped_p *
+      (static_cast<float>(_gen_cs_mtr.per_model_state[_offset_index].event_sum) /
+          static_cast<float>(_gen_cs_mtr.per_model_state[_offset_index].action_sum));
 
-  std::swap(gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
+  std::swap(_gen_cs_mtr.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
   // TODO!!! cb_labels are not getting properly restored (empty costs are
   // dropped)
   details::cs_ldf_learn_or_predict<true>(
-      base, gen_cs.mtr_ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
-  examples[gen_cs.mtr_example]->num_features = nf;
-  examples[gen_cs.mtr_example]->weight = old_weight;
-  std::swap(gen_cs.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
+      base, _gen_cs_mtr.mtr_ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
+  examples[_gen_cs_mtr.mtr_example]->num_features = nf;
+  examples[_gen_cs_mtr.mtr_example]->weight = old_weight;
+  std::swap(_gen_cs_mtr.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
 
   if (PREDICT)
   {  // Return the saved prediction
@@ -229,13 +241,14 @@ void VW::reductions::cb_adf::learn_mtr(multi_learner& base, VW::multi_ex& exampl
   }
 }
 
-void VW::reductions::cb_adf::learn(multi_learner& base, VW::multi_ex& ec_seq)
+void VW::reductions::cb_adf::learn(learner& base, VW::multi_ex& ec_seq)
 {
   if (VW::test_cb_adf_sequence(ec_seq) != nullptr)
   {
     _offset = ec_seq[0]->ft_offset;
-    gen_cs.known_cost = VW::get_observed_cost_or_default_cb_adf(ec_seq);  // need to set for test case
-    switch (gen_cs.cb_type)
+    _offset_index = _offset / _all->weights.stride();
+    _gen_cs_dr.known_cost = VW::get_observed_cost_or_default_cb_adf(ec_seq);  // need to set for test case
+    switch (_cb_type)
     {
       case VW::cb_type_t::DR:
         learn_dr(base, ec_seq);
@@ -258,11 +271,12 @@ void VW::reductions::cb_adf::learn(multi_learner& base, VW::multi_ex& ec_seq)
   else if (learn_returns_prediction()) { predict(base, ec_seq); }
 }
 
-void VW::reductions::cb_adf::predict(multi_learner& base, VW::multi_ex& ec_seq)
+void VW::reductions::cb_adf::predict(learner& base, VW::multi_ex& ec_seq)
 {
   _offset = ec_seq[0]->ft_offset;
-  gen_cs.known_cost = VW::get_observed_cost_or_default_cb_adf(ec_seq);  // need to set for test case
-  details::gen_cs_test_example(ec_seq, _cs_labels);                     // create test labels.
+  _offset_index = _offset / _all->weights.stride();
+  _gen_cs_dr.known_cost = VW::get_observed_cost_or_default_cb_adf(ec_seq);  // need to set for test case
+  details::gen_cs_test_example(ec_seq, _cs_labels);                         // create test labels.
   details::cs_ldf_learn_or_predict<false>(base, ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
 }
 
@@ -279,7 +293,10 @@ bool VW::reductions::cb_adf::update_statistics(
   float loss = 0.;
 
   bool labeled_example = true;
-  if (gen_cs.known_cost.probability > 0) { loss = get_cost_estimate(gen_cs.known_cost, gen_cs.pred_scores, action); }
+  if (_gen_cs_dr.known_cost.probability > 0)
+  {
+    loss = get_cost_estimate(_gen_cs_dr.known_cost, _gen_cs_dr.pred_scores, action);
+  }
   else { labeled_example = false; }
 
   bool holdout_example = labeled_example;
@@ -305,7 +322,7 @@ void output_example_prediction_cb_adf(
 {
   if (ec_seq.empty()) { return; }
   const auto& ec = *ec_seq.front();
-  for (auto& sink : all.final_prediction_sink)
+  for (auto& sink : all.output_runtime.final_prediction_sink)
   {
     if (data.get_rank_all()) { VW::details::print_action_score(sink.get(), ec.pred.a_s, ec.tag, logger); }
     else
@@ -314,7 +331,7 @@ void output_example_prediction_cb_adf(
       all.print_by_ref(sink.get(), static_cast<float>(action), 0, ec.tag, logger);
     }
   }
-  VW::details::global_print_newline(all.final_prediction_sink, logger);
+  VW::details::global_print_newline(all.output_runtime.final_prediction_sink, logger);
 }
 
 void print_update_cb_adf(VW::workspace& all, VW::shared_data& /* sd */, const VW::reductions::cb_adf& data,
@@ -322,7 +339,7 @@ void print_update_cb_adf(VW::workspace& all, VW::shared_data& /* sd */, const VW
 {
   if (ec_seq.empty()) { return; }
 
-  const bool labeled_example = data.gen_cs.known_cost.probability > 0;
+  const bool labeled_example = data.get_gen_cs_dr().known_cost.probability > 0;
   const auto& ec = *ec_seq.front();
   if (labeled_example) { VW::details::print_update_cb(all, !labeled_example, ec, &ec_seq, true, data.known_cost()); }
   else { VW::details::print_update_cb(all, !labeled_example, ec, &ec_seq, true, nullptr); }
@@ -337,13 +354,13 @@ void save_load(VW::reductions::cb_adf& c, VW::io_buf& model_file, bool read, boo
   }
 
   std::stringstream msg;
-  msg << "event_sum " << c.get_gen_cs().event_sum << "\n";
-  VW::details::bin_text_read_write_fixed(
-      model_file, (char*)&c.get_gen_cs().event_sum, sizeof(c.get_gen_cs().event_sum), read, msg, text);
+  msg << "event_sum " << c.get_gen_cs_mtr().per_model_state[0].event_sum << "\n";
+  VW::details::bin_text_read_write_fixed(model_file, (char*)&c.get_gen_cs_mtr().per_model_state[0].event_sum,
+      sizeof(c.get_gen_cs_mtr().per_model_state[0].event_sum), read, msg, text);
 
-  msg << "action_sum " << c.get_gen_cs().action_sum << "\n";
-  VW::details::bin_text_read_write_fixed(
-      model_file, (char*)&c.get_gen_cs().action_sum, sizeof(c.get_gen_cs().action_sum), read, msg, text);
+  msg << "action_sum " << c.get_gen_cs_mtr().per_model_state[0].action_sum << "\n";
+  VW::details::bin_text_read_write_fixed(model_file, (char*)&c.get_gen_cs_mtr().per_model_state[0].action_sum,
+      sizeof(c.get_gen_cs_mtr().per_model_state[0].action_sum), read, msg, text);
 }
 
 void cb_adf_merge(const std::vector<float>& /* per_model_weights */,
@@ -351,34 +368,50 @@ void cb_adf_merge(const std::vector<float>& /* per_model_weights */,
 {
   for (const auto* source : sources)
   {
-    output_data.get_gen_cs().event_sum += source->get_gen_cs().event_sum;
-    output_data.get_gen_cs().action_sum += source->get_gen_cs().action_sum;
+    for (size_t i = 0; i < output_data.get_gen_cs_mtr().per_model_state.size(); i++)
+    {
+      output_data.get_gen_cs_mtr().per_model_state[i].event_sum +=
+          source->get_gen_cs_mtr().per_model_state[i].event_sum;
+      output_data.get_gen_cs_mtr().per_model_state[i].action_sum +=
+          source->get_gen_cs_mtr().per_model_state[i].action_sum;
+    }
   }
 }
 
 void cb_adf_add(
     const VW::reductions::cb_adf& data1, const VW::reductions::cb_adf& data2, VW::reductions::cb_adf& data_out)
 {
-  data_out.get_gen_cs().event_sum = data1.get_gen_cs().event_sum + data2.get_gen_cs().event_sum;
-  data_out.get_gen_cs().action_sum = data1.get_gen_cs().action_sum + data2.get_gen_cs().action_sum;
+  for (size_t i = 0; i < data1.get_gen_cs_mtr().per_model_state.size(); i++)
+  {
+    data_out.get_gen_cs_mtr().per_model_state[i].event_sum =
+        data1.get_gen_cs_mtr().per_model_state[i].event_sum + data2.get_gen_cs_mtr().per_model_state[i].event_sum;
+    data_out.get_gen_cs_mtr().per_model_state[i].action_sum =
+        data1.get_gen_cs_mtr().per_model_state[i].action_sum + data2.get_gen_cs_mtr().per_model_state[i].action_sum;
+  }
 }
 
 void cb_adf_subtract(
     const VW::reductions::cb_adf& data1, const VW::reductions::cb_adf& data2, VW::reductions::cb_adf& data_out)
 {
-  data_out.get_gen_cs().event_sum = data1.get_gen_cs().event_sum - data2.get_gen_cs().event_sum;
-  data_out.get_gen_cs().action_sum = data1.get_gen_cs().action_sum - data2.get_gen_cs().action_sum;
+  for (size_t i = 0; i < data1.get_gen_cs_mtr().per_model_state.size(); i++)
+  {
+    data_out.get_gen_cs_mtr().per_model_state[i].event_sum =
+        data1.get_gen_cs_mtr().per_model_state[i].event_sum - data2.get_gen_cs_mtr().per_model_state[i].event_sum;
+    data_out.get_gen_cs_mtr().per_model_state[i].action_sum =
+        data1.get_gen_cs_mtr().per_model_state[i].action_sum - data2.get_gen_cs_mtr().per_model_state[i].action_sum;
+  }
 }
 
-void learn(VW::reductions::cb_adf& c, multi_learner& base, VW::multi_ex& ec_seq) { c.learn(base, ec_seq); }
+void learn(VW::reductions::cb_adf& c, learner& base, VW::multi_ex& ec_seq) { c.learn(base, ec_seq); }
 
-void predict(VW::reductions::cb_adf& c, multi_learner& base, VW::multi_ex& ec_seq) { c.predict(base, ec_seq); }
+void predict(VW::reductions::cb_adf& c, learner& base, VW::multi_ex& ec_seq) { c.predict(base, ec_seq); }
 
 }  // namespace
-VW::LEARNER::base_learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_adf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
+  size_t feature_width_above = stack_builder.get_feature_width_above();
   bool cb_adf_option = false;
   std::string type_string = "mtr";
 
@@ -420,7 +453,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_
   }
 
   // number of weight vectors needed
-  size_t problem_multiplier = 1;  // default for IPS
+  size_t feature_width = 1;  // default for IPS
   bool check_baseline_enabled = false;
 
   try
@@ -436,7 +469,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_
 
   if (cb_type == VW::cb_type_t::DR)
   {
-    problem_multiplier = 2;
+    feature_width = 2;
     // only use baseline when manually enabled for loss estimation
     check_baseline_enabled = true;
   }
@@ -457,30 +490,29 @@ VW::LEARNER::base_learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_
 
   if (options.was_supplied("baseline") && check_baseline_enabled) { options.insert("check_enabled", ""); }
 
-  auto ld = VW::make_unique<VW::reductions::cb_adf>(cb_type, rank_all, clip_p, no_predict, &all);
+  auto ld = VW::make_unique<VW::reductions::cb_adf>(cb_type, rank_all, clip_p, no_predict, feature_width_above, &all);
 
-  auto base = as_multiline(stack_builder.setup_base_learner());
-  all.example_parser->lbl_parser = VW::cb_label_parser_global;
+  auto base = require_multiline(stack_builder.setup_base_learner(feature_width));
 
   VW::reductions::cb_adf* bare = ld.get();
   bool lrp = ld->learn_returns_prediction();
-  auto* l = make_reduction_learner(std::move(ld), base, learn, predict, stack_builder.get_setupfn_name(cb_adf_setup))
-                .set_input_label_type(VW::label_type_t::CB)
-                .set_output_label_type(VW::label_type_t::CS)
-                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
-                .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
-                .set_learn_returns_prediction(lrp)
-                .set_params_per_weight(problem_multiplier)
-                .set_save_load(::save_load)
-                .set_merge(::cb_adf_merge)
-                .set_add(::cb_adf_add)
-                .set_subtract(::cb_adf_subtract)
-                .set_output_example_prediction(::output_example_prediction_cb_adf)
-                .set_print_update(::print_update_cb_adf)
-                .set_update_stats(::update_stats_cb_adf)
-                .build();
+  auto l = make_reduction_learner(std::move(ld), base, learn, predict, stack_builder.get_setupfn_name(cb_adf_setup))
+               .set_input_label_type(VW::label_type_t::CB)
+               .set_output_label_type(VW::label_type_t::CS)
+               .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+               .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+               .set_learn_returns_prediction(lrp)
+               .set_feature_width(feature_width)
+               .set_save_load(::save_load)
+               .set_merge(::cb_adf_merge)
+               .set_add(::cb_adf_add)
+               .set_subtract(::cb_adf_subtract)
+               .set_output_example_prediction(::output_example_prediction_cb_adf)
+               .set_print_update(::print_update_cb_adf)
+               .set_update_stats(::update_stats_cb_adf)
+               .build();
 
-  bare->set_scorer(VW::LEARNER::as_singleline(base->get_learner_by_name_prefix("scorer")));
+  bare->set_scorer(VW::LEARNER::require_singleline(base->get_learner_by_name_prefix("scorer")));
 
-  return make_base(*l);
+  return l;
 }

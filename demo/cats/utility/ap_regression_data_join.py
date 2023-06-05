@@ -21,7 +21,6 @@ class PredictDataJoiner_ap:
         self.loss_type_return = loss_type_return
 
     def join(self):
-
         data_file = open(self.data_file_name, "r")
         predict_file = open(self.predict_file_name, "r")
 
@@ -35,7 +34,7 @@ class PredictDataJoiner_ap:
         sqr_loss_max = float("-inf")
         max_found = float("-inf")
         min_found = float("inf")
-        for (data_line, predict_line) in zip(data_file, predict_file):
+        for data_line, predict_line in zip(data_file, predict_file):
             # Get data
             act = self.get_action(predict_line)
             reg = self.get_regression_val(data_line)

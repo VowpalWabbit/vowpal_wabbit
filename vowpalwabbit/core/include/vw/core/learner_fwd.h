@@ -11,10 +11,6 @@ namespace VW
 {
 namespace LEARNER
 {
-template <class T, class E>
 class learner;
-using base_learner = learner<char, char>;
-using single_learner = learner<char, example>;
-using multi_learner = learner<char, multi_ex>;
 }  // namespace LEARNER
 }  // namespace VW

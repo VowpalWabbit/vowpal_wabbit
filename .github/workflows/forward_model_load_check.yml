@@ -55,7 +55,7 @@ jobs:
         shell: bash
         run: |
           pip install built_wheel/*.whl
-          python ./test/run_tests_model_gen_and_load.py --generate_models
+          python ./test/run_tests_model_gen_and_load.py --generate_models --skip_pr_tests "${{ github.event.pull_request.title }}"
       - name: Upload generated file
         uses: actions/upload-artifact@v2
         with:
@@ -86,4 +86,4 @@ jobs:
           auditwheel repair wheel_last_commit/*whl -w audit_last_commit/
           /opt/python/cp310-cp310/bin/python3.10 -m pip install wheel_last_commit/*.whl
           cd ..
-          /opt/python/cp310-cp310/bin/python3.10 ./test/run_tests_model_gen_and_load.py --load_models --skip_missing_args
+          /opt/python/cp310-cp310/bin/python3.10 ./test/run_tests_model_gen_and_load.py --load_models --skip_missing_args --skip_pr_tests "${{ github.event.pull_request.title }}"

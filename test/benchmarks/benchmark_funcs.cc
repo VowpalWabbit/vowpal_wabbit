@@ -20,7 +20,7 @@ static void benchmark_sum_ft_squared_char(benchmark::State& state)
   io_buf buffer;
   buffer.add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
   examples.push_back(&VW::get_unused_example(vw.get()));
-  vw->example_parser->reader(vw.get(), buffer, examples);
+  vw->parser_runtime.example_parser->reader(vw.get(), buffer, examples);
   example* ex = examples[0];
   VW::setup_example(*vw, ex);
   for (auto _ : state)
@@ -46,7 +46,7 @@ static void benchmark_sum_ft_squared_extent(benchmark::State& state)
   io_buf buffer;
   buffer.add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
   examples.push_back(&VW::get_unused_example(vw.get()));
-  vw->example_parser->reader(vw.get(), buffer, examples);
+  vw->parser_runtime.example_parser->reader(vw.get(), buffer, examples);
   example* ex = examples[0];
   VW::setup_example(*vw, ex);
   for (auto _ : state)

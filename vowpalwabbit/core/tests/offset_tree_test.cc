@@ -35,7 +35,7 @@ public:
 
   void set_predict_response(const vector<pair<float, float>>& predictions) { _predictions = predictions; }
 
-  void test_predict(base_learner& /* base */, VW::example& ec)
+  void test_predict(VW::example& ec)
   {
     ec.pred.a_s.clear();
     const auto curr_pred = _predictions[_curr_idx++];
@@ -43,37 +43,29 @@ public:
     ec.pred.a_s.push_back(VW::action_score{1, curr_pred.second});
   }
 
-  void test_learn(base_learner& /* base */, VW::example& /* ec */)
+  void test_learn(VW::example& /* ec */)
   {
     // do nothing
   }
 
-  // use NO_SANITIZE_UNDEFINED because reference base_learner& base may be bound to nullptr
-  static void NO_SANITIZE_UNDEFINED predict(reduction_test_harness& test_reduction, base_learner& base, VW::example& ec)
-  {
-    test_reduction.test_predict(base, ec);
-  }
+  static void predict(reduction_test_harness& test_reduction, VW::example& ec) { test_reduction.test_predict(ec); }
 
-  static void NO_SANITIZE_UNDEFINED learn(reduction_test_harness& test_reduction, base_learner& base, VW::example& ec)
-  {
-    test_reduction.test_learn(base, ec);
-  };
+  static void learn(reduction_test_harness& test_reduction, VW::example& ec) { test_reduction.test_learn(ec); };
 
 private:
   vector<pair<float, float>> _predictions;
   int _curr_idx;
 };
 
-using test_learner_t = learner<reduction_test_harness, VW::example>;
 using predictions_t = vector<pair<float, float>>;
 using scores_t = std::vector<float>;
 
-test_learner_t* get_test_harness_reduction(const predictions_t& base_reduction_predictions)
+std::shared_ptr<learner> get_test_harness(const predictions_t& bottom_learner_predictions)
 {
-  // Setup a test harness base reduction
+  // Setup a test harness bottom learner
   auto test_harness = VW::make_unique<reduction_test_harness>();
-  test_harness->set_predict_response(base_reduction_predictions);
-  auto test_learner = VW::LEARNER::make_base_learner(
+  test_harness->set_predict_response(bottom_learner_predictions);
+  auto test_learner = VW::LEARNER::make_bottom_learner(
       std::move(test_harness),          // Data structure passed by vw_framework into test_harness predict/learn calls
       reduction_test_harness::learn,    // test_harness learn
       reduction_test_harness::predict,  // test_harness predict
@@ -81,34 +73,32 @@ test_learner_t* get_test_harness_reduction(const predictions_t& base_reduction_p
                           .set_output_example_prediction([](VW::workspace& /* all */, const reduction_test_harness&,
                                                              const VW::example&, VW::io::logger&) {})
 
-                          .build();  // Create a learner using the base reduction.
+                          .build();  // Create a learner using the bottom learner.
   return test_learner;
 }
 
-void predict_test_helper(const predictions_t& base_reduction_predictions, const scores_t& expected_scores)
+void predict_test_helper(const predictions_t& bottom_learner_predictions, const scores_t& expected_scores)
 {
-  const auto test_base = get_test_harness_reduction(base_reduction_predictions);
+  const auto test_base = get_test_harness(bottom_learner_predictions);
   VW::reductions::offset_tree::offset_tree tree(static_cast<uint32_t>(expected_scores.size()));
   tree.init();
   VW::example ec;
-  auto& ret_val = tree.predict(*as_singleline(test_base), ec);
+  auto& ret_val = tree.predict(*test_base, ec);
   EXPECT_THAT(ret_val, ContainerEq(expected_scores));
-  delete test_base;
 }
 }  // namespace
 
 TEST(OffsetTree, OffsetTreeLearnBasic)
 {
-  // Setup a test harness base reduction
-  const auto test_harness = get_test_harness_reduction({{.9f, .1f}, {.9f, .1f}});
+  // Setup a test harness bottom learner
+  const auto test_harness = get_test_harness({{.9f, .1f}, {.9f, .1f}});
 
   VW::reductions::offset_tree::offset_tree tree(3);
   tree.init();
   VW::example ec;
   ec.l.cb.costs.push_back(VW::cb_class{-1.0f, 1, 0.5f});
 
-  tree.learn(*as_singleline(test_harness), ec);
-  delete test_harness;
+  tree.learn(*test_harness, ec);
 }
 
 TEST(OffsetTree, OffsetTreePredict)

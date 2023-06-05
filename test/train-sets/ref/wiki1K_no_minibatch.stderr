@@ -5,7 +5,7 @@ Num weight bits = 13
 learning rate = 1
 initial_t = 0
 power_t = 0.5
-Enabled reductions: lda
+Enabled learners: lda
 Input label = NOLABEL
 Output pred = SCALARS
 average  since         example        example        current        current  current

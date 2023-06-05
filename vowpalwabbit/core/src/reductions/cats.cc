@@ -24,7 +24,7 @@ using VW::cb_continuous::continuous_label_elm;
 using VW::config::make_option;
 using VW::config::option_group_definition;
 using VW::config::options_i;
-using VW::LEARNER::single_learner;
+using VW::LEARNER::learner;
 
 // Enable/Disable indented debug statements
 #undef VW_DEBUG_LOG
@@ -82,7 +82,7 @@ float cats::get_loss(const VW::cb_continuous::continuous_label& cb_cont_costs, f
   return loss;
 }
 
-cats::cats(single_learner* p_base) : _base(p_base) {}
+cats::cats(learner* p_base) : _base(p_base) {}
 }  // namespace cats
 }  // namespace reductions
 }  // namespace VW
@@ -91,7 +91,7 @@ namespace
 {
 // Free function to tie function pointers to reduction class methods
 template <bool is_learn>
-void predict_or_learn(VW::reductions::cats::cats& reduction, single_learner&, VW::example& ec)
+void predict_or_learn(VW::reductions::cats::cats& reduction, learner&, VW::example& ec)
 {
   VW::experimental::api_status status;
   if (is_learn) { reduction.learn(ec, &status); }
@@ -114,7 +114,7 @@ void output_example_prediction_cats(VW::workspace& all, const VW::reductions::ca
 {
   // output to the prediction to all files
   const auto str = VW::to_string(ec.pred.pdf_value, VW::details::AS_MANY_AS_NEEDED_FLOAT_FORMATTING_DECIMAL_PRECISION);
-  for (auto& f : all.final_prediction_sink)
+  for (auto& f : all.output_runtime.final_prediction_sink)
   {
     f->write(str.c_str(), str.size());
     f->write("\n", 1);
@@ -133,15 +133,16 @@ void print_update_cats(VW::workspace& all, VW::shared_data& sd, const VW::reduct
     const VW::example& ec, VW::io::logger& /* unused */)
 {
   const auto should_print_driver_update =
-      all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs;
+      all.sd->weighted_examples() >= all.sd->dump_interval && !all.output_config.quiet && !all.reduction_state.bfgs;
   if (should_print_driver_update)
   {
-    sd.print_update(*all.trace_message, all.holdout_set_off, all.current_pass,
+    sd.print_update(*all.output_runtime.trace_message, all.passes_config.holdout_set_off,
+        all.passes_config.current_pass,
         ec.test_only
             ? "unknown"
             : VW::to_string(ec.l.cb_cont.costs[0], VW::details::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION),  // Label
         VW::to_string(ec.pred.pdf_value, VW::details::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION),  // Prediction
-        ec.get_num_features(), all.progress_add, all.progress_arg);
+        ec.get_num_features());
   }
 }
 }  // namespace
@@ -150,7 +151,7 @@ void print_update_cats(VW::workspace& all, VW::shared_data& sd, const VW::reduct
 ////////////////////////////////////////////////////
 
 // Setup reduction in stack
-VW::LEARNER::base_learner* VW::reductions::cats_setup(setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::cats_setup(setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -189,23 +190,23 @@ VW::LEARNER::base_learner* VW::reductions::cats_setup(setup_base_i& stack_builde
         "Bandwidth was not supplied, setting default to half the continuous action unit range: {}", bandwidth);
   }
 
-  LEARNER::base_learner* p_base = stack_builder.setup_base_learner();
-  auto p_reduction = VW::make_unique<VW::reductions::cats::cats>(as_singleline(p_base));
+  auto p_base = require_singleline(stack_builder.setup_base_learner());
+  auto p_reduction = VW::make_unique<VW::reductions::cats::cats>(p_base.get());
   p_reduction->num_actions = num_actions;
   p_reduction->bandwidth = bandwidth;
   p_reduction->max_value = max_value;
   p_reduction->min_value = min_value;
 
-  auto* l = make_reduction_learner(std::move(p_reduction), as_singleline(p_base), predict_or_learn<true>,
-      predict_or_learn<false>, stack_builder.get_setupfn_name(cats_setup))
-                .set_input_label_type(VW::label_type_t::CONTINUOUS)
-                .set_output_label_type(VW::label_type_t::CONTINUOUS)
-                .set_input_prediction_type(VW::prediction_type_t::ACTION_PDF_VALUE)
-                .set_output_prediction_type(VW::prediction_type_t::ACTION_PDF_VALUE)
-                .set_output_example_prediction(output_example_prediction_cats)
-                .set_print_update(print_update_cats)
-                .set_update_stats(update_stats_cats)
-                .build();
+  auto l = make_reduction_learner(std::move(p_reduction), p_base, predict_or_learn<true>, predict_or_learn<false>,
+      stack_builder.get_setupfn_name(cats_setup))
+               .set_input_label_type(VW::label_type_t::CONTINUOUS)
+               .set_output_label_type(VW::label_type_t::CONTINUOUS)
+               .set_input_prediction_type(VW::prediction_type_t::ACTION_PDF_VALUE)
+               .set_output_prediction_type(VW::prediction_type_t::ACTION_PDF_VALUE)
+               .set_output_example_prediction(output_example_prediction_cats)
+               .set_print_update(print_update_cats)
+               .set_update_stats(update_stats_cats)
+               .build();
 
-  return make_base(*l);
+  return l;
 }

@@ -15,6 +15,7 @@ set(vw_config_sources
     src/options_cli.cc
     src/options_name_extractor.cc
     src/options.cc
+    src/option.cc
 )
 
 vw_add_library(

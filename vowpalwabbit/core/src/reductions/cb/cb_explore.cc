@@ -45,7 +45,7 @@ public:
   VW::cs_label cs_label;
   VW::cs_label second_cs_label;
 
-  learner<cb_explore, VW::example>* cs = nullptr;
+  learner* cs = nullptr;
 
   uint64_t tau = 0;
   float epsilon = 0.f;
@@ -63,7 +63,7 @@ public:
 };
 
 template <bool is_learn>
-void predict_or_learn_first(cb_explore& data, single_learner& base, VW::example& ec)
+void predict_or_learn_first(cb_explore& data, learner& base, VW::example& ec)
 {
   // Explore tau times, then act according to optimal.
   bool learn = is_learn && ec.l.cb.costs[0].probability < 1;
@@ -87,7 +87,7 @@ void predict_or_learn_first(cb_explore& data, single_learner& base, VW::example&
 }
 
 template <bool is_learn>
-void predict_or_learn_greedy(cb_explore& data, single_learner& base, VW::example& ec)
+void predict_or_learn_greedy(cb_explore& data, learner& base, VW::example& ec)
 {
   // Explore uniform random an epsilon fraction of the time.
   // TODO: pointers are copied here. What happens if base.learn/base.predict re-allocs?
@@ -110,7 +110,7 @@ void predict_or_learn_greedy(cb_explore& data, single_learner& base, VW::example
 }
 
 template <bool is_learn>
-void predict_or_learn_bag(cb_explore& data, single_learner& base, VW::example& ec)
+void predict_or_learn_bag(cb_explore& data, learner& base, VW::example& ec)
 {
   // Randomize over predictions from a base set of predictors
   auto& probs = ec.pred.a_s;
@@ -134,7 +134,7 @@ void predict_or_learn_bag(cb_explore& data, single_learner& base, VW::example& e
 }
 
 void get_cover_probabilities(
-    cb_explore& data, single_learner& /* base */, VW::example& ec, VW::action_scores& probs, float min_prob)
+    cb_explore& data, learner& /* base */, VW::example& ec, VW::action_scores& probs, float min_prob)
 {
   float additive_probability = 1.f / static_cast<float>(data.cover_size);
   data.preds.clear();
@@ -157,7 +157,7 @@ void get_cover_probabilities(
 }
 
 template <bool is_learn>
-void predict_or_learn_cover(cb_explore& data, single_learner& base, VW::example& ec)
+void predict_or_learn_cover(cb_explore& data, learner& base, VW::example& ec)
 {
   VW_DBG(ec) << "predict_or_learn_cover:" << is_learn << " start" << endl;
   // Randomize over predictions from a base set of predictors
@@ -237,7 +237,7 @@ void predict_or_learn_cover(cb_explore& data, single_learner& base, VW::example&
 void print_update_cb_explore(
     VW::workspace& all, VW::shared_data& sd, bool is_test, const VW::example& ec, std::stringstream& pred_string)
 {
-  if ((sd.weighted_examples() >= all.sd->dump_interval) && !all.quiet && !all.bfgs)
+  if ((sd.weighted_examples() >= all.sd->dump_interval) && !all.output_config.quiet && !all.reduction_state.bfgs)
   {
     std::stringstream label_string;
     if (is_test) { label_string << "unknown"; }
@@ -246,8 +246,8 @@ void print_update_cb_explore(
       const auto& cost = ec.l.cb.costs[0];
       label_string << cost.action << ":" << cost.cost << ":" << cost.probability;
     }
-    sd.print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_string.str(), pred_string.str(),
-        ec.get_num_features(), all.progress_add, all.progress_arg);
+    sd.print_update(*all.output_runtime.trace_message, all.passes_config.holdout_set_off,
+        all.passes_config.current_pass, label_string.str(), pred_string.str(), ec.get_num_features());
   }
 }
 
@@ -297,7 +297,10 @@ void output_example_prediction_cb_explore(
   std::stringstream ss;
 
   for (const auto& act_score : ec.pred.a_s) { ss << std::fixed << act_score.score << " "; }
-  for (auto& sink : all.final_prediction_sink) { all.print_text_by_ref(sink.get(), ss.str(), ec.tag, logger); }
+  for (auto& sink : all.output_runtime.final_prediction_sink)
+  {
+    all.print_text_by_ref(sink.get(), ss.str(), ec.tag, logger);
+  }
 }
 
 void print_update_cb_explore(
@@ -320,7 +323,7 @@ void print_update_cb_explore(
 }
 }  // namespace
 
-base_learner* VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -369,14 +372,18 @@ base_learner* VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
   if (data->epsilon < 0.0 || data->epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
 
   data->cbcs.cb_type = VW::cb_type_t::DR;
-  data->model_file_version = all.model_file_ver;
+  data->model_file_version = all.runtime_state.model_file_ver;
 
-  single_learner* base = as_singleline(stack_builder.setup_base_learner());
-  data->cbcs.scorer = VW::LEARNER::as_singleline(base->get_learner_by_name_prefix("scorer"));
+  size_t params_per_weight = 1;
+  if (options.was_supplied("cover")) { params_per_weight = data->cover_size + 1; }
+  else if (options.was_supplied("bag")) { params_per_weight = data->bag_size; }
 
-  void (*learn_ptr)(cb_explore&, single_learner&, VW::example&);
-  void (*predict_ptr)(cb_explore&, single_learner&, VW::example&);
-  size_t params_per_weight;
+  auto base = require_singleline(stack_builder.setup_base_learner(params_per_weight));
+  data->cbcs.scorer = VW::LEARNER::require_singleline(base->get_learner_by_name_prefix("scorer"));
+
+  void (*learn_ptr)(cb_explore&, learner&, VW::example&);
+  void (*predict_ptr)(cb_explore&, learner&, VW::example&);
+
   std::string name_addition;
 
   if (options.was_supplied("cover"))
@@ -391,48 +398,46 @@ base_learner* VW::reductions::cb_explore_setup(VW::setup_base_i& stack_builder)
       data->epsilon = 1.f;
       data->epsilon_decay = true;
     }
-    data->cs = reinterpret_cast<learner<cb_explore, VW::example>*>(as_singleline(all.cost_sensitive));
+
+    data->cs = VW::LEARNER::require_singleline(base->get_learner_by_name_prefix("cs"));
+
     for (uint32_t j = 0; j < num_actions; j++) { data->second_cs_label.costs.push_back(VW::cs_class{}); }
     data->cover_probs.resize(num_actions);
     data->preds.reserve(data->cover_size);
     learn_ptr = predict_or_learn_cover<true>;
     predict_ptr = predict_or_learn_cover<false>;
-    params_per_weight = data->cover_size + 1;
     name_addition = "-cover";
   }
   else if (options.was_supplied("bag"))
   {
     learn_ptr = predict_or_learn_bag<true>;
     predict_ptr = predict_or_learn_bag<false>;
-    params_per_weight = data->bag_size;
     name_addition = "-bag";
   }
   else if (options.was_supplied("first"))
   {
     learn_ptr = predict_or_learn_first<true>;
     predict_ptr = predict_or_learn_first<false>;
-    params_per_weight = 1;
     name_addition = "-first";
   }
   else  // greedy
   {
     learn_ptr = predict_or_learn_greedy<true>;
     predict_ptr = predict_or_learn_greedy<false>;
-    params_per_weight = 1;
     name_addition = "-greedy";
   }
-  auto* l = make_reduction_learner(
+  auto l = make_reduction_learner(
       std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cb_explore_setup) + name_addition)
-                .set_input_label_type(VW::label_type_t::CB)
-                .set_output_label_type(VW::label_type_t::CB)
-                .set_input_prediction_type(VW::prediction_type_t::MULTICLASS)
-                .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
-                .set_params_per_weight(params_per_weight)
-                .set_update_stats(::update_stats_cb_explore)
-                .set_output_example_prediction(::output_example_prediction_cb_explore)
-                .set_print_update(::print_update_cb_explore)
-                .set_save_load(save_load)
-                .build();
+               .set_input_label_type(VW::label_type_t::CB)
+               .set_output_label_type(VW::label_type_t::CB)
+               .set_input_prediction_type(VW::prediction_type_t::MULTICLASS)
+               .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
+               .set_feature_width(params_per_weight)
+               .set_update_stats(::update_stats_cb_explore)
+               .set_output_example_prediction(::output_example_prediction_cb_explore)
+               .set_print_update(::print_update_cb_explore)
+               .set_save_load(save_load)
+               .build();
 
-  return make_base(*l);
+  return l;
 }

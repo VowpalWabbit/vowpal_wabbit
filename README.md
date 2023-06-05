@@ -5,7 +5,6 @@
 
 [![codecov](https://codecov.io/gh/VowpalWabbit/vowpal_wabbit/branch/master/graph/badge.svg)](https://codecov.io/gh/VowpalWabbit/vowpal_wabbit)
 [![Total Alerts](https://img.shields.io/lgtm/alerts/g/JohnLangford/vowpal_wabbit.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/JohnLangford/vowpal_wabbit/alerts/)
-[![Gitter chat](https://badges.gitter.im/VowpalWabbit.svg)](https://gitter.im/VowpalWabbit)
 
 This is the *Vowpal Wabbit* fast online learning code.
 

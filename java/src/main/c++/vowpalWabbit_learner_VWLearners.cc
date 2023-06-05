@@ -26,9 +26,9 @@ JNIEXPORT void JNICALL Java_vowpalWabbit_learner_VWLearners_performRemainingPass
   try
   {
     VW::workspace* vwInstance = (VW::workspace*)vwPtr;
-    if (vwInstance->numpasses > 1)
+    if (vwInstance->runtime_config.numpasses > 1)
     {
-      vwInstance->do_reset_source = true;
+      vwInstance->runtime_state.do_reset_source = true;
       VW::start_parser(*vwInstance);
       VW::LEARNER::generic_driver(*vwInstance);
       VW::end_parser(*vwInstance);

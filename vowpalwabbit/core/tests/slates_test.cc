@@ -29,27 +29,24 @@ public:
   PredictFunc test_predict_func;
 
   test_base(LearnFunc learn, PredictFunc predict) : test_learn_func(learn), test_predict_func(predict) {}
-  static void invoke_learn(
-      test_base<LearnFunc, PredictFunc>& data, VW::LEARNER::base_learner& /*base*/, VW::multi_ex& examples)
+  static void invoke_learn(test_base<LearnFunc, PredictFunc>& data, VW::multi_ex& examples)
   {
     data.test_learn_func(examples);
   }
-  static void invoke_predict(
-      test_base<LearnFunc, PredictFunc>& data, VW::LEARNER::base_learner& /*base*/, VW::multi_ex& examples)
+  static void invoke_predict(test_base<LearnFunc, PredictFunc>& data, VW::multi_ex& examples)
   {
     data.test_predict_func(examples);
   }
 };
 
 template <typename LearnFunc, typename PredictFunc>
-VW::LEARNER::learner<test_base<LearnFunc, PredictFunc>, VW::multi_ex>* make_test_learner(
-    const LearnFunc& learn, const PredictFunc& predict)
+std::shared_ptr<VW::LEARNER::learner> make_test_learner(const LearnFunc& learn, const PredictFunc& predict)
 {
   auto test_base_data = VW::make_unique<test_base<LearnFunc, PredictFunc>>(learn, predict);
-  using func = void (*)(test_base<LearnFunc, PredictFunc>&, VW::LEARNER::base_learner&, VW::multi_ex&);
+  using func = void (*)(test_base<LearnFunc, PredictFunc>&, VW::multi_ex&);
   auto learn_fptr = &test_base<LearnFunc, PredictFunc>::invoke_learn;
   auto predict_fptr = &test_base<LearnFunc, PredictFunc>::invoke_predict;
-  return VW::LEARNER::make_base_learner(std::move(test_base_data), static_cast<func>(learn_fptr),
+  return VW::LEARNER::make_bottom_learner(std::move(test_base_data), static_cast<func>(learn_fptr),
       static_cast<func>(predict_fptr), "mock_reduction", VW::prediction_type_t::DECISION_PROBS, VW::label_type_t::CCB)
       // Set it to something so that the compat VW::finish_example shim is put in place.
       .set_output_example_prediction([](VW::workspace& /* all */, const test_base<LearnFunc, PredictFunc>&,
@@ -100,9 +97,9 @@ TEST(Slates, ReductionMockTest)
     examples[0]->pred.decision_scores.push_back(slot_zero);
     examples[0]->pred.decision_scores.push_back(slot_one);
   };
-  auto* test_base_learner = make_test_learner(mock_learn_or_pred, mock_learn_or_pred);
+  auto test_base_learner = make_test_learner(mock_learn_or_pred, mock_learn_or_pred);
   VW::reductions::slates_data slate_reduction;
-  slate_reduction.learn(*VW::LEARNER::as_multiline(test_base_learner), examples);
+  slate_reduction.learn(*test_base_learner, examples);
 
   // This confirms that the reductions converted the CCB space decision scores back to slates action index space.
   EXPECT_EQ(examples[0]->pred.decision_scores.size(), 2);
@@ -113,5 +110,4 @@ TEST(Slates, ReductionMockTest)
 
   vw->finish_example(examples);
   test_base_learner->finish();
-  delete test_base_learner;
 }

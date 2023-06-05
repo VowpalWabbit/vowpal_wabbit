@@ -233,7 +233,7 @@ bool children(log_multi& b, uint32_t& current, uint32_t& class_index, uint32_t l
 }
 
 void train_node(
-    log_multi& b, single_learner& base, VW::example& ec, uint32_t& current, uint32_t& class_index, uint32_t /* depth */)
+    log_multi& b, learner& base, VW::example& ec, uint32_t& current, uint32_t& class_index, uint32_t /* depth */)
 {
   if (b.nodes[current].norm_Eh > b.nodes[current].preds[class_index].norm_Ehk) { ec.l.simple.label = -1.f; }
   else { ec.l.simple.label = 1.f; }
@@ -259,7 +259,7 @@ inline uint32_t descend(node& n, float prediction)
   else { return n.right; }
 }
 
-void predict(log_multi& b, single_learner& base, VW::example& ec)
+void predict(log_multi& b, learner& base, VW::example& ec)
 {
   VW::multiclass_label mc = ec.l.multi;
 
@@ -276,7 +276,7 @@ void predict(log_multi& b, single_learner& base, VW::example& ec)
   ec.l.multi = mc;
 }
 
-void learn(log_multi& b, single_learner& base, VW::example& ec)
+void learn(log_multi& b, learner& base, VW::example& ec)
 {
   if (ec.l.multi.label != static_cast<uint32_t>(-1))  // if training the tree
   {
@@ -425,7 +425,7 @@ void save_load_tree(log_multi& b, VW::io_buf& model_file, bool read, bool text)
 }
 }  // namespace
 
-base_learner* VW::reductions::log_multi_setup(VW::setup_base_i& stack_builder)  // learner setup
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::log_multi_setup(VW::setup_base_i& stack_builder)  // learner setup
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -444,26 +444,23 @@ base_learner* VW::reductions::log_multi_setup(VW::setup_base_i& stack_builder)  
 
   std::string loss_function = "quantile";
   float loss_parameter = 0.5;
-  all.loss = get_loss_function(all, loss_function, loss_parameter);
+  all.loss_config.loss = get_loss_function(all, loss_function, loss_parameter);
 
   data->max_predictors = data->k - 1;
   init_tree(*data.get());
 
-  size_t ws = data->max_predictors;
-  auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()), learn, predict,
-      stack_builder.get_setupfn_name(log_multi_setup))
-                .set_params_per_weight(ws)
-                .set_update_stats(VW::details::update_stats_multiclass_label<log_multi>)
-                .set_output_example_prediction(VW::details::output_example_prediction_multiclass_label<log_multi>)
-                .set_print_update(VW::details::print_update_multiclass_label<log_multi>)
-                .set_save_load(save_load_tree)
-                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
-                .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
-                .set_input_label_type(VW::label_type_t::MULTICLASS)
-                .set_output_label_type(VW::label_type_t::SIMPLE)
-                .build();
-
-  all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
-
-  return make_base(*l);
+  size_t feature_width = data->max_predictors;
+  auto l = make_reduction_learner(std::move(data), require_singleline(stack_builder.setup_base_learner(feature_width)),
+      learn, predict, stack_builder.get_setupfn_name(log_multi_setup))
+               .set_feature_width(feature_width)
+               .set_update_stats(VW::details::update_stats_multiclass_label<log_multi>)
+               .set_output_example_prediction(VW::details::output_example_prediction_multiclass_label<log_multi>)
+               .set_print_update(VW::details::print_update_multiclass_label<log_multi>)
+               .set_save_load(save_load_tree)
+               .set_input_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
+               .set_input_label_type(VW::label_type_t::MULTICLASS)
+               .set_output_label_type(VW::label_type_t::SIMPLE)
+               .build();
+  return l;
 }

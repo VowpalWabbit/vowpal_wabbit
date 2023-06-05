@@ -11,6 +11,7 @@ import signal
 
 # Python 3.8+ required
 
+
 # The code used to find the test binaries are taken from run_tests.py. If any changes occur
 # in one, make sure to update the other
 def find_in_path(paths, file_matcher, debug_file_name):
@@ -71,7 +72,6 @@ def find_test_binary(test_base_ref_dir, user_supplied_bin_path):
 
 
 def main():
-
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )

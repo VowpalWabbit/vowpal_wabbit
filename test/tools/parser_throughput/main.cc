@@ -10,7 +10,7 @@
 #include "vw/json_parser/parse_example_json.h"
 #include "vw/text_parser/parse_example_text.h"
 
-#ifdef VW_BUILD_CSV
+#ifdef VW_FEAT_CSV_ENABLED
 #  include "vw/csv_parser/parse_example_csv.h"
 #endif
 
@@ -120,8 +120,8 @@ int main(int argc, char** argv)
   if (type == parser_type::DSJSON) { args.push_back("--dsjson"); }
   else if (type == parser_type::CSV)
   {
-#ifndef VW_BUILD_CSV
-    THROW("CSV parser not enabled. Please reconfigure cmake and rebuild with VW_BUILD_CSV=ON");
+#ifndef VW_FEAT_CSV_ENABLED
+    THROW("CSV parser not enabled. Please reconfigure cmake and rebuild with VW_FEAT_CSV=ON");
 #endif
 
     args.push_back("--csv");
@@ -175,13 +175,13 @@ int main(int argc, char** argv)
       VW::multi_ex examples;
       examples.push_back(&VW::get_unused_example(vw.get()));
       VW::parsers::json::read_line_decision_service_json<false>(*vw, examples, const_cast<char*>(line.data()),
-          line.length(), false, (VW::example_factory_t)&VW::get_unused_example, (void*)vw.get(), &interaction);
+          line.length(), false, std::bind(VW::get_unused_example, vw.get()), &interaction);
       VW::finish_example(*vw, examples);
     }
   }
   else
   {
-#ifdef VW_BUILD_CSV
+#ifdef VW_FEAT_CSV_ENABLED
     VW::multi_ex examples;
     examples.push_back(&VW::get_unused_example(vw.get()));
     while (VW::parsers::csv::parse_csv_examples(vw.get(), file_contents_as_io_buf, examples) != 0)
@@ -192,7 +192,7 @@ int main(int argc, char** argv)
     }
     VW::finish_example(*vw, *examples[0]);
 #else
-    THROW("CSV parser not enabled. Please reconfigure cmake and rebuild with VW_BUILD_CSV=ON");
+    THROW("CSV parser not enabled. Please reconfigure cmake and rebuild with VW_FEAT_CSV=ON");
 #endif
   }
   const auto end = std::chrono::high_resolution_clock::now();

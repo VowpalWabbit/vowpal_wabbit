@@ -40,10 +40,10 @@ std::unique_ptr<VW::workspace> initialize_internal(
   VW::io_buf local_model;
   if (model == nullptr)
   {
-    std::vector<std::string> all_initial_regressor_files(all->initial_regressors);
+    std::vector<std::string> all_initial_regressor_files(all->initial_weights_config.initial_regressors);
     if (all->options->was_supplied("input_feature_regularizer"))
     {
-      all_initial_regressor_files.push_back(all->per_feature_regularizer_input);
+      all_initial_regressor_files.push_back(all->initial_weights_config.per_feature_regularizer_input);
     }
     VW::details::read_regressor_file(*all, all_initial_regressor_files, local_model);
     model = &local_model;
@@ -62,29 +62,34 @@ std::unique_ptr<VW::workspace> initialize_internal(
   }
   catch (VW::save_load_model_exception& e)
   {
-    auto msg = fmt::format("{}, model files = {}", e.what(), fmt::join(all->initial_regressors, ", "));
+    auto msg =
+        fmt::format("{}, model files = {}", e.what(), fmt::join(all->initial_weights_config.initial_regressors, ", "));
     throw VW::save_load_model_exception(e.filename(), e.line_number(), msg);
   }
 
-  if (!all->quiet)
+  if (!all->output_config.quiet)
   {
-    *(all->trace_message) << "Num weight bits = " << all->num_bits << std::endl;
-    *(all->trace_message) << "learning rate = " << all->eta << std::endl;
-    *(all->trace_message) << "initial_t = " << all->sd->t << std::endl;
-    *(all->trace_message) << "power_t = " << all->power_t << std::endl;
-    if (all->numpasses > 1) { *(all->trace_message) << "decay_learning_rate = " << all->eta_decay_rate << std::endl; }
+    *(all->output_runtime.trace_message) << "Num weight bits = " << all->initial_weights_config.num_bits << std::endl;
+    *(all->output_runtime.trace_message) << "learning rate = " << all->update_rule_config.eta << std::endl;
+    *(all->output_runtime.trace_message) << "initial_t = " << all->sd->t << std::endl;
+    *(all->output_runtime.trace_message) << "power_t = " << all->update_rule_config.power_t << std::endl;
+    if (all->runtime_config.numpasses > 1)
+    {
+      *(all->output_runtime.trace_message)
+          << "decay_learning_rate = " << all->update_rule_config.eta_decay_rate << std::endl;
+    }
     if (all->options->was_supplied("cb_type"))
     {
-      *(all->trace_message) << "cb_type = " << all->options->get_typed_option<std::string>("cb_type").value()
-                            << std::endl;
+      *(all->output_runtime.trace_message)
+          << "cb_type = " << all->options->get_typed_option<std::string>("cb_type").value() << std::endl;
     }
   }
 
   // we must delay so parse_mask is fully defined.
   for (const auto& name_space : dictionary_namespaces) { VW::details::parse_dictionary_argument(*all, name_space); }
 
-  std::vector<std::string> enabled_reductions;
-  if (all->l != nullptr) { all->l->get_enabled_reductions(enabled_reductions); }
+  std::vector<std::string> enabled_learners;
+  if (all->l != nullptr) { all->l->get_enabled_learners(enabled_learners); }
 
   // upon direct query for help -- spit it out to stdout;
   if (all->options->get_typed_option<bool>("help").value())
@@ -120,20 +125,22 @@ std::unique_ptr<VW::workspace> initialize_internal(
     std::exit(0);
   }
 
-  VW::details::print_enabled_reductions(*all, enabled_reductions);
+  VW::details::print_enabled_learners(*all, enabled_learners);
 
-  if (!all->quiet)
+  if (!all->output_config.quiet)
   {
-    *(all->trace_message) << "Input label = " << VW::to_string(all->l->get_input_label_type()).substr(14) << std::endl;
-    *(all->trace_message) << "Output pred = " << VW::to_string(all->l->get_output_prediction_type()).substr(19)
-                          << std::endl;
+    *(all->output_runtime.trace_message) << "Input label = " << VW::to_string(all->l->get_input_label_type()).substr(14)
+                                         << std::endl;
+    *(all->output_runtime.trace_message) << "Output pred = "
+                                         << VW::to_string(all->l->get_output_prediction_type()).substr(19) << std::endl;
   }
 
   if (!all->options->get_typed_option<bool>("dry_run").value())
   {
-    if (!all->quiet && !all->bfgs && (all->searchstr == nullptr) && !all->options->was_supplied("audit_regressor"))
+    if (!all->output_config.quiet && !all->reduction_state.bfgs && (all->reduction_state.searchstr == nullptr) &&
+        !all->options->was_supplied("audit_regressor"))
     {
-      all->sd->print_update_header(*all->trace_message);
+      all->sd->print_update_header(*all->output_runtime.trace_message);
     }
     all->l->init_driver();
   }
@@ -219,7 +226,6 @@ VW::workspace* VW::seed_vw_model(
   VW::workspace* new_model =
       VW::initialize(serialized_options, nullptr, true /* skip_model_load */, trace_listener, trace_context);
   VW_WARNING_STATE_POP
-  delete new_model->sd;
 
   // reference model states stored in the specified VW instance
   new_model->weights.shallow_copy(vw_model->weights);  // regressor
@@ -328,7 +334,6 @@ std::unique_ptr<VW::workspace> VW::seed_vw_model(VW::workspace& vw_model, const 
 
   auto new_model = initialize_internal(std::move(options_custom_deleter), nullptr, false /* skip model load */,
       driver_output_func, driver_output_func_context, custom_logger, nullptr);
-  delete new_model->sd;
 
   // reference model states stored in the specified VW instance
   new_model->weights.shallow_copy(vw_model.weights);  // regressor
@@ -459,73 +464,100 @@ void VW::free_args(int argc, char* argv[])
 
 const char* VW::are_features_compatible(const VW::workspace& vw1, const VW::workspace& vw2)
 {
-  if (vw1.example_parser->hasher != vw2.example_parser->hasher) { return "hasher"; }
+  if (vw1.parser_runtime.example_parser->hasher != vw2.parser_runtime.example_parser->hasher) { return "hasher"; }
 
-  if (!std::equal(vw1.spelling_features.begin(), vw1.spelling_features.end(), vw2.spelling_features.begin()))
+  if (!std::equal(vw1.feature_tweaks_config.spelling_features.begin(),
+          vw1.feature_tweaks_config.spelling_features.end(), vw2.feature_tweaks_config.spelling_features.begin()))
   {
     return "spelling_features";
   }
 
-  if (!std::equal(vw1.affix_features.begin(), vw1.affix_features.end(), vw2.affix_features.begin()))
+  if (!std::equal(vw1.feature_tweaks_config.affix_features.begin(), vw1.feature_tweaks_config.affix_features.end(),
+          vw2.feature_tweaks_config.affix_features.begin()))
   {
     return "affix_features";
   }
 
-  if (vw1.skip_gram_transformer != nullptr && vw2.skip_gram_transformer != nullptr)
+  if (vw1.feature_tweaks_config.skip_gram_transformer != nullptr &&
+      vw2.feature_tweaks_config.skip_gram_transformer != nullptr)
   {
-    const auto& vw1_ngram_strings = vw1.skip_gram_transformer->get_initial_ngram_definitions();
-    const auto& vw2_ngram_strings = vw2.skip_gram_transformer->get_initial_ngram_definitions();
-    const auto& vw1_skips_strings = vw1.skip_gram_transformer->get_initial_skip_definitions();
-    const auto& vw2_skips_strings = vw2.skip_gram_transformer->get_initial_skip_definitions();
+    const auto& vw1_ngram_strings = vw1.feature_tweaks_config.skip_gram_transformer->get_initial_ngram_definitions();
+    const auto& vw2_ngram_strings = vw2.feature_tweaks_config.skip_gram_transformer->get_initial_ngram_definitions();
+    const auto& vw1_skips_strings = vw1.feature_tweaks_config.skip_gram_transformer->get_initial_skip_definitions();
+    const auto& vw2_skips_strings = vw2.feature_tweaks_config.skip_gram_transformer->get_initial_skip_definitions();
 
     if (!std::equal(vw1_ngram_strings.begin(), vw1_ngram_strings.end(), vw2_ngram_strings.begin())) { return "ngram"; }
 
     if (!std::equal(vw1_skips_strings.begin(), vw1_skips_strings.end(), vw2_skips_strings.begin())) { return "skips"; }
   }
-  else if (vw1.skip_gram_transformer != nullptr || vw2.skip_gram_transformer != nullptr)
+  else if (vw1.feature_tweaks_config.skip_gram_transformer != nullptr ||
+      vw2.feature_tweaks_config.skip_gram_transformer != nullptr)
   {
     // If one of them didn't define the ngram transformer then they differ by ngram (skips depends on ngram)
     return "ngram";
   }
 
-  if (!std::equal(vw1.limit.begin(), vw1.limit.end(), vw2.limit.begin())) { return "limit"; }
+  if (!std::equal(vw1.feature_tweaks_config.limit.begin(), vw1.feature_tweaks_config.limit.end(),
+          vw2.feature_tweaks_config.limit.begin()))
+  {
+    return "limit";
+  }
 
-  if (vw1.num_bits != vw2.num_bits) { return "num_bits"; }
+  if (vw1.initial_weights_config.num_bits != vw2.initial_weights_config.num_bits) { return "num_bits"; }
 
-  if (vw1.permutations != vw2.permutations) { return "permutations"; }
+  if (vw1.feature_tweaks_config.permutations != vw2.feature_tweaks_config.permutations) { return "permutations"; }
 
-  if (vw1.interactions.size() != vw2.interactions.size()) { return "interactions size"; }
+  if (vw1.feature_tweaks_config.interactions.size() != vw2.feature_tweaks_config.interactions.size())
+  {
+    return "interactions size";
+  }
 
-  if (vw1.ignore_some != vw2.ignore_some) { return "ignore_some"; }
+  if (vw1.feature_tweaks_config.ignore_some != vw2.feature_tweaks_config.ignore_some) { return "ignore_some"; }
 
-  if (vw1.ignore_some && !std::equal(vw1.ignore.begin(), vw1.ignore.end(), vw2.ignore.begin())) { return "ignore"; }
+  if (vw1.feature_tweaks_config.ignore_some &&
+      !std::equal(vw1.feature_tweaks_config.ignore.begin(), vw1.feature_tweaks_config.ignore.end(),
+          vw2.feature_tweaks_config.ignore.begin()))
+  {
+    return "ignore";
+  }
 
-  if (vw1.ignore_some_linear != vw2.ignore_some_linear) { return "ignore_some_linear"; }
+  if (vw1.feature_tweaks_config.ignore_some_linear != vw2.feature_tweaks_config.ignore_some_linear)
+  {
+    return "ignore_some_linear";
+  }
 
-  if (vw1.ignore_some_linear &&
-      !std::equal(vw1.ignore_linear.begin(), vw1.ignore_linear.end(), vw2.ignore_linear.begin()))
+  if (vw1.feature_tweaks_config.ignore_some_linear &&
+      !std::equal(vw1.feature_tweaks_config.ignore_linear.begin(), vw1.feature_tweaks_config.ignore_linear.end(),
+          vw2.feature_tweaks_config.ignore_linear.begin()))
   {
     return "ignore_linear";
   }
 
-  if (vw1.redefine_some != vw2.redefine_some) { return "redefine_some"; }
+  if (vw1.feature_tweaks_config.redefine_some != vw2.feature_tweaks_config.redefine_some) { return "redefine_some"; }
 
-  if (vw1.redefine_some && !std::equal(vw1.redefine.begin(), vw1.redefine.end(), vw2.redefine.begin()))
+  if (vw1.feature_tweaks_config.redefine_some &&
+      !std::equal(vw1.feature_tweaks_config.redefine.begin(), vw1.feature_tweaks_config.redefine.end(),
+          vw2.feature_tweaks_config.redefine.begin()))
   {
     return "redefine";
   }
 
-  if (vw1.add_constant != vw2.add_constant) { return "add_constant"; }
+  if (vw1.feature_tweaks_config.add_constant != vw2.feature_tweaks_config.add_constant) { return "add_constant"; }
 
-  if (vw1.dictionary_path.size() != vw2.dictionary_path.size()) { return "dictionary_path size"; }
+  if (vw1.feature_tweaks_config.dictionary_path.size() != vw2.feature_tweaks_config.dictionary_path.size())
+  {
+    return "dictionary_path size";
+  }
 
-  if (!std::equal(vw1.dictionary_path.begin(), vw1.dictionary_path.end(), vw2.dictionary_path.begin()))
+  if (!std::equal(vw1.feature_tweaks_config.dictionary_path.begin(), vw1.feature_tweaks_config.dictionary_path.end(),
+          vw2.feature_tweaks_config.dictionary_path.begin()))
   {
     return "dictionary_path";
   }
 
-  for (auto i = std::begin(vw1.interactions), j = std::begin(vw2.interactions); i != std::end(vw1.interactions);
-       ++i, ++j)
+  for (auto i = std::begin(vw1.feature_tweaks_config.interactions),
+            j = std::begin(vw2.feature_tweaks_config.interactions);
+       i != std::end(vw1.feature_tweaks_config.interactions); ++i, ++j)
   {
     if (*i != *j) { return "interaction mismatch"; }
   }
@@ -546,7 +578,7 @@ void VW::finish(VW::workspace& all, bool delete_all)
 
 void VW::sync_stats(VW::workspace& all)
 {
-  if (all.all_reduce != nullptr)
+  if (all.runtime_state.all_reduce != nullptr)
   {
     const auto loss = static_cast<float>(all.sd->sum_loss);
     all.sd->sum_loss = static_cast<double>(VW::details::accumulate_scalar(all, loss));
@@ -570,19 +602,19 @@ namespace
 
 void thread_dispatch(VW::workspace& all, const VW::multi_ex& examples)
 {
-  for (auto* example : examples) { all.example_parser->ready_parsed_examples.push(example); }
+  for (auto* example : examples) { all.parser_runtime.example_parser->ready_parsed_examples.push(example); }
 }
 void main_parse_loop(VW::workspace* all) { VW::details::parse_dispatch(*all, thread_dispatch); }
 }  // namespace
 
-void VW::start_parser(VW::workspace& all) { all.parse_thread = std::thread(main_parse_loop, &all); }
-void VW::end_parser(VW::workspace& all) { all.parse_thread.join(); }
+void VW::start_parser(VW::workspace& all) { all.parser_runtime.parse_thread = std::thread(main_parse_loop, &all); }
+void VW::end_parser(VW::workspace& all) { all.parser_runtime.parse_thread.join(); }
 
 bool VW::is_ring_example(const VW::workspace& all, const example* ae)
 {
   VW_WARNING_STATE_PUSH
   VW_WARNING_DISABLE_DEPRECATED_USAGE
-  return all.example_parser->example_pool.is_from_pool(ae);
+  return all.parser_runtime.example_parser->example_pool.is_from_pool(ae);
   VW_WARNING_STATE_POP
 }
 
@@ -606,7 +638,7 @@ VW::example* VW::import_example(
     VW::workspace& all, const std::string& label, primitive_feature_space* features, size_t len)
 {
   VW::example* ret = &get_unused_example(&all);
-  all.example_parser->lbl_parser.default_label(ret->l);
+  all.parser_runtime.example_parser->lbl_parser.default_label(ret->l);
 
   if (label.length() > 0) { parse_example_label(all, *ret, label); }
 
@@ -631,8 +663,8 @@ void VW::parse_example_label(VW::workspace& all, example& ec, const std::string&
 {
   std::vector<VW::string_view> words;
   VW::tokenize(' ', label, words);
-  all.example_parser->lbl_parser.parse_label(ec.l, ec.ex_reduction_features, all.example_parser->parser_memory_to_reuse,
-      all.sd->ldict.get(), words, all.logger);
+  all.parser_runtime.example_parser->lbl_parser.parse_label(ec.l, ec.ex_reduction_features,
+      all.parser_runtime.example_parser->parser_memory_to_reuse, all.sd->ldict.get(), words, all.logger);
 }
 
 void VW::setup_examples(VW::workspace& all, VW::multi_ex& examples)
@@ -660,11 +692,11 @@ void feature_limit(VW::workspace& all, VW::example* ex)
 {
   for (VW::namespace_index index : ex->indices)
   {
-    if (all.limit[index] < ex->feature_space[index].size())
+    if (all.feature_tweaks_config.limit[index] < ex->feature_space[index].size())
     {
       auto& fs = ex->feature_space[index];
-      fs.sort(all.parse_mask);
-      VW::unique_features(fs, all.limit[index]);
+      fs.sort(all.runtime_state.parse_mask);
+      VW::unique_features(fs, all.feature_tweaks_config.limit[index]);
     }
   }
 }
@@ -674,12 +706,16 @@ void feature_limit(VW::workspace& all, VW::example* ex)
 void VW::setup_example(VW::workspace& all, VW::example* ae)
 {
   assert(ae != nullptr);
-  if (all.example_parser->sort_features && !ae->sorted) { unique_sort_features(all.parse_mask, *ae); }
-
-  if (all.example_parser->write_cache)
+  if (all.parser_runtime.example_parser->sort_features && !ae->sorted)
   {
-    VW::parsers::cache::write_example_to_cache(all.example_parser->output, ae, all.example_parser->lbl_parser,
-        all.parse_mask, all.example_parser->cache_temp_buffer_obj);
+    unique_sort_features(all.runtime_state.parse_mask, *ae);
+  }
+
+  if (all.parser_runtime.example_parser->write_cache)
+  {
+    VW::parsers::cache::write_example_to_cache(all.parser_runtime.example_parser->output, ae,
+        all.parser_runtime.example_parser->lbl_parser, all.runtime_state.parse_mask,
+        all.parser_runtime.example_parser->cache_temp_buffer_obj);
   }
 
   // Require all extents to be complete in an VW::example.
@@ -692,32 +728,36 @@ void VW::setup_example(VW::workspace& all, VW::example* ae)
   ae->reset_total_sum_feat_sq();
   ae->loss = 0.;
   ae->debug_current_reduction_depth = 0;
-  ae->_use_permutations = all.permutations;
+  ae->_use_permutations = all.feature_tweaks_config.permutations;
 
-  all.example_parser->num_setup_examples++;
-  if (!all.example_parser->emptylines_separate_examples) { all.example_parser->in_pass_counter++; }
-
-  // Determine if this example is part of the holdout set.
-  ae->test_only = is_test_only(all.example_parser->in_pass_counter, all.holdout_period, all.holdout_after,
-      all.holdout_set_off, all.example_parser->emptylines_separate_examples ? (all.holdout_period - 1) : 0);
-  // If this example has a test only label then it is true regardless.
-  ae->test_only |= all.example_parser->lbl_parser.test_label(ae->l);
-
-  if (all.example_parser->emptylines_separate_examples &&
-      (example_is_newline(*ae) &&
-          (all.example_parser->lbl_parser.label_type != label_type_t::CCB ||
-              VW::reductions::ccb::ec_is_example_unset(*ae))))
+  all.parser_runtime.example_parser->num_setup_examples++;
+  if (!all.parser_runtime.example_parser->emptylines_separate_examples)
   {
-    all.example_parser->in_pass_counter++;
+    all.parser_runtime.example_parser->in_pass_counter++;
   }
 
-  ae->weight = all.example_parser->lbl_parser.get_weight(ae->l, ae->ex_reduction_features);
+  // Determine if this example is part of the holdout set.
+  ae->test_only = is_test_only(all.parser_runtime.example_parser->in_pass_counter, all.passes_config.holdout_period,
+      all.passes_config.holdout_after, all.passes_config.holdout_set_off,
+      all.parser_runtime.example_parser->emptylines_separate_examples ? (all.passes_config.holdout_period - 1) : 0);
+  // If this example has a test only label then it is true regardless.
+  ae->test_only |= all.parser_runtime.example_parser->lbl_parser.test_label(ae->l);
 
-  if (all.ignore_some)
+  if (all.parser_runtime.example_parser->emptylines_separate_examples &&
+      (example_is_newline(*ae) &&
+          (all.parser_runtime.example_parser->lbl_parser.label_type != label_type_t::CCB ||
+              VW::reductions::ccb::ec_is_example_unset(*ae))))
+  {
+    all.parser_runtime.example_parser->in_pass_counter++;
+  }
+
+  ae->weight = all.parser_runtime.example_parser->lbl_parser.get_weight(ae->l, ae->ex_reduction_features);
+
+  if (all.feature_tweaks_config.ignore_some)
   {
     for (unsigned char* i = ae->indices.begin(); i != ae->indices.end(); i++)
     {
-      if (all.ignore[*i])
+      if (all.feature_tweaks_config.ignore[*i])
       {
         // Delete namespace
         ae->feature_space[*i].clear();
@@ -729,16 +769,19 @@ void VW::setup_example(VW::workspace& all, VW::example* ae)
     }
   }
 
-  if (all.skip_gram_transformer != nullptr) { all.skip_gram_transformer->generate_grams(ae); }
+  if (all.feature_tweaks_config.skip_gram_transformer != nullptr)
+  {
+    all.feature_tweaks_config.skip_gram_transformer->generate_grams(ae);
+  }
 
-  if (all.add_constant)
+  if (all.feature_tweaks_config.add_constant)
   {  // add constant feature
     VW::add_constant_feature(all, ae);
   }
 
-  if (!all.limit_strings.empty()) { feature_limit(all, ae); }
+  if (!all.feature_tweaks_config.limit_strings.empty()) { feature_limit(all, ae); }
 
-  uint64_t multiplier = static_cast<uint64_t>(all.wpp) << all.weights.stride_shift();
+  uint64_t multiplier = static_cast<uint64_t>(all.reduction_state.total_feature_width) << all.weights.stride_shift();
 
   if (multiplier != 1)
   {  // make room for per-feature information.
@@ -751,14 +794,14 @@ void VW::setup_example(VW::workspace& all, VW::example* ae)
   for (const features& fs : *ae) { ae->num_features += fs.size(); }
 
   // Set the interactions for this example to the global set.
-  ae->interactions = &all.interactions;
-  ae->extent_interactions = &all.extent_interactions;
+  ae->interactions = &all.feature_tweaks_config.interactions;
+  ae->extent_interactions = &all.feature_tweaks_config.extent_interactions;
 }
 
 VW::example* VW::new_unused_example(VW::workspace& all)
 {
   VW::example* ec = &get_unused_example(&all);
-  all.example_parser->lbl_parser.default_label(ec->l);
+  all.parser_runtime.example_parser->lbl_parser.default_label(ec->l);
   return ec;
 }
 
@@ -844,13 +887,13 @@ VW::feature* VW::get_features(VW::workspace& all, example* ec, size_t& feature_n
 
 void VW::return_features(feature* f) { delete[] f; }
 
-void VW::add_constant_feature(VW::workspace& all, VW::example* ec)
+void VW::add_constant_feature(const VW::workspace& all, VW::example* ec)
 {
   ec->indices.push_back(VW::details::CONSTANT_NAMESPACE);
   ec->feature_space[VW::details::CONSTANT_NAMESPACE].push_back(
       1, VW::details::CONSTANT, VW::details::CONSTANT_NAMESPACE);
   ec->num_features++;
-  if (all.audit || all.hash_inv)
+  if (all.output_config.audit || all.output_config.hash_inv)
   {
     ec->feature_space[VW::details::CONSTANT_NAMESPACE].space_names.emplace_back("", "Constant");
   }
@@ -875,9 +918,9 @@ void VW::finish_example(VW::workspace& all, example& ec)
   details::clean_example(all, ec);
 
   {
-    std::lock_guard<std::mutex> lock(all.example_parser->output_lock);
-    ++all.example_parser->num_finished_examples;
-    all.example_parser->output_done.notify_one();
+    std::lock_guard<std::mutex> lock(all.parser_runtime.example_parser->output_lock);
+    ++all.parser_runtime.example_parser->num_finished_examples;
+    all.parser_runtime.example_parser->output_done.notify_one();
   }
 }
 
@@ -897,6 +940,8 @@ void VW::empty_example(VW::workspace& /*all*/, example& ec)
   ec.is_newline = false;
   ec.ex_reduction_features.clear();
   ec.num_features_from_interactions = 0;
+  ec.feature_space_hash = 0;
+  ec.is_set_feature_space_hash = false;
 }
 
 void VW::move_feature_namespace(example* dst, example* src, namespace_index c)

@@ -166,7 +166,7 @@ size_t create_circuit(ect& e, uint64_t max_label, uint64_t eliminations)
   return e.last_pair + (eliminations - 1);
 }
 
-uint32_t ect_predict(ect& e, single_learner& base, VW::example& ec)
+uint32_t ect_predict(ect& e, learner& base, VW::example& ec)
 {
   if (e.k == static_cast<size_t>(1)) { return 1; }
 
@@ -201,7 +201,7 @@ uint32_t ect_predict(ect& e, single_learner& base, VW::example& ec)
   return id + 1;
 }
 
-void ect_train(ect& e, single_learner& base, VW::example& ec)
+void ect_train(ect& e, learner& base, VW::example& ec)
 {
   if (e.k == 1)
   {  // nothing to do
@@ -287,9 +287,9 @@ void ect_train(ect& e, single_learner& base, VW::example& ec)
   }
 }
 
-void predict(ect& e, single_learner& base, VW::example& ec) { ec.pred.multiclass = ect_predict(e, base, ec); }
+void predict(ect& e, learner& base, VW::example& ec) { ec.pred.multiclass = ect_predict(e, base, ec); }
 
-void learn(ect& e, single_learner& base, VW::example& ec)
+void learn(ect& e, learner& base, VW::example& ec)
 {
   VW::multiclass_label mc = ec.l.multi;
   uint32_t pred = ec.pred.multiclass;
@@ -300,7 +300,7 @@ void learn(ect& e, single_learner& base, VW::example& ec)
 }
 }  // namespace
 
-base_learner* VW::reductions::ect_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::ect_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -318,27 +318,24 @@ base_learner* VW::reductions::ect_setup(VW::setup_base_i& stack_builder)
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  size_t wpp = create_circuit(*data.get(), data->k, data->errors + 1);
+  size_t feature_width = create_circuit(*data.get(), data->k, data->errors + 1);
 
-  base_learner* base = stack_builder.setup_base_learner();
+  auto base = stack_builder.setup_base_learner(feature_width);
   if (link == "logistic")
   {
     data->class_boundary = 0.5;  // as --link=logistic maps predictions in [0;1]
   }
 
-  auto* l = make_reduction_learner(
-      std::move(data), as_singleline(base), learn, predict, stack_builder.get_setupfn_name(ect_setup))
-                .set_params_per_weight(wpp)
-                .set_input_label_type(VW::label_type_t::MULTICLASS)
-                .set_output_label_type(VW::label_type_t::SIMPLE)
-                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
-                .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
-                .set_update_stats(VW::details::update_stats_multiclass_label<ect>)
-                .set_output_example_prediction(VW::details::output_example_prediction_multiclass_label<ect>)
-                .set_print_update(VW::details::print_update_multiclass_label<ect>)
-                .build();
-
-  all.example_parser->lbl_parser = VW::multiclass_label_parser_global;
-
-  return make_base(*l);
+  auto l = make_reduction_learner(
+      std::move(data), require_singleline(base), learn, predict, stack_builder.get_setupfn_name(ect_setup))
+               .set_feature_width(feature_width)
+               .set_input_label_type(VW::label_type_t::MULTICLASS)
+               .set_output_label_type(VW::label_type_t::SIMPLE)
+               .set_input_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
+               .set_update_stats(VW::details::update_stats_multiclass_label<ect>)
+               .set_output_example_prediction(VW::details::output_example_prediction_multiclass_label<ect>)
+               .set_print_update(VW::details::print_update_multiclass_label<ect>)
+               .build();
+  return l;
 }

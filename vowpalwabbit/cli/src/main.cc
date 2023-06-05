@@ -9,6 +9,7 @@
 #include "vw/core/learner.h"
 #include "vw/core/memory.h"
 #include "vw/core/parse_primitives.h"
+#include "vw/core/scope_exit.h"
 #include "vw/core/vw.h"
 #include "vw/io/logger.h"
 
@@ -19,7 +20,7 @@ using namespace VW::config;
 std::unique_ptr<VW::workspace> setup(std::unique_ptr<options_i> options)
 {
   auto all = VW::initialize(std::move(options));
-  all->vw_is_main = true;
+  all->runtime_config.vw_is_main = true;
   return all;
 }
 
@@ -104,6 +105,8 @@ int main(int argc, char* argv[])
     else
     {
       VW::start_parser(all);
+      auto scope_guard = VW::scope_exit([&all] { VW::end_parser(all); });
+
       if (alls.size() == 1) { VW::LEARNER::generic_driver(all); }
       else
       {
@@ -112,12 +115,14 @@ int main(int argc, char* argv[])
         for (auto& v : alls) { alls_ptrs.push_back(v.get()); }
         VW::LEARNER::generic_driver(alls_ptrs);
       }
-      VW::end_parser(all);
     }
 
     for (auto& v : alls)
     {
-      if (v->example_parser->exc_ptr) { std::rethrow_exception(v->example_parser->exc_ptr); }
+      if (v->parser_runtime.example_parser->exc_ptr)
+      {
+        std::rethrow_exception(v->parser_runtime.example_parser->exc_ptr);
+      }
 
       VW::sync_stats(*v);
       // Leave deletion up to the unique_ptr

@@ -6,7 +6,7 @@ learning rate = 10
 initial_t = 1
 power_t = 0.5
 decay_learning_rate = 1
-Enabled reductions: gd, scorer-identity, ect
+Enabled learners: gd, scorer-identity, ect
 Input label = MULTICLASS
 Output pred = MULTICLASS
 average  since         example        example        current        current  current

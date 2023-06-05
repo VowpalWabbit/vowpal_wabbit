@@ -17,56 +17,28 @@ VW::weight* VW::sparse_parameters::get_or_default_and_get(size_t i) const
   auto iter = _map.find(index);
   if (iter == _map.end())
   {
-    _map.insert(std::make_pair(index, VW::details::calloc_mergable_or_throw<VW::weight>(stride())));
+    // memory allocated by calloc should be freed by C free()
+    _map.insert(std::make_pair(
+        index, std::shared_ptr<VW::weight>(VW::details::calloc_mergable_or_throw<VW::weight>(stride()), free)));
     iter = _map.find(index);
-    if (_default_func != nullptr) { _default_func(iter->second, index); }
+    if (_default_func != nullptr) { _default_func(iter->second.get(), index); }
   }
-  return iter->second;
+  return iter->second.get();
 }
 
 VW::sparse_parameters::sparse_parameters(size_t length, uint32_t stride_shift)
-    : _weight_mask((length << stride_shift) - 1)
-    , _stride_shift(stride_shift)
-    , _seeded(false)
-    , _delete(false)
-    , _default_func(nullptr)
+    : _weight_mask((length << stride_shift) - 1), _stride_shift(stride_shift), _default_func(nullptr)
 {
 }
 
-VW::sparse_parameters::sparse_parameters()
-    : _weight_mask(0), _stride_shift(0), _seeded(false), _delete(false), _default_func(nullptr)
-{
-}
-
-VW::sparse_parameters::~sparse_parameters()
-{
-  if (!_delete && !_seeded)  // don't free weight vector if it is shared with another instance
-  {
-    for (auto& iter : _map)
-    {
-      auto* weight_ptr = iter.second;
-      free(weight_ptr);
-    }
-    _map.clear();
-    _delete = true;
-  }
-}
+VW::sparse_parameters::sparse_parameters() : _weight_mask(0), _stride_shift(0), _default_func(nullptr) {}
 
 void VW::sparse_parameters::shallow_copy(const sparse_parameters& input)
 {
   // TODO: this is level-1 copy (VW::weight* are stilled shared)
-  if (!_seeded)
-  {
-    for (auto& iter : _map)
-    {
-      auto* weight_ptr = iter.second;
-      free(weight_ptr);
-    }
-  }
   _map = input._map;
   _weight_mask = input._weight_mask;
   _stride_shift = input._stride_shift;
-  _seeded = true;
 }
 
 void VW::sparse_parameters::set_zero(size_t offset)

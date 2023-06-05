@@ -121,10 +121,11 @@ void VW::details::gen_cs_example_ips(
   }
 }
 
-void VW::details::gen_cs_example_mtr(cb_to_cs_adf& c, VW::multi_ex& ec_seq, VW::cs_label& cs_labels)
+void VW::details::gen_cs_example_mtr(
+    cb_to_cs_adf_mtr& c, VW::multi_ex& ec_seq, VW::cs_label& cs_labels, uint64_t offset_index)
 {
-  c.action_sum += ec_seq.size();
-  c.event_sum++;
+  c.per_model_state[offset_index].action_sum += ec_seq.size();
+  c.per_model_state[offset_index].event_sum++;
 
   c.mtr_ec_seq.clear();
   cs_labels.costs.clear();

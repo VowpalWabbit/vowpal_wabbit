@@ -640,7 +640,7 @@ class Workspace(pylibvw.vw):
 
         elif isinstance(ec, list):
             if not self._is_multiline():
-                raise TypeError("Expecting a mutiline Learner.")
+                raise TypeError("Expecting a multiline learner.")
             if len(ec) == 0:
                 raise ValueError("An empty list is invalid")
             if isinstance(ec[0], str):
@@ -974,6 +974,7 @@ class NamespaceId:
                 - If int, uses that as an index into this Examples list of feature groups to get the namespace id character
                 - If str, uses the first character as the namespace id character
         """
+        self.full = None
         if isinstance(id, int):  # you've specified a namespace by index
             if id < 0 or id >= ex.num_namespaces():
                 raise Exception("namespace " + str(id) + " out of bounds")
@@ -983,6 +984,7 @@ class NamespaceId:
         elif isinstance(id, str):  # you've specified a namespace by string
             if len(id) == 0:
                 id = " "
+            self.full = id
             self.id = None  # we don't know and we don't want to do the linear search required to find it
             self.ns = id[0]
             self.ord_ns = ord(self.ns)
@@ -1695,6 +1697,7 @@ class Example(pylibvw.example):
         """
         return pylibvw.example.num_features_in(self, self.get_ns(ns).ord_ns)
 
+    # pytype: disable=attribute-error
     def get_feature_id(
         self,
         ns: Union[NamespaceId, str, int],
@@ -1722,7 +1725,13 @@ class Example(pylibvw.example):
             return feature
         if isinstance(feature, str):
             if ns_hash is None:
-                ns_hash = self.vw.hash_space(self.get_ns(ns).ns)
+                if type(ns) != NamespaceId:
+                    ns = self.get_ns(ns)
+                ns_hash = (
+                    self.vw.hash_space(ns.full)
+                    if ns.full
+                    else self.vw.hash_space(ns.ns)
+                )
             return self.vw.hash_feature(feature, ns_hash)
         raise Exception("cannot extract feature of type: " + str(type(feature)))
 
@@ -1839,8 +1848,9 @@ class Example(pylibvw.example):
         """
         ns = self.get_ns(ns)
         self.ensure_namespace_exists(ns)
+        ns_hash = self.vw.hash_space(ns.full) if ns.full else self.vw.hash_space(ns.ns)
         self.push_feature_list(
-            self.vw, ns.ord_ns, featureList
+            self.vw, ns.ord_ns, ns_hash, featureList
         )  # much faster just to do it in C++
         # ns_hash = self.vw.hash_space( ns.ns )
         # for feature in featureList:
@@ -1931,7 +1941,6 @@ class Example(pylibvw.example):
         Tuple[int, List[int]],
         None,
     ]:
-
         """Get prediction object from this example.
 
         Args:

@@ -7,8 +7,6 @@
 #include <unordered_map>
 #include <vector>
 
-using reduction_setup_fn = VW::LEARNER::base_learner* (*)(VW::setup_base_i&);
-
 namespace VW
 {
 class default_reduction_stack_setup : public setup_base_i
@@ -21,9 +19,9 @@ public:
 
   void delayed_state_attach(VW::workspace& all, VW::config::options_i& options) override;
 
-  // this function consumes all the reduction_stack until it's able to construct a base_learner
-  // same signature as the old setup_base(...) from parse_args.cc
-  VW::LEARNER::base_learner* setup_base_learner() override;
+  // This function consumes all the reduction_stack until it's able to construct a learner
+  // Same signature as the old setup_base(...) from parse_args.cc
+  std::shared_ptr<VW::LEARNER::learner> setup_base_learner(size_t increment = 1) override;
 
   VW::config::options_i* get_options() override { return _options_impl; }
 
@@ -31,9 +29,13 @@ public:
 
   std::string get_setupfn_name(reduction_setup_fn setup) override;
 
+  size_t get_feature_width_above() override { return _feature_width_above; }
+
 private:
   VW::config::options_i* _options_impl = nullptr;
   VW::workspace* _all_ptr = nullptr;
+  std::shared_ptr<VW::LEARNER::learner> _base;
+  size_t _feature_width_above = 1;
 
 protected:
   std::vector<std::tuple<std::string, reduction_setup_fn>> _reduction_stack;

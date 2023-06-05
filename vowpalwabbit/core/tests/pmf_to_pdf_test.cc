@@ -24,7 +24,7 @@ class reduction_test_harness
 public:
   void set_predict_response(const vector<pair<uint32_t, float>>& predictions) { _predictions = predictions; }
 
-  void test_predict(base_learner& /* base */, VW::example& ec)
+  void test_predict(VW::example& ec)
   {
     ec.pred.a_s.clear();
     for (const auto& prediction : _predictions)
@@ -33,34 +33,26 @@ public:
     }
   }
 
-  void test_learn(base_learner& /* base */, VW::example& /* ec */)
+  void test_learn(VW::example& /* ec */)
   { /*noop*/
   }
 
-  // use NO_SANITIZE_UNDEFINED because reference base_learner& base may be bound to nullptr
-  static void NO_SANITIZE_UNDEFINED predict(reduction_test_harness& test_reduction, base_learner& base, VW::example& ec)
-  {
-    test_reduction.test_predict(base, ec);
-  }
+  static void predict(reduction_test_harness& test_reduction, VW::example& ec) { test_reduction.test_predict(ec); }
 
-  static void NO_SANITIZE_UNDEFINED learn(reduction_test_harness& test_reduction, base_learner& base, VW::example& ec)
-  {
-    test_reduction.test_learn(base, ec);
-  };
+  static void learn(reduction_test_harness& test_reduction, VW::example& ec) { test_reduction.test_learn(ec); };
 
 private:
   vector<pair<uint32_t, float>> _predictions;
 };
 
-using test_learner_t = learner<reduction_test_harness, VW::example>;
 using predictions_t = vector<pair<uint32_t, float>>;
 
-test_learner_t* get_test_harness_reduction(const predictions_t& base_reduction_predictions)
+std::shared_ptr<learner> get_test_harness(const predictions_t& bottom_learner_predictions)
 {
-  // Setup a test harness base reduction
+  // Setup a test harness bottom learner
   auto test_harness = VW::make_unique<reduction_test_harness>();
-  test_harness->set_predict_response(base_reduction_predictions);
-  auto test_learner = VW::LEARNER::make_base_learner(
+  test_harness->set_predict_response(bottom_learner_predictions);
+  auto test_learner = VW::LEARNER::make_bottom_learner(
       std::move(test_harness),          // Data structure passed by vw_framework into test_harness predict/learn calls
       reduction_test_harness::learn,    // test_harness learn
       reduction_test_harness::predict,  // test_harness predict
@@ -69,7 +61,7 @@ test_learner_t* get_test_harness_reduction(const predictions_t& base_reduction_p
                           .set_output_example_prediction([](VW::workspace& /* all */, const reduction_test_harness&,
                                                              const VW::example&, VW::io::logger&) {})
 
-                          .build();  // Create a learner using the base reduction.
+                          .build();  // Create a learner using the bottom learner.
   return test_learner;
 }
 }  // namespace
@@ -127,7 +119,7 @@ TEST(PmfToPdf, Basic)
   uint32_t action = 2;
   const ::predictions_t prediction_scores{{action, 1.f}};
 
-  const auto test_harness = ::get_test_harness_reduction(prediction_scores);
+  const auto test_harness = ::get_test_harness(prediction_scores);
 
   VW::example ec;
 
@@ -136,7 +128,7 @@ TEST(PmfToPdf, Basic)
   data->bandwidth = h;
   data->min_value = min_val;
   data->max_value = max_val;
-  data->_p_base = as_singleline(test_harness);
+  data->_p_base = test_harness.get();
 
   data->predict(ec);
 
@@ -155,7 +147,6 @@ TEST(PmfToPdf, Basic)
   data->learn(ec);
 
   test_harness->finish();
-  delete test_harness;
 }
 
 TEST(PmfToPdf, WLargeBandwidth)
@@ -179,8 +170,8 @@ TEST(PmfToPdf, WLargeBandwidth)
   {
     const ::predictions_t prediction_scores{{action, 1.f}};
 
-    const auto test_harness = ::get_test_harness_reduction(prediction_scores);
-    data->_p_base = as_singleline(test_harness);
+    const auto test_harness = ::get_test_harness(prediction_scores);
+    data->_p_base = test_harness.get();
 
     data->predict(ec);
 
@@ -188,7 +179,6 @@ TEST(PmfToPdf, WLargeBandwidth)
     check_pdf_limits_are_valid(ec.pred.pdf, min_val, max_val, h, k, action);
 
     test_harness->finish();
-    delete test_harness;
   }
 }
 
@@ -214,8 +204,8 @@ TEST(PmfToPdf, WLargeDiscretization)
   {
     const ::predictions_t prediction_scores{{action, 1.f}};
 
-    const auto test_harness = ::get_test_harness_reduction(prediction_scores);
-    data->_p_base = as_singleline(test_harness);
+    const auto test_harness = ::get_test_harness(prediction_scores);
+    data->_p_base = test_harness.get();
 
     data->predict(ec);
 
@@ -223,6 +213,5 @@ TEST(PmfToPdf, WLargeDiscretization)
     check_pdf_limits_are_valid(ec.pred.pdf, min_val, max_val, h, k, action);
 
     test_harness->finish();
-    delete test_harness;
   }
 }

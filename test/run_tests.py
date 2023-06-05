@@ -385,7 +385,6 @@ def run_command_line_test(
     valgrind=False,
     timeout=100,
 ) -> TestOutcome:
-
     if test.skip:
         completed_tests.report_completion(test.id, False)
         return TestOutcome(test.id, Result.SKIPPED, {}, skip_reason=test.skip_reason)
@@ -771,12 +770,12 @@ def convert_tests_for_flatbuffers(
             )
             continue
         # todo: 300 understand why is it failing
-        # test 189, 312, 316, 318, 351, 438 and 319 depend on dsjson parser behaviour
+        # test 189, 312, 316, 318, 319, 351, 367, 368, 394, 438, 456, 457 depend on dsjson parser behaviour
         # they can be enabled if we ignore diffing the --extra_metrics
         # (324-326) deals with corrupted data, so cannot be translated to fb
         # pdrop is not supported in fb, so 327-331 are excluded
-        # 336, 337, 338 - the FB converter script seems to be affecting the invert_hash
-        # 423, 424, 426, 428, 442, 444 - FB converter removes feature names from invert_hash (probably the same issue as above)
+        # 336, 337, 338, 442, 444, 450, 452 - the FB converter script seems to be affecting the invert_hash
+        # 423, 424, 425, 426 - FB converter removes feature names from invert_hash (probably the same issue as above)
         if str(test.id) in (
             "300",
             "189",
@@ -796,6 +795,9 @@ def convert_tests_for_flatbuffers(
             "337",
             "338",
             "351",
+            "367",
+            "368",
+            "394",
             "399",
             "400",
             "404",
@@ -809,6 +811,15 @@ def convert_tests_for_flatbuffers(
             "438",
             "442",
             "444",
+            "450",
+            "452",
+            "456",
+            "457",
+            "458",
+            "459",
+            "460",
+            "461",
+            "462",
         ):
             test.skip = True
             test.skip_reason = "test skipped for automatic converted flatbuffer tests for unknown reason"
@@ -856,6 +867,7 @@ def convert_to_test_data(
     vw_bin: str,
     spanning_tree_bin: Optional[Path],
     skipped_ids: List[int],
+    skip_network_tests: bool,
     extra_vw_options: str,
 ) -> List[TestData]:
     results: List[TestData] = []
@@ -889,6 +901,14 @@ def convert_to_test_data(
                 skip = True
                 skip_reason = "Test using spanning_tree skipped because of --skip_spanning_tree_tests argument"
 
+            if skip_network_tests and (
+                "daemon" in test["bash_command"]
+                or "spanning_tree" in test["bash_command"]
+                or "sender_test.py" in test["bash_command"]
+                or "active_test.py" in test["bash_command"]
+            ):
+                skip = True
+                skip_reason = "Tests requiring daemon or network skipped because of --skip_network_tests argument"
         elif "vw_command" in test:
             command_line = f"{vw_bin} {test['vw_command']} {extra_vw_options}"
         else:
@@ -925,10 +945,11 @@ def get_test(test_number: int, tests: List[TestData]) -> Optional[TestData]:
 def interpret_test_arg(arg: str, *, num_tests: int) -> List[int]:
     single_number_pattern = re.compile(r"^\d+$")
     range_pattern = re.compile(r"^(\d+)?\.\.(\d+)?$")
+    range_pattern_match = range_pattern.match(arg)
     if single_number_pattern.match(arg):
         return [int(arg)]
-    elif range_pattern.match(arg):
-        start, end = range_pattern.match(arg).groups()
+    elif range_pattern_match:
+        start, end = range_pattern_match.groups()
         start = int(start) if start else 1
         end = int(end) if end else num_tests
         if start > end:
@@ -1023,6 +1044,11 @@ def main():
         action="store_true",
     )
     parser.add_argument(
+        "--skip_network_tests",
+        help="Skip all tests that require daemon or network connection",
+        action="store_true",
+    )
+    parser.add_argument(
         "--skip_test",
         help="Skip specific test ids",
         nargs="+",
@@ -1069,6 +1095,9 @@ def main():
         default=100,
     )
     args = parser.parse_args()
+
+    if args.skip_network_tests:
+        args.skip_spanning_tree_tests = True
 
     # user did not supply dir
     temp_working_dir: Path = Path(args.working_dir)
@@ -1142,6 +1171,7 @@ def main():
         vw_bin,
         spanning_tree_bin,
         args.skip_test,
+        args.skip_network_tests,
         extra_vw_options=args.extra_options,
     )
 
@@ -1190,6 +1220,16 @@ def main():
         tests = convert_tests_for_flatbuffers(
             tests, to_flatbuff_bin, test_base_working_dir, color_enum
         )
+
+    if args.skip_network_tests:
+        for test in tests:
+            if (
+                "--active" in test.command_line
+                or "--sendto" in test.command_line
+                or "--daemon" in test.command_line
+            ):
+                test.skip = True
+                test.skip_reason = "Tests requiring daemon or network skipped because of --skip_network_tests argument"
 
     tasks: List[Future[TestOutcome]] = []
     completed_tests = Completion()

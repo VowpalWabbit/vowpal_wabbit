@@ -187,7 +187,7 @@ void VW::cb_label::reset_to_default()
 void ::VW::details::print_update_cb(VW::workspace& all, bool is_test, const VW::example& ec, const VW::multi_ex* ec_seq,
     bool action_scores, const VW::cb_class* known_cost)
 {
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.output_config.quiet && !all.reduction_state.bfgs)
   {
     size_t num_features = ec.get_num_features();
 
@@ -219,13 +219,13 @@ void ::VW::details::print_update_cb(VW::workspace& all, bool is_test, const VW::
             VW::fmt_float(ec.pred.a_s[0].score, VW::details::DEFAULT_FLOAT_FORMATTING_DECIMAL_PRECISION));
       }
       else { pred_buf << "no action"; }
-      all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_buf, pred_buf.str(),
-          num_features, all.progress_add, all.progress_arg);
+      all.sd->print_update(*all.output_runtime.trace_message, all.passes_config.holdout_set_off,
+          all.passes_config.current_pass, label_buf, pred_buf.str(), num_features);
     }
     else
     {
-      all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_buf,
-          static_cast<uint32_t>(pred), num_features, all.progress_add, all.progress_arg);
+      all.sd->print_update(*all.output_runtime.trace_message, all.passes_config.holdout_set_off,
+          all.passes_config.current_pass, label_buf, static_cast<uint32_t>(pred), num_features);
     }
   }
 }

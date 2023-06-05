@@ -136,11 +136,12 @@ TEST(Ccb, InsertInteractionsImplTest)
   std::set<std::string> expected_after{
       "AA", "AA[ccbid]", "AB", "AB[ccbid]", "BB", "BB[ccbid]", "[wild][ccbid]", "[wild][wild]", "[wild][wild][ccbid]"};
 
-  auto pre_result = interaction_vec_t_to_set(vw->interactions);
+  auto pre_result = interaction_vec_t_to_set(vw->feature_tweaks_config.interactions);
   EXPECT_THAT(pre_result, testing::ContainerEq(expected_before));
 
-  VW::reductions::ccb::insert_ccb_interactions(vw->interactions, vw->extent_interactions);
-  auto result = interaction_vec_t_to_set(vw->interactions);
+  VW::reductions::ccb::insert_ccb_interactions(
+      vw->feature_tweaks_config.interactions, vw->feature_tweaks_config.extent_interactions);
+  auto result = interaction_vec_t_to_set(vw->feature_tweaks_config.interactions);
 
   EXPECT_THAT(result, testing::ContainerEq(expected_after));
 }

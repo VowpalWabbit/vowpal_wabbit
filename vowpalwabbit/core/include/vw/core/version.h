@@ -52,4 +52,6 @@ constexpr version_struct version(VW_VERSION_MAJOR, VW_VERSION_MINOR, VW_VERSION_
 extern const std::string GIT_COMMIT;
 VW_DEPRECATED("VW::git_commit renamed to VW::GIT_COMMIT")
 extern const std::string git_commit;  // NOLINT
+
+extern const std::string ENABLED_FEATURES;
 }  // namespace VW

@@ -4,7 +4,6 @@ import queue
 
 
 class Sanitize:
-
     S_CODE = 0
     S_COMMENT = 1
     SANITIZE_WORDS = [

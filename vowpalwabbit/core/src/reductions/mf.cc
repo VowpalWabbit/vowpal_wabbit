@@ -21,8 +21,6 @@ class mf
 public:
   size_t rank = 0;
 
-  uint32_t increment = 0;
-
   // array to cache w*x, (l^k * x_l) and (r^k * x_r)
   // [ w*(1,x_l,x_r) , l^1*x_l, r^1*x_r, l^2*x_l, r^2*x_2, ... ]
   VW::v_array<float> sub_predictions;
@@ -40,7 +38,7 @@ public:
 };
 
 template <bool cache_sub_predictions>
-void predict(mf& data, single_learner& base, VW::example& ec)
+void predict(mf& data, learner& base, VW::example& ec)
 {
   float prediction = 0;
   if (cache_sub_predictions) { data.sub_predictions.resize(2 * data.rank + 1); }
@@ -100,10 +98,10 @@ void predict(mf& data, single_learner& base, VW::example& ec)
 
   // finalize prediction
   ec.partial_prediction = prediction;
-  ec.pred.scalar = VW::details::finalize_prediction(data.all->sd, data.all->logger, ec.partial_prediction);
+  ec.pred.scalar = VW::details::finalize_prediction(*data.all->sd, data.all->logger, ec.partial_prediction);
 }
 
-void learn(mf& data, single_learner& base, VW::example& ec)
+void learn(mf& data, learner& base, VW::example& ec)
 {
   // predict with current weights
   predict<true>(data, base, ec);
@@ -187,7 +185,7 @@ void learn(mf& data, single_learner& base, VW::example& ec)
 }
 }  // namespace
 
-base_learner* VW::reductions::mf_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::mf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -202,19 +200,20 @@ base_learner* VW::reductions::mf_setup(VW::setup_base_i& stack_builder)
   data->all = &all;
   // store global pairs in local data structure and clear global pairs
   // for eventual calls to base learner
-  auto non_pair_count = std::count_if(all.interactions.begin(), all.interactions.end(),
-      [](const std::vector<unsigned char>& interaction) { return interaction.size() != 2; });
+  auto non_pair_count =
+      std::count_if(all.feature_tweaks_config.interactions.begin(), all.feature_tweaks_config.interactions.end(),
+          [](const std::vector<unsigned char>& interaction) { return interaction.size() != 2; });
   if (non_pair_count > 0) { THROW("can only use pairs with new_mf"); }
 
-  all.random_positive_weights = true;
+  all.initial_weights_config.random_positive_weights = true;
 
-  size_t ws = 2 * data->rank + 1;
+  size_t feature_width = 2 * data->rank + 1;
 
-  auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()), learn,
-      predict<false>, stack_builder.get_setupfn_name(mf_setup))
-                .set_params_per_weight(ws)
-                .set_output_prediction_type(VW::prediction_type_t::SCALAR)
-                .build();
+  auto l = make_reduction_learner(std::move(data), require_singleline(stack_builder.setup_base_learner(feature_width)),
+      learn, predict<false>, stack_builder.get_setupfn_name(mf_setup))
+               .set_feature_width(feature_width)
+               .set_output_prediction_type(VW::prediction_type_t::SCALAR)
+               .build();
 
-  return make_base(*l);
+  return l;
 }

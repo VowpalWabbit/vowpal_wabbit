@@ -26,6 +26,8 @@
 #include "vw/core/vw_fwd.h"
 #include "vw/core/vw_math.h"
 
+#include <memory>
+
 namespace VW
 {
 namespace cb_explore_adf
@@ -85,15 +87,16 @@ class cb_explore_adf_base
 {
 public:
   template <typename... Args>
-  cb_explore_adf_base(bool with_metrics, Args&&... args) : explore(std::forward<Args>(args)...)
+  cb_explore_adf_base(bool with_metrics, Args&&... args)
+      : explore(std::forward<Args>(args)...), _allow_multiple_costs(false)
   {
     if (with_metrics) { _metrics = VW::make_unique<cb_explore_metrics>(); }
   }
 
   static void save_load(cb_explore_adf_base<ExploreType>& data, io_buf& io, bool read, bool text);
   static void persist_metrics(cb_explore_adf_base<ExploreType>& data, metric_sink& metrics);
-  static void predict(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
-  static void learn(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples);
+  static void predict(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::learner& base, multi_ex& examples);
+  static void learn(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::learner& base, multi_ex& examples);
 
   static void update_stats(const VW::workspace& all, VW::shared_data& sd, const cb_explore_adf_base<ExploreType>& data,
       const multi_ex& ec_seq, VW::io::logger& logger);
@@ -102,9 +105,12 @@ public:
   static void print_update(VW::workspace& all, VW::shared_data& sd, const cb_explore_adf_base<ExploreType>& data,
       const multi_ex& ec_seq, VW::io::logger& logger);
 
+  void set_allow_multiple_costs(bool allow_multiple_costs) { _allow_multiple_costs = allow_multiple_costs; }
+
   ExploreType explore;
 
 private:
+  bool _allow_multiple_costs;
   VW::cb_class _known_cost;
   // used in output_example
   VW::cb_label _action_label;
@@ -120,9 +126,9 @@ private:
 
 template <typename ExploreType>
 inline void cb_explore_adf_base<ExploreType>::predict(
-    cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
+    cb_explore_adf_base<ExploreType>& data, VW::LEARNER::learner& base, multi_ex& examples)
 {
-  example* label_example = VW::test_cb_adf_sequence(examples);
+  example* label_example = VW::test_cb_adf_sequence(examples, data._allow_multiple_costs);
   data._known_cost = VW::get_observed_cost_or_default_cb_adf(examples);
 
   if (label_example != nullptr)
@@ -145,9 +151,9 @@ inline void cb_explore_adf_base<ExploreType>::predict(
 
 template <typename ExploreType>
 inline void cb_explore_adf_base<ExploreType>::learn(
-    cb_explore_adf_base<ExploreType>& data, VW::LEARNER::multi_learner& base, multi_ex& examples)
+    cb_explore_adf_base<ExploreType>& data, VW::LEARNER::learner& base, multi_ex& examples)
 {
-  example* label_example = VW::test_cb_adf_sequence(examples);
+  example* label_example = VW::test_cb_adf_sequence(examples, data._allow_multiple_costs);
   if (label_example != nullptr)
   {
     data._known_cost = VW::get_observed_cost_or_default_cb_adf(examples);
@@ -256,12 +262,12 @@ void cb_explore_adf_base<ExploreType>::_output_example_prediction(
 {
   if (ec_seq.size() <= 0) { return; }
   auto& ec = *ec_seq[0];
-  for (auto& sink : all.final_prediction_sink)
+  for (auto& sink : all.output_runtime.final_prediction_sink)
   {
     VW::details::print_action_score(sink.get(), ec.pred.a_s, ec.tag, logger);
   }
 
-  if (all.raw_prediction != nullptr)
+  if (all.output_runtime.raw_prediction != nullptr)
   {
     std::string output_string;
     std::stringstream output_string_stream(output_string);
@@ -272,11 +278,14 @@ void cb_explore_adf_base<ExploreType>::_output_example_prediction(
       if (i > 0) { output_string_stream << ' '; }
       output_string_stream << costs[i].action << ':' << costs[i].partial_prediction;
     }
-    all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, logger);
+    all.print_text_by_ref(all.output_runtime.raw_prediction.get(), output_string_stream.str(), ec.tag, logger);
   }
   // maintain legacy printing behavior
-  if (all.raw_prediction != nullptr) { all.print_text_by_ref(all.raw_prediction.get(), "", ec_seq[0]->tag, logger); }
-  VW::details::global_print_newline(all.final_prediction_sink, logger);
+  if (all.output_runtime.raw_prediction != nullptr)
+  {
+    all.print_text_by_ref(all.output_runtime.raw_prediction.get(), "", ec_seq[0]->tag, logger);
+  }
+  VW::details::global_print_newline(all.output_runtime.final_prediction_sink, logger);
 }
 
 template <typename ExploreType>

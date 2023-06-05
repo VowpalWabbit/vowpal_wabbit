@@ -25,7 +25,7 @@ public:
   bool is_valid() { return _chisq.is_valid(); }
 
   template <bool is_learn, bool is_explore>
-  inline void learn_or_predict(multi_learner& base, VW::multi_ex& examples)
+  inline void learn_or_predict(learner& base, VW::multi_ex& examples)
   {
     // Some explanation required.
     //
@@ -93,13 +93,13 @@ private:
   std::vector<float> _save_weight;
 };
 template <bool is_learn, bool is_explore>
-void learn_or_predict(cb_dro_data& data, multi_learner& base, VW::multi_ex& examples)
+void learn_or_predict(cb_dro_data& data, learner& base, VW::multi_ex& examples)
 {
   data.learn_or_predict<is_learn, is_explore>(base, examples);
 }
 }  // namespace
 
-base_learner* VW::reductions::cb_dro_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_dro_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -135,20 +135,20 @@ base_learner* VW::reductions::cb_dro_setup(VW::setup_base_i& stack_builder)
 
   if (wmax <= 1) { THROW("cb_dro_wmax must exceed 1"); }
 
-  if (!all.quiet)
+  if (!all.output_config.quiet)
   {
-    *(all.trace_message) << "Using DRO for CB learning" << std::endl;
-    *(all.trace_message) << "cb_dro_alpha = " << alpha << std::endl;
-    *(all.trace_message) << "cb_dro_tau = " << tau << std::endl;
-    *(all.trace_message) << "cb_dro_wmax = " << wmax << std::endl;
+    *(all.output_runtime.trace_message) << "Using DRO for CB learning" << std::endl;
+    *(all.output_runtime.trace_message) << "cb_dro_alpha = " << alpha << std::endl;
+    *(all.output_runtime.trace_message) << "cb_dro_tau = " << tau << std::endl;
+    *(all.output_runtime.trace_message) << "cb_dro_wmax = " << wmax << std::endl;
   }
 
   auto data = VW::make_unique<cb_dro_data>(alpha, tau, wmax);
 
   if (!data->is_valid()) { THROW("invalid cb_dro parameter values supplied"); }
 
-  void (*learn_ptr)(cb_dro_data&, multi_learner&, VW::multi_ex&);
-  void (*pred_ptr)(cb_dro_data&, multi_learner&, VW::multi_ex&);
+  void (*learn_ptr)(cb_dro_data&, learner&, VW::multi_ex&);
+  void (*pred_ptr)(cb_dro_data&, learner&, VW::multi_ex&);
   std::string name_addition;
   VW::prediction_type_t pred_type;
   if (options.was_supplied("cb_explore_adf"))
@@ -166,14 +166,14 @@ base_learner* VW::reductions::cb_dro_setup(VW::setup_base_i& stack_builder)
     pred_type = VW::prediction_type_t::ACTION_SCORES;
   }
 
-  auto* base = stack_builder.setup_base_learner();
-  auto* l = make_reduction_learner(std::move(data), as_multiline(base), learn_ptr, pred_ptr,
+  auto base = stack_builder.setup_base_learner();
+  auto l = make_reduction_learner(std::move(data), require_multiline(base), learn_ptr, pred_ptr,
       stack_builder.get_setupfn_name(cb_dro_setup) + name_addition)
-                .set_learn_returns_prediction(base->learn_returns_prediction)
-                .set_input_label_type(VW::label_type_t::CB)
-                .set_output_label_type(VW::label_type_t::CB)
-                .set_input_prediction_type(pred_type)
-                .set_output_prediction_type(pred_type)
-                .build();
-  return make_base(*l);
+               .set_learn_returns_prediction(base->learn_returns_prediction)
+               .set_input_label_type(VW::label_type_t::CB)
+               .set_output_label_type(VW::label_type_t::CB)
+               .set_input_prediction_type(pred_type)
+               .set_output_prediction_type(pred_type)
+               .build();
+  return l;
 }

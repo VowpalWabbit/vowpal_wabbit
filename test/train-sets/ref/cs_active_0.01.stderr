@@ -5,7 +5,7 @@ Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
-Enabled reductions: gd, scorer-identity, cs_active-sim
+Enabled learners: gd, scorer-identity, cs_active-sim
 Input label = CS
 Output pred = ACTIVE_MULTICLASS
 average  since         example        example        current        current  current

@@ -38,7 +38,9 @@ bool count_namespaces(const multi_ex& ecs, std::map<namespace_index, uint64_t>& 
     for (const auto& ns : ex->indices)
     {
       if (!VW::is_interaction_ns(ns)) { continue; }
-      if (!is_allowed_to_remove(ns)) { continue; }
+      // CCB_SLOT_NAMESPACE should be accounted for since generate_interactions treats it as a normal namespace
+      // it should still not be removed from oracle so we have to keep track of it here
+      if (ns != VW::details::CCB_SLOT_NAMESPACE && !is_allowed_to_remove(ns)) { continue; }
       ns_counter[ns]++;
       if (ns_counter[ns] == 1) { new_ns_seen = true; }
     }
@@ -60,10 +62,10 @@ namespace util
 // todo: audit if they reference global all interactions
 void fail_if_enabled(VW::workspace& all, const std::set<std::string>& not_compat)
 {
-  std::vector<std::string> enabled_reductions;
-  if (all.l != nullptr) { all.l->get_enabled_reductions(enabled_reductions); }
+  std::vector<std::string> enabled_learners;
+  if (all.l != nullptr) { all.l->get_enabled_learners(enabled_learners); }
 
-  for (const auto& reduction : enabled_reductions)
+  for (const auto& reduction : enabled_learners)
   {
     if (not_compat.count(reduction) > 0) THROW("automl does not yet support this reduction: " + reduction);
   }

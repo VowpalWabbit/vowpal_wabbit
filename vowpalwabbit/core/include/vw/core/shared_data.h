@@ -61,19 +61,23 @@ public:
   float first_observed_label = FLT_MAX;
   float second_observed_label = FLT_MAX;
 
+  // Set by --progress <arg>
+  bool progress_add = false;  // additive (rather than multiplicative) progress dumps
+  float progress_arg = 2.0;   // next update progress dump multiplier
+
   double weighted_examples() const;
   void update(bool test_example, bool labeled_example, float loss, float weight, size_t num_features);
-  void update_dump_interval(bool progress_add, float progress_arg);
+  void update_dump_interval();
   /// progressive validation header
   void print_update_header(std::ostream& trace_message);
   void print_update(std::ostream& output_stream, bool holdout_set_off, size_t current_pass, float label,
-      float prediction, size_t num_features, bool progress_add, float progress_arg);
+      float prediction, size_t num_features);
   void print_update(std::ostream& output_stream, bool holdout_set_off, size_t current_pass, uint32_t label,
-      uint32_t prediction, size_t num_features, bool progress_add, float progress_arg);
+      uint32_t prediction, size_t num_features);
   void print_update(std::ostream& output_stream, bool holdout_set_off, size_t current_pass, const std::string& label,
-      uint32_t prediction, size_t num_features, bool progress_add, float progress_arg);
+      uint32_t prediction, size_t num_features);
   void print_update(std::ostream& output_stream, bool holdout_set_off, size_t current_pass, const std::string& label,
-      const std::string& prediction, size_t num_features, bool progress_add, float progress_arg);
+      const std::string& prediction, size_t num_features);
   void print_summary(std::ostream& output, const shared_data& sd, const VW::loss_function& loss_func,
       uint64_t current_pass, bool holdout_set_off) const;
 };

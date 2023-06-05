@@ -8,6 +8,7 @@
 #include "vw/core/vw_fwd.h"
 
 #include <cstddef>
+#include <memory>
 
 namespace VW
 {
@@ -22,9 +23,9 @@ public:
 
 private:
   template <bool is_learn>
-  void learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& examples);
+  void learn_or_predict(VW::LEARNER::learner& base, multi_ex& examples);
 };
 
-VW::LEARNER::base_learner* cb_actions_mask_setup(VW::setup_base_i&);
+std::shared_ptr<VW::LEARNER::learner> cb_actions_mask_setup(VW::setup_base_i&);
 }  // namespace reductions
 }  // namespace VW

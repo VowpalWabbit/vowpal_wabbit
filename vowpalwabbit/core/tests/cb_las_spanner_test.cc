@@ -35,8 +35,8 @@ TEST(Las, CheckFindingMaxVolume)
     VW::cb_explore_adf::cb_explore_adf_large_action_space<VW::cb_explore_adf::one_pass_svd_impl,
         VW::cb_explore_adf::one_rank_spanner_state>
         largecb(
-            /*d=*/0, /*gamma_scale=*/1.f, /*gamma_exponent=*/0.f, /*c=*/2, false, vw.get(), seed, 1 << vw->num_bits,
-            /*thread_pool_size*/ 0, /*block_size*/ 0, /*use_explicit_simd=*/use_simd,
+            /*d=*/0, /*c=*/2, false, vw.get(), seed, 1 << vw->initial_weights_config.num_bits,
+            /*thread_pool_size*/ 0, /*block_size*/ 0, /*cache slack size*/ 50, /*use_explicit_simd=*/use_simd,
             VW::cb_explore_adf::implementation_type::one_pass_svd);
     largecb.U = Eigen::MatrixXf{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {0, 0, 0}, {7, 5, 3}, {6, 4, 8}};
     Eigen::MatrixXf X{{1, 2, 3}, {3, 2, 1}, {2, 1, 3}};
@@ -149,14 +149,14 @@ TEST(Las, CheckSpannerResultsSquarecb)
     }
 
     std::vector<std::string> e_r;
-    vw.l->get_enabled_reductions(e_r);
+    vw.l->get_enabled_learners(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
-      FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
+      FAIL() << "cb_explore_adf_large_action_space not found in enabled learners";
     }
 
-    VW::LEARNER::multi_learner* learner =
-        as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+    VW::LEARNER::learner* learner =
+        require_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
     auto* action_space = (internal_action_space_op*)learner->get_internal_type_erased_data_pointer_test_use_only();
     EXPECT_EQ(action_space != nullptr, true);
@@ -252,14 +252,14 @@ TEST(Las, CheckSpannerResultsEpsilonGreedy)
     }
 
     std::vector<std::string> e_r;
-    vw.l->get_enabled_reductions(e_r);
+    vw.l->get_enabled_learners(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
-      FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
+      FAIL() << "cb_explore_adf_large_action_space not found in enabled learners";
     }
 
-    VW::LEARNER::multi_learner* learner =
-        as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+    VW::LEARNER::learner* learner =
+        require_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
     auto* action_space = (internal_action_space_op*)learner->get_internal_type_erased_data_pointer_test_use_only();
     EXPECT_EQ(action_space != nullptr, true);
@@ -323,8 +323,8 @@ TEST(Las, CheckUniformProbabilitiesBeforeLearning)
   {
     auto& vw = *std::get<0>(vw_pair);
 
-    VW::LEARNER::multi_learner* learner =
-        as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+    VW::LEARNER::learner* learner =
+        require_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
     {
       VW::multi_ex examples;
@@ -389,14 +389,14 @@ TEST(Las, CheckProbabilitiesWhenDIsLarger)
     }
 
     std::vector<std::string> e_r;
-    vw->l->get_enabled_reductions(e_r);
+    vw->l->get_enabled_learners(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
-      FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
+      FAIL() << "cb_explore_adf_large_action_space not found in enabled learners";
     }
 
-    VW::LEARNER::multi_learner* learner =
-        as_multiline(vw->l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+    VW::LEARNER::learner* learner =
+        require_multiline(vw->l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
     auto* action_space = (internal_action_space_op*)learner->get_internal_type_erased_data_pointer_test_use_only();
     EXPECT_EQ(action_space != nullptr, true);
@@ -485,14 +485,14 @@ TEST(Las, CheckSpannerChoosesActionsThatClearlyMaximiseVolume)
     }
 
     std::vector<std::string> e_r;
-    vw.l->get_enabled_reductions(e_r);
+    vw.l->get_enabled_learners(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
-      FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
+      FAIL() << "cb_explore_adf_large_action_space not found in enabled learners";
     }
 
-    VW::LEARNER::multi_learner* learner =
-        as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+    VW::LEARNER::learner* learner =
+        require_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
     auto* action_space = (internal_action_space_op*)learner->get_internal_type_erased_data_pointer_test_use_only();
     EXPECT_EQ(action_space != nullptr, true);
@@ -634,14 +634,14 @@ TEST(Las, CheckSpannerRejectsSameActions)
     }
 
     std::vector<std::string> e_r;
-    vw.l->get_enabled_reductions(e_r);
+    vw.l->get_enabled_learners(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
-      FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
+      FAIL() << "cb_explore_adf_large_action_space not found in enabled learners";
     }
 
-    VW::LEARNER::multi_learner* learner =
-        as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+    VW::LEARNER::learner* learner =
+        require_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
     auto* action_space = (internal_action_space_op*)learner->get_internal_type_erased_data_pointer_test_use_only();
     EXPECT_EQ(action_space != nullptr, true);
@@ -698,14 +698,14 @@ TEST(Las, CheckSpannerWithActionsThatAreLinearCombinationsOfOtherActions)
   {
     auto& vw = *vw_ptr;
     std::vector<std::string> e_r;
-    vw.l->get_enabled_reductions(e_r);
+    vw.l->get_enabled_learners(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
-      FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
+      FAIL() << "cb_explore_adf_large_action_space not found in enabled learners";
     }
 
-    VW::LEARNER::multi_learner* learner =
-        as_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+    VW::LEARNER::learner* learner =
+        require_multiline(vw.l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
     auto* action_space = (internal_action_space_op*)learner->get_internal_type_erased_data_pointer_test_use_only();
     EXPECT_EQ(action_space != nullptr, true);
@@ -813,14 +813,14 @@ TEST(Las, CheckSingularValueSumDiffForDiffRanksIsSmall)
     }
 
     std::vector<std::string> e_r;
-    vw->l->get_enabled_reductions(e_r);
+    vw->l->get_enabled_learners(e_r);
     if (std::find(e_r.begin(), e_r.end(), "cb_explore_adf_large_action_space") == e_r.end())
     {
-      FAIL() << "cb_explore_adf_large_action_space not found in enabled reductions";
+      FAIL() << "cb_explore_adf_large_action_space not found in enabled learners";
     }
 
-    VW::LEARNER::multi_learner* learner =
-        as_multiline(vw->l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
+    VW::LEARNER::learner* learner =
+        require_multiline(vw->l->get_learner_by_name_prefix("cb_explore_adf_large_action_space"));
 
     auto* action_space = (internal_action_space_op*)learner->get_internal_type_erased_data_pointer_test_use_only();
     EXPECT_EQ(action_space != nullptr, true);
@@ -839,6 +839,19 @@ TEST(Las, CheckSingularValueSumDiffForDiffRanksIsSmall)
       vw->predict(examples);
 
       small_rank_sum = action_space->explore.S.sum();
+      vw->finish_example(examples);
+    }
+
+    {
+      action_space->explore._test_only_set_rank(d);
+      VW::multi_ex examples;
+
+      for (const auto& ex : dexs) { examples.push_back(VW::read_example(*vw, ex)); }
+      for (const auto& ex : exs) { examples.push_back(VW::read_example(*vw, ex)); }
+
+      vw->predict(examples);
+
+      larger_rank_sum = action_space->explore.S.sum();
       vw->finish_example(examples);
     }
 

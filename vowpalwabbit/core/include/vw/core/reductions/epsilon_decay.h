@@ -8,6 +8,7 @@
 #include "vw/core/learner_fwd.h"
 #include "vw/core/vw_fwd.h"
 
+#include <memory>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -16,7 +17,7 @@ namespace VW
 {
 namespace reductions
 {
-VW::LEARNER::base_learner* epsilon_decay_setup(VW::setup_base_i&);
+std::shared_ptr<VW::LEARNER::learner> epsilon_decay_setup(VW::setup_base_i&);
 
 namespace epsilon_decay
 {
@@ -27,9 +28,10 @@ class epsilon_decay_data
 public:
   epsilon_decay_data(uint64_t model_count, uint64_t min_scope, double epsilon_decay_significance_level,
       double epsilon_decay_estimator_decay, dense_parameters& weights, std::string epsilon_decay_audit_str,
-      bool constant_epsilon, uint32_t& wpp, uint64_t _min_champ_examples, float initial_epsilon,
-      uint64_t shift_model_bounds, bool reward_as_cost, double tol_x, bool is_brentq);
-  void update_weights(float init_ep, VW::LEARNER::multi_learner& base, VW::multi_ex& examples);
+      bool constant_epsilon, uint32_t& feature_width, uint64_t _min_champ_examples, float initial_epsilon,
+      uint64_t shift_model_bounds, bool reward_as_cost, double tol_x, bool is_brentq, bool predict_only_model,
+      bool challenger_epsilon);
+  void update_weights(float init_ep, VW::LEARNER::learner& base, VW::multi_ex& examples);
   void promote_model(int64_t model_ind, int64_t swap_dist);
   void rebalance_greater_models(int64_t model_ind, int64_t swap_dist, int64_t model_count);
   void clear_weights_and_estimators(int64_t swap_dist, int64_t model_count);
@@ -48,20 +50,13 @@ public:
   std::stringstream _audit_msg;
   uint64_t _global_counter = 1;
   bool _constant_epsilon;
-  uint32_t& _wpp;
+  uint32_t& _feature_width;
   uint64_t _min_champ_examples;
   float _initial_epsilon;
   uint64_t _shift_model_bounds;
   bool _reward_as_cost;
-
-  // TODO: delete all this, gd and cb_adf must respect ft_offset, see header import of automl.cc
-  std::vector<double> per_live_model_state_double;
-  std::vector<uint64_t> per_live_model_state_uint64;
-  double* _gd_normalized = nullptr;
-  double* _gd_total_weight = nullptr;
-  double* _sd_gravity = nullptr;
-  uint64_t* _cb_adf_event_sum = nullptr;
-  uint64_t* _cb_adf_action_sum = nullptr;
+  bool _predict_only_model;
+  bool _challenger_epsilon;
 };
 
 }  // namespace epsilon_decay

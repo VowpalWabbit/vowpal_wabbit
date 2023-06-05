@@ -30,7 +30,7 @@ public:
 };
 
 template <bool is_learn>
-void predict_or_learn(cb& data, single_learner& base, VW::example& ec)
+void predict_or_learn(cb& data, learner& base, VW::example& ec)
 {
   VW::details::cb_to_cs& c = data.cbcs;
   auto optional_cost = get_observed_cost_cb(ec.l.cb);
@@ -59,9 +59,9 @@ void predict_or_learn(cb& data, single_learner& base, VW::example& ec)
   }
 }
 
-void predict_eval(cb&, single_learner&, VW::example&) { THROW("can not use a test label for evaluation"); }
+void predict_eval(cb&, learner&, VW::example&) { THROW("can not use a test label for evaluation"); }
 
-void learn_eval(cb& data, single_learner&, VW::example& ec)
+void learn_eval(cb& data, learner&, VW::example& ec)
 {
   VW::details::cb_to_cs& c = data.cbcs;
   auto optional_cost = get_observed_cost_cb(ec.l.cb_eval.event);
@@ -97,12 +97,12 @@ void output_example_prediction_cb_algs(
 {
   const auto& ld = uses_eval ? ec.l.cb_eval.event : ec.l.cb;
 
-  for (auto& sink : all.final_prediction_sink)
+  for (auto& sink : all.output_runtime.final_prediction_sink)
   {
     all.print_by_ref(sink.get(), static_cast<float>(ec.pred.multiclass), 0, ec.tag, all.logger);
   }
 
-  if (all.raw_prediction != nullptr)
+  if (all.output_runtime.raw_prediction != nullptr)
   {
     std::stringstream output_string_stream;
     for (unsigned int i = 0; i < ld.costs.size(); i++)
@@ -111,7 +111,7 @@ void output_example_prediction_cb_algs(
       if (i > 0) { output_string_stream << ' '; }
       output_string_stream << cl.action << ':' << cl.partial_prediction;
     }
-    all.print_text_by_ref(all.raw_prediction.get(), output_string_stream.str(), ec.tag, logger);
+    all.print_text_by_ref(all.output_runtime.raw_prediction.get(), output_string_stream.str(), ec.tag, logger);
   }
 }
 
@@ -128,7 +128,7 @@ void print_update_cb_algs(
 }
 }  // namespace
 
-base_learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -166,7 +166,7 @@ base_learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
 
   VW::details::cb_to_cs& c = data->cbcs;
 
-  size_t problem_multiplier = 2;  // default for DR
+  size_t feature_width = 2;  // default for DR
   c.cb_type = VW::cb_type_from_string(type_string);
   switch (c.cb_type)
   {
@@ -174,10 +174,10 @@ base_learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
       break;
     case VW::cb_type_t::DM:
       if (eval) THROW("direct method can not be used for evaluation --- it is biased.");
-      problem_multiplier = 1;
+      feature_width = 1;
       break;
     case VW::cb_type_t::IPS:
-      problem_multiplier = 1;
+      feature_width = 1;
       break;
     case VW::cb_type_t::MTR:
     case VW::cb_type_t::SM:
@@ -194,10 +194,8 @@ base_learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
     options.insert("csoaa", ss.str());
   }
 
-  auto* base = as_singleline(stack_builder.setup_base_learner());
-  if (eval) { all.example_parser->lbl_parser = VW::cb_eval_label_parser_global; }
-  else { all.example_parser->lbl_parser = VW::cb_label_parser_global; }
-  c.scorer = VW::LEARNER::as_singleline(base->get_learner_by_name_prefix("scorer"));
+  auto base = require_singleline(stack_builder.setup_base_learner(feature_width));
+  c.scorer = VW::LEARNER::require_singleline(base->get_learner_by_name_prefix("scorer"));
 
   std::string name_addition = eval ? "-eval" : "";
   auto learn_ptr = eval ? learn_eval : predict_or_learn<true>;
@@ -210,18 +208,18 @@ base_learner* VW::reductions::cb_algs_setup(VW::setup_base_i& stack_builder)
   VW::learner_print_update_func<cb, VW::example>* print_update_func =
       eval ? print_update_cb_algs<true> : print_update_cb_algs<false>;
 
-  auto* l = make_reduction_learner(
+  auto l = make_reduction_learner(
       std::move(data), base, learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cb_algs_setup) + name_addition)
-                .set_input_label_type(label_type)
-                .set_output_label_type(VW::label_type_t::CS)
-                .set_input_prediction_type(VW::prediction_type_t::MULTICLASS)
-                .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
-                .set_params_per_weight(problem_multiplier)
-                .set_learn_returns_prediction(eval)
-                .set_update_stats(update_stats_func)
-                .set_output_example_prediction(output_example_prediction_func)
-                .set_print_update(print_update_func)
-                .build();
+               .set_input_label_type(label_type)
+               .set_output_label_type(VW::label_type_t::CS)
+               .set_input_prediction_type(VW::prediction_type_t::MULTICLASS)
+               .set_output_prediction_type(VW::prediction_type_t::MULTICLASS)
+               .set_feature_width(feature_width)
+               .set_learn_returns_prediction(eval)
+               .set_update_stats(update_stats_func)
+               .set_output_example_prediction(output_example_prediction_func)
+               .set_print_update(print_update_func)
+               .build();
 
-  return make_base(*l);
+  return l;
 }

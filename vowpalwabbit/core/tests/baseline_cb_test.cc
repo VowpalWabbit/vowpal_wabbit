@@ -61,7 +61,7 @@ TEST(BaselineCB, BaselinePerformsBadly)
     vw->finish_example(ex);
   }
 
-  auto metrics = vw->global_metrics.collect_metrics(vw->l);
+  auto metrics = vw->output_runtime.global_metrics.collect_metrics(vw->l.get());
 
   EXPECT_EQ(metrics.get_bool("baseline_cb_baseline_in_use"), false);
   // if baseline is not in use, it means the CI lower bound is smaller than the policy expectation
@@ -110,7 +110,7 @@ TEST(BaselineCB, BaselineTakesOverPolicy)
   }
 
   // after 400 steps of switched reward dynamics, the baseline CI should have caught up.
-  auto metrics = vw->global_metrics.collect_metrics(vw->l);
+  auto metrics = vw->output_runtime.global_metrics.collect_metrics(vw->l.get());
 
   EXPECT_EQ(metrics.get_bool("baseline_cb_baseline_in_use"), true);
 
@@ -152,7 +152,7 @@ VW::metric_sink run_simulation(int steps, int switch_step)
       vw = VW::initialize(vwtest::make_args("--quiet", "--extra_metrics", "ut_metrics.json", "-i", "model_file.vw"));
     }
   }
-  auto metrics = vw->global_metrics.collect_metrics(vw->l);
+  auto metrics = vw->output_runtime.global_metrics.collect_metrics(vw->l.get());
   return metrics;
 }
 

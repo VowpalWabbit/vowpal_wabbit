@@ -26,7 +26,7 @@ def test_recompute_duals_lower():
 
     np.testing.assert_almost_equal(list(zip(ws, rs)), ws_rs, 5)
 
-    for (w, r) in zip(ws, rs):
+    for w, r in zip(ws, rs):
         ocrl.update(1, w, r)
         ocrl.recomputeduals()
         if ocrl.duals[1][0] is None:
@@ -105,7 +105,7 @@ def test_recompute_duals_upper():
     duals = []
     bounds = []
 
-    for (w, r) in zip(ws, rs):
+    for w, r in zip(ws, rs):
         ocrl.update(1, w, r)
         ocrl.recomputeduals(is_upper=True)
         if ocrl.duals[1][0] is None:
@@ -159,7 +159,7 @@ def test_qlb():
 
     np.testing.assert_almost_equal(list(zip(ws, rs)), ws_rs, 5)
 
-    for (w, r) in zip(ws, rs):
+    for w, r in zip(ws, rs):
         ocrl.update(1, w, r)
         qlbs.append(ocrl.qlb(w, r))
 

@@ -18,6 +18,7 @@ namespace details
 class input_options
 {
 public:
+#ifdef VW_FEAT_NETWORKING_ENABLED
   bool daemon;
   bool foreground;
   uint32_t port;
@@ -27,6 +28,7 @@ public:
   // If a model was saved in daemon or active learning mode, force it to accept
   // local input when loaded instead.
   bool no_daemon = false;
+#endif
 
   bool cache;
   std::vector<std::string> cache_files;
@@ -36,7 +38,7 @@ public:
   bool compressed;
   bool chain_hash_json;
   bool flatbuffer = false;
-#ifdef VW_BUILD_CSV
+#ifdef VW_FEAT_CSV_ENABLED
   std::unique_ptr<VW::parsers::csv::csv_parser_options> csv_opts;
 #endif
   bool stdin_off = false;
@@ -64,7 +66,7 @@ void parse_modules(config::options_i& options, VW::workspace& all, bool interact
     std::vector<std::string>& dictionary_namespaces);
 void instantiate_learner(VW::workspace& all, std::unique_ptr<VW::setup_base_i> learner_builder);
 void parse_sources(config::options_i& options, VW::workspace& all, io_buf& model, bool skip_model_load);
-void print_enabled_reductions(VW::workspace& all, std::vector<std::string>& enabled_reductions);
+void print_enabled_learners(VW::workspace& all, std::vector<std::string>& enabled_learners);
 void parse_dictionary_argument(VW::workspace& all, const std::string& str);
 }  // namespace details
 }  // namespace VW

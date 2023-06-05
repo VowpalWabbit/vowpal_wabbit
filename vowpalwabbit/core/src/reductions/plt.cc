@@ -82,7 +82,7 @@ public:
   }
 };
 
-inline float learn_node(plt& p, uint32_t n, single_learner& base, VW::example& ec)
+inline float learn_node(plt& p, uint32_t n, learner& base, VW::example& ec)
 {
   p.all->sd->t = p.nodes_time[n];
   p.nodes_time[n] += ec.weight;
@@ -90,15 +90,8 @@ inline float learn_node(plt& p, uint32_t n, single_learner& base, VW::example& e
   return ec.loss;
 }
 
-void learn(plt& p, single_learner& base, VW::example& ec)
+void get_nodes_to_update(plt& p, VW::multilabel_label& multilabels)
 {
-  auto multilabels = std::move(ec.l.multilabels);
-  VW::polyprediction pred = std::move(ec.pred);
-
-  double t = p.all->sd->t;
-  double weighted_holdout_examples = p.all->sd->weighted_holdout_examples;
-  p.all->sd->weighted_holdout_examples = 0;
-
   p.positive_nodes.clear();
   p.negative_nodes.clear();
 
@@ -139,7 +132,16 @@ void learn(plt& p, single_learner& base, VW::example& ec)
     }
   }
   else { p.negative_nodes.insert(0); }
+}
 
+void learn(plt& p, learner& base, VW::example& ec)
+{
+  auto multilabels = std::move(ec.l.multilabels);
+  VW::polyprediction pred = std::move(ec.pred);
+
+  get_nodes_to_update(p, multilabels);
+
+  double t = p.all->sd->t;
   float loss = 0;
   ec.l.simple = {1.f};
   ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
@@ -149,8 +151,6 @@ void learn(plt& p, single_learner& base, VW::example& ec)
   for (auto& n : p.negative_nodes) { loss += learn_node(p, n, base, ec); }
 
   p.all->sd->t = t;
-  p.all->sd->weighted_holdout_examples = weighted_holdout_examples;
-
   ec.loss = loss;
   ec.pred = std::move(pred);
   ec.l.multilabels = std::move(multilabels);
@@ -158,7 +158,7 @@ void learn(plt& p, single_learner& base, VW::example& ec)
 
 inline float sigmoid(float x) { return 1.0f / (1.0f + std::exp(-x)); }
 
-inline float predict_node(uint32_t n, single_learner& base, VW::example& ec)
+inline float predict_node(uint32_t n, learner& base, VW::example& ec)
 {
   ec.l.simple = {FLT_MAX};
   ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
@@ -166,12 +166,37 @@ inline float predict_node(uint32_t n, single_learner& base, VW::example& ec)
   return sigmoid(ec.partial_prediction);
 }
 
+inline float evaluate_node(uint32_t n, learner& base, VW::example& ec)
+{
+  base.predict(ec, n);
+  return ec.loss;
+}
+
 template <bool threshold>
-void predict(plt& p, single_learner& base, VW::example& ec)
+void predict(plt& p, learner& base, VW::example& ec)
 {
   auto multilabels = std::move(ec.l.multilabels);
   VW::polyprediction pred = std::move(ec.pred);
 
+  // if true labels are present (e.g., predicting on holdout set),
+  // calculate training loss without updating base learner/weights
+  if (multilabels.label_v.size() > 0)
+  {
+    get_nodes_to_update(p, multilabels);
+
+    float loss = 0;
+    ec.l.simple = {1.f};
+    ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
+    for (auto& n : p.positive_nodes) { loss += evaluate_node(n, base, ec); }
+
+    ec.l.simple.label = -1.f;
+    for (auto& n : p.negative_nodes) { loss += evaluate_node(n, base, ec); }
+
+    ec.loss = loss;
+  }
+  else { ec.loss = 0; }
+
+  // start real prediction
   if (p.probabilities) { pred.a_s.clear(); }
   pred.multilabels.label_v.clear();
 
@@ -220,18 +245,21 @@ void predict(plt& p, single_learner& base, VW::example& ec)
       }
     }
 
-    // calculate evaluation measures
-    uint32_t tp = 0;
-    uint32_t pred_size = pred.multilabels.label_v.size();
-
-    for (uint32_t i = 0; i < pred_size; ++i)
+    // if there are true labels, calculate evaluation measures
+    if (p.true_labels.size() > 0)
     {
-      uint32_t pred_label = pred.multilabels.label_v[i];
-      if (p.true_labels.count(pred_label)) { ++tp; }
+      uint32_t tp = 0;
+      uint32_t pred_size = pred.multilabels.label_v.size();
+
+      for (uint32_t i = 0; i < pred_size; ++i)
+      {
+        uint32_t pred_label = pred.multilabels.label_v[i];
+        if (p.true_labels.count(pred_label)) { ++tp; }
+      }
+      p.tp += tp;
+      p.fp += static_cast<uint32_t>(pred_size) - tp;
+      p.fn += static_cast<uint32_t>(p.true_labels.size()) - tp;
     }
-    p.tp += tp;
-    p.fp += static_cast<uint32_t>(pred_size) - tp;
-    p.fn += static_cast<uint32_t>(p.true_labels.size()) - tp;
   }
 
   // top-k prediction
@@ -270,21 +298,23 @@ void predict(plt& p, single_learner& base, VW::example& ec)
       }
     }
 
-    // calculate precision and recall at
-    float tp_at = 0;
-    for (size_t i = 0; i < p.top_k; ++i)
+    // if there are true labels, calculate precision and recall at k
+    if (p.true_labels.size() > 0)
     {
-      uint32_t pred_label = pred.multilabels.label_v[i];
-      if (p.true_labels.count(pred_label)) { tp_at += 1; }
-      p.p_at[i] += tp_at / (i + 1);
-      if (p.true_labels.size() > 0) { p.r_at[i] += tp_at / p.true_labels.size(); }
+      float tp_at = 0;
+      for (size_t i = 0; i < p.top_k; ++i)
+      {
+        uint32_t pred_label = pred.multilabels.label_v[i];
+        if (p.true_labels.count(pred_label)) { tp_at += 1; }
+        p.p_at[i] += tp_at / (i + 1);
+        if (p.true_labels.size() > 0) { p.r_at[i] += tp_at / p.true_labels.size(); }
+      }
     }
   }
 
   ++p.ec_count;
   p.node_queue.clear();
 
-  ec.loss = 0;
   ec.pred = std::move(pred);
   ec.l.multilabels = std::move(multilabels);
 }
@@ -301,7 +331,7 @@ void output_example_prediction_plt(VW::workspace& all, const plt& p, const VW::e
   if (p.probabilities)
   {
     // print probabilities for predicted labels stored in a_s vector, similar to multilabel_oaa reduction
-    for (auto& sink : all.final_prediction_sink)
+    for (auto& sink : all.output_runtime.final_prediction_sink)
     {
       VW::details::print_action_score(sink.get(), ec.pred.a_s, ec.tag, all.logger);
     }
@@ -321,7 +351,7 @@ void print_update_plt(VW::workspace& all, VW::shared_data&, const plt&, const VW
 void finish(plt& p)
 {
   // print results in the test mode
-  if (!p.all->training && p.ec_count > 0)
+  if (!p.all->runtime_config.training && p.ec_count > 0)
   {
     // top-k predictions
     if (p.top_k > 0)
@@ -329,16 +359,19 @@ void finish(plt& p)
       for (size_t i = 0; i < p.top_k; ++i)
       {
         // TODO: is this the correct logger?
-        *(p.all->trace_message) << "p@" << i + 1 << " = " << p.p_at[i] / p.ec_count << std::endl;
-        *(p.all->trace_message) << "r@" << i + 1 << " = " << p.r_at[i] / p.ec_count << std::endl;
+        *(p.all->output_runtime.trace_message) << "p@" << i + 1 << " = " << p.p_at[i] / p.ec_count << std::endl;
+        *(p.all->output_runtime.trace_message) << "r@" << i + 1 << " = " << p.r_at[i] / p.ec_count << std::endl;
       }
     }
     else if (p.threshold > 0)
     {
       // TODO: is this the correct logger?
-      *(p.all->trace_message) << "hamming loss = " << static_cast<double>(p.fp + p.fn) / p.ec_count << std::endl;
-      *(p.all->trace_message) << "micro-precision = " << static_cast<double>(p.tp) / (p.tp + p.fp) << std::endl;
-      *(p.all->trace_message) << "micro-recall = " << static_cast<double>(p.tp) / (p.tp + p.fn) << std::endl;
+      *(p.all->output_runtime.trace_message)
+          << "hamming loss = " << static_cast<double>(p.fp + p.fn) / p.ec_count << std::endl;
+      *(p.all->output_runtime.trace_message)
+          << "micro-precision = " << static_cast<double>(p.tp) / (p.tp + p.fp) << std::endl;
+      *(p.all->output_runtime.trace_message)
+          << "micro-recall = " << static_cast<double>(p.tp) / (p.tp + p.fn) << std::endl;
     }
   }
 }
@@ -393,7 +426,7 @@ void save_load_tree(plt& p, VW::io_buf& model_file, bool read, bool text)
 }
 }  // namespace
 
-base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -414,9 +447,9 @@ base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  if (all.loss->get_type() != "logistic")
+  if (all.loss_config.loss->get_type() != "logistic")
   {
-    THROW("--plt requires --loss_function=logistic, but instead found: " << all.loss->get_type());
+    THROW("--plt requires --loss_function=logistic, but instead found: " << all.loss_config.loss->get_type());
   }
 
   tree->all = &all;
@@ -430,19 +463,19 @@ base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
   tree->t = static_cast<uint32_t>(e + d);
   tree->ti = tree->t - tree->k;
 
-  if (!all.quiet)
+  if (!all.output_config.quiet)
   {
-    *(all.trace_message) << "PLT k = " << tree->k << "\nkary_tree = " << tree->kary << std::endl;
-    if (!all.training)
+    *(all.output_runtime.trace_message) << "PLT k = " << tree->k << "\nkary_tree = " << tree->kary << std::endl;
+    if (!all.runtime_config.training)
     {
-      if (tree->top_k > 0) { *(all.trace_message) << "top_k = " << tree->top_k << std::endl; }
-      else { *(all.trace_message) << "threshold = " << tree->threshold << std::endl; }
+      if (tree->top_k > 0) { *(all.output_runtime.trace_message) << "top_k = " << tree->top_k << std::endl; }
+      else { *(all.output_runtime.trace_message) << "threshold = " << tree->threshold << std::endl; }
     }
   }
 
   // resize VW::v_arrays
   tree->nodes_time.resize(tree->t);
-  std::fill(tree->nodes_time.begin(), tree->nodes_time.end(), all.initial_t);
+  std::fill(tree->nodes_time.begin(), tree->nodes_time.end(), all.update_rule_config.initial_t);
   tree->node_pred.resize(tree->kary);
   if (tree->top_k > 0)
   {
@@ -450,12 +483,12 @@ base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
     tree->r_at.resize(tree->top_k);
   }
 
-  tree->model_file_version = all.model_file_ver;
+  tree->model_file_version = all.runtime_state.model_file_ver;
 
-  size_t ws = tree->t;
+  size_t feature_width = tree->t;
   std::string name_addition = "";
   VW::prediction_type_t pred_type;
-  void (*pred_ptr)(plt&, single_learner&, VW::example&);
+  void (*pred_ptr)(plt&, learner&, VW::example&);
 
   if (tree->top_k > 0)
   {
@@ -471,23 +504,20 @@ base_learner* VW::reductions::plt_setup(VW::setup_base_i& stack_builder)
   }
   else { pred_type = VW::prediction_type_t::MULTILABELS; }
 
-  auto* l = make_reduction_learner(std::move(tree), as_singleline(stack_builder.setup_base_learner()), learn, pred_ptr,
-      stack_builder.get_setupfn_name(plt_setup) + name_addition)
-                .set_params_per_weight(ws)
-                .set_learn_returns_prediction(false)
-                .set_input_label_type(VW::label_type_t::MULTILABEL)
-                .set_output_label_type(VW::label_type_t::SIMPLE)
-                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
-                .set_output_prediction_type(pred_type)
-                .set_learn_returns_prediction(false)
-                .set_update_stats(update_stats_plt)
-                .set_output_example_prediction(output_example_prediction_plt)
-                .set_print_update(print_update_plt)
-                .set_finish(::finish)
-                .set_save_load(::save_load_tree)
-                .build();
-
-  all.example_parser->lbl_parser = VW::multilabel_label_parser_global;
-
-  return make_base(*l);
+  auto l = make_reduction_learner(std::move(tree), require_singleline(stack_builder.setup_base_learner(feature_width)),
+      learn, pred_ptr, stack_builder.get_setupfn_name(plt_setup) + name_addition)
+               .set_feature_width(feature_width)
+               .set_learn_returns_prediction(false)
+               .set_input_label_type(VW::label_type_t::MULTILABEL)
+               .set_output_label_type(VW::label_type_t::SIMPLE)
+               .set_input_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_output_prediction_type(pred_type)
+               .set_learn_returns_prediction(false)
+               .set_update_stats(update_stats_plt)
+               .set_output_example_prediction(output_example_prediction_plt)
+               .set_print_update(print_update_plt)
+               .set_finish(::finish)
+               .set_save_load(::save_load_tree)
+               .build();
+  return l;
 }

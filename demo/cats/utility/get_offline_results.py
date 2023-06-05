@@ -47,7 +47,6 @@ class EvaluatorOffline:
         self.pmin = 0.05  # epsilon = 5%
 
     def eval(self):
-
         data_file = open(self.srm_file_name, "r")
         line = data_file.readline()
 

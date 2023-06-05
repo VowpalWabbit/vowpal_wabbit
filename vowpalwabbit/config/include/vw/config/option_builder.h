@@ -6,6 +6,7 @@
 
 #include "option.h"
 
+#include <initializer_list>
 #include <memory>
 #include <set>
 #include <string>
@@ -27,7 +28,7 @@ template <typename T>
 class is_vector<T,
     typename std::enable_if<std::is_same<typename std::decay<T>::type,
         std::vector<typename std::decay<T>::type::value_type, typename std::decay<T>::type::allocator_type>>::value>::
-        type> : std::true_type
+        type> : public std::true_type
 {
 };
 
@@ -110,12 +111,10 @@ public:
     return *this;
   }
 
-  option_builder& allow_override(bool allow_override = true)
+  template <typename U = T>
+  typename std::enable_if<!details::is_vector<typename U::value_type>::value, option_builder&>::type allow_override(
+      bool allow_override = true)
   {
-    if (details::is_vector<typename T::value_type>::value)
-    {
-      THROW("allow_override can only apply to scalar option types.")
-    }
     _option_obj.m_allow_override = allow_override;
     return *this;
   }
@@ -123,6 +122,12 @@ public:
   static std::shared_ptr<base_option> finalize(option_builder&& option)
   {
     return std::make_shared<T>(std::move(option._option_obj));
+  }
+
+  option_builder& tags(std::initializer_list<std::string> input_tags)
+  {
+    _option_obj.set_tags(input_tags);
+    return *this;
   }
 
 private:

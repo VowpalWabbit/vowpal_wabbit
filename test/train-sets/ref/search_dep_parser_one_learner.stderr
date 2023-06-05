@@ -9,7 +9,7 @@ Num weight bits = 20
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
-Enabled reductions: ftrl-Proximal-FTRL, nn, scorer-identity, csoaa, search_task
+Enabled learners: ftrl-Proximal-FTRL, nn, scorer-identity, csoaa, search_task
 Input label = CS
 Output pred = MULTICLASS
 average    since      instance            current true      current predicted   cur   cur   predic    cache  examples          

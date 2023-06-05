@@ -4,6 +4,7 @@
 
 #include "vw/config/options.h"
 
+#include "vw/config/option.h"
 #include "vw/config/options_name_extractor.h"
 
 #include <gmock/gmock.h>
@@ -188,4 +189,26 @@ TEST(Options, NameExtractionRecycle)
 
   EXPECT_EQ(name_extractor.generated_name, "im_necessary_v2_opt2");
   EXPECT_EQ(result, false);
+}
+
+TEST(Options, SetTags)
+{
+  typed_option<bool> opt("my_opt");
+  opt.set_tags(std::vector<std::string>{"tagb", "taga", "tagc"});
+  ASSERT_THAT(opt.get_tags(), ::testing::ElementsAre("taga", "tagb", "tagc"));
+}
+
+TEST(Options, SetTagsDuplicate)
+{
+  typed_option<bool> opt("my_opt");
+  EXPECT_THROW(opt.set_tags(std::vector<std::string>{"taga", "tagb", "tagb"}), VW::vw_exception);
+}
+
+TEST(Options, SetTagsInvalidName)
+{
+  typed_option<bool> opt("my_opt");
+  EXPECT_THROW(opt.set_tags(std::vector<std::string>{"tag1"}), VW::vw_exception);
+  EXPECT_THROW(opt.set_tags(std::vector<std::string>{"Tag"}), VW::vw_exception);
+  EXPECT_THROW(opt.set_tags(std::vector<std::string>{"a b"}), VW::vw_exception);
+  EXPECT_THROW(opt.set_tags(std::vector<std::string>{"t-a-g"}), VW::vw_exception);
 }

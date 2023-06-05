@@ -6,7 +6,7 @@ learning rate = 2.56e+06
 initial_t = 128000
 power_t = 1
 decay_learning_rate = 1
-Enabled reductions: gd, scorer-identity, count_label
+Enabled learners: gd, scorer-identity, count_label
 Input label = SIMPLE
 Output pred = SCALAR
 average  since         example        example        current        current  current

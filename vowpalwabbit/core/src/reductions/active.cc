@@ -60,7 +60,7 @@ float query_decision(const active& a, float ec_revert_weight, float k)
 }
 
 template <bool is_learn>
-void predict_or_learn_simulation(active& a, single_learner& base, VW::example& ec)
+void predict_or_learn_simulation(active& a, learner& base, VW::example& ec)
 {
   base.predict(ec);
 
@@ -87,7 +87,7 @@ void predict_or_learn_simulation(active& a, single_learner& base, VW::example& e
 }
 
 template <bool is_learn>
-void predict_or_learn_active(active& a, single_learner& base, VW::example& ec)
+void predict_or_learn_active(active& a, learner& base, VW::example& ec)
 {
   if (is_learn) { base.learn(ec); }
   else { base.predict(ec); }
@@ -168,12 +168,15 @@ void output_example_prediction_active(
     ai = query_decision(data, ec.confidence, static_cast<float>(all.sd->weighted_unlabeled_examples));
   }
 
-  all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag, logger);
-  for (auto& i : all.final_prediction_sink) { active_print_result(i.get(), ec.pred.scalar, ai, ec.tag, logger); }
+  all.print_by_ref(all.output_runtime.raw_prediction.get(), ec.partial_prediction, -1, ec.tag, logger);
+  for (auto& i : all.output_runtime.final_prediction_sink)
+  {
+    active_print_result(i.get(), ec.pred.scalar, ai, ec.tag, logger);
+  }
 }
 }  // namespace
 
-base_learner* VW::reductions::active_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::active_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -193,9 +196,9 @@ base_learner* VW::reductions::active_setup(VW::setup_base_i& stack_builder)
 
   if (options.was_supplied("lda")) { THROW("lda cannot be combined with active learning") }
   auto data = VW::make_unique<active>(active_c0, &all);
-  auto base = as_singleline(stack_builder.setup_base_learner());
+  auto base = require_singleline(stack_builder.setup_base_learner());
 
-  using learn_pred_func_t = void (*)(active&, VW::LEARNER::single_learner&, VW::example&);
+  using learn_pred_func_t = void (*)(active&, VW::LEARNER::learner&, VW::example&);
   learn_pred_func_t learn_func;
   learn_pred_func_t pred_func;
 
@@ -216,7 +219,7 @@ base_learner* VW::reductions::active_setup(VW::setup_base_i& stack_builder)
   }
   else
   {
-    all.active = true;
+    all.reduction_state.active = true;
     learn_func = predict_or_learn_active<true>;
     pred_func = predict_or_learn_active<false>;
     update_stats_func = update_stats_active;
@@ -226,17 +229,17 @@ base_learner* VW::reductions::active_setup(VW::setup_base_i& stack_builder)
   }
 
   // Create new learner
-  auto* l = make_reduction_learner(std::move(data), base, learn_func, pred_func, reduction_name)
-                .set_input_label_type(VW::label_type_t::SIMPLE)
-                .set_output_label_type(VW::label_type_t::SIMPLE)
-                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
-                .set_output_prediction_type(VW::prediction_type_t::SCALAR)
-                .set_learn_returns_prediction(learn_returns_prediction)
-                .set_save_load(save_load)
-                .set_update_stats(update_stats_func)
-                .set_output_example_prediction(output_example_prediction_func)
-                .set_print_update(print_update_func)
-                .build();
+  auto l = make_reduction_learner(std::move(data), base, learn_func, pred_func, reduction_name)
+               .set_input_label_type(VW::label_type_t::SIMPLE)
+               .set_output_label_type(VW::label_type_t::SIMPLE)
+               .set_input_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_output_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_learn_returns_prediction(learn_returns_prediction)
+               .set_save_load(save_load)
+               .set_update_stats(update_stats_func)
+               .set_output_example_prediction(output_example_prediction_func)
+               .set_print_update(print_update_func)
+               .build();
 
-  return make_base(*l);
+  return l;
 }

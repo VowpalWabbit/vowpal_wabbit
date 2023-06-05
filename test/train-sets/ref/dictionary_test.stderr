@@ -10,7 +10,7 @@ decay_learning_rate = 1
 scanned dictionary 'dictionary_test.dict' from 'train-sets/dictionary_test.dict', hash=3226e82e3d58b6b2
 dictionary dictionary_test.dict contains 4 items
 scanned dictionary 'dictionary_test.dict.gz' from 'train-sets/dictionary_test.dict.gz', hash=3226e82e3d58b6b2
-Enabled reductions: gd, scorer-identity, binary, count_label
+Enabled learners: gd, scorer-identity, binary, count_label
 Input label = SIMPLE
 Output pred = SCALAR
 average  since         example        example        current        current  current

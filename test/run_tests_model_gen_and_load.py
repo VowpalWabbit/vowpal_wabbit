@@ -193,6 +193,8 @@ def get_tests(
     explicit_tests: Optional[List[int]] = None,
     color_enum: Type[Union[Color, NoColor]] = Color,
     skip_missing_args: bool = False,
+    skip_network_tests: bool = False,
+    skip_pr_tests: List[int] = [],
 ) -> List[TestData]:
     test_ref_dir: Path = Path(__file__).resolve().parent
 
@@ -208,6 +210,7 @@ def get_tests(
         vw_bin="",
         spanning_tree_bin=None,
         skipped_ids=[],
+        skip_network_tests=skip_network_tests,
         extra_vw_options="",
     )
     filtered_tests = []
@@ -220,6 +223,7 @@ def get_tests(
             and not "--no_stdin" in test.command_line
             and not "--help" in test.command_line
             and not "--flatbuffer" in test.command_line
+            and not test.id in skip_pr_tests
         ):
             test.command_line = re.sub("-f [:a-zA-Z0-9_.\\-/]*", "", test.command_line)
             test.command_line = re.sub("-f=[:a-zA-Z0-9_.\\-/]*", "", test.command_line)
@@ -356,7 +360,26 @@ def main():
         help=f"This should be set when running on a previous version of VW. If new arguments then initializing VW with them is expected to fail.",
     )
 
+    parser.add_argument(
+        "--skip_pr_tests",
+        type=str,
+        action="append",
+        help="Skip specific tests based on Pull Request description",
+    )
+
+    parser.add_argument(
+        "--skip_network_tests",
+        help="Skip all tests that require daemon or network connection",
+        action="store_true",
+    )
+
     args = parser.parse_args()
+    if args.skip_pr_tests and "skip:" in args.skip_pr_tests[0]:
+        skip_pr_tests = [
+            int(x) for x in args.skip_pr_tests[0].split("skip:")[-1].strip().split(" ")
+        ]
+    else:
+        skip_pr_tests = []
     color_enum = NoColor if args.no_color else Color
 
     temp_working_dir = Path.home() / default_working_dir_name
@@ -380,6 +403,8 @@ def main():
             args.test,
             color_enum,
             args.skip_missing_args,
+            args.skip_network_tests,
+            skip_pr_tests,
         )
 
         if args.generate_models:

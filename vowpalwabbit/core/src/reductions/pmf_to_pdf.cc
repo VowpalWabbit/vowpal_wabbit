@@ -180,11 +180,11 @@ void pmf_to_pdf_reduction::learn(example& ec)
 
 namespace
 {
-void predict(VW::reductions::pmf_to_pdf_reduction& data, single_learner&, VW::example& ec) { data.predict(ec); }
-void learn(VW::reductions::pmf_to_pdf_reduction& data, single_learner&, VW::example& ec) { data.learn(ec); }
+void predict(VW::reductions::pmf_to_pdf_reduction& data, learner&, VW::example& ec) { data.predict(ec); }
+void learn(VW::reductions::pmf_to_pdf_reduction& data, learner&, VW::example& ec) { data.learn(ec); }
 }  // namespace
 
-base_learner* VW::reductions::pmf_to_pdf_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::pmf_to_pdf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -245,15 +245,15 @@ base_learner* VW::reductions::pmf_to_pdf_setup(VW::setup_base_i& stack_builder)
 
   options.replace("tree_bandwidth", std::to_string(data->tree_bandwidth));
 
-  auto* p_base = as_singleline(stack_builder.setup_base_learner());
-  data->_p_base = p_base;
+  auto p_base = require_singleline(stack_builder.setup_base_learner());
+  data->_p_base = p_base.get();
 
-  auto* l = VW::LEARNER::make_reduction_learner(
-      std::move(data), p_base, learn, predict, stack_builder.get_setupfn_name(pmf_to_pdf_setup))
-                .set_input_label_type(VW::label_type_t::CONTINUOUS)
-                .set_output_label_type(VW::label_type_t::CB)
-                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
-                .set_output_prediction_type(VW::prediction_type_t::PDF)
-                .build();
-  return make_base(*l);
+  auto l =
+      make_reduction_learner(std::move(data), p_base, learn, predict, stack_builder.get_setupfn_name(pmf_to_pdf_setup))
+          .set_input_label_type(VW::label_type_t::CONTINUOUS)
+          .set_output_label_type(VW::label_type_t::CB)
+          .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
+          .set_output_prediction_type(VW::prediction_type_t::PDF)
+          .build();
+  return l;
 }

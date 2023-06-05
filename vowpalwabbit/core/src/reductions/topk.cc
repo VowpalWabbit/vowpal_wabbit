@@ -32,8 +32,8 @@ public:
   using const_iterator_t = container_t::const_iterator;
   topk(uint32_t k_num);
 
-  void predict(VW::LEARNER::single_learner& base, VW::multi_ex& ec_seq);
-  void learn(VW::LEARNER::single_learner& base, VW::multi_ex& ec_seq);
+  void predict(VW::LEARNER::learner& base, VW::multi_ex& ec_seq);
+  void learn(VW::LEARNER::learner& base, VW::multi_ex& ec_seq);
   std::pair<const_iterator_t, const_iterator_t> get_container_view() const;
 
 private:
@@ -46,7 +46,7 @@ private:
 
 topk::topk(uint32_t k_num) : _k_num(k_num) {}
 
-void topk::predict(VW::LEARNER::single_learner& base, VW::multi_ex& ec_seq)
+void topk::predict(VW::LEARNER::learner& base, VW::multi_ex& ec_seq)
 {
   clear_container();
   ec_seq[0]->pred.scalars.clear();
@@ -62,7 +62,7 @@ void topk::predict(VW::LEARNER::single_learner& base, VW::multi_ex& ec_seq)
   }
 }
 
-void topk::learn(VW::LEARNER::single_learner& base, VW::multi_ex& ec_seq)
+void topk::learn(VW::LEARNER::learner& base, VW::multi_ex& ec_seq)
 {
   clear_container();
   ec_seq[0]->pred.scalars.clear();
@@ -132,14 +132,17 @@ void update_stats_topk(const VW::workspace& /* all */, VW::shared_data& sd, cons
 void output_example_prediction_topk(
     VW::workspace& all, const topk& data, const VW::multi_ex& ec_seq, VW::io::logger& logger)
 {
-  for (auto& sink : all.final_prediction_sink) { print_result(sink.get(), data.get_container_view(), ec_seq, logger); }
+  for (auto& sink : all.output_runtime.final_prediction_sink)
+  {
+    print_result(sink.get(), data.get_container_view(), ec_seq, logger);
+  }
 }
 
 void print_update_topk(VW::workspace& all, VW::shared_data& sd, const topk& /* data */, const VW::multi_ex& ec_seq,
     VW::io::logger& /* unused */)
 {
   const bool should_print_driver_update =
-      all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs;
+      all.sd->weighted_examples() >= all.sd->dump_interval && !all.output_config.quiet && !all.reduction_state.bfgs;
 
   if (should_print_driver_update)
   {
@@ -162,20 +165,20 @@ void print_update_topk(VW::workspace& all, VW::shared_data& sd, const topk& /* d
       sep = ",";
     }
 
-    sd.print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_ss.str(), pred_ss.str(),
-        num_features, all.progress_add, all.progress_arg);
+    sd.print_update(*all.output_runtime.trace_message, all.passes_config.holdout_set_off,
+        all.passes_config.current_pass, label_ss.str(), pred_ss.str(), num_features);
   }
 }
 
 template <bool is_learn>
-void predict_or_learn(topk& d, VW::LEARNER::single_learner& base, VW::multi_ex& ec_seq)
+void predict_or_learn(topk& d, VW::LEARNER::learner& base, VW::multi_ex& ec_seq)
 {
   if (is_learn) { d.learn(base, ec_seq); }
   else { d.predict(base, ec_seq); }
 }
 }  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::topk_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::topk_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   uint32_t k{};
@@ -185,16 +188,16 @@ VW::LEARNER::base_learner* VW::reductions::topk_setup(VW::setup_base_i& stack_bu
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   auto data = VW::make_unique<topk>(k);
-  auto* l = VW::LEARNER::make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()),
+  auto l = make_reduction_learner(std::move(data), require_singleline(stack_builder.setup_base_learner()),
       predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(topk_setup))
-                .set_learn_returns_prediction(true)
-                .set_input_prediction_type(VW::prediction_type_t::SCALAR)
-                .set_output_prediction_type(VW::prediction_type_t::SCALARS)
-                .set_input_label_type(VW::label_type_t::SIMPLE)
-                .set_output_label_type(VW::label_type_t::SIMPLE)
-                .set_output_example_prediction(output_example_prediction_topk)
-                .set_print_update(print_update_topk)
-                .set_update_stats(update_stats_topk)
-                .build();
-  return make_base(*l);
+               .set_learn_returns_prediction(true)
+               .set_input_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_output_prediction_type(VW::prediction_type_t::SCALARS)
+               .set_input_label_type(VW::label_type_t::SIMPLE)
+               .set_output_label_type(VW::label_type_t::SIMPLE)
+               .set_output_example_prediction(output_example_prediction_topk)
+               .set_print_update(print_update_topk)
+               .set_update_stats(update_stats_topk)
+               .build();
+  return l;
 }

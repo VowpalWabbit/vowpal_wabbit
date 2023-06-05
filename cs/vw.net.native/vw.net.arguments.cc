@@ -6,10 +6,10 @@
 API void GetWorkspaceBasicArguments(
     vw_net_native::workspace_context* workspace, vw_net_native::vw_basic_arguments_t* args)
 {
-  args->is_test_only = !workspace->vw->training;
-  args->num_passes = (int)workspace->vw->numpasses;
-  args->learning_rate = workspace->vw->eta;
-  args->power_t = workspace->vw->power_t;
+  args->is_test_only = !workspace->vw->runtime_config.training;
+  args->num_passes = (int)workspace->vw->runtime_config.numpasses;
+  args->learning_rate = workspace->vw->update_rule_config.eta;
+  args->power_t = workspace->vw->update_rule_config.power_t;
 
   if (workspace->vw->options->was_supplied("cb"))
   {
@@ -19,12 +19,12 @@ API void GetWorkspaceBasicArguments(
 
 API const char* GetWorkspaceDataFilename(vw_net_native::workspace_context* workspace)
 {
-  return workspace->vw->data_filename.c_str();
+  return workspace->vw->parser_runtime.data_filename.c_str();
 }
 
 API const char* GetFinalRegressorFilename(vw_net_native::workspace_context* workspace)
 {
-  return workspace->vw->final_regressor_name.c_str();
+  return workspace->vw->output_model_config.final_regressor_name.c_str();
 }
 
 API char* SerializeCommandLine(vw_net_native::workspace_context* workspace)
@@ -42,20 +42,23 @@ API char* SerializeCommandLine(vw_net_native::workspace_context* workspace)
 
 API size_t GetInitialRegressorFilenamesCount(vw_net_native::workspace_context* workspace)
 {
-  return workspace->vw->initial_regressors.size();
+  return workspace->vw->initial_weights_config.initial_regressors.size();
 }
 
 API vw_net_native::dotnet_size_t GetInitialRegressorFilenames(
     vw_net_native::workspace_context* workspace, const char** filenames, vw_net_native::dotnet_size_t count)
 {
-  std::vector<std::string>& initial_regressors = workspace->vw->initial_regressors;
+  std::vector<std::string>& initial_regressors = workspace->vw->initial_weights_config.initial_regressors;
   size_t size = initial_regressors.size();
   if ((size_t)count < size)
   {
     return vw_net_native::size_to_neg_dotnet_size(size);  // Not enough space in destination buffer
   }
 
-  for (size_t i = 0; i < size; i++) { filenames[i] = workspace->vw->initial_regressors[i].c_str(); }
+  for (size_t i = 0; i < size; i++)
+  {
+    filenames[i] = workspace->vw->initial_weights_config.initial_regressors[i].c_str();
+  }
 
-  return workspace->vw->initial_regressors.size();
+  return workspace->vw->initial_weights_config.initial_regressors.size();
 }
