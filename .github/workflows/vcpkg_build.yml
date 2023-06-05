@@ -42,6 +42,7 @@ jobs:
         with:
           path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}/*
           key: ${{ matrix.os }}-build-${{ env.cache-name }}-${{ hashFiles('vcpkg.json') }}-${{ env.VCPKG_COMMIT }}"
+      - run: echo ${{ env.VCPKG_ROOT }}
       - uses: lukka/run-cmake@v10
         with:
           cmakeListsTxtPath: "${{ github.workspace }}/CMakeLists.txt"
