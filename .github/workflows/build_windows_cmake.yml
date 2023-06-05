@@ -46,9 +46,10 @@ jobs:
       - uses: ilammy/msvc-dev-cmd@v1
       - name: Vcpkg install
         run: |
-          echo "VCPKG_ROOT=${{ env.VCPKG_ROOT }}" >> $GITHUB_ENV
-          ${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.bat
-          run: ${{ env.VCPKG_ROOT_VW }}/vcpkg.exe --triplet x64-windows install zlib flatbuffers
+          export VCPKG_ROOT=${{ env.VCPKG_ROOT }}
+          echo "VCPKG_ROOT=${VCPKG_ROOT}" >> $GITHUB_ENV
+          ${VCPKG_ROOT}/bootstrap-vcpkg.bat
+          ${VCPKG_ROOT}/vcpkg.exe --triplet x64-windows install zlib flatbuffers
       - name: Generate project files
         run: |
           cmake -S "${{ env.SOURCE_DIR }}" -B "${{ env.CMAKE_BUILD_DIR }}" -A "x64" -DVCPKG_MANIFEST_MODE=OFF -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_ROOT_VW }}/scripts/buildsystems/vcpkg.cmake" -DVW_FEAT_FLATBUFFERS=On -DVW_FEAT_CSV=On -DVW_FEAT_CB_GRAPH_FEEDBACK=On -Dvw_BUILD_NET_FRAMEWORK=On
