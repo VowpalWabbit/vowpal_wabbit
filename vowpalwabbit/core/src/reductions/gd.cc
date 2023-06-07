@@ -1115,9 +1115,21 @@ void VW::details::save_load_online_state_gd(VW::workspace& all, VW::io_buf& mode
       sizeof(all.update_rule_config.initial_t), read, msg, text);
 
   assert(pms.size() >= 1);
-  msg << "norm normalizer " << pms[0].normalized_sum_norm_x << "\n";
-  VW::details::bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&pms[0].normalized_sum_norm_x),
-      sizeof(pms[0].normalized_sum_norm_x), read, msg, text);
+  if (g != nullptr && g->per_model_save_load)
+  {
+    for (size_t ind = 0; ind < pms.size(); ++ind)
+    {
+      msg << "norm normalizer_" << ind << " " << pms[ind].normalized_sum_norm_x << "\n";
+      VW::details::bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&pms[ind].normalized_sum_norm_x),
+          sizeof(pms[ind].normalized_sum_norm_x), read, msg, text);
+    }
+  }
+  else
+  {
+    msg << "norm normalizer " << pms[0].normalized_sum_norm_x << "\n";
+    VW::details::bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&pms[0].normalized_sum_norm_x),
+        sizeof(pms[0].normalized_sum_norm_x), read, msg, text);
+  }
 
   msg << "t " << all.sd->t << "\n";
   VW::details::bin_text_read_write_fixed(
@@ -1174,9 +1186,21 @@ void VW::details::save_load_online_state_gd(VW::workspace& all, VW::io_buf& mode
     // restore some data to allow save_resume work more accurate
 
     // fix average loss
-    msg << "total_weight " << pms[0].total_weight << "\n";
-    VW::details::bin_text_read_write_fixed(
-        model_file, reinterpret_cast<char*>(&pms[0].total_weight), sizeof(pms[0].total_weight), read, msg, text);
+    if (g != nullptr && g->per_model_save_load)
+    {
+      for (size_t ind = 0; ind < pms.size(); ++ind)
+      {
+        msg << "total_weight_" << ind << " " << pms[ind].total_weight << "\n";
+        VW::details::bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&pms[ind].total_weight),
+            sizeof(pms[ind].total_weight), read, msg, text);
+      }
+    }
+    else
+    {
+      msg << "total_weight " << pms[0].total_weight << "\n";
+      VW::details::bin_text_read_write_fixed(
+          model_file, reinterpret_cast<char*>(&pms[0].total_weight), sizeof(pms[0].total_weight), read, msg, text);
+    }
 
     // fix "loss since last" for first printed out example details
     msg << "sd::oec.weighted_labeled_examples " << all.sd->old_weighted_labeled_examples << "\n";
@@ -1435,6 +1459,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i&
   all.sd->contraction = L2_STATE_DEFAULT;
   float local_gravity = 0;
   float local_contraction = 0;
+  bool per_model_save_load = false;
 
   option_group_definition new_options("[Reduction] Gradient Descent");
   new_options
@@ -1461,7 +1486,11 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i&
       .add(make_option("l2_state", local_contraction)
                .allow_override()
                .default_value(L2_STATE_DEFAULT)
-               .help("Amount of accumulated implicit l2 regularization"));
+               .help("Amount of accumulated implicit l2 regularization"))
+      .add(make_option("per_model_save_load", per_model_save_load)
+               .keep()
+               .allow_override()
+               .help("Save and load per model state"));
   options.add_and_parse(new_options);
 
   if (options.was_supplied("l1_state")) { all.sd->gravity = local_gravity; }
@@ -1475,6 +1504,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_setup(VW::setup_base_i&
   g->neg_norm_power = (all.weights.adaptive ? (all.update_rule_config.power_t - 1.f) : -1.f);
   g->neg_power_t = -all.update_rule_config.power_t;
   g->sparse_l2 = sparse_l2;
+  g->per_model_save_load = per_model_save_load;
 
   if (all.update_rule_config.initial_t >
       0)  // for the normalized update: if initial_t is bigger than 1 we interpret this as if we had

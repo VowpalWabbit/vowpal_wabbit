@@ -55,6 +55,7 @@ public:
   bool adaptive_input = false;
   bool normalized_input = false;
   bool adax = false;
+  bool per_model_save_load = false;
   VW::workspace* all = nullptr;  // parallel, features, parameters
 };
 }  // namespace reductions
