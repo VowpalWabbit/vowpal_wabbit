@@ -354,13 +354,29 @@ void save_load(VW::reductions::cb_adf& c, VW::io_buf& model_file, bool read, boo
   }
 
   std::stringstream msg;
-  msg << "event_sum " << c.get_gen_cs_mtr().per_model_state[0].event_sum << "\n";
-  VW::details::bin_text_read_write_fixed(model_file, (char*)&c.get_gen_cs_mtr().per_model_state[0].event_sum,
-      sizeof(c.get_gen_cs_mtr().per_model_state[0].event_sum), read, msg, text);
+  if (c.per_model_save_load())
+  {
+    for (size_t ind = 0; ind < c.get_gen_cs_mtr().per_model_state.size(); ++ind)
+    {
+      msg << "event_sum_" << c.get_gen_cs_mtr().per_model_state[ind].event_sum << "\n";
+      VW::details::bin_text_read_write_fixed(model_file, (char*)&c.get_gen_cs_mtr().per_model_state[ind].event_sum,
+          sizeof(c.get_gen_cs_mtr().per_model_state[ind].event_sum), read, msg, text);
 
-  msg << "action_sum " << c.get_gen_cs_mtr().per_model_state[0].action_sum << "\n";
-  VW::details::bin_text_read_write_fixed(model_file, (char*)&c.get_gen_cs_mtr().per_model_state[0].action_sum,
-      sizeof(c.get_gen_cs_mtr().per_model_state[0].action_sum), read, msg, text);
+      msg << "action_sum " << c.get_gen_cs_mtr().per_model_state[ind].action_sum << "\n";
+      VW::details::bin_text_read_write_fixed(model_file, (char*)&c.get_gen_cs_mtr().per_model_state[ind].action_sum,
+          sizeof(c.get_gen_cs_mtr().per_model_state[ind].action_sum), read, msg, text);
+    }
+  }
+  else
+  {
+    msg << "event_sum " << c.get_gen_cs_mtr().per_model_state[0].event_sum << "\n";
+    VW::details::bin_text_read_write_fixed(model_file, (char*)&c.get_gen_cs_mtr().per_model_state[0].event_sum,
+        sizeof(c.get_gen_cs_mtr().per_model_state[0].event_sum), read, msg, text);
+
+    msg << "action_sum " << c.get_gen_cs_mtr().per_model_state[0].action_sum << "\n";
+    VW::details::bin_text_read_write_fixed(model_file, (char*)&c.get_gen_cs_mtr().per_model_state[0].action_sum,
+        sizeof(c.get_gen_cs_mtr().per_model_state[0].action_sum), read, msg, text);
+  }
 }
 
 void cb_adf_merge(const std::vector<float>& /* per_model_weights */,
@@ -419,6 +435,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_adf_setup(VW::setup_bas
   bool rank_all;
   float clip_p;
   bool no_predict = false;
+  bool per_model_save_load = false;
 
   option_group_definition new_options("[Reduction] Contextual Bandit with Action Dependent Features");
   new_options
@@ -436,7 +453,12 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_adf_setup(VW::setup_bas
                .keep()
                .default_value("mtr")
                .one_of({"ips", "dm", "dr", "mtr", "sm"})
-               .help("Contextual bandit method to use"));
+               .help("Contextual bandit method to use"))
+      .add(make_option("per_model_save_load", per_model_save_load)
+               .keep()
+               .allow_override()
+               .help("Save and load per model state"));
+  ;
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
@@ -490,7 +512,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_adf_setup(VW::setup_bas
 
   if (options.was_supplied("baseline") && check_baseline_enabled) { options.insert("check_enabled", ""); }
 
-  auto ld = VW::make_unique<VW::reductions::cb_adf>(cb_type, rank_all, clip_p, no_predict, feature_width_above, &all);
+  auto ld = VW::make_unique<VW::reductions::cb_adf>(
+      cb_type, rank_all, clip_p, no_predict, feature_width_above, per_model_save_load, &all);
 
   auto base = require_multiline(stack_builder.setup_base_learner(feature_width));
 
