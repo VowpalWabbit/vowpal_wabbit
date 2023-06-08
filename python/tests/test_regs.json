@@ -1,0 +1,46 @@
+[
+    {
+        "data_func": "constant_function",
+        "data_func_args": {
+            "no_sample": 2000,
+            "constant": 5,
+            "lower_bound": 1,
+            "upper_bound": 100
+        },
+        "assert_functions": [
+            {
+                "assert_func": "assert_prediction",
+                "assert_func_args": {
+                    "expected_value": 5,
+                    "threshold": 0.5
+                }
+            },
+            {
+                "assert_func": "assert_weight",
+                "assert_func_args": {
+                    "expected_weights": [
+                        5,
+                        0
+                    ],
+                    "atol": 100,
+                    "rtol": 10
+                }
+            }
+        ],
+        "grid": {
+            "#base": [
+                "-P 50000 --preserve_performance_counters --save_resume "
+            ],
+            "#reg": [
+                "",
+                "--coin",
+                "--ftrl",
+                "--pistol"
+            ]
+        },
+        "output": [
+            "--readable_model",
+            "-p"
+        ]
+    }
+]

@@ -7,11 +7,12 @@ import itertools
 # Get the current directory
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
+
 def json_to_dict_list(file):
-    with open(current_dir + "/" + file, 'r') as file:
+    with open(current_dir + "/" + file, "r") as file:
         # Load the JSON data
         return json.load(file)
-        
+
 
 def dynamic_function_call(module_name, function_name, *args, **kwargs):
     try:
@@ -36,7 +37,6 @@ def get_function_object(module_name, function_name):
         print(f"Function '{function_name}' not found in module '{module_name}'.")
 
 
-
 def generate_test_function(test_data):
     @pytest.dynamic
     def test_dynamic():
@@ -59,9 +59,9 @@ def generate_pytest_from_json(filepath):
     for test_case in json_data:
         test_function = generate_test_function(test_case)
         globals()[test_function.__name__] = test_function
-    
+
 
 def generate_string_combinations(*lists):
     combinations = list(itertools.product(*lists))
-    combinations = [''.join(combination) for combination in combinations]
+    combinations = ["".join(combination) for combination in combinations]
     return combinations

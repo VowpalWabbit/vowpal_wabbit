@@ -1,0 +1,60 @@
+[
+    {
+        "data_func": "generate_cb_data",
+        "data_func_args": {
+            "num_examples": 100,
+            "num_features": 1,
+            "num_action": 1,
+            "reward_function": {
+                "name": "constant_reward",
+                "params": {}
+            },
+            "probability_function": {
+                "name": "constant_probability",
+                "params": {}
+            }
+        },
+        "assert_functions": [
+            {
+                "assert_func": "assert_loss",
+                "assert_func_args": {"expected_loss": 1}
+            },
+            {
+                "assert_func": "assert_prediction",
+                "assert_func_args": {
+                    "expected_value": 0,
+                    "threshold": 0.5
+                }
+            },
+            {
+                "assert_func": "assert_weight",
+                "assert_func_args": {
+                    "expected_weights": [
+                        5,
+                        0
+                    ],
+                    "atol": 100,
+                    "rtol": 100
+                }
+            }
+        ],
+        "grid": {
+            "#base": [
+                "--cb 1 -P 10000 --preserve_performance_counters --save_resume"
+            ],
+            "--cb_type": [
+                "ips",
+                "mtr"
+            ]
+        },
+        "*": {
+            "--cb": [
+                1
+            ]
+        },
+        "output": [
+            "--readable_model",
+            "-p"
+        ]
+    }
+]
