@@ -825,6 +825,10 @@ def tovw(x, y=None, sample_weight=None, convert_labels=False):
         for row in rows:
             for col in cols:
                 x[row, col] = INVALID_CHARS.sub(".", x[row, col])
+    elif x.dtype.kind == "u":
+        raise TypeError(
+            "tovw does not support unsigned integers. Please convert to signed integers. See issue: https://github.com/VowpalWabbit/vowpal_wabbit/issues/4609"
+        )
 
     # convert input to svmlight format
     s = io.BytesIO()
