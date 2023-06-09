@@ -1055,20 +1055,23 @@ void save_load_online_state_weights(VW::workspace& all, VW::io_buf& model_file, 
       if (ftrl3_write)
       {
         brw = write_index(model_file, msg, text, all.initial_weights_config.num_bits, i);
-        msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << "\n";
+        if (text) { msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << "\n"; }
         brw += VW::details::bin_text_write_fixed(model_file, (char*)&(*v), 3 * sizeof(*v), msg, text);
       }
       else if (ftrl4_write)
       {
         brw = write_index(model_file, msg, text, all.initial_weights_config.num_bits, i);
-        msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << " " << (&(*v))[3] << "\n";
+        if (text) { msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << " " << (&(*v))[3] << "\n"; }
         brw += VW::details::bin_text_write_fixed(model_file, (char*)&(*v), 4 * sizeof(*v), msg, text);
       }
       else if (ftrl6_write)
       {
         brw = write_index(model_file, msg, text, all.initial_weights_config.num_bits, i);
-        msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << " " << (&(*v))[3] << " " << (&(*v))[4] << " "
-            << (&(*v))[5] << "\n";
+        if (text)
+        {
+          msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << " " << (&(*v))[3] << " " << (&(*v))[4] << " "
+              << (&(*v))[5] << "\n";
+        }
         brw += VW::details::bin_text_write_fixed(model_file, (char*)&(*v), 6 * sizeof(*v), msg, text);
       }
       else if (g == nullptr || (!all.weights.adaptive && !all.weights.normalized))
@@ -1076,7 +1079,7 @@ void save_load_online_state_weights(VW::workspace& all, VW::io_buf& model_file, 
         if (*v != 0.)
         {
           brw = write_index(model_file, msg, text, all.initial_weights_config.num_bits, i);
-          msg << ":" << *v << "\n";
+          if (text) { msg << ":" << *v << "\n"; }
           brw += VW::details::bin_text_write_fixed(model_file, (char*)&(*v), sizeof(*v), msg, text);
         }
       }
@@ -1086,7 +1089,7 @@ void save_load_online_state_weights(VW::workspace& all, VW::io_buf& model_file, 
         if (*v != 0. || (&(*v))[1] != 0.)
         {
           brw = write_index(model_file, msg, text, all.initial_weights_config.num_bits, i);
-          msg << ":" << *v << " " << (&(*v))[1] << "\n";
+          if (text) { msg << ":" << *v << " " << (&(*v))[1] << "\n"; }
           brw += VW::details::bin_text_write_fixed(model_file, (char*)&(*v), 2 * sizeof(*v), msg, text);
         }
       }
@@ -1096,7 +1099,7 @@ void save_load_online_state_weights(VW::workspace& all, VW::io_buf& model_file, 
         if (*v != 0. || (&(*v))[1] != 0. || (&(*v))[2] != 0.)
         {
           brw = write_index(model_file, msg, text, all.initial_weights_config.num_bits, i);
-          msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << "\n";
+          if (text) { msg << ":" << *v << " " << (&(*v))[1] << " " << (&(*v))[2] << "\n"; }
           brw += VW::details::bin_text_write_fixed(model_file, (char*)&(*v), 3 * sizeof(*v), msg, text);
         }
       }
