@@ -246,7 +246,9 @@ size_t read_model_field(io_buf& io, VW::reductions::epsilon_decay::epsilon_decay
 {
   size_t bytes = 0;
   epsilon_decay.conf_seq_estimators.clear();
+  epsilon_decay._weight_indices.clear();
   bytes += read_model_field(io, epsilon_decay.conf_seq_estimators);
+  bytes += read_model_field(io, epsilon_decay._weight_indices);
   bytes += read_model_field(io, epsilon_decay._global_counter);
   return bytes;
 }
@@ -256,6 +258,7 @@ size_t write_model_field(io_buf& io, const VW::reductions::epsilon_decay::epsilo
 {
   size_t bytes = 0;
   bytes += write_model_field(io, epsilon_decay.conf_seq_estimators, upstream_name + "conf_seq_estimators", text);
+  bytes += write_model_field(io, epsilon_decay._weight_indices, upstream_name + "_weight_indices", text);
   bytes += write_model_field(io, epsilon_decay._global_counter, upstream_name + "_global_counter", text);
   return bytes;
 }
