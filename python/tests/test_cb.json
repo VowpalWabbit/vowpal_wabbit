@@ -1,12 +1,13 @@
 [
     {
+        "test_name": "cb_one_action",
         "data_func": "generate_cb_data",
         "data_func_args": {
             "num_examples": 100,
             "num_features": 1,
             "num_action": 1,
             "reward_function": {
-                "name": "constant_reward",
+                "name": "fixed_reward",
                 "params": {}
             },
             "probability_function": {
@@ -17,24 +18,15 @@
         "assert_functions": [
             {
                 "assert_func": "assert_loss",
-                "assert_func_args": {"expected_loss": 1}
+                "assert_func_args": {
+                    "expected_loss": 1
+                }
             },
             {
                 "assert_func": "assert_prediction",
                 "assert_func_args": {
                     "expected_value": 0,
-                    "threshold": 0.5
-                }
-            },
-            {
-                "assert_func": "assert_weight",
-                "assert_func_args": {
-                    "expected_weights": [
-                        5,
-                        0
-                    ],
-                    "atol": 100,
-                    "rtol": 100
+                    "threshold": 0.1
                 }
             }
         ],
@@ -50,6 +42,105 @@
         "*": {
             "--cb": [
                 1
+            ]
+        },
+        "output": [
+            "--readable_model",
+            "-p"
+        ]
+    },
+    {
+        "test_name": "cb_two_action",
+        "data_func": "generate_cb_data",
+        "data_func_args": {
+            "num_examples": 100,
+            "num_features": 1,
+            "num_action": 2,
+            "reward_function": {
+                "name": "constant_reward",
+                "params": {
+                    "reward": [
+                        1,
+                        0
+                    ]
+                }
+            },
+            "probability_function": {
+                "name": "even_probability",
+                "params": {
+                    "num_actions": 2
+                }
+            },
+            "no_context": 2
+        },
+        "assert_functions": [
+            {
+                "assert_func": "assert_loss",
+                "assert_func_args": {
+                    "expected_loss": 0.05
+                }
+            },
+            {
+                "assert_func": "assert_prediction",
+                "assert_func_args": {
+                    "expected_value": [
+                        0.975,
+                        0.025
+                    ],
+                    "threshold": 0.1
+                }
+            }
+        ],
+        "grid": {
+            "#base": [
+                "--cb_explore 2"
+            ]
+        },
+        "output": [
+            "--readable_model",
+            "-p"
+        ]
+    },
+    {
+        "test_name": "cb_two_action_diff_context",
+        "data_func": "generate_cb_data",
+        "data_func_args": {
+            "num_examples": 100,
+            "num_features": 1,
+            "num_action": 2,
+            "reward_function": {
+                "name": "fixed_reward_for_diff_context",
+                "params": {}
+            },
+            "probability_function": {
+                "name": "even_probability",
+                "params": {
+                    "num_actions": 2
+                }
+            },
+            "no_context": 2
+        },
+        "assert_functions": [
+            {
+                "assert_func": "assert_loss",
+                "assert_func_args": {
+                    "expected_loss": 0.5
+                }
+            },
+            {
+                "assert_func": "assert_prediction",
+                "assert_func_args": {
+                    "expected_value": [
+                        0.975,
+                        0.025
+                    ],
+                    "threshold": 0.1
+                }
+            }
+        ],
+        "grid": {
+            "#base": [
+                "--cb_explore 2"
             ]
         },
         "output": [

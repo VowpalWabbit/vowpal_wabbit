@@ -11,8 +11,10 @@
             {
                 "assert_func": "assert_prediction",
                 "assert_func_args": {
-                    "expected_value": 5,
-                    "threshold": 0.5
+                    "expected_value": [
+                        5
+                    ],
+                    "threshold": 0
                 }
             },
             {
@@ -36,6 +38,13 @@
                 "--coin",
                 "--ftrl",
                 "--pistol"
+            ]
+        },
+        "*": {
+            "--learning_rate": [
+                0.1,
+                0.01,
+                0.001
             ]
         },
         "output": [

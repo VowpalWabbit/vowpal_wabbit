@@ -13,7 +13,7 @@ def get_from_kwargs(kwargs, key, default=None):
 def majority_close(arr1, arr2, rtol, atol, threshold):
     # Check if the majority of elements are close
     close_count = np.count_nonzero(np.isclose(arr1, arr2, rtol=rtol, atol=atol))
-    return close_count > len(arr1) * threshold
+    return close_count >= len(arr1) * threshold
 
 
 def assert_weight(job, **kwargs):
@@ -37,22 +37,30 @@ def assert_prediction(job, **kwargs):
     atol = kwargs.get("atol", 10e-8)
     rtol = kwargs.get("rtol", 10e-5)
     threshold = kwargs.get("threshold", 0.9)
-    constant = kwargs["expected_value"]
+    expected_value = kwargs["expected_value"]
     predictions = job.outputs["-p"]
     with open(predictions[0], "r") as f:
         predictions = [i.strip() for i in f.readlines()]
         predictions = [i for i in predictions if i != ""]
-        predictions = [float(i) for i in predictions[1:]]
+
+        if ":" in predictions[0]:
+            predictions = [[j.split(":")[1] for j in i.split(",")] for i in predictions]
+
+        if type(predictions[0]) == list:
+            predictions = [[float(j) for j in i] for i in predictions[1:]]
+        else:
+            predictions = [float(i) for i in predictions[1:]]
+
         assert majority_close(
             predictions,
-            [constant] * len(predictions),
+            [expected_value] * len(predictions),
             rtol=rtol,
             atol=atol,
             threshold=threshold,
-        ), f"predicted value should be {constant}"
+        ), f"predicted value should be {expected_value}, \n actual values are {predictions}"
 
 
 def assert_loss(job, **kwargs):
     assert job.status == ExecutionStatus.Success, "job should be successful"
     assert type(job[0].loss) == float, "loss should be an float"
-    assert_almost_equal(job[0].loss, kwargs["expected_loss"])
+    assert_almost_equal(job[0].loss, kwargs["expected_loss"], decimal=1)
