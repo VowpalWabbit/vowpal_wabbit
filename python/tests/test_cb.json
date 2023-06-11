@@ -106,7 +106,7 @@
         "data_func": "generate_cb_data",
         "data_func_args": {
             "num_examples": 100,
-            "num_features": 1,
+            "num_features": 2,
             "num_action": 2,
             "reward_function": {
                 "name": "fixed_reward_for_diff_context",
@@ -140,7 +140,7 @@
         ],
         "grid": {
             "#base": [
-                "--cb_explore 2"
+                "--cb_explore_adf"
             ]
         },
         "output": [

@@ -19,3 +19,4 @@ def fixed_reward_for_diff_context(**kwargs):
         return 0
     elif chosen_context == 2 and chosen_action == 1:
         return 1
+    return 1

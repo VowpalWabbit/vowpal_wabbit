@@ -3,6 +3,10 @@ from numpy.testing import assert_allclose, assert_almost_equal
 from vw_executor.vw import ExecutionStatus
 
 
+def remove_non_digits(string):
+    return "".join(char for char in string if char.isdigit() or char == ".")
+
+
 def get_from_kwargs(kwargs, key, default=None):
     if key in kwargs:
         return kwargs[key]
@@ -40,24 +44,21 @@ def assert_prediction(job, **kwargs):
     expected_value = kwargs["expected_value"]
     predictions = job.outputs["-p"]
     with open(predictions[0], "r") as f:
-        predictions = [i.strip() for i in f.readlines()]
-        predictions = [i for i in predictions if i != ""]
-
-        if ":" in predictions[0]:
-            predictions = [[j.split(":")[1] for j in i.split(",")] for i in predictions]
-
-        if type(predictions[0]) == list:
-            predictions = [[float(j) for j in i] for i in predictions[1:]]
+        prediction = [i.strip() for i in f.readlines()]
+        prediction = [i for i in prediction if i != ""]
+        if ":" in prediction[0]:
+            prediction = [[j.split(":")[1] for j in i.split(",")] for i in prediction]
+        if type(prediction[0]) == list:
+            prediction = [[float(remove_non_digits(j)) for j in i] for i in prediction]
         else:
-            predictions = [float(i) for i in predictions[1:]]
-
+            prediction = [float(remove_non_digits(i)) for i in prediction]
         assert majority_close(
-            predictions,
-            [expected_value] * len(predictions),
+            prediction,
+            [expected_value] * len(prediction),
             rtol=rtol,
             atol=atol,
             threshold=threshold,
-        ), f"predicted value should be {expected_value}, \n actual values are {predictions}"
+        ), f"predicted value should be {expected_value}, \n actual values are {prediction}"
 
 
 def assert_loss(job, **kwargs):
