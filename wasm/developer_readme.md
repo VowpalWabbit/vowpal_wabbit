@@ -38,6 +38,7 @@ Make sure Emscripten is activated.
 ```sh
 emcmake cmake --preset wasm -DCMAKE_BUILD_TYPE=MinSizeRel -DCMAKE_TOOLCHAIN_FILE=$(pwd)/ext_libs/vcpkg/scripts/buildsystems/vcpkg.cmake
 cmake --build build --target vw-wasm
+npm run build
 ```
 
 ### Test

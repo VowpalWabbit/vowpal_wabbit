@@ -94,7 +94,7 @@ export default new Promise((resolve) => {
 
             /**
              * The current total sum of the progressive validation loss
-             * 
+             *
              * @returns {number} the sum of all losses accumulated by the model
              */
             sumLoss(): number {
@@ -102,10 +102,10 @@ export default new Promise((resolve) => {
             }
 
             /**
-             * 
+             *
              * Takes a file location and stores the VW model in binary format in the file.
-             * 
-             * @param {string} model_file the path to the file where the model will be saved 
+             *
+             * @param {string} model_file the path to the file where the model will be saved
              */
             saveModelToFile(model_file: string) {
                 let char_vector = this._instance.getModel();
@@ -124,9 +124,9 @@ export default new Promise((resolve) => {
 
             /**
              * Gets the VW model in binary format as a Uint8Array that can be saved to a file.
-             * There is no need to delete or free the array returned by this function. 
+             * There is no need to delete or free the array returned by this function.
              * If the same array is however used to re-load the model into VW, then the array needs to be stored in wasm memory (see loadModelFromArray)
-             * 
+             *
              * @returns {Uint8Array} the VW model in binary format
              */
             getModelAsArray(): Uint8Array {
@@ -142,9 +142,9 @@ export default new Promise((resolve) => {
             }
 
             /**
-             * 
+             *
              * Takes a file location and loads the VW model from the file.
-             * 
+             *
              * @param {string} model_file the path to the file where the model will be loaded from
              */
             loadModelFromFile(model_file: string) {
@@ -159,9 +159,9 @@ export default new Promise((resolve) => {
             /**
              * Takes a model in an array binary format and loads it into the VW instance.
              * The memory must be allocated via the WebAssembly module's _malloc function and should later be freed via the _free function.
-             * 
+             *
              * @param {number} model_array_ptr the pre-loaded model's array pointer
-             *  The memory must be allocated via the WebAssembly module's _malloc function and should later be freed via the _free function. 
+             *  The memory must be allocated via the WebAssembly module's _malloc function and should later be freed via the _free function.
              * @param {number} model_array_len the pre-loaded model's array length
              */
             loadModelFromArray(model_array_ptr: number, model_array_len: number) {
@@ -186,7 +186,7 @@ export default new Promise((resolve) => {
             /**
              * Creates a new Vowpal Wabbit workspace.
              * Can accept either or both string arguments and a model file.
-             * 
+             *
              * @constructor
              * @param {Function} readSync - A function that reads a file synchronously and returns a buffer
              * @param {Function} writeSync - A function that writes a buffer to a file synchronously
@@ -206,11 +206,11 @@ export default new Promise((resolve) => {
             }
 
             /**
-             * Parse a line of text into a VW example. 
-             * The example can then be used for prediction or learning. 
+             * Parse a line of text into a VW example.
+             * The example can then be used for prediction or learning.
              * finishExample() must be called and then delete() on the example, when it is no longer needed.
-             * 
-             * @param {string} line 
+             *
+             * @param {string} line
              * @returns a parsed vw example that can be used for prediction or learning
              */
             parse(line: string): object {
@@ -218,8 +218,23 @@ export default new Promise((resolve) => {
             }
 
             /**
+             * Creates a new example from a dense array of features, where the key of the map is the namespace.
+             *
+             * @example
+             * let example = model.create_example_from_dense({
+             *     my_namespace: [0.3, 0.2, 0.1, 0.3, 0.5, 0.9]
+             * });
+             * @param {Map<string, number[]>} features
+             * @param {string} label Empty label by default
+             * @returns a parsed vw example that can be used for prediction or learning
+             */
+            createExampleFromDense(features: Map<string, number[]>, label: string = ""): object {
+                return this._instance.createExampleFromDense(features, label);
+            }
+
+            /**
              * Calls vw predict on the example and returns the prediction.
-             * 
+             *
              * @param {object} example returned from parse()
              * @returns the prediction with a type corresponding to the reduction that was used
              * @throws {VWError} Throws an error if the example is not well defined
@@ -234,7 +249,7 @@ export default new Promise((resolve) => {
 
             /**
              * Calls vw learn on the example and updates the model
-             * 
+             *
              * @param {object} example returned from parse()
              * @throws {VWError} Throws an error if the example is not well defined
              */
@@ -248,7 +263,7 @@ export default new Promise((resolve) => {
 
             /**
              * Cleans the example and returns it to the pool of available examples. delete() must also be called on the example object
-             * 
+             *
              * @param {object} example returned from parse()
              */
             finishExample(example: object) {
@@ -266,7 +281,7 @@ export default new Promise((resolve) => {
             /**
              * Creates a new Vowpal Wabbit workspace for Contextual Bandit exploration algorithms.
              * Can accept either or both string arguments and a model file.
-             * 
+             *
              * @constructor
              * @param {Function} readSync - A function that reads a file synchronously and returns a buffer
              * @param {Function} writeSync - A function that writes a buffer to a file synchronously
@@ -291,10 +306,10 @@ export default new Promise((resolve) => {
             /**
              * Takes a CB example and returns an array of (action, score) pairs, representing the probability mass function over the available actions
              * The returned pmf can be used with samplePmf to sample an action
-             * 
+             *
              * Example must have the following properties:
              * - text_context: a string representing the context
-             * 
+             *
              * @param {object} example the example object that will be used for prediction
              * @returns {array} probability mass function, an array of action,score pairs that was returned by predict
              * @throws {VWError} Throws an error if the example text_context is missing from the example
@@ -309,17 +324,17 @@ export default new Promise((resolve) => {
 
             /**
              * Takes a CB example and uses it to update the model
-             * 
+             *
              * Example must have the following properties:
              * - text_context: a string representing the context
              * - labels: an array of label objects (usually one), each label object must have the following properties:
              *  - action: the action index
              *  - cost: the cost of the action
              *  - probability: the probability of the action
-             * 
+             *
              * A label object should have more than one labels only if a reduction that accepts multiple labels was used (e.g. graph_feedback)
-             * 
-             * 
+             *
+             *
              * @param {object} example the example object that will be used for prediction
              * @throws {VWError} Throws an error if the example does not have the required properties to learn
              */
@@ -335,7 +350,7 @@ export default new Promise((resolve) => {
             /**
              * Accepts a CB example (in text format) line by line. Once a full CB example is passed in it will call learnFromString.
              * This is intended to be used with files that have CB examples, that were logged using logCBExampleToStream and are being read line by line.
-             * 
+             *
              * @param {string} line a string representing a line from a CB example in text Vowpal Wabbit format
              */
             addLine(line: string) {
@@ -351,7 +366,7 @@ export default new Promise((resolve) => {
 
             /**
              * Takes a full multiline CB example in text format and uses it to update the model. This is intended to be used with examples that are logged to a file using logCBExampleToStream.
-             * 
+             *
              * @param {string} example a string representing the CB example in text Vowpal Wabbit format
              * @throws {Error} Throws an error if the example is an object with a label and/or a text_context
              */
@@ -368,10 +383,10 @@ export default new Promise((resolve) => {
             }
 
             /**
-             * 
+             *
              * Takes an exploration prediction (array of action, score pairs) and returns a single action and score,
              * along with a unique id that was used to seed the sampling and that can be used to track and reproduce the sampling.
-             * 
+             *
              * @param {array} pmf probability mass function, an array of action,score pairs that was returned by predict
              * @returns {object} an object with the following properties:
              * - action: the action index that was sampled
@@ -392,10 +407,10 @@ export default new Promise((resolve) => {
             }
 
             /**
-             * 
+             *
              * Takes an exploration prediction (array of action, score pairs) and a unique id that is used to seed the sampling,
              * and returns a single action index and the corresponding score.
-             * 
+             *
              * @param {array} pmf probability mass function, an array of action,score pairs that was returned by predict
              * @param {string} uuid a unique id that can be used to seed the prediction
              * @returns {object} an object with the following properties:
@@ -415,11 +430,11 @@ export default new Promise((resolve) => {
             }
 
             /**
-             * 
+             *
              * Takes an example with a text_context field and calls predict. The prediction (a probability mass function over the available actions)
              * will then be sampled from, and only the chosen action index and the corresponding score will be returned,
              * along with a unique id that was used to seed the sampling and that can be used to track and reproduce the sampling.
-             * 
+             *
              * @param {object} example an example object containing the context to be used during prediction
              * @returns {object} an object with the following properties:
              * - action: the action index that was sampled
@@ -439,11 +454,11 @@ export default new Promise((resolve) => {
             }
 
             /**
-             * 
+             *
              * Takes an example with a text_context field and calls predict, and a unique id that is used to seed the sampling.
              * The prediction (a probability mass function over the available actions) will then be sampled from, and only the chosen action index
              * and the corresponding score will be returned, along with a unique id that was used to seed the sampling and that can be used to track and reproduce the sampling.
-             * 
+             *
              * @param {object} example an example object containing the context to be used during prediction
              * @returns {object} an object with the following properties:
              * - action: the action index that was sampled
