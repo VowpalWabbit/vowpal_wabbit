@@ -1,3 +1,4 @@
+#include "vw/common/text_utils.h"
 #include "vw/config/options.h"
 #include "vw/core/example.h"
 #include "vw/core/learner.h"
@@ -9,7 +10,6 @@
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
 #include "vw/explore/explore.h"
-#include "vw/common/text_utils.h"
 
 #include <emscripten/bind.h>
 #include <emscripten/val.h>
