@@ -687,4 +687,40 @@ describe('Call WASM VWModule', () => {
         example.delete();
         model.delete();
     });
+
+    it("create dense example", () => {
+      let model = new vw.Workspace({ args_str: "" });
+      let example = model.createExampleFromDense({
+        myns: [1, 2, 2],
+        ns2: [3, 4, 5],
+        "": [34, 1]
+      });
+      let prediction = model.predict(example);
+
+      assert.equal(model.predictionType(), vw.Prediction.Type.Scalar);
+      assert.equal(typeof prediction, "number");
+      model.finishExample(example);
+      example.delete();
+      model.delete();
+    });
+
+    it("create dense example with label", () => {
+        let model = new vw.Workspace({ args_str: "" });
+        let example = model.createExampleFromDense({
+          myns: [1, 2, 2],
+          ns2: [3, 4, 5],
+          "": [34, 1]
+        }, "1");
+        let prediction = model.predict(example);
+        model.learn(example);
+        let prediction2 = model.predict(example);
+
+
+        assert.equal(model.predictionType(), vw.Prediction.Type.Scalar);
+        assert.equal(typeof prediction, "number");
+        assert.notEqual(prediction, prediction2);
+        model.finishExample(example);
+        example.delete();
+        model.delete();
+      });
 });

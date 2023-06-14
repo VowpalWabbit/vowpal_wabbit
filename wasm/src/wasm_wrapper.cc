@@ -1,9 +1,11 @@
+#include "vw/common/text_utils.h"
 #include "vw/config/options.h"
 #include "vw/core/example.h"
 #include "vw/core/learner.h"
 #include "vw/core/parse_example.h"
 #include "vw/core/parse_primitives.h"
 #include "vw/core/parse_regressor.h"
+#include "vw/core/parser.h"
 #include "vw/core/prediction_type.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
@@ -198,6 +200,48 @@ struct vw_model_basic
   float weighted_labeled_examples() const { return vw_ptr->sd->weighted_labeled_examples; }
 
   prediction_type_t get_prediction_type() const { return vw_ptr->l->get_output_prediction_type(); }
+
+  std::vector<std::shared_ptr<example_ptr>> create_example_from_dense_features(
+      const emscripten::val& features, const std::string& label)
+  {
+    std::vector<std::shared_ptr<example_ptr>> example_collection;
+    auto* ex = &VW::get_unused_example(this->vw_ptr.get());
+
+    emscripten::val keys = emscripten::val::global("Object").call<emscripten::val>("keys", features);
+    int length = keys["length"].as<int>();
+
+    for (int i = 0; i < length; ++i)
+    {
+      auto key = keys[i].as<std::string>();
+      if (features.hasOwnProperty(key.c_str()))
+      {
+        auto values = emscripten::convertJSArrayToNumberVector<float>(features[key]);
+        auto namespace_hash = VW::hash_space(*this->vw_ptr, key);
+        auto namespace_slot = key.length() > 0 ? key[0] : ' ';
+        auto anon_index = 0;
+        auto& feature_group = ex->feature_space[namespace_slot];
+        auto it = std::find(ex->indices.begin(), ex->indices.end(), namespace_slot);
+        if (it == ex->indices.end()) { ex->indices.push_back(namespace_slot); }
+
+        feature_group.indices.reserve(feature_group.indices.size() + values.size());
+        feature_group.values.reserve(feature_group.values.size() + values.size());
+        for (auto v : values)
+        {
+          feature_group.indices.push_back(anon_index++);
+          feature_group.values.push_back(v);
+        }
+      }
+    }
+
+    this->vw_ptr->parser_runtime.example_parser->lbl_parser.default_label(ex->l);
+    this->vw_ptr->parser_runtime.example_parser->words.clear();
+    VW::tokenize(' ', label, this->vw_ptr->parser_runtime.example_parser->words);
+    this->vw_ptr->parser_runtime.example_parser->lbl_parser.parse_label(ex->l, ex->ex_reduction_features,
+        this->vw_ptr->parser_runtime.example_parser->parser_memory_to_reuse, this->vw_ptr->sd->ldict.get(),
+        this->vw_ptr->parser_runtime.example_parser->words, this->vw_ptr->logger);
+    VW::setup_example(*this->vw_ptr, ex);
+    return {example_ptr::wrap_pooled_example(ex, this->vw_ptr)};
+  }
 
   std::shared_ptr<vw> vw_ptr;
   std::string args;
@@ -491,7 +535,8 @@ EMSCRIPTEN_BINDINGS(vwwasm)
       .function("getModel", &vw_model_basic::get_model)
       .function("sumLoss", &vw_model_basic::sum_loss)
       .function("weightedLabeledExamples", &vw_model_basic::weighted_labeled_examples)
-      .function("predictionType", &vw_model_basic::get_prediction_type);
+      .function("predictionType", &vw_model_basic::get_prediction_type)
+      .function("createExampleFromDense", &vw_model_basic::create_example_from_dense_features);
 
   // Currently this is structured such that parse returns a vector of example but to JS that is opaque.
   // All the caller can do is pass this opaque object to the other functions. Is it possible to convert this to a JS
