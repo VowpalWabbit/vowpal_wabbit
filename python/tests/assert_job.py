@@ -64,4 +64,4 @@ def assert_prediction(job, **kwargs):
 def assert_loss(job, **kwargs):
     assert job.status == ExecutionStatus.Success, "job should be successful"
     assert type(job[0].loss) == float, "loss should be an float"
-    assert_almost_equal(job[0].loss, kwargs["expected_loss"], decimal=1)
+    assert_almost_equal(job[0].loss, kwargs["expected_loss"], decimal=2)

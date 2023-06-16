@@ -37,30 +37,6 @@ def get_function_object(module_name, function_name):
         print(f"Function '{function_name}' not found in module '{module_name}'.")
 
 
-def generate_test_function(test_data):
-    @pytest.dynamic
-    def test_dynamic():
-        pass
-        # Perform the test using the test_data
-        # ...
-
-    # Set a custom name for the test function
-    test_dynamic.__name__ = test_data["name"]
-
-    return test_dynamic
-
-
-def generate_pytest_from_json(filepath):
-    # Load the JSON data from a file
-    with open(filepath, "r") as file:
-        json_data = json.load(file)
-
-    # Iterate over the JSON data and dynamically generate the test functions
-    for test_case in json_data:
-        test_function = generate_test_function(test_case)
-        globals()[test_function.__name__] = test_function
-
-
 def generate_string_combinations(*lists):
     combinations = list(itertools.product(*lists))
     combinations = ["".join(combination) for combination in combinations]

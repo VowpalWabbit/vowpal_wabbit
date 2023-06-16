@@ -11,8 +11,10 @@
                 "params": {}
             },
             "probability_function": {
-                "name": "constant_probability",
-                "params": {}
+                "name": "even_probability",
+                "params": {
+                    "num_actions": 1
+                }
             }
         },
         "assert_functions": [
@@ -77,23 +79,23 @@
             {
                 "assert_func": "assert_loss",
                 "assert_func_args": {
-                    "expected_loss": 0.05
+                    "expected_loss": 0.1
                 }
             },
             {
                 "assert_func": "assert_prediction",
                 "assert_func_args": {
                     "expected_value": [
-                        0.975,
-                        0.025
+                        0.9,
+                        0.1
                     ],
-                    "threshold": 0.1
+                    "threshold": 0.99
                 }
             }
         ],
         "grid": {
             "#base": [
-                "--cb_explore 2"
+                "--cb_explore 2 --epsilon 0.2"
             ]
         },
         "output": [
@@ -109,7 +111,7 @@
             "num_features": 2,
             "num_action": 2,
             "reward_function": {
-                "name": "fixed_reward_for_diff_context",
+                "name": "fixed_reward_two_action",
                 "params": {}
             },
             "probability_function": {

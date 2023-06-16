@@ -25,7 +25,7 @@ def generate_cb_data(
     num_features,
     num_actions,
     reward_function,
-    probability_function,
+    logging_policy,
     no_context=1,
     context_name=None,
 ):
@@ -35,9 +35,7 @@ def generate_cb_data(
     reward_function_obj = get_function_object(
         "reward_functions", reward_function["name"]
     )
-    probability_function_obj = get_function_object(
-        "probability_functions", probability_function["name"]
-    )
+    logging_policy_obj = get_function_object("logging_policies", logging_policy["name"])
     features = [f"feature{index}" for index in range(1, num_features + 1)]
     with open(os.path.join(script_directory, dataFile), "w") as f:
         for _ in range(num_examples):
@@ -50,8 +48,8 @@ def generate_cb_data(
             def return_cost_probability(chosen_action):
                 reward_function["params"]["chosen_action"] = chosen_action
                 cost = reward_function_obj(**reward_function["params"])
-                probability_function["params"]["chosen_action"] = chosen_action
-                probability = probability_function_obj(**probability_function["params"])
+                logging_policy["params"]["chosen_action"] = chosen_action
+                probability = logging_policy_obj(**logging_policy["params"])
                 return cost, probability
 
             chosen_action = random.randint(1, num_actions)
