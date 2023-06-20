@@ -1,16 +1,18 @@
 [
     {
-        "data_func": "constant_function",
-        "data_func_args": {
-            "no_sample": 2000,
-            "constant": 5,
-            "lower_bound": 1,
-            "upper_bound": 100
+        "data_func": {
+            "name": "constant_function",
+            "params": {
+                "no_sample": 2000,
+                "constant": 5,
+                "lower_bound": 1,
+                "upper_bound": 100
+            }
         },
         "assert_functions": [
             {
-                "assert_func": "assert_prediction",
-                "assert_func_args": {
+                "name": "assert_prediction",
+                "params": {
                     "expected_value": [
                         5
                     ],
@@ -18,8 +20,8 @@
                 }
             },
             {
-                "assert_func": "assert_weight",
-                "assert_func_args": {
+                "name": "assert_weight",
+                "params": {
                     "expected_weights": [
                         5,
                         0
@@ -38,14 +40,14 @@
                 "--coin",
                 "--ftrl",
                 "--pistol"
-            ]
-        },
-        "*": {
-            "--learning_rate": [
-                0.1,
-                0.01,
-                0.001
-            ]
+            ],
+            "*": {
+                "--learning_rate": [
+                    0.1,
+                    0.01,
+                    0.001
+                ]
+            }
         },
         "output": [
             "--readable_model",

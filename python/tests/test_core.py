@@ -55,8 +55,12 @@ def init_all(test_descriptions):
         if type(tests) is not list:
             tests = [tests]
         for test_description in tests:
-            mutiply = test_description.get("*", None)
-            plus = test_description.get("+", None)
+            mutiply = test_description["grid"].get("*", None)
+            plus = test_description["grid"].get("+", None)
+            if mutiply:
+                del test_description["grid"]["*"]
+            if plus:
+                del test_description["grid"]["+"]
             grid = Grid(test_description["grid"])
             if mutiply:
                 grid *= mutiply
@@ -65,26 +69,26 @@ def init_all(test_descriptions):
             options = Grid(grid)
             data = dynamic_function_call(
                 "data_generation",
-                test_description["data_func"],
-                *test_description["data_func_args"].values(),
+                test_description["data_func"]["name"],
+                *test_description["data_func"]["params"].values(),
             )
             for assert_func in test_description["assert_functions"]:
-                assert_job = get_function_object(
-                    "assert_job", assert_func["assert_func"]
-                )
+                assert_job = get_function_object("assert_job", assert_func["name"])
                 script_directory = os.path.dirname(os.path.realpath(__file__))
                 core_test(
                     os.path.join(script_directory, data),
                     options,
                     test_description["output"],
                     assert_job,
-                    assert_func["assert_func_args"],
+                    assert_func["params"],
                 )
 
 
-init_all(TEST_CONFIG_FILES)
-for generated_test_case in GENERATED_TEST_CASES:
-    test_name = f"test_{generated_test_case[1]}"
-    generated_test_case[0].__name__ = test_name
-    globals()[test_name] = generated_test_case[0]
-cleanup_data_file()
+try:
+    init_all(TEST_CONFIG_FILES)
+    for generated_test_case in GENERATED_TEST_CASES:
+        test_name = f"test_{generated_test_case[1]}"
+        generated_test_case[0].__name__ = test_name
+        globals()[test_name] = generated_test_case[0]
+finally:
+    cleanup_data_file()

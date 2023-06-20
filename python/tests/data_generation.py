@@ -40,24 +40,24 @@ def generate_cb_data(
     with open(os.path.join(script_directory, dataFile), "w") as f:
         for _ in range(num_examples):
             if no_context > 1:
-                chosen_context = random.randint(1, no_context)
-                reward_function["params"]["chosen_context"] = chosen_context
+                context = random.randint(1, no_context)
                 if not context_name:
                     context_name = [f"{index}" for index in range(1, no_context + 1)]
 
-            def return_cost_probability(chosen_action):
-                reward_function["params"]["chosen_action"] = chosen_action
-                cost = reward_function_obj(**reward_function["params"])
+            def return_cost_probability(chosen_action, context=1):
+                cost = reward_function_obj(
+                    chosen_action, context, **reward_function["params"]
+                )
                 logging_policy["params"]["chosen_action"] = chosen_action
                 probability = logging_policy_obj(**logging_policy["params"])
                 return cost, probability
 
             chosen_action = random.randint(1, num_actions)
             if no_context > 1:
-                f.write(f"shared | User s_{context_name[chosen_context-1]}\n")
+                f.write(f"shared | User s_{context_name[context-1]}\n")
                 for action in range(1, num_actions + 1):
 
-                    cost, probability = return_cost_probability(action)
+                    cost, probability = return_cost_probability(action, context)
                     if action == chosen_action:
                         f.write(
                             f'{action}:{cost}:{probability} | {" ".join(random_number_items(features))}\n'
