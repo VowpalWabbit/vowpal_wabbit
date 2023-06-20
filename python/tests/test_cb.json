@@ -1,0 +1,159 @@
+[
+    {
+        "test_name": "cb_one_action",
+        "data_func": {
+            "name": "generate_cb_data",
+            "params": {
+                "num_examples": 100,
+                "num_features": 1,
+                "num_action": 1,
+                "reward_function": {
+                    "name": "fixed_reward",
+                    "params": {}
+                },
+                "logging_policy": {
+                    "name": "even_probability",
+                    "params": {
+                        "num_actions": 1
+                    }
+                }
+            }
+        },
+        "assert_functions": [
+            {
+                "name": "assert_loss",
+                "params": {
+                    "expected_loss": 1
+                }
+            },
+            {
+                "name": "assert_prediction",
+                "params": {
+                    "expected_value": 0,
+                    "threshold": 0.1
+                }
+            }
+        ],
+        "grid": {
+            "#base": [
+                "--cb 1 -P 10000 --preserve_performance_counters --save_resume"
+            ],
+            "--cb_type": [
+                "ips",
+                "mtr"
+            ],
+            "*": {
+                "--cb": [
+                    1
+                ]
+            }
+        },
+        "output": [
+            "--readable_model",
+            "-p"
+        ]
+    },
+    {
+        "test_name": "cb_two_action",
+        "data_func": {
+            "name": "generate_cb_data",
+            "params": {
+                "num_examples": 100,
+                "num_features": 1,
+                "num_action": 2,
+                "reward_function": {
+                    "name": "constant_reward",
+                    "params": {
+                        "reward": [
+                            1,
+                            0
+                        ]
+                    }
+                },
+                "logging_policy": {
+                    "name": "even_probability",
+                    "params": {
+                        "num_actions": 2
+                    }
+                },
+                "no_context": 2
+            }
+        },
+        "assert_functions": [
+            {
+                "name": "assert_loss",
+                "params": {
+                    "expected_loss": 0.1
+                }
+            },
+            {
+                "name": "assert_prediction",
+                "params": {
+                    "expected_value": [
+                        0.9,
+                        0.1
+                    ],
+                    "threshold": 0.99
+                }
+            }
+        ],
+        "grid": {
+            "#base": [
+                "--cb_explore 2 --epsilon 0.2"
+            ]
+        },
+        "output": [
+            "--readable_model",
+            "-p"
+        ]
+    },
+    {
+        "test_name": "cb_two_action_diff_context",
+        "data_func": {
+            "name": "generate_cb_data",
+            "params": {
+                "num_examples": 100,
+                "num_features": 2,
+                "num_action": 2,
+                "reward_function": {
+                    "name": "fixed_reward_two_action",
+                    "params": {}
+                },
+                "logging_policy": {
+                    "name": "even_probability",
+                    "params": {
+                        "num_actions": 2
+                    }
+                },
+                "no_context": 2
+            }
+        },
+        "assert_functions": [
+            {
+                "name": "assert_loss",
+                "params": {
+                    "expected_loss": 0.5
+                }
+            },
+            {
+                "name": "assert_prediction",
+                "params": {
+                    "expected_value": [
+                        0.975,
+                        0.025
+                    ],
+                    "threshold": 0.1
+                }
+            }
+        ],
+        "grid": {
+            "#base": [
+                "--cb_explore_adf"
+            ]
+        },
+        "output": [
+            "--readable_model",
+            "-p"
+        ]
+    }
+]
