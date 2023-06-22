@@ -30,6 +30,7 @@ void parse_cb_label(VW::label_parser& lp, VW::string_view label, VW::polylabel& 
   lp.parse_label(l, red_features, mem, nullptr, words, null_logger);
 }
 
+#ifdef VW_FEAT_CB_GRAPH_FEEDBACK
 TEST(cb_gf_label_tests, cb_graph_parse_label)
 {
   VW::polylabel label;
@@ -281,3 +282,4 @@ TEST(cb_fg_label_tests, parse_json_label_bad_graph)
 
   VW::finish_example(*vw, examples);
 }
+#endif

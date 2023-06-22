@@ -77,6 +77,7 @@ std::vector<std::vector<float>> predict_learn_return_action_scores_two_actions(
   return result;
 }
 
+#ifdef VW_FEAT_CB_GRAPH_FEEDBACK
 TEST(GraphFeedback, CopsAndRobbers)
 {
   // aka one reveals info about the other so just give higher probability to the one with the lower cost
@@ -664,3 +665,4 @@ TEST(GraphFeedback, CheckUpdateRule500WIterations)
   EXPECT_GT(sim_gf.not_spam_classified_as_not_spam, sim_egreedy.not_spam_classified_as_not_spam);
   EXPECT_LT(sim_gf.not_spam_classified_as_spam, sim_egreedy.not_spam_classified_as_spam);
 }
+#endif
