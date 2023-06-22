@@ -431,8 +431,9 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::ftrl_setup(VW::setup_base_
   // Defaults that are specific to the mode that was chosen.
   if (ftrl_enabled)
   {
-    b->ftrl_alpha = options.was_supplied("ftrl_alpha") ? b->ftrl_alpha : 0.005f;
-    b->ftrl_beta = options.was_supplied("ftrl_beta") ? b->ftrl_beta : 0.1f;
+    // section 3.1: https://dl.acm.org/doi/pdf/10.1145/2487575.2488200
+    b->ftrl_alpha = options.was_supplied("ftrl_alpha") ? b->ftrl_alpha : 0.5f;
+    b->ftrl_beta = options.was_supplied("ftrl_beta") ? b->ftrl_beta : 1.0f;
     algorithm_name = "Proximal-FTRL";
     learn_ptr = all.output_config.audit || all.output_config.hash_inv ? learn_proximal<true> : learn_proximal<false>;
     all.weights.stride_shift(2);  // NOTE: for more parameter storage
