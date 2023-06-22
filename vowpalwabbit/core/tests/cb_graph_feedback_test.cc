@@ -15,6 +15,7 @@
 
 #include <string>
 
+#ifdef VW_FEAT_CB_GRAPH_FEEDBACK
 using namespace testing;
 constexpr float EXPLICIT_FLOAT_TOL = 0.01f;
 
@@ -664,3 +665,4 @@ TEST(GraphFeedback, CheckUpdateRule500WIterations)
   EXPECT_GT(sim_gf.not_spam_classified_as_not_spam, sim_egreedy.not_spam_classified_as_not_spam);
   EXPECT_LT(sim_gf.not_spam_classified_as_spam, sim_egreedy.not_spam_classified_as_spam);
 }
+#endif
