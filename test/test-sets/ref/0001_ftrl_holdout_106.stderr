@@ -2,8 +2,8 @@ only testing
 predictions = 0001_ftrl_holdout.predict
 Enabling FTRL based optimization
 Algorithm used: Proximal-FTRL
-ftrl_alpha = 0.005
-ftrl_beta = 0.1
+ftrl_alpha = 0.5
+ftrl_beta = 1
 using no cache
 Reading datafile = train-sets/0001.dat
 num sources = 1
