@@ -17,6 +17,7 @@
 
 #include <vector>
 
+#ifdef VW_FEAT_CB_GRAPH_FEEDBACK
 using namespace testing;
 constexpr float EXPLICIT_FLOAT_TOL = 0.01f;
 
@@ -30,7 +31,6 @@ void parse_cb_label(VW::label_parser& lp, VW::string_view label, VW::polylabel& 
   lp.parse_label(l, red_features, mem, nullptr, words, null_logger);
 }
 
-#ifdef VW_FEAT_CB_GRAPH_FEEDBACK
 TEST(cb_gf_label_tests, cb_graph_parse_label)
 {
   VW::polylabel label;

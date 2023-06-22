@@ -15,6 +15,7 @@
 
 #include <string>
 
+#ifdef VW_FEAT_CB_GRAPH_FEEDBACK
 using namespace testing;
 constexpr float EXPLICIT_FLOAT_TOL = 0.01f;
 
@@ -77,7 +78,6 @@ std::vector<std::vector<float>> predict_learn_return_action_scores_two_actions(
   return result;
 }
 
-#ifdef VW_FEAT_CB_GRAPH_FEEDBACK
 TEST(GraphFeedback, CopsAndRobbers)
 {
   // aka one reveals info about the other so just give higher probability to the one with the lower cost
