@@ -85,14 +85,11 @@ def init_all(test_descriptions):
                 )
 
 
-successful_testCases = 0
-
 try:
     init_all(TEST_CONFIG_FILES)
     for generated_test_case in GENERATED_TEST_CASES:
         test_name = f"test_{generated_test_case[1]}"
         generated_test_case[0].__name__ = test_name
         globals()[test_name] = generated_test_case[0]
-        successful_testCases += 1
 finally:
     cleanup_data_file()
