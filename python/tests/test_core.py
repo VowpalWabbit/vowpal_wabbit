@@ -5,16 +5,22 @@ import pandas as pd
 import numpy as np
 import pytest
 import os
+import logging
 from test_helper import (
     json_to_dict_list,
     dynamic_function_call,
     get_function_object,
+    evaluate_expression,
+    generate_mathematical_expression_json,
 )
 
 CURR_DICT = os.path.dirname(os.path.abspath(__file__))
-TEST_CONFIG_FILES = ["test_cb.json", "test_regs.json"]
+TEST_CONFIG_FILES = ["test_regs.json", "test_cb.json"]
 TEST_CONFIG_FILES = [json_to_dict_list(i) for i in TEST_CONFIG_FILES]
 GENERATED_TEST_CASES = []
+logging.basicConfig(
+    format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO
+)
 
 
 def cleanup_data_file():
@@ -55,18 +61,13 @@ def init_all(test_descriptions):
         if type(tests) is not list:
             tests = [tests]
         for test_description in tests:
-            mutiply = test_description["grid"].get("*", None)
-            plus = test_description["grid"].get("+", None)
-            if mutiply:
-                del test_description["grid"]["*"]
-            if plus:
-                del test_description["grid"]["+"]
-            grid = Grid(test_description["grid"])
-            if mutiply:
-                grid *= mutiply
-            if plus:
-                grid += plus
-            options = Grid(grid)
+            grid_expression = generate_mathematical_expression_json(
+                test_description["grids"]
+            )
+            variables = {}
+            for i, item in enumerate(test_description["grids"]):
+                variables["a" + str(i)] = Grid(item)
+            options = evaluate_expression(grid_expression, variables)
             data = dynamic_function_call(
                 "data_generation",
                 test_description["data_func"]["name"],
@@ -84,11 +85,14 @@ def init_all(test_descriptions):
                 )
 
 
+successful_testCases = 0
+
 try:
     init_all(TEST_CONFIG_FILES)
     for generated_test_case in GENERATED_TEST_CASES:
         test_name = f"test_{generated_test_case[1]}"
         generated_test_case[0].__name__ = test_name
         globals()[test_name] = generated_test_case[0]
+        successful_testCases += 1
 finally:
     cleanup_data_file()

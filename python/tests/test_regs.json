@@ -4,7 +4,7 @@
             "name": "constant_function",
             "params": {
                 "no_sample": 2000,
-                "constant": 5,
+                "constant": 10,
                 "lower_bound": 1,
                 "upper_bound": 100
             }
@@ -31,24 +31,28 @@
                 }
             }
         ],
-        "grid": {
-            "#base": [
-                "-P 50000 --preserve_performance_counters --save_resume "
-            ],
-            "#reg": [
-                "",
-                "--coin",
-                "--ftrl",
-                "--pistol"
-            ],
-            "*": {
+        "grids": [
+            {
+                "#base": [
+                    "-P 50000 --preserve_performance_counters --save_resume "
+                ]
+            },
+            {
+                "#reg": [
+                    "--coin",
+                    "--ftrl",
+                    "--pistol"
+                ]
+            },
+            "+",
+            {
                 "--learning_rate": [
                     0.1,
                     0.01,
                     0.001
                 ]
             }
-        },
+        ],
         "output": [
             "--readable_model",
             "-p"
