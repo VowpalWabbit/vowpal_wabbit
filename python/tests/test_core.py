@@ -55,19 +55,22 @@ def core_test(files, grid, outputs, job_assert, job_assert_args):
         )
 
 
+def get_options(grids):
+    grid_expression = generate_mathematical_expression_json(grids)
+    variables = {}
+    for i, item in enumerate(grids):
+        if isinstance(item, dict):
+            variables["a" + str(i)] = Grid(item)
+    return evaluate_expression(grid_expression, variables)
+
+
 @pytest.mark.usefixtures("test_descriptions", TEST_CONFIG_FILES)
 def init_all(test_descriptions):
     for tests in test_descriptions:
         if type(tests) is not list:
             tests = [tests]
         for test_description in tests:
-            grid_expression = generate_mathematical_expression_json(
-                test_description["grids"]
-            )
-            variables = {}
-            for i, item in enumerate(test_description["grids"]):
-                variables["a" + str(i)] = Grid(item)
-            options = evaluate_expression(grid_expression, variables)
+            options = get_options(test_description["grids"])
             data = dynamic_function_call(
                 "data_generation",
                 test_description["data_func"]["name"],

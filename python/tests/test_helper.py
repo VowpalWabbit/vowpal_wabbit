@@ -38,7 +38,7 @@ def generate_mathematical_expression_json(config):
 
         elif isinstance(item, str):
             if item == "(":
-                if expression[-1].isdigit():
+                if expression and expression[-1].isdigit():
                     expression += " * "
                 expression += "("
             elif item == "+":
