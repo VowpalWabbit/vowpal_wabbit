@@ -4,7 +4,7 @@
             "name": "constant_function",
             "params": {
                 "no_sample": 2000,
-                "constant": 10,
+                "constant": 5,
                 "lower_bound": 1,
                 "upper_bound": 100
             }
