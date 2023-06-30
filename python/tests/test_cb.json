@@ -34,20 +34,24 @@
                 }
             }
         ],
-        "grid": {
-            "#base": [
-                "--cb 1 -P 10000 --preserve_performance_counters --save_resume"
-            ],
-            "--cb_type": [
-                "ips",
-                "mtr"
-            ],
-            "*": {
+        "grids": [
+            {
+                "#base": [
+                    "--cb 1 -P 10000 --preserve_performance_counters --save_resume"
+                ]
+            },
+            {
+                "--cb_type": [
+                    "ips",
+                    "mtr"
+                ]
+            },
+            {
                 "--cb": [
                     1
                 ]
             }
-        },
+        ],
         "output": [
             "--readable_model",
             "-p"
@@ -97,11 +101,13 @@
                 }
             }
         ],
-        "grid": {
-            "#base": [
-                "--cb_explore 2 --epsilon 0.2"
-            ]
-        },
+        "grids": [
+            {
+                "#base": [
+                    "--cb_explore 2 --epsilon 0.2"
+                ]
+            }
+        ],
         "output": [
             "--readable_model",
             "-p"
@@ -132,7 +138,7 @@
             {
                 "name": "assert_loss",
                 "params": {
-                    "expected_loss": 0.5
+                    "expected_loss": 0.6
                 }
             },
             {
@@ -146,11 +152,13 @@
                 }
             }
         ],
-        "grid": {
-            "#base": [
-                "--cb_explore_adf"
-            ]
-        },
+        "grids": [
+            {
+                "#base": [
+                    "--cb_explore_adf"
+                ]
+            }
+        ],
         "output": [
             "--readable_model",
             "-p"

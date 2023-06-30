@@ -5,16 +5,22 @@ import pandas as pd
 import numpy as np
 import pytest
 import os
+import logging
 from test_helper import (
     json_to_dict_list,
     dynamic_function_call,
     get_function_object,
+    evaluate_expression,
+    generate_mathematical_expression_json,
 )
 
 CURR_DICT = os.path.dirname(os.path.abspath(__file__))
-TEST_CONFIG_FILES = ["test_cb.json", "test_regs.json"]
+TEST_CONFIG_FILES = ["test_regs.json", "test_cb.json"]
 TEST_CONFIG_FILES = [json_to_dict_list(i) for i in TEST_CONFIG_FILES]
 GENERATED_TEST_CASES = []
+logging.basicConfig(
+    format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO
+)
 
 
 def cleanup_data_file():
@@ -49,24 +55,22 @@ def core_test(files, grid, outputs, job_assert, job_assert_args):
         )
 
 
+def get_options(grids):
+    grid_expression = generate_mathematical_expression_json(grids)
+    variables = {}
+    for i, item in enumerate(grids):
+        if isinstance(item, dict):
+            variables["a" + str(i)] = Grid(item)
+    return evaluate_expression(grid_expression, variables)
+
+
 @pytest.mark.usefixtures("test_descriptions", TEST_CONFIG_FILES)
 def init_all(test_descriptions):
     for tests in test_descriptions:
         if type(tests) is not list:
             tests = [tests]
         for test_description in tests:
-            mutiply = test_description["grid"].get("*", None)
-            plus = test_description["grid"].get("+", None)
-            if mutiply:
-                del test_description["grid"]["*"]
-            if plus:
-                del test_description["grid"]["+"]
-            grid = Grid(test_description["grid"])
-            if mutiply:
-                grid *= mutiply
-            if plus:
-                grid += plus
-            options = Grid(grid)
+            options = get_options(test_description["grids"])
             data = dynamic_function_call(
                 "data_generation",
                 test_description["data_func"]["name"],

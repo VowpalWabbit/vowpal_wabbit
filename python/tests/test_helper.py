@@ -14,6 +14,41 @@ def json_to_dict_list(file):
         return json.load(file)
 
 
+def evaluate_expression(expression, variables):
+    # Create a dictionary to hold the variable values
+    variables_dict = {}
+
+    # Populate the variables_dict with the provided variables
+    for variable_name, variable_value in variables.items():
+        variables_dict[variable_name] = variable_value
+
+    # Evaluate the expression using eval()
+    result = eval(expression, variables_dict)
+    return result
+
+
+def generate_mathematical_expression_json(config):
+    expression = ""
+
+    for i, item in enumerate(config):
+        if isinstance(item, dict):
+            if expression and (expression[-1].isdigit()):
+                expression += " * "
+            expression += "a" + str(config.index(item))
+
+        elif isinstance(item, str):
+            if item == "(":
+                if expression and expression[-1].isdigit():
+                    expression += " * "
+                expression += "("
+            elif item == "+":
+                expression += " + "
+            elif item == ")":
+                expression += ")"
+
+    return expression
+
+
 def dynamic_function_call(module_name, function_name, *args, **kwargs):
     try:
         module = importlib.import_module(module_name)

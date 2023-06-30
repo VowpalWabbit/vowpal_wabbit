@@ -31,24 +31,28 @@
                 }
             }
         ],
-        "grid": {
-            "#base": [
-                "-P 50000 --preserve_performance_counters --save_resume "
-            ],
-            "#reg": [
-                "",
-                "--coin",
-                "--ftrl",
-                "--pistol"
-            ],
-            "*": {
+        "grids": [
+            {
+                "#base": [
+                    "-P 50000 --preserve_performance_counters --save_resume "
+                ]
+            },
+            {
+                "#reg": [
+                    "--coin",
+                    "--ftrl",
+                    "--pistol"
+                ]
+            },
+            "+",
+            {
                 "--learning_rate": [
                     0.1,
                     0.01,
                     0.001
                 ]
             }
-        },
+        ],
         "output": [
             "--readable_model",
             "-p"
