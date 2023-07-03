@@ -37,21 +37,54 @@
                     "-P 50000 --preserve_performance_counters --save_resume "
                 ]
             },
+            "(",
             {
                 "#reg": [
                     "--coin",
-                    "--ftrl",
                     "--pistol"
                 ]
             },
             "+",
+            "(",
             {
                 "--learning_rate": [
                     0.1,
                     0.01,
                     0.001
                 ]
-            }
+            },
+            {
+                "--decay_learning_rate": [
+                    1.1,
+                    1,
+                    0.9
+                ]
+            },
+            {
+                "--power_t": [
+                    0.5,
+                    0.6,
+                    0.4
+                ]
+            },
+            ")",
+            "+",
+            {
+                "#reg": [
+                    "--ftrl"
+                ],
+                "--ftrl_alpha": [
+                    0.1,
+                    0.01,
+                    0.001
+                ],
+                "--ftrl_beta": [
+                    0.1,
+                    0.01,
+                    0.001
+                ]
+            },
+            ")"
         ],
         "output": [
             "--readable_model",
