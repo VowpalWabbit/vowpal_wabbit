@@ -34,56 +34,75 @@
         "grids": [
             {
                 "#base": [
-                    "-P 50000 --preserve_performance_counters --save_resume "
+                    "-P 50000 --preserve_performance_counters --save_resume"
                 ]
             },
-            "(",
-            {
-                "#reg": [
-                    "--coin",
-                    "--pistol"
-                ]
-            },
-            "+",
             "(",
             {
                 "--learning_rate": [
+                    null,
                     0.1,
                     0.01,
                     0.001
-                ]
-            },
-            {
+                ],
                 "--decay_learning_rate": [
+                    null,
                     1.1,
                     1,
                     0.9
-                ]
-            },
-            {
+                ],
                 "--power_t": [
+                    null,
                     0.5,
                     0.6,
                     0.4
                 ]
             },
-            ")",
+            "+",
+            "(",
+            {
+                "#reg": [
+                    "--freegrad",
+                    "--conjugate_gradient",
+                    "--bfgs --passes 1 --cache"
+                ]
+            },
             "+",
             {
                 "#reg": [
-                    "--ftrl"
+                    "--ftrl",
+                    "--coin",
+                    "--pistol"
                 ],
                 "--ftrl_alpha": [
-                    0.1,
-                    0.01,
-                    0.001
+                    null,
+                    0.1
                 ],
                 "--ftrl_beta": [
-                    0.1,
-                    0.01,
-                    0.001
+                    null,
+                    0.1
                 ]
             },
+            ")",
+            "(",
+            {
+                "--loss_function": [
+                    null,
+                    "poisson",
+                    "quantile"
+                ]
+            },
+            "+",
+            {
+                "--loss_function": [
+                    "expectile"
+                ],
+                "--expectile_q": [
+                    0.25,
+                    0.5
+                ]
+            },
+            ")",
             ")"
         ],
         "output": [
