@@ -12,7 +12,7 @@ def constant_function(no_sample, constant, lower_bound, upper_bound):
         for _ in range(no_sample):
             x = random.uniform(lower_bound, upper_bound)
             f.write(f"{constant} |f x:{x}\n")
-    return dataFile
+    return os.path.join(script_directory, dataFile)
 
 
 def random_number_items(items):
@@ -72,4 +72,30 @@ def generate_cb_data(
                     f'{chosen_action}:{cost}:{probability} | {" ".join(random_number_items(features))}\n'
                 )
             f.write("\n")
-    return dataFile
+    return os.path.join(script_directory, dataFile)
+
+
+def generate_classification_data(
+    num_sample,
+    num_classes,
+    num_features,
+    classify_func,
+    bounds=None,
+):
+    dataFile = f"classification_{num_classes}_{num_features}_{num_sample}.txt"
+    classify_func_obj = get_function_object(
+        "classification_functions", classify_func["name"]
+    )
+    if not bounds:
+        bounds = [[0, 1] for _ in range(num_features)]
+    with open(os.path.join(script_directory, dataFile), "w") as f:
+        for _ in range(num_sample):
+            x = [
+                random.uniform(bounds[index][0], bounds[index][1])
+                for index in range(num_features)
+            ]
+            y = classify_func_obj(x, **classify_func["params"])
+            f.write(
+                f"{y} |f {' '.join([f'x{i}:{x[i]}' for i in range(num_features)])}\n"
+            )
+    return os.path.join(script_directory, dataFile)

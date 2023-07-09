@@ -1,6 +1,8 @@
 import numpy as np
 from numpy.testing import assert_allclose, assert_almost_equal
 from vw_executor.vw import ExecutionStatus
+import vowpalwabbit as vw
+from test_helper import get_function_object
 
 
 def remove_non_digits(string):
@@ -67,3 +69,23 @@ def assert_loss(job, **kwargs):
     if job[0].loss < kwargs["expected_loss"]:
         return
     assert_almost_equal(job[0].loss, kwargs["expected_loss"], decimal=2)
+
+
+def assert_prediction_with_generated_data(job, **kwargs):
+    assert job.status == ExecutionStatus.Success, "job should be successful"
+    expected_class = []
+    trained_model = vw.Workspace(f"-i {job[0].model9('-f').path} --quiet")
+    predictions = []
+    data_func_obj = get_function_object("data_generation", kwargs["data_func"]["name"])
+    dataFile = data_func_obj(*kwargs["data_func"]["params"].values())
+    with open(dataFile, "r") as f:
+        for line in f.readlines():
+            expected_class.append(line.split("|")[0].strip())
+            predicted_class = trained_model.predict(line.strip())
+            predictions.append(predicted_class)
+    accuracy = sum(
+        [1 if int(yp) == int(ye) else 0 for yp, ye in zip(predictions, expected_class)]
+    ) / len(expected_class)
+    assert (
+        accuracy >= kwargs["accuracy_threshold"]
+    ), f"Accuracy is {accuracy} and Threshold is {kwargs['accuracy_threshold']}"
