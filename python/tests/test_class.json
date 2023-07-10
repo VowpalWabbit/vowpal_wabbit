@@ -1,0 +1,100 @@
+[
+    {
+        "test_name": "binary_class",
+        "data_func": {
+            "name": "generate_classification_data",
+            "params": {
+                "no_sample": 2000,
+                "no_class": 2,
+                "no_features": 1,
+                "classify_func": {
+                    "name": "binary_classification_one_feature",
+                    "params": {}
+                },
+                "bounds": [
+                    [
+                        0,
+                        1
+                    ]
+                ]
+            }
+        },
+        "assert_functions": [
+            {
+                "name": "assert_prediction_with_generated_data",
+                "params": {
+                    "data_func": {
+                        "name": "generate_classification_data",
+                        "params": {
+                            "no_sample": 100,
+                            "no_class": 2,
+                            "no_features": 1,
+                            "classify_func": {
+                                "name": "binary_classification_one_feature",
+                                "params": {}
+                            }
+                        }
+                    },
+                    "accuracy_threshold": 0.9
+                }
+            }
+        ],
+        "grids": [
+            {
+                "#base": [
+                    "--oaa 3"
+                ]
+            }
+        ],
+        "output": [
+            "--readable_model",
+            "-p"
+        ]
+    },
+    {
+        "test_name": "multiclass_two_features",
+        "data_func": {
+            "name": "generate_classification_data",
+            "params": {
+                "no_sample": 100000,
+                "no_class": 25,
+                "no_features": 2,
+                "classify_func": {
+                    "name": "multi_classification_two_features",
+                    "params": {}
+                }
+            }
+        },
+        "assert_functions": [
+            {
+                "name": "assert_prediction_with_generated_data",
+                "params": {
+                    "data_func": {
+                        "name": "generate_classification_data",
+                        "params": {
+                            "no_sample": 500,
+                            "no_class": 25,
+                            "no_features": 2,
+                            "classify_func": {
+                                "name": "multi_classification_two_features",
+                                "params": {}
+                            }
+                        }
+                    },
+                    "accuracy_threshold": 0.5
+                }
+            }
+        ],
+        "grids": [
+            {
+                "#base": [
+                    "--oaa 25"
+                ]
+            }
+        ],
+        "output": [
+            "--readable_model",
+            "-p"
+        ]
+    }
+]
