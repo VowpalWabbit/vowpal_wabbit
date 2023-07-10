@@ -34,11 +34,13 @@ def generate_mathematical_expression_json(config):
         if isinstance(item, dict):
             if expression and (expression[-1].isdigit()):
                 expression += " * "
+            if expression and expression[-1] == ")":
+                expression += " * "
             expression += "a" + str(config.index(item))
 
         elif isinstance(item, str):
             if item == "(":
-                if expression and expression[-1].isdigit():
+                if expression and (expression[-1].isdigit() or expression[-1] == ")"):
                     expression += " * "
                 expression += "("
             elif item == "+":
