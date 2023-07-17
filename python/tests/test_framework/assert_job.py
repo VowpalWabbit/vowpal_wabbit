@@ -1,4 +1,5 @@
 import numpy as np
+import os
 from numpy.testing import assert_allclose, assert_almost_equal
 from vw_executor.vw import ExecutionStatus
 import vowpalwabbit as vw
@@ -66,9 +67,10 @@ def assert_prediction(job, **kwargs):
 def assert_loss(job, **kwargs):
     assert job.status == ExecutionStatus.Success, "job should be successful"
     assert type(job[0].loss) == float, "loss should be an float"
+    decimal = kwargs.get("decimal", 2)
     if job[0].loss < kwargs["expected_loss"]:
         return
-    assert_almost_equal(job[0].loss, kwargs["expected_loss"], decimal=2)
+    assert_almost_equal(job[0].loss, kwargs["expected_loss"], decimal=decimal)
 
 
 def assert_prediction_with_generated_data(job, **kwargs):
@@ -76,7 +78,22 @@ def assert_prediction_with_generated_data(job, **kwargs):
     expected_class = []
     trained_model = vw.Workspace(f"-i {job[0].model9('-f').path} --quiet")
     predictions = []
-    data_func_obj = get_function_object("data_generation", kwargs["data_func"]["name"])
+    folder_path = os.path.dirname(os.path.realpath(__file__))
+    subdirectories = [
+        os.path.join(folder_path, name)
+        for name in os.listdir(folder_path)
+        if os.path.isdir(os.path.join(folder_path, name))
+    ]
+    for subdir in subdirectories:
+        try:
+            subdir_name = subdir.replace("\\", "/").split("/")[-1]
+            data_func_obj = get_function_object(
+                f"{subdir_name}.data_generation", kwargs["data_func"]["name"]
+            )
+            if data_func_obj:
+                break
+        except:
+            pass
     dataFile = data_func_obj(*kwargs["data_func"]["params"].values())
     with open(dataFile, "r") as f:
         for line in f.readlines():

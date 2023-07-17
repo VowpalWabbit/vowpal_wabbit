@@ -15,8 +15,8 @@ from test_helper import (
 )
 
 CURR_DICT = os.path.dirname(os.path.abspath(__file__))
-TEST_CONFIG_FILES = ["test_regs.json", "test_cb.json"]
-TEST_CONFIG_FILES = [json_to_dict_list(i) for i in TEST_CONFIG_FILES]
+TEST_CONFIG_FILES_NAME = os.listdir(os.path.join(CURR_DICT, "test_configs"))
+TEST_CONFIG_FILES = [json_to_dict_list(i) for i in TEST_CONFIG_FILES_NAME]
 GENERATED_TEST_CASES = []
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -26,12 +26,17 @@ logging.basicConfig(
 def cleanup_data_file():
     script_directory = os.path.dirname(os.path.realpath(__file__))
     # List all files in the directory
-    files = os.listdir(script_directory)
-    # Iterate over the files and remove the ones with .txt extension
-    for file in files:
-        if file.endswith(".txt"):
-            file_path = os.path.join(script_directory, file)
-            os.remove(file_path)
+    for name in TEST_CONFIG_FILES_NAME:
+        name = name.split(".")[0]
+        try:
+            files = os.listdir(os.path.join(script_directory, name))
+        except:
+            return
+        # Iterate over the files and remove the ones with .txt extension
+        for file in files:
+            if file.endswith(".txt"):
+                file_path = os.path.join(script_directory + "/" + name, file)
+                os.remove(file_path)
 
 
 @pytest.fixture
@@ -56,28 +61,38 @@ def core_test(files, grid, outputs, job_assert, job_assert_args):
 
 
 def get_options(grids):
-    grid_expression = generate_mathematical_expression_json(grids)
-    variables = {}
-    for i, item in enumerate(grids):
-        if isinstance(item, dict):
-            variables["a" + str(i)] = Grid(item)
-    return evaluate_expression(grid_expression, variables)
+    grid_expression, variables = generate_mathematical_expression_json(grids)
+    final_variables = {}
+    for key in variables:
+        final_variables[key] = Grid(variables[key])
+    return evaluate_expression(grid_expression, final_variables)
 
 
 @pytest.mark.usefixtures("test_descriptions", TEST_CONFIG_FILES)
 def init_all(test_descriptions):
-    for tests in test_descriptions:
+    for tIndex, tests in enumerate(test_descriptions):
         if type(tests) is not list:
             tests = [tests]
         for test_description in tests:
             options = get_options(test_description["grids"])
-            data = dynamic_function_call(
-                "data_generation",
-                test_description["data_func"]["name"],
-                *test_description["data_func"]["params"].values(),
-            )
+            task_folder = TEST_CONFIG_FILES_NAME[tIndex].split(".")[0]
+            package_name = [task_folder + ".", ""]
+            for dir in package_name:
+                try:
+                    data = dynamic_function_call(
+                        dir + "data_generation",
+                        test_description["data_func"]["name"],
+                        *test_description["data_func"]["params"].values(),
+                    )
+                    if data:
+                        break
+                except:
+                    pass
+
             for assert_func in test_description["assert_functions"]:
                 assert_job = get_function_object("assert_job", assert_func["name"])
+                if not assert_job:
+                    continue
                 script_directory = os.path.dirname(os.path.realpath(__file__))
                 core_test(
                     os.path.join(script_directory, data),

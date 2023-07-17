@@ -1,5 +1,3 @@
-
-
 def fixed_reward(chosen_action, context, **kwargs):
     return 1
 
