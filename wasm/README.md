@@ -8,6 +8,7 @@ Javascript bindings for [VowpalWabbit](https://vowpalwabbit.org/)
 | 0.0.4   | 9.8.0   | wasm_v0.0.4 |
 | 0.0.5   | 9.8.0   | wasm_v0.0.5 |
 | 0.0.6   | 9.8.0   | wasm_v0.0.6 |
+| 0.0.7   | 9.9.0   | wasm_v0.0.7 |
 
 ## Documentation
 
