@@ -1,6 +1,5 @@
 from vw_executor.vw import Vw
 from vw_executor.vw_opts import Grid
-from numpy.testing import assert_allclose
 import pandas as pd
 import numpy as np
 import pytest
@@ -11,7 +10,7 @@ from test_helper import (
     dynamic_function_call,
     get_function_object,
     evaluate_expression,
-    generate_mathematical_expression_json,
+    variable_mapping,
 )
 
 CURR_DICT = os.path.dirname(os.path.abspath(__file__))
@@ -60,12 +59,12 @@ def core_test(files, grid, outputs, job_assert, job_assert_args):
         )
 
 
-def get_options(grids):
-    grid_expression, variables = generate_mathematical_expression_json(grids)
+def get_options(grids, expression):
+    variables = variable_mapping(grids)
     final_variables = {}
     for key in variables:
         final_variables[key] = Grid(variables[key])
-    return evaluate_expression(grid_expression, final_variables)
+    return evaluate_expression(expression, final_variables)
 
 
 @pytest.mark.usefixtures("test_descriptions", TEST_CONFIG_FILES)
@@ -74,7 +73,10 @@ def init_all(test_descriptions):
         if type(tests) is not list:
             tests = [tests]
         for test_description in tests:
-            options = get_options(test_description["grids"])
+            print(test_description)
+            options = get_options(
+                test_description["grids"], test_description["grids_expression"]
+            )
             task_folder = TEST_CONFIG_FILES_NAME[tIndex].split(".")[0]
             package_name = [task_folder + ".", ""]
             for dir in package_name:

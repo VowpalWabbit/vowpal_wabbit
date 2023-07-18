@@ -46,6 +46,7 @@
                 ]
             }
         ],
+        "grids_expression": "g0",
         "output": [
             "--readable_model",
             "-p"
@@ -92,6 +93,7 @@
                 ]
             }
         ],
+        "grids_expression": "g0",
         "output": [
             "--readable_model",
             "-p"
