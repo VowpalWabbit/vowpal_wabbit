@@ -323,6 +323,7 @@ ES6 wrapper around the Vowpal Wabbit C++ library.
     * [new Workspace([args_str], [model_array])](#new_Workspace_new)
     * [new Workspace([args_str], [model_file], [model_array])](#new_Workspace_new)
     * [.parse(line)](#Workspace+parse) ⇒
+    * [.createExampleFromDense(features, label)](#Workspace+createExampleFromDense) ⇒
     * [.predict(example)](#Workspace+predict) ⇒
     * [.learn(example)](#Workspace+learn)
     * [.finishExample(example)](#Workspace+finishExample)
@@ -410,6 +411,25 @@ finishExample() must be called and then delete() on the example, when it is no l
 | --- | --- |
 | line | <code>string</code> | 
 
+<a name="Workspace+createExampleFromDense"></a>
+
+### workspace.createExampleFromDense(features, label) ⇒
+Creates a new example from a dense array of features, where the key of the map is the namespace.
+
+**Kind**: instance method of [<code>Workspace</code>](#Workspace)  
+**Returns**: a parsed vw example that can be used for prediction or learning  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| features | <code>Map.&lt;string, Array.&lt;number&gt;&gt;</code> |  |
+| label | <code>string</code> | Empty label by default |
+
+**Example**  
+```js
+let example = model.create_example_from_dense({
+    my_namespace: [0.3, 0.2, 0.1, 0.3, 0.5, 0.9]
+});
+```
 <a name="Workspace+predict"></a>
 
 ### workspace.predict(example) ⇒
@@ -945,6 +965,7 @@ Nodejs wrapper around the Vowpal Wabbit C++ library.
     * [new Workspace([args_str], [model_array])](#new_Workspace_new)
     * [new Workspace([args_str], [model_file], [model_array])](#new_Workspace_new)
     * [.parse(line)](#Workspace+parse) ⇒
+    * [.createExampleFromDense(features, label)](#Workspace+createExampleFromDense) ⇒
     * [.predict(example)](#Workspace+predict) ⇒
     * [.learn(example)](#Workspace+learn)
     * [.finishExample(example)](#Workspace+finishExample)
@@ -1032,6 +1053,25 @@ finishExample() must be called and then delete() on the example, when it is no l
 | --- | --- |
 | line | <code>string</code> | 
 
+<a name="Workspace+createExampleFromDense"></a>
+
+### workspace.createExampleFromDense(features, label) ⇒
+Creates a new example from a dense array of features, where the key of the map is the namespace.
+
+**Kind**: instance method of [<code>Workspace</code>](#Workspace)  
+**Returns**: a parsed vw example that can be used for prediction or learning  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| features | <code>Map.&lt;string, Array.&lt;number&gt;&gt;</code> |  |
+| label | <code>string</code> | Empty label by default |
+
+**Example**  
+```js
+let example = model.create_example_from_dense({
+    my_namespace: [0.3, 0.2, 0.1, 0.3, 0.5, 0.9]
+});
+```
 <a name="Workspace+predict"></a>
 
 ### workspace.predict(example) ⇒
