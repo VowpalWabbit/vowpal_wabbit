@@ -11,7 +11,9 @@ from test_helper import (
     get_function_object,
     evaluate_expression,
     variable_mapping,
+    copy_file,
 )
+from conftest import STORE_OUTPUT
 
 CURR_DICT = os.path.dirname(os.path.abspath(__file__))
 TEST_CONFIG_FILES_NAME = os.listdir(os.path.join(CURR_DICT, "test_configs"))
@@ -57,6 +59,21 @@ def core_test(files, grid, outputs, job_assert, job_assert_args):
         GENERATED_TEST_CASES.append(
             [lambda: job_assert(j, **job_assert_args), test_name]
         )
+        if STORE_OUTPUT:
+            if not os.path.exists(CURR_DICT + "/output"):
+                os.mkdir(CURR_DICT + "/output")
+            if not os.path.exists(CURR_DICT + "/output/" + test_name):
+                os.mkdir(CURR_DICT + "/output/" + test_name)
+            fileName = str(list(j.outputs.values())[0][0]).split("/")[-1]
+            for key, value in list(j.outputs.items()):
+                copy_file(
+                    value[0],
+                    CURR_DICT + "/output/" + test_name + "/" + f"{key}_" + fileName,
+                )
+            copy_file(
+                os.path.join(j.cache.path, "cacheNone/" + fileName),
+                CURR_DICT + "/output/" + test_name + "/" + fileName,
+            )
 
 
 def get_options(grids, expression):
@@ -73,7 +90,6 @@ def init_all(test_descriptions):
         if type(tests) is not list:
             tests = [tests]
         for test_description in tests:
-            print(test_description)
             options = get_options(
                 test_description["grids"], test_description["grids_expression"]
             )

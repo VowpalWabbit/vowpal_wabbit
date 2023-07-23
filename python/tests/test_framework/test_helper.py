@@ -3,6 +3,7 @@ import importlib
 import os
 import itertools
 import inspect
+import shutil
 
 # Get the current directory
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -65,3 +66,15 @@ def generate_string_combinations(*lists):
     combinations = list(itertools.product(*lists))
     combinations = ["".join(combination) for combination in combinations]
     return combinations
+
+
+def copy_file(source_file, destination_file):
+    try:
+        shutil.copy(source_file, destination_file)
+        print(f"File copied successfully from '{source_file}' to '{destination_file}'.")
+    except FileNotFoundError:
+        print(f"Source file '{source_file}' not found.")
+    except PermissionError:
+        print(
+            f"Permission denied. Unable to copy '{source_file}' to '{destination_file}'."
+        )
