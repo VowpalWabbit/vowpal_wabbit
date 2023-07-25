@@ -77,10 +77,9 @@ def core_test(files, grid, outputs, job_assert, job_assert_args):
 
 
 def get_options(grids, expression):
-    variables = variable_mapping(grids)
     final_variables = {}
-    for key in variables:
-        final_variables[key] = Grid(variables[key])
+    for key in grids:
+        final_variables[key] = Grid(grids[key])
     return evaluate_expression(expression, final_variables)
 
 

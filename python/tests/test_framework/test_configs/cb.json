@@ -43,61 +43,61 @@
                 }
             }
         ],
-        "grids": [
-            {
+        "grids": {
+            "g0": {
                 "#base": [
                     "--cb_explore 2"
                 ]
             },
-            {
+            "g1": {
                 "--epsilon": [
                     0.1,
                     0.2,
                     0.3
                 ]
             },
-            {
+            "g2": {
                 "--first": [
                     1,
                     2
                 ]
             },
-            {
+            "g3": {
                 "--bag": [
                     5,
                     6,
                     7
                 ]
             },
-            {
+            "g4": {
                 "--cover": [
                     1,
                     2,
                     3
                 ]
             },
-            {
+            "g5": {
                 "--squarecb": [
                     "--gamma_scale 1000",
                     "--gamma_scale 10000"
                 ]
             },
-            {
+            "g6": {
                 "--synthcover": [
                     ""
                 ]
             },
-            {
+            "g7": {
                 "--regcb": [
                     ""
                 ]
             },
-            {
+            "g8": {
                 "--softmax": [
                     ""
                 ]
             }
-        ],
+        },
         "grids_expression": "g0 * (g1 + g2 + g3 + g4 + g5 +g6 + g7 + g8)",
         "output": [
             "--readable_model",
@@ -139,13 +139,13 @@
                 }
             }
         ],
-        "grids": [
-            {
+        "grids": {
+            "g0": {
                 "#base": [
                     "--cb 1 --preserve_performance_counters --save_resume"
                 ]
             },
-            {
+            "g1": {
                 "--cb_type": [
                     "ips",
                     "mtr",
@@ -153,7 +153,7 @@
                     "dm"
                 ]
             }
-        ],
+        },
         "grids_expression": "g0 * g1",
         "output": [
             "--readable_model",
@@ -202,61 +202,61 @@
                 }
             }
         ],
-        "grids": [
-            {
+        "grids": {
+            "g0": {
                 "#base": [
                     "--cb_explore_adf"
                 ]
             },
-            {
+            "g1": {
                 "--epsilon": [
                     0.1,
                     0.2,
                     0.3
                 ]
             },
-            {
+            "g2": {
                 "--first": [
                     1,
                     2
                 ]
             },
-            {
+            "g3": {
                 "--bag": [
                     5,
                     6,
                     7
                 ]
             },
-            {
+            "g4": {
                 "--cover": [
                     1,
                     2,
                     3
                 ]
             },
-            {
+            "g5": {
                 "--squarecb": [
                     "--gamma_scale 1000",
                     "--gamma_scale 10000"
                 ]
             },
-            {
+            "g6": {
                 "--synthcover": [
                     ""
                 ]
             },
-            {
+            "g7": {
                 "--regcb": [
                     ""
                 ]
             },
-            {
+            "g8": {
                 "--softmax": [
                     ""
                 ]
             }
-        ],
+        },
         "grids_expression": "g0 * (g1 + g2 + g3 + g4 + g5 +g6 + g7 + g8)",
         "output": [
             "--readable_model",

@@ -31,13 +31,13 @@
                 }
             }
         ],
-        "grids": [
-            {
+        "grids": {
+            "g0": {
                 "#base": [
                     "-P 50000 --preserve_performance_counters --save_resume"
                 ]
             },
-            {
+            "g1": {
                 "--learning_rate": [
                     null,
                     0.1,
@@ -57,14 +57,14 @@
                     0.4
                 ]
             },
-            {
+            "g2": {
                 "#reg": [
                     "--freegrad",
                     "--conjugate_gradient",
                     "--bfgs --passes 1 --cache"
                 ]
             },
-            {
+            "g3": {
                 "#reg": [
                     "--ftrl",
                     "--coin",
@@ -79,14 +79,14 @@
                     0.1
                 ]
             },
-            {
+            "g4": {
                 "--loss_function": [
                     null,
                     "poisson",
                     "quantile"
                 ]
             },
-            {
+            "g5": {
                 "--loss_function": [
                     "expectile"
                 ],
@@ -95,8 +95,8 @@
                     0.5
                 ]
             }
-        ],
-        "grids_expression" : "g0 * (g1 + g2 + g3) * (g5 + g4)",
+        },
+        "grids_expression": "g0 * (g1 + g2 + g3) * (g5 + g4)",
         "output": [
             "--readable_model",
             "-p"
