@@ -39,13 +39,14 @@
                 }
             }
         ],
-        "grids": [
-            {
+        "grids": {
+            "g0": {
                 "#base": [
                     "--oaa 3"
                 ]
             }
-        ],
+        },
+        "grids_expression": "g0",
         "output": [
             "--readable_model",
             "-p"
@@ -85,13 +86,14 @@
                 }
             }
         ],
-        "grids": [
-            {
+        "grids": {
+            "g0": {
                 "#base": [
                     "--oaa 25"
                 ]
             }
-        ],
+        },
+        "grids_expression": "g0",
         "output": [
             "--readable_model",
             "-p"

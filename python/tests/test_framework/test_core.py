@@ -1,6 +1,5 @@
 from vw_executor.vw import Vw
 from vw_executor.vw_opts import Grid
-from numpy.testing import assert_allclose
 import pandas as pd
 import numpy as np
 import pytest
@@ -11,8 +10,10 @@ from test_helper import (
     dynamic_function_call,
     get_function_object,
     evaluate_expression,
-    generate_mathematical_expression_json,
+    variable_mapping,
+    copy_file,
 )
+from conftest import STORE_OUTPUT
 
 CURR_DICT = os.path.dirname(os.path.abspath(__file__))
 TEST_CONFIG_FILES_NAME = os.listdir(os.path.join(CURR_DICT, "test_configs"))
@@ -58,14 +59,28 @@ def core_test(files, grid, outputs, job_assert, job_assert_args):
         GENERATED_TEST_CASES.append(
             [lambda: job_assert(j, **job_assert_args), test_name]
         )
+        if STORE_OUTPUT:
+            if not os.path.exists(CURR_DICT + "/output"):
+                os.mkdir(CURR_DICT + "/output")
+            if not os.path.exists(CURR_DICT + "/output/" + test_name):
+                os.mkdir(CURR_DICT + "/output/" + test_name)
+            fileName = str(list(j.outputs.values())[0][0]).split("/")[-1]
+            for key, value in list(j.outputs.items()):
+                copy_file(
+                    value[0],
+                    CURR_DICT + "/output/" + test_name + "/" + f"{key}_" + fileName,
+                )
+            copy_file(
+                os.path.join(j.cache.path, "cacheNone/" + fileName),
+                CURR_DICT + "/output/" + test_name + "/" + fileName,
+            )
 
 
-def get_options(grids):
-    grid_expression, variables = generate_mathematical_expression_json(grids)
+def get_options(grids, expression):
     final_variables = {}
-    for key in variables:
-        final_variables[key] = Grid(variables[key])
-    return evaluate_expression(grid_expression, final_variables)
+    for key in grids:
+        final_variables[key] = Grid(grids[key])
+    return evaluate_expression(expression, final_variables)
 
 
 @pytest.mark.usefixtures("test_descriptions", TEST_CONFIG_FILES)
@@ -74,7 +89,9 @@ def init_all(test_descriptions):
         if type(tests) is not list:
             tests = [tests]
         for test_description in tests:
-            options = get_options(test_description["grids"])
+            options = get_options(
+                test_description["grids"], test_description["grids_expression"]
+            )
             task_folder = TEST_CONFIG_FILES_NAME[tIndex].split(".")[0]
             package_name = [task_folder + ".", ""]
             for dir in package_name:
