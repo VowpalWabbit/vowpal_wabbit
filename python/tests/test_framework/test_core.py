@@ -10,7 +10,6 @@ from test_helper import (
     dynamic_function_call,
     get_function_object,
     evaluate_expression,
-    variable_mapping,
     copy_file,
 )
 from conftest import STORE_OUTPUT
@@ -43,7 +42,7 @@ def cleanup_data_file():
 @pytest.fixture
 def test_descriptions(request):
     resource = request.param
-    yield resource  #
+    yield resource
     cleanup_data_file()
 
 

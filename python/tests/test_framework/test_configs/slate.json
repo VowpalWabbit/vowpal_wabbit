@@ -1,0 +1,130 @@
+[
+    {
+        "test_name": "slates",
+        "data_func": {
+            "name": "generate_slate_data",
+            "params": {
+                "num_examples": 1000,
+                "num_action": [
+                    3,
+                    3,
+                    3
+                ],
+                "reward_function": {
+                    "name": "changing_reward",
+                    "params": {
+                        "reward": [
+                            [
+                                0,
+                                1,
+                                1
+                            ],
+                            [
+                                1,
+                                0,
+                                1
+                            ],
+                            [
+                                1,
+                                1,
+                                0
+                            ]
+                        ]
+                    }
+                },
+                "logging_policy": {
+                    "name": "even_probability",
+                    "params": {}
+                },
+                "action_space": {
+                    "name": "threeSlot_clothes_sunny_raining",
+                    "params": {}
+                },
+                "num_slot": 3,
+                "num_context": 2
+            }
+        },
+        "assert_functions": [
+            {
+                "name": "assert_loss",
+                "params": {
+                    "expected_loss": 3.1,
+                    "decimal": 0.1
+                }
+            },
+            {
+                "name": "assert_prediction",
+                "params": {
+                    "expected_value": [
+                        0.866667,
+                        0.066667,
+                        0.066667
+                    ],
+                    "threshold": 0.8,
+                    "atol": 0.01,
+                    "rtol": 0.01
+                }
+            }
+        ],
+        "grids": {
+            "g0": {
+                "#base": [
+                    "--slates"
+                ]
+            },
+            "g1": {
+                "--epsilon": [
+                    0.1,
+                    0.2,
+                    0.3
+                ]
+            },
+            "g2": {
+                "--first": [
+                    1,
+                    2
+                ]
+            },
+            "g3": {
+                "--bag": [
+                    5,
+                    6,
+                    7
+                ]
+            },
+            "g4": {
+                "--cover": [
+                    1,
+                    2,
+                    3
+                ]
+            },
+            "g5": {
+                "--squarecb": [
+                    "--gamma_scale 1000",
+                    "--gamma_scale 10000"
+                ]
+            },
+            "g6": {
+                "--synthcover": [
+                    ""
+                ]
+            },
+            "g7": {
+                "--regcb": [
+                    ""
+                ]
+            },
+            "g8": {
+                "--softmax": [
+                    ""
+                ]
+            }
+        },
+        "grids_expression": "g0 * (g1 + g2 + g3 + g4 + g5 +g6 + g7 + g8)",
+        "output": [
+            "--readable_model",
+            "-p"
+        ]
+    }
+]
