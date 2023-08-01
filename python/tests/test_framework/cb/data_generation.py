@@ -41,7 +41,10 @@ def generate_cb_data(
                 cost = reward_function_obj(
                     chosen_action, context, **reward_function["params"]
                 )
+                if "params" not in logging_policy:
+                    logging_policy["params"] = {}
                 logging_policy["params"]["chosen_action"] = chosen_action
+                logging_policy["params"]["num_actions"] = num_actions
                 probability = logging_policy_obj(**logging_policy["params"])
                 return cost, probability
 

@@ -5,31 +5,20 @@
             "name": "generate_slate_data",
             "params": {
                 "num_examples": 1000,
-                "num_action": [
-                    3,
-                    3,
-                    3
-                ],
                 "reward_function": {
-                    "name": "changing_reward",
+                    "name": "reverse_reward_after_iteration",
                     "params": {
                         "reward": [
                             [
-                                0,
-                                1,
-                                1
-                            ],
-                            [
-                                1,
-                                0,
-                                1
-                            ],
-                            [
-                                1,
                                 1,
                                 0
+                            ],
+                            [
+                                0,
+                                1
                             ]
-                        ]
+                        ],
+                        "threshold": 500
                     }
                 },
                 "logging_policy": {
@@ -37,18 +26,38 @@
                     "params": {}
                 },
                 "action_space": {
-                    "name": "threeSlot_clothes_sunny_raining",
-                    "params": {}
-                },
-                "num_slot": 3,
-                "num_context": 2
+                    "name": "new_action_after_threshold",
+                    "params": {
+                        "threshold": 500,
+                        "before": [
+                            [
+                                "longshirt",
+                                "tshirt"
+                            ],
+                            [
+                                "shorts",
+                                "jeans"
+                            ]
+                        ],
+                        "after": [
+                            [
+                                "rainshirt",
+                                "buttonupshirt"
+                            ],
+                            [
+                                "formalpants",
+                                "rainpants"
+                            ]
+                        ]
+                    }
+                }
             }
         },
         "assert_functions": [
             {
                 "name": "assert_loss",
                 "params": {
-                    "expected_loss": 3.1,
+                    "expected_loss": 0.8,
                     "decimal": 0.1
                 }
             },
@@ -56,9 +65,14 @@
                 "name": "assert_prediction",
                 "params": {
                     "expected_value": [
-                        0.866667,
-                        0.066667,
-                        0.066667
+                        [
+                            0.1,
+                            0.9
+                        ],
+                        [
+                            0.9,
+                            0.1
+                        ]
                     ],
                     "threshold": 0.8,
                     "atol": 0.01,
@@ -67,61 +81,61 @@
             }
         ],
         "grids": {
-            "g0": {
+            "slate": {
                 "#base": [
                     "--slates"
                 ]
             },
-            "g1": {
+            "epsilon": {
                 "--epsilon": [
                     0.1,
                     0.2,
                     0.3
                 ]
             },
-            "g2": {
+            "first": {
                 "--first": [
                     1,
                     2
                 ]
             },
-            "g3": {
+            "bag": {
                 "--bag": [
                     5,
                     6,
                     7
                 ]
             },
-            "g4": {
+            "cover": {
                 "--cover": [
                     1,
                     2,
                     3
                 ]
             },
-            "g5": {
+            "squarecb": {
                 "--squarecb": [
                     "--gamma_scale 1000",
                     "--gamma_scale 10000"
                 ]
             },
-            "g6": {
+            "synthcover": {
                 "--synthcover": [
                     ""
                 ]
             },
-            "g7": {
+            "regcb": {
                 "--regcb": [
                     ""
                 ]
             },
-            "g8": {
+            "softmax": {
                 "--softmax": [
                     ""
                 ]
             }
         },
-        "grids_expression": "g0 * (g1 + g2 + g3 + g4 + g5 +g6 + g7 + g8)",
+        "grids_expression": "slate * (epsilon + first + bag + cover + squarecb + synthcover + regcb + softmax)",
         "output": [
             "--readable_model",
             "-p"

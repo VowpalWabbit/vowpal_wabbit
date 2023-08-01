@@ -1,15 +1,7 @@
-def threeSlot_clothes_sunny_raining(**kwargs):
+def new_action_after_threshold(**kwargs):
     iteration = kwargs.get("iteration", 0)
+    threshold = kwargs.get("threshold", 0)
     # before iteration 500, it is sunny and after it is raining
-    if iteration > 500:
-        return [
-            ["buttonupshirt", "highvis", "rainshirt"],
-            ["formalpants", "rainpants", "shorts"],
-            ["rainshoe", "formalshoes", "flipflops"],
-        ]
-
-    return [
-        ["tshirt", "longshirt", "turtleneck"],
-        ["workpants", "shorts", "formalpants"],
-        ["formalshoes", "runners", "flipflops"],
-    ]
+    if iteration > threshold:
+        return kwargs["after"]
+    return kwargs["before"]

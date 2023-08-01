@@ -7,20 +7,20 @@ random.seed(10)
 
 
 def generate_classification_data(
-    num_sample,
+    num_example,
     num_classes,
     num_features,
     classify_func,
     bounds=None,
 ):
-    dataFile = f"classification_{num_classes}_{num_features}_{num_sample}.txt"
+    dataFile = f"classification_{num_classes}_{num_features}_{num_example}.txt"
     classify_func_obj = get_function_object(
         "classification.classification_functions", classify_func["name"]
     )
     if not bounds:
         bounds = [[0, 1] for _ in range(num_features)]
     with open(os.path.join(script_directory, dataFile), "w") as f:
-        for _ in range(num_sample):
+        for _ in range(num_example):
             x = [
                 random.uniform(bounds[index][0], bounds[index][1])
                 for index in range(num_features)

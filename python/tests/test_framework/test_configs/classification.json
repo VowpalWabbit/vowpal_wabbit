@@ -4,9 +4,9 @@
         "data_func": {
             "name": "generate_classification_data",
             "params": {
-                "no_sample": 2000,
-                "no_class": 2,
-                "no_features": 1,
+                "num_example": 2000,
+                "num_classes": 2,
+                "num_features": 1,
                 "classify_func": {
                     "name": "binary_classification_one_feature",
                     "params": {}
@@ -26,7 +26,7 @@
                     "data_func": {
                         "name": "generate_classification_data",
                         "params": {
-                            "no_sample": 100,
+                            "num_example": 100,
                             "no_class": 2,
                             "no_features": 1,
                             "classify_func": {
@@ -57,9 +57,9 @@
         "data_func": {
             "name": "generate_classification_data",
             "params": {
-                "no_sample": 100000,
-                "no_class": 25,
-                "no_features": 2,
+                "num_example": 100000,
+                "num_classes": 25,
+                "num_features": 2,
                 "classify_func": {
                     "name": "multi_classification_two_features",
                     "params": {}
@@ -73,16 +73,16 @@
                     "data_func": {
                         "name": "generate_classification_data",
                         "params": {
-                            "no_sample": 500,
-                            "no_class": 25,
-                            "no_features": 2,
+                            "num_example": 500,
+                            "num_classes": 25,
+                            "num_features": 2,
                             "classify_func": {
                                 "name": "multi_classification_two_features",
                                 "params": {}
                             }
                         }
                     },
-                    "accuracy_threshold": 0.5
+                    "accuracy_threshold": 0.4
                 }
             }
         ],

@@ -26,13 +26,6 @@ def evaluate_expression(expression, variables):
     return result
 
 
-def variable_mapping(grids):
-    variables_map = {}
-    for i in range(len(grids)):
-        variables_map["g" + str(len(variables_map))] = grids[i]
-    return variables_map
-
-
 def dynamic_function_call(module_name, function_name, *args, **kwargs):
     try:
         calling_frame = inspect.stack()[1]
@@ -43,12 +36,13 @@ def dynamic_function_call(module_name, function_name, *args, **kwargs):
         result = function(*args, **kwargs)
         return result
     except ImportError:
-        print(f"Module '{module_name}' not found.")
+        pass
     except AttributeError:
-        print(f"Function '{function_name}' not found in module '{module_name}'.")
+        pass
 
 
 def get_function_object(module_name, function_name):
+    function = None
     try:
         calling_frame = inspect.stack()[1]
         calling_module = inspect.getmodule(calling_frame[0])
@@ -57,9 +51,9 @@ def get_function_object(module_name, function_name):
         function = getattr(module, function_name)
         return function
     except ImportError:
-        print(f"Module '{module_name}' not found.")
+        pass
     except AttributeError:
-        print(f"Function '{function_name}' not found in module '{module_name}'.")
+        pass
 
 
 def generate_string_combinations(*lists):
@@ -78,3 +72,54 @@ def copy_file(source_file, destination_file):
         print(
             f"Permission denied. Unable to copy '{source_file}' to '{destination_file}'."
         )
+
+
+def call_function_with_dirs(dirs, module_name, function_name, **kargs):
+
+    for dir in dirs:
+        try:
+            data = dynamic_function_call(
+                dir + module_name,
+                function_name,
+                **kargs,
+            )
+            if data:
+                return data
+        except Exception as error:
+            if type(error) not in [ModuleNotFoundError]:
+                raise error
+
+
+def get_function_obj_with_dirs(dirs, module_name, function_name):
+    obj = None
+    for dir in dirs:
+        try:
+            obj = get_function_object(
+                dir + module_name,
+                function_name,
+            )
+            if obj:
+                return obj
+        except Exception as error:
+            if type(error) not in [ModuleNotFoundError]:
+                raise error
+    if not obj:
+        raise ModuleNotFoundError(
+            f"Module '{module_name}' not found in any of the directories {dirs}."
+        )
+
+
+def calculate_similarity(word, string):
+    # Calculate the similarity score between the string and the word
+    score = 0
+    for char in word:
+        if char in string:
+            score += 1
+    return score
+
+
+def custom_sort(word, strings):
+    # Sort the list of strings based on their similarity to the word
+    return sorted(
+        strings, key=lambda string: calculate_similarity(word, string), reverse=True
+    )
