@@ -68,9 +68,15 @@ def assert_loss(job, **kwargs):
     assert job.status == ExecutionStatus.Success, "job should be successful"
     assert type(job[0].loss) == float, "loss should be an float"
     decimal = kwargs.get("decimal", 2)
-    if job[0].loss < kwargs["expected_loss"]:
-        return
     assert_almost_equal(job[0].loss, kwargs["expected_loss"], decimal=decimal)
+
+
+def assert_loss_below(job, **kwargs):
+    assert job.status == ExecutionStatus.Success, "job should be successful"
+    assert type(job[0].loss) == float, "loss should be an float"
+    assert (
+        job[0].loss <= kwargs["expected_loss"]
+    ), f"loss should be below {kwargs['expected_loss']}"
 
 
 def assert_prediction_with_generated_data(job, **kwargs):

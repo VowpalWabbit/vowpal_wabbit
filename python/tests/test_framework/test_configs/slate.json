@@ -6,7 +6,7 @@
             "params": {
                 "num_examples": 1000,
                 "reward_function": {
-                    "name": "reverse_reward_after_iteration",
+                    "name": "reverse_reward_after_threshold",
                     "params": {
                         "reward": [
                             [
@@ -57,7 +57,7 @@
             {
                 "name": "assert_loss",
                 "params": {
-                    "expected_loss": 0.8,
+                    "expected_loss": -1.9,
                     "decimal": 0.1
                 }
             },

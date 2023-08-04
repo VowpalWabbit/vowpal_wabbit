@@ -11,8 +11,7 @@ def generate_slate_data(
     reward_function,
     logging_policy,
     action_space,
-    num_context=1,
-    context_name=None,
+    context_name=["1"],
 ):
 
     action_space_obj = get_function_object("slate.action_space", action_space["name"])
@@ -25,7 +24,7 @@ def generate_slate_data(
     )
 
     def return_cost_probability(chosen_action, chosen_slot, context):
-        cost = reward_function_obj(
+        cost = -reward_function_obj(
             chosen_action, context, chosen_slot, **reward_function["params"]
         )
         logging_policy["params"]["num_action"] = num_actions[chosen_slot - 1]
@@ -42,12 +41,11 @@ def generate_slate_data(
             num_actions = [len(slot) for slot in action_spaces]
             slot_name = [f"slot_{index}" for index in range(1, num_slots + 1)]
             chosen_actions = []
+            num_context = len(context_name)
             if num_context > 1:
                 context = random.randint(1, num_context)
             else:
                 context = 1
-            if not context_name:
-                context_name = [f"{index}" for index in range(1, num_context + 1)]
             for s in range(num_slots):
                 chosen_actions.append(random.randint(1, num_actions[s]))
             chosen_actions_cost_prob = [

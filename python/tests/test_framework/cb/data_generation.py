@@ -17,8 +17,7 @@ def generate_cb_data(
     num_actions,
     reward_function,
     logging_policy,
-    no_context=1,
-    context_name=None,
+    context_name=["1"],
 ):
 
     dataFile = f"cb_test_{num_examples}_{num_actions}_{num_features}.txt"
@@ -32,13 +31,14 @@ def generate_cb_data(
     features = [f"feature{index}" for index in range(1, num_features + 1)]
     with open(os.path.join(script_directory, dataFile), "w") as f:
         for _ in range(num_examples):
+            no_context = len(context_name)
             if no_context > 1:
                 context = random.randint(1, no_context)
-                if not context_name:
-                    context_name = [f"{index}" for index in range(1, no_context + 1)]
+            else:
+                context = 1
 
             def return_cost_probability(chosen_action, context=1):
-                cost = reward_function_obj(
+                cost = -reward_function_obj(
                     chosen_action, context, **reward_function["params"]
                 )
                 if "params" not in logging_policy:

@@ -3,7 +3,7 @@ def fixed_reward(chosen_action, context, slot, **kwargs):
     return reward[slot - 1][chosen_action - 1]
 
 
-def reverse_reward_after_iteration(chosen_action, context, slot, **kwargs):
+def reverse_reward_after_threshold(chosen_action, context, slot, **kwargs):
     reward = kwargs["reward"]
     iteration = kwargs.get("iteration", 0)
     threshold = kwargs.get("threshold", 0)

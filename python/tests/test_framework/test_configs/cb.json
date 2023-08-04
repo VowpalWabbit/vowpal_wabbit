@@ -21,14 +21,15 @@
                     "params": {
                     }
                 },
-                "no_context": 2
+                "context_name": ["1", "2"]
             }
         },
         "assert_functions": [
             {
                 "name": "assert_loss",
                 "params": {
-                    "expected_loss": 0.1
+                    "expected_loss": -1,
+                    "decimal": 1
                 }
             },
             {
@@ -124,7 +125,7 @@
             {
                 "name": "assert_loss",
                 "params": {
-                    "expected_loss": 1
+                    "expected_loss": -1
                 }
             },
             {
@@ -173,14 +174,14 @@
                     "params": {
                     }
                 },
-                "no_context": 2
+                "context_name": ["1", "2"]
             }
         },
         "assert_functions": [
             {
                 "name": "assert_loss",
                 "params": {
-                    "expected_loss": 0.6,
+                    "expected_loss": -0.4,
                     "decimal": 1
                 }
             },
