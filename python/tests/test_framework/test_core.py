@@ -7,11 +7,11 @@ import os
 import logging
 from test_helper import (
     json_to_dict_list,
-    dynamic_function_call,
-    get_function_object,
     evaluate_expression,
-    variable_mapping,
     copy_file,
+    call_function_with_dirs,
+    custom_sort,
+    get_function_obj_with_dirs,
 )
 from conftest import STORE_OUTPUT
 
@@ -43,7 +43,7 @@ def cleanup_data_file():
 @pytest.fixture
 def test_descriptions(request):
     resource = request.param
-    yield resource  #
+    yield resource
     cleanup_data_file()
 
 
@@ -86,30 +86,28 @@ def get_options(grids, expression):
 @pytest.mark.usefixtures("test_descriptions", TEST_CONFIG_FILES)
 def init_all(test_descriptions):
     for tIndex, tests in enumerate(test_descriptions):
+        task_folder = TEST_CONFIG_FILES_NAME[tIndex].split(".")[0]
+        package_name = [task_folder + ".", ""]
+        package_name = custom_sort(task_folder, package_name)
+        package_name.append(".")
         if type(tests) is not list:
             tests = [tests]
         for test_description in tests:
             options = get_options(
                 test_description["grids"], test_description["grids_expression"]
             )
-            task_folder = TEST_CONFIG_FILES_NAME[tIndex].split(".")[0]
-            package_name = [task_folder + ".", ""]
-            for dir in package_name:
-                try:
-                    data = dynamic_function_call(
-                        dir + "data_generation",
-                        test_description["data_func"]["name"],
-                        *test_description["data_func"]["params"].values(),
-                    )
-                    if data:
-                        break
-                except:
-                    pass
+            data = call_function_with_dirs(
+                package_name,
+                "data_generation",
+                test_description["data_func"]["name"],
+                **test_description["data_func"]["params"],
+            )
 
             for assert_func in test_description["assert_functions"]:
-                assert_job = get_function_object("assert_job", assert_func["name"])
-                if not assert_job:
-                    continue
+
+                assert_job = get_function_obj_with_dirs(
+                    package_name, "assert_job", assert_func["name"]
+                )
                 script_directory = os.path.dirname(os.path.realpath(__file__))
                 core_test(
                     os.path.join(script_directory, data),
