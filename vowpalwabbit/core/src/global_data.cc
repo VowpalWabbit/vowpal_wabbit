@@ -113,10 +113,10 @@ void workspace::learn(multi_ex& ec)
     {
       VW::LEARNER::require_multiline(l)->predict(ec);
       VW::polyprediction saved_prediction;
-      VW::move_pred_to(ec[0]->pred, saved_prediction, l->get_output_prediction_type());
-      new (&ec[0]->pred) VW::polyprediction();
+      // VW::move_pred_to(ec[0]->pred, saved_prediction, l->get_output_prediction_type());
+      // new (&ec[0]->pred) VW::polyprediction();
       VW::LEARNER::require_multiline(l)->learn(ec);
-      VW::move_pred_to(saved_prediction, ec[0]->pred, l->get_output_prediction_type());
+      // VW::move_pred_to(saved_prediction, ec[0]->pred, l->get_output_prediction_type());
     }
   }
 }
