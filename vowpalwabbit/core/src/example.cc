@@ -16,45 +16,45 @@
 #include <climits>
 #include <cstdint>
 
-void VW::swap_prediction(VW::polyprediction& a, VW::polyprediction& b, VW::prediction_type_t prediction_type)
+void VW::move_pred_to(VW::polyprediction& src, VW::polyprediction& dest, VW::prediction_type_t prediction_type)
 {
-  switch(prediction_type)
+  switch (prediction_type)
   {
     case VW::prediction_type_t::SCALAR:
-      std::swap(a.scalar, b.scalar);
+      dest.scalar = std::move(src.scalar);
       break;
     case VW::prediction_type_t::SCALARS:
-      std::swap(a.scalars, b.scalars);
+      dest.scalars = std::move(src.scalars);
       break;
     case VW::prediction_type_t::ACTION_SCORES:
-      std::swap(a.a_s, b.a_s);
+      dest.a_s = std::move(src.a_s);
       break;
     case VW::prediction_type_t::PDF:
-      std::swap(a.pdf, b.pdf);
+      dest.pdf = std::move(src.pdf);
       break;
     case VW::prediction_type_t::ACTION_PROBS:
-      std::swap(a.a_s, b.a_s);
+      dest.a_s = std::move(src.a_s);
       break;
     case VW::prediction_type_t::MULTICLASS:
-      std::swap(a.multiclass, b.multiclass);
+      dest.multiclass = std::move(src.multiclass);
       break;
     case VW::prediction_type_t::MULTILABELS:
-      std::swap(a.multilabels, b.multilabels);
+      dest.multilabels = std::move(src.multilabels);
       break;
     case VW::prediction_type_t::PROB:
-      std::swap(a.prob, b.prob);
+      dest.prob = std::move(src.prob);
       break;
     case VW::prediction_type_t::MULTICLASS_PROBS:
-      std::swap(a.scalars, b.scalars);
+      dest.scalars = std::move(src.scalars);
       break;
     case VW::prediction_type_t::DECISION_PROBS:
-      std::swap(a.decision_scores, b.decision_scores);
+      dest.decision_scores = std::move(src.decision_scores);
       break;
     case VW::prediction_type_t::ACTION_PDF_VALUE:
-      std::swap(a.pdf_value, b.pdf_value);
+      dest.pdf_value = std::move(src.pdf_value);
       break;
     case VW::prediction_type_t::ACTIVE_MULTICLASS:
-      std::swap(a.active_multiclass, b.active_multiclass);
+      dest.active_multiclass = std::move(src.active_multiclass);
       break;
     case VW::prediction_type_t::NOPRED:
       // Noop
