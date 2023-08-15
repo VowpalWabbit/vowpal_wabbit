@@ -93,10 +93,10 @@ void workspace::learn(example& ec)
     {
       VW::LEARNER::require_singleline(l)->predict(ec);
       VW::polyprediction saved_prediction;
-      VW::move_pred_to(ec.pred, saved_prediction, l->get_output_prediction_type());
-      new (&ec.pred) VW::polyprediction();
+      // VW::move_pred_to(ec.pred, saved_prediction, l->get_output_prediction_type());
+      // new (&ec.pred) VW::polyprediction();
       VW::LEARNER::require_singleline(l)->learn(ec);
-      VW::move_pred_to(saved_prediction, ec.pred, l->get_output_prediction_type());
+      // VW::move_pred_to(saved_prediction, ec.pred, l->get_output_prediction_type());
     }
   }
 }
