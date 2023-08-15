@@ -11,7 +11,7 @@
                     2
                 ],
                 "reward_function": {
-                    "name": "constant_reward",
+                    "name": "piecewise_constant",
                     "params": {
                         "reward": [
                             1,
@@ -160,7 +160,7 @@
             {
                 "name": "assert_prediction",
                 "params": {
-                    "expected_value": 0,
+                    "expected_value": [0,1],
                     "threshold": 0.1
                 }
             }
@@ -168,7 +168,7 @@
         "grids": {
             "g0": {
                 "#base": [
-                    "--cats 1 --min_value 0 --max_value 1 --bandwidth 1"
+                    "--cats 2 --min_value 0 --max_value 1 --bandwidth 1"
                 ]
             },
             "g1": {

@@ -2,7 +2,7 @@ def fixed_reward(chosen_action, context, **kwargs):
     return 1
 
 
-def constant_reward(chosen_action, context, **kwargs):
+def piecewise_constant(chosen_action, context, **kwargs):
     reward = kwargs["reward"]
     return reward[int(chosen_action) - 1]
 

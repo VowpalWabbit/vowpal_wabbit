@@ -37,7 +37,7 @@ def generate_cb_data(
             else:
                 context = 1
 
-            def return_cost_probability(chosen_action, context=1):
+            def return_cost_probability(chosen_action, context):
                 cost = -reward_function_obj(
                     chosen_action, context, **reward_function["params"]
                 )
