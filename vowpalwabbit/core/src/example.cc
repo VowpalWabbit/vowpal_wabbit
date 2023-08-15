@@ -108,7 +108,6 @@ void VW::copy_prediction(const VW::polyprediction& src, VW::polyprediction& dest
   }
 }
 
-
 float calculate_total_sum_features_squared(bool permutations, VW::example& ec)
 {
   float sum_features_squared = 0.f;
