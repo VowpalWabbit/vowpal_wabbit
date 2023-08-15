@@ -62,52 +62,6 @@ void VW::swap_prediction(VW::polyprediction& a, VW::polyprediction& b, VW::predi
   }
 }
 
-void VW::copy_prediction(const VW::polyprediction& src, VW::polyprediction& dest, VW::prediction_type_t prediction_type)
-{
-  switch (prediction_type)
-  {
-    case VW::prediction_type_t::SCALAR:
-      dest.scalar = src.scalar;
-      break;
-    case VW::prediction_type_t::SCALARS:
-      dest.scalars = src.scalars;
-      break;
-    case VW::prediction_type_t::ACTION_SCORES:
-      dest.a_s = src.a_s;
-      break;
-    case VW::prediction_type_t::PDF:
-      dest.pdf = src.pdf;
-      break;
-    case VW::prediction_type_t::ACTION_PROBS:
-      dest.a_s = src.a_s;
-      break;
-    case VW::prediction_type_t::MULTICLASS:
-      dest.multiclass = src.multiclass;
-      break;
-    case VW::prediction_type_t::MULTILABELS:
-      dest.multilabels = src.multilabels;
-      break;
-    case VW::prediction_type_t::PROB:
-      dest.prob = src.prob;
-      break;
-    case VW::prediction_type_t::MULTICLASS_PROBS:
-      dest.scalars = src.scalars;
-      break;
-    case VW::prediction_type_t::DECISION_PROBS:
-      dest.decision_scores = src.decision_scores;
-      break;
-    case VW::prediction_type_t::ACTION_PDF_VALUE:
-      dest.pdf_value = src.pdf_value;
-      break;
-    case VW::prediction_type_t::ACTIVE_MULTICLASS:
-      dest.active_multiclass = src.active_multiclass;
-      break;
-    case VW::prediction_type_t::NOPRED:
-      // Noop
-      break;
-  }
-}
-
 float calculate_total_sum_features_squared(bool permutations, VW::example& ec)
 {
   float sum_features_squared = 0.f;
