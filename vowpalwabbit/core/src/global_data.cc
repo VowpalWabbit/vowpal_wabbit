@@ -93,10 +93,9 @@ void workspace::learn(example& ec)
     {
       VW::LEARNER::require_singleline(l)->predict(ec);
       VW::polyprediction saved_prediction;
-      // VW::move_pred_to(ec.pred, saved_prediction, l->get_output_prediction_type());
-      // new (&ec.pred) VW::polyprediction();
+      VW::swap_prediction(ec.pred, saved_prediction, l->get_output_prediction_type());
       VW::LEARNER::require_singleline(l)->learn(ec);
-      // VW::move_pred_to(saved_prediction, ec.pred, l->get_output_prediction_type());
+      VW::swap_prediction(saved_prediction, ec.pred, l->get_output_prediction_type());
     }
   }
 }
@@ -113,10 +112,9 @@ void workspace::learn(multi_ex& ec)
     {
       VW::LEARNER::require_multiline(l)->predict(ec);
       VW::polyprediction saved_prediction;
-      // VW::move_pred_to(ec[0]->pred, saved_prediction, l->get_output_prediction_type());
-      // new (&ec[0]->pred) VW::polyprediction();
+      VW::swap_prediction(ec[0]->pred, saved_prediction, l->get_output_prediction_type());
       VW::LEARNER::require_multiline(l)->learn(ec);
-      // VW::move_pred_to(saved_prediction, ec[0]->pred, l->get_output_prediction_type());
+      VW::swap_prediction(saved_prediction, ec[0]->pred, l->get_output_prediction_type());
     }
   }
 }

@@ -83,7 +83,7 @@ public:
 };
 
 std::string to_string(const v_array<float>& scalars, int decimal_precision = details::DEFAULT_FLOAT_PRECISION);
-void move_pred_to(polyprediction& src, polyprediction& dest, prediction_type_t prediction_type);
+void swap_prediction(polyprediction& a, polyprediction& b, prediction_type_t prediction_type);
 
 class example : public example_predict  // core example datatype.
 {
