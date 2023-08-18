@@ -51,6 +51,8 @@ def assert_prediction(job, **kwargs):
         prediction = [i for i in prediction if i != ""]
         if ":" in prediction[0]:
             prediction = [[j.split(":")[1] for j in i.split(",")] for i in prediction]
+        elif "," in prediction[0]:
+            prediction = [[j for j in i.split(",")] for i in prediction]
         if type(prediction[0]) == list:
             prediction = [[float(remove_non_digits(j)) for j in i] for i in prediction]
         else:

@@ -75,7 +75,6 @@ def copy_file(source_file, destination_file):
 
 
 def call_function_with_dirs(dirs, module_name, function_name, **kargs):
-
     for dir in dirs:
         try:
             data = dynamic_function_call(
