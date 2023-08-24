@@ -28,15 +28,15 @@ def assert_weight(job, **kwargs):
     rtol = get_from_kwargs(kwargs, "rtol", 10e-5)
     expected_weights = kwargs["expected_weights"]
     assert job.status == ExecutionStatus.Success, f"{job.opts} job should be successful"
-    data = job.outputs["--readable_model"]
+    data = job.outputs["--invert_hash"]
     with open(data[0], "r") as f:
         data = f.readlines()
     data = [i.strip() for i in data]
-    weights = job[0].model9("--readable_model").weights
-    weights = weights["weight"].to_list()
-    assert_allclose(
-        weights, expected_weights, atol=atol, rtol=rtol
-    ), f"weights should be {expected_weights}"
+    weights = job[0].model9("--invert_hash").weights.to_dict()["weight"]
+    for x in expected_weights:
+        assert_allclose(
+            [weights[x]], [expected_weights[x]], atol=atol, rtol=rtol
+        ), f"weights {x} should be {expected_weights[x]}"
 
 
 def assert_prediction(job, **kwargs):

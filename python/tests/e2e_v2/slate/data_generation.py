@@ -3,7 +3,6 @@ import os
 from test_helper import get_function_object
 
 script_directory = os.path.dirname(os.path.realpath(__file__))
-random.seed(10)
 
 
 def generate_slate_data(
@@ -12,8 +11,10 @@ def generate_slate_data(
     logging_policy,
     action_space,
     context_name=["1"],
+    seed=random.randint(0, 100),
 ):
 
+    random.seed(seed)
     action_space_obj = get_function_object("slate.action_space", action_space["name"])
 
     reward_function_obj = get_function_object(
