@@ -5,8 +5,9 @@
             "params": {
                 "no_sample": 2000,
                 "constant": 5,
-                "lower_bound": 1,
-                "upper_bound": 100
+                "x_lower_bound": 1,
+                "x_upper_bound": 100,
+                "seed" : 1
             }
         },
         "assert_functions": [
@@ -22,10 +23,10 @@
             {
                 "name": "assert_weight",
                 "params": {
-                    "expected_weights": [
-                        5,
-                        0
-                    ],
+                    "expected_weights": {
+                        "f^x": 5,
+                        "Constant": 0
+                    },
                     "atol": 100,
                     "rtol": 10
                 }
@@ -99,6 +100,7 @@
         "grids_expression": "g0 * (g1 + g2 + g3) * (g5 + g4)",
         "output": [
             "--readable_model",
+            "--invert_hash",
             "-p"
         ]
     }

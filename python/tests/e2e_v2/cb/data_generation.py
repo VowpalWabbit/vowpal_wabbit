@@ -3,7 +3,6 @@ import os
 from test_helper import get_function_object
 
 script_directory = os.path.dirname(os.path.realpath(__file__))
-random.seed(10)
 
 
 def random_number_items(items):
@@ -18,8 +17,9 @@ def generate_cb_data(
     reward_function,
     logging_policy,
     context_name=["1"],
+    seed=random.randint(0, 100),
 ):
-
+    random.seed(seed)
     dataFile = f"cb_test_{num_examples}_{num_actions}_{num_features}.txt"
 
     reward_function_obj = get_function_object(

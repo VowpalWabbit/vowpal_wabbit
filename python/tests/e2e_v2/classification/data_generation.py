@@ -11,8 +11,10 @@ def generate_classification_data(
     num_classes,
     num_features,
     classify_func,
+    seed=random.randint(0, 100),
     bounds=None,
 ):
+    random.seed(seed)
     dataFile = f"classification_{num_classes}_{num_features}_{num_example}.txt"
     classify_func_obj = get_function_object(
         "classification.classification_functions", classify_func["name"]
