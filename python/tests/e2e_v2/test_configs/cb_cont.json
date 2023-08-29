@@ -6,6 +6,7 @@
             "params": {
                 "num_examples": 100,
                 "num_features": 1,
+                "seed" : 1,
                 "action_range": [
                     0,
                     2
@@ -71,6 +72,7 @@
             "params": {
                 "num_examples": 100,
                 "num_features": 2,
+                "seed" : 1,
                 "action_range": [
                     0,
                     2
@@ -137,6 +139,7 @@
             "params": {
                 "num_examples": 10,
                 "num_features": 1,
+                "seed" : 1,
                 "action_range": [
                     0,
                     1

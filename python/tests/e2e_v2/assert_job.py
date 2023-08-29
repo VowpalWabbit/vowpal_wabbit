@@ -102,7 +102,7 @@ def assert_prediction_with_generated_data(job, **kwargs):
                 break
         except:
             pass
-    dataFile = data_func_obj(*kwargs["data_func"]["params"].values())
+    dataFile = data_func_obj(**kwargs["data_func"]["params"])
     with open(dataFile, "r") as f:
         for line in f.readlines():
             expected_class.append(line.split("|")[0].strip())

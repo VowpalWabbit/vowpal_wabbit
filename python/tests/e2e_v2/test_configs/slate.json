@@ -5,6 +5,7 @@
             "name": "generate_slate_data",
             "params": {
                 "num_examples": 1000,
+                "seed" : 1,
                 "reward_function": {
                     "name": "reverse_reward_after_threshold",
                     "params": {

@@ -6,7 +6,8 @@
                 "no_sample": 2000,
                 "constant": 5,
                 "x_lower_bound": 1,
-                "x_upper_bound": 100
+                "x_upper_bound": 100,
+                "seed" : 1
             }
         },
         "assert_functions": [
