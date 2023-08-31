@@ -5,6 +5,7 @@
 #include "vw/core/global_data.h"
 
 #include "vw/config/options.h"
+#include "vw/core/example.h"
 #include "vw/core/parse_regressor.h"
 #include "vw/core/reductions/metrics.h"
 
@@ -91,7 +92,10 @@ void workspace::learn(example& ec)
     else
     {
       VW::LEARNER::require_singleline(l)->predict(ec);
+      VW::polyprediction saved_prediction;
+      VW::swap_prediction(ec.pred, saved_prediction, l->get_output_prediction_type());
       VW::LEARNER::require_singleline(l)->learn(ec);
+      VW::swap_prediction(saved_prediction, ec.pred, l->get_output_prediction_type());
     }
   }
 }
@@ -107,7 +111,10 @@ void workspace::learn(multi_ex& ec)
     else
     {
       VW::LEARNER::require_multiline(l)->predict(ec);
+      VW::polyprediction saved_prediction;
+      VW::swap_prediction(ec[0]->pred, saved_prediction, l->get_output_prediction_type());
       VW::LEARNER::require_multiline(l)->learn(ec);
+      VW::swap_prediction(saved_prediction, ec[0]->pred, l->get_output_prediction_type());
     }
   }
 }
