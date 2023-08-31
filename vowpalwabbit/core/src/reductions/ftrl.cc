@@ -458,7 +458,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::ftrl_setup(VW::setup_base_
         all.output_config.audit || all.output_config.hash_inv ? learn_coin_betting<true> : learn_coin_betting<false>;
     all.weights.stride_shift(3);  // NOTE: for more parameter storage
     b->ftrl_size = 6;
-    learn_returns_prediction = true;
+    learn_returns_prediction = false;
   }
 
   b->data.ftrl_alpha = b->ftrl_alpha;
