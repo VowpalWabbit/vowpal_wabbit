@@ -122,8 +122,42 @@ void add_obs_features_to_ik_ex(VW::example& ik_ex, const VW::example& obs_ex)
   }
 }
 
+void predict(VW::reductions::igl::igl_data& igl, learner& base, VW::multi_ex& ec_seq)
+{
+  VW::example* observation_ex = nullptr;
+
+  if (ec_seq.size() > 0 && ec_seq.back()->l.cb_with_observations.is_observation)
+  {
+    observation_ex = ec_seq.back();
+    ec_seq.pop_back();
+  }
+
+  std::swap(*igl.pi_ftrl.get(), *igl.ik_ftrl);
+
+  for (auto& ex : ec_seq)
+  {
+    ex->l.cb = ex->l.cb_with_observations.event;
+    ex->l.cb_with_observations.event.reset_to_default();
+  }
+
+  base.predict(ec_seq, 1);
+  std::swap(*igl.pi_ftrl.get(), *igl.ik_ftrl);
+
+  for (auto& ex : ec_seq)
+  {
+    ex->l.cb_with_observations.event = ex->l.cb;
+    ex->l.cb.reset_to_default();
+  }
+
+  if (observation_ex != nullptr) { ec_seq.push_back(observation_ex); }
+}
+
 void learn(VW::reductions::igl::igl_data& igl, learner& base, VW::multi_ex& ec_seq)
 {
+  predict(igl, base, ec_seq);
+
+  auto stashed_prediction = ec_seq[0]->pred.a_s;
+
   float p_unlabeled_prior = 0.5f;
 
   std::swap(igl.ik_ftrl->all->loss_config.loss, igl.ik_all->loss_config.loss);
@@ -212,36 +246,7 @@ void learn(VW::reductions::igl::igl_data& igl, learner& base, VW::multi_ex& ec_s
   }
 
   ec_seq.push_back(observation_ex);
-}
-
-void predict(VW::reductions::igl::igl_data& igl, learner& base, VW::multi_ex& ec_seq)
-{
-  VW::example* observation_ex = nullptr;
-
-  if (ec_seq.size() > 0 && ec_seq.back()->l.cb_with_observations.is_observation)
-  {
-    observation_ex = ec_seq.back();
-    ec_seq.pop_back();
-  }
-
-  std::swap(*igl.pi_ftrl.get(), *igl.ik_ftrl);
-
-  for (auto& ex : ec_seq)
-  {
-    ex->l.cb = ex->l.cb_with_observations.event;
-    ex->l.cb_with_observations.event.reset_to_default();
-  }
-
-  base.predict(ec_seq, 1);
-  std::swap(*igl.pi_ftrl.get(), *igl.ik_ftrl);
-
-  for (auto& ex : ec_seq)
-  {
-    ex->l.cb_with_observations.event = ex->l.cb;
-    ex->l.cb.reset_to_default();
-  }
-
-  if (observation_ex != nullptr) { ec_seq.push_back(observation_ex); }
+  ec_seq[0]->pred.a_s = std::move(stashed_prediction);
 }
 
 void save_load_igl(VW::reductions::igl::igl_data& igl, VW::io_buf& io, bool read, bool text)
@@ -415,6 +420,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::interaction_ground_setup(V
   auto l = make_reduction_learner(
       std::move(ld), pi_learner, learn, predict, stack_builder.get_setupfn_name(interaction_ground_setup))
                .set_feature_width(feature_width)
+               .set_learn_returns_prediction(true)
                .set_input_label_type(label_type_t::CB_WITH_OBSERVATIONS)
                .set_output_label_type(label_type_t::CB)
                .set_input_prediction_type(pred_type)

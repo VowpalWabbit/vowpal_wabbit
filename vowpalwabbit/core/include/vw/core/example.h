@@ -18,6 +18,7 @@
 #include "vw/core/multiclass.h"
 #include "vw/core/multilabel.h"
 #include "vw/core/no_label.h"
+#include "vw/core/prediction_type.h"
 #include "vw/core/prob_dist_cont.h"
 #include "vw/core/simple_label.h"
 #include "vw/core/slates_label.h"
@@ -82,6 +83,7 @@ public:
 };
 
 std::string to_string(const v_array<float>& scalars, int decimal_precision = details::DEFAULT_FLOAT_PRECISION);
+void swap_prediction(polyprediction& a, polyprediction& b, prediction_type_t prediction_type);
 
 class example : public example_predict  // core example datatype.
 {
