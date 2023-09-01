@@ -110,11 +110,7 @@ void predict_or_learn(boosting& o, VW::LEARNER::learner& base, VW::example& ec)
   }
 
   ec.weight = u;
-  ec.partial_prediction = final_prediction;
-  ec.pred.scalar = VW::math::sign(final_prediction);
-
-  if (ld.label == ec.pred.scalar) { ec.loss = 0.; }
-  else { ec.loss = ec.weight; }
+  ec.pred.scalar = final_prediction;
 }
 
 //-----------------------------------------------------------------
@@ -166,11 +162,7 @@ void predict_or_learn_logistic(boosting& o, VW::LEARNER::learner& base, VW::exam
   }
 
   ec.weight = u;
-  ec.partial_prediction = final_prediction;
-  ec.pred.scalar = VW::math::sign(final_prediction);
-
-  if (ld.label == ec.pred.scalar) { ec.loss = 0.; }
-  else { ec.loss = ec.weight; }
+  ec.pred.scalar = final_prediction;
 }
 
 template <bool is_learn>
@@ -244,11 +236,7 @@ void predict_or_learn_adaptive(boosting& o, VW::LEARNER::learner& base, VW::exam
   }
 
   ec.weight = u;
-  ec.partial_prediction = final_prediction;
-  ec.pred.scalar = VW::math::sign(final_prediction);
-
-  if (ld.label == ec.pred.scalar) { ec.loss = 0.; }
-  else { ec.loss = ec.weight; }
+  ec.pred.scalar = final_prediction;
 }
 
 void save_load_sampling(boosting& o, VW::io_buf& model_file, bool read, bool text)
