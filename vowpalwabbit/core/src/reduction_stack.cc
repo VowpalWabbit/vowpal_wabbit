@@ -188,12 +188,12 @@ void prepare_reductions(std::vector<std::tuple<std::string, VW::reduction_setup_
 
   // Reductions
   reductions.push_back(VW::reductions::bs_setup);
+  reductions.push_back(VW::reductions::boosting_setup);
   reductions.push_back(VW::reductions::binary_setup);
 
   reductions.push_back(VW::reductions::expreplay_setup<'m', VW::multiclass_label_parser_global>);
   reductions.push_back(VW::reductions::topk_setup);
   reductions.push_back(VW::reductions::oaa_setup);
-  reductions.push_back(VW::reductions::boosting_setup);
   reductions.push_back(VW::reductions::ect_setup);
   reductions.push_back(VW::reductions::log_multi_setup);
   reductions.push_back(VW::reductions::recall_tree_setup);
