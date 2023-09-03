@@ -6,7 +6,7 @@
             "params": {
                 "num_examples": 100,
                 "num_features": 1,
-                "seed" : 1,
+                "seed": 1,
                 "action_range": [
                     0,
                     2
@@ -72,7 +72,7 @@
             "params": {
                 "num_examples": 100,
                 "num_features": 2,
-                "seed" : 1,
+                "seed": 1,
                 "action_range": [
                     0,
                     2
@@ -139,7 +139,7 @@
             "params": {
                 "num_examples": 10,
                 "num_features": 1,
-                "seed" : 1,
+                "seed": 1,
                 "action_range": [
                     0,
                     1
@@ -163,7 +163,10 @@
             {
                 "name": "assert_prediction",
                 "params": {
-                    "expected_value": [0,1],
+                    "expected_value": [
+                        0,
+                        1
+                    ],
                     "threshold": 0.1
                 }
             }

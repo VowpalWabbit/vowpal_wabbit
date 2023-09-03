@@ -1,4 +1,3 @@
-from numpy.testing import assert_allclose, assert_almost_equal
 from vw_executor.vw import ExecutionStatus
 import numpy as np
 

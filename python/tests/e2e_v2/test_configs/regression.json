@@ -17,18 +17,18 @@
                     "expected_value": [
                         5
                     ],
-                    "threshold": 0
+                    "threshold": 0.8
                 }
             },
             {
                 "name": "assert_weight",
                 "params": {
                     "expected_weights": {
-                        "f^x": 5,
-                        "Constant": 0
+                        "f^x": 0,
+                        "Constant": 5
                     },
-                    "atol": 100,
-                    "rtol": 10
+                    "atol": 0.1,
+                    "rtol": 1
                 }
             }
         ],

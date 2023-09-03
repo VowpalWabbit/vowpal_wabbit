@@ -6,6 +6,7 @@ script_directory = os.path.dirname(os.path.realpath(__file__))
 
 
 def generate_slate_data(
+    f,
     num_examples,
     reward_function,
     logging_policy,
@@ -33,39 +34,37 @@ def generate_slate_data(
         probability = logging_policy_obj(**logging_policy["params"])
         return cost, probability
 
-    dataFile = f"slate_test_{num_examples}_{generate_slate_data.__name__}.txt"
-    with open(os.path.join(script_directory, dataFile), "w") as f:
-        for i in range(num_examples):
-            action_space["params"]["iteration"] = i
-            action_spaces = action_space_obj(**action_space["params"])
-            num_slots = len(action_spaces)
-            num_actions = [len(slot) for slot in action_spaces]
-            slot_name = [f"slot_{index}" for index in range(1, num_slots + 1)]
-            chosen_actions = []
-            num_context = len(context_name)
-            if num_context > 1:
-                context = random.randint(1, num_context)
-            else:
-                context = 1
-            for s in range(num_slots):
-                chosen_actions.append(random.randint(1, num_actions[s]))
-            chosen_actions_cost_prob = [
-                return_cost_probability(action, slot + 1, context)
-                for slot, action in enumerate(chosen_actions)
-            ]
-            total_cost = sum([cost for cost, _ in chosen_actions_cost_prob])
+    for i in range(num_examples):
+        action_space["params"]["iteration"] = i
+        action_spaces = action_space_obj(**action_space["params"])
+        reward_function["params"]["iteration"] = i
+        num_slots = len(action_spaces)
+        num_actions = [len(slot) for slot in action_spaces]
+        slot_name = [f"slot_{index}" for index in range(1, num_slots + 1)]
+        chosen_actions = []
+        num_context = len(context_name)
+        if num_context > 1:
+            context = random.randint(1, num_context)
+        else:
+            context = 1
+        for s in range(num_slots):
+            chosen_actions.append(random.randint(1, num_actions[s]))
+        chosen_actions_cost_prob = [
+            return_cost_probability(action, slot + 1, context)
+            for slot, action in enumerate(chosen_actions)
+        ]
+        total_cost = sum([cost for cost, _ in chosen_actions_cost_prob])
 
-            f.write(f"slates shared {total_cost} |User {context_name[context-1]}\n")
-            # write actions
-            for ind, slot in enumerate(action_spaces):
-                for a in slot:
-                    f.write(
-                        f"slates action {ind} |Action {a}\n",
-                    )
-
-            for s in range(num_slots):
+        f.write(f"slates shared {total_cost} |User {context_name[context-1]}\n")
+        # write actions
+        for ind, slot in enumerate(action_spaces):
+            for a in slot:
                 f.write(
-                    f"slates slot {chosen_actions[s]}:{chosen_actions_cost_prob[s][1]} |Slot {slot_name[s]}\n"
+                    f"slates action {ind} |Action {a}\n",
                 )
-            f.write("\n")
-    return os.path.join(script_directory, dataFile)
+
+        for s in range(num_slots):
+            f.write(
+                f"slates slot {chosen_actions[s]}:{chosen_actions_cost_prob[s][1]} |Slot {slot_name[s]}\n"
+            )
+        f.write("\n")
