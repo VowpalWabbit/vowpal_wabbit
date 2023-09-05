@@ -7,7 +7,7 @@
                 "num_examples": 100,
                 "num_features": 1,
                 "num_actions": 2,
-                "seed" : 1,
+                "seed": 1,
                 "reward_function": {
                     "name": "constant_reward",
                     "params": {
@@ -115,7 +115,7 @@
                 "num_examples": 100,
                 "num_features": 1,
                 "num_actions": 1,
-                "seed" : 1,
+                "seed": 1,
                 "reward_function": {
                     "name": "fixed_reward",
                     "params": {}
@@ -170,7 +170,7 @@
                 "num_examples": 100,
                 "num_features": 2,
                 "num_actions": 2,
-                "seed" : 1,
+                "seed": 1,
                 "reward_function": {
                     "name": "fixed_reward_two_action",
                     "params": {}

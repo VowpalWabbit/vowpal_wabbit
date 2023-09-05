@@ -108,6 +108,23 @@ def get_function_obj_with_dirs(dirs, module_name, function_name):
         )
 
 
+def datagen_driver(script_directory, impl, **kwargs):
+
+    names = []
+    for i in kwargs.values():
+        if type(i) == dict:
+            names.append(list(i.items())[0][1])
+        elif type(i) == list:
+            pass
+        else:
+            names.append(i)
+
+    dataFile = f"{str(impl.__name__)}_{'_'.join([str(i) for i in names])}.txt"
+    with open(os.path.join(script_directory, dataFile), "w") as f:
+        impl(f, **kwargs)
+    return os.path.join(script_directory, dataFile)
+
+
 def calculate_similarity(word, string):
     # Calculate the similarity score between the string and the word
     score = 0

@@ -1,7 +1,5 @@
 from vw_executor.vw import Vw
 from vw_executor.vw_opts import Grid
-import pandas as pd
-import numpy as np
 import pytest
 import os
 import logging
@@ -9,9 +7,9 @@ from test_helper import (
     json_to_dict_list,
     evaluate_expression,
     copy_file,
-    call_function_with_dirs,
     custom_sort,
     get_function_obj_with_dirs,
+    datagen_driver,
 )
 from conftest import STORE_OUTPUT
 
@@ -96,19 +94,23 @@ def init_all(test_descriptions):
             options = get_options(
                 test_description["grids"], test_description["grids_expression"]
             )
-            data = call_function_with_dirs(
+            data_func = get_function_obj_with_dirs(
                 package_name,
                 "data_generation",
                 test_description["data_func"]["name"],
-                **test_description["data_func"]["params"],
             )
-
+            scenario_directory = (
+                os.path.dirname(os.path.realpath(__file__)) + f"/{task_folder}"
+            )
+            data = datagen_driver(
+                scenario_directory, data_func, **test_description["data_func"]["params"]
+            )
+            script_directory = os.path.dirname(os.path.realpath(__file__))
             for assert_func in test_description["assert_functions"]:
 
                 assert_job = get_function_obj_with_dirs(
                     package_name, "assert_job", assert_func["name"]
                 )
-                script_directory = os.path.dirname(os.path.realpath(__file__))
                 core_test(
                     os.path.join(script_directory, data),
                     options,

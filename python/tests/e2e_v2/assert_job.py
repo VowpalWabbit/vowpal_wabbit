@@ -3,7 +3,7 @@ import os
 from numpy.testing import assert_allclose, assert_almost_equal
 from vw_executor.vw import ExecutionStatus
 import vowpalwabbit as vw
-from test_helper import get_function_object
+from test_helper import get_function_object, datagen_driver
 
 
 def remove_non_digits(string):
@@ -82,6 +82,7 @@ def assert_loss_below(job, **kwargs):
 
 
 def assert_prediction_with_generated_data(job, **kwargs):
+
     assert job.status == ExecutionStatus.Success, "job should be successful"
     expected_class = []
     trained_model = vw.Workspace(f"-i {job[0].model9('-f').path} --quiet")
@@ -102,7 +103,12 @@ def assert_prediction_with_generated_data(job, **kwargs):
                 break
         except:
             pass
-    dataFile = data_func_obj(**kwargs["data_func"]["params"])
+    script_directory = os.path.dirname(os.path.realpath(__file__))
+    dataFile = datagen_driver(
+        os.path.join(script_directory, subdir_name),
+        data_func_obj,
+        **kwargs["data_func"]["params"],
+    )
     with open(dataFile, "r") as f:
         for line in f.readlines():
             expected_class.append(line.split("|")[0].strip())

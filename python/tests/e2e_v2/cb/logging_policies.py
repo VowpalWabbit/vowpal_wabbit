@@ -1,7 +1,6 @@
-def constant_probability(chosen_action, **kwargs):
+def constant_probability(chosen_action):
     return 1
 
 
-def even_probability(chosen_action, **kwargs):
-    num_actions = kwargs["num_actions"]
+def even_probability(chosen_action, num_actions):
     return round(1 / num_actions, 2)
