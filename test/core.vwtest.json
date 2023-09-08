@@ -6004,5 +6004,18 @@
     "input_files": [
       "train-sets/automl_spin_off.txt"
     ]
+  },
+  {
+    "id": 464,
+    "desc": "Ignore empty lines on single-examples",
+    "vw_command": "-d train-sets/single_empty_lines.txt -p single_empty_lines.predict",
+    "diff_files": {
+      "stderr": "test-sets/ref/single_empty_lines.stderr",
+      "single_empty_lines.predict": "pred-sets/ref/single_empty_lines.predict",
+      "stdout": "test-sets/ref/single_empty_lines.stdout"
+    },
+    "input_files": [
+      "train-sets/single_empty_lines.txt"
+    ]
   }
 ]
