@@ -12,7 +12,7 @@
 set(VW_ALL_FEATURES "CSV;FLATBUFFERS;LDA;CB_GRAPH_FEEDBACK;SEARCH;LAS_SIMD;NETWORKING")
 
 option(VW_FEAT_FLATBUFFERS "Enable flatbuffers support" OFF)
-option(VW_FEAT_CSV "Enable csv parser" OFF)
+option(VW_FEAT_CSV "Enable csv parser" ON)
 option(VW_FEAT_CB_GRAPH_FEEDBACK "Enable cb with graph feedback reduction" OFF)
 option(VW_FEAT_LDA "Enable lda reduction" ON)
 option(VW_FEAT_SEARCH "Enable search reductions" ON)
