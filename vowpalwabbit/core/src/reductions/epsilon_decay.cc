@@ -5,7 +5,6 @@
 #include "vw/core/reductions/epsilon_decay.h"
 
 #include "vw/config/options.h"
-#include "vw/core/estimators/distributionally_robust.h"
 #include "vw/core/global_data.h"
 #include "vw/core/label_type.h"
 #include "vw/core/learner.h"
@@ -92,18 +91,6 @@ void epsilon_decay_data::update_weights(float init_ep, VW::LEARNER::learner& bas
 
     VW::action_scores champ_a_s;
 
-    // Get best action
-    uint32_t best_action = 0;
-    float best_score = 0.f;
-    for (const auto& a_s : examples[0]->pred.a_s)
-    {
-      if (a_s.score > best_score)
-      {
-        best_action = a_s.action;
-        best_score = a_s.score;
-      }
-    }
-
     // Process each model, then update the upper/lower bounds for each model
     for (int64_t model_ind = model_count - 1; model_ind >= 0; --model_ind)
     {
@@ -122,6 +109,17 @@ void epsilon_decay_data::update_weights(float init_ep, VW::LEARNER::learner& bas
           float p_pred = a_s.score;
           if (model_ind != model_count - 1 && !_challenger_epsilon)
           {
+            // Get best action
+            uint32_t best_action = 0;
+            float best_score = 0.f;
+            for (const auto& a_s : examples[0]->pred.a_s)
+            {
+              if (a_s.score > best_score)
+              {
+                best_action = a_s.action;
+                best_score = a_s.score;
+              }
+            }
             p_pred = (a_s.action == best_action) ? 1.f : 0.f;
           }
           float w = (logged.probability > 0) ? p_pred / logged.probability : 0;
@@ -248,7 +246,9 @@ size_t read_model_field(io_buf& io, VW::reductions::epsilon_decay::epsilon_decay
 {
   size_t bytes = 0;
   epsilon_decay.conf_seq_estimators.clear();
+  epsilon_decay._weight_indices.clear();
   bytes += read_model_field(io, epsilon_decay.conf_seq_estimators);
+  bytes += read_model_field(io, epsilon_decay._weight_indices);
   bytes += read_model_field(io, epsilon_decay._global_counter);
   return bytes;
 }
@@ -258,6 +258,7 @@ size_t write_model_field(io_buf& io, const VW::reductions::epsilon_decay::epsilo
 {
   size_t bytes = 0;
   bytes += write_model_field(io, epsilon_decay.conf_seq_estimators, upstream_name + "conf_seq_estimators", text);
+  bytes += write_model_field(io, epsilon_decay._weight_indices, upstream_name + "_weight_indices", text);
   bytes += write_model_field(io, epsilon_decay._global_counter, upstream_name + "_global_counter", text);
   return bytes;
 }
@@ -375,13 +376,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::epsilon_decay_setup(VW::se
                .experimental())
       .add(make_option("epsilon_decay_significance_level", epsilon_decay_significance_level)
                .keep()
-               .default_value(VW::details::DEFAULT_ALPHA)
+               .default_value(VW::details::CS_ROBUST_DEFAULT_ALPHA)
                .help("Set significance level for champion change")
-               .experimental())
-      .add(make_option("epsilon_decay_estimator_decay", epsilon_decay_estimator_decay)
-               .keep()
-               .default_value(VW::details::CRESSEREAD_DEFAULT_TAU)
-               .help("Time constant for count decay")
                .experimental())
       .add(make_option("epsilon_decay_audit", epsilon_decay_audit_str)
                .default_value("")

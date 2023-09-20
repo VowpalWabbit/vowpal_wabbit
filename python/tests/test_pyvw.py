@@ -774,3 +774,17 @@ def test_merge_models_with_base():
     assert model2.get_weight_from_name("foo") == 0
     assert model2.get_weight_from_name("bar") != 0
     assert merged_model.get_weight_from_name("bar") != 0
+
+
+def test_get_explore_eval_stats():
+    vw = vowpalwabbit.Workspace(
+        "--cb_explore_adf --explore_eval --dsjson --extra_metrics"
+    )
+
+    ex_l_str = '{"_label_cost":-0.9,"_label_probability":0.5,"_label_Action":1,"_labelIndex":0,"o":[{"v":1.0,"EventId":"38cbf24f-70b2-4c76-aa0c-970d0c8d388e","ActionTaken":false}],"Timestamp":"2020-11-15T17:09:31.8350000Z","Version":"1","EventId":"38cbf24f-70b2-4c76-aa0c-970d0c8d388e","a":[1,2],"c":{ "GUser":{"id":"person5","major":"engineering","hobby":"hiking","favorite_character":"spock"}, "_multi": [ { "TAction":{"topic":"SkiConditions-VT"} }, { "TAction":{"topic":"HerbGarden"} } ] },"p":[0.5,0.5],"VWState":{"m":"N/A"}}\n'
+    ex_l = vw.parse(ex_l_str)
+    vw.learn(ex_l)
+    vw.finish_example(ex_l)
+    learner_metric_dict = vw.get_learner_metrics()
+    assert learner_metric_dict["weighted_update_count"] == 1.0
+    assert learner_metric_dict["average_accepted_example_weight"] == 1.0

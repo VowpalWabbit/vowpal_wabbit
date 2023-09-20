@@ -10,11 +10,10 @@ Input label = SIMPLE
 Output pred = SCALAR
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
-n.a.     n.a.                1            1.0        unknown         0.0000        1
 
 finished run
-number of examples = 1
-weighted example sum = 1.000000
+number of examples = 0
+weighted example sum = 0.000000
 weighted label sum = 0.000000
 average loss = n.a.
-total feature number = 1
+total feature number = 0

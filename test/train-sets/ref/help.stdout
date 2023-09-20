@@ -461,6 +461,7 @@ Weight Options:
                                             (type: float, default: 0, keep)
     --cb_type arg                           Contextual bandit method to use (type: str, default: mtr, choices
                                             {dm, dr, ips, mtr, sm}, keep)
+    --per_model_save_load                   Save and load per model state (type: bool, keep)
 [Reduction] Contextual Bandit: cb -> cb_adf Options:
     --cb_to_cbadf arg                       Flag is unused and has no effect. It should not be passed. The
                                             cb_to_cbadf reduction is automatically enabled if cb, cb_explore
@@ -580,8 +581,6 @@ Weight Options:
                                             100, keep, experimental)
     --epsilon_decay_significance_level arg  Set significance level for champion change (type: float, default:
                                             0.05, keep, experimental)
-    --epsilon_decay_estimator_decay arg     Time constant for count decay (type: float, default: 1, keep,
-                                            experimental)
     --epsilon_decay_audit arg               Epsilon decay audit file name (type: str, experimental)
     --constant_epsilon                      Keep epsilon constant across models (type: bool, keep, experimental)
     --bonferroni_denominator arg            Factor to scale down significance level by, defaults to model
@@ -707,6 +706,7 @@ Weight Options:
                                             default: 0)
     --l2_state arg                          Amount of accumulated implicit l2 regularization (type: float,
                                             default: 1)
+    --per_model_save_load                   Save and load per model state (type: bool, keep)
 [Reduction] Interact via Elementwise Multiplication Options:
     --interact arg                          Put weights on feature products from namespaces <n1> and <n2>
                                             (type: str, keep, necessary)

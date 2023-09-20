@@ -16,6 +16,52 @@
 #include <climits>
 #include <cstdint>
 
+void VW::swap_prediction(VW::polyprediction& a, VW::polyprediction& b, VW::prediction_type_t prediction_type)
+{
+  switch (prediction_type)
+  {
+    case VW::prediction_type_t::SCALAR:
+      std::swap(b.scalar, a.scalar);
+      break;
+    case VW::prediction_type_t::SCALARS:
+      std::swap(b.scalars, a.scalars);
+      break;
+    case VW::prediction_type_t::ACTION_SCORES:
+      std::swap(b.a_s, a.a_s);
+      break;
+    case VW::prediction_type_t::PDF:
+      std::swap(b.pdf, a.pdf);
+      break;
+    case VW::prediction_type_t::ACTION_PROBS:
+      std::swap(b.a_s, a.a_s);
+      break;
+    case VW::prediction_type_t::MULTICLASS:
+      std::swap(b.multiclass, a.multiclass);
+      break;
+    case VW::prediction_type_t::MULTILABELS:
+      std::swap(b.multilabels, a.multilabels);
+      break;
+    case VW::prediction_type_t::PROB:
+      std::swap(b.prob, a.prob);
+      break;
+    case VW::prediction_type_t::MULTICLASS_PROBS:
+      std::swap(b.scalars, a.scalars);
+      break;
+    case VW::prediction_type_t::DECISION_PROBS:
+      std::swap(b.decision_scores, a.decision_scores);
+      break;
+    case VW::prediction_type_t::ACTION_PDF_VALUE:
+      std::swap(b.pdf_value, a.pdf_value);
+      break;
+    case VW::prediction_type_t::ACTIVE_MULTICLASS:
+      std::swap(b.active_multiclass, a.active_multiclass);
+      break;
+    case VW::prediction_type_t::NOPRED:
+      // Noop
+      break;
+  }
+}
+
 float calculate_total_sum_features_squared(bool permutations, VW::example& ec)
 {
   float sum_features_squared = 0.f;

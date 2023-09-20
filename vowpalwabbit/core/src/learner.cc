@@ -145,6 +145,7 @@ public:
     }
     else if (ec->end_pass) { _context.template process<example, end_pass>(*ec); }
     else if (is_save_cmd(ec)) { _context.template process<example, save>(*ec); }
+    else if (ec->is_newline) { VW::finish_example(_context.get_master(), *ec); }
     else { _context.template process<example, learn_ex>(*ec); }
   }
 

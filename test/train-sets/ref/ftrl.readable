@@ -1,5 +1,5 @@
-Version 9.8.0
-Id 
+Version 9.9.0
+Id
 Min label:0
 Max label:2
 bits:18
@@ -9,5 +9,5 @@ lda:0
 options: --ftrl --noconstant
 Checksum: 2919628460
 :0
-f2:82936:0.277141
-f1:259761:0.277141
+f2:82936:1
+f1:259761:1

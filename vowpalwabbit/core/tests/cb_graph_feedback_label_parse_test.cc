@@ -17,6 +17,7 @@
 
 #include <vector>
 
+#ifdef VW_FEAT_CB_GRAPH_FEEDBACK
 using namespace testing;
 constexpr float EXPLICIT_FLOAT_TOL = 0.01f;
 
@@ -281,3 +282,4 @@ TEST(cb_fg_label_tests, parse_json_label_bad_graph)
 
   VW::finish_example(*vw, examples);
 }
+#endif
