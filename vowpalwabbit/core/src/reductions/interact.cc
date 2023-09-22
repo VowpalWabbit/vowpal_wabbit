@@ -28,28 +28,6 @@ public:
   size_t num_features = 0;
 };
 
-bool contains_valid_namespaces(VW::features& f_src1, VW::features& f_src2, interact& in, VW::io::logger& logger)
-{
-  // first feature must be 1 so we're sure that the anchor feature is present
-  if (f_src1.size() == 0 || f_src2.size() == 0) { return false; }
-
-  if (f_src1.values[0] != 1)
-  {
-    // Anchor feature must be a number instead of text so that the relative offsets functions correctly but I don't
-    // think we are able to test for this here.
-    logger.err_error("Namespace '{}' misses anchor feature with value 1", static_cast<char>(in.n1));
-    return false;
-  }
-
-  if (f_src2.values[0] != 1)
-  {
-    logger.err_error("Namespace '{}' misses anchor feature with value 1", static_cast<char>(in.n2));
-    return false;
-  }
-
-  return true;
-}
-
 void multiply(VW::features& f_dest, VW::features& f_src2, interact& in)
 {
   f_dest.clear();
@@ -102,7 +80,7 @@ void predict_or_learn(interact& in, VW::LEARNER::learner& base, VW::example& ec)
   VW::features& f1 = ec.feature_space[in.n1];
   VW::features& f2 = ec.feature_space[in.n2];
 
-  if (!contains_valid_namespaces(f1, f2, in, in.all->logger))
+  if (f1.empty() || f2.empty())
   {
     if (is_learn) { base.learn(ec); }
     else { base.predict(ec); }
