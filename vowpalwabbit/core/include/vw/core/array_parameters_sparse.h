@@ -70,7 +70,7 @@ public:
   sparse_parameters& operator=(sparse_parameters&&) noexcept = delete;
   sparse_parameters(sparse_parameters&&) noexcept = delete;
 
-  bool not_null() { return (_weight_mask > 0 && !_map.empty()); }
+  bool not_null() { return (_weight_mask > 0); }
   VW::weight* first() { THROW_OR_RETURN("Allreduce currently not supported in sparse", nullptr); }
 
   // iterator with stride
