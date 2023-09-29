@@ -6,5 +6,10 @@
             ],
             "url": "./test/vwtest.schema.json"
         }
-    ]
+    ],
+    "files.associations": {
+        "ranges": "cpp",
+        "bitset": "cpp",
+        "*.tcc": "cpp"
+    }
 }

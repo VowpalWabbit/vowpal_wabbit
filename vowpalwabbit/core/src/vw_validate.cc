@@ -39,7 +39,9 @@ void validate_num_bits(VW::workspace& all)
     if (all.weights.sparse)
     {
       std::stringstream ss;
-      ss << "Bit size is " << all.initial_weights_config.num_bits << ". While this is allowed for sparse weights, it may cause an overflow and is strongly recommened to use a smaller value.";
+      ss << "Bit size is " << all.initial_weights_config.num_bits
+         << ". While this is allowed for sparse weights, it may cause an overflow and is strongly recommened to use a "
+            "smaller value.";
       all.logger.err_warn(ss.str());
     }
     else
