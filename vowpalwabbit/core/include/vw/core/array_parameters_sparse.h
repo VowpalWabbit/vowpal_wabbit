@@ -75,11 +75,11 @@ public:
 
   // iterator with stride
   iterator begin() { return iterator(_map.begin()); }
-  iterator end() { return iterator(_map.begin()); }
+  iterator end() { return iterator(_map.end()); }
 
   // const iterator
   const_iterator cbegin() const { return const_iterator(_map.begin()); }
-  const_iterator cend() const { return const_iterator(_map.begin()); }
+  const_iterator cend() const { return const_iterator(_map.end()); }
 
   inline VW::weight& operator[](size_t i) { return *(get_or_default_and_get(i)); }
 
