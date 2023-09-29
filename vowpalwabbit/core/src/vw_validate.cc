@@ -34,7 +34,18 @@ void validate_default_bits(VW::workspace& all, uint32_t local_num_bits)
 
 void validate_num_bits(VW::workspace& all)
 {
-  if (!all.weights.sparse && (all.initial_weights_config.num_bits > sizeof(size_t) * 8 - 3))
-    THROW("Only " << sizeof(size_t) * 8 - 3 << " or fewer bits allowed.  If this is a serious limit, speak up.");
+  if (all.initial_weights_config.num_bits > sizeof(size_t) * 8 - 3)
+  {
+    if (all.weights.sparse)
+    {
+      std::stringstream ss;
+      ss << "Bit size is " << all.initial_weights_config.num_bits << ". While this is allowed for sparse weights, it may cause an overflow and is strongly recommened to use a smaller value.";
+      all.logger.err_warn(ss.str());
+    }
+    else
+    {
+      THROW("Only " << sizeof(size_t) * 8 - 3 << " or fewer bits allowed.  If this is a serious limit, speak up.");
+    }
+  }
 }
 }  // namespace VW
