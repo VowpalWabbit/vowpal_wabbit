@@ -38,10 +38,13 @@ void validate_num_bits(VW::workspace& all)
   {
     if (all.weights.sparse)
     {
-      std::string warning = "Bit size is " + std::to_string(all.initial_weights_config.num_bits) +
-          ". While this is allowed for sparse weights, it may cause an overflow and is strongly recommended to use a "
-          "smaller value.";
-      all.logger.err_warn(warning);
+      if (all.weights.sparse)
+      {
+        all.logger.err_warn(
+            "Bit size is {}. While this is allowed for sparse weights, it may cause an overflow and is strongly "
+            "recommended to use a smaller value.",
+            all.initial_weights_config.num_bits);
+      }
     }
     else
     {
