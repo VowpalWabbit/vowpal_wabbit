@@ -6017,5 +6017,33 @@
     "input_files": [
       "train-sets/single_empty_lines.txt"
     ]
+  },
+  {
+    "id": 465,
+    "desc": "cb_explore_adf with epsilon-greedy exploration using --sparse_weights and saving model",
+    "vw_command": "--cb_explore_adf --epsilon 0.1 -d train-sets/cb_test.ldf --noconstant --sparse_weights -f standard_sparse_model.vw",
+    "diff_files": {
+      "stderr": "train-sets/ref/sparse_save_check.stderr",
+      "stdout": "train-sets/ref/sparse_save_check.stdout"
+    },
+    "input_files": [
+      "train-sets/cb_test.ldf"
+    ]
+  },
+  {
+    "id": 466,
+    "desc": "cb_explore_adf with epsilon-greedy exploration using --sparse_weights and loading model",
+    "vw_command": "--cb_explore_adf --epsilon 0.1 -d train-sets/cb_test.ldf --noconstant --sparse_weights -i standard_sparse_model.vw",
+    "diff_files": {
+      "stderr": "train-sets/ref/sparse_load_check.stderr",
+      "stdout": "train-sets/ref/sparse_load_check.stdout"
+    },
+    "input_files": [
+      "train-sets/cb_test.ldf",
+      "standard_sparse_model.vw"
+    ],
+    "depends_on": [
+      465
+    ]
   }
 ]
