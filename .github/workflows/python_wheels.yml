@@ -34,6 +34,8 @@ jobs:
         - { version: "3.8", base_path: /opt/python/cp38-cp38/, include_dir_name: python3.8/ }
         - { version: "3.9", base_path: /opt/python/cp39-cp39/, include_dir_name: python3.9/ }
         - { version: "3.10", base_path: /opt/python/cp310-cp310/, include_dir_name: python3.10/ }
+        - { version: "3.11", base_path: /opt/python/cp11-cp11/, include_dir_name: python3.11/ }
+        - { version: "3.12", base_path: /opt/python/cp12-cp12/, include_dir_name: python3.12/ }
       fail-fast: false
     steps:
       # v1 must be used because newer versions require a node.js version that will not run on this old image.
@@ -58,7 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        version: ["3.6", "3.7", "3.8", "3.9", "3.10"]
+        version: ["3.6", "3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
       fail-fast: false
     steps:
       - uses: actions/checkout@v1
@@ -151,6 +153,8 @@ jobs:
         - { version: "3.8", base_path: /opt/python/cp38-cp38/, include_dir_name: python3.8/ }
         - { version: "3.9", base_path: /opt/python/cp39-cp39/, include_dir_name: python3.9/ }
         - { version: "3.10", base_path: /opt/python/cp310-cp310/, include_dir_name: python3.10/ }
+        - { version: "3.11", base_path: /opt/python/cp311-cp311/, include_dir_name: python3.11/ }
+        - { version: "3.12", base_path: /opt/python/cp312-cp312/, include_dir_name: python3.12/ }
       fail-fast: false
     runs-on: ubuntu-latest
     steps:
@@ -185,6 +189,8 @@ jobs:
         - { version: "3.8" }
         - { version: "3.9" }
         - { version: "3.10" }
+        - { version: "3.11" }
+        - { version: "3.12" }
       fail-fast: false
     env:
       py: python${{ matrix.config.version }}
@@ -231,6 +237,8 @@ jobs:
         - { version: 3.8, include_dir_name: python3.8/}
         - { version: 3.9, include_dir_name: python3.9/}
         - { version: "3.10", include_dir_name: python3.10/}
+        - { version: "3.11", include_dir_name: python3.11/}
+        - { version: "3.12", include_dir_name: python3.12/}
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -257,7 +265,7 @@ jobs:
     runs-on: macos-11
     strategy:
       matrix:
-        version: [3.6, 3.7, 3.8, 3.9, "3.10"]
+        version: [3.6, 3.7, 3.8, 3.9, "3.10", "3.11", "3.12"]
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -294,6 +302,8 @@ jobs:
         - { version: "3.8", vcpkg_manifest: "python\\vcpkg_default.json", overlay_ports: "python\\vcpkg_python_override_ports\\python38\\" }
         - { version: "3.9", vcpkg_manifest: "python\\vcpkg_default.json", overlay_ports: "python\\vcpkg_python_override_ports\\python39\\" }
         - { version: "3.10", vcpkg_manifest: "python\\vcpkg_python310.json", overlay_ports: "" }
+        - { version: "3.11", vcpkg_manifest: "python\\vcpkg_python311.json", overlay_ports: "" }
+        - { version: "3.12", vcpkg_manifest: "python\\vcpkg_python312.json", overlay_ports: "" }
       fail-fast: false
     steps:
       - uses: actions/setup-python@v2
@@ -342,7 +352,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        version: ["3.6", "3.7", "3.8", "3.9", "3.10"]
+        version: ["3.6", "3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
         os: ["windows-2019"]
       fail-fast: false
     steps:
