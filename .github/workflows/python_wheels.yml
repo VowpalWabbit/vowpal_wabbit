@@ -34,8 +34,8 @@ jobs:
         - { version: "3.8", base_path: /opt/python/cp38-cp38/, include_dir_name: python3.8/ }
         - { version: "3.9", base_path: /opt/python/cp39-cp39/, include_dir_name: python3.9/ }
         - { version: "3.10", base_path: /opt/python/cp310-cp310/, include_dir_name: python3.10/ }
-        - { version: "3.11", base_path: /opt/python/cp11-cp11/, include_dir_name: python3.11/ }
-        - { version: "3.12", base_path: /opt/python/cp12-cp12/, include_dir_name: python3.12/ }
+        - { version: "3.11", base_path: /opt/python/cp311-cp311/, include_dir_name: python3.11/ }
+        - { version: "3.12", base_path: /opt/python/cp312-cp312/, include_dir_name: python3.12/ }
       fail-fast: false
     steps:
       # v1 must be used because newer versions require a node.js version that will not run on this old image.
