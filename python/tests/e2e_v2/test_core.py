@@ -107,7 +107,6 @@ def init_all(test_descriptions):
             )
             script_directory = os.path.dirname(os.path.realpath(__file__))
             for assert_func in test_description["assert_functions"]:
-
                 assert_job = get_function_obj_with_dirs(
                     package_name, "assert_job", assert_func["name"]
                 )

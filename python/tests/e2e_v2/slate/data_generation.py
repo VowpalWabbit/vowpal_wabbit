@@ -14,7 +14,6 @@ def generate_slate_data(
     context_name=["1"],
     seed=random.randint(0, 100),
 ):
-
     random.seed(seed)
     action_space_obj = get_function_object("slate.action_space", action_space["name"])
 

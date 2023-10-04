@@ -51,7 +51,6 @@ def generate_cb_data(
         if no_context > 1:
             f.write(f"shared | User s_{context_name[context-1]}\n")
             for action in range(1, num_actions + 1):
-
                 cost, probability = return_cost_probability(action, context)
                 if action == chosen_action:
                     f.write(
@@ -61,7 +60,6 @@ def generate_cb_data(
                     f.write(f'| {" ".join(random_number_items(features))}\n')
 
         else:
-
             cost, probability = return_cost_probability(chosen_action)
             f.write(
                 f'{chosen_action}:{cost}:{probability} | {" ".join(random_number_items(features))}\n'

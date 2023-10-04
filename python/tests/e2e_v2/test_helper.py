@@ -109,7 +109,6 @@ def get_function_obj_with_dirs(dirs, module_name, function_name):
 
 
 def datagen_driver(script_directory, impl, **kwargs):
-
     names = []
     for i in kwargs.values():
         if type(i) == dict:

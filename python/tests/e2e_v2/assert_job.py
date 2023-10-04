@@ -82,7 +82,6 @@ def assert_loss_below(job, **kwargs):
 
 
 def assert_prediction_with_generated_data(job, **kwargs):
-
     assert job.status == ExecutionStatus.Success, "job should be successful"
     expected_class = []
     trained_model = vw.Workspace(f"-i {job[0].model9('-f').path} --quiet")
