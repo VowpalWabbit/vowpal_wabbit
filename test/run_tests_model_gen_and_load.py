@@ -180,6 +180,11 @@ def load_model(
         weights_dir.mkdir(parents=True, exist_ok=True)
         weight_file = str(weights_dir / f"weights_{test_id}.json")
         old_weights = json.load(open(weight_file))
+        if new_weights != old_weights:
+            print("OLD WEIGHTS:")
+            print(new_weights)
+            print("NEW WEIGHTS:")
+            print(old_weights)
         assert new_weights == old_weights
         vw.finish()
     except Exception as e:
