@@ -184,8 +184,8 @@ def load_model(
         old_weights = json.load(open(weight_file))
 
         # Sort the weights inside both dictionaries based on 'index'
-        new_weights['weights'].sort(key=lambda x: x['index'])
-        old_weights['weights'].sort(key=lambda x: x['index'])
+        new_weights["weights"].sort(key=lambda x: x["index"])
+        old_weights["weights"].sort(key=lambda x: x["index"])
 
         # Assert if both sorted weights are equal
         assert new_weights == old_weights
