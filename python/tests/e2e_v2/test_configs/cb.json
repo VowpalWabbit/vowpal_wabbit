@@ -1,0 +1,270 @@
+[
+    {
+        "test_name": "cb_two_action",
+        "data_func": {
+            "name": "generate_cb_data",
+            "params": {
+                "num_examples": 100,
+                "num_features": 1,
+                "num_actions": 2,
+                "seed": 1,
+                "reward_function": {
+                    "name": "constant_reward",
+                    "params": {
+                        "reward": [
+                            1,
+                            0
+                        ]
+                    }
+                },
+                "logging_policy": {
+                    "name": "even_probability",
+                    "params": {}
+                },
+                "context_name": [
+                    "1",
+                    "2"
+                ]
+            }
+        },
+        "assert_functions": [
+            {
+                "name": "assert_loss",
+                "params": {
+                    "expected_loss": -1,
+                    "decimal": 1
+                }
+            },
+            {
+                "name": "assert_prediction",
+                "params": {
+                    "expected_value": [
+                        1,
+                        0
+                    ],
+                    "threshold": 0.8
+                }
+            }
+        ],
+        "grids": {
+            "cb": {
+                "#base": [
+                    "--cb_explore 2"
+                ]
+            },
+            "epsilon": {
+                "--epsilon": [
+                    0.1,
+                    0.2,
+                    0.3
+                ]
+            },
+            "first": {
+                "--first": [
+                    1,
+                    2
+                ]
+            },
+            "bag": {
+                "--bag": [
+                    5,
+                    6,
+                    7
+                ]
+            },
+            "cover": {
+                "--cover": [
+                    1,
+                    2,
+                    3
+                ]
+            },
+            "squarecb": {
+                "--squarecb": [
+                    "--gamma_scale 1000",
+                    "--gamma_scale 10000"
+                ]
+            },
+            "synthcover": {
+                "--synthcover": [
+                    ""
+                ]
+            },
+            "regcb": {
+                "--regcb": [
+                    ""
+                ]
+            },
+            "softmax": {
+                "--softmax": [
+                    ""
+                ]
+            }
+        },
+        "grids_expression": "cb * (epsilon + first + bag + cover + squarecb + synthcover + regcb + softmax)",
+        "output": [
+            "--readable_model",
+            "-p"
+        ]
+    },
+    {
+        "test_name": "cb_one_action",
+        "data_func": {
+            "name": "generate_cb_data",
+            "params": {
+                "num_examples": 100,
+                "num_features": 1,
+                "num_actions": 1,
+                "seed": 1,
+                "reward_function": {
+                    "name": "fixed_reward",
+                    "params": {}
+                },
+                "logging_policy": {
+                    "name": "even_probability"
+                }
+            }
+        },
+        "assert_functions": [
+            {
+                "name": "assert_loss",
+                "params": {
+                    "expected_loss": -1,
+                    "decimal": 1
+                }
+            },
+            {
+                "name": "assert_prediction",
+                "params": {
+                    "expected_value": 0,
+                    "threshold": 0.1
+                }
+            }
+        ],
+        "grids": {
+            "g0": {
+                "#base": [
+                    "--cb 1 --preserve_performance_counters --save_resume"
+                ]
+            },
+            "g1": {
+                "--cb_type": [
+                    "ips",
+                    "mtr",
+                    "dr",
+                    "dm"
+                ]
+            }
+        },
+        "grids_expression": "g0 * g1",
+        "output": [
+            "--readable_model",
+            "-p"
+        ]
+    },
+    {
+        "test_name": "cb_two_action_diff_context",
+        "data_func": {
+            "name": "generate_cb_data",
+            "params": {
+                "num_examples": 100,
+                "num_features": 2,
+                "num_actions": 2,
+                "seed": 1,
+                "reward_function": {
+                    "name": "fixed_reward_two_action",
+                    "params": {}
+                },
+                "logging_policy": {
+                    "name": "even_probability",
+                    "params": {}
+                },
+                "context_name": [
+                    "1",
+                    "2"
+                ]
+            }
+        },
+        "assert_functions": [
+            {
+                "name": "assert_loss",
+                "params": {
+                    "expected_loss": -0.5,
+                    "decimal": 1
+                }
+            },
+            {
+                "name": "assert_prediction",
+                "params": {
+                    "expected_value": [
+                        0.975,
+                        0.025
+                    ],
+                    "threshold": 0.1,
+                    "atol": 0.1,
+                    "rtol": 0.1
+                }
+            }
+        ],
+        "grids": {
+            "cb": {
+                "#base": [
+                    "--cb_explore_adf"
+                ]
+            },
+            "epsilon": {
+                "--epsilon": [
+                    0.1,
+                    0.2,
+                    0.3
+                ]
+            },
+            "first": {
+                "--first": [
+                    1,
+                    2
+                ]
+            },
+            "bag": {
+                "--bag": [
+                    5,
+                    6,
+                    7
+                ]
+            },
+            "cover": {
+                "--cover": [
+                    1,
+                    2,
+                    3
+                ]
+            },
+            "squarecb": {
+                "--squarecb": [
+                    "--gamma_scale 1000",
+                    "--gamma_scale 10000"
+                ]
+            },
+            "synthcover": {
+                "--synthcover": [
+                    ""
+                ]
+            },
+            "regcb": {
+                "--regcb": [
+                    ""
+                ]
+            },
+            "softmax": {
+                "--softmax": [
+                    ""
+                ]
+            }
+        },
+        "grids_expression": "cb * (epsilon + first + bag + cover + squarecb + synthcover + regcb + softmax)",
+        "output": [
+            "--readable_model",
+            "-p"
+        ]
+    }
+]
