@@ -780,10 +780,7 @@ void node_predict(emt_tree& b, learner& base, emt_node& cn, emt_example& ex, VW:
   auto* closest_ex = node_pick(b, base, cn, ex);
   ec.pred.multiclass = (closest_ex != nullptr) ? closest_ex->label : 0;
   ec.loss = (ec.l.multi.label != ec.pred.multiclass) ? ec.weight : 0;
-  if (closest_ex != nullptr) {
-    tree_bound(b, closest_ex);
-  }
-
+  if (closest_ex != nullptr) { tree_bound(b, closest_ex); }
 }
 
 void emt_predict(emt_tree& b, learner& base, VW::example& ec)
