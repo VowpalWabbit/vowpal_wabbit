@@ -544,7 +544,7 @@ void scorer_features_mul(const emt_feats& f1, const emt_feats& f2, VW::features&
     }
     else
     {
-      out.push_back(std::abs(iter1->second - iter2->second), iter1->first);
+      out.push_back(iter1->second*iter2->second, iter1->first);
       iter1++;
       iter2++;
     }
