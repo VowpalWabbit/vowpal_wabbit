@@ -60,6 +60,7 @@ constexpr VW::version_struct VERSION_PASS_UINT64{8, 3, 3};
 /// Added serialized seen min and max labels in the --active reduction
 constexpr VW::version_struct VERSION_FILE_WITH_ACTIVE_SEEN_LABELS{9, 0, 0};
 /// Active seen labels was accidentally reverted out in 9.4.0
+constexpr VW::version_struct VERSION_FILE_WITH_ACTIVE_SEEN_LABELS_REVERTED{9, 4, 0};
 constexpr VW::version_struct VERSION_FILE_WITH_ACTIVE_SEEN_LABELS_FIXED{9, 10, 0};
 
 /// Moved option values from command line to model data

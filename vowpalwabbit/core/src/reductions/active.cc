@@ -129,8 +129,17 @@ void active_print_result(
 
 void save_load(active& a, VW::io_buf& io, bool read, bool text)
 {
+  using namespace VW::version_definitions;
   if (io.num_files() == 0) { return; }
-  if (a._model_version >= VW::version_definitions::VERSION_FILE_WITH_ACTIVE_SEEN_LABELS_FIXED)
+  // This code is valid if version is within
+  // [VERSION_FILE_WITH_ACTIVE_SEEN_LABELS, VERSION_FILE_WITH_ACTIVE_SEEN_LABELS_REVERTED)
+  // or >= VERSION_FILE_WITH_ACTIVE_SEEN_LABELS_FIXED
+  if (
+    ( a._model_version >= VERSION_FILE_WITH_ACTIVE_SEEN_LABELS
+          &&
+      a._model_version < VERSION_FILE_WITH_ACTIVE_SEEN_LABELS_REVERTED)
+      ||
+    a._model_version >= VERSION_FILE_WITH_ACTIVE_SEEN_LABELS_FIXED)
   {
     if (read)
     {
