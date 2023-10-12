@@ -134,12 +134,9 @@ void save_load(active& a, VW::io_buf& io, bool read, bool text)
   // This code is valid if version is within
   // [VERSION_FILE_WITH_ACTIVE_SEEN_LABELS, VERSION_FILE_WITH_ACTIVE_SEEN_LABELS_REVERTED)
   // or >= VERSION_FILE_WITH_ACTIVE_SEEN_LABELS_FIXED
-  if (
-    ( a._model_version >= VERSION_FILE_WITH_ACTIVE_SEEN_LABELS
-          &&
-      a._model_version < VERSION_FILE_WITH_ACTIVE_SEEN_LABELS_REVERTED)
-      ||
-    a._model_version >= VERSION_FILE_WITH_ACTIVE_SEEN_LABELS_FIXED)
+  if ((a._model_version >= VERSION_FILE_WITH_ACTIVE_SEEN_LABELS &&
+          a._model_version < VERSION_FILE_WITH_ACTIVE_SEEN_LABELS_REVERTED) ||
+      a._model_version >= VERSION_FILE_WITH_ACTIVE_SEEN_LABELS_FIXED)
   {
     if (read)
     {
