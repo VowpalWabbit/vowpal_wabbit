@@ -16,10 +16,18 @@ namespace reductions
 class active
 {
 public:
-  active(float active_c0, VW::workspace* all) : active_c0(active_c0), _all(all) {}
+  active(float active_c0, std::shared_ptr<shared_data> shared_data, std::shared_ptr<rand_state> random_state,
+      VW::version_struct model_version)
+      : active_c0(active_c0)
+      , _shared_data(shared_data)
+      , _random_state(std::move(random_state))
+      , _model_version{std::move(model_version)}
+  {
+  }
 
   float active_c0;
-  VW::workspace* _all = nullptr;
+  std::shared_ptr<shared_data> _shared_data;  // statistics, loss
+  std::shared_ptr<rand_state> _random_state;
 
   float _min_seen_label = 0.f;
   float _max_seen_label = 1.f;
