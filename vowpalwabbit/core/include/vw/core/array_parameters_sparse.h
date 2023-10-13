@@ -11,7 +11,7 @@
 #include <cstddef>
 #include <functional>
 #include <memory>
-#include <unordered_map>
+#include <map>
 
 namespace VW
 {
@@ -20,7 +20,7 @@ class sparse_parameters;
 namespace details
 {
 
-using weight_map = std::unordered_map<uint64_t, std::shared_ptr<VW::weight>>;
+using weight_map = std::map<uint64_t, std::shared_ptr<VW::weight>>;
 
 template <typename T>
 class sparse_iterator
@@ -82,8 +82,10 @@ public:
   const_iterator cend() const { return const_iterator(_map.end()); }
 
   inline VW::weight& operator[](size_t i) { return *(get_or_default_and_get(i)); }
-
   inline const VW::weight& operator[](size_t i) const { return *(get_or_default_and_get(i)); }
+
+  inline VW::weight& get(size_t i) { return *(get_impl(i)); };
+  inline const VW::weight& get(size_t i) const { return *(get_impl(i)); };
 
   inline VW::weight& strided_index(size_t index) { return operator[](index << _stride_shift); }
   inline const VW::weight& strided_index(size_t index) const { return operator[](index << _stride_shift); }
@@ -109,7 +111,7 @@ public:
   void share(size_t /* length */);
 #endif
 
-private:
+public:
   // This must be mutable because the const operator[] must be able to intialize default weights to return.
   mutable details::weight_map _map;
   uint64_t _weight_mask;  // (stride*(1 << num_bits) -1)
@@ -119,6 +121,7 @@ private:
   // It is marked const so it can be used from both const and non const operator[]
   // The map itself is mutable to facilitate this
   VW::weight* get_or_default_and_get(size_t i) const;
+  VW::weight* get_impl(size_t i) const;
 };
 }  // namespace VW
 using sparse_parameters VW_DEPRECATED("sparse_parameters moved into VW namespace") = VW::sparse_parameters;

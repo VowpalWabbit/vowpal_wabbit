@@ -36,7 +36,7 @@ inline void foreach_feature(WeightsT& weights, const VW::features& fs, DataT& da
 {
   for (const auto& f : fs)
   {
-    VW::weight& w = weights[(f.index() + offset)];
+    VW::weight& w = weights.get(f.index() + offset);
     FuncT(dat, mult * f.value(), w);
   }
 }
@@ -46,7 +46,7 @@ template <class DataT, void (*FuncT)(DataT&, float, float), class WeightsT>
 inline void foreach_feature(
     const WeightsT& weights, const VW::features& fs, DataT& dat, uint64_t offset = 0, float mult = 1.)
 {
-  for (const auto& f : fs) { FuncT(dat, mult * f.value(), weights[static_cast<size_t>(f.index() + offset)]); }
+  for (const auto& f : fs) { FuncT(dat, mult * f.value(), weights.get(static_cast<size_t>(f.index() + offset))); }
 }
 
 template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT),

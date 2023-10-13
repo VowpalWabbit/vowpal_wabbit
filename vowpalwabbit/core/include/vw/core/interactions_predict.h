@@ -37,13 +37,13 @@ const static VW::audit_strings EMPTY_AUDIT_STRINGS;
 template <class DataT, void (*FuncT)(DataT&, const float, float&), class WeightsT>
 inline void call_func_t(DataT& dat, WeightsT& weights, const float ft_value, const uint64_t ft_idx)
 {
-  FuncT(dat, ft_value, weights[ft_idx]);
+  FuncT(dat, ft_value, weights.get(ft_idx));
 }
 
 template <class DataT, void (*FuncT)(DataT&, const float, float), class WeightsT>
 inline void call_func_t(DataT& dat, const WeightsT& weights, const float ft_value, const uint64_t ft_idx)
 {
-  FuncT(dat, ft_value, weights[static_cast<size_t>(ft_idx)]);
+  FuncT(dat, ft_value, weights.get(static_cast<size_t>(ft_idx)));
 }
 
 template <class DataT, void (*FuncT)(DataT&, float, uint64_t), class WeightsT>

@@ -145,6 +145,7 @@ class lazy_gaussian
 {
 public:
   inline float operator[](uint64_t index) const { return VW::details::merand48_boxmuller(index); }
+  inline float get(uint64_t index) const { return VW::details::merand48_boxmuller(index); }
 };
 
 inline void vec_add_with_norm(std::pair<float, float>& p, float fx, float fw)

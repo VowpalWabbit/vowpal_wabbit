@@ -122,6 +122,9 @@ public:
   inline const VW::weight& operator[](size_t i) const { return _begin.get()[i & _weight_mask]; }
   inline VW::weight& operator[](size_t i) { return _begin.get()[i & _weight_mask]; }
 
+  inline const VW::weight& get(size_t i) const { return _begin.get()[i & _weight_mask]; }
+  inline VW::weight& get(size_t i) { return _begin.get()[i & _weight_mask]; }
+
   VW_ATTR(nodiscard) static dense_parameters shallow_copy(const dense_parameters& input);
   VW_ATTR(nodiscard) static dense_parameters deep_copy(const dense_parameters& input);
 
