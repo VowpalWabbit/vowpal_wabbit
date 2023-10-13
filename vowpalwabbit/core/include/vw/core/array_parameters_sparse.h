@@ -111,7 +111,7 @@ public:
   void share(size_t /* length */);
 #endif
 
-public:
+private:
   // This must be mutable because the const operator[] must be able to intialize default weights to return.
   mutable details::weight_map _map;
   uint64_t _weight_mask;  // (stride*(1 << num_bits) -1)

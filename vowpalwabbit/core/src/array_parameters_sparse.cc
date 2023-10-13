@@ -26,7 +26,7 @@ VW::weight* VW::sparse_parameters::get_or_default_and_get(size_t i) const
   return iter->second.get();
 }
 
-VW::weight* sparse_parameters::get_impl(size_t i) const {
+VW::weight* VW::sparse_parameters::get_impl(size_t i) const {
     static VW::weight default_value = 0.0f;
 
     uint64_t index = i & _weight_mask;
