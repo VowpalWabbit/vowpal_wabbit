@@ -36,7 +36,7 @@ inline void foreach_feature(WeightsT& weights, const VW::features& fs, DataT& da
 {
   for (const auto& f : fs)
   {
-    VW::weight& w = weights.get(f.index() + offset);
+    VW::weight& w = weights[f.index() + offset];
     FuncT(dat, mult * f.value(), w);
   }
 }
