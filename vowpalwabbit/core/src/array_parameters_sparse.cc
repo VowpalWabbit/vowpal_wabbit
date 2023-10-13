@@ -26,19 +26,19 @@ VW::weight* VW::sparse_parameters::get_or_default_and_get(size_t i) const
   return iter->second.get();
 }
 
-VW::weight* VW::sparse_parameters::get_impl(size_t i) const {
-    static VW::weight default_value = 0.0f;
+VW::weight* VW::sparse_parameters::get_impl(size_t i) const
+{
+  static VW::weight default_value = 0.0f;
 
-    uint64_t index = i & _weight_mask;
-    auto iter = _map.find(index);
-    if (iter == _map.end()) {
-        if (_default_func != nullptr) {
-            _default_func(&default_value, index); 
-        }
-        return &default_value;
-    }
+  uint64_t index = i & _weight_mask;
+  auto iter = _map.find(index);
+  if (iter == _map.end())
+  {
+    if (_default_func != nullptr) { _default_func(&default_value, index); }
+    return &default_value;
+  }
 
-    return iter->second.get();
+  return iter->second.get();
 }
 
 VW::sparse_parameters::sparse_parameters(size_t length, uint32_t stride_shift)
