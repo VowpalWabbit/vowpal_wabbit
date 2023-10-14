@@ -534,17 +534,11 @@ void scorer_features_mul(const emt_feats& f1, const emt_feats& f2, VW::features&
 
   while (iter1 != f1.end() && iter2 != f2.end())
   {
-    if (iter1->first < iter2->first)
-    {
-      iter1++;
-    }
-    else if (iter2->first < iter1->first)
-    {
-      iter2++;
-    }
+    if (iter1->first < iter2->first) { iter1++; }
+    else if (iter2->first < iter1->first) { iter2++; }
     else
     {
-      out.push_back(iter1->second*iter2->second, iter1->first);
+      out.push_back(iter1->second * iter2->second, iter1->first);
       iter1++;
       iter2++;
     }
