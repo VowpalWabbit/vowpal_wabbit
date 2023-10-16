@@ -347,17 +347,17 @@ BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_500actions_plaincb,
 BENCHMARK_CAPTURE(benchmark_multi, cb_adf_no_namespaces_sparse, gen_cb_examples(100, 7, 3, 6, 1, 4, 14, 2, false),
     "--cb_explore_adf --quiet --sparse_weights")
     ->MinTime(15.0);
-BENCHMARK_CAPTURE(benchmark_multi, cb_adf_diff_char_no_interactions_sparse, gen_cb_examples(100, 7, 3, 6, 3, 4, 14, 2, false),
-    "--cb_explore_adf --quiet --sparse_weights")
+BENCHMARK_CAPTURE(benchmark_multi, cb_adf_diff_char_no_interactions_sparse,
+    gen_cb_examples(100, 7, 3, 6, 3, 4, 14, 2, false), "--cb_explore_adf --quiet --sparse_weights")
     ->MinTime(15.0);
-BENCHMARK_CAPTURE(benchmark_multi, cb_adf_diff_char_interactions_sparse, gen_cb_examples(100, 7, 3, 6, 3, 4, 14, 2, false),
-    "--cb_explore_adf --quiet -q :: --sparse_weights")
+BENCHMARK_CAPTURE(benchmark_multi, cb_adf_diff_char_interactions_sparse,
+    gen_cb_examples(100, 7, 3, 6, 3, 4, 14, 2, false), "--cb_explore_adf --quiet -q :: --sparse_weights")
     ->MinTime(15.0);
-BENCHMARK_CAPTURE(benchmark_multi, cb_adf_same_char_no_interactions_sparse, gen_cb_examples(100, 7, 3, 6, 3, 4, 14, 2, true),
-    "--cb_explore_adf --quiet --sparse_weights")
+BENCHMARK_CAPTURE(benchmark_multi, cb_adf_same_char_no_interactions_sparse,
+    gen_cb_examples(100, 7, 3, 6, 3, 4, 14, 2, true), "--cb_explore_adf --quiet --sparse_weights")
     ->MinTime(15.0);
-BENCHMARK_CAPTURE(benchmark_multi, cb_adf_same_char_interactions_sparse, gen_cb_examples(100, 7, 3, 6, 3, 4, 14, 2, true),
-    "--cb_explore_adf --quiet -q :: --sparse_weights")
+BENCHMARK_CAPTURE(benchmark_multi, cb_adf_same_char_interactions_sparse,
+    gen_cb_examples(100, 7, 3, 6, 3, 4, 14, 2, true), "--cb_explore_adf --quiet -q :: --sparse_weights")
     ->MinTime(15.0);
 BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_no_namespaces_sparse, gen_ccb_examples(50, 7, 3, 6, 1, 4, 14, 2, false, 3),
     "--ccb_explore_adf --quiet --sparse_weights")
@@ -365,8 +365,8 @@ BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_no_namespaces_sparse, gen_ccb_example
 BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_diff_char_no_interactions_sparse,
     gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, false, 3), "--ccb_explore_adf --quiet --sparse_weights")
     ->MinTime(15.0);
-BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_diff_char_interactions_sparse, gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, false, 3),
-    "--ccb_explore_adf --quiet -q :: --sparse_weights")
+BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_diff_char_interactions_sparse,
+    gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, false, 3), "--ccb_explore_adf --quiet -q :: --sparse_weights")
     ->MinTime(15.0);
 // CCB predict with quadratic interactions
 // 20 slots, 20 context features,  30 actions, 20 action features each
@@ -387,11 +387,12 @@ BENCHMARK_CAPTURE(benchmark_multi_predict, ccb_adf_diff_char_interactions_predic
 BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_same_char_no_interactions_sparse,
     gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, true, 3), "--ccb_explore_adf --quiet --sparse_weights")
     ->MinTime(15.0);
-BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_same_char_interactions_sparse, gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, true, 3),
-    "--ccb_explore_adf --quiet -q :: --sparse_weights")
+BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_same_char_interactions_sparse,
+    gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, true, 3), "--ccb_explore_adf --quiet -q :: --sparse_weights")
     ->MinTime(15.0);
 
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_300actions_sparse, gen_cb_examples(1, 50, 10, 300, 5, 5, 20, 10, false),
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_300actions_sparse,
+    gen_cb_examples(1, 50, 10, 300, 5, 5, 20, 10, false),
     "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --sparse_weights")
     ->MinTime(15.0)
     ->UseRealTime()
@@ -411,7 +412,8 @@ BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_300actions_plaincb_sparse,
     ->UseRealTime()
     ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_500actions_sparse, gen_cb_examples(1, 50, 10, 500, 5, 5, 20, 10, false),
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_500actions_sparse,
+    gen_cb_examples(1, 50, 10, 500, 5, 5, 20, 10, false),
     "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --sparse_weights")
     ->MinTime(15.0)
     ->UseRealTime()
