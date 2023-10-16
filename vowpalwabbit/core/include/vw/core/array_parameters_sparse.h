@@ -10,7 +10,7 @@
 
 #include <cstddef>
 #include <functional>
-#include <map>
+#include <unordered_map>
 #include <memory>
 
 namespace VW
@@ -20,7 +20,7 @@ class sparse_parameters;
 namespace details
 {
 
-using weight_map = std::map<uint64_t, std::shared_ptr<VW::weight>>;
+using weight_map = std::unordered_map<uint64_t, std::shared_ptr<VW::weight>>;
 
 template <typename T>
 class sparse_iterator
