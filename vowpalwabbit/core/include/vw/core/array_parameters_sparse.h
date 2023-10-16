@@ -10,8 +10,8 @@
 
 #include <cstddef>
 #include <functional>
-#include <unordered_map>
 #include <memory>
+#include <unordered_map>
 
 namespace VW
 {
