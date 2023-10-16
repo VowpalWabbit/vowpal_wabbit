@@ -391,48 +391,6 @@ BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_same_char_interactions_sparse,
     gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, true, 3), "--ccb_explore_adf --quiet -q :: --sparse_weights")
     ->MinTime(15.0);
 
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_300actions_sparse,
-    gen_cb_examples(1, 50, 10, 300, 5, 5, 20, 10, false),
-    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --sparse_weights")
-    ->MinTime(15.0)
-    ->UseRealTime()
-    ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_300actions_max_threads_sparse,
-    gen_cb_examples(1, 50, 10, 300, 5, 5, 20, 10, false),
-    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --thread_pool_size --sparse_weights " +
-        std::to_string(std::thread::hardware_concurrency()))
-    ->MinTime(15.0)
-    ->UseRealTime()
-    ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_300actions_plaincb_sparse,
-    gen_cb_examples(1, 50, 10, 300, 5, 5, 20, 10, false), "--cb_explore_adf -q :: --quiet --sparse_weights")
-    ->MinTime(15.0)
-    ->UseRealTime()
-    ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_500actions_sparse,
-    gen_cb_examples(1, 50, 10, 500, 5, 5, 20, 10, false),
-    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --sparse_weights")
-    ->MinTime(15.0)
-    ->UseRealTime()
-    ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_500actions_max_threads_sparse,
-    gen_cb_examples(1, 50, 10, 500, 5, 5, 20, 10, false),
-    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --thread_pool_size  --sparse_weights " +
-        std::to_string(std::thread::hardware_concurrency()))
-    ->MinTime(15.0)
-    ->UseRealTime()
-    ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_500actions_plaincb_sparse,
-    gen_cb_examples(1, 50, 10, 500, 5, 5, 20, 10, false), "--cb_explore_adf -q :: --quiet --sparse_weights")
-    ->MinTime(15.0)
-    ->UseRealTime()
-    ->Unit(benchmark::kMillisecond);
-
 #ifdef VW_FEAT_LAS_SIMD_ENABLED
 BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_300actions_10features_1thread,
     gen_cb_examples(1, 50000, 10, 300, 5, 5, 20000, 10, false),
