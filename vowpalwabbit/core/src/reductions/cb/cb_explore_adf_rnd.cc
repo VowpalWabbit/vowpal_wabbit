@@ -145,7 +145,8 @@ class lazy_gaussian
 {
 public:
   inline float operator[](uint64_t index) const { return VW::details::merand48_boxmuller(index); }
-  inline float get(uint64_t index) const { return VW::details::merand48_boxmuller(index); }
+  // get() is only needed for sparse_weights, same as operator[] for lazy_gaussian
+  inline float get(uint64_t index) const { return operator[](index); }
 };
 
 inline void vec_add_with_norm(std::pair<float, float>& p, float fx, float fw)

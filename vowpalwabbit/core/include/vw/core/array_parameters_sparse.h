@@ -81,9 +81,11 @@ public:
   const_iterator cbegin() const { return const_iterator(_map.begin()); }
   const_iterator cend() const { return const_iterator(_map.end()); }
 
+  // operator[] will find weight in _map and return and insert a default value if not found. Does alter _map.
   inline VW::weight& operator[](size_t i) { return *(get_or_default_and_get(i)); }
   inline const VW::weight& operator[](size_t i) const { return *(get_or_default_and_get(i)); }
 
+  // get() will find weight in _map and return a default value if not found. Does not alter _map.
   inline VW::weight& get(size_t i) { return *(get_impl(i)); };
   inline const VW::weight& get(size_t i) const { return *(get_impl(i)); };
 
