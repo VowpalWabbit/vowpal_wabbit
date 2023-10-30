@@ -21,7 +21,7 @@ jobs:
         os: ["ubuntu-22.04", "ubuntu-20.04"]
         build_type: ["Debug", "Release"]
         compiler:
-        - { cc: "gcc", cxx: "g++", version: "11"}
+        - { cc: "gcc", cxx: "g++"}
         - { cc: "clang", cxx: "clang++"}
     runs-on: ${{matrix.os}}
     steps:
@@ -49,7 +49,6 @@ jobs:
           -DVW_INSTALL=Off
           -DWARNINGS=On
           -DWARNING_AS_ERROR=On
-          -DUSE_LATEST_STD=On
       - name: Build
         run: cmake --build build
       - name: Unit tests
@@ -76,7 +75,6 @@ jobs:
       - name: Configure
         run: >
           cmake -S "${{ env.SOURCE_DIR }}" -B "${{ env.CMAKE_BUILD_DIR }}" -A "x64"
-          -DCMAKE_CXX_STANDARD=11
           -DUSE_LATEST_STD=On
           -DVW_FEAT_FLATBUFFERS=Off
           -DVW_FEAT_CSV=On
