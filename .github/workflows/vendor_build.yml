@@ -21,7 +21,7 @@ jobs:
         os: ["ubuntu-22.04", "ubuntu-20.04"]
         build_type: ["Debug", "Release"]
         compiler:
-        - { cc: "gcc", cxx: "g++"}
+        - { cc: "gcc", cxx: "g++", version: "11"}
         - { cc: "clang", cxx: "clang++"}
     runs-on: ${{matrix.os}}
     steps:
