@@ -36,7 +36,6 @@ jobs:
           CXX: ${{matrix.compiler.cxx}}
         run: >
           cmake -S . -B build -G Ninja
-          -DCMAKE_CXX_STANDARD=11
           -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
           -DVW_FEAT_FLATBUFFERS=Off
           -DVW_FEAT_CSV=On
@@ -108,7 +107,6 @@ jobs:
       - name: Configure
         run: >
           cmake -S . -B build -G Ninja
-          -DCMAKE_CXX_STANDARD=11
           -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
           -DVW_FEAT_FLATBUFFERS=Off
           -DVW_FEAT_CSV=On
