@@ -6,10 +6,10 @@
 #include "vw/common/string_view.h"
 #include "vw/core/vw_fwd.h"
 
+#include <cstdint>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <cstdint>
 
 namespace VW
 {
