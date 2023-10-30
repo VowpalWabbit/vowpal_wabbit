@@ -30,6 +30,9 @@ jobs:
           submodules: 'recursive'
       - name: Install requirements
         run: sudo apt-get install -y ninja-build libboost-test-dev
+      - name: Install libc++ and headers for Clang
+        if: matrix.compiler.cxx == 'clang++'  # Only install for clang builds
+        run: sudo apt-get install -y libc++-dev libc++1
       - name: Configure
         env:
           CC: ${{matrix.compiler.cc}}
