@@ -34,6 +34,7 @@ jobs:
         env:
           CC: ${{matrix.compiler.cc}}
           CXX: ${{matrix.compiler.cxx}}
+          CXXFLAGS: "-stdlib=libc++"
         run: >
           cmake -S . -B build -G Ninja
           -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
