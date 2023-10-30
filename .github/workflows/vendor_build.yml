@@ -21,8 +21,8 @@ jobs:
         os: ["ubuntu-22.04", "ubuntu-20.04"]
         build_type: ["Debug", "Release"]
         compiler:
-        - { cc: "gcc", cxx: "g++"}
-        - { cc: "clang", cxx: "clang++"}
+        - { cc: "gcc", cxx: "g++", stdlib: "" }
+        - { cc: "clang", cxx: "clang++", stdlib: "-stdlib=libc++" }
     runs-on: ${{matrix.os}}
     steps:
       - uses: actions/checkout@v3
@@ -34,7 +34,7 @@ jobs:
         env:
           CC: ${{matrix.compiler.cc}}
           CXX: ${{matrix.compiler.cxx}}
-          CXXFLAGS: "-stdlib=libc++"
+          CXXFLAGS: ${{matrix.compiler.stdlib}}
         run: >
           cmake -S . -B build -G Ninja
           -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
