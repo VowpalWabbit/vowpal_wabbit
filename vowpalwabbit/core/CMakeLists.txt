@@ -400,6 +400,10 @@ vw_add_library(
     ENABLE_INSTALL
 )
 
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+  target_compile_options(core PRIVATE -Wno-unused-but-set-variable)
+endif()
+
 if(VW_FEAT_LDA)
   target_link_libraries(vw_core PRIVATE $<BUILD_INTERFACE:${boost_math_target}>)
 endif()
