@@ -18,39 +18,11 @@ jobs:
     name: core-cli.${{ matrix.os }}.amd64.${{ matrix.build_type }}.${{ matrix.compiler.cxx }}.standalone
     strategy:
       matrix:
-        include:
-          - os: "ubuntu-20.04"
-            build_type: "Debug"
-            cc: "gcc"
-            cxx: "g++"
-          - os: "ubuntu-20.04"
-            build_type: "Release"
-            cc: "gcc"
-            cxx: "g++"
-          - os: "ubuntu-20.04"
-            build_type: "Debug"
-            cc: "clang"
-            cxx: "clang++"
-          - os: "ubuntu-20.04"
-            build_type: "Release"
-            cc: "clang"
-            cxx: "clang++"
-          - os: "ubuntu-22.04"
-            build_type: "Debug"
-            cc: "gcc"
-            cxx: "g++"
-          - os: "ubuntu-22.04"
-            build_type: "Release"
-            cc: "gcc"
-            cxx: "g++"
-          - os: "ubuntu-22.04"
-            build_type: "Debug"
-            cc: "clang-15"
-            cxx: "clang++-15"
-          - os: "ubuntu-22.04"
-            build_type: "Release"
-            cc: "clang-15"
-            cxx: "clang++-15"
+        os: ["ubuntu-22.04", "ubuntu-20.04"]
+        build_type: ["Debug", "Release"]
+        compiler:
+        - { cc: "gcc", cxx: "g++"}
+        - { cc: "clang", cxx: "clang++"}
     runs-on: ${{matrix.os}}
     steps:
       - uses: actions/checkout@v3
@@ -58,6 +30,8 @@ jobs:
           submodules: 'recursive'
       - name: Install requirements
         run: sudo apt-get install -y ninja-build libboost-test-dev
+      - name: Print g++ version
+        run: g++ --version
       - name: Configure
         env:
           CC: ${{matrix.compiler.cc}}
