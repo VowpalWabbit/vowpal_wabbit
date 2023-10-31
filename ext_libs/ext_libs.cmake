@@ -110,8 +110,11 @@ else()
   endif()
   add_library(eigen INTERFACE)
   target_include_directories(eigen SYSTEM INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/eigen>)
-  target_compile_options(eigen INTERFACE "-Wno-unused-but-set-variable")
   endif()
+
+if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    target_compile_options(eigen INTERFACE "-Wno-unused-but-set-variable")
+endif()
 
 add_library(sse2neon INTERFACE)
 if(VW_SSE2NEON_SYS_DEP)
