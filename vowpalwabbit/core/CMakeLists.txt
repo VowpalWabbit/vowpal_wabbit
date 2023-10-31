@@ -401,7 +401,7 @@ vw_add_library(
 )
 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-  target_compile_options(core PRIVATE -Wno-unused-but-set-variable)
+  target_compile_options(vowpalwabbit_core PRIVATE -Wno-unused-but-set-variable)
 endif()
 
 if(VW_FEAT_LDA)
