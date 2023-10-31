@@ -18,21 +18,39 @@ jobs:
     name: core-cli.${{ matrix.os }}.amd64.${{ matrix.build_type }}.${{ matrix.compiler.cxx }}.standalone
     strategy:
       matrix:
-        os: ["ubuntu-22.04", "ubuntu-20.04"]
-        build_type: ["Debug", "Release"]
-        compiler:
-        - os: "ubuntu-20.04"
-          cc: "gcc"
-          cxx: "g++"
-        - os: "ubuntu-20.04"
-          cc: "clang"
-          cxx: "clang++"
-        - os: "ubuntu-22.04"
-          cc: "gcc"
-          cxx: "g++"
-        - os: "ubuntu-22.04"
-          cc: "clang-15"
-          cxx: "clang++-15"
+        include:
+          - os: "ubuntu-20.04"
+            build_type: "Debug"
+            cc: "gcc"
+            cxx: "g++"
+          - os: "ubuntu-20.04"
+            build_type: "Release"
+            cc: "gcc"
+            cxx: "g++"
+          - os: "ubuntu-20.04"
+            build_type: "Debug"
+            cc: "clang"
+            cxx: "clang++"
+          - os: "ubuntu-20.04"
+            build_type: "Release"
+            cc: "clang"
+            cxx: "clang++"
+          - os: "ubuntu-22.04"
+            build_type: "Debug"
+            cc: "gcc"
+            cxx: "g++"
+          - os: "ubuntu-22.04"
+            build_type: "Release"
+            cc: "gcc"
+            cxx: "g++"
+          - os: "ubuntu-22.04"
+            build_type: "Debug"
+            cc: "clang-15"
+            cxx: "clang++-15"
+          - os: "ubuntu-22.04"
+            build_type: "Release"
+            cc: "clang-15"
+            cxx: "clang++-15"
     runs-on: ${{matrix.os}}
     steps:
       - uses: actions/checkout@v3
