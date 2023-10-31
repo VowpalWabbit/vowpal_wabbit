@@ -26,6 +26,10 @@
     "benchmarks": {
       "description": "Build Benchmarks",
       "dependencies": ["benchmark"]
+    },
+    "dnn": {
+      "description": "Build DNN",
+      "dependencies": ["libtorch"]
     }
   }
 }

@@ -9,7 +9,7 @@
 #   - The cmake variable VW_FEAT_X is set to ON, otherwise it is OFF
 #   - The C++ macro VW_FEAT_X_ENABLED is defined if the feature is enabled, otherwise it is not defined
 
-set(VW_ALL_FEATURES "CSV;FLATBUFFERS;LDA;CB_GRAPH_FEEDBACK;SEARCH;LAS_SIMD;NETWORKING")
+set(VW_ALL_FEATURES "CSV;FLATBUFFERS;LDA;CB_GRAPH_FEEDBACK;SEARCH;LAS_SIMD;NETWORKING;DNN")
 
 option(VW_FEAT_FLATBUFFERS "Enable flatbuffers support" OFF)
 option(VW_FEAT_CSV "Enable csv parser" OFF)
@@ -18,6 +18,7 @@ option(VW_FEAT_LDA "Enable lda reduction" ON)
 option(VW_FEAT_SEARCH "Enable search reductions" ON)
 option(VW_FEAT_LAS_SIMD "Enable large action space with explicit simd (only works with linux for now)" ON)
 option(VW_FEAT_NETWORKING "Enable daemon mode, spanning tree, sender, and active" ON)
+option(VW_FEAT_DNN "Add deep neural network as a base reduction" OFF)
 
 # Legacy options for feature enablement
 if(DEFINED BUILD_FLATBUFFERS)

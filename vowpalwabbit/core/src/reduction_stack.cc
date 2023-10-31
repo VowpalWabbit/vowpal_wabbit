@@ -105,6 +105,10 @@
 #include "vw/core/reductions/svrg.h"
 #include "vw/core/reductions/topk.h"
 
+#ifdef VW_FEAT_DNN_ENABLED
+#include "vw/core/reductions/dnn/dnn.h"
+#endif
+
 #include <unordered_map>
 
 void register_reductions(std::vector<VW::reduction_setup_fn>& reductions,
@@ -112,6 +116,9 @@ void register_reductions(std::vector<VW::reduction_setup_fn>& reductions,
 {
   std::unordered_map<VW::reduction_setup_fn, std::string> allowlist = {{VW::reductions::gd_setup, "gd"},
       {VW::reductions::ftrl_setup, "ftrl"},
+#ifdef VW_FEAT_DNN_ENABLED
+        {VW::reductions::dnn_setup, "dnn"},
+#endif
 #ifdef VW_FEAT_NETWORKING_ENABLED
       {VW::reductions::sender_setup, "sender"},
 #endif
@@ -151,6 +158,9 @@ void prepare_reductions(std::vector<std::tuple<std::string, VW::reduction_setup_
   reductions.push_back(VW::reductions::gd_setup);
   reductions.push_back(VW::reductions::kernel_svm_setup);
   reductions.push_back(VW::reductions::ftrl_setup);
+#ifdef VW_FEAT_DNN_ENABLED
+  reductions.push_back(VW::reductions::dnn_setup);
+#endif
   reductions.push_back(VW::reductions::freegrad_setup);
   reductions.push_back(VW::reductions::svrg_setup);
 #ifdef VW_FEAT_NETWORKING_ENABLED

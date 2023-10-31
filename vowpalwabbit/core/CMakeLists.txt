@@ -384,6 +384,13 @@ if(VW_FEAT_NETWORKING)
   )
 endif()
 
+if(VW_FEAT_DNN)
+  find_package(Torch REQUIRED)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
+  list(APPEND vw_core_headers include/vw/core/reductions/dnn/dnn.h)
+  list(APPEND vw_core_sources src/reductions/dnn/dnn.cc)
+endif()
+
 vw_add_library(
     NAME "core"
     TYPE "STATIC_ONLY"
@@ -399,6 +406,10 @@ vw_add_library(
     EXCEPTION_DESCRIPTION "Yes"
     ENABLE_INSTALL
 )
+
+if(VW_FEAT_DNN)
+  target_link_libraries(vw_core PRIVATE $<BUILD_INTERFACE:${TORCH_LIBRARIES}>)
+endif()
 
 if(VW_FEAT_LDA)
   target_link_libraries(vw_core PRIVATE $<BUILD_INTERFACE:${boost_math_target}>)

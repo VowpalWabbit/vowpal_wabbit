@@ -70,6 +70,10 @@ if(BUILD_BENCHMARKS)
   list(APPEND VCPKG_MANIFEST_FEATURES "benchmarks")
 endif()
 
+if(VW_FEAT_DNN)
+  list(APPEND VCPKG_MANIFEST_FEATURES "dnn")
+endif()
+
 # CMake project() does not support semantic versioning
 project(vowpal_wabbit VERSION "${VW_VERSION_MAJOR}.${VW_VERSION_MINOR}.${VW_VERSION_PATCH}" LANGUAGES C CXX)
 set(VW_PROJECT_DESCRIPTION "Vowpal Wabbit Machine Learning System")

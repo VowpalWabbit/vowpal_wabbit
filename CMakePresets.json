@@ -164,7 +164,7 @@
       "description": "CMAKE_TOOLCHAIN_FILE has to be passed explicitly since emcmake overwrites it if we define it here.",
       "inherits": "default",
       "cacheVariables": {
-        "VCPKG_CHAINLOAD_TOOLCHAIN_FILE":
+        "VCPKG_CHAINLOAD_TOOLCHAIN_FILE": 
         {
           "type": "FILEPATH",
           "value": "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake"
@@ -212,18 +212,15 @@
       }
     },
     {
-      "name": "vs2022-vcpkg-no-sys-deps",
-      "generator": "Visual Studio 17 2022",
-      "binaryDir": "${sourceDir}/build",
+      "name": "vcpkg-deps",
+      "inherits": "default",
+      "displayName": "Use vcpkg dependencies",
+      "description": "Use vcpkg dependencies instead of system dependencies, which is default",
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
       "cacheVariables": {
-        "CMAKE_TOOLCHAIN_FILE": {
-          "type": "FILEPATH",
-          "value": "${sourceDir}/ext_libs/vcpkg/scripts/buildsystems/vcpkg.cmake"
-        },
-        "BUILD_TESTING": {
-          "type": "BOOL",
-          "value": "ON"
-        },
         "RAPIDJSON_SYS_DEP": {
           "type": "BOOL",
           "value": "OFF"
@@ -257,6 +254,73 @@
           "value": "OFF"
         }
       }
+    },
+    {
+      "name": "vcpkg-deps-dnn",
+      "inherits": "vcpkg-deps",
+      "displayName": "VW with DNN",
+      "cacheVariables": {
+        "VW_FEAT_DNN": {
+          "type": "BOOL",
+          "value": "ON"
+        }
+      }
+    },
+    {
+      "name": "windows-base",
+      "inherits": "vcpkg-deps",
+      "displayName": "Windows x64 Base",
+      "description": "Sets visual studio generator, compilers, x64 architecture, build and install directory, debug build type",
+      "generator": "Visual Studio 17 2022",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}"
+      },
+      "vendor": {
+        "microsoft.com/VisualStudioSettings/CMake/1.0": {
+          "hostOS": [
+            "Windows"
+          ]
+        }
+      }
+    },
+    {
+      "name": "windows-x64-release",
+      "inherits": "windows-base",
+      "displayName": "Windows x64 Release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "windows-x64-debug",
+      "inherits": "windows-base",
+      "displayName": "Windows x64 Debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "windows-x64-debug-dnn",
+      "inherits": "windows-x64-debug",
+      "displayName": "Windows x64 Debug DNN",
+      "cacheVariables": {
+        "VW_FEAT_DNN": {
+          "type": "BOOL",
+          "value": "ON"
+        }
+      }
+    },
+    {
+      "name": "windows-x64-release-dnn",
+      "inherits": "windows-x64-release",
+      "displayName": "Windows x64 Release DNN",
+      "cacheVariables": {
+        "VW_FEAT_DNN": {
+          "type": "BOOL",
+          "value": "ON"
+        }
+      }
     }
   ],
   "buildPresets": [
@@ -273,16 +337,34 @@
     {
       "name": "vcpkg-debug",
       "configurePreset": "vcpkg-debug",
-      "output": { "outputOnFailure": true },
-      "execution": { "noTestsAction": "error", "stopOnFailure": true },
-      "filter": { "include": { "label": "VWTestList" } }
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error",
+        "stopOnFailure": true
+      },
+      "filter": {
+        "include": {
+          "label": "VWTestList"
+        }
+      }
     },
     {
       "name": "vcpkg-release",
       "configurePreset": "vcpkg-release",
-      "output": { "outputOnFailure": true },
-      "execution": { "noTestsAction": "error", "stopOnFailure": true },
-      "filter": { "include": { "label": "VWTestList" } }
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error",
+        "stopOnFailure": true
+      },
+      "filter": {
+        "include": {
+          "label": "VWTestList"
+        }
+      }
     }
   ]
 }

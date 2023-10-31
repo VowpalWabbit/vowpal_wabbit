@@ -18,7 +18,10 @@ bool option_group_definition::check_necessary_enabled(const options_i& options) 
 
   bool check_if_all_necessary_enabled = true;
 
-  for (const auto& elem : m_necessary_flags) { check_if_all_necessary_enabled &= options.was_supplied(elem); }
+  for (const auto& elem : m_necessary_flags)
+  {
+    check_if_all_necessary_enabled &= options.was_supplied(elem);
+  }
 
   return check_if_all_necessary_enabled;
 }
