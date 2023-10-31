@@ -31,26 +31,30 @@ jobs:
       - name: Install requirements
         run: |
           sudo apt-get update
-          sudo apt-get install -y ninja-build libboost-test-dev
+          sudo apt-get install -y ninja-build libboost-test-dev libc++-dev libc++abi-dev
       - name: Configure
         env:
           CC: ${{matrix.compiler.cc}}
           CXX: ${{matrix.compiler.cxx}}
-        run: >
-          cmake -S . -B build -G Ninja
-          -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
-          -DVW_FEAT_FLATBUFFERS=Off
-          -DVW_FEAT_CSV=On
-          -DVW_FEAT_CB_GRAPH_FEEDBACK=On
-          -DRAPIDJSON_SYS_DEP=Off
-          -DFMT_SYS_DEP=Off
-          -DSPDLOG_SYS_DEP=Off
-          -DVW_ZLIB_SYS_DEP=Off
-          -DVW_BOOST_MATH_SYS_DEP=Off
-          -DVW_INSTALL=Off
-          -DWARNINGS=On
-          -DWARNING_AS_ERROR=On
-          -DUSE_LATEST_STD=On
+        run: |
+          FLAGS=""
+          if [[ "${{ matrix.compiler.cxx }}" == "clang++" ]]; then
+            FLAGS="-DCMAKE_CXX_FLAGS=-stdlib=libc++"
+          fi
+          cmake -S . -B build -G Ninja $FLAGS \
+            -DCMAKE_BUILD_TYPE=${{matrix.build_type}} \
+            -DVW_FEAT_FLATBUFFERS=Off \
+            -DVW_FEAT_CSV=On \
+            -DVW_FEAT_CB_GRAPH_FEEDBACK=On \
+            -DRAPIDJSON_SYS_DEP=Off \
+            -DFMT_SYS_DEP=Off \
+            -DSPDLOG_SYS_DEP=Off \
+            -DVW_ZLIB_SYS_DEP=Off \
+            -DVW_BOOST_MATH_SYS_DEP=Off \
+            -DVW_INSTALL=Off \
+            -DWARNINGS=On \
+            -DWARNING_AS_ERROR=On \
+            -DUSE_LATEST_STD=On
       - name: Build
         run: cmake --build build
       - name: Unit tests
