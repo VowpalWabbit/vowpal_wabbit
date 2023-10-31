@@ -526,7 +526,7 @@ vw_add_test_executable(
     SOURCES ${vw_core_test_sources}
 )
 
-if(VW_FEAT_CB_GRAPH_FEEDBACK)
+if(TARGET vw_core_test AND VW_FEAT_CB_GRAPH_FEEDBACK)
   if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     target_compile_options(vw_core_test PRIVATE -Wno-unused-but-set-variable)
   endif()
