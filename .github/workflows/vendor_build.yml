@@ -29,7 +29,9 @@ jobs:
         with:
           submodules: 'recursive'
       - name: Install requirements
-        run: sudo apt-get install -y ninja-build libboost-test-dev
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build libboost-test-dev
       - name: Configure
         env:
           CC: ${{matrix.compiler.cc}}
