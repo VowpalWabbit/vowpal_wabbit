@@ -30,8 +30,6 @@ jobs:
           submodules: 'recursive'
       - name: Install requirements
         run: sudo apt-get install -y ninja-build libboost-test-dev
-      - name: Print g++ version
-        run: g++ --version
       - name: Configure
         env:
           CC: ${{matrix.compiler.cc}}

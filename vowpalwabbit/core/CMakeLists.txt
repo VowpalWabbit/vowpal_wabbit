@@ -526,12 +526,6 @@ vw_add_test_executable(
     SOURCES ${vw_core_test_sources}
 )
 
-if(TARGET vw_core_test AND VW_FEAT_CB_GRAPH_FEEDBACK)
-  if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    target_compile_options(vw_core_test PRIVATE -Wno-unused-but-set-variable)
-  endif()
-endif()
-
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
   # Tests are allowed to access private headers.
   target_include_directories(vw_core_test PRIVATE $<TARGET_PROPERTY:vw_core,INCLUDE_DIRECTORIES>)

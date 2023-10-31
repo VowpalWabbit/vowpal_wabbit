@@ -36,14 +36,13 @@ float decayed_epsilon(float init_ep, uint64_t update_count)
 }
 
 epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
-    double epsilon_decay_significance_level, double epsilon_decay_estimator_decay, dense_parameters& weights,
+    double epsilon_decay_significance_level, dense_parameters& weights,
     std::string epsilon_decay_audit_str, bool constant_epsilon, uint32_t& feature_width, uint64_t min_champ_examples,
     float initial_epsilon, uint64_t shift_model_bounds, bool reward_as_cost, double tol_x, bool is_brentq,
     bool predict_only_model, bool challenger_epsilon)
     : _model_count(model_count)
     , _min_scope(min_scope)
     , _epsilon_decay_significance_level(epsilon_decay_significance_level)
-    , _epsilon_decay_estimator_decay(epsilon_decay_estimator_decay)
     , _weights(weights)
     , _epsilon_decay_audit_str(std::move(epsilon_decay_audit_str))
     , _constant_epsilon(constant_epsilon)
@@ -345,7 +344,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::epsilon_decay_setup(VW::se
   uint64_t model_count;
   uint64_t min_scope;
   float epsilon_decay_significance_level;
-  float epsilon_decay_estimator_decay;
   std::string epsilon_decay_audit_str;
   bool constant_epsilon = false;
   uint64_t bonferroni_denominator;
@@ -439,7 +437,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::epsilon_decay_setup(VW::se
   bool is_brentq = opt_func == "brentq";
 
   auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(model_count, min_scope,
-      epsilon_decay_significance_level, epsilon_decay_estimator_decay, all.weights.dense_weights,
+      epsilon_decay_significance_level, all.weights.dense_weights,
       epsilon_decay_audit_str, constant_epsilon, all.reduction_state.total_feature_width, min_champ_examples,
       initial_epsilon, shift_model_bounds, reward_as_cost, tol_x, is_brentq, predict_only_model, challenger_epsilon);
 
