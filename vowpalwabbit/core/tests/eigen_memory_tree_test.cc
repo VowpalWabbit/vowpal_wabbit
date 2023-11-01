@@ -185,7 +185,6 @@ TEST(EigenMemoryTree, BoundingRecency)
   vw->finish_example(*ex2);
 
   EXPECT_EQ((*tree->bounder->list.begin())->base[0].first, 0);
-
 }
 
 TEST(EigenMemoryTree, Split)
