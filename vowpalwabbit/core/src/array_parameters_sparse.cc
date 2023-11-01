@@ -28,7 +28,8 @@ VW::weight* VW::sparse_parameters::get_or_default_and_get(size_t i) const
 
 VW::weight* VW::sparse_parameters::get_impl(size_t i) const
 {
-  static auto default_value = std::shared_ptr<VW::weight>(VW::details::calloc_mergable_or_throw<VW::weight>(stride()), free);
+  static auto default_value =
+      std::shared_ptr<VW::weight>(VW::details::calloc_mergable_or_throw<VW::weight>(stride()), free);
   uint64_t index = i & _weight_mask;
   auto iter = _map.find(index);
   if (iter == _map.end())
