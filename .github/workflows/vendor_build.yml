@@ -48,6 +48,7 @@ jobs:
           -DVW_INSTALL=Off
           -DWARNINGS=On
           -DWARNING_AS_ERROR=On
+          -DVW_CXX_STANDARD=17
       - name: Build
         run: cmake --build build
       - name: Unit tests
