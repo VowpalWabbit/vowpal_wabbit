@@ -6,8 +6,5 @@
             ],
             "url": "./test/vwtest.schema.json"
         }
-    ],
-    "files.associations": {
-        "string": "cpp"
-    }
+    ]
 }
