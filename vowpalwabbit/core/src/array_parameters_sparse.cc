@@ -28,16 +28,26 @@ VW::weight* VW::sparse_parameters::get_or_default_and_get(size_t i) const
 
 VW::weight* VW::sparse_parameters::get_impl(size_t i) const
 {
-  static VW::weight default_value = 0.0f;
-
+  static auto default_value = std::shared_ptr<VW::weight>(VW::details::calloc_mergable_or_throw<VW::weight>(stride()), free);
   uint64_t index = i & _weight_mask;
   auto iter = _map.find(index);
   if (iter == _map.end())
   {
-    if (_default_func != nullptr) { _default_func(&default_value, index); }
-    return &default_value;
+    // Add entry to map if _default_func is defined
+    if (_default_func != nullptr)
+    {
+      // memory allocated by calloc should be freed by C free()
+      _map.insert(std::make_pair(
+          index, std::shared_ptr<VW::weight>(VW::details::calloc_mergable_or_throw<VW::weight>(stride()), free)));
+      iter = _map.find(index);
+      _default_func(iter->second.get(), index);
+      return iter->second.get();
+    }
+    // Return default value if _default_func is not defined
+    return default_value.get();
   }
 
+  // Get entry if it exists in the map
   return iter->second.get();
 }
 
