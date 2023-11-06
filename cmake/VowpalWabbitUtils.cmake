@@ -329,7 +329,11 @@ function(vw_add_test_executable)
       GTest::gmock GTest::gtest
     )
     target_compile_definitions(${FULL_TEST_NAME} PRIVATE ${VW_TEST_COMPILE_DEFS})
-    target_compile_options(${FULL_TEST_NAME} PRIVATE ${WARNING_OPTIONS} ${WARNING_AS_ERROR_OPTIONS})
+    target_compile_options(${FULL_TEST_NAME} PRIVATE
+      $<$<CXX_COMPILER_ID:GNU>:-Wno-unused-but-set-variable>
+      $<$<CXX_COMPILER_ID:Clang>:-Wno-unused-but-set-variable>
+      ${WARNING_OPTIONS} ${WARNING_AS_ERROR_OPTIONS}
+    )
     set_property(TARGET ${FULL_TEST_NAME} PROPERTY CXX_STANDARD ${VW_CXX_STANDARD})
     set_property(TARGET ${FULL_TEST_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
     set_property(TARGET ${FULL_TEST_NAME} PROPERTY CMAKE_CXX_EXTENSIONS OFF)

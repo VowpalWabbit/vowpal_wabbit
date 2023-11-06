@@ -112,12 +112,6 @@ else()
   target_include_directories(eigen SYSTEM INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/eigen>)
 endif()
 
-# Suppress specific warnings for Eigen
-target_compile_options(eigen INTERFACE
-  $<$<CXX_COMPILER_ID:GNU>:-Wno-unused-but-set-variable>
-  $<$<CXX_COMPILER_ID:Clang>:-Wno-unused-but-set-variable>
-)
-
 add_library(sse2neon INTERFACE)
 if(VW_SSE2NEON_SYS_DEP)
   find_path(SSE2NEON_INCLUDE_DIRS "sse2neon/sse2neon.h")
