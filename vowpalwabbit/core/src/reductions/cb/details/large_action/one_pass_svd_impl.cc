@@ -164,7 +164,7 @@ void one_pass_svd_impl::run(const multi_ex& examples, const std::vector<float>& 
     Eigen::VectorXf& S, Eigen::MatrixXf& _V)
 {
   generate_AOmega(examples, shrink_factors);
-  _svd.compute(AOmega, Eigen::ComputeThinU | Eigen::ComputeThinV);
+  _svd.compute(AOmega);
   U = _svd.matrixU().leftCols(_d);
   S = _svd.singularValues();
 

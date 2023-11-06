@@ -94,7 +94,7 @@ private:
   simd_type _use_simd = simd_type::NO_SIMD;
 #endif
   std::vector<std::future<void>> _futures;
-  Eigen::JacobiSVD<Eigen::MatrixXf> _svd;
+  Eigen::JacobiSVD<Eigen::MatrixXf, Eigen::ComputeThinU | Eigen::ComputeThinV> _svd;
 };
 
 class shrink_factor_config
