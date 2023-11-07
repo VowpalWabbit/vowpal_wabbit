@@ -4,15 +4,15 @@
 
 #pragma once
 
+#include "vw/core/api_status.h"
 #include "vw/core/multi_ex.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw_fwd.h"
 #include "vw/fb_parser/generated/example_generated.h"
-#include "vw/core/api_status.h"
 
 namespace VW
 {
-  class api_status;
+class api_status;
 namespace parsers
 {
 namespace flatbuffer
@@ -24,7 +24,8 @@ class parser
 public:
   parser() = default;
   const VW::parsers::flatbuffer::ExampleRoot* data();
-  int parse_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& examples, uint8_t* buffer_pointer = nullptr, VW::experimental::api_status* status=nullptr);
+  int parse_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& examples, uint8_t* buffer_pointer = nullptr,
+      VW::experimental::api_status* status = nullptr);
 
 private:
   const VW::parsers::flatbuffer::ExampleRoot* _data;
@@ -39,12 +40,16 @@ private:
   uint64_t _c_hash = 0;
 
   bool parse(io_buf& buf, uint8_t* buffer_pointer = nullptr);
-  int process_collection_item(VW::workspace* all, VW::multi_ex& examples, VW::experimental::api_status* status=nullptr);
-  int parse_example(VW::workspace* all, example* ae, const Example* eg, VW::experimental::api_status* status=nullptr);
-  int parse_multi_example(VW::workspace* all, example* ae, const MultiExample* eg, VW::experimental::api_status* status=nullptr);
-  int parse_namespaces(VW::workspace* all, example* ae, const Namespace* ns, VW::experimental::api_status* status=nullptr);
-  int parse_flat_label(shared_data* sd, example* ae, const Example* eg, VW::io::logger& logger, VW::experimental::api_status* status=nullptr);
-  int get_namespace_index(const Namespace* ns, namespace_index& ni, VW::experimental::api_status* status=nullptr);
+  int process_collection_item(
+      VW::workspace* all, VW::multi_ex& examples, VW::experimental::api_status* status = nullptr);
+  int parse_example(VW::workspace* all, example* ae, const Example* eg, VW::experimental::api_status* status = nullptr);
+  int parse_multi_example(
+      VW::workspace* all, example* ae, const MultiExample* eg, VW::experimental::api_status* status = nullptr);
+  int parse_namespaces(
+      VW::workspace* all, example* ae, const Namespace* ns, VW::experimental::api_status* status = nullptr);
+  int parse_flat_label(shared_data* sd, example* ae, const Example* eg, VW::io::logger& logger,
+      VW::experimental::api_status* status = nullptr);
+  int get_namespace_index(const Namespace* ns, namespace_index& ni, VW::experimental::api_status* status = nullptr);
 
   void parse_simple_label(shared_data* sd, polylabel* l, reduction_features* red_features, const SimpleLabel* label);
   void parse_cb_label(polylabel* l, const CBLabel* label);
@@ -53,7 +58,7 @@ private:
   void parse_cb_eval_label(polylabel* l, const CB_EVAL_Label* label);
   void parse_mc_label(shared_data* sd, polylabel* l, const MultiClass* label, VW::io::logger& logger);
   void parse_multi_label(polylabel* l, const MultiLabel* label);
-  int parse_slates_label(polylabel* l, const Slates_Label* label, VW::experimental::api_status* status=nullptr);
+  int parse_slates_label(polylabel* l, const Slates_Label* label, VW::experimental::api_status* status = nullptr);
   void parse_continuous_action_label(polylabel* l, const ContinuousLabel* label);
 };
 }  // namespace flatbuffer

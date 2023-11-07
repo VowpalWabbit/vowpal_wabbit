@@ -85,8 +85,8 @@ private:
   void write_to_file(bool collection, bool is_multiline, MultiExampleBuilder& multi_ex_builder,
       ExampleBuilder& ex_builder, std::ofstream& outfile);
 
-  flatbuffers::Offset<VW::parsers::flatbuffer::Namespace> create_namespace(VW::features::const_iterator begin,
-      VW::features::const_iterator end, VW::namespace_index index, uint64_t hash);
-  flatbuffers::Offset<VW::parsers::flatbuffer::Namespace> create_namespace_audit(VW::features::audit_iterator begin,
-      VW::features::audit_iterator end, VW::namespace_index index, uint64_t hash);
+  flatbuffers::Offset<VW::parsers::flatbuffer::Namespace> create_namespace(
+      VW::features::const_iterator begin, VW::features::const_iterator end, VW::namespace_index index, uint64_t hash);
+  flatbuffers::Offset<VW::parsers::flatbuffer::Namespace> create_namespace_audit(
+      VW::features::audit_iterator begin, VW::features::audit_iterator end, VW::namespace_index index, uint64_t hash);
 };

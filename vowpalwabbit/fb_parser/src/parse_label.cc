@@ -6,12 +6,12 @@
 #include "vw/core/best_constant.h"
 #include "vw/core/cb.h"
 #include "vw/core/constant.h"
+#include "vw/core/error_constants.h"
 #include "vw/core/example.h"
 #include "vw/core/global_data.h"
 #include "vw/core/named_labels.h"
 #include "vw/core/slates_label.h"
 #include "vw/fb_parser/parse_example_flatbuffer.h"
-#include "vw/core/error_constants.h"
 
 #include <cfloat>
 #include <fstream>
@@ -150,10 +150,7 @@ int parser::parse_slates_label(polylabel* l, const Slates_Label* label, VW::expe
 
     for (auto const& as : *(label->probabilities())) l->slates.probabilities.push_back({as->action(), as->score()});
   }
-  else
-  {
-    RETURN_ERROR(status, not_implemented, "Example type not understood");
-  }
+  else { RETURN_ERROR(status, not_implemented, "Example type not understood"); }
   return VW::experimental::error_code::success;
 }
 

@@ -263,10 +263,9 @@ int report_error(status_builder& sb, const First& first, const Rest&... rest)
 /**
  * @brief Error reporting macro to test and return on error
  */
-#define RETURN_IF_FAIL(x)                               \
-  do                                                    \
-  {                                                     \
-    int retval__LINE__ = (x);                           \
-    if (retval__LINE__ != 0) { return retval__LINE__; } \
-  } while (0)
+#  define RETURN_IF_FAIL(x)                               \
+    do {                                                  \
+      int retval__LINE__ = (x);                           \
+      if (retval__LINE__ != 0) { return retval__LINE__; } \
+    } while (0)
 #endif

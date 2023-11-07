@@ -30,10 +30,12 @@ flatbuffers::Offset<VW::parsers::flatbuffer::ExampleRoot> sample_flatbuffer_audi
 {
   std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Namespace>> namespaces;
   auto label = get_label(builder, label_type);
-  const std::vector<flatbuffers::Offset<flatbuffers::String>> feature_names = {builder.CreateString("hello")}; //auto temp_fn= {builder.CreateString("hello")}; 
-  const std::vector<float>  feature_values = {2.23f};
-  const std::vector<uint64_t> feature_hashes;// = {VW::details::CONSTANT}; 
-  namespaces.push_back(VW::parsers::flatbuffer::CreateNamespaceDirect(builder, nullptr, VW::details::CONSTANT_NAMESPACE, 128, &feature_names, &feature_values, nullptr));
+  const std::vector<flatbuffers::Offset<flatbuffers::String>> feature_names = {
+      builder.CreateString("hello")};  // auto temp_fn= {builder.CreateString("hello")};
+  const std::vector<float> feature_values = {2.23f};
+  const std::vector<uint64_t> feature_hashes;  // = {VW::details::CONSTANT};
+  namespaces.push_back(VW::parsers::flatbuffer::CreateNamespaceDirect(
+      builder, nullptr, VW::details::CONSTANT_NAMESPACE, 128, &feature_names, &feature_values, nullptr));
   auto example = VW::parsers::flatbuffer::CreateExampleDirect(builder, &namespaces, label_type, label);
 
   return CreateExampleRoot(builder, VW::parsers::flatbuffer::ExampleType_Example, example.Union());
@@ -44,9 +46,10 @@ flatbuffers::Offset<VW::parsers::flatbuffer::ExampleRoot> sample_flatbuffer_no_a
 {
   std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Namespace>> namespaces;
   auto label = get_label(builder, label_type);
-  const std::vector<float>  feature_values = {2.23f};
-  const std::vector<uint64_t> feature_hashes = {VW::details::CONSTANT}; 
-  namespaces.push_back(VW::parsers::flatbuffer::CreateNamespaceDirect(builder, nullptr, VW::details::CONSTANT_NAMESPACE, 128, nullptr, &feature_values, &feature_hashes));
+  const std::vector<float> feature_values = {2.23f};
+  const std::vector<uint64_t> feature_hashes = {VW::details::CONSTANT};
+  namespaces.push_back(VW::parsers::flatbuffer::CreateNamespaceDirect(
+      builder, nullptr, VW::details::CONSTANT_NAMESPACE, 128, nullptr, &feature_values, &feature_hashes));
   auto example = VW::parsers::flatbuffer::CreateExampleDirect(builder, &namespaces, label_type, label);
 
   return CreateExampleRoot(builder, VW::parsers::flatbuffer::ExampleType_Example, example.Union());
@@ -63,7 +66,8 @@ flatbuffers::Offset<VW::parsers::flatbuffer::ExampleRoot> sample_flatbuffer_coll
   std::vector<flatbuffers::Offset<flatbuffers::String>> feature_names = {builder.CreateString("hello")};
   std::vector<float> feature_values = {2.23f};
   std::vector<uint64_t> feature_hashes = {VW::details::CONSTANT};
-  namespaces.push_back(VW::parsers::flatbuffer::CreateNamespaceDirect(builder, nullptr, VW::details::CONSTANT_NAMESPACE, 128, &feature_names, &feature_values, &feature_hashes));
+  namespaces.push_back(VW::parsers::flatbuffer::CreateNamespaceDirect(
+      builder, nullptr, VW::details::CONSTANT_NAMESPACE, 128, &feature_names, &feature_values, &feature_hashes));
   examples.push_back(VW::parsers::flatbuffer::CreateExampleDirect(builder, &namespaces, label_type, label));
 
   auto eg_collection = VW::parsers::flatbuffer::CreateExampleCollectionDirect(builder, &examples);
@@ -76,10 +80,12 @@ flatbuffers::Offset<VW::parsers::flatbuffer::ExampleRoot> sample_flatbuffer_erro
   std::vector<flatbuffers::Offset<VW::parsers::flatbuffer::Namespace>> namespaces;
   auto label = get_label(builder, label_type);
 
-  const std::vector<flatbuffers::Offset<flatbuffers::String>> feature_names;// = {builder.CreateString("hello")}; //auto temp_fn= {builder.CreateString("hello")}; 
-  const std::vector<float>  feature_values = {2.23f};
-  const std::vector<uint64_t> feature_hashes;// = {VW::details::CONSTANT}; 
-  namespaces.push_back(VW::parsers::flatbuffer::CreateNamespaceDirect(builder, nullptr, VW::details::CONSTANT_NAMESPACE, 128, nullptr, &feature_values, nullptr));
+  const std::vector<flatbuffers::Offset<flatbuffers::String>>
+      feature_names;  // = {builder.CreateString("hello")}; //auto temp_fn= {builder.CreateString("hello")};
+  const std::vector<float> feature_values = {2.23f};
+  const std::vector<uint64_t> feature_hashes;  // = {VW::details::CONSTANT};
+  namespaces.push_back(VW::parsers::flatbuffer::CreateNamespaceDirect(
+      builder, nullptr, VW::details::CONSTANT_NAMESPACE, 128, nullptr, &feature_values, nullptr));
   auto example = VW::parsers::flatbuffer::CreateExampleDirect(builder, &namespaces, label_type, label);
 
   return CreateExampleRoot(builder, VW::parsers::flatbuffer::ExampleType_Example, example.Union());
@@ -87,7 +93,7 @@ flatbuffers::Offset<VW::parsers::flatbuffer::ExampleRoot> sample_flatbuffer_erro
 
 TEST(flatbuffer_parser_tests, test_flatbuffer_standalone_example_audit)
 {
-  //Testcase where user would provide feature names and feature values (no feature hashes)
+  // Testcase where user would provide feature names and feature values (no feature hashes)
   auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer"));
 
   flatbuffers::FlatBufferBuilder builder;
@@ -130,7 +136,7 @@ TEST(flatbuffer_parser_tests, test_flatbuffer_standalone_example_audit)
 
 TEST(flatbuffer_parser_tests, test_flatbuffer_standalone_example_no_audit)
 {
-  //Testcase where user would provide feature names and feature values (no feature hashes)
+  // Testcase where user would provide feature names and feature values (no feature hashes)
   auto all = VW::initialize("--no_stdin --quiet --flatbuffer", nullptr, false, nullptr, nullptr);
 
   flatbuffers::FlatBufferBuilder builder;
@@ -217,7 +223,7 @@ TEST(FlatbufferParser, FlatbufferCollection)
 
 TEST(flatbuffer_parser_tests, test_flatbuffer_standalone_example_error_code)
 {
-  //Testcase where user would provide feature names and feature values (no feature hashes)
+  // Testcase where user would provide feature names and feature values (no feature hashes)
   auto all = VW::initialize("--no_stdin --quiet --flatbuffer --api_status --audit", nullptr, false, nullptr, nullptr);
 
   flatbuffers::FlatBufferBuilder builder;
