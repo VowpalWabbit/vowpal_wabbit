@@ -18,11 +18,11 @@ jobs:
     name: core-cli.${{ matrix.os }}.amd64.${{ matrix.build_type }}.${{ matrix.compiler.cxx }}.standalone
     strategy:
       matrix:
-        os: ["ubuntu-22.04"]
+        os: ["ubuntu-22.04", "ubuntu-20.04"]
         build_type: ["Debug", "Release"]
         compiler:
         - { cc: "gcc", cxx: "g++"}
-        - { cc: "clang-15", cxx: "clang++-15"}
+        - { cc: "clang", cxx: "clang++"}
     runs-on: ${{matrix.os}}
     steps:
       - uses: actions/checkout@v3
