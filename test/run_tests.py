@@ -967,6 +967,13 @@ def main():
 
     default_test_spec_file: Path = test_ref_dir / "core.vwtest.json"
 
+    parser.add_argument(
+        "-j",
+        "--jobs",
+        type=int,
+        default=1,
+        help="Number of tests to run in parallel. Set to 1 to run tests sequentially.",
+    )
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
