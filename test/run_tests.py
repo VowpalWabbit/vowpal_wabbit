@@ -1241,7 +1241,7 @@ def main():
     tasks: List[Future[TestOutcome]] = []
     completed_tests = Completion()
 
-    executor = ThreadPoolExecutor(max_workers=args.jobs)
+    executor = ThreadPoolExecutor(max_workers=1)
 
     for test in tests:
         tasks.append(

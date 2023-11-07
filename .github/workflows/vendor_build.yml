@@ -57,7 +57,7 @@ jobs:
       - name: Test
         run: python3 test/run_tests.py -f --clean_dirty -E 0.001
         env:
-          NUM_JOBS: 2
+          NUM_JOBS: 1
   build_vendor_windows:
     name: core-cli.${{ matrix.os }}.amd64.${{ matrix.build_type }}.msvc.standalone
     runs-on: ${{matrix.os}}
