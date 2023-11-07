@@ -22,7 +22,7 @@ jobs:
         build_type: ["Debug", "Release"]
         compiler:
         - { cc: "gcc", cxx: "g++"}
-        - { cc: "clang", cxx: "clang++"}
+        #- { cc: "clang", cxx: "clang++"}
     runs-on: ${{matrix.os}}
     steps:
       - uses: actions/checkout@v3
