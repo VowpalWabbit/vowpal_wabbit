@@ -110,6 +110,35 @@ void predict_or_learn_active(active& a, learner& base, VW::example& ec)
   }
 }
 
+template <bool is_learn>
+void predict_or_learn_active_direct(active& a, learner& base, VW::example& ec)
+{ 
+  if (is_learn) { base.learn(ec); }
+  else { base.predict(ec); }
+    
+  if (ec.l.simple.label == FLT_MAX)
+  {
+    if (std::string(ec.tag.begin(), ec.tag.begin()+6) == "query?")
+    { 
+      // std::cout << "Inside if on query in predict_or_learn_act" << std::endl;
+      const float threshold = (a._shared_data->max_label + a._shared_data->min_label) * 0.5f;
+      // We want to understand the change in prediction if the label were to be
+      // the opposite of what was predicted. 0 and 1 are used for the expected min
+      // and max labels to be coming in from the active interactor.
+      ec.l.simple.label = (ec.pred.scalar >= threshold) ? a._min_seen_label : a._max_seen_label;
+      ec.confidence = std::abs(ec.pred.scalar - threshold) / base.sensitivity(ec);
+      ec.l.simple.label = FLT_MAX;
+      ec.pred.scalar = query_decision(a, ec.confidence, static_cast<float>(a._shared_data->weighted_unlabeled_examples));
+    }
+  }
+  else
+  { 
+    // Update seen labels based on the current example's label.
+    a._min_seen_label = std::min(ec.l.simple.label, a._min_seen_label);
+    a._max_seen_label = std::max(ec.l.simple.label, a._max_seen_label);
+  } 
+}   
+
 void active_print_result(
     VW::io::writer* f, float res, float weight, const VW::v_array<char>& tag, VW::io::logger& logger)
 {
@@ -189,10 +218,12 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::active_setup(VW::setup_bas
 
   bool active_option = false;
   bool simulation = false;
+  bool direct = false;
   float active_c0;
   option_group_definition new_options("[Reduction] Active Learning");
   new_options.add(make_option("active", active_option).keep().necessary().help("Enable active learning"))
       .add(make_option("simulation", simulation).help("Active learning simulation mode"))
+      .add(make_option("direct", direct).help("Active learning via the tag and predictions interface.  Tag should start with \"query?\" to get query decision.  Returned prediction is either -1 for no or the importance weight for yes."))
       .add(make_option("mellowness", active_c0)
                .keep()
                .default_value(8.f)
@@ -222,6 +253,15 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::active_setup(VW::setup_bas
     output_example_prediction_func = VW::details::output_example_prediction_simple_label<active>;
     print_update_func = VW::details::print_update_simple_label<active>;
     reduction_name.append("-simulation");
+  }
+  else if (direct)
+  {
+    learn_func = predict_or_learn_active_direct<true>;
+    pred_func = predict_or_learn_active_direct<false>;
+    update_stats_func = update_stats_active;
+    output_example_prediction_func = VW::details::output_example_prediction_simple_label<active>;
+    print_update_func = VW::details::print_update_simple_label<active>;
+    learn_returns_prediction = base->learn_returns_prediction;
   }
   else
   {
