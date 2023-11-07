@@ -11,7 +11,7 @@ on:
     branches:
       - '*'
 
-concurrency: 
+concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
@@ -27,7 +27,7 @@ jobs:
     runs-on: ${{matrix.config.os}}
     steps:
       # Setup for build
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: 'recursive'
       - name: Setup MSVC Developer Command Prompt
@@ -47,8 +47,10 @@ jobs:
         shell: bash
         run: |
           version=$(./utl/version_number.py)
+          version_trimmed=$(echo $version | sed 's/\+.*//')
           echo "Generated version number: $version"
-          echo "::set-output name=version::$version"
+          echo "version=$version" >> $GITHUB_OUTPUT
+          echo "version_trimmed=$version_trimmed" >> $GITHUB_OUTPUT
 
       # Build .NET Core, all platforms
       - name: Configure .NET Core
@@ -58,7 +60,8 @@ jobs:
           -Dvw_DOTNET_USE_MSPROJECT=Off
           -DVW_NUGET_PACKAGE_NAME=VowpalWabbit
           -DVW_NUGET_PACKAGE_VERSION="${{ steps.get_version.outputs.version }}"
-          -DBUILD_FLATBUFFERS=Off
+          -DVW_NUGET_PACKAGE_VERSION_TRIMMED="${{ steps.get_version.outputs.version_trimmed }}"
+          -DVW_FEAT_FLATBUFFERS=Off
           -DRAPIDJSON_SYS_DEP=Off
           -DFMT_SYS_DEP=Off
           -DSPDLOG_SYS_DEP=Off
@@ -83,7 +86,8 @@ jobs:
           -Dvw_BUILD_NET_FRAMEWORK=On
           -DVW_NUGET_PACKAGE_NAME=VowpalWabbit
           -DVW_NUGET_PACKAGE_VERSION="${{ steps.get_version.outputs.version }}"
-          -DBUILD_FLATBUFFERS=Off
+          -DVW_NUGET_PACKAGE_VERSION_TRIMMED="${{ steps.get_version.outputs.version_trimmed }}"
+          -DVW_FEAT_FLATBUFFERS=Off
           -DRAPIDJSON_SYS_DEP=Off
           -DFMT_SYS_DEP=Off
           -DSPDLOG_SYS_DEP=Off
@@ -108,7 +112,7 @@ jobs:
           cd nuget_staging
           nuget pack dotnet.nuspec
           $NugetFileName = Get-ChildItem *.nupkg -name
-          echo "::set-output name=NugetFileName::$NugetFileName"
+          echo "NugetFileName=$NugetFileName" >> $GITHUB_OUTPUT
       - name: Upload Combined
         if: ${{ startsWith(matrix.config.os, 'windows') }}
         uses: actions/upload-artifact@v1
@@ -124,7 +128,7 @@ jobs:
           cd nuget_staging
           nuget pack dotnetcore_runtime.nuspec
           NugetFileName=(*runtime*.nupkg)
-          echo "::set-output name=NugetFileName::${NugetFileName[0]}"
+          echo "NugetFileName=${NugetFileName[0]}" >> $GITHUB_OUTPUT
       - name: Upload .NET Core Runtime
         uses: actions/upload-artifact@v1
         with:
@@ -142,7 +146,7 @@ jobs:
           - { os: "macos-latest", runtime_id: "osx-x64" }
     runs-on: ${{matrix.config.os}}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: 'recursive'
       - if: ${{ startsWith(matrix.config.os, 'windows') }}
@@ -158,7 +162,7 @@ jobs:
         run: |
           version=$(./utl/version_number.py)
           echo "Generated version number: $version"
-          echo "::set-output name=version::$version"
+          echo "version=$version" >> $GITHUB_OUTPUT
 
       # Download the previously built Nuget packages
       - name: Clear nuget cache
@@ -169,7 +173,15 @@ jobs:
           path: downloaded_nugets
       - uses: actions/download-artifact@v1
         with:
-          name: VowpalWabbit.runtime.${{matrix.config.runtime_id}}.${{steps.get_version.outputs.version}}.nupkg
+          name: VowpalWabbit.runtime.win-x64.${{steps.get_version.outputs.version}}.nupkg
+          path: downloaded_nugets
+      - uses: actions/download-artifact@v1
+        with:
+          name: VowpalWabbit.runtime.linux-x64.${{steps.get_version.outputs.version}}.nupkg
+          path: downloaded_nugets
+      - uses: actions/download-artifact@v1
+        with:
+          name: VowpalWabbit.runtime.osx-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
       - name: List downloaded packages
         run: ls downloaded_nugets
@@ -192,11 +204,9 @@ jobs:
 
   test_nuget_dotnetframework:
     needs: [build_nuget_dotnet]
-    strategy:
-      fail-fast: false
     runs-on: "windows-latest"
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: 'recursive'
       - uses: ilammy/msvc-dev-cmd@v1
@@ -211,7 +221,7 @@ jobs:
         run: |
           version=$(./utl/version_number.py)
           echo "Generated version number: $version"
-          echo "::set-output name=version::$version"
+          echo "version=$version" >> $GITHUB_OUTPUT
 
       # Download the previously built Nuget packages
       - name: Clear nuget cache
@@ -223,6 +233,14 @@ jobs:
       - uses: actions/download-artifact@v1
         with:
           name: VowpalWabbit.runtime.win-x64.${{steps.get_version.outputs.version}}.nupkg
+          path: downloaded_nugets
+      - uses: actions/download-artifact@v1
+        with:
+          name: VowpalWabbit.runtime.linux-x64.${{steps.get_version.outputs.version}}.nupkg
+          path: downloaded_nugets
+      - uses: actions/download-artifact@v1
+        with:
+          name: VowpalWabbit.runtime.osx-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
       - name: List downloaded packages
         run: ls downloaded_nugets
@@ -245,11 +263,13 @@ jobs:
 
   benchmark_nuget:
     needs: [build_nuget_dotnet]
-    strategy:
-      fail-fast: false
     runs-on: "windows-latest"
+    permissions:
+      contents: write
+      deployments: write
+    if: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: 'recursive'
       - uses: ilammy/msvc-dev-cmd@v1
@@ -266,7 +286,7 @@ jobs:
         run: |
           version=$(./utl/version_number.py)
           echo "Generated version number: $version"
-          echo "::set-output name=version::$version"
+          echo "version=$version" >> $GITHUB_OUTPUT
 
       # Download the previously built Nuget packages
       - name: Clear nuget cache
@@ -279,6 +299,14 @@ jobs:
         with:
           name: VowpalWabbit.runtime.win-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
+      - uses: actions/download-artifact@v1
+        with:
+          name: VowpalWabbit.runtime.linux-x64.${{steps.get_version.outputs.version}}.nupkg
+          path: downloaded_nugets
+      - uses: actions/download-artifact@v1
+        with:
+          name: VowpalWabbit.runtime.osx-x64.${{steps.get_version.outputs.version}}.nupkg
+          path: downloaded_nugets
       - name: List downloaded packages
         run: ls downloaded_nugets
 
@@ -287,7 +315,7 @@ jobs:
       - name: Install package
         run: |
           set +e
-          cd nuget/dotnet/benchmarks
+          cd test/benchmarks/dotnet
           dotnet add dotnet_benchmark.csproj package VowpalWabbit --version ${{steps.get_version.outputs.version}} --source "${{github.workspace}}/downloaded_nugets" --no-restore
           dotnet add dotnet_benchmark.csproj package VowpalWabbit.runtime.win-x64 --version ${{steps.get_version.outputs.version}} --source "${{github.workspace}}/downloaded_nugets" --no-restore
           dotnet restore dotnet_benchmark.csproj --runtime win-x64 --source "${{github.workspace}}/downloaded_nugets"
@@ -295,7 +323,7 @@ jobs:
           exit 0
       - name: Build and run benchmarks
         run: |
-          cd nuget/dotnet/benchmarks
+          cd test/benchmarks/dotnet
 
           # Build for both .NET Core and Framework
           dotnet build dotnet_benchmark.csproj --framework net6.0 --runtime win-x64 --configuration Release --no-restore --self-contained
@@ -303,29 +331,37 @@ jobs:
 
           # Run with .NET Core as host process
           # Arguments after "--" are for BenchmarkDotNet
-          dotnet run --project dotnet_benchmark.csproj --framework net6.0 --runtime win-x64 --configuration Release --no-build -- --filter '*'
+          dotnet run --project dotnet_benchmark.csproj --framework net6.0 --runtime win-x64 --configuration Release --no-build -- --filter '*' --join
+
+      # Generate output for Github workflow artifacts
       - name: Print benchmark results
         shell: bash
         run: |
-          cd nuget/dotnet/benchmarks
+          cd test/benchmarks/dotnet/BenchmarkDotNet.Artifacts/results
           echo "## .NET Benchmark Results" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          dotnet run --project dotnet_benchmark.csproj --framework net6.0 --runtime win-x64 --configuration Release --no-build -- --info >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-          echo -e '\n' >> $GITHUB_STEP_SUMMARY
-
-          cd BenchmarkDotNet.Artifacts/results
-          for file in *-report-github.md; do
-            benchmark="${file%-report-github.md}"
-            echo "### $benchmark" >> $GITHUB_STEP_SUMMARY
-            # Remove lines not part of table (not between |...|)
-            # Remove markdown formatting **
-            # Remove first 2 columns of table
-            cat "$file" | sed '/^|.*|\s*$/!d' | sed 's/\*\*//g' | sed 's/^\(|[^|]*\)\{2\}//' >> $GITHUB_STEP_SUMMARY
-            echo -e '\n' >> $GITHUB_STEP_SUMMARY
-          done
+          cat BenchmarkRun-joined-*.md | sed 's/\*\*//g' >> $GITHUB_STEP_SUMMARY
       - name: Upload benchmark artifacts
         uses: actions/upload-artifact@v3
         with:
           name: benchmark_results
-          path: nuget/dotnet/benchmarks/BenchmarkDotNet.Artifacts/results/
+          path: test/benchmarks/dotnet/BenchmarkDotNet.Artifacts/results/
+
+      # Generate output for github-action-benchmark
+      - name: Reset dotnet_benchmark.csproj
+        run: git restore test/benchmarks/dotnet/dotnet_benchmark.csproj
+      - name: Filter only .NET Core output for github-action-benchmark
+        shell: bash
+        run: |
+          cd test/benchmarks/dotnet/BenchmarkDotNet.Artifacts/results
+          cat BenchmarkRun-joined-*.json | jq '.Benchmarks |= map(select(.DisplayInfo | contains(".NET Framework") | not))' > BenchmarkRun.json
+      - uses: benchmark-action/github-action-benchmark@v1
+        with:
+          tool: 'benchmarkdotnet'
+          output-file-path: test/benchmarks/dotnet/BenchmarkDotNet.Artifacts/results/BenchmarkRun.json
+          alert-threshold: '200%'
+          fail-on-alert: true
+          comment-on-alert: true
+          auto-push: false
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push results to gh-pages branch
+        run: git push 'https://VowpalWabbit:${{ secrets.GITHUB_TOKEN }}@github.com/VowpalWabbit/vowpal_wabbit.git' gh-pages:gh-pages

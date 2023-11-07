@@ -9,7 +9,7 @@ on:
     branches:
       - '*'
 
-concurrency: 
+concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
@@ -24,21 +24,16 @@ jobs:
     env:
       CMAKE_BUILD_DIR: ${{ github.workspace }}/vw/build
       SOURCE_DIR: ${{ github.workspace }}/vw
-      VCPKG_ROOT: ${{ github.workspace }}/vcpkg
-      VCPKG_REF: cef0b3ec767df6e83806899fe9525f6cf8d7bc91
+      VCPKG_ROOT: ${{ github.workspace }}/vw/ext_libs/vcpkg
+      VCPKG_REF: 501db0f17ef6df184fcdbfbe0f87cde2313b6ab1
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           path: 'vw'
           submodules: recursive
-      - uses: actions/checkout@v2
-        with:
-          path: 'vcpkg'
-          repository: 'microsoft/vcpkg'
-          ref: ${{ env.VCPKG_REF }}
       - name: Restore vcpkg and build artifacts
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ${{ env.VCPKG_ROOT }}/installed/
@@ -49,17 +44,18 @@ jobs:
           key: |
             ${{ env.VCPKG_REF }}-${{ matrix.os }}-vcpkg-cache-invalidate-0
       - uses: ilammy/msvc-dev-cmd@v1
-      - name: Bootstrap vcpkg
-        run: ${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.bat
-      - name: Install vcpkg dependencies
-        run: ${{ env.VCPKG_ROOT }}/vcpkg.exe --triplet x64-windows install zlib boost-test flatbuffers
+      - name: Vcpkg install
+        run: |
+          $env:VCPKG_ROOT = "${{ github.workspace }}/vw/ext_libs/vcpkg"
+          echo "VCPKG_ROOT=$env:VCPKG_ROOT" >> $env:GITHUB_ENV
+          & "$env:VCPKG_ROOT\bootstrap-vcpkg.bat"
+          & "$env:VCPKG_ROOT\vcpkg.exe" --triplet x64-windows install zlib flatbuffers
       - name: Generate project files
         run: |
-          cmake -S "${{ env.SOURCE_DIR }}" -B "${{ env.CMAKE_BUILD_DIR }}" -A "x64" -DVCPKG_MANIFEST_MODE=OFF -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake" -DBUILD_FLATBUFFERS=On -DVW_BUILD_CSV=On -Dvw_BUILD_NET_FRAMEWORK=On
+          cmake -S "${{ env.SOURCE_DIR }}" -B "${{ env.CMAKE_BUILD_DIR }}" -A "x64" -DVCPKG_MANIFEST_MODE=OFF -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake" -DVW_FEAT_FLATBUFFERS=On -DVW_FEAT_CSV=On -DVW_FEAT_CB_GRAPH_FEEDBACK=On -Dvw_BUILD_NET_FRAMEWORK=On
       - name: Build project
         run: |
           cmake --build "${{ env.CMAKE_BUILD_DIR }}" --config ${{ matrix.build_config }} --verbose
       - name: Run tests
-        run: |
-          cd ${{ env.CMAKE_BUILD_DIR }}
-          ctest --verbose --output-on-failure -C ${{ matrix.build_config }} --label-regex VWTestList
+        working-directory: ${{ env.CMAKE_BUILD_DIR }}
+        run: ctest --output-on-failure --no-tests=error --label-regex VWTestList --build-config ${{ matrix.build_config }}

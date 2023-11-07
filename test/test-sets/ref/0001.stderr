@@ -7,19 +7,19 @@ Num weight bits = 18
 learning rate = 20
 initial_t = 129600
 power_t = 1
-Enabled reductions: gd, scorer-identity, count_label
-Input label = simple
-Output pred = scalar
-average  since         example        example        current        current  current 
-loss     last          counter         weight          label        predict features 
-0.000000 0.000000            1            1.0         1.0000         1.0000      290 
-0.000000 0.000000            2            2.0         0.0000         0.0000      608 
-0.000000 0.000000            4            4.0         0.0000         0.0000      794 
-0.000000 0.000000            8            8.0         0.0000         0.0000      860 
-0.000000 0.000000           16           16.0         1.0000         1.0000      128 
-0.000000 0.000000           32           32.0         0.0000         0.0000      176 
-0.000000 0.000000           64           64.0         0.0000         0.0000      350 
-0.000000 0.000000          128          128.0         1.0000         1.0000      620 
+Enabled learners: gd, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.000000 0.000000            1            1.0         1.0000         1.0000      290
+0.000000 0.000000            2            2.0         0.0000         0.0000      608
+0.000000 0.000000            4            4.0         0.0000         0.0000      794
+0.000000 0.000000            8            8.0         0.0000         0.0000      860
+0.000000 0.000000           16           16.0         1.0000         1.0000      128
+0.000000 0.000000           32           32.0         0.0000         0.0000      176
+0.000000 0.000000           64           64.0         0.0000         0.0000      350
+0.000000 0.000000          128          128.0         1.0000         1.0000      620
 
 finished run
 number of examples = 200

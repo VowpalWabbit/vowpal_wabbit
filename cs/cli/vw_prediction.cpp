@@ -6,6 +6,7 @@
 #include "vw_example.h"
 #include "vw_base.h"
 #include "vowpalwabbit.h"
+#include "vw/core/learner.h"
 
 namespace VW
 {
@@ -113,7 +114,7 @@ uint32_t VowpalWabbitMulticlassPredictionFactory::Create(VW::workspace* vw, exam
 }
 
 cli::array<int>^ VowpalWabbitMultilabelPredictionFactory::Create(VW::workspace* vw, example* ex)
-{ CheckExample(vw, ex, prediction_type_t::multilabels);
+{ CheckExample(vw, ex, prediction_type_t::MULTILABELS);
 
   size_t length;
   uint32_t* labels;
@@ -154,15 +155,15 @@ cli::array<float>^ VowpalWabbitTopicPredictionFactory::Create(VW::workspace* vw,
 { if (ex == nullptr)
     throw gcnew ArgumentNullException("ex");
 
-  auto values = gcnew cli::array<float>(vw->lda);
-  Marshal::Copy(IntPtr(ex->pred.scalars.begin()), values, 0, vw->lda);
+  auto values = gcnew cli::array<float>(vw->reduction_state.lda);
+  Marshal::Copy(IntPtr(ex->pred.scalars.begin()), values, 0, vw->reduction_state.lda);
 
   return values;
 }
 
 VowpalWabbitActiveMulticlass^ VowpalWabbitActiveMulticlassPredictionFactory::Create(VW::workspace* vw, example* ex)
 {
-  CheckExample(vw, ex, prediction_type_t::active_multiclass);
+  CheckExample(vw, ex, prediction_type_t::ACTIVE_MULTICLASS);
   auto struct_obj = gcnew VowpalWabbitActiveMulticlass();
   const auto length = ex->pred.active_multiclass.more_info_required_for_classes.size();
   struct_obj->more_info_required_for_classes = gcnew cli::array<int>((int)length);
@@ -183,23 +184,23 @@ System::Object^ VowpalWabbitDynamicPredictionFactory::Create(VW::workspace* vw, 
     throw gcnew ArgumentNullException("ex");
 
   switch (vw->l->get_output_prediction_type())
-  { case prediction_type_t::scalar:
+  { case prediction_type_t::SCALAR:
       return VowpalWabbitPredictionType::Scalar->Create(vw, ex);
-    case prediction_type_t::scalars:
+    case prediction_type_t::SCALARS:
       return VowpalWabbitPredictionType::Scalars->Create(vw, ex);
-    case prediction_type_t::multiclass:
+    case prediction_type_t::MULTICLASS:
       return VowpalWabbitPredictionType::Multiclass->Create(vw, ex);
-    case prediction_type_t::multilabels:
+    case prediction_type_t::MULTILABELS:
       return VowpalWabbitPredictionType::Multilabel->Create(vw, ex);
-    case prediction_type_t::action_scores:
+    case prediction_type_t::ACTION_SCORES:
       return VowpalWabbitPredictionType::ActionScore->Create(vw, ex);
-    case prediction_type_t::action_probs:
+    case prediction_type_t::ACTION_PROBS:
       return VowpalWabbitPredictionType::ActionProbabilities->Create(vw, ex);
-    case prediction_type_t::prob:
+    case prediction_type_t::PROB:
       return VowpalWabbitPredictionType::Probability->Create(vw, ex);
-    case prediction_type_t::multiclassprobs:
+    case prediction_type_t::MULTICLASS_PROBS:
       return VowpalWabbitPredictionType::MultiClassProbabilities->Create(vw, ex);
-    case prediction_type_t::active_multiclass:
+    case prediction_type_t::ACTIVE_MULTICLASS:
       return VowpalWabbitPredictionType::ActiveMulticlass->Create(vw, ex);
     default:
     { auto sb = gcnew StringBuilder();

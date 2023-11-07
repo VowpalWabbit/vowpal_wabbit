@@ -13,7 +13,9 @@ bool VW::get_best_constant(
     const loss_function& loss_func, const shared_data& sd, float& best_constant, float& best_constant_loss)
 {
   if (sd.first_observed_label == FLT_MAX)  // no non-test labels observed or function was never called
-  { return false; }
+  {
+    return false;
+  }
 
   float label1 = sd.first_observed_label;  // observed labels might be inside [sd.Min_label, sd.Max_label], so
                                            // can't use Min/Max
@@ -38,54 +40,38 @@ bool VW::get_best_constant(
     label1_cnt = static_cast<float>(sd.weighted_labels - label2 * sd.weighted_labeled_examples) / (label1 - label2);
     label2_cnt = static_cast<float>(sd.weighted_labeled_examples) - label1_cnt;
   }
-  else
-  {
-    return false;
-  }
+  else { return false; }
 
   if ((label1_cnt + label2_cnt) <= 0.) { return false; }
 
-  auto funcName = loss_func.get_type();
-  if (funcName == "squared" || funcName == "Huber" || funcName == "classic")
-  { best_constant = static_cast<float>(sd.weighted_labels) / static_cast<float>(sd.weighted_labeled_examples); }
+  auto func_name = loss_func.get_type();
+  if (func_name == "squared" || func_name == "Huber" || func_name == "classic")
+  {
+    best_constant = static_cast<float>(sd.weighted_labels) / static_cast<float>(sd.weighted_labeled_examples);
+  }
   else if (sd.is_more_than_two_labels_observed)
   {
     // loss functions below don't have generic formuas for constant yet.
     return false;
   }
-  else if (funcName == "hinge")
-  {
-    best_constant = label2_cnt <= label1_cnt ? -1.f : 1.f;
-  }
-  else if (funcName == "logistic")
+  else if (func_name == "hinge") { best_constant = label2_cnt <= label1_cnt ? -1.f : 1.f; }
+  else if (func_name == "logistic")
   {
     label1 = -1.;  // override {-50, 50} to get proper loss
     label2 = 1.;
 
     if (label1_cnt <= 0) { best_constant = 1.; }
-    else if (label2_cnt <= 0)
-    {
-      best_constant = -1.;
-    }
-    else
-    {
-      best_constant = std::log(label2_cnt / label1_cnt);
-    }
+    else if (label2_cnt <= 0) { best_constant = -1.; }
+    else { best_constant = std::log(label2_cnt / label1_cnt); }
   }
-  else if (funcName == "quantile" || funcName == "pinball" || funcName == "absolute")
+  else if (func_name == "quantile" || func_name == "pinball" || func_name == "absolute")
   {
     float tau = loss_func.get_parameter();
     float q = tau * (label1_cnt + label2_cnt);
     if (q < label2_cnt) { best_constant = label2; }
-    else
-    {
-      best_constant = label1;
-    }
+    else { best_constant = label1; }
   }
-  else
-  {
-    return false;
-  }
+  else { return false; }
 
   if (!sd.is_more_than_two_labels_observed)
   {
@@ -93,10 +79,7 @@ bool VW::get_best_constant(
     best_constant_loss += (label2_cnt > 0) ? loss_func.get_loss(&sd, best_constant, label2) * label2_cnt : 0.0f;
     best_constant_loss /= label1_cnt + label2_cnt;
   }
-  else
-  {
-    best_constant_loss = FLT_MIN;
-  }
+  else { best_constant_loss = FLT_MIN; }
 
   return true;
 }

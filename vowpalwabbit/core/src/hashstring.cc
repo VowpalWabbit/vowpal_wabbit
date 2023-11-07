@@ -5,16 +5,16 @@
 #include "vw/core/hashstring.h"
 
 #include "vw/common/vw_exception.h"
+#include "vw/common/vw_throw.h"
 
 #include <string>
 
-hash_func_t getHasher(const std::string& s)
+VW::hash_func_t get_hasher(const std::string& s) { return VW::get_hasher(s); }
+
+VW::hash_func_t VW::get_hasher(const std::string& s)
 {
-  if (s == "strings") { return hashstring; }
-  else if (s == "all")
-  {
-    return hashall;
-  }
+  if (s == "strings") { return VW::details::hashstring; }
+  else if (s == "all") { return VW::details::hashall; }
   else
     THROW("Unknown hash function: " << s);
 }

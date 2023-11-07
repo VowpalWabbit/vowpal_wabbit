@@ -6,26 +6,26 @@ learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 decay_learning_rate = 1
-Enabled reductions: lda
-Input label = nolabel
-Output pred = scalars
-average  since         example        example        current        current  current 
-loss     last          counter         weight          label        predict features 
-12.81371 12.81371            1            1.0           none              0      201 
-12.94682 13.07993            2            2.0           none              0      220 
-13.71767 14.48851            4            4.0           none              0      136 
-14.78730 15.85694            8            8.0           none              0      371 
-15.93477 17.08223           16           16.0           none              0      138 
-17.20918 18.48360           32           32.0           none              0      276 
-17.16330 17.11742           64           64.0           none              0       55 
-16.49471 15.82611          128          128.0           none              0      131 
-15.91807 15.34144          256          256.0           none              0      433 
-15.28181 14.64554          512          512.0           none              0       61 
+Enabled learners: lda
+Input label = NOLABEL
+Output pred = SCALARS
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+12.81377 12.81377            1            1.0           none              0      201
+12.94686 13.07995            2            2.0           none              0      220
+13.71817 14.48947            4            4.0           none              0      136
+14.78753 15.85688            8            8.0           none              0      371
+15.93484 17.08216           16           16.0           none              0      138
+17.20925 18.48366           32           32.0           none              0      276
+17.16331 17.11736           64           64.0           none              0       55
+16.49466 15.82602          128          128.0           none              0      131
+15.91804 15.34142          256          256.0           none              0      433
+15.28166 14.64527          512          512.0           none              0       61
 
 finished run
 number of examples per pass = 500
 passes used = 2
 weighted example sum = 1000.000000
 weighted label sum = 0.000000
-average loss = 14.298476
+average loss = 14.297977
 total feature number = 193156

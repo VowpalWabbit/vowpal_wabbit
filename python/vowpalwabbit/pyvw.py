@@ -110,6 +110,7 @@ class VWOption:
         value_supplied,
         default_value,
         default_value_supplied,
+        experimental,
     ):
         self._name = name
         self._help_str = help_str
@@ -121,6 +122,7 @@ class VWOption:
         self._value_supplied = value_supplied
         self._default_value = default_value
         self._default_value_supplied = default_value_supplied
+        self._experimental = experimental
 
     @property
     def name(self):
@@ -157,6 +159,10 @@ class VWOption:
     @property
     def default_value_supplied(self):
         return self._default_value_supplied
+
+    @property
+    def experimental(self):
+        return self._experimental
 
     @property
     def value(self):
@@ -634,7 +640,7 @@ class Workspace(pylibvw.vw):
 
         elif isinstance(ec, list):
             if not self._is_multiline():
-                raise TypeError("Expecting a mutiline Learner.")
+                raise TypeError("Expecting a multiline learner.")
             if len(ec) == 0:
                 raise ValueError("An empty list is invalid")
             if isinstance(ec[0], str):
@@ -968,6 +974,7 @@ class NamespaceId:
                 - If int, uses that as an index into this Examples list of feature groups to get the namespace id character
                 - If str, uses the first character as the namespace id character
         """
+        self.full = None
         if isinstance(id, int):  # you've specified a namespace by index
             if id < 0 or id >= ex.num_namespaces():
                 raise Exception("namespace " + str(id) + " out of bounds")
@@ -977,6 +984,7 @@ class NamespaceId:
         elif isinstance(id, str):  # you've specified a namespace by string
             if len(id) == 0:
                 id = " "
+            self.full = id
             self.id = None  # we don't know and we don't want to do the linear search required to find it
             self.ns = id[0]
             self.ord_ns = ord(self.ns)
@@ -1689,6 +1697,7 @@ class Example(pylibvw.example):
         """
         return pylibvw.example.num_features_in(self, self.get_ns(ns).ord_ns)
 
+    # pytype: disable=attribute-error
     def get_feature_id(
         self,
         ns: Union[NamespaceId, str, int],
@@ -1716,7 +1725,13 @@ class Example(pylibvw.example):
             return feature
         if isinstance(feature, str):
             if ns_hash is None:
-                ns_hash = self.vw.hash_space(self.get_ns(ns).ns)
+                if type(ns) != NamespaceId:
+                    ns = self.get_ns(ns)
+                ns_hash = (
+                    self.vw.hash_space(ns.full)
+                    if ns.full
+                    else self.vw.hash_space(ns.ns)
+                )
             return self.vw.hash_feature(feature, ns_hash)
         raise Exception("cannot extract feature of type: " + str(type(feature)))
 
@@ -1833,8 +1848,9 @@ class Example(pylibvw.example):
         """
         ns = self.get_ns(ns)
         self.ensure_namespace_exists(ns)
+        ns_hash = self.vw.hash_space(ns.full) if ns.full else self.vw.hash_space(ns.ns)
         self.push_feature_list(
-            self.vw, ns.ord_ns, featureList
+            self.vw, ns.ord_ns, ns_hash, featureList
         )  # much faster just to do it in C++
         # ns_hash = self.vw.hash_space( ns.ns )
         # for feature in featureList:
@@ -1923,9 +1939,8 @@ class Example(pylibvw.example):
         Tuple[int, float],
         List[Tuple[float, float, float]],
         Tuple[int, List[int]],
-        str,
+        None,
     ]:
-
         """Get prediction object from this example.
 
         Args:
@@ -1948,7 +1963,7 @@ class Example(pylibvw.example):
                 - :py:obj:`~vowpalwabbit.PredictionType.ACTION_PDF_VALUE`: Tuple[int, float]
                 - :py:obj:`~vowpalwabbit.PredictionType.PDF`: List[Tuple[float, float, float]]
                 - :py:obj:`~vowpalwabbit.PredictionType.ACTIVE_MULTICLASS`: Tuple[int, List[int]]
-                - :py:obj:`~vowpalwabbit.PredictionType.NOPRED`: str
+                - :py:obj:`~vowpalwabbit.PredictionType.NOPRED`: None
 
         Examples:
             >>> from vowpalwabbit import Workspace, PredictionType
@@ -1973,6 +1988,9 @@ class Example(pylibvw.example):
             )
             prediction_type = PredictionType(prediction_type)
 
+        def return_nopred_none() -> None:
+            return None
+
         switch_prediction_type = {
             PredictionType.SCALAR: self.get_simplelabel_prediction,
             PredictionType.SCALARS: self.get_scalars,
@@ -1986,7 +2004,7 @@ class Example(pylibvw.example):
             PredictionType.ACTION_PDF_VALUE: self.get_action_pdf_value,
             PredictionType.PDF: self.get_pdf,
             PredictionType.ACTIVE_MULTICLASS: self.get_active_multiclass,
-            PredictionType.NOPRED: self.get_nopred,
+            PredictionType.NOPRED: return_nopred_none,
         }
         return switch_prediction_type[prediction_type]()
 

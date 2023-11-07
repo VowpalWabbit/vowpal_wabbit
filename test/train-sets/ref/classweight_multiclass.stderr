@@ -5,13 +5,13 @@ Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
-Enabled reductions: gd, scorer-identity, oaa, classweight-multi
-Input label = multiclass
-Output pred = multiclass
-average  since         example        example        current        current  current 
-loss     last          counter         weight          label        predict features 
-0.000000 0.000000            1            1.0              1              1        2 
-0.909091 1.000000            2           11.0              2              1        2 
+Enabled learners: gd, scorer-identity, oaa, classweight-multi
+Input label = MULTICLASS
+Output pred = MULTICLASS
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.000000 0.000000            1            1.0              1              1        2
+0.909091 1.000000            2           11.0              2              1        2
 
 finished run
 number of examples = 10

@@ -2,7 +2,7 @@ vw_add_executable(
   NAME "spanning_tree"
   OVERRIDE_BIN_NAME "spanning_tree"
   SOURCES "src/spanning_tree_main.cc"
-  DEPS vw_spanning_tree vw_common vw_config
+  DEPS vw_spanning_tree vw_common vw_config vw_io
   DESCRIPTION "Command line tool for connecting instances of vw for distributed learning"
   ENABLE_INSTALL
 )

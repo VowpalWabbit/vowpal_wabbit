@@ -12,8 +12,9 @@
 
 namespace VW
 {
-struct kskip_ngram_transformer
+class kskip_ngram_transformer
 {
+public:
   static kskip_ngram_transformer build(
       const std::vector<std::string>& grams, const std::vector<std::string>& skips, bool quiet, VW::io::logger& logger);
 

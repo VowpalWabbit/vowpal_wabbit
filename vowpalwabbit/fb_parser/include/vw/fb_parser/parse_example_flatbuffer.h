@@ -4,18 +4,11 @@
 
 #pragma once
 
-#include "vw/core/v_array.h"
+#include "vw/core/multi_ex.h"
+#include "vw/core/shared_data.h"
+#include "vw/core/vw_fwd.h"
 #include "vw/fb_parser/generated/example_generated.h"
 #include "vw/core/api_status.h"
-
-class io_buf;
-namespace VW
-{
-struct workspace;
-struct example;
-struct polylabel;
-class reduction_features;
-}  // namespace VW
 
 namespace VW
 {

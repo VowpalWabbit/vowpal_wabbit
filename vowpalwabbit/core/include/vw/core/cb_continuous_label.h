@@ -10,13 +10,16 @@
 #include "vw/core/v_array.h"
 #include "vw/core/vw_fwd.h"
 
+#include <cfloat>
+
 namespace VW
 {
-struct example;
+class example;
 namespace cb_continuous
 {
-struct continuous_label_elm
+class continuous_label_elm
 {
+public:
   float action;     // the continuous action
   float cost;       // the cost of this class
   float pdf_value;  // the pdf density of the chosen location, specifies the probability the data collection policy
@@ -25,17 +28,24 @@ struct continuous_label_elm
   bool operator==(const continuous_label_elm&& j) const { return action == j.action; }
 };
 
-struct continuous_label
+class continuous_label
 {
+public:
   v_array<continuous_label_elm> costs;
+
+  VW_ATTR(nodiscard) bool is_test_label() const;
+  VW_ATTR(nodiscard) bool is_labeled() const;
+  void reset_to_default();
 };
 
 extern VW::label_parser the_label_parser;
 
 }  // namespace cb_continuous
 
-std::string to_string(const cb_continuous::continuous_label_elm& elm, int decimal_precision = DEFAULT_FLOAT_PRECISION);
-std::string to_string(const cb_continuous::continuous_label& lbl, int decimal_precision = DEFAULT_FLOAT_PRECISION);
+std::string to_string(
+    const cb_continuous::continuous_label_elm& elm, int decimal_precision = details::DEFAULT_FLOAT_PRECISION);
+std::string to_string(
+    const cb_continuous::continuous_label& lbl, int decimal_precision = details::DEFAULT_FLOAT_PRECISION);
 
 namespace model_utils
 {

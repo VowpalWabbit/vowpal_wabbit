@@ -7,8 +7,10 @@
 #include "vw/common/vw_exception.h"
 #include "vw/config/options.h"
 #include "vw/core/debug_log.h"
+#include "vw/core/example.h"
+#include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
-#include "vw/core/rand48.h"
+#include "vw/core/named_labels.h"
 #include "vw/core/reductions/csoaa.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
@@ -19,22 +21,22 @@
 #include <cmath>
 #include <limits>
 
-//#define B_SEARCH_MAX_ITER 50
+// #define B_SEARCH_MAX_ITER 50
 #define B_SEARCH_MAX_ITER 20
 
 using namespace VW::LEARNER;
-using namespace COST_SENSITIVE;
 using namespace VW::config;
 
 using std::endl;
 
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::cs_active
+#define VW_DEBUG_LOG vw_dbg::CS_ACTIVE
 
 namespace
 {
-struct lq_data
+class lq_data
 {
+public:
   // The following are used by cost-sensitive active learning
   float max_pred;            // The max cost for this label predicted by the current set of good regressors
   float min_pred;            // The min cost for this label predicted by the current set of good regressors
@@ -42,11 +44,12 @@ struct lq_data
   bool is_range_overlapped;  // Indicator of whether this label's cost range overlaps with the cost range that has the
                              // minimum max_pred
   bool query_needed;         // Used in reduction mode: tell upper-layer whether a query is needed for this label
-  COST_SENSITIVE::wclass* cl;
+  VW::cs_class* cl;
 };
 
-struct cs_active
+class cs_active
 {
+public:
   // active learning algorithm parameters
   float c0 = 0.f;        // mellowness controlling the width of the set of good functions
   float c1 = 0.f;        // multiplier on the threshold for the cost range test
@@ -64,7 +67,7 @@ struct cs_active
   bool use_domination = false;
 
   VW::workspace* all = nullptr;  // statistics, loss
-  VW::LEARNER::base_learner* l = nullptr;
+  VW::LEARNER::learner* l = nullptr;
 
   VW::v_array<lq_data> query_data;
 
@@ -76,7 +79,7 @@ struct cs_active
   float range = 0.f;
 };
 
-float binarySearch(float fhat, float delta, float sens, float tol)
+float binary_search(float fhat, float delta, float sens, float tol)
 {
   float maxw = std::min(fhat / sens, FLT_MAX);
 
@@ -89,10 +92,7 @@ float binarySearch(float fhat, float delta, float sens, float tol)
     w = (u + l) / 2.f;
     v = w * (fhat * fhat - (fhat - sens * w) * (fhat - sens * w)) - delta;
     if (v > 0) { u = w; }
-    else
-    {
-      l = w;
-    }
+    else { l = w; }
     if (std::fabs(v) <= tol || u - l <= tol) { break; }
   }
 
@@ -100,8 +100,8 @@ float binarySearch(float fhat, float delta, float sens, float tol)
 }
 
 template <bool is_learn, bool is_simulation>
-inline void inner_loop(cs_active& cs_a, single_learner& base, VW::example& ec, uint32_t i, float cost,
-    uint32_t& prediction, float& score, float& partial_prediction, bool query_this_label, bool& query_needed)
+inline void inner_loop(cs_active& cs_a, learner& base, VW::example& ec, uint32_t i, float cost, uint32_t& prediction,
+    float& score, float& partial_prediction, bool query_this_label, bool& query_needed)
 {
   base.predict(ec, i - 1);
   if (is_learn)
@@ -116,10 +116,7 @@ inline void inner_loop(cs_active& cs_a, single_learner& base, VW::example& ec, u
         ec.l.simple.label = cost;
         all.sd->queries += 1;
       }
-      else
-      {
-        ec.l.simple.label = FLT_MAX;
-      }
+      else { ec.l.simple.label = FLT_MAX; }
     }
     else
     {
@@ -130,12 +127,11 @@ inline void inner_loop(cs_active& cs_a, single_learner& base, VW::example& ec, u
       {
         ec.l.simple.label = cost;
         if ((cost < cs_a.cost_min) || (cost > cs_a.cost_max))
-        { cs_a.all->logger.err_warn("Cost {0} outside of cost range[{1}, {2}]", cost, cs_a.cost_min, cs_a.cost_max); }
+        {
+          cs_a.all->logger.err_warn("Cost {0} outside of cost range[{1}, {2}]", cost, cs_a.cost_min, cs_a.cost_max);
+        }
       }
-      else
-      {
-        ec.l.simple.label = FLT_MAX;
-      }
+      else { ec.l.simple.label = FLT_MAX; }
     }
 
     if (ec.l.simple.label != FLT_MAX) { base.learn(ec, i - 1); }
@@ -153,10 +149,10 @@ inline void inner_loop(cs_active& cs_a, single_learner& base, VW::example& ec, u
     score = ec.partial_prediction;
     prediction = i;
   }
-  add_passthrough_feature(ec, i, ec.partial_prediction);
+  VW_ADD_PASSTHROUGH_FEATURE(ec, i, ec.partial_prediction);
 }
 
-inline void find_cost_range(cs_active& cs_a, single_learner& base, VW::example& ec, uint32_t i, float delta, float eta,
+inline void find_cost_range(cs_active& cs_a, learner& base, VW::example& ec, uint32_t i, float delta, float eta,
     float& min_pred, float& max_pred, bool& is_range_large)
 {
   float tol = 1e-6f;
@@ -178,10 +174,10 @@ inline void find_cost_range(cs_active& cs_a, single_learner& base, VW::example& 
   else
   {
     // finding max_pred and min_pred by binary search
-    max_pred =
-        std::min(ec.pred.scalar + sens * binarySearch(cs_a.cost_max - ec.pred.scalar, delta, sens, tol), cs_a.cost_max);
-    min_pred =
-        std::max(ec.pred.scalar - sens * binarySearch(ec.pred.scalar - cs_a.cost_min, delta, sens, tol), cs_a.cost_min);
+    max_pred = std::min(
+        ec.pred.scalar + sens * binary_search(cs_a.cost_max - ec.pred.scalar, delta, sens, tol), cs_a.cost_max);
+    min_pred = std::max(
+        ec.pred.scalar - sens * binary_search(ec.pred.scalar - cs_a.cost_min, delta, sens, tol), cs_a.cost_min);
     is_range_large = (max_pred - min_pred > eta);
     if (cs_a.print_debug_stuff)
     {
@@ -192,33 +188,37 @@ inline void find_cost_range(cs_active& cs_a, single_learner& base, VW::example& 
 }
 
 template <bool is_learn, bool is_simulation>
-void predict_or_learn(cs_active& cs_a, single_learner& base, VW::example& ec)
+void predict_or_learn(cs_active& cs_a, learner& base, VW::example& ec)
 {
-  COST_SENSITIVE::label ld = ec.l.cs;
+  VW::cs_label ld = ec.l.cs;
 
   if (cs_a.all->sd->queries >= cs_a.min_labels * cs_a.num_classes)
   {
     // save regressor
     std::stringstream filename;
-    filename << cs_a.all->final_regressor_name << "." << ec.example_counter << "." << cs_a.all->sd->queries << "."
-             << cs_a.num_any_queries;
+    filename << cs_a.all->output_model_config.final_regressor_name << "." << ec.example_counter << "."
+             << cs_a.all->sd->queries << "." << cs_a.num_any_queries;
     VW::save_predictor(*(cs_a.all), filename.str());
-    *(cs_a.all->trace_message) << endl << "Number of examples with at least one query = " << cs_a.num_any_queries;
+    *(cs_a.all->output_runtime.trace_message)
+        << endl
+        << "Number of examples with at least one query = " << cs_a.num_any_queries;
     // Double label query budget
     cs_a.min_labels *= 2;
 
     for (size_t i = 0; i < cs_a.examples_by_queries.size(); i++)
     {
-      *(cs_a.all->trace_message) << endl
-                                 << "examples with " << i << " labels queried = " << cs_a.examples_by_queries[i];
+      *(cs_a.all->output_runtime.trace_message)
+          << endl
+          << "examples with " << i << " labels queried = " << cs_a.examples_by_queries[i];
     }
 
-    *(cs_a.all->trace_message) << endl << "labels outside of cost range = " << cs_a.labels_outside_range;
-    *(cs_a.all->trace_message) << endl
-                               << "average distance to range = "
-                               << cs_a.distance_to_range / (static_cast<float>(cs_a.labels_outside_range));
-    *(cs_a.all->trace_message) << endl
-                               << "average range = " << cs_a.range / (static_cast<float>(cs_a.labels_outside_range));
+    *(cs_a.all->output_runtime.trace_message) << endl << "labels outside of cost range = " << cs_a.labels_outside_range;
+    *(cs_a.all->output_runtime.trace_message)
+        << endl
+        << "average distance to range = " << cs_a.distance_to_range / (static_cast<float>(cs_a.labels_outside_range));
+    *(cs_a.all->output_runtime.trace_message)
+        << endl
+        << "average range = " << cs_a.range / (static_cast<float>(cs_a.labels_outside_range));
   }
 
   if (cs_a.all->sd->queries >= cs_a.max_labels * cs_a.num_classes) { return; }
@@ -226,7 +226,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, VW::example& ec)
   uint32_t prediction = 1;
   float score = FLT_MAX;
   ec.l.simple = {0.f};
-  ec._reduction_features.template get<simple_label_reduction_features>().reset_to_default();
+  ec.ex_reduction_features.template get<VW::simple_label_reduction_features>().reset_to_default();
 
   float min_max_cost = FLT_MAX;
   float t = static_cast<float>(cs_a.t);  // ec.example_t;  // current round
@@ -239,7 +239,7 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, VW::example& ec)
   if (ld.costs.size() > 0)
   {
     // Create metadata structure
-    for (COST_SENSITIVE::wclass& cl : ld.costs)
+    for (VW::cs_class& cl : ld.costs)
     {
       lq_data f = {0.0, 0.0, 0, 0, 0, &cl};
       cs_a.query_data.push_back(f);
@@ -298,22 +298,89 @@ void predict_or_learn(cs_active& cs_a, single_learner& base, VW::example& ec)
     float temp = 0.f;
     bool temp2 = false, temp3 = false;
     for (uint32_t i = 1; i <= cs_a.num_classes; i++)
-    { inner_loop<false, is_simulation>(cs_a, base, ec, i, FLT_MAX, prediction, score, temp, temp2, temp3); }
+    {
+      inner_loop<false, is_simulation>(cs_a, base, ec, i, FLT_MAX, prediction, score, temp, temp2, temp3);
+    }
   }
 
   ec.pred.active_multiclass.predicted_class = prediction;
   ec.l.cs = ld;
 }
 
-void finish_example(VW::workspace& all, cs_active&, VW::example& ec)
+void update_stats_cs_active(const VW::workspace& /* all */, VW::shared_data& sd, const cs_active& /* data */,
+    const VW::example& ec, VW::io::logger& logger)
 {
-  COST_SENSITIVE::output_example(all, ec, ec.l.cs, ec.pred.active_multiclass.predicted_class);
-  VW::finish_example(all, ec);
+  const auto& label = ec.l.cs;
+  const auto multiclass_prediction = ec.pred.active_multiclass.predicted_class;
+  float loss = 0.;
+  if (!label.is_test_label())
+  {
+    // need to compute exact loss
+    auto pred = static_cast<size_t>(multiclass_prediction);
+
+    float chosen_loss = FLT_MAX;
+    float min = FLT_MAX;
+    for (const auto& cl : label.costs)
+    {
+      if (cl.class_index == pred) { chosen_loss = cl.x; }
+      if (cl.x < min) { min = cl.x; }
+    }
+    if (chosen_loss == FLT_MAX)
+    {
+      logger.err_warn("csoaa predicted an invalid class. Are all multi-class labels in the {{1..k}} range?");
+    }
+
+    loss = (chosen_loss - min) * ec.weight;
+    // TODO(alberto): add option somewhere to allow using absolute loss instead?
+    // loss = chosen_loss;
+  }
+
+  sd.update(ec.test_only, !label.is_test_label(), loss, ec.weight, ec.get_num_features());
 }
 
+void output_example_prediction_cs_active(
+    VW::workspace& all, const cs_active& /* data */, const VW::example& ec, VW::io::logger& /* unused */)
+{
+  const auto& label = ec.l.cs;
+  const auto multiclass_prediction = ec.pred.active_multiclass.predicted_class;
+
+  for (auto& sink : all.output_runtime.final_prediction_sink)
+  {
+    if (!all.sd->ldict)
+    {
+      all.print_by_ref(sink.get(), static_cast<float>(multiclass_prediction), 0, ec.tag, all.logger);
+    }
+    else
+    {
+      VW::string_view sv_pred = all.sd->ldict->get(multiclass_prediction);
+      all.print_text_by_ref(sink.get(), std::string{sv_pred}, ec.tag, all.logger);
+    }
+  }
+
+  if (all.output_runtime.raw_prediction != nullptr)
+  {
+    std::stringstream output_string_stream;
+    for (unsigned int i = 0; i < label.costs.size(); i++)
+    {
+      const auto& cl = label.costs[i];
+      if (i > 0) { output_string_stream << ' '; }
+      output_string_stream << cl.class_index << ':' << cl.partial_prediction;
+    }
+    all.print_text_by_ref(all.output_runtime.raw_prediction.get(), output_string_stream.str(), ec.tag, all.logger);
+  }
+}
+
+void print_update_cs_active(VW::workspace& all, VW::shared_data& /* sd */, const cs_active& /* data */,
+    const VW::example& ec, VW::io::logger& /* unused */)
+{
+  const auto& label = ec.l.cs;
+  const auto multiclass_prediction = ec.pred.active_multiclass.predicted_class;
+
+  VW::details::print_cs_update(all, label.is_test_label(), ec, nullptr, false, multiclass_prediction);
+}
 }  // namespace
 
-base_learner* VW::reductions::cs_active_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::cs_active_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -358,7 +425,7 @@ base_learner* VW::reductions::cs_active_setup(VW::setup_base_i& stack_builder)
   data->all = &all;
   data->t = 1;
 
-  auto loss_function_type = all.loss->get_type();
+  auto loss_function_type = all.loss_config.loss->get_type();
   if (loss_function_type != "squared") THROW("non-squared loss can't be used with --cs_active");
 
   if (options.was_supplied("lda")) THROW("lda can't be combined with active learning");
@@ -371,12 +438,16 @@ base_learner* VW::reductions::cs_active_setup(VW::setup_base_i& stack_builder)
 
   if (!options.was_supplied("adax")) { all.logger.err_warn("--cs_active should be used with --adax"); }
 
-  all.set_minmax(all.sd, data->cost_max);
-  all.set_minmax(all.sd, data->cost_min);
+  if (all.set_minmax)
+  {
+    all.set_minmax(data->cost_max);
+    all.set_minmax(data->cost_min);
+  }
+
   for (uint32_t i = 0; i < data->num_classes + 1; i++) { data->examples_by_queries.push_back(0); }
 
-  void (*learn_ptr)(cs_active & cs_a, single_learner & base, VW::example & ec);
-  void (*predict_ptr)(cs_active & cs_a, single_learner & base, VW::example & ec);
+  void (*learn_ptr)(cs_active & cs_a, learner & base, VW::example & ec);
+  void (*predict_ptr)(cs_active & cs_a, learner & base, VW::example & ec);
   std::string name_addition;
 
   if (simulation)
@@ -392,19 +463,18 @@ base_learner* VW::reductions::cs_active_setup(VW::setup_base_i& stack_builder)
     name_addition = "";
   }
 
-  size_t ws = data->num_classes;
-  auto* l = make_reduction_learner(std::move(data), as_singleline(stack_builder.setup_base_learner()), learn_ptr,
-      predict_ptr, stack_builder.get_setupfn_name(cs_active_setup) + name_addition)
-                .set_params_per_weight(ws)
-                .set_learn_returns_prediction(true)
-                .set_output_prediction_type(VW::prediction_type_t::active_multiclass)
-                .set_input_label_type(VW::label_type_t::cs)
-                .set_finish_example(::finish_example)
-                .build();
-
-  // Label parser set to cost sensitive label parser
-  all.example_parser->lbl_parser = cs_label;
-  base_learner* b = make_base(*l);
-  all.cost_sensitive = b;
-  return b;
+  size_t feature_width = data->num_classes;
+  auto l = make_reduction_learner(std::move(data), require_singleline(stack_builder.setup_base_learner(feature_width)),
+      learn_ptr, predict_ptr, stack_builder.get_setupfn_name(cs_active_setup) + name_addition)
+               .set_feature_width(feature_width)
+               .set_learn_returns_prediction(true)
+               .set_input_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_output_prediction_type(VW::prediction_type_t::ACTIVE_MULTICLASS)
+               .set_input_label_type(VW::label_type_t::CS)
+               .set_output_label_type(VW::label_type_t::SIMPLE)
+               .set_output_example_prediction(output_example_prediction_cs_active)
+               .set_print_update(print_update_cs_active)
+               .set_update_stats(update_stats_cs_active)
+               .build();
+  return l;
 }

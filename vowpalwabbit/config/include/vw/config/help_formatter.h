@@ -11,14 +11,15 @@ namespace VW
 {
 namespace config
 {
-struct option_group_definition;
-struct options_i;
+class option_group_definition;
+class options_i;
 
 std::vector<option_group_definition> remove_disabled_necessary_options(
     options_i& options, const std::vector<option_group_definition>& groups);
 
-struct help_formatter
+class help_formatter
 {
+public:
   virtual std::string format_help(const std::vector<option_group_definition>& groups) = 0;
   virtual ~help_formatter() = default;
 };

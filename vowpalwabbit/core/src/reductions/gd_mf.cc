@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 #include "vw/core/reductions/gd_mf.h"
 
+#include "vw/common/random_details.h"
 #include "vw/common/vw_exception.h"
 #include "vw/core/array_parameters.h"
 #include "vw/core/crossplat_compat.h"
@@ -11,10 +12,10 @@
 #include "vw/core/parse_regressor.h"
 #include "vw/core/parser.h"
 #include "vw/core/prediction_type.h"
-#include "vw/core/rand48.h"
 #include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
+#include "vw/core/simple_label.h"
 
 #include <cfloat>
 #include <cstdio>
@@ -25,8 +26,9 @@ using namespace VW::config;
 
 namespace
 {
-struct gdmf
+class gdmf
 {
+public:
   VW::workspace* all = nullptr;  // regressor, printing
   VW::v_array<float> scalars;
   uint32_t rank = 0;
@@ -38,9 +40,9 @@ void mf_print_offset_features(gdmf& d, VW::example& ec, size_t offset)
 {
   // TODO: Where should audit stuff output to?
   VW::workspace& all = *d.all;
-  parameters& weights = all.weights;
+  auto& weights = all.weights;
   uint64_t mask = weights.mask();
-  for (features& fs : ec)
+  for (VW::features& fs : ec)
   {
     bool audit = !fs.space_names.empty();
     for (const auto& f : fs.audit_range())
@@ -51,7 +53,7 @@ void mf_print_offset_features(gdmf& d, VW::example& ec, size_t offset)
       std::cout << ':' << (&weights[f.index()])[offset];
     }
   }
-  for (const auto& i : all.interactions)
+  for (const auto& i : all.feature_tweaks_config.interactions)
   {
     if (i.size() != 2) THROW("can only use pairs in matrix factorization");
 
@@ -84,12 +86,14 @@ void mf_print_offset_features(gdmf& d, VW::example& ec, size_t offset)
 
 void mf_print_audit_features(gdmf& d, VW::example& ec, size_t offset)
 {
-  print_result_by_ref(d.all->stdout_adapter.get(), ec.pred.scalar, -1, ec.tag, d.all->logger);
+  VW::details::print_result_by_ref(
+      d.all->output_runtime.stdout_adapter.get(), ec.pred.scalar, -1, ec.tag, d.all->logger);
   mf_print_offset_features(d, ec, offset);
 }
 
-struct pred_offset
+class pred_offset
 {
+public:
   float p;
   uint64_t offset;
 };
@@ -100,11 +104,11 @@ template <class T>
 float mf_predict(gdmf& d, VW::example& ec, T& weights)
 {
   VW::workspace& all = *d.all;
-  const auto& simple_red_features = ec._reduction_features.template get<simple_label_reduction_features>();
+  const auto& simple_red_features = ec.ex_reduction_features.template get<VW::simple_label_reduction_features>();
   float prediction = simple_red_features.initial;
 
   ec.num_features_from_interactions = 0;
-  for (const auto& i : d.all->interactions)
+  for (const auto& i : d.all->feature_tweaks_config.interactions)
   {
     if (i.size() != 2) THROW("can only use pairs in matrix factorization");
     const auto interacted_count =
@@ -121,7 +125,7 @@ float mf_predict(gdmf& d, VW::example& ec, T& weights)
   float linear_prediction = 0.;
   // linear terms
 
-  for (features& fs : ec) { GD::foreach_feature<float, GD::vec_add, T>(weights, fs, linear_prediction); }
+  for (VW::features& fs : ec) { VW::foreach_feature<float, VW::details::vec_add, T>(weights, fs, linear_prediction); }
 
   // store constant + linear prediction
   // note: constant is now automatically added
@@ -129,7 +133,7 @@ float mf_predict(gdmf& d, VW::example& ec, T& weights)
 
   prediction += linear_prediction;
   // interaction terms
-  for (const auto& i : d.all->interactions)
+  for (const auto& i : d.all->feature_tweaks_config.interactions)
   {
     // The check for non-pair interactions is done in the previous loop
 
@@ -141,13 +145,13 @@ float mf_predict(gdmf& d, VW::example& ec, T& weights)
         // l^k is from index+1 to index+d.rank
         // float x_dot_l = sd_offset_add(weights, ec.atomics[(int)(*i)[0]].begin(), ec.atomics[(int)(*i)[0]].end(), k);
         pred_offset x_dot_l = {0., k};
-        GD::foreach_feature<pred_offset, offset_add, T>(weights, ec.feature_space[static_cast<int>(i[0])], x_dot_l);
+        VW::foreach_feature<pred_offset, offset_add, T>(weights, ec.feature_space[static_cast<int>(i[0])], x_dot_l);
         // x_r * r^k
         // r^k is from index+d.rank+1 to index+2*d.rank
         // float x_dot_r = sd_offset_add(weights, ec.atomics[(int)(*i)[1]].begin(), ec.atomics[(int)(*i)[1]].end(),
         // k+d.rank);
         pred_offset x_dot_r = {0., k + d.rank};
-        GD::foreach_feature<pred_offset, offset_add, T>(weights, ec.feature_space[static_cast<int>(i[1])], x_dot_r);
+        VW::foreach_feature<pred_offset, offset_add, T>(weights, ec.feature_space[static_cast<int>(i[1])], x_dot_r);
 
         prediction += x_dot_l.p * x_dot_r.p;
 
@@ -162,14 +166,16 @@ float mf_predict(gdmf& d, VW::example& ec, T& weights)
 
   ec.partial_prediction = prediction;
 
-  all.set_minmax(all.sd, ec.l.simple.label);
+  if (all.set_minmax) { all.set_minmax(ec.l.simple.label); }
 
-  ec.pred.scalar = GD::finalize_prediction(all.sd, all.logger, ec.partial_prediction);
+  ec.pred.scalar = VW::details::finalize_prediction(*all.sd, all.logger, ec.partial_prediction);
 
   if (ec.l.simple.label != FLT_MAX)
-  { ec.loss = all.loss->get_loss(all.sd, ec.pred.scalar, ec.l.simple.label) * ec.weight; }
+  {
+    ec.loss = all.loss_config.loss->get_loss(all.sd.get(), ec.pred.scalar, ec.l.simple.label) * ec.weight;
+  }
 
-  if (all.audit) { mf_print_audit_features(d, ec, 0); }
+  if (all.output_config.audit) { mf_print_audit_features(d, ec, 0); }
 
   return ec.pred.scalar;
 }
@@ -178,37 +184,37 @@ float mf_predict(gdmf& d, VW::example& ec)
 {
   VW::workspace& all = *d.all;
   if (all.weights.sparse) { return mf_predict(d, ec, all.weights.sparse_weights); }
-  else
-  {
-    return mf_predict(d, ec, all.weights.dense_weights);
-  }
+  else { return mf_predict(d, ec, all.weights.dense_weights); }
 }
 
 template <class T>
-void sd_offset_update(T& weights, features& fs, uint64_t offset, float update, float regularization)
+void sd_offset_update(T& weights, VW::features& fs, uint64_t offset, float update, float regularization)
 {
   for (size_t i = 0; i < fs.size(); i++)
-  { (&weights[fs.indices[i]])[offset] += update * fs.values[i] - regularization * (&weights[fs.indices[i]])[offset]; }
+  {
+    (&weights[fs.indices[i]])[offset] += update * fs.values[i] - regularization * (&weights[fs.indices[i]])[offset];
+  }
 }
 
 template <class T>
 void mf_train(gdmf& d, VW::example& ec, T& weights)
 {
   VW::workspace& all = *d.all;
-  label_data& ld = ec.l.simple;
+  VW::simple_label& ld = ec.l.simple;
 
   // use final prediction to get update size
   // update = eta_t*(y-y_hat) where eta_t = eta/(3*t^p) * importance weight
-  float eta_t = all.eta / powf(static_cast<float>(all.sd->t) + ec.weight, all.power_t) / 3.f * ec.weight;
-  float update = all.loss->get_update(ec.pred.scalar, ld.label, eta_t, 1.);  // ec.total_sum_feat_sq);
+  float eta_t = all.update_rule_config.eta /
+      powf(static_cast<float>(all.sd->t) + ec.weight, all.update_rule_config.power_t) / 3.f * ec.weight;
+  float update = all.loss_config.loss->get_update(ec.pred.scalar, ld.label, eta_t, 1.);  // ec.total_sum_feat_sq);
 
-  float regularization = eta_t * all.l2_lambda;
+  float regularization = eta_t * all.loss_config.l2_lambda;
 
   // linear update
-  for (features& fs : ec) { sd_offset_update<T>(weights, fs, 0, update, regularization); }
+  for (VW::features& fs : ec) { sd_offset_update<T>(weights, fs, 0, update, regularization); }
 
   // quadratic update
-  for (const auto& i : all.interactions)
+  for (const auto& i : all.feature_tweaks_config.interactions)
   {
     if (i.size() != 2) THROW("can only use pairs in matrix factorization");
 
@@ -238,33 +244,30 @@ void mf_train(gdmf& d, VW::example& ec, T& weights)
 void mf_train(gdmf& d, VW::example& ec)
 {
   if (d.all->weights.sparse) { mf_train(d, ec, d.all->weights.sparse_weights); }
-  else
-  {
-    mf_train(d, ec, d.all->weights.dense_weights);
-  }
+  else { mf_train(d, ec, d.all->weights.dense_weights); }
 }
 
-void initialize_weights(weight* weights, uint64_t index, uint32_t stride)
+void initialize_weights(VW::weight* weights, uint64_t index, uint32_t stride)
 {
   for (size_t i = 0; i != stride; ++i, ++index)
   {
-    float initial_value = 0.1f * merand48(index);
+    float initial_value = 0.1f * VW::details::merand48(index);
     weights[i] = initial_value;
   }
 }
 
-void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
+void save_load(gdmf& d, VW::io_buf& model_file, bool read, bool text)
 {
   VW::workspace& all = *d.all;
-  uint64_t length = static_cast<uint64_t>(1) << all.num_bits;
+  uint64_t length = static_cast<uint64_t>(1) << all.initial_weights_config.num_bits;
   if (read)
   {
-    initialize_regressor(all);
-    if (all.random_weights)
+    VW::details::initialize_regressor(all);
+    if (all.initial_weights_config.random_weights)
     {
       uint32_t stride = all.weights.stride();
-      auto weight_initializer = [stride](
-                                    weight* weights, uint64_t index) { initialize_weights(weights, index, stride); };
+      auto weight_initializer = [stride](VW::weight* weights, uint64_t index)
+      { initialize_weights(weights, index, stride); };
 
       all.weights.set_default(weight_initializer);
     }
@@ -273,30 +276,33 @@ void save_load(gdmf& d, io_buf& model_file, bool read, bool text)
   if (model_file.num_files() > 0)
   {
     if (!all.weights.not_null())
-    { THROW("Model weights object was not initialized when trying to data load into it."); }
+    {
+      THROW("Model weights object was not initialized when trying to data load into it.");
+    }
     uint64_t i = 0;
     size_t brw = 1;
-    do
-    {
+    do {
       brw = 0;
-      size_t K = d.rank * 2 + 1;
+      size_t K = d.rank * 2 + 1;  // NOLINT
       std::stringstream msg;
       msg << i << " ";
-      brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), read, msg, text);
+      brw +=
+          VW::details::bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), read, msg, text);
       if (brw != 0)
       {
-        weight* w_i = &(all.weights.strided_index(i));
+        VW::weight* w_i = &(all.weights.strided_index(i));
         for (uint64_t k = 0; k < K; k++)
         {
-          weight* v = w_i + k;
+          VW::weight* v = w_i + k;
           msg << v << " ";
-          brw += bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(v), sizeof(*v), read, msg, text);
+          brw += VW::details::bin_text_read_write_fixed(
+              model_file, reinterpret_cast<char*>(v), sizeof(*v), read, msg, text);
         }
       }
       if (text)
       {
         msg << "\n";
-        brw += bin_text_read_write_fixed(model_file, nullptr, 0, read, msg, text);
+        brw += VW::details::bin_text_read_write_fixed(model_file, nullptr, 0, read, msg, text);
       }
 
       if (!read) { ++i; }
@@ -308,30 +314,39 @@ void end_pass(gdmf& d)
 {
   VW::workspace* all = d.all;
 
-  all->eta *= all->eta_decay_rate;
-  if (all->save_per_pass) { save_predictor(*all, all->final_regressor_name, all->current_pass); }
-
-  if (!all->holdout_set_off)
+  all->update_rule_config.eta *= all->update_rule_config.eta_decay_rate;
+  if (all->output_model_config.save_per_pass)
   {
-    if (summarize_holdout_set(*all, d.no_win_counter)) { finalize_regressor(*all, all->final_regressor_name); }
+    VW::details::save_predictor(*all, all->output_model_config.final_regressor_name, all->passes_config.current_pass);
+  }
+
+  if (!all->passes_config.holdout_set_off)
+  {
+    if (VW::details::summarize_holdout_set(*all, d.no_win_counter))
+    {
+      VW::details::finalize_regressor(*all, all->output_model_config.final_regressor_name);
+    }
     if ((d.early_stop_thres == d.no_win_counter) &&
-        ((all->check_holdout_every_n_passes <= 1) || ((all->current_pass % all->check_holdout_every_n_passes) == 0)))
-    { set_done(*all); }
+        ((all->passes_config.check_holdout_every_n_passes <= 1) ||
+            ((all->passes_config.current_pass % all->passes_config.check_holdout_every_n_passes) == 0)))
+    {
+      VW::details::set_done(*all);
+    }
   }
 }
 
-void predict(gdmf& d, base_learner&, VW::example& ec) { mf_predict(d, ec); }
+void predict(gdmf& d, VW::example& ec) { mf_predict(d, ec); }
 
-void learn(gdmf& d, base_learner&, VW::example& ec)
+void learn(gdmf& d, VW::example& ec)
 {
   VW::workspace& all = *d.all;
 
   mf_predict(d, ec);
-  if (all.training && ec.l.simple.label != FLT_MAX) { mf_train(d, ec); }
+  if (all.runtime_config.training && ec.l.simple.label != FLT_MAX) { mf_train(d, ec); }
 }
 
 }  // namespace
-base_learner* VW::reductions::gd_mf_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::gd_mf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -349,7 +364,9 @@ base_learner* VW::reductions::gd_mf_setup(VW::setup_base_i& stack_builder)
     THROW("normalized adaptive updates is not implemented for matrix factorization");
 
   if (options.was_supplied("bfgs") || options.was_supplied("conjugate_gradient"))
-  { THROW("bfgs is not implemented for matrix factorization"); }
+  {
+    THROW("bfgs is not implemented for matrix factorization");
+  }
 
   data->all = &all;
   data->no_win_counter = 0;
@@ -357,9 +374,9 @@ base_learner* VW::reductions::gd_mf_setup(VW::setup_base_i& stack_builder)
   // store linear + 2*rank weights per index, round up to power of two
   float temp = ceilf(logf(static_cast<float>(data->rank * 2 + 1)) / logf(2.f));
   all.weights.stride_shift(static_cast<size_t>(temp));
-  all.random_weights = true;
+  all.initial_weights_config.random_weights = true;
 
-  if (!all.holdout_set_off)
+  if (!all.passes_config.holdout_set_off)
   {
     all.sd->holdout_best_loss = FLT_MAX;
     data->early_stop_thres = options.get_typed_option<uint64_t>("early_terminate").value();
@@ -367,24 +384,26 @@ base_learner* VW::reductions::gd_mf_setup(VW::setup_base_i& stack_builder)
 
   if (!options.was_supplied("learning_rate") && !options.was_supplied("l"))
   {
-    all.eta = 10;  // default learning rate to 10 for non default update rule
+    all.update_rule_config.eta = 10;  // default learning rate to 10 for non default update rule
   }
 
   // default initial_t to 1 instead of 0
   if (!options.was_supplied("initial_t"))
   {
     all.sd->t = 1.f;
-    all.initial_t = 1.f;
+    all.update_rule_config.initial_t = 1.f;
   }
-  all.eta *= powf(static_cast<float>(all.sd->t), all.power_t);
+  all.update_rule_config.eta *= powf(static_cast<float>(all.sd->t), all.update_rule_config.power_t);
 
-  auto* l = make_base_learner(std::move(data), learn, predict, stack_builder.get_setupfn_name(gd_mf_setup),
-      VW::prediction_type_t::scalar, VW::label_type_t::simple)
-                .set_params_per_weight(UINT64_ONE << all.weights.stride_shift())
-                .set_learn_returns_prediction(true)
-                .set_save_load(save_load)
-                .set_end_pass(end_pass)
-                .build();
+  auto l = make_bottom_learner(std::move(data), learn, predict, stack_builder.get_setupfn_name(gd_mf_setup),
+      VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
+               .set_learn_returns_prediction(true)
+               .set_save_load(save_load)
+               .set_end_pass(end_pass)
+               .set_output_example_prediction(VW::details::output_example_prediction_simple_label<gdmf>)
+               .set_update_stats(VW::details::update_stats_simple_label<gdmf>)
+               .set_print_update(VW::details::print_update_simple_label<gdmf>)
+               .build();
 
-  return make_base(*l);
+  return l;
 }

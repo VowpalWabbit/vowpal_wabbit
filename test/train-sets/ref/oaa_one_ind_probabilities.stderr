@@ -6,19 +6,19 @@ Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
-Enabled reductions: gd, scorer-identity, oaa-prob
-Input label = multiclass
-Output pred = scalars
-average  since         example        example        current        current  current 
-loss     last          counter         weight          label        predict features 
-0.000000 0.000000            1            1.0              1         1(25%)        3 
-0.500000 1.000000            2            2.0              2         1(35%)        3 
-0.750000 1.000000            4            4.0              4         1(28%)        3 
+Enabled learners: gd, scorer-identity, oaa-prob
+Input label = MULTICLASS
+Output pred = SCALARS
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.000000 0.000000            1            1.0              1         1(25%)        3
+0.500000 1.000000            2            2.0              2         1(35%)        3
+0.750000 1.000000            4            4.0              4         1(28%)        3
 
 finished run
 number of examples = 6
 weighted example sum = 6.000000
 weighted label sum = 0.000000
 average loss = 0.833333
-average multiclass log loss = 1.534655
+average multiclass log loss = 1.534626
 total feature number = 18

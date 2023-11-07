@@ -5,6 +5,7 @@
 	cb_explore_adf, cover
 	cb_explore_adf, first
 	cb_explore_adf, synthcover
+	cb_explore_adf, squarecb
 	cb_explore_adf, rnd
 	cb_explore_adf, softmax
 	cb_explore_adf

@@ -6,21 +6,21 @@ Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.45
-Enabled reductions: gd, scorer-identity, count_label
-Input label = simple
-Output pred = scalar
-average  since         example        example        current        current  current 
-loss     last          counter         weight          label        predict features 
-0.271591 0.271591            1            1.0         0.5211         0.0000       15 
-0.136335 0.001079            2            2.0         0.5353         0.5024       15 
-0.107713 0.079091            4            4.0         0.5854         0.5854       15 
-0.078253 0.048793            8            8.0         0.5575         0.4557       15 
-0.080356 0.082460           16           16.0         0.5878         0.3578       15 
-0.044376 0.008395           32           32.0         0.6038         0.6114       15 
-0.028309 0.012242           64           64.0         0.5683         0.4656       15 
-0.016985 0.005660          128          128.0         0.5351         0.5011       15 
-0.010126 0.003267          256          256.0         0.5385         0.5605       15 
-0.006146 0.002165          512          512.0         0.5053         0.5132       15 
+Enabled learners: gd, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.271591 0.271591            1            1.0         0.5211         0.0000       15
+0.136335 0.001079            2            2.0         0.5353         0.5024       15
+0.107713 0.079091            4            4.0         0.5854         0.5854       15
+0.078253 0.048793            8            8.0         0.5575         0.4557       15
+0.080356 0.082460           16           16.0         0.5878         0.3578       15
+0.044376 0.008395           32           32.0         0.6038         0.6114       15
+0.028309 0.012242           64           64.0         0.5683         0.4656       15
+0.016985 0.005660          128          128.0         0.5351         0.5011       15
+0.010126 0.003267          256          256.0         0.5385         0.5605       15
+0.006146 0.002165          512          512.0         0.5053         0.5132       15
 
 finished run
 number of examples = 1000

@@ -14,8 +14,9 @@ namespace VW
 {
 namespace config
 {
-struct cli_options_serializer : options_serializer_i, typed_option_visitor
+class cli_options_serializer : public options_serializer_i, typed_option_visitor
 {
+public:
   cli_options_serializer();
 
   void add(base_option& option) override;

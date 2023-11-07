@@ -74,7 +74,7 @@ std::string VW::debug::features_to_string(const example_predict& ec)
 
 std::string VW::debug::debug_depth_indent_string(const example& ec)
 {
-  return debug_depth_indent_string(ec._debug_current_reduction_depth);
+  return debug_depth_indent_string(ec.debug_current_reduction_depth);
 }
 
 std::string VW::debug::debug_depth_indent_string(const multi_ex& ec)

@@ -17,8 +17,12 @@ namespace VW
 {
 namespace parsers
 {
-struct csv_parser_options
+namespace csv
 {
+
+class csv_parser_options
+{
+public:
   bool enabled = false;
   // CSV parsing configurations
   std::string csv_separator = ",";
@@ -43,14 +47,14 @@ public:
   std::unordered_map<std::string, float> ns_value;
 
   explicit csv_parser(csv_parser_options options) : VW::details::input_parser("csv"), options(std::move(options)) {}
-  virtual ~csv_parser() = default;
+  ~csv_parser() override = default;
 
   static void set_parse_args(VW::config::option_group_definition& in_options, csv_parser_options& parsed_options);
   static void handle_parse_args(csv_parser_options& parsed_options);
 
   bool next(VW::workspace& all, io_buf& buf, VW::multi_ex& examples) override
   {
-    return parse_csv(&all, examples[0], buf);
+    return parse_csv(&all, examples[0], buf) != 0;
   }
 
 private:
@@ -59,5 +63,6 @@ private:
   int parse_csv(VW::workspace* all, VW::example* ae, io_buf& buf);
   size_t read_line(VW::workspace* all, VW::example* ae, io_buf& buf);
 };
+}  // namespace csv
 }  // namespace parsers
 }  // namespace VW

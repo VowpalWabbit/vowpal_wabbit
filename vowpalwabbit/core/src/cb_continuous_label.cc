@@ -6,7 +6,6 @@
 
 #include "vw/common/text_utils.h"
 #include "vw/common/vw_exception.h"
-#include "vw/core/cb_label_parser.h"
 #include "vw/core/debug_print.h"
 #include "vw/core/example.h"
 #include "vw/core/model_utils.h"
@@ -20,27 +19,19 @@
 
 using namespace VW::LEARNER;
 
-namespace CB
-{
-template <>
-void default_label_additional_fields<VW::cb_continuous::continuous_label>(VW::cb_continuous::continuous_label&)
-{
-}
-}  // namespace CB
-
 void parse_pdf(const std::vector<VW::string_view>& words, size_t words_index, VW::label_parser_reuse_mem& reuse_mem,
     VW::reduction_features& red_features, VW::io::logger& logger)
 {
   auto& cats_reduction_features = red_features.template get<VW::continuous_actions::reduction_features>();
   for (size_t i = words_index; i < words.size(); i++)
   {
-    if (words[i] == CHOSEN_ACTION) { break; /* no more pdf to parse*/ }
+    if (words[i] == VW::details::CHOSEN_ACTION) { break; /* no more pdf to parse*/ }
     VW::tokenize(':', words[i], reuse_mem.tokens);
     if (reuse_mem.tokens.empty() || reuse_mem.tokens.size() < 3) { continue; }
     VW::continuous_actions::pdf_segment seg;
-    seg.left = float_of_string(reuse_mem.tokens[0], logger);
-    seg.right = float_of_string(reuse_mem.tokens[1], logger);
-    seg.pdf_value = float_of_string(reuse_mem.tokens[2], logger);
+    seg.left = VW::details::float_of_string(reuse_mem.tokens[0], logger);
+    seg.right = VW::details::float_of_string(reuse_mem.tokens[1], logger);
+    seg.pdf_value = VW::details::float_of_string(reuse_mem.tokens[2], logger);
     cats_reduction_features.pdf.push_back(seg);
   }
   if (!VW::continuous_actions::is_valid_pdf(cats_reduction_features.pdf)) { cats_reduction_features.pdf.clear(); }
@@ -54,7 +45,7 @@ void parse_chosen_action(const std::vector<VW::string_view>& words, size_t words
   {
     VW::tokenize(':', words[i], reuse_mem.tokens);
     if (reuse_mem.tokens.empty() || reuse_mem.tokens.size() < 1) { continue; }
-    cats_reduction_features.chosen_action = float_of_string(reuse_mem.tokens[0], logger);
+    cats_reduction_features.chosen_action = VW::details::float_of_string(reuse_mem.tokens[0], logger);
     break;  // there can only be one chosen action
   }
 }
@@ -72,16 +63,16 @@ void parse_label(continuous_label& ld, reduction_features& red_features, VW::lab
 
   if (words.empty()) { return; }
 
-  if (!(words[0] == CA_LABEL)) { THROW("Continuous actions labels require the first word to be ca"); }
+  if (!(words[0] == VW::details::CA_LABEL)) { THROW("Continuous actions labels require the first word to be ca"); }
 
   for (size_t i = 1; i < words.size(); i++)
   {
-    if (words[i] == PDF) { parse_pdf(words, i + 1, reuse_mem, red_features, logger); }
-    else if (words[i] == CHOSEN_ACTION)
+    if (words[i] == VW::details::PDF) { parse_pdf(words, i + 1, reuse_mem, red_features, logger); }
+    else if (words[i] == VW::details::CHOSEN_ACTION)
     {
       parse_chosen_action(words, i + 1, reuse_mem, red_features, logger);
     }
-    else if (words[i - 1] == CA_LABEL)
+    else if (words[i - 1] == VW::details::CA_LABEL)
     {
       continuous_label_elm f{0.f, FLT_MAX, 0.f};
       VW::tokenize(':', words[i], reuse_mem.tokens);
@@ -90,15 +81,15 @@ void parse_label(continuous_label& ld, reduction_features& red_features, VW::lab
         THROW("malformed cost specification: "
             << "reuse_mem.tokens");
 
-      f.action = float_of_string(reuse_mem.tokens[0], logger);
+      f.action = VW::details::float_of_string(reuse_mem.tokens[0], logger);
 
-      if (reuse_mem.tokens.size() > 1) { f.cost = float_of_string(reuse_mem.tokens[1], logger); }
+      if (reuse_mem.tokens.size() > 1) { f.cost = VW::details::float_of_string(reuse_mem.tokens[1], logger); }
 
       if (std::isnan(f.cost))
         THROW("error NaN cost (" << reuse_mem.tokens[1] << " for action: " << reuse_mem.tokens[0]);
 
       f.pdf_value = .0;
-      if (reuse_mem.tokens.size() > 2) { f.pdf_value = float_of_string(reuse_mem.tokens[2], logger); }
+      if (reuse_mem.tokens.size() > 2) { f.pdf_value = VW::details::float_of_string(reuse_mem.tokens[2], logger); }
 
       if (std::isnan(f.pdf_value))
         THROW("error NaN pdf_value (" << reuse_mem.tokens[2] << " for action: " << reuse_mem.tokens[0]);
@@ -116,14 +107,15 @@ void parse_label(continuous_label& ld, reduction_features& red_features, VW::lab
 
 label_parser the_label_parser = {
     // default_label
-    [](polylabel& label) { CB::default_label<continuous_label>(label.cb_cont); },
+    [](polylabel& label) { label.cb_cont.reset_to_default(); },
     // parse_label
     [](polylabel& label, reduction_features& red_features, VW::label_parser_reuse_mem& reuse_mem,
-        const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words,
-        VW::io::logger& logger) { parse_label(label.cb_cont, red_features, reuse_mem, words, logger); },
+        const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words, VW::io::logger& logger)
+    { parse_label(label.cb_cont, red_features, reuse_mem, words, logger); },
     // cache_label
     [](const polylabel& label, const reduction_features& red_feats /*red_features*/, io_buf& cache,
-        const std::string& upstream_name, bool text) {
+        const std::string& upstream_name, bool text)
+    {
       size_t bytes = 0;
       bytes += VW::model_utils::write_model_field(cache, label.cb_cont, upstream_name, text);
       bytes += VW::model_utils::write_model_field(
@@ -131,7 +123,8 @@ label_parser the_label_parser = {
       return bytes;
     },
     // read_cached_label
-    [](polylabel& label, reduction_features& red_feats /*red_features*/, io_buf& cache) {
+    [](polylabel& label, reduction_features& red_feats /*red_features*/, io_buf& cache)
+    {
       size_t bytes = 0;
       bytes += VW::model_utils::read_model_field(cache, label.cb_cont);
       bytes += VW::model_utils::read_model_field(
@@ -142,13 +135,25 @@ label_parser the_label_parser = {
     // CB::weight just returns 1.f? This seems like it could be a bug...
     [](const polylabel& /*label*/, const reduction_features& /*red_features*/) { return 1.f; },
     // test_label
-    [](const polylabel& label) { return CB::is_test_label<continuous_label, continuous_label_elm>(label.cb_cont); },
+    [](const polylabel& label) { return label.cb_cont.is_test_label(); },
     // label type
-    VW::label_type_t::continuous};
+    VW::label_type_t::CONTINUOUS};
 
 // End: parse a,c,p label format
 ////////////////////////////////////////////////////
 
+bool continuous_label::is_test_label() const
+{
+  if (costs.empty()) { return true; }
+  for (const auto& cost : costs)
+  {
+    const auto probability = cost.pdf_value;
+    if (FLT_MAX != cost.cost && probability > 0.) { return false; }
+  }
+  return true;
+}
+bool continuous_label::is_labeled() const { return !is_test_label(); }
+void continuous_label::reset_to_default() { costs.clear(); }
 }  // namespace cb_continuous
 
 std::string to_string(const cb_continuous::continuous_label_elm& elm, int decimal_precision)

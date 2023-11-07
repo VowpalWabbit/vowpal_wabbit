@@ -17,7 +17,7 @@ target_compile_definitions(vw_c_wrapper PUBLIC VWDLL_EXPORTS _CRT_SECURE_NO_WARN
 
 vw_add_test_executable(
   FOR_LIB "c_wrapper"
-  SOURCES tests/vwdll_test.cc tests/main.cc
+  SOURCES tests/vwdll_test.cc
   EXTRA_DEPS vw_core
 )
 

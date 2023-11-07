@@ -1,0 +1,9 @@
+boost_math - optional
+eigen - optional
+fmt
+rapidjson
+spdlog
+sse2neon - optional
+string-view-lite
+vcpkg
+zlib

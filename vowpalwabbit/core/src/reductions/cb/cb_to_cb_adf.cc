@@ -5,7 +5,6 @@
 #include "vw/core/reductions/cb/cb_to_cb_adf.h"
 
 #include "vw/config/options.h"
-#include "vw/core/cb_label_parser.h"
 #include "vw/core/learner.h"
 #include "vw/core/reductions/cb/cbify.h"
 #include "vw/core/setup_base.h"
@@ -17,22 +16,23 @@ using namespace VW::config;
 
 namespace
 {
-struct cb_to_cb_adf
+class cb_to_cb_adf
 {
-  parameters* weights = nullptr;
+public:
+  VW::parameters* weights = nullptr;
   VW::reductions::cbify_adf_data adf_data;
   bool explore_mode = false;
-  multi_learner* adf_learner = nullptr;
+  learner* adf_learner = nullptr;
 };
 
 template <bool is_learn>
-void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, VW::example& ec)
+void predict_or_learn(cb_to_cb_adf& data, learner& base, VW::example& ec)
 {
   data.adf_data.copy_example_to_adf(*data.weights, ec);
 
-  CB::label backup_ld;
-  CB::label new_ld;
-  bool is_test_label = CB::is_test_label(ec.l.cb);
+  VW::cb_label backup_ld;
+  VW::cb_label new_ld;
+  bool is_test_label = ec.l.cb.is_test_label();
 
   uint32_t chosen_action = 0;
   uint32_t index_with_cost = 0;
@@ -70,37 +70,45 @@ void predict_or_learn(cb_to_cb_adf& data, multi_learner& base, VW::example& ec)
     data.adf_data.ecs[chosen_action]->l.cb = std::move(new_ld);
   }
 
-  auto restore_guard = VW::scope_exit([&backup_ld, &data, &chosen_action, &is_test_label, &new_ld] {
-    if (!is_test_label && chosen_action < data.adf_data.num_actions)
-    {
-      new_ld = std::move(data.adf_data.ecs[chosen_action]->l.cb);
-      data.adf_data.ecs[chosen_action]->l.cb = std::move(backup_ld);
-    }
-  });
+  auto restore_guard = VW::scope_exit(
+      [&backup_ld, &data, &chosen_action, &is_test_label, &new_ld]
+      {
+        if (!is_test_label && chosen_action < data.adf_data.num_actions)
+        {
+          new_ld = std::move(data.adf_data.ecs[chosen_action]->l.cb);
+          data.adf_data.ecs[chosen_action]->l.cb = std::move(backup_ld);
+        }
+      });
 
   if (!base.learn_returns_prediction || !is_learn) { base.predict(data.adf_data.ecs); }
   if (is_learn) { base.learn(data.adf_data.ecs); }
 
   if (data.explore_mode) { ec.pred.a_s = std::move(data.adf_data.ecs[0]->pred.a_s); }
-  else
-  {
-    ec.pred.multiclass = data.adf_data.ecs[0]->pred.a_s[0].action + 1;
-  }
+  else { ec.pred.multiclass = data.adf_data.ecs[0]->pred.a_s[0].action + 1; }
 }
 
-void finish_example(VW::workspace& all, cb_to_cb_adf& c, VW::example& ec)
+void update_stats_cb_to_cb_adf(
+    const VW::workspace& all, VW::shared_data& sd, const cb_to_cb_adf& c, const VW::example& ec, VW::io::logger& logger)
 {
-  if (c.explore_mode)
-  {
-    c.adf_data.ecs[0]->pred.a_s = std::move(ec.pred.a_s);
-    c.adf_learner->print_example(all, c.adf_data.ecs);
-  }
-  else
-  {
-    c.adf_data.ecs[0]->pred.multiclass = std::move(ec.pred.multiclass);
-    c.adf_learner->print_example(all, c.adf_data.ecs);
-  }
-  VW::finish_example(all, ec);
+  if (c.explore_mode) { c.adf_data.ecs[0]->pred.a_s = ec.pred.a_s; }
+  else { c.adf_data.ecs[0]->pred.multiclass = ec.pred.multiclass; }
+  c.adf_learner->update_stats(all, sd, c.adf_data.ecs, logger);
+}
+
+void print_update_cb_to_cb_adf(
+    VW::workspace& all, VW::shared_data& sd, const cb_to_cb_adf& c, const VW::example& ec, VW::io::logger& logger)
+{
+  if (c.explore_mode) { c.adf_data.ecs[0]->pred.a_s = ec.pred.a_s; }
+  else { c.adf_data.ecs[0]->pred.multiclass = ec.pred.multiclass; }
+  c.adf_learner->print_update(all, sd, c.adf_data.ecs, logger);
+}
+
+void output_example_prediction_cb_to_cb_adf(
+    VW::workspace& all, const cb_to_cb_adf& c, const VW::example& ec, VW::io::logger& logger)
+{
+  if (c.explore_mode) { c.adf_data.ecs[0]->pred.a_s = ec.pred.a_s; }
+  else { c.adf_data.ecs[0]->pred.multiclass = ec.pred.multiclass; }
+  c.adf_learner->output_example_prediction(all, c.adf_data.ecs, logger);
 }
 }  // namespace
 
@@ -113,7 +121,7 @@ void finish_example(VW::workspace& all, cb_to_cb_adf& c, VW::example& ec)
 
     Related files: cb_algs.cc, cb_explore.cc, cbify.cc
 */
-VW::LEARNER::base_learner* VW::reductions::cb_to_cb_adf_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_to_cb_adf_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -149,8 +157,10 @@ VW::LEARNER::base_learner* VW::reductions::cb_to_cb_adf_setup(VW::setup_base_i& 
   if (options.was_supplied("eval")) { return nullptr; }
 
   // ANY model created with older version should default to --cb_force_legacy
-  if (all.model_file_ver != VW::version_definitions::EMPTY_VERSION_FILE)
-  { compat_old_cb = !(all.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_CB_TO_CBADF); }
+  if (all.runtime_state.model_file_ver != VW::version_definitions::EMPTY_VERSION_FILE)
+  {
+    compat_old_cb = !(all.runtime_state.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_CB_TO_CBADF);
+  }
 
   // not compatible with adf
   if (options.was_supplied("cbify_reg")) { compat_old_cb = true; }
@@ -203,39 +213,42 @@ VW::LEARNER::base_learner* VW::reductions::cb_to_cb_adf_setup(VW::setup_base_i& 
   data->explore_mode = override_cb_explore;
   data->weights = &(all.weights);
 
-  multi_learner* base = as_multiline(stack_builder.setup_base_learner());
+  auto base = require_multiline(stack_builder.setup_base_learner());
 
   if (num_actions <= 0) { THROW("cb num actions must be positive"); }
 
-  data->adf_data.init_adf_data(num_actions, base->increment, all.interactions, all.extent_interactions);
+  data->adf_data.init_adf_data(num_actions, base->feature_width_below, all.feature_tweaks_config.interactions,
+      all.feature_tweaks_config.extent_interactions);
 
   // see csoaa.cc ~ line 894 / setup for csldf_setup
-  all.example_parser->emptylines_separate_examples = false;
+  all.parser_runtime.example_parser->emptylines_separate_examples = false;
   VW::prediction_type_t in_pred_type;
   VW::prediction_type_t out_pred_type;
 
   if (data->explore_mode)
   {
-    data->adf_learner = as_multiline(base->get_learner_by_name_prefix("cb_explore_adf_"));
-    in_pred_type = VW::prediction_type_t::action_probs;
-    out_pred_type = VW::prediction_type_t::action_probs;
+    data->adf_learner = require_multiline(base->get_learner_by_name_prefix("cb_explore_adf_"));
+    in_pred_type = VW::prediction_type_t::ACTION_PROBS;
+    out_pred_type = VW::prediction_type_t::ACTION_PROBS;
   }
   else
   {
-    data->adf_learner = as_multiline(base->get_learner_by_name_prefix("cb_adf"));
-    in_pred_type = VW::prediction_type_t::action_scores;
-    out_pred_type = VW::prediction_type_t::multiclass;
+    data->adf_learner = require_multiline(base->get_learner_by_name_prefix("cb_adf"));
+    in_pred_type = VW::prediction_type_t::ACTION_SCORES;
+    out_pred_type = VW::prediction_type_t::MULTICLASS;
   }
 
-  auto* l = make_reduction_learner(
-      std::move(data), base, predict_or_learn<true>, predict_or_learn<false>, all.get_setupfn_name(cb_to_cb_adf_setup))
-                .set_input_label_type(VW::label_type_t::cb)
-                .set_output_label_type(VW::label_type_t::cb)
-                .set_input_prediction_type(in_pred_type)
-                .set_output_prediction_type(out_pred_type)
-                .set_learn_returns_prediction(true)
-                .set_finish_example(::finish_example)
-                .build(&all.logger);
+  auto l = make_reduction_learner(std::move(data), base, predict_or_learn<true>, predict_or_learn<false>,
+      stack_builder.get_setupfn_name(cb_to_cb_adf_setup))
+               .set_input_label_type(VW::label_type_t::CB)
+               .set_output_label_type(VW::label_type_t::CB)
+               .set_input_prediction_type(in_pred_type)
+               .set_output_prediction_type(out_pred_type)
+               .set_learn_returns_prediction(true)
+               .set_output_example_prediction(::output_example_prediction_cb_to_cb_adf)
+               .set_update_stats(::update_stats_cb_to_cb_adf)
+               .set_print_update(::print_update_cb_to_cb_adf)
+               .build();
 
-  return make_base(*l);
+  return l;
 }

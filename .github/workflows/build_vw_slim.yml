@@ -9,7 +9,7 @@ on:
     branches:
       - '*'
 
-concurrency: 
+concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
@@ -27,4 +27,5 @@ jobs:
         run: ./.scripts/linux/build-slim.sh
       - name: Test VW Slim
         shell: bash
-        run: ./.scripts/linux/test-slim.sh
+        working-directory: build
+        run: ctest --output-on-failure --no-tests=error --tests-regex "VowpalWabbitSlim|ExploreSlim|CommandLineOptionsSlim" --parallel 2

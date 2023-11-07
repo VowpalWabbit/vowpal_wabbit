@@ -1,7 +1,7 @@
 from cmath import sqrt
 
 
-class IncrementalFsum:
+class incremental_f_sum:
     """Incremental version of https://en.wikipedia.org/wiki/Kahan_summation_algorithm"""
 
     def __init__(self):
@@ -22,7 +22,7 @@ class IncrementalFsum:
         return self
 
     def __add__(self, other):
-        result = IncrementalFsum()
+        result = incremental_f_sum()
         result.partials = deepcopy(self.partials)
         for y in other.partials:
             result += y
@@ -32,7 +32,7 @@ class IncrementalFsum:
         return sum(self.partials, 0.0)
 
 
-class ConfidenceSequence(object):
+class confidence_sequence(object):
     def __init__(self, rmin=0, rmax=1, adjust=True, eta=1.1, s=1.1):
         super().__init__()
 
@@ -47,17 +47,17 @@ class ConfidenceSequence(object):
 
         self.t = 0
 
-        self.sumwsqrsq = IncrementalFsum()
-        self.sumwsqr = IncrementalFsum()
-        self.sumwsq = IncrementalFsum()
-        self.sumwr = IncrementalFsum()
-        self.sumw = IncrementalFsum()
-        self.sumwrxhatlow = IncrementalFsum()
-        self.sumwxhatlow = IncrementalFsum()
-        self.sumxhatlowsq = IncrementalFsum()
-        self.sumwrxhathigh = IncrementalFsum()
-        self.sumwxhathigh = IncrementalFsum()
-        self.sumxhathighsq = IncrementalFsum()
+        self.sumwsqrsq = incremental_f_sum()
+        self.sumwsqr = incremental_f_sum()
+        self.sumwsq = incremental_f_sum()
+        self.sumwr = incremental_f_sum()
+        self.sumw = incremental_f_sum()
+        self.sumwrxhatlow = incremental_f_sum()
+        self.sumwxhatlow = incremental_f_sum()
+        self.sumxhatlowsq = incremental_f_sum()
+        self.sumwrxhathigh = incremental_f_sum()
+        self.sumwxhathigh = incremental_f_sum()
+        self.sumxhathighsq = incremental_f_sum()
 
     def addobs(self, w, r, p_drop=0, n_drop=None):
         assert w >= 0

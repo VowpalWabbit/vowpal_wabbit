@@ -2163,7 +2163,6 @@ def compact(text):
     listLevel = ""  # nesting of lists
 
     for line in text.split("\n"):
-
         if not line:
             continue
         # Handle section titles
@@ -2235,7 +2234,7 @@ def compact(text):
             if not Extractor.keepSections:
                 items = headers.items()
                 items.sort()
-                for (i, v) in items:
+                for i, v in items:
                     page.append(v)
             headers.clear()
             page.append(line)  # first line

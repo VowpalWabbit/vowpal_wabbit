@@ -7,14 +7,20 @@
 #include "vw/core/feature_group.h"
 #include "vw/core/vw_fwd.h"
 
+#include <memory>
+
+#ifdef VW_FEAT_LDA_ENABLED
+
 namespace VW
 {
 namespace reductions
 {
-VW::LEARNER::base_learner* lda_setup(VW::setup_base_i& stack_builder);
+std::shared_ptr<VW::LEARNER::learner> lda_setup(VW::setup_base_i& stack_builder);
 namespace lda
 {
 void get_top_weights(VW::workspace* all, int top_words_count, int topic, std::vector<feature>& output);
 }
 }  // namespace reductions
 }  // namespace VW
+
+#endif

@@ -71,11 +71,13 @@
 #  define VW_WARNING_DISABLE_CAST_FUNC_TYPE
 #  define VW_WARNING_DISABLE_UNUSED_PARAM
 #  define VW_WARNING_DISABLE_UNUSED_INTERNAL_DECLARATION
+#  define VW_WARNING_DISABLE_UNUSED_FUNCTION
 #elif defined(__GNUC__) || defined(__clang__)
 #  define VW_WARNING_DISABLE_DEPRECATED_USAGE VW_WARNING_DISABLE("-Wdeprecated-declarations")
 #  define VW_WARNING_DISABLE_BADLY_FORMED_XML
 #  define VW_WARNING_DISABLE_COND_CONST_EXPR
 #  define VW_WARNING_DISABLE_UNUSED_PARAM VW_WARNING_DISABLE("-Wunused-parameter")
+#  define VW_WARNING_DISABLE_UNUSED_FUNCTION VW_WARNING_DISABLE("-Wunused-function")
 
 // Clang only warnings
 #  if defined(__clang__)
@@ -134,3 +136,5 @@
 #else
 #  define NO_SANITIZE_UNDEFINED
 #endif
+
+#define _UNUSED(x) ((void)(x))  // NOLINT

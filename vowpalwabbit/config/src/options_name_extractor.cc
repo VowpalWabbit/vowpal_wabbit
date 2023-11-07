@@ -13,10 +13,7 @@ void options_name_extractor::internal_add_and_parse(const option_group_definitio
   if (!group.contains_necessary_options()) { THROW("reductions must specify at least one .necessary() option"); }
 
   if (m_added_help_group_names.count(group.m_name) == 0) { m_added_help_group_names.insert(group.m_name); }
-  else
-  {
-    THROW("repeated option_group_definition name: " + group.m_name);
-  }
+  else { THROW("repeated option_group_definition name: " + group.m_name); }
 
   generated_name.clear();
 
@@ -25,10 +22,7 @@ void options_name_extractor::internal_add_and_parse(const option_group_definitio
     if (opt->m_necessary)
     {
       if (generated_name.empty()) { generated_name += opt->m_name; }
-      else
-      {
-        generated_name += "_" + opt->m_name;
-      }
+      else { generated_name += "_" + opt->m_name; }
     }
   }
 }

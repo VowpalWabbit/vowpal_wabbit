@@ -12,22 +12,22 @@ learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 decay_learning_rate = 1
-Enabled reductions: ftrl-Proximal-FTRL, scorer-identity, count_label
-Input label = simple
-Output pred = scalar
-average  since         example        example        current        current  current 
-loss     last          counter         weight          label        predict features 
-1.000000 1.000000            1            1.0         1.0000         0.0000       51 
-0.500000 0.000000            2            2.0         0.0000         0.0000      104 
-0.250000 0.000000            4            4.0         0.0000         0.0000      135 
-0.250012 0.250025            8            8.0         0.0000         0.0070      146 
-0.308000 0.365988           16           16.0         1.0000         0.0173       24 
-0.330613 0.353225           32           32.0         0.0000         0.0413       32 
-0.334181 0.337749           64           64.0         0.0000         0.0670       61 
-0.363877 0.393573          128          128.0         1.0000         0.1077      106 
-0.355459 0.347041          256          256.0         0.0000         0.1651       71 
-0.329371 0.303283          512          512.0         0.0000         0.2272       49 
-0.296295 0.263220         1024         1024.0         1.0000         0.3364       31 
+Enabled learners: ftrl-Proximal-FTRL, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+1.000000 1.000000            1            1.0         1.0000         0.0000       51
+0.500000 0.000000            2            2.0         0.0000         0.0000      104
+0.250000 0.000000            4            4.0         0.0000         0.0000      135
+0.250012 0.250025            8            8.0         0.0000         0.0070      146
+0.308000 0.365988           16           16.0         1.0000         0.0173       24
+0.330613 0.353225           32           32.0         0.0000         0.0413       32
+0.334181 0.337749           64           64.0         0.0000         0.0670       61
+0.363877 0.393573          128          128.0         1.0000         0.1077      106
+0.355459 0.347041          256          256.0         0.0000         0.1651       71
+0.329371 0.303283          512          512.0         0.0000         0.2272       49
+0.296295 0.263220         1024         1024.0         1.0000         0.3364       31
 
 finished run
 number of examples per pass = 200

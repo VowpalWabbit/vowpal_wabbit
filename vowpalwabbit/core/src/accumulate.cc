@@ -17,101 +17,97 @@ Alekh Agarwal and John Langford, with help Olivier Chapelle.
 #include <cstdint>
 #include <iostream>
 
-void add_float(float& c1, const float& c2) { c1 += c2; }
+static void add_float(float& c1, const float& c2) { c1 += c2; }
 
-void accumulate(VW::workspace& all, parameters& weights, size_t offset)
+void VW::details::accumulate(VW::workspace& all, parameters& weights, size_t offset)
 {
-  uint64_t length = UINT64_ONE << all.num_bits;  // This is size of gradient
+  uint64_t length = UINT64_ONE << all.initial_weights_config.num_bits;  // This is size of gradient
   float* local_grad = new float[length];
 
   if (weights.sparse)
   {
     for (uint64_t i = 0; i < length; i++)
-    { local_grad[i] = (&(weights.sparse_weights[i << weights.sparse_weights.stride_shift()]))[offset]; }
+    {
+      local_grad[i] = (&(weights.sparse_weights[i << weights.sparse_weights.stride_shift()]))[offset];
+    }
   }
   else
   {
     for (uint64_t i = 0; i < length; i++)
-    { local_grad[i] = (&(weights.dense_weights[i << weights.dense_weights.stride_shift()]))[offset]; }
+    {
+      local_grad[i] = (&(weights.dense_weights[i << weights.dense_weights.stride_shift()]))[offset];
+    }
   }
 
-  all_reduce<float, add_float>(all, local_grad, length);  // TODO: modify to not use first()
+  VW::details::all_reduce<float, add_float>(all, local_grad, length);  // TODO: modify to not use first()
 
   if (weights.sparse)
   {
     for (uint64_t i = 0; i < length; i++)
-    { (&(weights.sparse_weights[i << weights.sparse_weights.stride_shift()]))[offset] = local_grad[i]; }
+    {
+      (&(weights.sparse_weights[i << weights.sparse_weights.stride_shift()]))[offset] = local_grad[i];
+    }
   }
   else
   {
     for (uint64_t i = 0; i < length; i++)
-    { (&(weights.dense_weights[i << weights.dense_weights.stride_shift()]))[offset] = local_grad[i]; }
+    {
+      (&(weights.dense_weights[i << weights.dense_weights.stride_shift()]))[offset] = local_grad[i];
+    }
   }
 
   delete[] local_grad;
 }
 
-float accumulate_scalar(VW::workspace& all, float local_sum)
+float VW::details::accumulate_scalar(VW::workspace& all, float local_sum)
 {
   float temp = local_sum;
-  all_reduce<float, add_float>(all, &temp, 1);
+  VW::details::all_reduce<float, add_float>(all, &temp, 1);
   return temp;
 }
 
-void accumulate_avg(VW::workspace& all, parameters& weights, size_t offset)
+void VW::details::accumulate_avg(VW::workspace& all, parameters& weights, size_t offset)
 {
-  uint32_t length = 1 << all.num_bits;  // This is size of gradient
-  float numnodes = static_cast<float>(all.all_reduce->total);
+  uint32_t length = 1 << all.initial_weights_config.num_bits;  // This is size of gradient
+  float numnodes = static_cast<float>(all.runtime_state.all_reduce->total);
   float* local_grad = new float[length];
 
   if (weights.sparse)
   {
     for (uint64_t i = 0; i < length; i++)
-    { local_grad[i] = (&(weights.sparse_weights[i << weights.sparse_weights.stride_shift()]))[offset]; }
+    {
+      local_grad[i] = (&(weights.sparse_weights[i << weights.sparse_weights.stride_shift()]))[offset];
+    }
   }
   else
   {
     for (uint64_t i = 0; i < length; i++)
-    { local_grad[i] = (&(weights.dense_weights[i << weights.dense_weights.stride_shift()]))[offset]; }
+    {
+      local_grad[i] = (&(weights.dense_weights[i << weights.dense_weights.stride_shift()]))[offset];
+    }
   }
 
-  all_reduce<float, add_float>(all, local_grad, length);  // TODO: modify to not use first()
+  VW::details::all_reduce<float, add_float>(all, local_grad, length);  // TODO: modify to not use first()
 
   if (weights.sparse)
   {
     for (uint64_t i = 0; i < length; i++)
-    { (&(weights.sparse_weights[i << weights.sparse_weights.stride_shift()]))[offset] = local_grad[i] / numnodes; }
+    {
+      (&(weights.sparse_weights[i << weights.sparse_weights.stride_shift()]))[offset] = local_grad[i] / numnodes;
+    }
   }
   else
   {
     for (uint64_t i = 0; i < length; i++)
-    { (&(weights.dense_weights[i << weights.dense_weights.stride_shift()]))[offset] = local_grad[i] / numnodes; }
+    {
+      (&(weights.dense_weights[i << weights.dense_weights.stride_shift()]))[offset] = local_grad[i] / numnodes;
+    }
   }
 
   delete[] local_grad;
 }
 
-float max_elem(float* arr, int length)
-{
-  float max = arr[0];
-  for (int i = 1; i < length; i++)
-  {
-    if (arr[i] > max) { max = arr[i]; }
-  }
-  return max;
-}
-
-float min_elem(float* arr, int length)
-{
-  float min = arr[0];
-  for (int i = 1; i < length; i++)
-  {
-    if (arr[i] < min && arr[i] > 0.001) { min = arr[i]; }
-  }
-  return min;
-}
-
-void accumulate_weighted_avg(VW::workspace& all, parameters& weights)
+void VW::details::accumulate_weighted_avg(VW::workspace& all, parameters& weights)
 {
   if (!weights.adaptive)
   {
@@ -119,27 +115,34 @@ void accumulate_weighted_avg(VW::workspace& all, parameters& weights)
     return;
   }
 
-  uint32_t length = 1 << all.num_bits;  // This is the number of parameters
+  uint32_t length = 1 << all.initial_weights_config.num_bits;  // This is the number of parameters
   float* local_weights = new float[length];
 
   if (weights.sparse)
   {
     for (uint64_t i = 0; i < length; i++)
-    { local_weights[i] = (&(weights.sparse_weights[i << weights.sparse_weights.stride_shift()]))[1]; }
+    {
+      local_weights[i] = (&(weights.sparse_weights[i << weights.sparse_weights.stride_shift()]))[1];
+    }
   }
   else
   {
     for (uint64_t i = 0; i < length; i++)
-    { local_weights[i] = (&(weights.dense_weights[i << weights.dense_weights.stride_shift()]))[1]; }
+    {
+      local_weights[i] = (&(weights.dense_weights[i << weights.dense_weights.stride_shift()]))[1];
+    }
   }
 
   // First compute weights for averaging
-  all_reduce<float, add_float>(all, local_weights, length);
+  VW::details::all_reduce<float, add_float>(all, local_weights, length);
 
-  if (weights.sparse) { VW::details::do_weighting(all.normalized_idx, length, local_weights, weights.sparse_weights); }
+  if (weights.sparse)
+  {
+    VW::details::do_weighting(all.initial_weights_config.normalized_idx, length, local_weights, weights.sparse_weights);
+  }
   else
   {
-    VW::details::do_weighting(all.normalized_idx, length, local_weights, weights.dense_weights);
+    VW::details::do_weighting(all.initial_weights_config.normalized_idx, length, local_weights, weights.dense_weights);
   }
 
   if (weights.sparse)
@@ -149,7 +152,7 @@ void accumulate_weighted_avg(VW::workspace& all, parameters& weights)
   }
   else
   {
-    all_reduce<float, add_float>(
+    VW::details::all_reduce<float, add_float>(
         all, weights.dense_weights.first(), (static_cast<size_t>(length)) * (1ull << weights.stride_shift()));
   }
   delete[] local_weights;

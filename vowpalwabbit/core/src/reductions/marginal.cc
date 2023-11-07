@@ -9,6 +9,7 @@
 #include "vw/core/example.h"
 #include "vw/core/global_data.h"
 #include "vw/core/interactions.h"
+#include "vw/core/io_buf.h"
 #include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
 #include "vw/core/setup_base.h"
@@ -21,8 +22,9 @@
 using namespace VW::config;
 namespace
 {
-struct expert
+class expert
 {
+public:
   expert() = default;
   expert(float regret, float abs_regret, float weight) : regret(regret), abs_regret(abs_regret), weight(weight) {}
 
@@ -34,8 +36,9 @@ struct expert
 using marginal = std::pair<double, double>;
 using expert_pair = std::pair<expert, expert>;
 
-struct data
+class data
 {
+public:
   data(float initial_numerator, float initial_denominator, float decay, bool update_before_learn,
       bool unweighted_marginals, bool compete, VW::workspace* all)
       : initial_numerator(initial_numerator)
@@ -56,7 +59,7 @@ struct data
   bool unweighted_marginals;
 
   std::array<bool, 256> id_features;
-  std::array<features, 256> temp;  // temporary storage when reducing.
+  std::array<VW::features, 256> temp;  // temporary storage when reducing.
   std::map<uint64_t, marginal> marginals;
 
   // bookkeeping variables for experts
@@ -77,7 +80,7 @@ float get_adanormalhedge_weights(float r, float c)
 {
   float r_pos = r > 0.f ? r : 0.f;
   if (c == 0.f || r_pos == 0.f) { return 0.f; }
-  return 2.f * r_pos * correctedExp(r_pos * r_pos / (3.f * c)) / (3.f * c);
+  return 2.f * r_pos * VW::details::correctedExp(r_pos * r_pos / (3.f * c)) / (3.f * c);
 }
 
 template <bool is_learn>
@@ -95,7 +98,7 @@ void make_marginal(data& sm, VW::example& ec)
     if (sm.id_features[n])
     {
       std::swap(sm.temp[n], *i);
-      features& f = *i;
+      VW::features& f = *i;
       f.clear();
       size_t inv_hash_idx = 0;
       for (auto j = sm.temp[n].begin(); j != sm.temp[n].end(); ++j)
@@ -124,7 +127,7 @@ void make_marginal(data& sm, VW::example& ec)
             expert e = {0, 0, 1.};
             sm.expert_state.insert(std::make_pair(key, std::make_pair(e, e)));
           }
-          if (sm.m_all->hash_inv)
+          if (sm.m_all->output_config.hash_inv)
           {
             std::ostringstream ss;
             std::vector<VW::audit_strings>& sn = sm.temp[n].space_names;
@@ -146,7 +149,7 @@ void make_marginal(data& sm, VW::example& ec)
           if VW_STD17_CONSTEXPR (is_learn)
           {
             const float label = ec.l.simple.label;
-            sm.alg_loss += weight * sm.m_all->loss->get_loss(sm.m_all->sd, marginal_pred, label);
+            sm.alg_loss += weight * sm.m_all->loss_config.loss->get_loss(sm.m_all->sd.get(), marginal_pred, label);
           }
         }
       }
@@ -181,7 +184,8 @@ void compute_expert_loss(data& sm, VW::example& ec)
   if VW_STD17_CONSTEXPR (is_learn)
   {
     const float label = ec.l.simple.label;
-    sm.alg_loss += sm.net_feature_weight * sm.m_all->loss->get_loss(sm.m_all->sd, sm.feature_pred, label);
+    sm.alg_loss +=
+        sm.net_feature_weight * sm.m_all->loss_config.loss->get_loss(sm.m_all->sd.get(), sm.feature_pred, label);
     sm.alg_loss *= inv_weight;
   }
 }
@@ -209,9 +213,10 @@ void update_marginal(data& sm, VW::example& ec)
         if (sm.compete)  // now update weights, before updating marginals
         {
           expert_pair& e = sm.expert_state[key];
-          const float regret1 =
-              sm.alg_loss - sm.m_all->loss->get_loss(sm.m_all->sd, static_cast<float>(m.first / m.second), label);
-          const float regret2 = sm.alg_loss - sm.m_all->loss->get_loss(sm.m_all->sd, sm.feature_pred, label);
+          const float regret1 = sm.alg_loss -
+              sm.m_all->loss_config.loss->get_loss(sm.m_all->sd.get(), static_cast<float>(m.first / m.second), label);
+          const float regret2 =
+              sm.alg_loss - sm.m_all->loss_config.loss->get_loss(sm.m_all->sd.get(), sm.feature_pred, label);
 
           e.first.regret += regret1 * weight;
           e.first.abs_regret += regret1 * regret1 * weight;  // fabs(regret1);
@@ -229,7 +234,7 @@ void update_marginal(data& sm, VW::example& ec)
 }
 
 template <bool is_learn>
-void predict_or_learn(data& sm, VW::LEARNER::single_learner& base, VW::example& ec)
+void predict_or_learn(data& sm, VW::LEARNER::learner& base, VW::example& ec)
 {
   make_marginal<is_learn>(sm, ec);
   if VW_STD17_CONSTEXPR (is_learn)
@@ -275,7 +280,7 @@ void predict_or_learn(data& sm, VW::LEARNER::single_learner& base, VW::example& 
   undo_marginal(sm, ec);
 }
 
-void save_load(data& sm, io_buf& io, bool read, bool text)
+void save_load(data& sm, VW::io_buf& io, bool read, bool text)
 {
   const uint64_t stride_shift = sm.m_all->weights.stride_shift();
 
@@ -287,7 +292,8 @@ void save_load(data& sm, io_buf& io, bool read, bool text)
     total_size = static_cast<uint64_t>(sm.marginals.size());
     msg << "marginals size = " << total_size << "\n";
   }
-  bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&total_size), sizeof(total_size), read, msg, text);
+  VW::details::bin_text_read_write_fixed_validated(
+      io, reinterpret_cast<char*>(&total_size), sizeof(total_size), read, msg, text);
 
   auto iter = sm.marginals.begin();
   for (size_t i = 0; i < total_size; ++i)
@@ -296,33 +302,28 @@ void save_load(data& sm, io_buf& io, bool read, bool text)
     if (!read)
     {
       index = iter->first >> stride_shift;
-      if (sm.m_all->hash_inv) { msg << sm.inverse_hashes[iter->first]; }
-      else
-      {
-        msg << index;
-      }
+      if (sm.m_all->output_config.hash_inv) { msg << sm.inverse_hashes[iter->first]; }
+      else { msg << index; }
       msg << ":";
     }
-    bin_text_read_write_fixed(io, reinterpret_cast<char*>(&index), sizeof(index), read, msg, text);
+    VW::details::bin_text_read_write_fixed(io, reinterpret_cast<char*>(&index), sizeof(index), read, msg, text);
     double numerator;
     if (!read)
     {
       numerator = iter->second.first;
       msg << numerator << ":";
     }
-    bin_text_read_write_fixed(io, reinterpret_cast<char*>(&numerator), sizeof(numerator), read, msg, text);
+    VW::details::bin_text_read_write_fixed(io, reinterpret_cast<char*>(&numerator), sizeof(numerator), read, msg, text);
     double denominator;
     if (!read)
     {
       denominator = iter->second.second;
       msg << denominator << "\n";
     }
-    bin_text_read_write_fixed(io, reinterpret_cast<char*>(&denominator), sizeof(denominator), read, msg, text);
+    VW::details::bin_text_read_write_fixed(
+        io, reinterpret_cast<char*>(&denominator), sizeof(denominator), read, msg, text);
     if (read) { sm.marginals.insert(std::make_pair(index << stride_shift, std::make_pair(numerator, denominator))); }
-    else
-    {
-      ++iter;
-    }
+    else { ++iter; }
   }
 
   if (sm.compete)
@@ -332,7 +333,8 @@ void save_load(data& sm, io_buf& io, bool read, bool text)
       total_size = static_cast<uint64_t>(sm.expert_state.size());
       msg << "expert_state size = " << total_size << "\n";
     }
-    bin_text_read_write_fixed_validated(io, reinterpret_cast<char*>(&total_size), sizeof(total_size), read, msg, text);
+    VW::details::bin_text_read_write_fixed_validated(
+        io, reinterpret_cast<char*>(&total_size), sizeof(total_size), read, msg, text);
 
     auto exp_iter = sm.expert_state.begin();
     for (size_t i = 0; i < total_size; ++i)
@@ -343,7 +345,7 @@ void save_load(data& sm, io_buf& io, bool read, bool text)
         index = exp_iter->first >> stride_shift;
         msg << index << ":";
       }
-      bin_text_read_write_fixed(io, reinterpret_cast<char*>(&index), sizeof(index), read, msg, text);
+      VW::details::bin_text_read_write_fixed(io, reinterpret_cast<char*>(&index), sizeof(index), read, msg, text);
       float r1 = 0;
       float c1 = 0;
       float w1 = 0;
@@ -360,17 +362,17 @@ void save_load(data& sm, io_buf& io, bool read, bool text)
         w2 = exp_iter->second.second.weight;
         msg << r1 << ":";
       }
-      bin_text_read_write_fixed(io, reinterpret_cast<char*>(&r1), sizeof(r1), read, msg, text);
+      VW::details::bin_text_read_write_fixed(io, reinterpret_cast<char*>(&r1), sizeof(r1), read, msg, text);
       if (!read) { msg << c1 << ":"; }
-      bin_text_read_write_fixed(io, reinterpret_cast<char*>(&c1), sizeof(c1), read, msg, text);
+      VW::details::bin_text_read_write_fixed(io, reinterpret_cast<char*>(&c1), sizeof(c1), read, msg, text);
       if (!read) { msg << w1 << ":"; }
-      bin_text_read_write_fixed(io, reinterpret_cast<char*>(&w1), sizeof(w1), read, msg, text);
+      VW::details::bin_text_read_write_fixed(io, reinterpret_cast<char*>(&w1), sizeof(w1), read, msg, text);
       if (!read) { msg << r2 << ":"; }
-      bin_text_read_write_fixed(io, reinterpret_cast<char*>(&r2), sizeof(r2), read, msg, text);
+      VW::details::bin_text_read_write_fixed(io, reinterpret_cast<char*>(&r2), sizeof(r2), read, msg, text);
       if (!read) { msg << c2 << ":"; }
-      bin_text_read_write_fixed(io, reinterpret_cast<char*>(&c2), sizeof(c2), read, msg, text);
+      VW::details::bin_text_read_write_fixed(io, reinterpret_cast<char*>(&c2), sizeof(c2), read, msg, text);
       if (!read) { msg << w2 << ":"; }
-      bin_text_read_write_fixed(io, reinterpret_cast<char*>(&w2), sizeof(w2), read, msg, text);
+      VW::details::bin_text_read_write_fixed(io, reinterpret_cast<char*>(&w2), sizeof(w2), read, msg, text);
 
       if (read)
       {
@@ -378,16 +380,13 @@ void save_load(data& sm, io_buf& io, bool read, bool text)
         expert e2 = {r2, c2, w2};
         sm.expert_state.insert(std::make_pair(index << stride_shift, std::make_pair(e1, e2)));
       }
-      else
-      {
-        ++exp_iter;
-      }
+      else { ++exp_iter; }
     }
   }
 }
 }  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::marginal_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::marginal_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace* all = stack_builder.get_all_pointer();
@@ -419,13 +418,15 @@ VW::LEARNER::base_learner* VW::reductions::marginal_setup(VW::setup_base_i& stac
   if (marginal.find(':') != std::string::npos) { THROW("Cannot use wildcard with marginal.") }
   for (const auto ns : marginal) { d->id_features[static_cast<unsigned char>(ns)] = true; }
 
-  auto* l = VW::LEARNER::make_reduction_learner(std::move(d), as_singleline(stack_builder.setup_base_learner()),
+  auto l = make_reduction_learner(std::move(d), require_singleline(stack_builder.setup_base_learner()),
       predict_or_learn<true>, predict_or_learn<false>, stack_builder.get_setupfn_name(marginal_setup))
-                .set_input_label_type(VW::label_type_t::simple)
-                .set_output_prediction_type(VW::prediction_type_t::scalar)
-                .set_learn_returns_prediction(true)
-                .set_save_load(save_load)
-                .build();
+               .set_input_label_type(VW::label_type_t::SIMPLE)
+               .set_output_label_type(VW::label_type_t::SIMPLE)
+               .set_input_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_output_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_learn_returns_prediction(true)
+               .set_save_load(save_load)
+               .build();
 
-  return make_base(*l);
+  return l;
 }

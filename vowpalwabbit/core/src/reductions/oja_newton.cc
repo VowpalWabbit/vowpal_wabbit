@@ -3,13 +3,16 @@
 // license as described in the file LICENSE.
 #include "vw/core/reductions/oja_newton.h"
 
+#include "vw/common/random.h"
+#include "vw/core/learner.h"
 #include "vw/core/loss_functions.h"
+#include "vw/core/memory.h"
 #include "vw/core/parse_regressor.h"
-#include "vw/core/rand48.h"
-#include "vw/core/rand_state.h"
+#include "vw/core/prediction_type.h"
 #include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/vw.h"
+#include "vw/core/vw_fwd.h"
 
 #include <cmath>
 #include <memory>
@@ -22,50 +25,56 @@ using namespace VW::config;
 
 namespace
 {
-struct oja_n_update_data
+class OjaNewton;
+class oja_n_update_data
 {
-  struct OjaNewton* ON = nullptr;
+public:
+  OjaNewton* oja_newton_ptr = nullptr;
   float g = 0.f;
   float sketch_cnt = 0.f;
   float norm2_x = 0.f;
-  float* Zx = nullptr;
-  float* AZx = nullptr;
-  float* delta = nullptr;
+  std::vector<float> Zx;   // NOLINT
+  std::vector<float> AZx;  // NOLINT
+  std::vector<float> delta;
   float bdelta = 0.f;
   float prediction = 0.f;
 };
 
-struct OjaNewton
+class OjaNewton
 {
+public:
   VW::workspace* all = nullptr;
-  std::shared_ptr<VW::rand_state> _random_state;
+  std::shared_ptr<VW::rand_state> random_state;
   int m = 0;
-  int epoch_size = 0;
+  uint64_t epoch_size = 0;
   float alpha = 0.f;
-  int cnt = 0;
+  uint64_t cnt = 0;
   int t = 0;
 
-  float* ev = nullptr;
-  float* b = nullptr;
-  float* D = nullptr;
-  float** A = nullptr;
-  float** K = nullptr;
+  std::vector<float> ev;
+  std::vector<float> b;
+  std::vector<float> D;               // NOLINT
+  std::vector<std::vector<float>> A;  // NOLINT
+  std::vector<std::vector<float>> K;  // NOLINT
 
-  float* zv = nullptr;
-  float* vv = nullptr;
-  float* tmp = nullptr;
+  std::vector<float> zv;
+  std::vector<float> vv;
+  std::vector<float> tmp;
 
-  VW::example** buffer = nullptr;
-  float* weight_buffer = nullptr;
-  struct oja_n_update_data data;
+  std::vector<VW::example*> buffer;
+  // If the epoch size is greater than 1, the examples in the batch need to be saved somewhere.
+  std::vector<std::unique_ptr<VW::example>> saved_batch_examples;
+
+  std::vector<float> weight_buffer;
+  oja_n_update_data data;
 
   float learning_rate_cnt = 0.f;
   bool normalize = false;
   bool random_init = false;
 
-  void initialize_Z(parameters& weights)
+  void initialize_Z(VW::parameters& weights)  // NOLINT
   {
-    uint32_t length = 1 << all->num_bits;
+    uint32_t length = 1 << all->initial_weights_config.num_bits;
     if (normalize)  // initialize normalization part
     {
       for (uint32_t i = 0; i < length; i++) { (&(weights.strided_index(i)))[NORM2] = 0.1f; }
@@ -79,20 +88,20 @@ struct OjaNewton
     {
       // more complicated initialization: orthgonal basis of a random matrix
 
-      const double PI2 = 2.f * 3.1415927f;
+      static constexpr double PI2 = 2.f * 3.1415927f;
 
       for (uint32_t i = 0; i < length; i++)
       {
-        weight& w = weights.strided_index(i);
-        float r1, r2;
+        VW::weight& w = weights.strided_index(i);
+        float r1;
+        float r2;
         for (int j = 1; j <= m; j++)
         {
           // box-muller tranform: https://en.wikipedia.org/wiki/Box%E2%80%93Muller_transform
           // redraw until r1 should be strictly positive
-          do
-          {
-            r1 = _random_state->get_and_update_random();
-            r2 = _random_state->get_and_update_random();
+          do {
+            r1 = random_state->get_and_update_random();
+            r2 = random_state->get_and_update_random();
           } while (r1 == 0.f);
 
           (&w)[j] = std::sqrt(-2.f * std::log(r1)) * static_cast<float>(cos(PI2 * r2));
@@ -108,19 +117,25 @@ struct OjaNewton
         double temp = 0;
 
         for (uint32_t i = 0; i < length; i++)
-        { temp += (static_cast<double>((&(weights.strided_index(i)))[j])) * (&(weights.strided_index(i)))[k]; }
+        {
+          temp += (static_cast<double>((&(weights.strided_index(i)))[j])) * (&(weights.strided_index(i)))[k];
+        }
         for (uint32_t i = 0; i < length; i++)
-        { (&(weights.strided_index(i)))[j] -= static_cast<float>(temp) * (&(weights.strided_index(i)))[k]; }
+        {
+          (&(weights.strided_index(i)))[j] -= static_cast<float>(temp) * (&(weights.strided_index(i)))[k];
+        }
       }
       double norm = 0;
       for (uint32_t i = 0; i < length; i++)
-      { norm += (static_cast<double>((&(weights.strided_index(i)))[j])) * (&(weights.strided_index(i)))[j]; }
+      {
+        norm += (static_cast<double>((&(weights.strided_index(i)))[j])) * (&(weights.strided_index(i)))[j];
+      }
       norm = std::sqrt(norm);
       for (uint32_t i = 0; i < length; i++) { (&(weights.strided_index(i)))[j] /= static_cast<float>(norm); }
     }
   }
 
-  void compute_AZx()
+  void compute_AZx()  // NOLINT
   {
     for (int i = 1; i <= m; i++)
     {
@@ -137,10 +152,7 @@ struct OjaNewton
       float temp = data.AZx[i] * data.sketch_cnt;
 
       if (t == 1) { ev[i] = gamma * temp * temp; }
-      else
-      {
-        ev[i] = (1 - gamma) * t * ev[i] / (t - 1) + gamma * t * temp * temp;
-      }
+      else { ev[i] = (1 - gamma) * t * ev[i] / (t - 1) + gamma * t * temp * temp; }
     }
   }
 
@@ -165,7 +177,7 @@ struct OjaNewton
     }
   }
 
-  void update_K()
+  void update_K()  // NOLINT
   {
     float temp = data.norm2_x * data.sketch_cnt * data.sketch_cnt;
     for (int i = 1; i <= m; i++)
@@ -179,7 +191,7 @@ struct OjaNewton
     }
   }
 
-  void update_A()
+  void update_A()  // NOLINT
   {
     for (int i = 1; i <= m; i++)
     {
@@ -223,7 +235,7 @@ struct OjaNewton
     }
   }
 
-  void update_D()
+  void update_D()  // NOLINT
   {
     for (int j = 1; j <= m; j++)
     {
@@ -260,7 +272,7 @@ struct OjaNewton
     // K <- AK
     for (int j = 1; j <= m; j++)
     {
-      memset(tmp, 0, sizeof(double) * (m + 1));
+      std::fill(tmp.begin(), tmp.end(), 0.f);
 
       for (int i = 1; i <= m; i++)
       {
@@ -272,7 +284,7 @@ struct OjaNewton
     // K <- KA'
     for (int i = 1; i <= m; i++)
     {
-      memset(tmp, 0, sizeof(double) * (m + 1));
+      std::fill(tmp.begin(), tmp.end(), 0.f);
 
       for (int j = 1; j <= m; j++)
       {
@@ -284,22 +296,22 @@ struct OjaNewton
 
     // second step: w[0] <- w[0] + (DZ)'b, b <- 0.
 
-    uint32_t length = 1 << all->num_bits;
+    uint32_t length = 1 << all->initial_weights_config.num_bits;
     for (uint32_t i = 0; i < length; i++)
     {
-      weight& w = all->weights.strided_index(i);
+      VW::weight& w = all->weights.strided_index(i);
       for (int j = 1; j <= m; j++) { w += (&w)[j] * b[j] * D[j]; }
     }
 
-    memset(b, 0, sizeof(double) * (m + 1));
+    std::fill(b.begin(), b.end(), 0.f);
 
     // third step: Z <- ADZ, A, D <- Identity
 
     // double norm = 0;
     for (uint32_t i = 0; i < length; ++i)
     {
-      memset(tmp, 0, sizeof(float) * (m + 1));
-      weight& w = all->weights.strided_index(i);
+      std::fill(tmp.begin(), tmp.end(), 0.f);
+      VW::weight& w = all->weights.strided_index(i);
       for (int j = 1; j <= m; j++)
       {
         for (int h = 1; h <= m; ++h) { tmp[j] += A[j][h] * D[h] * (&w)[h]; }
@@ -314,189 +326,175 @@ struct OjaNewton
 
     for (int i = 1; i <= m; i++)
     {
-      memset(A[i], 0, sizeof(double) * (m + 1));
+      std::fill(A[i].begin(), A[i].end(), 0.f);
       D[i] = 1;
       A[i][i] = 1;
     }
   }
-
-  ~OjaNewton()
-  {
-    free(ev);
-    free(b);
-    free(D);
-    free(buffer);
-    free(weight_buffer);
-    free(zv);
-    free(vv);
-    free(tmp);
-    if (A)
-    {
-      for (int i = 1; i <= m; i++)
-      {
-        free(A[i]);
-        free(K[i]);
-      }
-    }
-
-    free(A);
-    free(K);
-
-    free(data.Zx);
-    free(data.AZx);
-    free(data.delta);
-  }
 };
-
-void keep_example(VW::workspace& all, OjaNewton& /* ON */, VW::example& ec) { output_and_account_example(all, ec); }
 
 void make_pred(oja_n_update_data& data, float x, float& wref)
 {
-  int m = data.ON->m;
+  int m = data.oja_newton_ptr->m;
   float* w = &wref;
 
-  if (data.ON->normalize) { x /= std::sqrt(w[NORM2]); }
+  if (data.oja_newton_ptr->normalize) { x /= std::sqrt(w[NORM2]); }
 
   data.prediction += w[0] * x;
-  for (int i = 1; i <= m; i++) { data.prediction += w[i] * x * data.ON->D[i] * data.ON->b[i]; }
+  for (int i = 1; i <= m; i++) { data.prediction += w[i] * x * data.oja_newton_ptr->D[i] * data.oja_newton_ptr->b[i]; }
 }
 
-void predict(OjaNewton& ON, base_learner&, VW::example& ec)
+void predict(OjaNewton& oja_newton_ptr, VW::example& ec)
 {
-  ON.data.prediction = 0;
-  GD::foreach_feature<oja_n_update_data, make_pred>(*ON.all, ec, ON.data);
-  ec.partial_prediction = ON.data.prediction;
-  ec.pred.scalar = GD::finalize_prediction(ON.all->sd, ON.all->logger, ec.partial_prediction);
+  oja_newton_ptr.data.prediction = 0;
+  VW::foreach_feature<oja_n_update_data, make_pred>(*oja_newton_ptr.all, ec, oja_newton_ptr.data);
+  ec.partial_prediction = oja_newton_ptr.data.prediction;
+  ec.pred.scalar =
+      VW::details::finalize_prediction(*oja_newton_ptr.all->sd, oja_newton_ptr.all->logger, ec.partial_prediction);
 }
 
-void update_Z_and_wbar(oja_n_update_data& data, float x, float& wref)
+void update_Z_and_wbar(oja_n_update_data& data, float x, float& wref)  // NOLINT
 {
   float* w = &wref;
-  int m = data.ON->m;
-  if (data.ON->normalize) { x /= std::sqrt(w[NORM2]); }
+  int m = data.oja_newton_ptr->m;
+  if (data.oja_newton_ptr->normalize) { x /= std::sqrt(w[NORM2]); }
   float s = data.sketch_cnt * x;
 
-  for (int i = 1; i <= m; i++) { w[i] += data.delta[i] * s / data.ON->D[i]; }
+  for (int i = 1; i <= m; i++) { w[i] += data.delta[i] * s / data.oja_newton_ptr->D[i]; }
   w[0] -= s * data.bdelta;
 }
 
-void compute_Zx_and_norm(oja_n_update_data& data, float x, float& wref)
+void compute_Zx_and_norm(oja_n_update_data& data, float x, float& wref)  // NOLINT
 {
   float* w = &wref;
-  int m = data.ON->m;
-  if (data.ON->normalize) { x /= std::sqrt(w[NORM2]); }
+  int m = data.oja_newton_ptr->m;
+  if (data.oja_newton_ptr->normalize) { x /= std::sqrt(w[NORM2]); }
 
-  for (int i = 1; i <= m; i++) { data.Zx[i] += w[i] * x * data.ON->D[i]; }
+  for (int i = 1; i <= m; i++) { data.Zx[i] += w[i] * x * data.oja_newton_ptr->D[i]; }
   data.norm2_x += x * x;
 }
 
-void update_wbar_and_Zx(oja_n_update_data& data, float x, float& wref)
+void update_wbar_and_Zx(oja_n_update_data& data, float x, float& wref)  // NOLINT
 {
   float* w = &wref;
-  int m = data.ON->m;
-  if (data.ON->normalize) { x /= std::sqrt(w[NORM2]); }
+  int m = data.oja_newton_ptr->m;
+  if (data.oja_newton_ptr->normalize) { x /= std::sqrt(w[NORM2]); }
 
   float g = data.g * x;
 
-  for (int i = 1; i <= m; i++) { data.Zx[i] += w[i] * x * data.ON->D[i]; }
-  w[0] -= g / data.ON->alpha;
+  for (int i = 1; i <= m; i++) { data.Zx[i] += w[i] * x * data.oja_newton_ptr->D[i]; }
+  w[0] -= g / data.oja_newton_ptr->alpha;
 }
 
 void update_normalization(oja_n_update_data& data, float x, float& wref)
 {
   float* w = &wref;
-  int m = data.ON->m;
+  int m = data.oja_newton_ptr->m;
 
   w[NORM2] += x * x * data.g * data.g;
 }
 
-// NO_SANITIZE_UNDEFINED needed in learn functions because
-// base_learner& base might be a reference created from nullptr
-void NO_SANITIZE_UNDEFINED learn(OjaNewton& ON, base_learner& base, VW::example& ec)
+void learn(OjaNewton& oja_newton_ptr, VW::example& ec)
 {
   // predict
-  predict(ON, base, ec);
+  predict(oja_newton_ptr, ec);
 
-  oja_n_update_data& data = ON.data;
-  data.g = ON.all->loss->first_derivative(ON.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
+  oja_n_update_data& data = oja_newton_ptr.data;
+  data.g = oja_newton_ptr.all->loss_config.loss->first_derivative(
+               oja_newton_ptr.all->sd.get(), ec.pred.scalar, ec.l.simple.label) *
+      ec.weight;
   data.g /= 2;  // for half square loss
 
-  if (ON.normalize) { GD::foreach_feature<oja_n_update_data, update_normalization>(*ON.all, ec, data); }
-
-  ON.buffer[ON.cnt] = &ec;
-  ON.weight_buffer[ON.cnt++] = data.g / 2;
-
-  if (ON.cnt == ON.epoch_size)
+  if (oja_newton_ptr.normalize)
   {
-    for (int k = 0; k < ON.epoch_size; k++, ON.t++)
+    VW::foreach_feature<oja_n_update_data, update_normalization>(*oja_newton_ptr.all, ec, data);
+  }
+
+  VW::example* next_in_batch = nullptr;
+  // If the size is 1, we can just use the example directly.
+  if (oja_newton_ptr.epoch_size == 1) { next_in_batch = &ec; }
+  else
+  {
+    // If the batch size is greater than 1, we must make a copy of the example as its lifetime doesn't go beyond this
+    // function.
+    VW::copy_example_data_with_label(oja_newton_ptr.saved_batch_examples[oja_newton_ptr.cnt].get(), &ec);
+    next_in_batch = oja_newton_ptr.saved_batch_examples[oja_newton_ptr.cnt].get();
+  }
+  assert(next_in_batch != nullptr);
+  oja_newton_ptr.weight_buffer[oja_newton_ptr.cnt] = data.g / 2;
+  oja_newton_ptr.buffer[oja_newton_ptr.cnt] = next_in_batch;
+  oja_newton_ptr.cnt++;
+
+  // If we've reached the batch size then perform the batch processing.
+  if (oja_newton_ptr.cnt == oja_newton_ptr.epoch_size)
+  {
+    assert(oja_newton_ptr.buffer.size() == oja_newton_ptr.epoch_size);
+    assert(oja_newton_ptr.weight_buffer.size() == oja_newton_ptr.epoch_size);
+    assert(oja_newton_ptr.epoch_size == 1 || (oja_newton_ptr.saved_batch_examples.size() == oja_newton_ptr.epoch_size));
+
+    for (uint64_t k = 0; k < oja_newton_ptr.epoch_size; k++, oja_newton_ptr.t++)
     {
-      VW::example& ex = *(ON.buffer[k]);
-      data.sketch_cnt = ON.weight_buffer[k];
+      VW::example& ex = *(oja_newton_ptr.buffer[k]);
+      data.sketch_cnt = oja_newton_ptr.weight_buffer[k];
 
       data.norm2_x = 0;
-      memset(data.Zx, 0, sizeof(float) * (ON.m + 1));
-      GD::foreach_feature<oja_n_update_data, compute_Zx_and_norm>(*ON.all, ex, data);
-      ON.compute_AZx();
+      std::fill(data.Zx.begin(), data.Zx.end(), 0.f);
+      VW::foreach_feature<oja_n_update_data, compute_Zx_and_norm>(*oja_newton_ptr.all, ex, data);
+      oja_newton_ptr.compute_AZx();
 
-      ON.update_eigenvalues();
-      ON.compute_delta();
+      oja_newton_ptr.update_eigenvalues();
+      oja_newton_ptr.compute_delta();
 
-      ON.update_K();
+      oja_newton_ptr.update_K();
 
-      GD::foreach_feature<oja_n_update_data, update_Z_and_wbar>(*ON.all, ex, data);
+      VW::foreach_feature<oja_n_update_data, update_Z_and_wbar>(*oja_newton_ptr.all, ex, data);
     }
 
-    ON.update_A();
-    // ON.update_D();
+    oja_newton_ptr.update_A();
+    // oja_newton_ptr.update_D();
+
+    // Reset count for next batch.
+    oja_newton_ptr.cnt = 0;
   }
 
-  memset(data.Zx, 0, sizeof(float) * (ON.m + 1));
-  GD::foreach_feature<oja_n_update_data, update_wbar_and_Zx>(*ON.all, ec, data);
-  ON.compute_AZx();
+  std::fill(data.Zx.begin(), data.Zx.end(), 0.f);
+  VW::foreach_feature<oja_n_update_data, update_wbar_and_Zx>(*oja_newton_ptr.all, ec, data);
+  oja_newton_ptr.compute_AZx();
 
-  ON.update_b();
-  ON.check();
-
-  if (ON.cnt == ON.epoch_size)
-  {
-    ON.cnt = 0;
-    for (int k = 0; k < ON.epoch_size; k++) { VW::finish_example(*ON.all, *ON.buffer[k]); }
-  }
+  oja_newton_ptr.update_b();
+  oja_newton_ptr.check();
 }
 
-void save_load(OjaNewton& ON, io_buf& model_file, bool read, bool text)
+void save_load(OjaNewton& oja_newton_ptr, VW::io_buf& model_file, bool read, bool text)
 {
-  VW::workspace& all = *ON.all;
+  VW::workspace& all = *oja_newton_ptr.all;
   if (read)
   {
-    initialize_regressor(all);
-    ON.initialize_Z(all.weights);
+    VW::details::initialize_regressor(all);
+    oja_newton_ptr.initialize_Z(all.weights);
   }
 
   if (model_file.num_files() > 0)
   {
-    bool resume = all.save_resume;
+    bool resume = all.output_model_config.save_resume;
     std::stringstream msg;
     msg << ":" << resume << "\n";
-    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
+    VW::details::bin_text_read_write_fixed(
+        model_file, reinterpret_cast<char*>(&resume), sizeof(resume), read, msg, text);
 
-    double temp = 0.;
-    double temp_normalized_sum_norm_x = 0.;
-    if (resume) { GD::save_load_online_state(all, model_file, read, text, temp, temp_normalized_sum_norm_x); }
-    else
-    {
-      GD::save_load_regressor(all, model_file, read, text);
-    }
+    std::vector<VW::reductions::details::gd_per_model_state> temp_pms = {VW::reductions::details::gd_per_model_state()};
+    if (resume) { VW::details::save_load_online_state_gd(all, model_file, read, text, temp_pms); }
+    else { VW::details::save_load_regressor_gd(all, model_file, read, text); }
   }
 }
 }  // namespace
 
-base_learner* VW::reductions::oja_newton_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::oja_newton_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
 
-  auto ON = VW::make_unique<OjaNewton>();
+  auto oja_newton_ptr = VW::make_unique<OjaNewton>();
 
   bool oja_newton;
   float alpha_inverse;
@@ -509,11 +507,11 @@ base_learner* VW::reductions::oja_newton_setup(VW::setup_base_i& stack_builder)
   std::string random_init = "true";
   option_group_definition new_options("[Reduction] OjaNewton");
   new_options.add(make_option("OjaNewton", oja_newton).keep().necessary().help("Online Newton with Oja's Sketch"))
-      .add(make_option("sketch_size", ON->m).default_value(10).help("Size of sketch"))
-      .add(make_option("epoch_size", ON->epoch_size).default_value(1).help("Size of epoch"))
-      .add(make_option("alpha", ON->alpha).default_value(1.f).help("Mutiplicative constant for indentiy"))
+      .add(make_option("sketch_size", oja_newton_ptr->m).default_value(10).help("Size of sketch"))
+      .add(make_option("epoch_size", oja_newton_ptr->epoch_size).default_value(1).help("Size of epoch"))
+      .add(make_option("alpha", oja_newton_ptr->alpha).default_value(1.f).help("Mutiplicative constant for indentiy"))
       .add(make_option("alpha_inverse", alpha_inverse).help("One over alpha, similar to learning rate"))
-      .add(make_option("learning_rate_cnt", ON->learning_rate_cnt)
+      .add(make_option("learning_rate_cnt", oja_newton_ptr->learning_rate_cnt)
                .default_value(2.f)
                .help("Constant for the learning rate 1/t"))
       .add(make_option("normalize", normalize).help("Normalize the features or not"))
@@ -521,50 +519,57 @@ base_learner* VW::reductions::oja_newton_setup(VW::setup_base_i& stack_builder)
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  ON->all = &all;
-  ON->_random_state = all.get_random_state();
+  oja_newton_ptr->all = &all;
+  oja_newton_ptr->random_state = all.get_random_state();
 
-  ON->normalize = normalize == "true";
-  ON->random_init = random_init == "true";
+  oja_newton_ptr->normalize = normalize == "true";
+  oja_newton_ptr->random_init = random_init == "true";
 
-  if (options.was_supplied("alpha_inverse")) { ON->alpha = 1.f / alpha_inverse; }
+  if (options.was_supplied("alpha_inverse")) { oja_newton_ptr->alpha = 1.f / alpha_inverse; }
 
-  ON->cnt = 0;
-  ON->t = 1;
-  ON->ev = calloc_or_throw<float>(ON->m + 1);
-  ON->b = calloc_or_throw<float>(ON->m + 1);
-  ON->D = calloc_or_throw<float>(ON->m + 1);
-  ON->A = calloc_or_throw<float*>(ON->m + 1);
-  ON->K = calloc_or_throw<float*>(ON->m + 1);
-  for (int i = 1; i <= ON->m; i++)
+  const size_t buffer_size = oja_newton_ptr->m + 1;
+  oja_newton_ptr->cnt = 0;
+  oja_newton_ptr->t = 1;
+  oja_newton_ptr->ev = std::vector<float>(buffer_size, 0.f);
+  oja_newton_ptr->b = std::vector<float>(buffer_size, 0.f);
+  oja_newton_ptr->D = std::vector<float>(buffer_size, 1.f);
+  oja_newton_ptr->A = std::vector<std::vector<float>>(buffer_size, std::vector<float>(buffer_size, 0.f));
+  oja_newton_ptr->K = std::vector<std::vector<float>>(buffer_size, std::vector<float>(buffer_size, 0.f));
+  for (int i = 1; i <= oja_newton_ptr->m; i++)
   {
-    ON->A[i] = calloc_or_throw<float>(ON->m + 1);
-    ON->K[i] = calloc_or_throw<float>(ON->m + 1);
-    ON->A[i][i] = 1;
-    ON->K[i][i] = 1;
-    ON->D[i] = 1;
+    oja_newton_ptr->A[i][i] = 1.f;
+    oja_newton_ptr->K[i][i] = 1.f;
   }
 
-  ON->buffer = calloc_or_throw<VW::example*>(ON->epoch_size);
-  ON->weight_buffer = calloc_or_throw<float>(ON->epoch_size);
+  oja_newton_ptr->buffer = std::vector<VW::example*>(oja_newton_ptr->epoch_size, nullptr);
+  oja_newton_ptr->weight_buffer = std::vector<float>(oja_newton_ptr->epoch_size, 0.f);
+  if (oja_newton_ptr->epoch_size > 1)
+  {
+    oja_newton_ptr->saved_batch_examples.reserve(oja_newton_ptr->epoch_size);
+    for (uint64_t i = 0; i < oja_newton_ptr->epoch_size; i++)
+    {
+      oja_newton_ptr->saved_batch_examples.emplace_back(VW::make_unique<VW::example>());
+    }
+  }
 
-  ON->zv = calloc_or_throw<float>(ON->m + 1);
-  ON->vv = calloc_or_throw<float>(ON->m + 1);
-  ON->tmp = calloc_or_throw<float>(ON->m + 1);
+  oja_newton_ptr->zv = std::vector<float>(buffer_size, 0.f);
+  oja_newton_ptr->vv = std::vector<float>(buffer_size, 0.f);
+  oja_newton_ptr->tmp = std::vector<float>(buffer_size, 0.f);
 
-  ON->data.ON = ON.get();
-  ON->data.Zx = calloc_or_throw<float>(ON->m + 1);
-  ON->data.AZx = calloc_or_throw<float>(ON->m + 1);
-  ON->data.delta = calloc_or_throw<float>(ON->m + 1);
+  oja_newton_ptr->data.oja_newton_ptr = oja_newton_ptr.get();
+  oja_newton_ptr->data.Zx = std::vector<float>(buffer_size, 0.f);
+  oja_newton_ptr->data.AZx = std::vector<float>(buffer_size, 0.f);
+  oja_newton_ptr->data.delta = std::vector<float>(buffer_size, 0.f);
 
-  all.weights.stride_shift(static_cast<uint32_t>(ceil(log2(ON->m + 2))));
+  all.weights.stride_shift(static_cast<uint32_t>(std::ceil(std::log2(oja_newton_ptr->m + 2))));
 
-  auto* l = make_base_learner(std::move(ON), learn, predict, stack_builder.get_setupfn_name(oja_newton_setup),
-      VW::prediction_type_t::scalar, VW::label_type_t::simple)
-                .set_params_per_weight(all.weights.stride())
-                .set_save_load(save_load)
-                .set_finish_example(keep_example)
-                .build();
+  auto l = make_bottom_learner(std::move(oja_newton_ptr), learn, predict,
+      stack_builder.get_setupfn_name(oja_newton_setup), VW::prediction_type_t::SCALAR, VW::label_type_t::SIMPLE)
+               .set_save_load(save_load)
+               .set_output_example_prediction(VW::details::output_example_prediction_simple_label<OjaNewton>)
+               .set_update_stats(VW::details::update_stats_simple_label<OjaNewton>)
+               .set_print_update(VW::details::print_update_simple_label<OjaNewton>)
+               .build();
 
-  return make_base(*l);
+  return l;
 }

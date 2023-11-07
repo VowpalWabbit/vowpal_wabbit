@@ -12,15 +12,14 @@ function(DetectCXXStandard OUTPUT_VAR)
     set(CXX_STANDARD14_FLAG "/std:c++14")
   endif()
 
-  # TODO use VERSION_GREATER_EQUAL in cmake 3.7+
   check_cxx_compiler_flag(${CXX_STANDARD20_FLAG} HAS_CXX20_FLAG)
-  if (HAS_CXX20_FLAG AND ((${CMAKE_VERSION} VERSION_EQUAL "3.12.0") OR (${CMAKE_VERSION} VERSION_GREATER "3.12.0")))
+  if (HAS_CXX20_FLAG AND (${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.12.0"))
     set(${OUTPUT_VAR} 20 PARENT_SCOPE)
     return()
   endif()
 
   check_cxx_compiler_flag(${CXX_STANDARD17_FLAG} HAS_CXX17_FLAG)
-  if (HAS_CXX17_FLAG AND ((${CMAKE_VERSION} VERSION_EQUAL "3.8.0") OR (${CMAKE_VERSION} VERSION_GREATER "3.8.0")))
+  if (HAS_CXX17_FLAG)
     set(${OUTPUT_VAR} 17 PARENT_SCOPE)
     return()
   endif()

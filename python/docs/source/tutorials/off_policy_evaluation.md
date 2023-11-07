@@ -19,7 +19,7 @@ VW implements several estimators to reduce policy evaluation to supervised learn
 
 Finally, before we get into how to run offline policy evaluation in VW, note that in this tutorial, by policies we mean contextual bandit models, not the exploration layer (e.g. epsilon-greedy) that is usually part of a contextual bandit system to tackle the explore-exploit tradeoff.
 
-For now, If you wish to evaluate the performance of the entire loop (model + exploration), please refer to the documentation for `--explore_eval`. It is useful if you want to understand how different types of exploration might lead to better future rewards in an online learning bandit system.
+For now, If you wish to evaluate the performance of the entire loop (model + exploration), please refer to the documentation for [`--explore_eval`](https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Explore-Eval). It is useful if you want to understand how different types of exploration might lead to better future rewards in an online learning bandit system.
 
 ## Batch scenario: policy evaluation with a pre-trained VW policy, `cb`-format data
 

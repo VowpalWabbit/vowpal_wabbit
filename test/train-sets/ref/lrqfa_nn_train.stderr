@@ -6,20 +6,20 @@ Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
-Enabled reductions: gd, nn, lrqfa, scorer-logistic, count_label
-Input label = simple
-Output pred = scalar
+Enabled learners: gd, nn, lrqfa, scorer-logistic, count_label
+Input label = SIMPLE
+Output pred = SCALAR
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
 0.566986 0.566986            1            1.0         1.0000         0.5672        6
-0.945758 1.324530            2            2.0        -1.0000         0.7341        5
-0.881015 0.816272            4            4.0        -1.0000         0.7297        6
+0.976705 1.386424            2            2.0        -1.0000         0.7500        5
+0.912181 0.847658            4            4.0        -1.0000         0.7110        6
 
 finished run
 number of examples = 4
 weighted example sum = 4.000000
 weighted label sum = 0.000000
-average loss = 0.881015
+average loss = 0.912181
 best constant = 0.000000
 best constant's loss = 0.693147
 total feature number = 23

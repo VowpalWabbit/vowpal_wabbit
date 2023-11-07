@@ -8,6 +8,8 @@
 #include "vw/core/label_parser.h"
 #include "vw/core/vw_fwd.h"
 
+#include <fmt/format.h>
+
 #include <cstdint>
 
 namespace VW
@@ -16,14 +18,15 @@ namespace slates
 {
 enum class example_type : uint8_t
 {
-  unset = 0,
-  shared = 1,
-  action = 2,
-  slot = 3
+  UNSET = 0,
+  SHARED = 1,
+  ACTION = 2,
+  SLOT = 3
 };
 
-struct label
+class label
 {
+public:
   // General data
   example_type type;
   float weight;
@@ -41,13 +44,13 @@ struct label
 
   // For slot examples
   // Only valid if labeled
-  ACTION_SCORE::action_scores probabilities;
+  VW::action_scores probabilities;
 
   label() { reset_to_default(); }
 
   void reset_to_default()
   {
-    type = example_type::unset;
+    type = example_type::UNSET;
     weight = 1.f;
     labeled = false;
     cost = 0.f;
@@ -75,8 +78,9 @@ size_t write_model_field(io_buf&, const VW::slates::label&, const std::string&, 
 namespace fmt
 {
 template <>
-struct formatter<VW::slates::example_type> : formatter<std::string>
+class formatter<VW::slates::example_type> : public formatter<std::string>
 {
+public:
   auto format(VW::slates::example_type c, format_context& ctx) -> decltype(ctx.out())
   {
     return formatter<std::string>::format(std::string{VW::to_string(c)}, ctx);

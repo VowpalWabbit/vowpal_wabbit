@@ -6,22 +6,22 @@ learning rate = 2.56e+06
 initial_t = 128000
 power_t = 1
 decay_learning_rate = 1
-Enabled reductions: gd, scorer-identity, count_label
-Input label = simple
-Output pred = scalar
-average  since         example        example        current        current  current 
-loss     last          counter         weight          label        predict features 
-1.000000 1.000000            1            1.0         1.0000         0.0000      290 
-0.500037 0.000074            2            2.0         0.0000         0.0086      608 
-0.250094 0.000151            4            4.0         0.0000         0.0040      794 
-0.248153 0.246212            8            8.0         0.0000         0.0242      860 
-0.302406 0.356658           16           16.0         1.0000         0.0460      128 
-0.317139 0.331872           32           32.0         0.0000         0.0606      176 
-0.314299 0.311458           64           64.0         0.0000         0.1362      350 
-0.305342 0.296385          128          128.0         1.0000         0.3033      620 
-0.241114 0.176886          256          256.0         0.0000         0.2563      410 
-0.121858 0.002603          512          512.0         0.0000         0.0081      278 
-0.060930 0.000001         1024         1024.0         1.0000         1.0000      170 
+Enabled learners: gd, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+1.000000 1.000000            1            1.0         1.0000         0.0000      290
+0.500037 0.000074            2            2.0         0.0000         0.0086      608
+0.250094 0.000151            4            4.0         0.0000         0.0040      794
+0.248153 0.246212            8            8.0         0.0000         0.0242      860
+0.302406 0.356658           16           16.0         1.0000         0.0460      128
+0.317139 0.331872           32           32.0         0.0000         0.0606      176
+0.314299 0.311458           64           64.0         0.0000         0.1362      350
+0.305342 0.296385          128          128.0         1.0000         0.3033      620
+0.241114 0.176886          256          256.0         0.0000         0.2563      410
+0.121858 0.002603          512          512.0         0.0000         0.0081      278
+0.060930 0.000001         1024         1024.0         1.0000         1.0000      170
 
 finished run
 number of examples per pass = 200

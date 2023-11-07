@@ -6,13 +6,16 @@
 
 #include "vw/core/example.h"
 #include "vw/core/global_data.h"
-#include "vw/core/parse_example.h"
 #include "vw/core/parser.h"
 #include "vw/core/v_array.h"
 #include "vw/io/logger.h"
 
 #include <functional>
 
+namespace VW
+{
+namespace details
+{
 // DispatchFuncT should be of the form - void(VW::workspace&, const VW::multi_ex&)
 template <typename DispatchFuncT>
 void parse_dispatch(VW::workspace& all, DispatchFuncT& dispatch)
@@ -22,11 +25,12 @@ void parse_dispatch(VW::workspace& all, DispatchFuncT& dispatch)
 
   try
   {
-    while (!all.example_parser->done)
+    while (!all.parser_runtime.example_parser->done)
     {
       examples.push_back(&VW::get_unused_example(&all));  // need at least 1 example
-      if (!all.do_reset_source && example_number != all.pass_length && all.max_examples > example_number &&
-          all.example_parser->reader(&all, all.example_parser->input, examples) > 0)
+      if (!all.runtime_state.do_reset_source && example_number != all.runtime_config.pass_length &&
+          all.parser_runtime.max_examples > example_number &&
+          all.parser_runtime.example_parser->reader(&all, all.parser_runtime.example_parser->input, examples) > 0)
       {
         VW::setup_examples(all, examples);
         example_number += examples.size();
@@ -34,25 +38,29 @@ void parse_dispatch(VW::workspace& all, DispatchFuncT& dispatch)
       }
       else
       {
-        reset_source(all, all.num_bits);
-        all.do_reset_source = false;
-        all.passes_complete++;
+        VW::details::reset_source(all, all.initial_weights_config.num_bits);
+        all.runtime_state.do_reset_source = false;
+        all.runtime_state.passes_complete++;
 
         // setup an end_pass example
-        all.example_parser->lbl_parser.default_label(examples[0]->l);
+        all.parser_runtime.example_parser->lbl_parser.default_label(examples[0]->l);
         examples[0]->end_pass = true;
-        all.example_parser->in_pass_counter = 0;
+        all.parser_runtime.example_parser->in_pass_counter = 0;
         // Since this example gets finished, we need to keep the counter correct.
-        all.example_parser->num_setup_examples++;
+        all.parser_runtime.example_parser->num_setup_examples++;
 
-        if (all.passes_complete == all.numpasses && example_number == all.pass_length)
+        if (all.runtime_state.passes_complete == all.runtime_config.numpasses &&
+            example_number == all.runtime_config.pass_length)
         {
-          all.passes_complete = 0;
-          all.pass_length = all.pass_length * 2 + 1;
+          all.runtime_state.passes_complete = 0;
+          all.runtime_config.pass_length = all.runtime_config.pass_length * 2 + 1;
         }
         dispatch(all, examples);  // must be called before lock_done or race condition exists.
-        if (all.passes_complete >= all.numpasses && all.max_examples >= example_number)
-        { lock_done(*all.example_parser); }
+        if (all.runtime_state.passes_complete >= all.runtime_config.numpasses &&
+            all.parser_runtime.max_examples >= example_number)
+        {
+          VW::details::lock_done(*all.parser_runtime.example_parser);
+        }
         example_number = 0;
       }
 
@@ -62,10 +70,10 @@ void parse_dispatch(VW::workspace& all, DispatchFuncT& dispatch)
   catch (VW::vw_exception& e)
   {
     VW::return_multiple_example(all, examples);
-    all.logger.err_error("vw example #{0}({1}:{2}): {3}", example_number, e.Filename(), e.LineNumber(), e.what());
+    all.logger.err_error("vw example #{0}({1}:{2}): {3}", example_number, e.filename(), e.line_number(), e.what());
 
     // Stash the exception so it can be thrown on the main thread.
-    all.example_parser->exc_ptr = std::current_exception();
+    all.parser_runtime.example_parser->exc_ptr = std::current_exception();
   }
   catch (std::exception& e)
   {
@@ -73,7 +81,10 @@ void parse_dispatch(VW::workspace& all, DispatchFuncT& dispatch)
     all.logger.err_error("vw: example #{0}{1}", example_number, e.what());
 
     // Stash the exception so it can be thrown on the main thread.
-    all.example_parser->exc_ptr = std::current_exception();
+    all.parser_runtime.example_parser->exc_ptr = std::current_exception();
   }
-  lock_done(*all.example_parser);
+  VW::details::lock_done(*all.parser_runtime.example_parser);
 }
+
+}  // namespace details
+}  // namespace VW

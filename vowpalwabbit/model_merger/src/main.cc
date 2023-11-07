@@ -36,8 +36,9 @@ void print_help(const options_cli& options)
   std::cout << formatter.format_help(option_groups);
 }
 
-struct logger_context
+class logger_context
 {
+public:
   VW::io::logger& logger;
   std::string model_file_name;
 };
@@ -47,30 +48,31 @@ void logger_output_func(void* void_context, VW::io::log_level level, const std::
   auto* context = static_cast<logger_context*>(void_context);
   auto newline_stripped_message = message;
   newline_stripped_message.erase(std::remove(newline_stripped_message.begin(), newline_stripped_message.end(), '\n'),
-      newline_stripped_message.cend());
+      newline_stripped_message.end());
   switch (level)
   {
-    case VW::io::log_level::info:
+    case VW::io::log_level::INFO_LEVEL:
       context->logger.info("({}): {}", context->model_file_name, newline_stripped_message);
       break;
-    case VW::io::log_level::warn:
+    case VW::io::log_level::WARN_LEVEL:
       context->logger.warn("({}): {}", context->model_file_name, newline_stripped_message);
       break;
-    case VW::io::log_level::error:
+    case VW::io::log_level::ERROR_LEVEL:
       context->logger.error("({}): {}", context->model_file_name, newline_stripped_message);
       break;
-    case VW::io::log_level::critical:
+    case VW::io::log_level::CRITICAL_LEVEL:
       context->logger.critical("({}): {}", context->model_file_name, newline_stripped_message);
       break;
-    case VW::io::log_level::off:
+    case VW::io::log_level::OFF_LEVEL:
       break;
     default:
       THROW("Unsupported log level");
   }
 }
 
-struct command_line_options
+class command_line_options
 {
+public:
   VW::io::log_level log_level{};
   VW::io::output_location log_output_stream{};
   std::string output_file;
@@ -157,8 +159,8 @@ int main(int argc, char* argv[])
       logger_contexts.push_back(logger_context{logger, model_file});
 
       auto custom_logger = VW::io::create_custom_sink_logger(&logger_contexts.back(), logger_output_func);
-      auto model = VW::initialize_experimental(VW::make_unique<VW::config::options_cli>(std::vector<std::string>{
-                                                   "--driver_output_off", "--preserve_performance_counters"}),
+      auto model = VW::initialize(VW::make_unique<VW::config::options_cli>(std::vector<std::string>{
+                                      "--driver_output_off", "--preserve_performance_counters"}),
           VW::io::open_file_reader(model_file), nullptr, nullptr, &custom_logger);
       models.push_back(std::move(model));
     }
@@ -175,8 +177,8 @@ int main(int argc, char* argv[])
       logger.info("Loading base model: {}", options.base_file);
       logger_contexts.push_back(logger_context{logger, "base: " + options.base_file});
       auto custom_logger = VW::io::create_custom_sink_logger(&logger_contexts.back(), logger_output_func);
-      base_model = VW::initialize_experimental(VW::make_unique<VW::config::options_cli>(std::vector<std::string>{
-                                                   "--driver_output_off", "--preserve_performance_counters"}),
+      base_model = VW::initialize(VW::make_unique<VW::config::options_cli>(std::vector<std::string>{
+                                      "--driver_output_off", "--preserve_performance_counters"}),
           VW::io::open_file_reader(options.base_file), nullptr, nullptr, &custom_logger);
     }
 
@@ -187,7 +189,7 @@ int main(int argc, char* argv[])
   }
   catch (const VW::vw_exception& e)
   {
-    logger.critical("({}:{}): {}", e.Filename(), e.LineNumber(), e.what());
+    logger.critical("({}:{}): {}", e.filename(), e.line_number(), e.what());
     return 1;
   }
   catch (const std::exception& e)

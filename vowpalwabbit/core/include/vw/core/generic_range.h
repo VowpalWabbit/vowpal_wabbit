@@ -18,25 +18,27 @@ class generic_range
 template <typename IteratorT>
 class generic_range<IteratorT, typename std::enable_if<std::is_const<IteratorT>::value>::type>
 {
-  IteratorT _begin;
-  IteratorT _end;
-
 public:
   generic_range(IteratorT begin, IteratorT end) : _begin(begin), _end(end) {}
   IteratorT begin() const { return _begin; }
   IteratorT end() const { return _end; }
+
+private:
+  IteratorT _begin;
+  IteratorT _end;
 };
 
 template <typename IteratorT>
 class generic_range<IteratorT, typename std::enable_if<!std::is_const<IteratorT>::value>::type>
 {
-  IteratorT _begin;
-  IteratorT _end;
-
 public:
   generic_range(IteratorT begin, IteratorT end) : _begin(begin), _end(end) {}
   IteratorT begin() { return _begin; }
   IteratorT end() { return _end; }
+
+private:
+  IteratorT _begin;
+  IteratorT _end;
 };
 
 }  // namespace VW

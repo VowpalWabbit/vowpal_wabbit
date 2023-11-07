@@ -2,8 +2,11 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #pragma once
-#include "vw/core/example.h"
-#include "vw/core/global_data.h"
+
+#ifdef VW_FEAT_SEARCH_ENABLED
+
+#  include "vw/core/example.h"
+#  include "vw/core/global_data.h"
 
 // TODO: Search is using some macro-enabled logging logic for cdbg
 //       (going to clog [which in turn goes to err, with some differences])
@@ -22,12 +25,12 @@ using ptag = uint32_t;
 
 namespace Search
 {
-struct search_private;
-struct search_task;
+class search_private;
+class search_task;
 
 extern uint32_t AUTO_CONDITION_FEATURES, AUTO_HAMMING_LOSS, EXAMPLES_DONT_CHANGE, IS_LDF, NO_CACHING, ACTION_COSTS;
 
-struct search;
+class search;
 
 class BaseTask
 {
@@ -78,8 +81,9 @@ public:
   void (*_with_output_string)(search&, std::stringstream&);
 };
 
-struct search
-{  // INTERFACE
+class search
+{
+public:  // INTERFACE
   // for managing task-specific data that you want on the heap:
   template <class T>
   void set_task_data(T* data)
@@ -151,7 +155,7 @@ struct search
   //                           of length equal to the total number of actions ("A"); otherwise
   //                           it should be of length allowed_actions_cnt. only valid
   //                           if ACTION_COSTS is specified as an option.
-  //   learner_id            the id for the underlying learner to use (via set_num_learners)
+  //   learner_id            the id for the underlying learner to use (via set_feature_width)
   action predict(VW::example& ec, ptag my_tag, const action* oracle_actions, size_t oracle_actions_cnt = 1,
       const ptag* condition_on = nullptr,
       const char* condition_on_names = nullptr  // strlen(condition_on_names) should == |condition_on|
@@ -196,7 +200,7 @@ struct search
   std::stringstream& output();
 
   // set the number of learners
-  void set_num_learners(size_t num_learners);
+  void set_feature_width(size_t feature_width);
 
   // get the action sequence from the test run (only run if test_only or -t or...)
   void get_test_action_sequence(std::vector<action>&);
@@ -228,8 +232,9 @@ struct search
 };
 
 // for defining new tasks, you must fill out a search_task
-struct search_task
-{  // required
+class search_task
+{
+public:  // required
   const char* task_name;
   void (*run)(search&, VW::multi_ex&);
 
@@ -240,8 +245,9 @@ struct search_task
   void (*run_takedown)(search&, VW::multi_ex&);
 };
 
-struct search_metatask
-{  // required
+class search_metatask
+{
+public:  // required
   const char* metatask_name;
   void (*run)(search&, VW::multi_ex&);
 
@@ -368,6 +374,7 @@ namespace VW
 {
 namespace reductions
 {
-VW::LEARNER::base_learner* search_setup(VW::setup_base_i& stack_builder);
+std::shared_ptr<VW::LEARNER::learner> search_setup(VW::setup_base_i& stack_builder);
 }
 }  // namespace VW
+#endif

@@ -6,25 +6,25 @@ Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
-Enabled reductions: gd, scorer-identity, count_label
-Input label = simple
-Output pred = scalar
-average  since         example        example        current        current  current 
-loss     last          counter         weight          label        predict features 
-0.217154 0.217154            1            1.0         1.0000         0.5340       51 
-0.286436 0.355718            2            2.0         0.0000         0.5964      104 
-0.184430 0.082425            4            4.0         0.0000         0.2333      135 
-0.163580 0.142729            8            8.0         0.0000         0.1131      146 
-0.154974 0.146369           16           16.0         1.0000         0.5777       24 
-0.175538 0.196102           32           32.0         0.0000         0.1863       32 
-0.187969 0.200400           64           64.0         0.0000         0.0000       61 
-0.166548 0.145128          128          128.0         1.0000         0.8320      106 
+Enabled learners: gd, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.217146 0.217146            1            1.0         1.0000         0.5340       51
+0.286438 0.355730            2            2.0         0.0000         0.5964      104
+0.184439 0.082439            4            4.0         0.0000         0.2333      135
+0.163583 0.142727            8            8.0         0.0000         0.1131      146
+0.154976 0.146370           16           16.0         1.0000         0.5777       24
+0.175539 0.196103           32           32.0         0.0000         0.1863       32
+0.187969 0.200398           64           64.0         0.0000         0.0000       61
+0.166548 0.145127          128          128.0         1.0000         0.8320      106
 
 finished run
 number of examples = 200
 weighted example sum = 200.000000
 weighted label sum = 91.000000
-average loss = 0.135004
+average loss = 0.135003
 best constant = 0.455000
 best constant's loss = 0.247975
 total feature number = 15482

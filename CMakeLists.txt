@@ -36,6 +36,9 @@ if (NOT CMAKE_BUILD_TYPE AND NOT GENERATOR_IS_MULTI_CONFIG)
   set(CMAKE_BUILD_TYPE "Release")
 endif()
 
+# This must stay near the top of the file so compile features are properly detected.
+include(VowpalWabbitFeatures)
+
 if(WIN32)
   include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/platforms/win32.cmake)
   message(STATUS "WinSDK Version: ${CMAKE_SYSTEM_VERSION}")
@@ -47,9 +50,14 @@ if(WIN32)
   endif()
 endif()
 
-option(BUILD_FLATBUFFERS "Build flatbuffers" OFF)
-if(BUILD_FLATBUFFERS)
+if(VW_FEAT_FLATBUFFERS)
   list(APPEND VCPKG_MANIFEST_FEATURES "flatbuffers")
+endif()
+
+# This is a hack around the fact the Python build does not seem to be capable of
+# dealing with manifest features.
+if(VW_FEAT_LDA AND NOT BUILD_PYTHON)
+  list(APPEND VCPKG_MANIFEST_FEATURES "lda")
 endif()
 
 option(BUILD_TESTING "Build tests" ON)
@@ -57,14 +65,31 @@ if(BUILD_TESTING)
   list(APPEND VCPKG_MANIFEST_FEATURES "tests")
 endif()
 
+option(BUILD_BENCHMARKS "Build benchmarks" OFF)
+if(BUILD_BENCHMARKS)
+  list(APPEND VCPKG_MANIFEST_FEATURES "benchmarks")
+endif()
+
 # CMake project() does not support semantic versioning
 project(vowpal_wabbit VERSION "${VW_VERSION_MAJOR}.${VW_VERSION_MINOR}.${VW_VERSION_PATCH}" LANGUAGES C CXX)
 set(VW_PROJECT_DESCRIPTION "Vowpal Wabbit Machine Learning System")
 set(VW_PROJECT_URL "https://vowpalwabbit.org")
 
+# This must be checked after the project call since we need to check CMAKE_SYSTEM_PROCESSOR
+# It must be done before we include VowpalWabbitUtils
+if (VW_FEAT_LAS_SIMD AND NOT ((UNIX AND NOT APPLE) AND (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64")))
+  message(STATUS "LAS SIMD was requested but is only supported on x86_64 Linux and so was disabled.")
+  # Set the cmake option to off
+  set(VW_FEAT_LAS_SIMD OFF CACHE BOOL "" FORCE)
+endif()
+
+vw_print_enabled_features()
+
 option(USE_LATEST_STD "Override using C++11 with the latest standard the compiler offers. Default is C++11. " OFF)
 include(DetectCXXStandard)
-set(VW_CXX_STANDARD 11)
+if(NOT VW_CXX_STANDARD)
+  set(VW_CXX_STANDARD 11)
+endif()
 if(USE_LATEST_STD)
   DetectCXXStandard(VW_CXX_STANDARD)
 endif()
@@ -110,11 +135,9 @@ option(WARNING_AS_ERROR "Turn on warning as error. OFF by default." OFF)
 option(STATIC_LINK_VW "Link VW executable statically. Off by default." OFF)
 option(STATIC_LINK_VW_JAVA "Link VW-JNI shared library statically. Off by default." OFF)
 option(VW_INSTALL "Add install targets." OFF)
-option(BUILD_BENCHMARKS "Build benchmarks" OFF)
 option(BUILD_ONLY_STANDALONE_BENCHMARKS "Build only the benchmarks that can run standalone (and do not use vw internals)" OFF)
 option(BUILD_JAVA "Add Java targets." Off)
 option(BUILD_PYTHON "Add Python targets." Off)
-option(BUILD_DOCS "Add documentation targets." Off)
 option(BUILD_EXPERIMENTAL_BINDING "Add targets for experimental bindings" OFF)
 option(LTO "Enable Link Time optimization (Requires Release build, only works with clang and linux/mac for now)." Off)
 option(RAPIDJSON_SYS_DEP "Override using the submodule for RapidJSON dependency. Instead will use find_package" OFF)
@@ -123,13 +146,15 @@ option(SPDLOG_SYS_DEP "Override using the submodule for spdlog dependency. Inste
 option(VW_BOOST_MATH_SYS_DEP "Override using the submodule for boost math dependency. Instead will use find_package" OFF)
 option(VW_ZLIB_SYS_DEP "Override using the submodule for zlib dependency. Instead will use find_package" ON)
 option(VW_GTEST_SYS_DEP "Override using fetch package for gtest dependency. Instead will use find_package" OFF)
+option(VW_EIGEN_SYS_DEP "Override using the submodule for Eigen3 dependency. Instead will use find_package" OFF)
+option(VW_STRING_VIEW_LITE_SYS_DEP "Override using the submodule for string-view-lite dependency. Instead will use find_package" OFF)
+option(VW_SSE2NEON_SYS_DEP "Override using the submodule for SSE2Neon dependency. Instead will use find_package" OFF)
 option(VW_BUILD_VW_C_WRAPPER "Enable building the c_wrapper project" ON)
-option(VW_BUILD_CSV "Build csv parser" OFF)
-option(VW_BUILD_LARGE_ACTION_SPACE "Enable large action space reduction" OFF)
 option(vw_BUILD_NET_CORE "Build .NET Core targets" OFF)
 option(vw_BUILD_NET_FRAMEWORK "Build .NET Framework targets" OFF)
 option(VW_USE_ASAN "Compile with AddressSanitizer" OFF)
 option(VW_USE_UBSAN "Compile with UndefinedBehaviorSanitizer" OFF)
+option(VW_BUILD_WASM "Add WASM target" OFF)
 
 if(VW_USE_ASAN)
   add_compile_definitions(VW_USE_ASAN)
@@ -163,29 +188,6 @@ if(DEFINED BUILD_TESTS)
   message(WARNING "Value of BUILD_TESTS option ignored. Please use the standard option BUILD_TESTING.")
 endif()
 
-if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
-  include(CTest)
-  if(BUILD_TESTING)
-    if(${CMAKE_VERSION} VERSION_LESS "3.11.0")
-      message(WARNING "BUILD_TESTING requires CMake >= 3.11.0. You can turn if off by setting BUILD_TESTING=OFF")
-    endif()
-    if(VW_GTEST_SYS_DEP)
-      find_package(GTest REQUIRED)
-    else()
-      cmake_minimum_required(VERSION 3.11)
-      include(FetchContent)
-      FetchContent_Declare(
-        googletest
-        URL https://github.com/google/googletest/archive/refs/tags/release-1.11.0.zip
-      )
-      # For Windows: Prevent overriding the parent project's compiler/linker settings
-      set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-      set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
-      FetchContent_MakeAvailable(googletest)
-    endif()
-  endif()
-endif()
-
 if(VW_INSTALL AND NOT FMT_SYS_DEP)
   message(WARNING "Installing with a vendored version of fmt is not recommended. Use FMT_SYS_DEP to use a system dependency or specify VW_INSTALL=OFF to silence this warning.")
 endif()
@@ -200,19 +202,6 @@ endif()
 
 if(VW_GCOV AND (NOT CMAKE_BUILD_TYPE STREQUAL "Debug"))
   message(FATAL_ERROR "VW_GCOV requires Debug build type.")
-endif()
-
-# When using Ninja, or CCache GCC and Clang do not output colors as it sees it as a non-terminal output.
-# Use this option to force color output in these modes.
-option(FORCE_COLORED_OUTPUT "Always produce ANSI-colored output (GNU/Clang only)." OFF)
-if(FORCE_COLORED_OUTPUT)
-  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    add_compile_options(-fdiagnostics-color=always)
-  elseif((CMAKE_CXX_COMPILER_ID STREQUAL "Clang") OR (CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang"))
-    add_compile_options(-fcolor-diagnostics)
-  else()
-    message(WARNING "Unsupported compiler for FORCE_COLORED_OUTPUT: ${CMAKE_CXX_COMPILER_ID}")
-  endif()
 endif()
 
 if(WIN32 AND (STATIC_LINK_VW OR BUILD_JAVA OR VW_GOV))
@@ -256,12 +245,8 @@ include(ext_libs/ext_libs.cmake)
 add_subdirectory(vowpalwabbit)
 add_subdirectory(utl/dump_options)
 
-if (BUILD_FLATBUFFERS)
+if (VW_FEAT_FLATBUFFERS)
   add_subdirectory(utl/flatbuffer)
-endif()
-
-if(BUILD_DOCS)
-  add_subdirectory(doc)
 endif()
 
 if(BUILD_JAVA)
@@ -276,9 +261,11 @@ if(BUILD_BENCHMARKS)
   add_subdirectory(test/benchmarks)
 endif()
 
+if(VW_BUILD_WASM)
+  add_subdirectory(wasm)
+endif()
+
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
-  # Boost test is only required if we are building tests
-  find_package(Boost REQUIRED COMPONENTS unit_test_framework)
   add_subdirectory(test)
 
   # Don't offer these make dependent targets on Windows

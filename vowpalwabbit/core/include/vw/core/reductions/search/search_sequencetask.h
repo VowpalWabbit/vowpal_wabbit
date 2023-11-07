@@ -2,7 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #pragma once
-#include "search.h"
+#ifdef VW_FEAT_SEARCH_ENABLED
+#  include "search.h"
 
 namespace SequenceTask
 {
@@ -43,3 +44,4 @@ void finish(Search::search&);
 void run(Search::search&, VW::multi_ex&);
 extern Search::search_task task;
 }  // namespace SequenceTask_DemoLDF
+#endif

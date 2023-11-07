@@ -1,3 +1,4 @@
-[error] vw example #0(parse_example.cc:102): malformed example! '|',space, or EOL expected after : "| x:0.7"in Example #0: "| x:0.7"
+[error] vw example #0(parse_example_text.cc:67): malformed example! '|',space, or EOL expected after : "| x:0.7"in Example #0: "| x:0.7"
 
-[critical] vw (parse_example.cc:102): malformed example! '|',space, or EOL expected after : "| x:0.7"in Example #0: "| x:0.7"
+[critical] vw (parse_example_text.cc:67): malformed example! '|',space, or EOL expected after : "| x:0.7"in Example #0: "| x:0.7"
+

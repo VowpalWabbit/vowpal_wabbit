@@ -7,15 +7,15 @@ Num weight bits = 16
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
-Enabled reductions: gd, nn, scorer-identity, count_label
-Input label = simple
-Output pred = scalar
-average  since         example        example        current        current  current 
-loss     last          counter         weight          label        predict features 
-0.000000 0.000000            1            1.0        -1.0000        -1.0000        4 
-0.000000 0.000000            2            2.0        -1.0000        -1.0000        4 
-0.000000 0.000000            4            4.0        -1.0000        -1.0000        4 
-0.000000 0.000000            8            8.0         1.0000         1.0000        4 
+Enabled learners: gd, nn, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.000000 0.000000            1            1.0        -1.0000        -1.0000        4
+0.000000 0.000000            2            2.0        -1.0000        -1.0000        4
+0.000000 0.000000            4            4.0        -1.0000        -1.0000        4
+0.000000 0.000000            8            8.0         1.0000         1.0000        4
 
 finished run
 number of examples = 8

@@ -1,6 +1,8 @@
 #include "../benchmarks_common.h"
-#include "vw/core/parse_example.h"
+#include "vw/config/options_cli.h"
+#include "vw/core/parse_primitives.h"
 #include "vw/core/vw.h"
+#include "vw/text_parser/parse_example_text.h"
 
 #include <benchmark/benchmark.h>
 
@@ -21,21 +23,20 @@ static void bench_text(benchmark::State& state, ExtraArgs&&... extra_args)
   auto example_string = res[0];
 
   auto es = const_cast<char*>(example_string.c_str());
-  auto vw = VW::initialize("--cb 2 --quiet");
+  auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(std::vector<std::string>{"--cb", "2", "--quiet"}));
   VW::multi_ex examples;
-  examples.push_back(&VW::get_unused_example(vw));
+  examples.push_back(&VW::get_unused_example(vw.get()));
   for (auto _ : state)
   {
-    VW::read_line(*vw, examples[0], es);
+    VW::parsers::text::read_line(*vw, examples[0], es);
     VW::empty_example(*vw, *examples[0]);
     benchmark::ClobberMemory();
   }
-  VW::finish(*vw);
 }
 
 static void benchmark_learn_simple(benchmark::State& state, std::string example_string)
 {
-  auto vw = VW::initialize("--quiet", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(std::vector<std::string>{"--quiet"}));
 
   auto* example = VW::read_example(*vw, example_string);
 
@@ -45,12 +46,12 @@ static void benchmark_learn_simple(benchmark::State& state, std::string example_
     benchmark::ClobberMemory();
   }
   vw->finish_example(*example);
-  VW::finish(*vw);
 }
 
 static void benchmark_cb_adf_learn(benchmark::State& state, int feature_count)
 {
-  auto vw = VW::initialize("--cb_explore_adf --epsilon 0.1 --quiet -q ::", nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(
+      std::vector<std::string>{"--cb_explore_adf", "--epsilon", "0.1", "--quiet", "-q", "::"}));
   multi_ex examples;
   examples.push_back(VW::read_example(*vw, std::string("shared tag1| s_1 s_2")));
   examples.push_back(VW::read_example(*vw, get_x_string_fts(feature_count)));
@@ -63,12 +64,12 @@ static void benchmark_cb_adf_learn(benchmark::State& state, int feature_count)
     benchmark::ClobberMemory();
   }
   vw->finish_example(examples);
-  VW::finish(*vw);
 }
 
 static void benchmark_ccb_adf_learn(benchmark::State& state, std::string feature_string, std::string cmd = "")
 {
-  auto vw = VW::initialize("--ccb_explore_adf --quiet" + cmd, nullptr, false, nullptr, nullptr);
+  auto args = VW::split_command_line("--ccb_explore_adf --quiet" + cmd);
+  auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
 
   multi_ex examples;
   examples.push_back(VW::read_example(*vw, std::string("ccb shared |User " + feature_string)));
@@ -87,7 +88,6 @@ static void benchmark_ccb_adf_learn(benchmark::State& state, std::string feature
     benchmark::ClobberMemory();
   }
   vw->finish_example(examples);
-  VW::finish(*vw);
 }
 
 static std::vector<std::vector<std::string>> gen_cb_examples(size_t num_examples,  // Total number of multi_ex examples
@@ -109,7 +109,9 @@ static std::vector<std::vector<std::string>> gen_cb_examples(size_t num_examples
     std::ostringstream shared_ss;
     shared_ss << "shared |";
     for (int shared_feat = 0; shared_feat < shared_feats_count; ++shared_feat)
-    { shared_ss << " " << (rand() % shared_feats_size); }
+    {
+      shared_ss << " " << (rand() % shared_feats_size);
+    }
     examples.push_back(shared_ss.str());
     int action_ind = rand() % actions_per_example;
     for (int ac = 0; ac < actions_per_example; ++ac)
@@ -122,7 +124,9 @@ static std::vector<std::vector<std::string>> gen_cb_examples(size_t num_examples
         if (same_first_char) { action_ss << "f"; }
         action_ss << (static_cast<char>(65 + rand() % feature_groups_size)) << " ";
         for (int action_feat = 0; action_feat < action_feats_count; ++action_feat)
-        { action_ss << (rand() % action_feats_size) << " "; }
+        {
+          action_ss << (rand() % action_feats_size) << " ";
+        }
       }
       examples.push_back(action_ss.str());
     }
@@ -151,7 +155,9 @@ static std::vector<std::vector<std::string>> gen_ccb_examples(size_t num_example
     std::ostringstream shared_ss;
     shared_ss << "ccb shared |";
     for (int shared_feat = 0; shared_feat < shared_feats_count; ++shared_feat)
-    { shared_ss << " " << (rand() % shared_feats_size); }
+    {
+      shared_ss << " " << (rand() % shared_feats_size);
+    }
     examples.push_back(shared_ss.str());
     for (int ac = 0; ac < actions_per_example; ++ac)
     {
@@ -163,7 +169,9 @@ static std::vector<std::vector<std::string>> gen_ccb_examples(size_t num_example
         if (same_first_char) { action_ss << "f"; }
         action_ss << ((char)(65 + rand() % feature_groups_size)) << " ";
         for (int action_feat = 0; action_feat < action_feats_count; ++action_feat)
-        { action_ss << (rand() % action_feats_size) << " "; }
+        {
+          action_ss << (rand() % action_feats_size) << " ";
+        }
       }
       examples.push_back(action_ss.str());
     }
@@ -177,7 +185,9 @@ static std::vector<std::vector<std::string>> gen_ccb_examples(size_t num_example
         if (same_first_char) { slot_ss << "f"; }
         slot_ss << ((char)(65 + rand() % feature_groups_size)) << " ";
         for (int slot_feat = 0; slot_feat < action_feats_count; ++slot_feat)
-        { slot_ss << (rand() % action_feats_size) << " "; }
+        {
+          slot_ss << (rand() % action_feats_size) << " ";
+        }
       }
       examples.push_back(slot_ss.str());
     }
@@ -201,8 +211,9 @@ static std::vector<multi_ex> load_examples(VW::workspace* vw, const std::vector<
 static void benchmark_multi(
     benchmark::State& state, const std::vector<std::vector<std::string>>& examples_str, const std::string& cmd)
 {
-  auto vw = VW::initialize(cmd, nullptr, false, nullptr, nullptr);
-  std::vector<multi_ex> examples_vec = load_examples(vw, examples_str);
+  auto args = VW::split_command_line(cmd);
+  auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
+  std::vector<multi_ex> examples_vec = load_examples(vw.get(), examples_str);
 
   for (auto _ : state)
   {
@@ -210,14 +221,14 @@ static void benchmark_multi(
     benchmark::ClobberMemory();
   }
   for (multi_ex examples : examples_vec) { vw->finish_example(examples); }
-  VW::finish(*vw);
 }
 
 static void benchmark_multi_predict(
     benchmark::State& state, const std::vector<std::vector<std::string>>& examples_str, const std::string& cmd)
 {
-  auto vw = VW::initialize(cmd, nullptr, false, nullptr, nullptr);
-  std::vector<multi_ex> examples_vec = load_examples(vw, examples_str);
+  auto args = VW::split_command_line(cmd);
+  auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
+  std::vector<multi_ex> examples_vec = load_examples(vw.get(), examples_str);
 
   for (multi_ex examples : examples_vec) { vw->learn(examples); }
 
@@ -227,7 +238,6 @@ static void benchmark_multi_predict(
     benchmark::ClobberMemory();
   }
   for (multi_ex examples : examples_vec) { vw->finish_example(examples); }
-  VW::finish(*vw);
 }
 
 BENCHMARK_CAPTURE(bench_text, 120_string_fts, get_x_string_fts(120));
@@ -271,43 +281,56 @@ BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_diff_char_no_interactions,
 BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_diff_char_interactions, gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, false, 3),
     "--ccb_explore_adf --quiet -q ::")
     ->MinTime(15.0);
+// CCB predict with quadratic interactions
+// 20 slots, 20 context features,  30 actions, 20 action features each
+BENCHMARK_CAPTURE(benchmark_multi_predict, ccb_adf_diff_char_interactions_predict,
+    gen_ccb_examples(1,  // num_examples in dataset
+        30,              // shared_feats_size
+        20,              // shared_feats_count (actual number of shared features in example)
+        30,              // actions_per_example
+        1,               // feature_groups_size
+        1,               // feature_groups_count
+        30,              // action_feats_size
+        20,              // action_feats_count
+        false,           // same_first_char
+        20               // slots_per_example
+        ),
+    "--ccb_explore_adf --quiet -q ::")
+    ->MinTime(15.0);
 BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_same_char_no_interactions,
     gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, true, 3), "--ccb_explore_adf --quiet")
     ->MinTime(15.0);
 BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_same_char_interactions, gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, true, 3),
     "--ccb_explore_adf --quiet -q ::")
     ->MinTime(15.0);
-#ifdef BUILD_LARGE_ACTION_SPACE
 
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_medium_300_onestep,
-    gen_cb_examples(1, 50, 10, 300, 1, 1, 20, 10, false),
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_300actions, gen_cb_examples(1, 50, 10, 300, 5, 5, 20, 10, false),
     "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet")
     ->MinTime(15.0)
     ->UseRealTime()
     ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_medium_300_onestep_max_threads,
-    gen_cb_examples(1, 50, 10, 300, 1, 1, 20, 10, false),
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_300actions_max_threads,
+    gen_cb_examples(1, 50, 10, 300, 5, 5, 20, 10, false),
     "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --thread_pool_size " +
         std::to_string(std::thread::hardware_concurrency()))
     ->MinTime(15.0)
     ->UseRealTime()
     ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_medium_300_plaincb,
-    gen_cb_examples(1, 50, 10, 300, 1, 1, 20, 10, false), "--cb_explore_adf -q :: --quiet")
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_300actions_plaincb,
+    gen_cb_examples(1, 50, 10, 300, 5, 5, 20, 10, false), "--cb_explore_adf -q :: --quiet")
     ->MinTime(15.0)
     ->UseRealTime()
     ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_small_500_onestep,
-    gen_cb_examples(1, 50, 10, 500, 5, 5, 20, 10, false),
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_500actions, gen_cb_examples(1, 50, 10, 500, 5, 5, 20, 10, false),
     "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet")
     ->MinTime(15.0)
     ->UseRealTime()
     ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_small_500_onestep_max_threads,
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_500actions_max_threads,
     gen_cb_examples(1, 50, 10, 500, 5, 5, 20, 10, false),
     "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --thread_pool_size " +
         std::to_string(std::thread::hardware_concurrency()))
@@ -315,113 +338,86 @@ BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_small_500_onestep_max_threads,
     ->UseRealTime()
     ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_small_500_plaincb,
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_500actions_plaincb,
     gen_cb_examples(1, 50, 10, 500, 5, 5, 20, 10, false), "--cb_explore_adf -q :: --quiet")
     ->MinTime(15.0)
     ->UseRealTime()
     ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_small_1k_onestep,
-    gen_cb_examples(1, 50, 10, 1000, 5, 5, 20, 10, false),
-    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet")
+BENCHMARK_CAPTURE(benchmark_multi, cb_adf_no_namespaces_sparse, gen_cb_examples(100, 7, 3, 6, 1, 4, 14, 2, false),
+    "--cb_explore_adf --quiet --sparse_weights")
+    ->MinTime(15.0);
+BENCHMARK_CAPTURE(benchmark_multi, cb_adf_diff_char_no_interactions_sparse,
+    gen_cb_examples(100, 7, 3, 6, 3, 4, 14, 2, false), "--cb_explore_adf --quiet --sparse_weights")
+    ->MinTime(15.0);
+BENCHMARK_CAPTURE(benchmark_multi, cb_adf_diff_char_interactions_sparse,
+    gen_cb_examples(100, 7, 3, 6, 3, 4, 14, 2, false), "--cb_explore_adf --quiet -q :: --sparse_weights")
+    ->MinTime(15.0);
+BENCHMARK_CAPTURE(benchmark_multi, cb_adf_same_char_no_interactions_sparse,
+    gen_cb_examples(100, 7, 3, 6, 3, 4, 14, 2, true), "--cb_explore_adf --quiet --sparse_weights")
+    ->MinTime(15.0);
+BENCHMARK_CAPTURE(benchmark_multi, cb_adf_same_char_interactions_sparse,
+    gen_cb_examples(100, 7, 3, 6, 3, 4, 14, 2, true), "--cb_explore_adf --quiet -q :: --sparse_weights")
+    ->MinTime(15.0);
+BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_no_namespaces_sparse, gen_ccb_examples(50, 7, 3, 6, 1, 4, 14, 2, false, 3),
+    "--ccb_explore_adf --quiet --sparse_weights")
+    ->MinTime(15.0);
+BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_diff_char_no_interactions_sparse,
+    gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, false, 3), "--ccb_explore_adf --quiet --sparse_weights")
+    ->MinTime(15.0);
+BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_diff_char_interactions_sparse,
+    gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, false, 3), "--ccb_explore_adf --quiet -q :: --sparse_weights")
+    ->MinTime(15.0);
+// CCB predict with quadratic interactions
+// 20 slots, 20 context features,  30 actions, 20 action features each
+BENCHMARK_CAPTURE(benchmark_multi_predict, ccb_adf_diff_char_interactions_predict_sparse,
+    gen_ccb_examples(1,  // num_examples in dataset
+        30,              // shared_feats_size
+        20,              // shared_feats_count (actual number of shared features in example)
+        30,              // actions_per_example
+        1,               // feature_groups_size
+        1,               // feature_groups_count
+        30,              // action_feats_size
+        20,              // action_feats_count
+        false,           // same_first_char
+        20               // slots_per_example
+        ),
+    "--ccb_explore_adf --quiet -q :: --sparse_weights")
+    ->MinTime(15.0);
+BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_same_char_no_interactions_sparse,
+    gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, true, 3), "--ccb_explore_adf --quiet --sparse_weights")
+    ->MinTime(15.0);
+BENCHMARK_CAPTURE(benchmark_multi, ccb_adf_same_char_interactions_sparse,
+    gen_ccb_examples(50, 7, 3, 6, 3, 4, 14, 2, true, 3), "--ccb_explore_adf --quiet -q :: --sparse_weights")
+    ->MinTime(15.0);
+
+#ifdef VW_FEAT_LAS_SIMD_ENABLED
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_300actions_10features_1thread,
+    gen_cb_examples(1, 50000, 10, 300, 5, 5, 20000, 10, false),
+    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --thread_pool_size 0")
     ->MinTime(15.0)
     ->UseRealTime()
     ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_small_1k_onestep_max_threads,
-    gen_cb_examples(1, 50, 10, 1000, 5, 5, 20, 10, false),
-    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --thread_pool_size " +
-        std::to_string(std::thread::hardware_concurrency()))
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_300actions_10features_1thread_simd,
+    gen_cb_examples(1, 50000, 10, 300, 5, 5, 20000, 10, false),
+    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --thread_pool_size 0 "
+    "--las_hint_explicit_simd")
     ->MinTime(15.0)
     ->UseRealTime()
     ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_small_1k_plaincb,
-    gen_cb_examples(1, 50, 10, 1000, 5, 5, 20, 10, false), "--cb_explore_adf -q :: --quiet")
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_300actions_20features_1thread,
+    gen_cb_examples(1, 50000, 20, 300, 5, 5, 20000, 20, false),
+    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --thread_pool_size 0")
     ->MinTime(15.0)
     ->UseRealTime()
     ->Unit(benchmark::kMillisecond);
 
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_medium_500_onestep,
-    gen_cb_examples(1, 50, 20, 500, 5, 5, 20, 10, false),
-    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet")
-    ->MinTime(15.0)
-    ->UseRealTime()
-    ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_medium_500_onestep_max_threads,
-    gen_cb_examples(1, 50, 20, 500, 5, 5, 20, 10, false),
-    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --thread_pool_size " +
-        std::to_string(std::thread::hardware_concurrency()))
-    ->MinTime(15.0)
-    ->UseRealTime()
-    ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_medium_500_plaincb,
-    gen_cb_examples(1, 50, 20, 500, 5, 5, 20, 10, false), "--cb_explore_adf -q :: --quiet")
-    ->MinTime(15.0)
-    ->UseRealTime()
-    ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_medium_1k_onestep,
-    gen_cb_examples(1, 50, 20, 1000, 5, 5, 20, 10, false),
-    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet")
-    ->MinTime(15.0)
-    ->UseRealTime()
-    ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_medium_1k_onestep_max_threads,
-    gen_cb_examples(1, 50, 20, 1000, 5, 5, 20, 10, false),
-    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --thread_pool_size " +
-        std::to_string(std::thread::hardware_concurrency()))
-    ->MinTime(15.0)
-    ->UseRealTime()
-    ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_medium_1k_plaincb,
-    gen_cb_examples(1, 50, 20, 1000, 5, 5, 20, 10, false), "--cb_explore_adf -q :: --quiet")
-    ->MinTime(15.0)
-    ->UseRealTime()
-    ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_large_500_onestep,
-    gen_cb_examples(1, 50, 50, 500, 5, 5, 20, 10, false),
-    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet")
-    ->MinTime(15.0)
-    ->UseRealTime()
-    ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_large_500_onestep_max_threads,
-    gen_cb_examples(1, 50, 50, 500, 5, 5, 20, 10, false),
-    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --thread_pool_size " +
-        std::to_string(std::thread::hardware_concurrency()))
-    ->MinTime(15.0)
-    ->UseRealTime()
-    ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_large_500_plaincb,
-    gen_cb_examples(1, 50, 50, 500, 5, 5, 20, 10, false), "--cb_explore_adf -q :: --quiet")
-    ->MinTime(15.0)
-    ->UseRealTime()
-    ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_large_1k_onestep,
-    gen_cb_examples(1, 50, 50, 1000, 5, 5, 20, 10, false),
-    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet")
-    ->MinTime(15.0)
-    ->UseRealTime()
-    ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_large_1k_onestep_max_threads,
-    gen_cb_examples(1, 50, 50, 1000, 5, 5, 20, 10, false),
-    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --thread_pool_size " +
-        std::to_string(std::thread::hardware_concurrency()))
-    ->MinTime(15.0)
-    ->UseRealTime()
-    ->Unit(benchmark::kMillisecond);
-
-BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_large_1k_plaincb,
-    gen_cb_examples(1, 50, 50, 1000, 5, 5, 20, 10, false), "--cb_explore_adf -q :: --quiet")
+BENCHMARK_CAPTURE(benchmark_multi_predict, cb_las_300actions_20features_1thread_simd,
+    gen_cb_examples(1, 50000, 20, 300, 5, 5, 20000, 20, false),
+    "--cb_explore_adf --large_action_space -q :: --max_actions 20 --quiet --thread_pool_size 0 "
+    "--las_hint_explicit_simd")
     ->MinTime(15.0)
     ->UseRealTime()
     ->Unit(benchmark::kMillisecond);

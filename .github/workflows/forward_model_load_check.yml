@@ -1,7 +1,7 @@
-name: Model checks
+name: Forward Model checks
 
 # This file is for checking that models generated from newer VW code do not cause crashes when loaded into older VW code
-# Generate a model using latest wheel and load the same model using the latest vw python release
+# Generate a model using latest wheel and load the same model using the latest vw master branch
 
 on:
   push:
@@ -55,29 +55,35 @@ jobs:
         shell: bash
         run: |
           pip install built_wheel/*.whl
-          python ./test/run_tests_model_gen_and_load.py --generate_models
+          python ./test/run_tests_model_gen_and_load.py --generate_models --skip_pr_tests "${{ github.event.pull_request.title }}"
       - name: Upload generated file
         uses: actions/upload-artifact@v2
         with:
           name: vw_generated_models
-          path: ~/.vw_runtests_model_gen_working_dir/test_models/*
+          path: ~/.vw_runtests_model_gen_working_dir/*
           if-no-files-found: error
   test-latest-model:
-    name: Test latest model with previous release
+    name: Test latest model with current master
+    container:
+      image: vowpalwabbit/manylinux2010-build:latest
     needs: generate-latest-model
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v1
         with:
-          python-version: '3.10' 
+          submodules: recursive
       - uses: actions/download-artifact@v1
         with:
           name: vw_generated_models
-          path: .vw_runtests_model_gen_working_dir/test_models
-      - name: Test loading model with latest release
+          path: .vw_runtests_model_gen_working_dir
+      - name: Test loading model with current master
         shell: bash
         run: |
           mv .vw_runtests_model_gen_working_dir ~
-          pip install vowpalwabbit
-          python ./test/run_tests_model_gen_and_load.py --load_models
+          git clone --recursive https://github.com/VowpalWabbit/vowpal_wabbit.git
+          cd vowpal_wabbit
+          /opt/python/cp310-cp310/bin/pip wheel . -w wheel_last_commit/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='/opt/python/cp310-cp310/include/python3.10/'" --verbose
+          auditwheel repair wheel_last_commit/*whl -w audit_last_commit/
+          /opt/python/cp310-cp310/bin/python3.10 -m pip install wheel_last_commit/*.whl
+          cd ..
+          /opt/python/cp310-cp310/bin/python3.10 ./test/run_tests_model_gen_and_load.py --load_models --skip_missing_args --skip_pr_tests "${{ github.event.pull_request.title }}"

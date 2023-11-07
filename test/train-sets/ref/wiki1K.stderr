@@ -5,24 +5,17 @@ Num weight bits = 13
 learning rate = 1
 initial_t = 0
 power_t = 0.5
-Enabled reductions: lda
-Input label = nolabel
-Output pred = scalars
-average  since         example        example        current        current  current 
-loss     last          counter         weight          label        predict features 
-10.14865 10.14865            1            1.0           none              0      732 
-10.22642 10.30419            2            2.0           none              0       27 
-10.22696 10.22750            4            4.0           none              0       53 
-10.30758 10.38819            8            8.0           none              0       60 
-10.33157 10.35556           16           16.0           none              0       26 
-10.45796 10.58435           32           32.0           none              0      125 
-10.47445 10.49093           64           64.0           none              0      313 
-10.40357 10.33270          128          128.0           none              0       50 
-9.956893 9.510207          256          256.0           none              0       33 
+Enabled learners: lda
+Input label = NOLABEL
+Output pred = NOPRED
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+10.40360 10.40360          128          128.0           none              0      732
+9.956974 9.510342          256          256.0           none              0      102
 
 finished run
 number of examples = 256
 weighted example sum = 256.000000
 weighted label sum = 0.000000
-average loss = 9.956893
+average loss = 9.956974
 total feature number = 22158

@@ -2,24 +2,68 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "vw/core/confidence_sequence.h"
+#if !defined(__APPLE__) && !defined(_WIN32)
+#  define __STDCPP_MATH_SPEC_FUNCS__ 201003L
+#  define __STDCPP_WANT_MATH_SPEC_FUNCS__ 1
+#endif
 
+#include "vw/core/estimators/confidence_sequence.h"
+
+#include "vw/core/metric_sink.h"
 #include "vw/core/model_utils.h"
 
+#include <algorithm>
 #include <cassert>
 #include <cmath>
 
 namespace VW
 {
-namespace confidence_sequence
+namespace details
 {
-ConfidenceSequence::ConfidenceSequence(double alpha, double rmin_init, double rmax_init, bool adjust)
+
+incremental_f_sum incremental_f_sum::operator+=(double x)
+{
+  int i = 0;
+  for (double y : this->partials)
+  {
+    if (std::abs(x) < std::abs(y)) { std::swap(x, y); }
+    double hi = x + y;
+    double lo = y - (hi - x);
+    if (lo != 0.0)
+    {
+      this->partials[i] = lo;
+      ++i;
+    }
+    x = hi;
+  }
+  this->partials.resize(i + 1);
+  this->partials[i] = x;
+  return *this;
+}
+incremental_f_sum incremental_f_sum::operator+(incremental_f_sum const& other) const
+{
+  incremental_f_sum result;
+  result.partials = this->partials;
+  for (double y : other.partials) { result += y; }
+  return result;
+}
+details::incremental_f_sum::operator double() const
+{
+  double result = 0.0;
+  for (double x : this->partials) { result += x; }
+  return result;
+}
+}  // namespace details
+
+namespace estimators
+{
+confidence_sequence::confidence_sequence(double alpha, double rmin_init, double rmax_init, bool adjust)
     : alpha(alpha), rmin_init(rmin_init), rmax_init(rmax_init), adjust(adjust)
 {
   reset_stats();
 }
 
-void ConfidenceSequence::update(double w, double r, double p_drop, double n_drop)
+void confidence_sequence::update(double w, double r, double p_drop, double n_drop)
 {
   assert(w >= 0.0);
   assert(0.0 <= p_drop && p_drop < 1.0);
@@ -38,10 +82,10 @@ void ConfidenceSequence::update(double w, double r, double p_drop, double n_drop
 
   if (n_drop == -1.0) { n_drop = p_drop / (1.0 - p_drop); }
 
-  double sumXlow = 0.0;
-  double Xhatlow = 0.0;
-  double sumXhigh = 0.0;
-  double Xhathigh = 0.0;
+  double sumXlow = 0.0;   // NOLINT
+  double Xhatlow = 0.0;   // NOLINT
+  double sumXhigh = 0.0;  // NOLINT
+  double Xhathigh = 0.0;  // NOLINT
 
   if (n_drop > 0.0)
   {
@@ -80,20 +124,19 @@ void ConfidenceSequence::update(double w, double r, double p_drop, double n_drop
   ++t;
 }
 
-void ConfidenceSequence::persist(metric_sink& metrics, const std::string& suffix)
+void confidence_sequence::persist(metric_sink& metrics, const std::string& suffix) const
 {
   metrics.set_uint("upcnt" + suffix, update_count);
   metrics.set_float("lb" + suffix, lower_bound());
   metrics.set_float("ub" + suffix, upper_bound());
-  metrics.set_float("w" + suffix, last_w);
-  metrics.set_float("r" + suffix, last_r);
+  metrics.set_float("last_w" + suffix, last_w);
+  metrics.set_float("last_r" + suffix, last_r);
 }
 
-void ConfidenceSequence::reset_stats()
+void confidence_sequence::reset_stats()
 {
   rmin = rmin_init;
   rmax = rmax_init;
-
   eta = 1.1;
   s = 1.1;
   t = 0;
@@ -115,31 +158,31 @@ void ConfidenceSequence::reset_stats()
   last_r = 0.0;
 }
 
-float ConfidenceSequence::lower_bound()
+float confidence_sequence::lower_bound() const
 {
   if (t == 0 || rmin == rmax) { return static_cast<float>(rmin); }
 
   double sumvlow = (sumwsqrsq - 2.0 * rmin * sumwsqr + std::pow(rmin, 2) * sumwsq) / std::pow(rmax - rmin, 2) -
       2.0 * (sumwrxhatlow - rmin * sumwxhatlow) / (rmax - rmin) + sumxhatlowsq;
-  double sumXlow = (sumwr - sumw * rmin) / (rmax - rmin);
+  double sumXlow = (sumwr - sumw * rmin) / (rmax - rmin);  // NOLINT
   double l = lblogwealth(sumXlow, sumvlow, eta, s, alpha / 2.0);
 
   return static_cast<float>(rmin + l * (rmax - rmin));
 }
 
-float ConfidenceSequence::upper_bound()
+float confidence_sequence::upper_bound() const
 {
   if (t == 0 || rmin == rmax) { return static_cast<float>(rmax); }
 
   double sumvhigh = (sumwsqrsq - 2.0 * rmax * sumwsqr + std::pow(rmax, 2) * sumwsq) / std::pow(rmax - rmin, 2) +
       2.0 * (sumwrxhathigh - rmax * sumwxhathigh) / (rmax - rmin) + sumxhathighsq;
-  double sumXhigh = (sumw * rmax - sumwr) / (rmax - rmin);
+  double sumXhigh = (sumw * rmax - sumwr) / (rmax - rmin);  // NOLINT
   double u = 1.0 - lblogwealth(sumXhigh, sumvhigh, eta, s, alpha / 2.0);
 
   return static_cast<float>(rmin + u * (rmax - rmin));
 }
 
-double ConfidenceSequence::approxpolygammaone(double b)
+double confidence_sequence::approxpolygammaone(double b) const
 {
   assert(b >= 1.0);
   if (b > 10.0)
@@ -159,9 +202,9 @@ double ConfidenceSequence::approxpolygammaone(double b)
   }
 }
 
-double ConfidenceSequence::lblogwealth(double sumXt, double v, double eta, double s, double lb_alpha)
+double confidence_sequence::lblogwealth(double sumXt, double v, double eta, double s, double lb_alpha) const
 {
-#if !defined(__APPLE__) && !defined(_WIN32)
+#if !defined(__APPLE__) && !defined(_WIN32) && !defined(__EMSCRIPTEN__)
   double zeta_s = std::riemann_zeta(s);
 #else
   double zeta_s = 10.584448464950803;  // std::riemann_zeta(s) -- Assuming s=1.1 is constant
@@ -174,11 +217,11 @@ double ConfidenceSequence::lblogwealth(double sumXt, double v, double eta, doubl
   return std::max(
       0.0, (sumXt - std::sqrt(std::pow(gamma1, 2) * ll * v + std::pow(gamma2, 2) * std::pow(ll, 2)) - gamma2 * ll) / t);
 }
-}  // namespace confidence_sequence
+}  // namespace estimators
 
 namespace model_utils
 {
-size_t read_model_field(io_buf& io, VW::confidence_sequence::IncrementalFsum& ifs)
+size_t read_model_field(io_buf& io, VW::details::incremental_f_sum& ifs)
 {
   size_t bytes = 0;
   bytes += read_model_field(io, ifs.partials);
@@ -186,14 +229,14 @@ size_t read_model_field(io_buf& io, VW::confidence_sequence::IncrementalFsum& if
 }
 
 size_t write_model_field(
-    io_buf& io, const VW::confidence_sequence::IncrementalFsum& ifs, const std::string& upstream_name, bool text)
+    io_buf& io, const VW::details::incremental_f_sum& ifs, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, ifs.partials, upstream_name + "_partials", text);
   return bytes;
 }
 
-size_t read_model_field(io_buf& io, VW::confidence_sequence::ConfidenceSequence& im)
+size_t read_model_field(io_buf& io, VW::estimators::confidence_sequence& im)
 {
   size_t bytes = 0;
   bytes += read_model_field(io, im.alpha);
@@ -223,7 +266,7 @@ size_t read_model_field(io_buf& io, VW::confidence_sequence::ConfidenceSequence&
 }
 
 size_t write_model_field(
-    io_buf& io, const VW::confidence_sequence::ConfidenceSequence& im, const std::string& upstream_name, bool text)
+    io_buf& io, const VW::estimators::confidence_sequence& im, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, im.alpha, upstream_name + "_alpha", text);

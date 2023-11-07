@@ -6,7 +6,6 @@
 
 #include "vw/common/hash.h"
 #include "vw/common/string_view.h"
-#include "vw/core/v_array.h"
 #include "vw/io/io_adapter.h"
 
 #include <algorithm>
@@ -20,92 +19,38 @@
 
 #ifndef VW_NOEXCEPT
 #  include "vw/common/vw_exception.h"
+#  include "vw/common/vw_throw.h"
 #endif
 
 /* The i/o buffer can be conceptualized as an array below:
 **  _________________________________________________________________
 ** |__________|__________|__________|__________|__________|__________|
-** _buffer._begin        head       _buffer._end                     _buffer._end_array
+** _buffer.begin        head       _buffer.end                     _buffer.end_array
 **
-** _buffer._begin     = the beginning of the loaded values in the buffer
+** _buffer.begin     = the beginning of the loaded values in the buffer
 ** head               = the end of the last-read point in the buffer
-** _buffer._end       = the end of the loaded values from file
-** _buffer._end_array = the end of the allocated _buffer for the array
+** _buffer.end       = the end of the loaded values from file
+** _buffer.end_array = the end of the allocated _buffer for the array
 **
 ** The values are ordered so that:
-** _buffer._begin <= head <= _buffer._end <= _buffer._end_array
+** _buffer.begin <= head <= _buffer.end <= _buffer.end_array
 **
-** Initially _buffer._begin == head since no values have been read.
+** Initially _buffer.begin == head since no values have been read.
 **
-** The interval [head, _buffer._end] may be shifted down to _buffer._begin
+** The interval [head, _buffer.end] may be shifted down to _buffer.begin
 ** if the requested number of bytes to be read is larger than the interval size.
 ** This is done to avoid reallocating arrays as much as possible.
 */
+namespace VW
+{
 
 class io_buf
 {
-  // io_buf requires a grow only variant of v_array where it has access to the internals.
-  // It sets the begin, end and endarray members often and does not need the complexity
-  // of a generic container type, hence why a thin object is defined here.
-  struct internal_buffer
-  {
-    char* _begin = nullptr;
-    char* _end = nullptr;
-    char* _end_array = nullptr;
-
-    ~internal_buffer() { std::free(_begin); }
-
-    void realloc(size_t new_capacity)
-    {
-      // This specific internal buffer should only ever grow.
-      assert(new_capacity >= capacity());
-      const auto old_size = size();
-      char* temp = reinterpret_cast<char*>(std::realloc(_begin, sizeof(char) * new_capacity));
-      if (temp == nullptr)
-      {
-        // _begin still needs to be freed but the destructor will do it.
-        THROW_OR_RETURN("realloc of " << new_capacity << " failed in resize().  out of memory?");
-      }
-      _begin = temp;
-      _end = _begin + old_size;
-      _end_array = _begin + new_capacity;
-      memset(_end, 0, sizeof(char) * (_end_array - _end));
-    }
-
-    void shift_to_front(char* head_ptr)
-    {
-      assert(_end >= head_ptr);
-      const size_t space_left = _end - head_ptr;
-      // Only call memmove if we are within the bounds of the loaded buffer.
-      // Also, this ensures we don't memmove when head_ptr == _end_array which
-      // would be undefined behavior.
-      if (head_ptr >= _begin && head_ptr < _end) { std::memmove(_begin, head_ptr, space_left); }
-      _end = _begin + space_left;
-    }
-
-    size_t capacity() const { return _end_array - _begin; }
-    size_t size() const { return _end - _begin; }
-  };
-
-  // used to check-sum i/o files for corruption detection
-  bool _verify_hash = false;
-  uint32_t _hash = 0;
-  static constexpr size_t INITIAL_BUFF_SIZE = 1 << 16;
-
-  internal_buffer _buffer;
-  char* head = nullptr;
-
-  // file descriptor currently being used.
-  size_t _current = 0;
-
-  std::vector<std::unique_ptr<VW::io::reader>> input_files;
-  std::vector<std::unique_ptr<VW::io::writer>> output_files;
-
 public:
   io_buf()
   {
     _buffer.realloc(INITIAL_BUFF_SIZE);
-    head = _buffer._begin;
+    _head = _buffer.begin;
   }
 
   io_buf(io_buf& other) = delete;
@@ -113,8 +58,8 @@ public:
   io_buf(io_buf&& other) = delete;
   io_buf& operator=(io_buf&& other) = delete;
 
-  const std::vector<std::unique_ptr<VW::io::reader>>& get_input_files() const { return input_files; }
-  const std::vector<std::unique_ptr<VW::io::writer>>& get_output_files() const { return output_files; }
+  const std::vector<std::unique_ptr<VW::io::reader>>& get_input_files() const { return _input_files; }
+  const std::vector<std::unique_ptr<VW::io::writer>>& get_output_files() const { return _output_files; }
 
   void verify_hash(bool verify)
   {
@@ -132,14 +77,14 @@ public:
 
   void add_file(std::unique_ptr<VW::io::reader>&& file)
   {
-    assert(output_files.empty());
-    input_files.push_back(std::move(file));
+    assert(_output_files.empty());
+    _input_files.push_back(std::move(file));
   }
 
   void add_file(std::unique_ptr<VW::io::writer>&& file)
   {
-    assert(input_files.empty());
-    output_files.push_back(std::move(file));
+    assert(_input_files.empty());
+    _output_files.push_back(std::move(file));
   }
 
   /**
@@ -159,12 +104,12 @@ public:
    */
   bool is_resettable() const;
 
-  void set(char* p) { head = p; }
+  void set(char* p) { _head = p; }
 
   /// This function will return the number of input files AS WELL AS the number of output files. (because of legacy)
-  size_t num_files() const { return input_files.size() + output_files.size(); }
-  size_t num_input_files() const { return input_files.size(); }
-  size_t num_output_files() const { return output_files.size(); }
+  size_t num_files() const { return _input_files.size() + _output_files.size(); }
+  size_t num_input_files() const { return _input_files.size(); }
+  size_t num_output_files() const { return _output_files.size(); }
 
   // You can definitely call read directly on the reader object. This function hasn't been changed yet to reduce churn
   // in the refactor.
@@ -176,18 +121,18 @@ public:
   ssize_t fill(VW::io::reader* f)
   {
     // if the loaded values have reached the allocated space
-    if (_buffer._end_array - _buffer._end == 0)
+    if (_buffer.end_array - _buffer.end == 0)
     {  // reallocate to twice as much space
       size_t head_loc = unflushed_bytes_count();
       _buffer.realloc(_buffer.capacity() * 2);
-      head = _buffer._begin + head_loc;
+      _head = _buffer.begin + head_loc;
     }
     // read more bytes from file up to the remaining allocated space
-    ssize_t num_read = f->read(_buffer._end, _buffer._end_array - _buffer._end);
+    ssize_t num_read = f->read(_buffer.end, _buffer.end_array - _buffer.end);
     if (num_read >= 0)
     {
       // if some bytes were actually loaded, update the end of loaded values
-      _buffer._end += num_read;
+      _buffer.end += num_read;
       return num_read;
     }
 
@@ -197,21 +142,21 @@ public:
   // This has different meanings in write and read mode:
   //   - Write mode: Number of bytes that have not yet been flushed to the output device
   //   - Read mode: The offset of the position that has been read up to so far.
-  size_t unflushed_bytes_count() { return head - _buffer._begin; }
+  size_t unflushed_bytes_count() { return _head - _buffer.begin; }
 
   void flush();
 
   bool close_file()
   {
-    if (!input_files.empty())
+    if (!_input_files.empty())
     {
-      input_files.pop_back();
+      _input_files.pop_back();
       return true;
     }
 
-    if (!output_files.empty())
+    if (!_output_files.empty())
     {
-      output_files.pop_back();
+      _output_files.pop_back();
       return true;
     }
 
@@ -244,10 +189,7 @@ public:
     if (buf_read(read_head, sizeof(T)) < sizeof(T))
     {
       if (!debug_name.empty()) { THROW("Failed to read cache value: " << debug_name << ", with size: " << sizeof(T)); }
-      else
-      {
-        THROW("Failed to read cache value with size: " << sizeof(T));
-      }
+      else { THROW("Failed to read cache value with size: " << sizeof(T)); }
     }
     memcpy(&value, read_head, sizeof(T));
     return value;
@@ -300,9 +242,70 @@ public:
   size_t readto(char*& pointer, char terminal);
   size_t copy_to(void* dst, size_t max_size);
   void replace_buffer(char* buf, size_t capacity);
-  char* buffer_start() { return _buffer._begin; }  // This should be replaced with slicing.
+  char* buffer_start() { return _buffer.begin; }  // This should be replaced with slicing.
+
+private:
+  // io_buf requires a grow only variant of v_array where it has access to the internals.
+  // It sets the begin, end and endarray members often and does not need the complexity
+  // of a generic container type, hence why a thin object is defined here.
+  class internal_buffer
+  {
+  public:
+    char* begin = nullptr;
+    char* end = nullptr;
+    char* end_array = nullptr;
+
+    ~internal_buffer() { std::free(begin); }
+
+    void realloc(size_t new_capacity)
+    {
+      // This specific internal buffer should only ever grow.
+      assert(new_capacity >= capacity());
+      const auto old_size = size();
+      char* temp = reinterpret_cast<char*>(std::realloc(begin, sizeof(char) * new_capacity));
+      if (temp == nullptr)
+      {
+        // begin still needs to be freed but the destructor will do it.
+        THROW_OR_RETURN("realloc of " << new_capacity << " failed in resize().  out of memory?");
+      }
+      begin = temp;
+      end = begin + old_size;
+      end_array = begin + new_capacity;
+      memset(end, 0, sizeof(char) * (end_array - end));
+    }
+
+    void shift_to_front(char* head_ptr)
+    {
+      assert(end >= head_ptr);
+      const size_t space_left = end - head_ptr;
+      // Only call memmove if we are within the bounds of the loaded buffer.
+      // Also, this ensures we don't memmove when head_ptr == end_array which
+      // would be undefined behavior.
+      if (head_ptr >= begin && head_ptr < end) { std::memmove(begin, head_ptr, space_left); }
+      end = begin + space_left;
+    }
+
+    size_t capacity() const { return end_array - begin; }
+    size_t size() const { return end - begin; }
+  };
+
+  // used to check-sum i/o files for corruption detection
+  bool _verify_hash = false;
+  uint32_t _hash = 0;
+  static constexpr size_t INITIAL_BUFF_SIZE = 1 << 16;
+
+  internal_buffer _buffer;
+  char* _head = nullptr;
+
+  // file descriptor currently being used.
+  size_t _current = 0;
+
+  std::vector<std::unique_ptr<VW::io::reader>> _input_files;
+  std::vector<std::unique_ptr<VW::io::writer>> _output_files;
 };
 
+namespace details
+{
 inline size_t bin_read(io_buf& i, char* data, size_t len)
 {
   uint32_t obj_len;
@@ -368,18 +371,22 @@ inline size_t bin_text_read_write_fixed_validated(
   }
   return nbytes;
 }
+}  // namespace details
+}  // namespace VW
 
-#define writeit(what, str)                                                              \
-  do                                                                                    \
-  {                                                                                     \
-    msg << str << " = " << what << " ";                                                 \
-    bin_text_read_write_fixed(model_file, (char*)&what, sizeof(what), read, msg, text); \
+using io_buf VW_DEPRECATED("io_buf moved into VW namespace") = VW::io_buf;
+
+// Model utils functions should be used instead.
+#define DEPRECATED_WRITEIT(what, str)                                                                  \
+  do {                                                                                                 \
+    msg << str << " = " << what << " ";                                                                \
+    ::VW::details::bin_text_read_write_fixed(model_file, (char*)&what, sizeof(what), read, msg, text); \
   } while (0);
 
-#define writeitvar(what, str, mywhat)                                                       \
-  auto mywhat = (what);                                                                     \
-  do                                                                                        \
-  {                                                                                         \
-    msg << str << " = " << mywhat << " ";                                                   \
-    bin_text_read_write_fixed(model_file, (char*)&mywhat, sizeof(mywhat), read, msg, text); \
+// Model utils functions should be used instead.
+#define DEPRECATED_WRITEITVAR(what, str, mywhat)                                                           \
+  auto mywhat = (what);                                                                                    \
+  do {                                                                                                     \
+    msg << str << " = " << mywhat << " ";                                                                  \
+    ::VW::details::bin_text_read_write_fixed(model_file, (char*)&mywhat, sizeof(mywhat), read, msg, text); \
   } while (0);

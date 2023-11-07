@@ -31,10 +31,7 @@ void run(Search::search& sch, VW::multi_ex& /*ec*/)
 {
   task_data* td = sch.get_task_data<task_data>();
   if (td->run_f) { td->run_f(sch); }
-  else
-  {
-    sch.get_vw_pointer_unsafe().logger.err_warn("HookTask::structured_predict called before hook is set");
-  }
+  else { sch.get_vw_pointer_unsafe().logger.err_warn("HookTask::structured_predict called before hook is set"); }
 }
 
 void run_setup(Search::search& sch, VW::multi_ex& /*ec*/)

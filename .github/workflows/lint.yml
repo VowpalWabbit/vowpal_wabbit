@@ -9,7 +9,7 @@ on:
     branches:
       - '*'
 
-concurrency: 
+concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
@@ -80,7 +80,7 @@ jobs:
     name: lint.python.formatting
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
       - name: Setup python
@@ -93,11 +93,11 @@ jobs:
           python -m black --check . --exclude ext_libs/ || (echo -e "---\nTo fix, run:\n\tpython -m black . --exclude ext_libs"; exit 1)
   cpp-formatting:
     name: lint.c++.formatting
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
         with:
-          submodules: recursive
+          fetch-depth: 0
       - name: Install clang-format
         # This is only needed if the diff check runs as it installs 'clang-format-diff'
         # 'clang-format' is available by default
@@ -138,18 +138,21 @@ jobs:
           fi
   run-clang-tidy:
     name: lint.c++.clang-tidy
-    container:
-      image: vowpalwabbit/ubuntu2004-dev:latest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: recursive
-      - name: Install Ninja
-        shell: bash
+      - uses: actions/checkout@v3
+      - uses: cachix/install-nix-action@v18
+      - name: Run clang-tidy
         run: |
-          apt update
-          apt install -y libspdlog-dev libfmt-dev libboost-math-dev
-      - name: Run clang tidy
-        shell: bash
-        run: ./.scripts/linux/run-clang-tidy.sh
+          echo "::group::nix develop -c vw-clang-tidy"
+          nix develop -c vw-clang-tidy | tee tidy_out.txt || true
+          # Prevent false positives for THROW("error: ...") by using the prepended :
+          grep -A 3 ": error: " tidy_out.txt > tidy_onlyerrors.txt || true
+          echo "::endgroup::"
+          if [ -s tidy_onlyerrors.txt ]; then
+            # file has contents
+            echo "::group::clang-tidy errors"
+            cat tidy_onlyerrors.txt
+            echo "::endgroup::"
+            exit 11
+          fi

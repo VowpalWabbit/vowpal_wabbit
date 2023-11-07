@@ -1,0 +1,2 @@
+[warning] model file has set of {-q, --cubic, --interactions} settings stored, but they'll be OVERRIDDEN by set of {-q, --cubic, --interactions} settings from command line.
+[info] VW 9.0.0 introduced a change to the default model save behavior. Please use '--predict_only_model' when using either '--invert_hash' or '--readable_model' to get the old behavior. Details: https://vowpalwabbit.org/link/1

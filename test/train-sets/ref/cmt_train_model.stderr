@@ -7,22 +7,22 @@ Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
-Enabled reductions: gd, scorer-identity, memory_tree
-Input label = multiclass
-Output pred = multiclass
-average  since         example        example        current        current  current 
-loss     last          counter         weight          label        predict features 
-1.000000 1.000000            1            1.0            796              0       46 
-1.000000 1.000000            2            2.0            712            796       23 
-1.000000 1.000000            4            4.0            590            796       20 
-1.000000 1.000000            8            8.0            835            676       46 
-1.000000 1.000000           16           16.0            995            608       40 
-0.968750 0.937500           32           32.0            200            532       24 
-0.984375 1.000000           64           64.0            697            796       41 
+Enabled learners: gd, scorer-identity, memory_tree
+Input label = MULTICLASS
+Output pred = MULTICLASS
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+1.000000 1.000000            1            1.0            796              0       46
+1.000000 1.000000            2            2.0            712            796       23
+1.000000 1.000000            4            4.0            590            676       20
+1.000000 1.000000            8            8.0            835            712       46
+1.000000 1.000000           16           16.0            995            331       40
+0.968750 0.937500           32           32.0            200            898       24
+0.984375 1.000000           64           64.0            697            796       41
 
 finished run
 number of examples = 100
 weighted example sum = 100.000000
 weighted label sum = 0.000000
-average loss = 0.960000
+average loss = 0.970000
 total feature number = 3111

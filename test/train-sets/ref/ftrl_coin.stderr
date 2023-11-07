@@ -10,19 +10,19 @@ Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
-Enabled reductions: ftrl-Coin Betting, scorer-identity, count_label
-Input label = simple
-Output pred = scalar
-average  since         example        example        current        current  current 
-loss     last          counter         weight          label        predict features 
-1.000000 1.000000            1            1.0         1.0000         0.0000       51 
-0.503420 0.006841            2            2.0         0.0000         0.0827      104 
-0.253545 0.003669            4            4.0         0.0000         0.0000      135 
-0.250782 0.248019            8            8.0         0.0000         0.0259      146 
-0.278089 0.305396           16           16.0         1.0000         0.1788       24 
-0.292183 0.306278           32           32.0         0.0000         0.3479       32 
-0.263581 0.234979           64           64.0         0.0000         0.0007       61 
-0.233750 0.203920          128          128.0         1.0000         0.7720      106 
+Enabled learners: ftrl-Coin Betting, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+1.000000 1.000000            1            1.0         1.0000         0.0000       51
+0.503420 0.006841            2            2.0         0.0000         0.0000      104
+0.253545 0.003669            4            4.0         0.0000         0.0291      135
+0.250782 0.248019            8            8.0         0.0000         0.0620      146
+0.278089 0.305396           16           16.0         1.0000         0.1084       24
+0.292183 0.306278           32           32.0         0.0000         0.1627       32
+0.263581 0.234979           64           64.0         0.0000         0.0626       61
+0.233750 0.203920          128          128.0         1.0000         0.7347      106
 
 finished run
 number of examples = 200

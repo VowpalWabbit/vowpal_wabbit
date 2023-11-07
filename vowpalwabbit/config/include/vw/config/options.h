@@ -17,8 +17,9 @@ namespace VW
 {
 namespace config
 {
-struct options_i
+class options_i
 {
+public:
   void add_and_parse(const option_group_definition& group);
   bool add_parse_and_check_necessary(const option_group_definition& group);
 
@@ -57,16 +58,16 @@ struct options_i
   VW_ATTR(nodiscard) virtual std::vector<std::string> check_unregistered() = 0;
   virtual ~options_i() = default;
 
-  static constexpr const char* m_default_tint = "general";
+  static constexpr const char* DEFAULT_TINT = "general";
 
 protected:
   // Collection that tracks for now
   // setup_function_id (str) -> list of option_group_definition
-  std::map<std::string, std::vector<option_group_definition>> m_option_group_dic;
-  std::vector<option_group_definition> m_option_group_definitions;
-  std::string m_current_reduction_tint = m_default_tint;
-  std::map<std::string, std::shared_ptr<base_option>> m_options;
-  std::map<char, std::shared_ptr<base_option>> m_short_options;
+  std::map<std::string, std::vector<option_group_definition>> _option_group_dic;
+  std::vector<option_group_definition> _option_group_definitions;
+  std::string _current_reduction_tint = DEFAULT_TINT;
+  std::map<std::string, std::shared_ptr<base_option>> _options;
+  std::map<char, std::shared_ptr<base_option>> _short_options;
 };
 }  // namespace config
 }  // namespace VW

@@ -7,7 +7,7 @@ power_t = 0.5
 using no cache
 Reading datafile = train-sets/rcv1_raw_cb_small.vw
 num sources = 1
-Enabled reductions: gd, scorer, csoaa_ldf, cb_adf, cb
+Enabled learners: gd, scorer, csoaa_ldf, cb_adf, cb
 average  since         example        example  current  current  current
 loss     last          counter         weight    label  predict features
 2.000000 2.000000            1            1.0    known        1      280

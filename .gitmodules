@@ -19,3 +19,12 @@
 [submodule "ext_libs/vcpkg"]
 	path = ext_libs/vcpkg
 	url = ../../microsoft/vcpkg.git
+[submodule "ext_libs/sse2neon"]
+	path = ext_libs/sse2neon/sse2neon
+	url = https://github.com/DLTcollab/sse2neon
+[submodule "ext_libs/ensmallen"]
+	path = ext_libs/ensmallen
+	url = https://github.com/mlpack/ensmallen.git
+[submodule "ext_libs/armadillo-code"]
+	path = ext_libs/armadillo-code
+	url = https://gitlab.com/conradsnicta/armadillo-code.git

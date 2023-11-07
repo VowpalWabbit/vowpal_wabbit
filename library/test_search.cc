@@ -1,4 +1,6 @@
 #include "libsearch.h"
+#include "vw/config/options_cli.h"
+#include "vw/core/memory.h"
 #include "vw/core/reductions/search/search_sequencetask.h"
 #include "vw/core/vw.h"
 
@@ -16,7 +18,7 @@ struct wt
   wt(std::string w, uint32_t t) : word(std::move(w)), tag(t) {}
 };
 
-class SequenceLabelerTask : public SearchTask<std::vector<wt>, std::vector<uint32_t> >
+class SequenceLabelerTask : public SearchTask<std::vector<wt>, std::vector<uint32_t> >  // NOLINT
 {
 public:
   SequenceLabelerTask(VW::workspace& vw_obj)
@@ -42,7 +44,7 @@ public:
     }
   }
 
-  void _run2(Search::search& sch, std::vector<wt>& input_example, std::vector<uint32_t>& output)
+  void _run2(Search::search& sch, std::vector<wt>& input_example, std::vector<uint32_t>& output)  // NOLINT
   {
     auto& vw_obj = sch.get_vw_pointer_unsafe();
     output.clear();
@@ -72,7 +74,10 @@ void run(VW::workspace& vw_obj)
   SequenceLabelerTask task(vw_obj);
   std::vector<wt> data;
   std::vector<uint32_t> output;
-  uint32_t DET = 1, NOUN = 2, VERB = 3, ADJ = 4;
+  static constexpr const uint32_t DET = 1;
+  static constexpr const uint32_t NOUN = 2;
+  static constexpr const uint32_t VERB = 3;
+  static constexpr const uint32_t ADJ = 4;
   data.push_back(wt("the", DET));
   data.push_back(wt("monster", NOUN));
   data.push_back(wt("ate", VERB));
@@ -93,18 +98,19 @@ void train()
 {
   // initialize VW as usual, but use 'hook' as the search_task
   cerr << endl << endl << "##### train() #####" << endl << endl;
-  VW::workspace& vw_obj =
-      *VW::initialize("--search 4 --quiet --search_task hook --example_queue_limit 1024 -f my_model");
-  run(vw_obj);
-  VW::finish(vw_obj, false);
+  auto vw_obj = VW::initialize(VW::make_unique<VW::config::options_cli>(std::vector<std::string>{
+      "--search", "4", "--quiet", "--search_task", "hook", "--example_queue_limit", "1024", "-f", "my_model"}));
+  run(*vw_obj);
+  vw_obj->finish();
 }
 
 void predict()
 {
   cerr << endl << endl << "##### predict() #####" << endl << endl;
-  VW::workspace& vw_obj = *VW::initialize("--quiet -t --example_queue_limit 1024 -i my_model");
-  run(vw_obj);
-  VW::finish(vw_obj, false);
+  auto vw_obj = VW::initialize(VW::make_unique<VW::config::options_cli>(
+      std::vector<std::string>{"--quiet", "-t", "--example_queue_limit", "1024", "-i", "my_model"}));
+  run(*vw_obj);
+  vw_obj->finish();
 }
 
 void test_buildin_task()
@@ -119,24 +125,26 @@ void test_buildin_task()
 
   // now, load that model using the BuiltInTask library
   cerr << endl << endl << "##### test BuiltInTask #####" << endl << endl;
-  VW::workspace& vw_obj = *VW::initialize("-t --search_task hook");
+
+  auto vw_obj =
+      VW::initialize(VW::make_unique<VW::config::options_cli>(std::vector<std::string>{"-t", "--search_task", "hook"}));
   {  // create a new scope for the task object
-    BuiltInTask task(vw_obj, &SequenceTask::task);
-    VW::multi_ex V;
-    V.push_back(VW::read_example(vw_obj, (char*)"1 | a"));
-    V.push_back(VW::read_example(vw_obj, (char*)"1 | a"));
-    V.push_back(VW::read_example(vw_obj, (char*)"1 | a"));
-    V.push_back(VW::read_example(vw_obj, (char*)"1 | a"));
-    V.push_back(VW::read_example(vw_obj, (char*)"1 | a"));
+    BuiltInTask task(*vw_obj, &SequenceTask::task);
+    VW::multi_ex mult_ex;
+    mult_ex.push_back(VW::read_example(*vw_obj, (char*)"1 | a"));
+    mult_ex.push_back(VW::read_example(*vw_obj, (char*)"1 | a"));
+    mult_ex.push_back(VW::read_example(*vw_obj, (char*)"1 | a"));
+    mult_ex.push_back(VW::read_example(*vw_obj, (char*)"1 | a"));
+    mult_ex.push_back(VW::read_example(*vw_obj, (char*)"1 | a"));
     std::vector<action> out;
-    task.predict(V, out);
+    task.predict(mult_ex, out);
     cerr << "out (should be 1 2 3 4 3) =";
     for (size_t i = 0; i < out.size(); i++) { cerr << " " << out[i]; }
     cerr << endl;
-    for (size_t i = 0; i < V.size(); i++) { VW::finish_example(vw_obj, *V[i]); }
+    for (size_t i = 0; i < mult_ex.size(); i++) { VW::finish_example(*vw_obj, *mult_ex[i]); }
   }
 
-  VW::finish(vw_obj, false);
+  vw_obj->finish();
 }
 
 int main(int argc, char* argv[])

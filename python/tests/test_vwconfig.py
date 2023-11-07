@@ -6,7 +6,7 @@ def helper_options_to_list_strings(config):
     cmd_str_list = []
 
     for name, config_group in config.items():
-        for (group_name, options) in config_group:
+        for group_name, options in config_group:
             for option in options:
                 temp_str = str(option)
                 if temp_str:
@@ -57,3 +57,18 @@ def test_vw_get_all_options():
         cmd_str_list.add(name)
 
     assert len(cmd_str_list) >= 74
+
+
+def test_experimental_option_value():
+    has_experimental = False
+    vw = vowpalwabbit.Workspace("--cb_explore_adf --automl 3", quiet=True)
+    for groups in vw.get_config().values():
+        for group in groups:
+            for opt in group[1]:
+                if opt.experimental:
+                    has_experimental = True
+                    break
+        if has_experimental:
+            break
+    vw.finish()
+    assert has_experimental

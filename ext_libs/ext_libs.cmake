@@ -41,30 +41,19 @@ if(RAPIDJSON_SYS_DEP)
   target_include_directories(RapidJSON INTERFACE ${RapidJSON_INCLUDE_DIRS})
 else()
   add_library(RapidJSON INTERFACE)
-  target_include_directories(RapidJSON SYSTEM INTERFACE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/rapidjson/include>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-  )
-
-  if(VW_INSTALL)
-    install(
-      TARGETS RapidJSON
-      EXPORT VowpalWabbitConfig)
-
-    install(
-      DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/rapidjson/include/rapidjson/
-      DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/rapidjson
-    )
-  endif()
+  target_include_directories(RapidJSON SYSTEM INTERFACE "${CMAKE_CURRENT_LIST_DIR}/rapidjson/include")
 endif()
 
-if(VW_BOOST_MATH_SYS_DEP)
-  find_package(Boost REQUIRED)
-  set(boost_math_target Boost::boost)
-else()
-  set(BOOST_MATH_STANDALONE ON CACHE BOOL "Use Boost math vendored dep in standalone mode" FORCE)
-  add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/boost_math EXCLUDE_FROM_ALL)
-  set(boost_math_target Boost::math)
+# Boost math only required if LDA is enabled.
+if(VW_FEAT_LDA)
+  if(VW_BOOST_MATH_SYS_DEP)
+    find_package(Boost REQUIRED)
+    set(boost_math_target Boost::boost)
+  else()
+    set(BOOST_MATH_STANDALONE ON CACHE BOOL "Use Boost math vendored dep in standalone mode" FORCE)
+    add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/boost_math EXCLUDE_FROM_ALL)
+    set(boost_math_target Boost::math)
+  endif()
 endif()
 
 if(VW_ZLIB_SYS_DEP)
@@ -91,9 +80,13 @@ else()
   endif()
 endif()
 
-add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/string-view-lite)
+if (VW_STRING_VIEW_LITE_SYS_DEP)
+  find_package(string-view-lite CONFIG REQUIRED)
+else()
+  add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/string-view-lite)
+endif()
 
-if(BUILD_FLATBUFFERS)
+if(VW_FEAT_FLATBUFFERS)
   find_package(Flatbuffers CONFIG QUIET)
   if(FLATBUFFERS_FOUND)
     get_property(flatc_location TARGET flatbuffers::flatc PROPERTY LOCATION)
@@ -105,10 +98,33 @@ if(BUILD_FLATBUFFERS)
   include(FlatbufferUtils)
 endif()
 
-if(VW_BUILD_LARGE_ACTION_SPACE)
+if(VW_EIGEN_SYS_DEP)
+  # Since EXACT is not specified, any version compatible with 3.4.0 is accepted (>= 3.4.0)
+  find_package(Eigen3 3.4.0 CONFIG REQUIRED)
   add_library(eigen INTERFACE)
-  target_include_directories(eigen SYSTEM INTERFACE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/eigen>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-  )
+  target_include_directories(eigen INTERFACE ${EIGEN3_INCLUDE_DIR})
+else()
+  if(NOT EXISTS ${CMAKE_CURRENT_LIST_DIR}/eigen/CMakeLists.txt)
+  message(SEND_ERROR "The eigen git submodule is not available.\
+  Please run `git submodule update --init --recursive` or set VW_EIGEN_SYS_DEP to ON if using a system dependency for eigen")
+  endif()
+  add_library(eigen INTERFACE)
+  target_include_directories(eigen SYSTEM INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/eigen>)
+endif()
+
+add_library(sse2neon INTERFACE)
+if(VW_SSE2NEON_SYS_DEP)
+  find_path(SSE2NEON_INCLUDE_DIRS "sse2neon/sse2neon.h")
+  target_include_directories(sse2neon SYSTEM INTERFACE "${SSE2NEON_INCLUDE_DIRS}")
+else()
+  # This submodule is placed into a nested subdirectory since it exposes its
+  # header at the root of the repo rather than its own nested sse2neon/ dir
+  target_include_directories(sse2neon SYSTEM INTERFACE "${CMAKE_CURRENT_LIST_DIR}/sse2neon")
+endif()
+
+if(VW_FEAT_CB_GRAPH_FEEDBACK)
+  add_library(mlpack_ensmallen INTERFACE)
+  target_include_directories(mlpack_ensmallen SYSTEM INTERFACE ${CMAKE_CURRENT_LIST_DIR}/armadillo-code/include)
+
+  target_include_directories(mlpack_ensmallen SYSTEM INTERFACE ${CMAKE_CURRENT_LIST_DIR}/ensmallen/include)
 endif()

@@ -24,46 +24,44 @@ using namespace VW::LEARNER;
 using namespace rapidjson;
 namespace
 {
-void insert_dsjson_metrics(
-    const dsjson_metrics* ds_metrics, VW::metric_sink& metrics, const std::vector<std::string>& enabled_reductions)
+void insert_dsjson_metrics(const VW::details::dsjson_metrics* ds_metrics, VW::metric_sink& metrics,
+    const std::vector<std::string>& enabled_learners)
 {
   // ds_metrics is nullptr when --dsjson is disabled
   if (ds_metrics != nullptr)
   {
-    metrics.set_uint("number_skipped_events", ds_metrics->NumberOfSkippedEvents);
-    metrics.set_uint("number_events_zero_actions", ds_metrics->NumberOfEventsZeroActions);
-    metrics.set_uint("line_parse_error", ds_metrics->LineParseError);
-    metrics.set_string("first_event_id", ds_metrics->FirstEventId);
-    metrics.set_string("first_event_time", ds_metrics->FirstEventTime);
-    metrics.set_string("last_event_id", ds_metrics->LastEventId);
-    metrics.set_string("last_event_time", ds_metrics->LastEventTime);
-    metrics.set_float("dsjson_sum_cost_original", ds_metrics->DsjsonSumCostOriginal);
-    if (std::find(enabled_reductions.begin(), enabled_reductions.end(), "ccb_explore_adf") != enabled_reductions.end())
+    metrics.set_uint("number_skipped_events", ds_metrics->number_of_skipped_events);
+    metrics.set_uint("number_events_zero_actions", ds_metrics->number_of_events_zero_actions);
+    metrics.set_uint("line_parse_error", ds_metrics->line_parse_error);
+    metrics.set_string("first_event_id", ds_metrics->first_event_id);
+    metrics.set_string("first_event_time", ds_metrics->first_event_time);
+    metrics.set_string("last_event_id", ds_metrics->last_event_id);
+    metrics.set_string("last_event_time", ds_metrics->last_event_time);
+    metrics.set_float("dsjson_sum_cost_original", ds_metrics->dsjson_sum_cost_original);
+    if (std::find(enabled_learners.begin(), enabled_learners.end(), "ccb_explore_adf") != enabled_learners.end())
     {
-      metrics.set_float("dsjson_sum_cost_original_first_slot", ds_metrics->DsjsonSumCostOriginalFirstSlot);
-      metrics.set_uint(
-          "dsjson_number_label_equal_baseline_first_slot", ds_metrics->DsjsonNumberOfLabelEqualBaselineFirstSlot);
+      metrics.set_float("dsjson_sum_cost_original_first_slot", ds_metrics->dsjson_sum_cost_original_first_slot);
+      metrics.set_uint("dsjson_number_label_equal_baseline_first_slot",
+          ds_metrics->dsjson_number_of_label_equal_baseline_first_slot);
       metrics.set_uint("dsjson_number_label_not_equal_baseline_first_slot",
-          ds_metrics->DsjsonNumberOfLabelNotEqualBaselineFirstSlot);
+          ds_metrics->dsjson_number_of_label_not_equal_baseline_first_slot);
       metrics.set_float("dsjson_sum_cost_original_label_equal_baseline_first_slot",
-          ds_metrics->DsjsonSumCostOriginalLabelEqualBaselineFirstSlot);
+          ds_metrics->dsjson_sum_cost_original_label_equal_baseline_first_slot);
     }
-    else
-    {
-      metrics.set_float("dsjson_sum_cost_original_baseline", ds_metrics->DsjsonSumCostOriginalBaseline);
-    }
+    else { metrics.set_float("dsjson_sum_cost_original_baseline", ds_metrics->dsjson_sum_cost_original_baseline); }
   }
 }
 
-struct metrics_data
+class metrics_data
 {
-  std::string out_file;
+public:
   size_t learn_count = 0;
   size_t predict_count = 0;
 };
 
-struct json_metrics_writer : VW::metric_sink_visitor
+class json_metrics_writer : public VW::metric_sink_visitor
 {
+public:
   json_metrics_writer(Writer<FileWriteStream>& writer) : _writer(writer) { _writer.StartObject(); }
   ~json_metrics_writer() override { _writer.EndObject(); }
   void int_metric(const std::string& key, uint64_t value) override
@@ -87,6 +85,13 @@ struct json_metrics_writer : VW::metric_sink_visitor
     _writer.Key(key.c_str());
     _writer.Bool(value);
   }
+  void sink_metric(const std::string& key, const VW::metric_sink& value) override
+  {
+    _writer.Key(key.c_str());
+    _writer.StartObject();
+    value.visit(*this);
+    _writer.EndObject();
+  }
 
 private:
   Writer<FileWriteStream>& _writer;
@@ -105,11 +110,9 @@ void list_to_json_file(const std::string& filename, const VW::metric_sink& metri
     json_metrics_writer json_writer(writer);
     metrics.visit(json_writer);
   }
-  else
-  {
-    logger.err_warn("skipping metrics. could not open file for metrics: {}", filename);
-  }
+  else { logger.err_warn("skipping metrics. could not open file for metrics: {}", filename); }
 }
+
 void persist(metrics_data& data, VW::metric_sink& metrics)
 {
   metrics.set_uint("total_predict_calls", data.predict_count);
@@ -130,65 +133,69 @@ void predict_or_learn(metrics_data& data, T& base, E& ec)
     base.predict(ec);
   }
 }
+
+void additional_metrics(VW::workspace& all, VW::metric_sink& sink)
+{
+  sink.set_uint("total_log_calls", all.logger.get_log_count());
+
+  std::vector<std::string> enabled_learners;
+  if (all.l != nullptr) { all.l->get_enabled_learners(enabled_learners); }
+  insert_dsjson_metrics(all.parser_runtime.example_parser->metrics.get(), sink, enabled_learners);
+}
 }  // namespace
 
 void VW::reductions::output_metrics(VW::workspace& all)
 {
-  if (all.options->was_supplied("extra_metrics"))
+  metrics_collector& manager = all.output_runtime.global_metrics;
+  if (manager.are_metrics_enabled())
   {
     std::string filename = all.options->get_typed_option<std::string>("extra_metrics").value();
-    VW::metric_sink list_metrics;
-
-    all.l->persist_metrics(list_metrics);
-
-    for (auto& metric_hook : all.metric_output_hooks) { metric_hook(list_metrics); }
-
-    list_metrics.set_uint("total_log_calls", all.logger.get_log_count());
-
-    std::vector<std::string> enabled_reductions;
-    if (all.l != nullptr) { all.l->get_enabled_reductions(enabled_reductions); }
-    insert_dsjson_metrics(all.example_parser->metrics.get(), list_metrics, enabled_reductions);
-
-    list_to_json_file(filename, list_metrics, all.logger);
+    list_to_json_file(filename, manager.collect_metrics(all.l.get()), all.logger);
   }
 }
 
-VW::LEARNER::base_learner* VW::reductions::metrics_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::metrics_setup(VW::setup_base_i& stack_builder)
 {
-  options_i& options = *stack_builder.get_options();
+  VW::config::options_i& options = *stack_builder.get_options();
+  VW::workspace& all = *stack_builder.get_all_pointer();
+
   auto data = VW::make_unique<metrics_data>();
 
+  std::string out_file;
   option_group_definition new_options("[Reduction] Debug Metrics");
-  new_options.add(make_option("extra_metrics", data->out_file)
+  new_options.add(make_option("extra_metrics", out_file)
                       .necessary()
                       .help("Specify filename to write metrics to. Note: There is no fixed schema"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  if (data->out_file.empty()) THROW("extra_metrics argument (output filename) is missing.");
+  if (out_file.empty()) THROW("extra_metrics argument (output filename) is missing.");
+  all.output_runtime.global_metrics = VW::metrics_collector(true);
 
-  auto* base_learner = stack_builder.setup_base_learner();
+  auto* all_ptr = stack_builder.get_all_pointer();
+  all.output_runtime.global_metrics.register_metrics_callback(
+      [all_ptr](VW::metric_sink& sink) -> void { additional_metrics(*all_ptr, sink); });
 
-  if (base_learner->is_multiline())
+  auto base = stack_builder.setup_base_learner();
+
+  if (base->is_multiline())
   {
-    auto* l = make_reduction_learner(std::move(data), as_multiline(base_learner),
-        predict_or_learn<true, multi_learner, multi_ex>, predict_or_learn<false, multi_learner, multi_ex>,
-        stack_builder.get_setupfn_name(metrics_setup))
-                  .set_output_prediction_type(base_learner->get_output_prediction_type())
-                  .set_learn_returns_prediction(base_learner->learn_returns_prediction)
-                  .set_persist_metrics(persist)
-                  .build();
-    return make_base(*l);
+    auto l = make_reduction_learner(std::move(data), require_multiline(base), predict_or_learn<true, learner, multi_ex>,
+        predict_or_learn<false, learner, multi_ex>, stack_builder.get_setupfn_name(metrics_setup))
+                 .set_output_prediction_type(base->get_output_prediction_type())
+                 .set_learn_returns_prediction(base->learn_returns_prediction)
+                 .set_persist_metrics(persist)
+                 .build();
+    return l;
   }
   else
   {
-    auto* l = make_reduction_learner(std::move(data), as_singleline(base_learner),
-        predict_or_learn<true, single_learner, example>, predict_or_learn<false, single_learner, example>,
-        stack_builder.get_setupfn_name(metrics_setup))
-                  .set_output_prediction_type(base_learner->get_output_prediction_type())
-                  .set_learn_returns_prediction(base_learner->learn_returns_prediction)
-                  .set_persist_metrics(persist)
-                  .build();
-    return make_base(*l);
+    auto l = make_reduction_learner(std::move(data), require_singleline(base), predict_or_learn<true, learner, example>,
+        predict_or_learn<false, learner, example>, stack_builder.get_setupfn_name(metrics_setup))
+                 .set_output_prediction_type(base->get_output_prediction_type())
+                 .set_learn_returns_prediction(base->learn_returns_prediction)
+                 .set_persist_metrics(persist)
+                 .build();
+    return l;
   }
 }

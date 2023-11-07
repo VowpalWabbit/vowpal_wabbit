@@ -25,7 +25,9 @@ void find_opt(std::string const& command_line_args, std::string arg_name, std::v
 
     // skip all white space
     for (; idx_after_arg < command_line_args.size() && std::isspace(command_line_args[idx_after_arg]); ++idx_after_arg)
-    { ; }
+    {
+      ;
+    }
 
     if (idx_after_arg == command_line_args.size()) { return; }
 
@@ -41,7 +43,9 @@ void find_opt(std::string const& command_line_args, std::string arg_name, std::v
     // find next non-white space character
     auto idx_after_value = idx_after_arg;
     while (idx_after_value < command_line_args.size() && !std::isspace(command_line_args[idx_after_value]))
-    { ++idx_after_value; }
+    {
+      ++idx_after_value;
+    }
 
     auto value_size = idx_after_value - idx_after_arg;
     if (value_size > 0)

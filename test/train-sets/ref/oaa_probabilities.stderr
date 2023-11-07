@@ -6,24 +6,24 @@ Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
-Enabled reductions: gd, scorer-identity, oaa-prob
-Input label = multiclass
-Output pred = scalars
-average  since         example        example        current        current  current 
-loss     last          counter         weight          label        predict features 
-0.000000 0.000000            1            1.0              1         1(25%)       51 
-0.500000 1.000000            2            2.0              2         1(31%)      104 
-0.500000 0.500000            4            4.0              2         2(27%)      135 
-0.375000 0.250000            8            8.0              2         2(55%)      146 
-0.500000 0.625000           16           16.0              1         2(38%)       24 
-0.500000 0.500000           32           32.0              2         2(35%)       32 
-0.578125 0.656250           64           64.0              2         2(62%)       61 
-0.515625 0.453125          128          128.0              1         1(53%)      106 
+Enabled learners: gd, scorer-identity, oaa-prob
+Input label = MULTICLASS
+Output pred = SCALARS
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.000000 0.000000            1            1.0              1         1(25%)       51
+0.500000 1.000000            2            2.0              2         1(31%)      104
+0.500000 0.500000            4            4.0              2         2(26%)      135
+0.375000 0.250000            8            8.0              2         2(54%)      146
+0.500000 0.625000           16           16.0              1         2(38%)       24
+0.500000 0.500000           32           32.0              2         2(35%)       32
+0.578125 0.656250           64           64.0              2         2(62%)       61
+0.515625 0.453125          128          128.0              1         1(53%)      106
 
 finished run
 number of examples = 200
 weighted example sum = 200.000000
 weighted label sum = 0.000000
 average loss = 0.450000
-average multiclass log loss = 1.161184
+average multiclass log loss = 1.161130
 total feature number = 15482

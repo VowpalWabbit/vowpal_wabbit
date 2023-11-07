@@ -9,8 +9,8 @@ on:
     branches:
       - '*'
 
-concurrency: 
-  group: ${{ github.workflow }}-${{ github.head_ref || github.sha }} 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
 jobs:
@@ -18,14 +18,14 @@ jobs:
     name: core-cli.${{ matrix.os }}.amd64.${{ matrix.build_type }}.${{ matrix.compiler.cxx }}.standalone
     strategy:
       matrix:
-        os: ["ubuntu-20.04", "ubuntu-18.04"]
+        os: ["ubuntu-22.04", "ubuntu-20.04"]
         build_type: ["Debug", "Release"]
         compiler:
         - { cc: "gcc", cxx: "g++"}
         - { cc: "clang", cxx: "clang++"}
     runs-on: ${{matrix.os}}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: 'recursive'
       - name: Install requirements
@@ -37,8 +37,9 @@ jobs:
         run: >
           cmake -S . -B build -G Ninja
           -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
-          -DBUILD_FLATBUFFERS=Off
-          -DVW_BUILD_CSV=On
+          -DVW_FEAT_FLATBUFFERS=Off
+          -DVW_FEAT_CSV=On
+          -DVW_FEAT_CB_GRAPH_FEEDBACK=On
           -DRAPIDJSON_SYS_DEP=Off
           -DFMT_SYS_DEP=Off
           -DSPDLOG_SYS_DEP=Off
@@ -47,15 +48,14 @@ jobs:
           -DVW_INSTALL=Off
           -DWARNINGS=On
           -DWARNING_AS_ERROR=On
-          -DUSE_LATEST_STD=On
+          -DVW_CXX_STANDARD=17
       - name: Build
-        run: |
-          cmake --build build
+        run: cmake --build build
+      - name: Unit tests
+        working-directory: build
+        run: ctest --output-on-failure --no-tests=error --label-regex VWTestList --parallel 2
       - name: Test
-        run: |
-          python3 test/run_tests.py -f --clean_dirty -E 0.001
-          cd build
-          ctest --verbose --output-on-failure --label-regex VWTestList
+        run: python3 test/run_tests.py -f --clean_dirty -E 0.001
   build_vendor_windows:
     name: core-cli.${{ matrix.os }}.amd64.${{ matrix.build_type }}.msvc.standalone
     runs-on: ${{matrix.os}}
@@ -66,42 +66,19 @@ jobs:
     env:
       CMAKE_BUILD_DIR: ${{ github.workspace }}/vw/build
       SOURCE_DIR: ${{ github.workspace }}/vw
-      VCPKG_ROOT: ${{ github.workspace }}/vcpkg
-      VCPKG_REF: cef0b3ec767df6e83806899fe9525f6cf8d7bc91
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           path: 'vw'
           submodules: 'recursive'
-      - uses: actions/checkout@v2
-        with:
-          path: 'vcpkg'
-          repository: 'microsoft/vcpkg'
-          ref: ${{ env.VCPKG_REF }}
-      - name: Restore vcpkg and build artifacts
-        uses: actions/cache@v2
-        with:
-          path: |
-            ${{ env.VCPKG_ROOT }}/installed/
-            ${{ env.VCPKG_ROOT }}
-            !${{ env.VCPKG_ROOT }}/buildtrees
-            !${{ env.VCPKG_ROOT }}/packages
-            !${{ env.VCPKG_ROOT }}/downloads
-          key: |
-            ${{ env.VCPKG_REF }}-${{matrix.os}}-standalone-vcpkg-cache-invalidate-0
       - uses: ilammy/msvc-dev-cmd@v1
-      - name: Bootstrap vcpkg
-        run: ${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.bat
-      - name: Install vcpkg dependencies
-        run: ${{ env.VCPKG_ROOT }}/vcpkg.exe --triplet x64-windows install boost-test
       - name: Configure
         run: >
           cmake -S "${{ env.SOURCE_DIR }}" -B "${{ env.CMAKE_BUILD_DIR }}" -A "x64"
-          -DCMAKE_TOOLCHAIN_FILE="${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake"
-          -DVCPKG_MANIFEST_MODE=OFF
           -DUSE_LATEST_STD=On
-          -DBUILD_FLATBUFFERS=Off
-          -DVW_BUILD_CSV=On
+          -DVW_FEAT_FLATBUFFERS=Off
+          -DVW_FEAT_CSV=On
+          -DVW_FEAT_CB_GRAPH_FEEDBACK=On
           -DRAPIDJSON_SYS_DEP=Off
           -DFMT_SYS_DEP=Off
           -DSPDLOG_SYS_DEP=Off
@@ -109,15 +86,12 @@ jobs:
           -DVW_BOOST_MATH_SYS_DEP=Off
           -DVW_INSTALL=Off
       - name: Build
-        run: |
-          cmake --build "${{ env.CMAKE_BUILD_DIR }}" --config ${{ matrix.build_type }}
+        run: cmake --build "${{ env.CMAKE_BUILD_DIR }}" --config ${{ matrix.build_type }}
       - name: Test run_tests.py
-        # TODO: Look into test 67 failure
-        run: python3 ${{ env.SOURCE_DIR }}/test/run_tests.py -f --clean_dirty -E 0.01 --skip_spanning_tree_tests --vw_bin_path ${{ env.CMAKE_BUILD_DIR }}/vowpalwabbit/cli/${{ matrix.build_type }}/vw.exe --skip_test 67
+        run: python3 ${{ env.SOURCE_DIR }}/test/run_tests.py -f --clean_dirty -E 0.01 --skip_spanning_tree_tests --vw_bin_path ${{ env.CMAKE_BUILD_DIR }}/vowpalwabbit/cli/${{ matrix.build_type }}/vw.exe
       - name: Test unit tests
-        run: |
-          cd ${{ env.CMAKE_BUILD_DIR }}
-          ctest --verbose --output-on-failure --config ${{ matrix.build_type }} --label-regex VWTestList
+        working-directory: ${{ github.workspace }}/vw/build
+        run: ctest --output-on-failure --no-tests=error --label-regex VWTestList --build-config ${{ matrix.build_type }} --parallel 2
   build_vendor_macos:
     runs-on: ${{matrix.os}}
     name: core-cli.${{ matrix.os }}.amd64.${{ matrix.build_type }}.AppleClang.standalone
@@ -126,17 +100,18 @@ jobs:
         os: [macos-11]
         build_type: [Debug, Release]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: 'recursive'
       - name: Install dependencies
-        run: brew install cmake boost ninja
+        run: brew install cmake ninja
       - name: Configure
         run: >
           cmake -S . -B build -G Ninja
           -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
-          -DBUILD_FLATBUFFERS=Off
-          -DVW_BUILD_CSV=On
+          -DVW_FEAT_FLATBUFFERS=Off
+          -DVW_FEAT_CSV=On
+          -DVW_FEAT_CB_GRAPH_FEEDBACK=On
           -DRAPIDJSON_SYS_DEP=Off
           -DFMT_SYS_DEP=Off
           -DSPDLOG_SYS_DEP=Off
@@ -144,10 +119,9 @@ jobs:
           -DVW_BOOST_MATH_SYS_DEP=Off
           -DVW_INSTALL=Off
       - name: Build
-        run: |
-          cmake --build build
+        run: cmake --build build
+      - name: Unit tests
+        working-directory: build
+        run: ctest --output-on-failure --no-tests=error --label-regex VWTestList --parallel 2
       - name: Test
-        run: |
-          python3 test/run_tests.py -f --clean_dirty -E 0.001
-          cd build
-          ctest --verbose --output-on-failure --label-regex VWTestList
+        run: python3 test/run_tests.py -f --clean_dirty -E 0.001

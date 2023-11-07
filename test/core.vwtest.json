@@ -2800,10 +2800,10 @@
   {
     "id": 217,
     "desc": "check plt training",
-    "vw_command": "-d train-sets/multilabel -f plt.model --plt 10 --sgd --predict_only_model --loss_function logistic",
+    "vw_command": "-d train-sets/multilabel -f plt.model --plt 10 -l 10 --loss_function logistic",
     "diff_files": {
-      "stderr": "train-sets/ref/plt_multilabel.stderr",
-      "stdout": "train-sets/ref/plt_multilabel.stdout"
+      "stderr": "train-sets/ref/plt.stderr",
+      "stdout": "train-sets/ref/plt.stdout"
     },
     "input_files": [
       "train-sets/multilabel"
@@ -2811,12 +2811,12 @@
   },
   {
     "id": 218,
-    "desc": "check default plt prediction",
-    "vw_command": "-t -d train-sets/multilabel -i plt.model -p plt_multilabel.predict --loss_function logistic",
+    "desc": "check default plt prediction (with threshold 0.5)",
+    "vw_command": "-t -d train-sets/multilabel -i plt.model -p plt.predict --loss_function logistic",
     "diff_files": {
-      "stderr": "train-sets/ref/plt_multilabel_predict.stderr",
-      "plt_multilabel.predict": "pred-sets/ref/plt_multilabel.predict",
-      "stdout": "train-sets/ref/plt_multilabel_predict.stdout"
+      "stderr": "train-sets/ref/plt_predict.stderr",
+      "plt.predict": "pred-sets/ref/plt.predict",
+      "stdout": "train-sets/ref/plt_predict.stdout"
     },
     "input_files": [
       "train-sets/multilabel",
@@ -2829,11 +2829,11 @@
   {
     "id": 219,
     "desc": "check plt top-1 prediction",
-    "vw_command": "-t -d train-sets/multilabel -i plt.model -p plt_top1_multilabel.predict --top_k 1 --loss_function logistic",
+    "vw_command": "-t -d train-sets/multilabel -i plt.model -p plt_top1.predict --top_k 1 --loss_function logistic",
     "diff_files": {
-      "stderr": "train-sets/ref/plt_top1_multilabel_predict.stderr",
-      "plt_top1_multilabel.predict": "pred-sets/ref/plt_top1_multilabel.predict",
-      "stdout": "train-sets/ref/plt_top1_multilabel_predict.stdout"
+      "stderr": "train-sets/ref/plt_top1_predict.stderr",
+      "plt_top1.predict": "pred-sets/ref/plt_top1.predict",
+      "stdout": "train-sets/ref/plt_top1_predict.stdout"
     },
     "input_files": [
       "train-sets/multilabel",
@@ -3144,7 +3144,7 @@
   },
   {
     "id": 244,
-    "desc": "Flatbuffer CB_eval test",
+    "desc": "Flatbuffer CB_EVAL test",
     "vw_command": "-d train-sets/rcv1_cb_eval.fb --cb 2 --eval --flatbuffer",
     "diff_files": {
       "stderr": "train-sets/ref/rcv1_cb_eval_fb.stderr",
@@ -4732,26 +4732,26 @@
   },
   {
     "id": 367,
-    "desc": "Igl with a dataset containing costs - This intentionally has the same reference file as 368",
-    "vw_command": "--cbify 2 --experimental_igl -d train-sets/rcv1_multiclass.dat",
+    "desc": "Igl with two latent states",
+    "vw_command": "--dsjson --cb_explore_adf --epsilon 0.2 -q UA --coin --experimental_igl -d train-sets/igl.dsjson",
     "diff_files": {
       "stderr": "train-sets/ref/igl_result.stderr",
       "stdout": "train-sets/ref/igl_result.stdout"
     },
     "input_files": [
-      "train-sets/rcv1_multiclass.dat"
+      "train-sets/igl.dsjson"
     ]
   },
   {
     "id": 368,
-    "desc": "Igl with a dataset containing rewards - This intentionally has the same reference file as 367",
-    "vw_command": "--cbify 2 --flip_loss_sign --experimental_igl -d train-sets/rcv1_multiclass.dat",
+    "desc": "Igl with three latent states",
+    "vw_command": "--dsjson --cb_explore_adf --epsilon 0.2 -q UA --coin --experimental_igl -d train-sets/igl_3states.dsjson",
     "diff_files": {
-      "stderr": "train-sets/ref/igl_result.stderr",
+      "stderr": "train-sets/ref/igl_3states_result.stderr",
       "stdout": "train-sets/ref/igl_result.stdout"
     },
     "input_files": [
-      "train-sets/rcv1_multiclass.dat"
+      "train-sets/igl_3states.dsjson"
     ]
   },
   {
@@ -5082,12 +5082,13 @@
   {
     "id": 394,
     "desc": "Test using automl with ccb",
-    "vw_command": "--ccb_explore_adf --example_queue_limit 7 -d train-sets/ccb_reuse_small.data --automl 3 --verbose_metrics --extra_metrics aml_ccb_metrics.json --oracle_type one_diff",
+    "vw_command": "--ccb_explore_adf --example_queue_limit 7 -d train-sets/ccb_automl.dsjson --automl 4 --dsjson --verbose_metrics --extra_metrics aml_ccb_metrics.json --oracle_type one_diff",
     "diff_files": {
+      "stderr": "train-sets/ref/automl_ccb.stderr",
       "aml_ccb_metrics.json": "test-sets/ref/aml_ccb_metrics.json"
     },
     "input_files": [
-      "train-sets/ccb_reuse_small.data"
+      "train-sets/ccb_automl.dsjson"
     ]
   },
   {
@@ -5375,22 +5376,8 @@
   },
   {
     "id": 417,
-    "desc": "automl with cb_adf - transform to predict only model SkipC# - Do not remove this - this test breaks test generation by requiring a dependency that is not supported",
-    "vw_command": "--aml_predict_only_model automl_predict_only.model -i models/automl.model --readable_model automl_readable.txt",
-    "diff_files": {
-      "automl_readable.txt": "train-sets/ref/cbadf_automl_readable_predictonly.txt"
-    },
-    "input_files": [
-      "models/automl.model"
-    ],
-    "depends_on": [
-      411
-    ]
-  },
-  {
-    "id": 418,
     "desc": "set up automl model to test overrides",
-    "vw_command": "-d train-sets/decisionservice.json --dsjson --cb_explore_adf -f models/automl_override.model --automl 4 --global_lease 100 --priority_type favor_popular_namespaces --priority_challengers 1 --oracle_type rand --automl_significance_level .1",
+    "vw_command": "-d train-sets/decisionservice.json --dsjson --cb_explore_adf -f models/automl_override.model --automl 4 --default_lease 100 --priority_type favor_popular_namespaces --priority_challengers 1 --oracle_type rand --automl_significance_level .1",
     "diff_files": {
       "stderr": "train-sets/ref/automl_test_set_override.stderr",
       "stdout": "train-sets/ref/automl_test_set_override.stdout"
@@ -5400,9 +5387,9 @@
     ]
   },
   {
-    "id": 419,
+    "id": 418,
     "desc": "load automl model with overrides",
-    "vw_command": "-d train-sets/decisionservice.json --dsjson --cb_explore_adf -i models/automl_override.model --automl 4 --global_lease 200 --priority_type none --priority_challengers 2 --oracle_type one_diff --automl_significance_level .2",
+    "vw_command": "-d train-sets/decisionservice.json --dsjson --cb_explore_adf -i models/automl_override.model --automl 4 --default_lease 200 --priority_type none --priority_challengers 2 --oracle_type one_diff --automl_significance_level .2",
     "diff_files": {
       "stderr": "train-sets/ref/automl_test_load_override.stderr",
       "stdout": "train-sets/ref/automl_test_load_override.stdout"
@@ -5412,7 +5399,651 @@
       "models/automl_override.model"
     ],
     "depends_on": [
-      418
+      417
+    ]
+  },
+  {
+    "id": 419,
+    "desc": "Save model using ksvm to test flat_example save_load",
+    "vw_command": "--ksvm -d train-sets/tagged_data.dat -f models/ksvm_flat.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/ksvm_model_save.stderr",
+      "stdout": "train-sets/ref/ksvm_model_save.stdout"
+    },
+    "input_files": [
+      "train-sets/tagged_data.dat"
+    ]
+  },
+  {
+    "id": 420,
+    "desc": "Load model using ksvm to test flat_example save_load",
+    "vw_command": "--ksvm -d train-sets/tagged_data.dat -i models/ksvm_flat.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/ksvm_model_load.stderr",
+      "stdout": "train-sets/ref/ksvm_model_load.stdout"
+    },
+    "input_files": [
+      "train-sets/tagged_data.dat",
+      "models/ksvm_flat.model"
+    ],
+    "depends_on": [
+      419
+    ]
+  },
+  {
+    "id": 421,
+    "desc": "explore_eval evaluate same policy as logged policy, all examples should be used to update with default target_rate of 1",
+    "vw_command": "--cb_explore_adf -d train-sets/explore_eval_egreedy.dat --coin --epsilon 0.1 -q UA --explore_eval",
+    "diff_files": {
+      "stderr": "train-sets/ref/explore_eval_tr_1.stderr"
+    },
+    "input_files": [
+      "train-sets/explore_eval_egreedy.dat"
+    ]
+  },
+  {
+    "id": 422,
+    "desc": "explore_eval evaluate same policy as logged policy, target_rate set there should be around ((#examples * target_rate) updates",
+    "vw_command": "--cb_explore_adf -d train-sets/explore_eval_egreedy.dat --coin --epsilon 0.1 -q UA --explore_eval --target_rate 0.2",
+    "diff_files": {
+      "stderr": "train-sets/ref/explore_eval_tr_0.2.stderr"
+    },
+    "input_files": [
+      "train-sets/explore_eval_egreedy.dat"
+    ]
+  },
+  {
+    "id": 423,
+    "desc": "explore_eval evaluate same policy as logged policy, target_rate set there should be around ((#examples * target_rate) updates",
+    "vw_command": "--cb_explore_adf -d train-sets/explore_eval_egreedy.dat --coin --squarecb -q UA --explore_eval --target_rate 0.2",
+    "diff_files": {
+      "stderr": "train-sets/ref/explore_eval_sqcb.stderr"
+    },
+    "input_files": [
+      "train-sets/explore_eval_egreedy.dat"
+    ]
+  },
+  {
+    "id": 424,
+    "desc": "explore_eval evaluate same policy as logged policy, target_rate set there should be around ((#examples * target_rate) updates",
+    "vw_command": "--cb_explore_adf -d train-sets/explore_eval_egreedy.dat --coin --large_action_space --max_actions 5 -q UA --explore_eval --target_rate 0.2",
+    "diff_files": {
+      "stderr": "train-sets/ref/explore_eval_las.stderr"
+    },
+    "input_files": [
+      "train-sets/explore_eval_egreedy.dat"
+    ]
+  },
+  {
+    "id": 425,
+    "desc": "Spin off automl model to lower bitsize to cb_explore",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -f models/aml_spin_off.m -b 18 --predict_only_model --automl 2",
+    "diff_files": {
+      "stderr": "train-sets/ref/spin_off_aml_save.stderr"
+    },
+    "input_files": [
+      "train-sets/automl_spin_off.txt"
+    ]
+  },
+  {
+    "id": 426,
+    "desc": "Load spun off automl model and output invert hash",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -i models/aml_spin_off.m -b 17 --invert_hash aml_spinoff.inv --predict_only_model",
+    "diff_files": {
+      "stderr": "train-sets/ref/spin_off_aml_load.stderr",
+      "aml_spinoff.inv": "pred-sets/ref/aml_spinoff.inv"
+    },
+    "input_files": [
+      "train-sets/automl_spin_off.txt",
+      "models/aml_spin_off.m"
+    ],
+    "depends_on": [
+      425
+    ]
+  },
+  {
+    "id": 427,
+    "desc": "Generate similar model to spun off automl using standard cb_explore_adf",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -f models/cb_spin_off.m -b 17 --predict_only_model --interactions AA --interactions AB --interactions AC --interactions AD --interactions AE --interactions AF --interactions BB --interactions BC --interactions BD --interactions BE --interactions BF --interactions CC --interactions CD --interactions CE --interactions CF --interactions DD --interactions DE --interactions DF --interactions EE --interactions EF --interactions FF",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_similar_aml_spinoff_save.stderr"
+    },
+    "input_files": [
+      "train-sets/automl_spin_off.txt"
+    ]
+  },
+  {
+    "id": 428,
+    "desc": "Check that standard cb_explore_adf model has same invert hash as automl spinoff",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -i models/cb_spin_off.m -b 17 --invert_hash aml_spinoff_cb.inv --predict_only_model",
+    "diff_files": {
+      "stderr": "train-sets/ref/spin_off_aml_load.stderr",
+      "aml_spinoff_cb.inv": "pred-sets/ref/aml_spinoff.inv"
+    },
+    "input_files": [
+      "train-sets/automl_spin_off.txt",
+      "models/cb_spin_off.m"
+    ],
+    "depends_on": [
+      427
+    ]
+  },
+  {
+    "id": 429,
+    "desc": "Check that binary model files are identical between standard cb_explore_adf and automl spinoff",
+    "bash_command": "diff models/aml_spin_off.m models/cb_spin_off.m",
+    "input_files": [
+      "models/aml_spin_off.m",
+      "models/cb_spin_off.m"
+    ],
+    "depends_on": [
+      425, 427
+    ]
+  },
+  {
+    "id": 430,
+    "desc": "squarecb with epsilon",
+    "vw_command": "-d train-sets/cb_load.dat --cb_explore_adf -q UA --squarecb -p squarecb_pred_epsilon.predict --epsilon 0.2",
+    "diff_files": {
+      "stderr": "train-sets/ref/squarecb_epsilon.stderr",
+      "squarecb_pred_epsilon.predict": "pred-sets/ref/squarecb_pred_epsilon.predict",
+      "stdout": "train-sets/ref/squarecb_epsilon.stdout"
+    },
+    "input_files": [
+      "train-sets/cb_load.dat"
+    ]
+  },
+  {
+    "id": 431,
+    "desc": "Test sender reduction",
+    "diff_files": {
+      "stderr": "test-sets/ref/sender.stderr",
+      "stdout": "test-sets/ref/sender.stdout",
+      "sender_test.predict": "pred-sets/ref/sender.predict"
+    },
+    "bash_command": "python3 ./sender_test.py --vw {VW} --input_file train-sets/0001.dat",
+    "input_files": [
+      "sender_test.py",
+      "train-sets/0001.dat"
+    ]
+  },
+  {
+    "id": 432,
+    "desc": "check plt training with sgd",
+    "vw_command": "-d train-sets/multilabel -f plt_sgd.model --plt 10 --sgd --predict_only_model --loss_function logistic",
+    "diff_files": {
+      "stderr": "train-sets/ref/plt_sgd.stderr",
+      "stdout": "train-sets/ref/plt_sgd.stdout"
+    },
+    "input_files": [
+      "train-sets/multilabel"
+    ]
+  },
+  {
+    "id": 433,
+    "desc": "check default plt (trained with sgd) prediction (with threshold 0.5)",
+    "vw_command": "-t -d train-sets/multilabel -i plt_sgd.model -p plt_sgd.predict --loss_function logistic",
+    "diff_files": {
+      "stderr": "train-sets/ref/plt_sgd_predict.stderr",
+      "plt_sgd.predict": "pred-sets/ref/plt_sgd.predict",
+      "stdout": "train-sets/ref/plt_sgd_predict.stdout"
+    },
+    "input_files": [
+      "train-sets/multilabel",
+      "plt_sgd.model"
+    ],
+    "depends_on": [
+      432
+    ]
+  },
+  {
+    "id": 434,
+    "desc": "check plt (trained with sgd) top-1 prediction",
+    "vw_command": "-t -d train-sets/multilabel -i plt_sgd.model -p plt_sgd_top1.predict --top_k 1 --loss_function logistic",
+    "diff_files": {
+      "stderr": "train-sets/ref/plt_sgd_top1_predict.stderr",
+      "plt_sgd_top1.predict": "pred-sets/ref/plt_sgd_top1.predict",
+      "stdout": "train-sets/ref/plt_sgd_top1_predict.stdout"
+    },
+    "input_files": [
+      "train-sets/multilabel",
+      "plt_sgd.model"
+    ],
+    "depends_on": [
+      432
+    ]
+  },
+  {
+    "id": 435,
+    "desc": "second order online learning with epoch",
+    "vw_command":
+        "--OjaNewton -d train-sets/0001.dat -p second_order_with_epoch.predict --predict_only_model --epoch_size 8",
+    "diff_files": {
+      "stderr": "train-sets/ref/second_order_with_epoch.stderr",
+      "second_order_with_epoch.predict": "pred-sets/ref/second_order_with_epoch.predict",
+      "stdout": "train-sets/ref/second_order_with_epoch.stdout"
+    },
+    "input_files": [
+      "train-sets/0001.dat"
+    ]
+  },
+  {
+    "id": 436,
+    "desc": "check default plt prediction with --probabilities option",
+    "vw_command": "-t -d train-sets/multilabel -i plt.model -p plt_probabilities.predict --loss_function logistic --probabilities",
+    "diff_files": {
+      "stderr": "train-sets/ref/plt_predict_probabilities.stderr",
+      "plt_probabilities.predict": "pred-sets/ref/plt_probabilities.predict",
+      "stdout": "train-sets/ref/plt_predict_probabilities.stdout"
+    },
+    "input_files": [
+      "train-sets/multilabel",
+      "plt.model"
+    ],
+    "depends_on": [
+      217
+    ]
+  },
+  {
+    "id": 437,
+    "desc": "check plt top-1 prediction with --probabilities option",
+    "vw_command": "-t -d train-sets/multilabel -i plt.model -p plt_top1_probabilities.predict --top_k 1 --loss_function logistic --probabilities",
+    "diff_files": {
+      "stderr": "train-sets/ref/plt_top1_predict_probabilities.stderr",
+      "plt_top1_probabilities.predict": "pred-sets/ref/plt_top1_probabilities.predict",
+      "stdout": "train-sets/ref/plt_top1_predict_probabilities.stdout"
+    },
+    "input_files": [
+      "train-sets/multilabel",
+      "plt.model"
+    ],
+    "depends_on": [
+      217
+    ]
+  },
+  {
+    "id": 438,
+    "desc": "test AutoML with quad/cubic interaction",
+    "vw_command": "-f automl_qc.model --automl 3 --verbose_metrics --priority_type favor_popular_namespaces -d train-sets/decisionservice.json --dsjson --cb_explore_adf --epsilon 0.2 -P 1 -p cbe_adf_dsjson.predict --extra_metrics metrics_qc.json --readable_model automl_readable_qc.txt --oracle_type qbase_cubic",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbe_adf_dsjson_metrics_qc.stderr",
+      "metrics_qc.json": "test-sets/ref/metrics_qc.json",
+      "automl_readable_qc.txt": "train-sets/ref/automl_readable_qc.txt",
+      "stdout": "train-sets/ref/cbe_adf_dsjson_metrics_qc.stdout"
+    },
+    "input_files": [
+      "train-sets/decisionservice.json"
+    ]
+  },
+  {
+    "id": 439,
+    "desc": "Run LDA with 100 topics on 1000 Wikipedia articles without minibatching",
+    "vw_command": "-k --lda 100 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 1000 -l 1 -b 13 -d train-sets/wiki256.dat --math-mode 1",
+    "diff_files": {
+      "stderr": "train-sets/ref/wiki1K_no_minibatch.stderr",
+      "stdout": "train-sets/ref/wiki1K_no_minibatch.stdout"
+    },
+    "input_files": [
+      "train-sets/wiki256.dat"
+    ]
+  },
+  {
+    "id": 440,
+    "desc": "Interactive active test",
+    "bash_command": "python3 active_test.py --vw {VW} --active_interactor ../utl/active_interactor.py --unlabeled_data train-sets/0001_active.dat --labels train-sets/0001_active_input.dat --port 12353",
+    "diff_files": {
+      "stderr": "train-sets/ref/active_interactive.stderr",
+      "stdout": "train-sets/ref/active_interactive.stdout"
+    },
+    "input_files": [
+      "active_test.py",
+      "../utl/active_interactor.py",
+      "train-sets/0001_active.dat",
+      "train-sets/0001_active_input.dat"
+    ]
+  },
+  {
+    "id": 441,
+    "desc": "Spin off automl model to lower bitsize to cb_explore with bag",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off_small.txt --noconstant -f models/aml_spin_off_bag.m -b 18 --predict_only_model --automl 2 --bag 4",
+    "diff_files": {
+      "stderr": "train-sets/ref/spin_off_aml_save_bag.stderr"
+    },
+    "input_files": [
+      "train-sets/automl_spin_off_small.txt"
+    ]
+  },
+  {
+    "id": 442,
+    "desc": "Load spun off automl model and output invert hash with bag",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off_small.txt --noconstant -i models/aml_spin_off_bag.m -b 17 --predict_only_model --invert_hash aml_spinoff_bag.inv",
+    "diff_files": {
+      "stderr": "train-sets/ref/spin_off_aml_load_bag.stderr",
+      "aml_spinoff_bag.inv": "pred-sets/ref/aml_spinoff_bag.inv"
+    },
+    "input_files": [
+      "train-sets/automl_spin_off_small.txt",
+      "models/aml_spin_off_bag.m"
+    ],
+    "depends_on": [
+      441
+    ]
+  },
+  {
+    "id": 443,
+    "desc": "Generate similar model to spun off automl using standard cb_explore_adf with bag",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off_small.txt --noconstant -f models/cb_spin_off_bag.m -b 17 --bag 4 --predict_only_model --interactions AA --interactions AB --interactions AC --interactions AD --interactions AE --interactions AF --interactions BB --interactions BC --interactions BD --interactions BE --interactions BF --interactions CC --interactions CD --interactions CE --interactions CF --interactions DD --interactions DE --interactions DF --interactions EE --interactions EF --interactions FF",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_similar_aml_spinoff_save_bag.stderr"
+    },
+    "input_files": [
+      "train-sets/automl_spin_off_small.txt"
+    ]
+  },
+  {
+    "id": 444,
+    "desc": "Check that standard cb_explore_adf model has same invert hash as automl spinoff with bag",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off_small.txt --noconstant -i models/cb_spin_off_bag.m -b 17 --predict_only_model --invert_hash aml_spinoff_bag_cb.inv",
+    "diff_files": {
+      "stderr": "train-sets/ref/spin_off_aml_load_bag.stderr",
+      "aml_spinoff_bag_cb.inv": "pred-sets/ref/aml_spinoff_bag.inv"
+    },
+    "input_files": [
+      "train-sets/automl_spin_off_small.txt",
+      "models/cb_spin_off_bag.m"
+    ],
+    "depends_on": [
+      443
+    ]
+  },
+  {
+    "id": 445,
+    "desc": "Check that binary model files are identical between standard cb_explore_adf and automl spinoff with bag",
+    "bash_command": "diff models/aml_spin_off_bag.m models/cb_spin_off_bag.m",
+    "input_files": [
+      "models/aml_spin_off_bag.m",
+      "models/cb_spin_off_bag.m"
+    ],
+    "depends_on": [
+      441, 443
+    ]
+  },
+  {
+    "id": 446,
+    "desc": "large action spaces with cb_explore_adf epsilon greedy",
+    "vw_command": "--cb_explore_adf -d train-sets/las_100_actions.txt --noconstant --large_action_space --extra_metrics metrics_las_e.json",
+    "diff_files": {
+      "stderr": "train-sets/ref/las_egreedy.stderr",
+      "metrics_las_e.json": "test-sets/ref/metrics_las_e.json"
+    },
+    "input_files": [
+      "train-sets/las_100_actions.txt"
+    ]
+  },
+  {
+    "id": 447,
+    "desc": "large action spaces with cb_explore_adf squarecb",
+    "vw_command": "--cb_explore_adf -d train-sets/las_100_actions.txt --squarecb --noconstant --large_action_space --extra_metrics metrics_las_sqcb.json",
+    "diff_files": {
+      "stderr": "train-sets/ref/las_sqcb.stderr",
+      "metrics_las_sqcb.json": "test-sets/ref/metrics_las_sqcb.json"
+    },
+    "input_files": [
+      "train-sets/las_100_actions.txt"
+    ]
+  },
+  {
+    "id": 448,
+    "desc": "transition from squarecb model to las + squarecb",
+    "vw_command": "-d train-sets/cb_load.dat --cb_explore_adf -q UA --squarecb -i models/sqcb_ld.model --large_action_space --max_actions 2",
+    "diff_files": {
+      "stderr": "train-sets/ref/sqcb_to_las.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_load.dat",
+      "models/sqcb_ld.model"
+    ],
+    "depends_on": [
+      314
+    ]
+  },
+  {
+    "id": 449,
+    "desc": "Spin off epsilon decay model to lower bitsize to cb_explore",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -f models/ep_dec_spin_off.m -b 18 --predict_only_model --epsilon_decay --model_count 2",
+    "diff_files": {
+      "stderr": "train-sets/ref/spin_off_ep_dec_save.stderr"
+    },
+    "input_files": [
+      "train-sets/automl_spin_off.txt"
+    ]
+  },
+  {
+    "id": 450,
+    "desc": "Load spun off epsilon decay model and output invert hash",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -i models/ep_dec_spin_off.m -b 17 --invert_hash ep_dec_spinoff.inv --predict_only_model",
+    "diff_files": {
+      "stderr": "train-sets/ref/spin_off_ep_dec_load.stderr",
+      "ep_dec_spinoff.inv": "pred-sets/ref/ep_dec_spinoff.inv"
+    },
+    "input_files": [
+      "train-sets/automl_spin_off.txt",
+      "models/ep_dec_spin_off.m"
+    ],
+    "depends_on": [
+      449
+    ]
+  },
+  {
+    "id": 451,
+    "desc": "Generate similar model to spun off epsilon decay using standard cb_explore_adf",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -f models/ep_dec_spin_off_cb.m -b 17 --predict_only_model",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_similar_ep_decay_spinoff_save.stderr"
+    },
+    "input_files": [
+      "train-sets/automl_spin_off.txt"
+    ]
+  },
+  {
+    "id": 452,
+    "desc": "Check that standard cb_explore_adf model has same invert hash as epsilon decay spinoff",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -i models/ep_dec_spin_off_cb.m -b 17 --invert_hash ep_dec_spinoff_cb.inv --predict_only_model",
+    "diff_files": {
+      "stderr": "train-sets/ref/spin_off_ep_dec_load.stderr",
+      "ep_dec_spinoff_cb.inv": "pred-sets/ref/ep_dec_spinoff.inv"
+    },
+    "input_files": [
+      "train-sets/automl_spin_off.txt",
+      "models/ep_dec_spin_off_cb.m"
+    ],
+    "depends_on": [
+      451
+    ]
+  },
+  {
+    "id": 453,
+    "desc": "Check that binary model files are identical between standard cb_explore_adf and epsilon decay spinoff",
+    "bash_command": "diff models/ep_dec_spin_off.m models/ep_dec_spin_off_cb.m",
+    "input_files": [
+      "models/ep_dec_spin_off.m",
+      "models/ep_dec_spin_off_cb.m"
+    ],
+    "depends_on": [
+      449, 451
+    ]
+  },
+  {
+    "id": 454,
+    "desc": "Evaluate exploration on contextal bandit data with epsilon decay",
+    "vw_command": "--explore_eval --epsilon_decay --model_count 4 -d train-sets/automl_spin_off.txt --noconstant -p explore_eval_decay.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/explore_eval_decay.stderr",
+      "explore_eval_decay.predict": "pred-sets/ref/explore_eval_decay.predict",
+      "stdout": "train-sets/ref/explore_eval_decay.stdout"
+    },
+    "input_files": [
+      "train-sets/automl_spin_off.txt"
+    ]
+  },
+  {
+    "id": 455,
+    "desc": "large action spaces with cb_explore_adf epsilon greedy and ips",
+    "vw_command": "--cb_explore_adf -d train-sets/las_100_actions.txt --noconstant --large_action_space --cb_type ips",
+    "diff_files": {
+      "stderr": "train-sets/ref/las_egreedy_ips.stderr"
+    },
+    "input_files": [
+      "train-sets/las_100_actions.txt"
+    ]
+  },
+  {
+    "id": 456,
+    "desc": "Igl save_load, save model",
+    "vw_command": "--dsjson --cb_explore_adf --epsilon 0.2 -q UA --coin --experimental_igl -d train-sets/igl_3states_1.dsjson -f igl_1.vw -p igl_1.pred",
+    "diff_files": {
+      "stderr": "train-sets/ref/igl_3states_1.stderr",
+      "stdout": "train-sets/ref/igl_result.stdout",
+      "igl_1.pred": "pred-sets/ref/igl_1.pred"
+    },
+    "input_files": [
+      "train-sets/igl_3states_1.dsjson"
+    ]
+  },
+  {
+    "id": 457,
+    "desc": "Igl save_load, load model",
+    "vw_command": "--dsjson --cb_explore_adf --epsilon 0.2 -q UA --coin --experimental_igl -d train-sets/igl_3states_2.dsjson -i igl_1.vw -p igl_2.pred --readable_model igl_2.readable",
+    "diff_files": {
+      "stderr": "train-sets/ref/igl_3states_2.stderr",
+      "stdout": "train-sets/ref/igl_save_load.stdout",
+      "igl_2.pred": "pred-sets/ref/igl_2.pred",
+      "igl_2.readable": "train-sets/ref/igl_2.readable"
+    },
+    "input_files": [
+      "train-sets/igl_3states_2.dsjson",
+      "igl_1.vw"
+    ],
+    "depends_on": [
+      456
+    ]
+  },
+  {
+    "id": 458,
+    "desc": "Spin off igl model to lower bitsize to cb_explore",
+    "vw_command": "--experimental_igl --coin --cb_explore_adf -d train-sets/igl_3states_1.dsjson --dsjson --noconstant -q UA --predict_only_model -b 18 -f igl_spinoff.vw",
+    "diff_files": {
+      "stderr": "train-sets/ref/igl_3states_spinoff_save.stderr"
+    },
+    "input_files": [
+      "train-sets/igl_3states_1.dsjson"
+    ]
+  },
+  {
+    "id": 459,
+    "desc": "Load spun off igl model with cb_explore and output invert hash",
+    "vw_command": "--cb_explore_adf --coin -q UA -d train-sets/igl_3states_1.dsjson --dsjson --noconstant -i igl_spinoff.vw -b 17 --invert_hash igl_spinoff.inv --predict_only_model",
+    "diff_files": {
+      "stderr": "train-sets/ref/igl_3states_spinoff_load.stderr",
+      "igl_spinoff.inv": "pred-sets/ref/igl_spinoff.inv"
+    },
+    "input_files": [
+      "train-sets/igl_3states_1.dsjson",
+      "igl_spinoff.vw"
+    ],
+    "depends_on": [
+      458
+    ]
+  },
+  {
+    "id": 460,
+    "desc": "Generate similar model to spun off igl using standard cb_explore_adf",
+    "vw_command": "--cb_explore_adf --coin --dsjson -q UA -d train-sets/igl_3states_1.dsjson --noconstant -f igl_spinoff_cb.vw -b 17 --predict_only_model",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_similar_igl_spinoff_save.stderr"
+    },
+    "input_files": [
+      "train-sets/igl_3states_1.dsjson"
+    ]
+  },
+  {
+    "id": 461,
+    "desc": "Check that standard cb_explore_adf model has same invert hash as igl spinoff",
+    "vw_command": "--cb_explore_adf --coin -q UA --dsjson -d train-sets/igl_3states_1.dsjson --noconstant -i igl_spinoff_cb.vw -b 17 --invert_hash igl_spinoff_cb.inv --predict_only_model",
+    "diff_files": {
+      "stderr": "train-sets/ref/igl_spinoff_load.stderr",
+      "igl_spinoff_cb.inv": "pred-sets/ref/igl_spinoff.inv"
+    },
+    "input_files": [
+      "train-sets/igl_3states_1.dsjson",
+      "igl_spinoff_cb.vw"
+    ],
+    "depends_on": [
+      460
+    ]
+  },
+  {
+    "id": 462,
+    "desc": "Check that binary model files are identical between standard cb_explore_adf and igl spinoff",
+    "bash_command": "diff igl_spinoff.vw igl_spinoff_cb.vw",
+    "input_files": [
+      "igl_spinoff.vw",
+      "igl_spinoff_cb.vw"
+    ],
+    "depends_on": [
+      458, 460
+    ]
+  },
+  {
+    "id": 463,
+    "desc": "Spin off epsilon decay model to lower bitsize to cb_explore with explore eval",
+    "vw_command": "--cb_explore_adf -d train-sets/automl_spin_off.txt --noconstant -b 18 --predict_only_model --epsilon_decay --model_count 2 --explore_eval",
+    "diff_files": {
+      "stderr": "train-sets/ref/spin_off_ep_dec_w_explore_eval.stderr"
+    },
+    "input_files": [
+      "train-sets/automl_spin_off.txt"
+    ]
+  },
+  {
+    "id": 464,
+    "desc": "Ignore empty lines on single-examples",
+    "vw_command": "-d train-sets/single_empty_lines.txt -p single_empty_lines.predict",
+    "diff_files": {
+      "stderr": "test-sets/ref/single_empty_lines.stderr",
+      "single_empty_lines.predict": "pred-sets/ref/single_empty_lines.predict",
+      "stdout": "test-sets/ref/single_empty_lines.stdout"
+    },
+    "input_files": [
+      "train-sets/single_empty_lines.txt"
+    ]
+  },
+  {
+    "id": 465,
+    "desc": "cb_explore_adf with epsilon-greedy exploration using --sparse_weights and saving model",
+    "vw_command": "--cb_explore_adf --epsilon 0.1 -d train-sets/cb_test.ldf --noconstant --sparse_weights -f standard_sparse_model.vw",
+    "diff_files": {
+      "stderr": "train-sets/ref/sparse_save_check.stderr",
+      "stdout": "train-sets/ref/sparse_save_check.stdout"
+    },
+    "input_files": [
+      "train-sets/cb_test.ldf"
+    ]
+  },
+  {
+    "id": 466,
+    "desc": "cb_explore_adf with epsilon-greedy exploration using --sparse_weights and loading model",
+    "vw_command": "--cb_explore_adf --epsilon 0.1 -d train-sets/cb_test.ldf --noconstant --sparse_weights -i standard_sparse_model.vw",
+    "diff_files": {
+      "stderr": "train-sets/ref/sparse_load_check.stderr",
+      "stdout": "train-sets/ref/sparse_load_check.stdout"
+    },
+    "input_files": [
+      "train-sets/cb_test.ldf",
+      "standard_sparse_model.vw"
+    ],
+    "depends_on": [
+      465
     ]
   }
 ]

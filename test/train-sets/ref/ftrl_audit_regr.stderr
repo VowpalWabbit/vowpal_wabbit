@@ -1,7 +1,7 @@
 Enabling FTRL based optimization
 Algorithm used: Proximal-FTRL
-ftrl_alpha = 0.005
-ftrl_beta = 0.1
+ftrl_alpha = 0.5
+ftrl_beta = 1
 using no cache
 Reading datafile = train-sets/0001.dat
 num sources = 1
@@ -9,17 +9,17 @@ Num weight bits = 18
 learning rate = 0.5
 initial_t = 2000
 power_t = 0.5
-Input label = simple
-Output pred = scalar
+Input label = SIMPLE
+Output pred = SCALAR
 Regressor contains 1121 values
-example      values         total   
-counter      audited        progress
-1                   36            3%
-2                   85            7%
-4                  151           13%
-8                  233           20%
-16                 344           30%
-32                 512           45%
-64                 713           63%
-128                927           82%
-200               1121          100%
+example     values        total
+counter    audited     progress
+1               36           3%
+2               85           7%
+4              151          13%
+8              233          20%
+16             344          30%
+32             512          45%
+64             713          63%
+128            927          82%
+200           1121         100%

@@ -25,10 +25,10 @@ namespace flatbuffer
 int flatbuffer_to_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& examples)
 {
   // if (all->options->was_supplied("api_status"))
-  if (all->api_status)
-    return static_cast<int>(all->flat_converter->parse_examples(all, buf, examples, nullptr, new VW::experimental::api_status()) == VW::experimental::error_code::success);
+  if (all->parser_runtime.api_status)
+    return static_cast<int>(all->parser_runtime.flat_converter->parse_examples(all, buf, examples, nullptr, new VW::experimental::api_status()) == VW::experimental::error_code::success);
   else
-    return static_cast<int>(all->flat_converter->parse_examples(all, buf, examples, nullptr, nullptr) == VW::experimental::error_code::success);
+    return static_cast<int>(all->parser_runtime.flat_converter->parse_examples(all, buf, examples, nullptr, nullptr) == VW::experimental::error_code::success);
 }
 
 const VW::parsers::flatbuffer::ExampleRoot* parser::data() { return _data; }
@@ -128,9 +128,9 @@ int parser::parse_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& exampl
 
 int parser::parse_example(VW::workspace* all, example* ae, const Example* eg, VW::experimental::api_status* status)
 {
-  all->example_parser->lbl_parser.default_label(ae->l);
+  all->parser_runtime.example_parser->lbl_parser.default_label(ae->l);
   ae->is_newline = eg->is_newline();
-  RETURN_IF_FAIL(parse_flat_label(all->sd, ae, eg, all->logger));
+  RETURN_IF_FAIL(parse_flat_label(all->sd.get(), ae, eg, all->logger));
 
   if (flatbuffers::IsFieldPresent(eg, Example::VT_TAG))
   {
@@ -148,7 +148,7 @@ int parser::parse_example(VW::workspace* all, example* ae, const Example* eg, VW
 
 int parser::parse_multi_example(VW::workspace* all, example* ae, const MultiExample* eg, VW::experimental::api_status* status)
 {
-  all->example_parser->lbl_parser.default_label(ae->l);
+  all->parser_runtime.example_parser->lbl_parser.default_label(ae->l);
   if (_multi_ex_index >= eg->examples()->size())
   {
     // done with multi example, send a newline example and reset
@@ -191,7 +191,7 @@ bool get_namespace_hash(VW::workspace* all, const Namespace* ns, uint64_t& hash)
   }
   else if (flatbuffers::IsFieldPresent(ns, Namespace::VT_NAME))
   {
-    hash = all->example_parser->hasher(ns->name()->c_str(), ns->name()->size(), all->hash_seed);
+    hash = all->parser_runtime.example_parser->hasher(ns->name()->c_str(), ns->name()->size(), all->runtime_config.hash_seed);
     return true;
   }
   
@@ -260,7 +260,7 @@ int parser::parse_namespaces(VW::workspace* all, example* ae, const Namespace* n
       }
       for (;feature_value_iter != feature_value_iter_end; ++feature_value_iter, ++feature_name_iter)
       {
-        const uint64_t word_hash = all->example_parser->hasher(feature_name_iter->c_str(), feature_name_iter->size(), _c_hash);
+        const uint64_t word_hash = all->parser_runtime.example_parser->hasher(feature_name_iter->c_str(), feature_name_iter->size(), _c_hash);
         fs.push_back(*feature_value_iter, word_hash);
         if (ns_name != nullptr)
         { fs.space_names.emplace_back(audit_strings(ns_name->c_str(), feature_name_iter->c_str())); }
@@ -301,7 +301,7 @@ int parser::parse_flat_label(shared_data* sd, example* ae, const Example* eg, VW
     case Label_SimpleLabel:
     {
       const SimpleLabel* simple_lbl = static_cast<const SimpleLabel*>(eg->label());
-      parse_simple_label(sd, &(ae->l), &(ae->_reduction_features), simple_lbl);
+      parse_simple_label(sd, &(ae->l), &(ae->ex_reduction_features), simple_lbl);
       break;
     }
     case Label_CBLabel:

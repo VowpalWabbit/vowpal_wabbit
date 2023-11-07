@@ -15,7 +15,7 @@
 #include <stdexcept>
 #include <string>
 
-std::vector<std::string> escaped_tokenize(char delim, VW::string_view s, bool allow_empty)
+std::vector<std::string> VW::details::escaped_tokenize(char delim, VW::string_view s, bool allow_empty)
 {
   std::vector<std::string> tokens;
   std::string current;
@@ -95,10 +95,7 @@ std::vector<std::string> split_impl(It begin, It end)
         if (!current.empty()) { ret.push_back(current); }
         current.clear();
       }
-      else
-      {
-        current.append(1, *begin);
-      }
+      else { current.append(1, *begin); }
     }
     else if (is_quote(*begin))
     {
@@ -108,15 +105,9 @@ std::vector<std::string> split_impl(It begin, It end)
         inside_quote = true;
         quote_char = *begin;
       }
-      else
-      {
-        current.append(1, *begin);
-      }
+      else { current.append(1, *begin); }
     }
-    else
-    {
-      current.append(1, *begin);
-    }
+    else { current.append(1, *begin); }
   }
 
   if (inside_quote) { THROW("unbalanced quotes in string"); }

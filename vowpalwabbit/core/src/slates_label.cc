@@ -6,7 +6,6 @@
 
 #include "vw/common/string_view.h"
 #include "vw/common/text_utils.h"
-#include "vw/core/cache.h"
 #include "vw/core/constant.h"
 #include "vw/core/model_utils.h"
 #include "vw/core/parse_primitives.h"
@@ -41,37 +40,36 @@ void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const
   ld.weight = 1;
 
   if (words.empty()) { THROW("Slates labels may not be empty"); }
-  if (!(words[0] == SLATES_LABEL)) { THROW("Slates labels require the first word to be slates"); }
+  if (!(words[0] == VW::details::SLATES_LABEL)) { THROW("Slates labels require the first word to be slates"); }
 
   if (words.size() == 1) { THROW("Slates labels require a type. It must be one of: [shared, action, slot]"); }
 
   const auto& type = words[1];
-  if (type == SHARED_TYPE)
+  if (type == VW::details::SHARED_TYPE)
   {
     // There is a cost defined.
     if (words.size() == 3)
     {
-      ld.cost = float_of_string(words[2], logger);
+      ld.cost = VW::details::float_of_string(words[2], logger);
       ld.labeled = true;
     }
-    else if (words.size() != 2)
-    {
-      THROW("Slates shared labels must be of the form: slates shared [global_cost]");
-    }
-    ld.type = example_type::shared;
+    else if (words.size() != 2) { THROW("Slates shared labels must be of the form: slates shared [global_cost]"); }
+    ld.type = example_type::SHARED;
   }
-  else if (type == ACTION_TYPE)
+  else if (type == VW::details::ACTION_TYPE)
   {
     if (words.size() != 3) { THROW("Slates action labels must be of the form: slates action <slot_id>"); }
 
     char* char_after_int = nullptr;
-    ld.slot_id = int_of_string(words[2], char_after_int, logger);
+    ld.slot_id = VW::details::int_of_string(words[2], char_after_int, logger);
     if (char_after_int != nullptr && *char_after_int != ' ' && *char_after_int != '\0')
-    { THROW("Slot id seems to be malformed"); }
+    {
+      THROW("Slot id seems to be malformed");
+    }
 
-    ld.type = example_type::action;
+    ld.type = example_type::ACTION;
   }
-  else if (type == SLOT_TYPE)
+  else if (type == VW::details::SLOT_TYPE)
   {
     if (words.size() == 3)
     {
@@ -85,17 +83,15 @@ void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const
         if (split_colons.size() != 2) { THROW("Malformed action score token"); }
 
         // Element 0 is the action, element 1 is the probability
-        ld.probabilities.push_back(
-            {static_cast<uint32_t>(int_of_string(split_colons[0], logger)), float_of_string(split_colons[1], logger)});
+        ld.probabilities.push_back({static_cast<uint32_t>(VW::details::int_of_string(split_colons[0], logger)),
+            VW::details::float_of_string(split_colons[1], logger)});
       }
 
       // If a full distribution has been given, check if it sums to 1, otherwise throw.
       if (ld.probabilities.size() > 1)
       {
         float total_pred = std::accumulate(ld.probabilities.begin(), ld.probabilities.end(), 0.f,
-            [](float result_so_far, const ACTION_SCORE::action_score& action_pred) {
-              return result_so_far + action_pred.score;
-            });
+            [](float result_so_far, const VW::action_score& action_pred) { return result_so_far + action_pred.score; });
 
         if (!VW::math::are_same(total_pred, 1.f))
         {
@@ -110,12 +106,9 @@ void parse_label(slates::label& ld, VW::label_parser_reuse_mem& reuse_mem, const
           "Slates shared labels must be of the form: slates slot "
           "[chosen_action_id:probability[,action_id:probability...]]");
     }
-    ld.type = example_type::slot;
+    ld.type = example_type::SLOT;
   }
-  else
-  {
-    THROW("Unknown slates label type: " << type);
-  }
+  else { THROW("Unknown slates label type: " << type); }
 }
 
 label_parser slates_label_parser = {
@@ -123,22 +116,21 @@ label_parser slates_label_parser = {
     [](polylabel& label) { default_label(label.slates); },
     // parse_label
     [](polylabel& label, reduction_features& /* red_features */, VW::label_parser_reuse_mem& reuse_mem,
-        const VW::named_labels* /* ldict */, const std::vector<VW::string_view>& words,
-        VW::io::logger& logger) { parse_label(label.slates, reuse_mem, words, logger); },
+        const VW::named_labels* /* ldict */, const std::vector<VW::string_view>& words, VW::io::logger& logger)
+    { parse_label(label.slates, reuse_mem, words, logger); },
     // cache_label
     [](const polylabel& label, const reduction_features& /* red_features */, io_buf& cache,
-        const std::string& upstream_name,
-        bool text) { return VW::model_utils::write_model_field(cache, label.slates, upstream_name, text); },
+        const std::string& upstream_name, bool text)
+    { return VW::model_utils::write_model_field(cache, label.slates, upstream_name, text); },
     // read_cached_label
-    [](polylabel& label, reduction_features& /* red_features */, io_buf& cache) {
-      return VW::model_utils::read_model_field(cache, label.slates);
-    },
+    [](polylabel& label, reduction_features& /* red_features */, io_buf& cache)
+    { return VW::model_utils::read_model_field(cache, label.slates); },
     // get_weight
     [](const polylabel& label, const reduction_features& /* red_features */) { return weight(label.slates); },
     // test_label
     [](const polylabel& label) { return test_label(label.slates); },
     // label type
-    label_type_t::slates};
+    label_type_t::SLATES};
 
 }  // namespace slates
 }  // namespace VW
@@ -152,10 +144,10 @@ VW::string_view VW::to_string(VW::slates::example_type ex_type)
   using namespace VW::slates;
   switch (ex_type)
   {
-    CASE(example_type::unset)
-    CASE(example_type::shared)
-    CASE(example_type::action)
-    CASE(example_type::slot)
+    CASE(example_type::UNSET)
+    CASE(example_type::SHARED)
+    CASE(example_type::ACTION)
+    CASE(example_type::SLOT)
   }
 
   // The above enum is exhaustive and will warn on a new label type being added due to the lack of `default`

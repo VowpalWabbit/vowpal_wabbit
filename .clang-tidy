@@ -1,11 +1,26 @@
 {
-  "Checks": "-*,readability-*,modernize-*,performance-*,cppcoreguidelines-pro-type-member-init,cppcoreguidelines-init-variables,-modernize-use-trailing-return-type,-readability-uppercase-literal-suffix",
+  "Checks": "-*,readability-*,modernize-*,performance-*,cppcoreguidelines-pro-type-member-init,cppcoreguidelines-init-variables,readability-identifier-naming,-modernize-use-trailing-return-type,-readability-magic-numbers,-readability-function-cognitive-complexity,-readability-identifier-length,-readability-uppercase-literal-suffix",
   "FormatStyle": "file",
   "WarningsAsErrors": "-*,performance-*,modernize-use-using,readability-braces-around-statements",
   "CheckOptions": [
     {
       "key": "performance-move-const-arg.CheckTriviallyCopyableMove",
       "value": "0"
-    }
+    },
+    {"key": "readability-identifier-naming.NamespaceCase", "value": "lower_case"},
+    {"key": "readability-identifier-naming.ClassCase", "value": "lower_case"},
+    {"key": "readability-identifier-naming.StructCase", "value": "lower_case"},
+    {"key": "readability-identifier-naming.MemberCase", "value": "lower_case"},
+    {"key": "readability-identifier-naming.PrivateMemberPrefix", "value": "_"},
+    {"key": "readability-identifier-naming.ProtectedMemberPrefix", "value": "_"},
+    {"key": "readability-identifier-naming.FunctionCase", "value": "lower_case"},
+    {"key": "readability-identifier-naming.MethodCase", "value": "lower_case"},
+    {"key": "readability-identifier-naming.VariableCase", "value": "lower_case" },
+    {"key": "readability-identifier-naming.MacroDefinitionCase", "value": "UPPER_CASE"},
+    {"key": "readability-identifier-naming.EnumCase", "value": "lower_case"},
+    {"key": "readability-identifier-naming.ScopedEnumConstantCase", "value": "UPPER_CASE"},
+    {"key": "readability-identifier-naming.EnumConstantCase", "value": "UPPER_CASE"},
+    {"key": "readability-identifier-naming.GlobalConstantCase", "value": "UPPER_CASE"},
+    {"key": "readability-identifier-naming.StaticConstantCase", "value": "UPPER_CASE"}
   ]
 }

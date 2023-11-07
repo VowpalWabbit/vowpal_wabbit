@@ -16,33 +16,23 @@ on:
       - published
   workflow_dispatch:
 
-concurrency: 
+concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
 jobs:
   cpp:
-    container:
-      image: vowpalwabbit/ubuntu1804-build:latest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
-        with:
-          submodules: recursive
-      - name: Configure
-        run: |
-          mkdir build
-          cd build
-          cmake .. -DBUILD_DOCS=On
+      - uses: actions/checkout@v3
+      - uses: cachix/install-nix-action@v18
       - name: Build docs
-        run: |
-          cd build
-          make doc
+        run: nix build --print-build-logs .#vw-cpp-docs
       - name: Upload built docs
         uses: actions/upload-artifact@v1
         with:
           name: cxx_docs
-          path: doc/html/
+          path: result/html/
   dump-options-build:
     container:
       image: vowpalwabbit/ubuntu1804-build:latest
@@ -71,11 +61,11 @@ jobs:
       - uses: actions/checkout@v1
         with:
           submodules: recursive
-      - run: echo "/opt/python/cp39-cp39/bin" >> $GITHUB_PATH
+      - run: echo "/opt/python/cp310-cp310/bin" >> $GITHUB_PATH
       - name: Build wheel
         shell: bash
         run: |
-          pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='/opt/python/cp39-cp39/include/python3.9/'" --verbose
+          pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='/opt/python/cp310-cp310/include/python3.10/'" --verbose
           auditwheel repair wheel_output/*whl -w audit_output/
       - name: Upload built wheel
         uses: actions/upload-artifact@v1
@@ -92,7 +82,7 @@ jobs:
       - uses: actions/setup-node@v3
       - uses: actions/setup-python@v3
         with:
-          python-version: '3.9'
+          python-version: '3.10'
       - name: If this is a push build then set version to latest
         if: ${{ github.event_name == 'push' }}
         run: echo "VW_SPHINX_VERSION_OVERRIDE=latest" >> $GITHUB_ENV
@@ -113,7 +103,7 @@ jobs:
           pip install -r python/docs/build-requirements.txt
           pip install -r requirements.txt
           pip install PyYAML
-          npm install -g hbs-cli
+          npm install -g handlebars
       - name: Install wheel
         shell: bash
         run: |

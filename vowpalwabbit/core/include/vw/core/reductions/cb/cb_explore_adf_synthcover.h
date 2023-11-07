@@ -7,12 +7,11 @@
 #include "vw/core/vw_fwd.h"
 
 #include <memory>
-#include <vector>
 
 namespace VW
 {
 namespace reductions
 {
-VW::LEARNER::base_learner* cb_explore_adf_synthcover_setup(VW::setup_base_i& stack_builder);
+std::shared_ptr<VW::LEARNER::learner> cb_explore_adf_synthcover_setup(VW::setup_base_i& stack_builder);
 }  // namespace reductions
 }  // namespace VW

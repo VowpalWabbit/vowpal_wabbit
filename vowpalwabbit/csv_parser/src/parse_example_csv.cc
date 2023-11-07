@@ -15,9 +15,11 @@ namespace VW
 {
 namespace parsers
 {
+namespace csv
+{
 int parse_csv_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& examples)
 {
-  bool keep_reading = all->custom_parser->next(*all, buf, examples);
+  bool keep_reading = all->parser_runtime.custom_parser->next(*all, buf, examples);
   return keep_reading ? 1 : 0;
 }
 
@@ -41,7 +43,9 @@ void csv_parser::set_csv_separator(std::string& str, const std::string& name)
     }
 
     if ((result != str[0] && str.length() > 2) || result == str[0])
-    { THROW("Multiple characters passed as " << name << ": " << str); }
+    {
+      THROW("Multiple characters passed as " << name << ": " << str);
+    }
     str = result;
   }
 }
@@ -88,18 +92,22 @@ void csv_parser::handle_parse_args(csv_parser_options& parsed_options)
     for (size_t i = 0; i < strlen(csv_separator_forbid_chars); i++)
     {
       if (parsed_options.csv_separator[0] == csv_separator_forbid_chars[i])
-      { THROW("Forbidden field separator used: " << parsed_options.csv_separator[0]); }
+      {
+        THROW("Forbidden field separator used: " << parsed_options.csv_separator[0]);
+      }
     }
 
     if (parsed_options.csv_no_file_header && parsed_options.csv_header.empty())
-    { THROW("No header specified while --csv_no_file_header is set."); }
+    {
+      THROW("No header specified while --csv_no_file_header is set.");
+    }
   }
 }
 
 class CSV_parser
 {
 public:
-  CSV_parser(VW::workspace* all, VW::example* ae, VW::string_view csv_line, VW::parsers::csv_parser* parser)
+  CSV_parser(VW::workspace* all, VW::example* ae, VW::string_view csv_line, VW::parsers::csv::csv_parser* parser)
       : _parser(parser), _all(all), _ae(ae)
   {
     if (csv_line.empty()) { THROW("Malformed CSV, empty line at " << _parser->line_num << "!"); }
@@ -112,13 +120,13 @@ public:
   ~CSV_parser() {}
 
 private:
-  VW::parsers::csv_parser* _parser;
+  VW::parsers::csv::csv_parser* _parser;
   VW::workspace* _all;
   VW::example* _ae;
   VW::v_array<VW::string_view> _csv_line;
   std::vector<std::string> _token_storage;
-  size_t _anon;
-  uint64_t _channel_hash;
+  size_t _anon{};
+  uint64_t _channel_hash{};
 
   inline FORCE_INLINE void parse_line()
   {
@@ -145,10 +153,7 @@ private:
       THROW("CSV line " << _parser->line_num << " has " << _csv_line.size() << " elements, but the header has "
                         << _parser->header_fn.size() << " elements!");
     }
-    else if (!this_line_is_header)
-    {
-      parse_example();
-    }
+    else if (!this_line_is_header) { parse_example(); }
   }
 
   inline FORCE_INLINE void parse_ns_value()
@@ -160,18 +165,14 @@ private:
       std::string ns = " ";
       float value = 1.f;
       if (pair.size() != 2 || pair[1].empty())
-      { THROW("Malformed namespace value pair at cell " << i + 1 << ": " << ns_values[i]); }
-      else if (!pair[0].empty())
       {
-        ns = std::string{pair[0]};
+        THROW("Malformed namespace value pair at cell " << i + 1 << ": " << ns_values[i]);
       }
+      else if (!pair[0].empty()) { ns = std::string{pair[0]}; }
 
       value = string_to_float(pair[1]);
       if (std::isnan(value)) { THROW("NaN namespace value at cell " << i + 1 << ": " << ns_values[i]); }
-      else
-      {
-        _parser->ns_value[std::string{pair[0]}] = value;
-      }
+      else { _parser->ns_value[std::string{pair[0]}] = value; }
     }
   }
 
@@ -187,10 +188,7 @@ private:
         // Handle the tag column
         if (header_elements[i] == "_tag") { _parser->tag_list.emplace_back(i); }
         // Handle the label column
-        else if (header_elements[i] == "_label")
-        {
-          _parser->label_list.emplace_back(i);
-        }
+        else if (header_elements[i] == "_label") { _parser->label_list.emplace_back(i); }
 
         _parser->header_fn.emplace_back();
         _parser->header_ns.emplace_back();
@@ -219,12 +217,14 @@ private:
     }
 
     if (_parser->label_list.empty())
-    { _all->logger.err_warn("No '_label' column found in the header/CSV first line!"); }
+    {
+      _all->logger.err_warn("No '_label' column found in the header/CSV first line!");
+    }
   }
 
   inline FORCE_INLINE void parse_example()
   {
-    _all->example_parser->lbl_parser.default_label(_ae->l);
+    _all->parser_runtime.example_parser->lbl_parser.default_label(_ae->l);
     if (!_parser->label_list.empty()) { parse_label(); }
     if (!_parser->tag_list.empty()) { parse_tag(); }
 
@@ -236,14 +236,14 @@ private:
     VW::string_view label_content = _csv_line[_parser->label_list[0]];
     if (_parser->options.csv_remove_outer_quotes) { remove_quotation_marks(label_content); }
 
-    _all->example_parser->words.clear();
-    VW::tokenize(' ', label_content, _all->example_parser->words);
+    _all->parser_runtime.example_parser->words.clear();
+    VW::tokenize(' ', label_content, _all->parser_runtime.example_parser->words);
 
-    if (!_all->example_parser->words.empty())
+    if (!_all->parser_runtime.example_parser->words.empty())
     {
-      _all->example_parser->lbl_parser.parse_label(_ae->l, _ae->_reduction_features,
-          _all->example_parser->parser_memory_to_reuse, _all->sd->ldict.get(), _all->example_parser->words,
-          _all->logger);
+      _all->parser_runtime.example_parser->lbl_parser.parse_label(_ae->l, _ae->ex_reduction_features,
+          _all->parser_runtime.example_parser->parser_memory_to_reuse, _all->sd->ldict.get(),
+          _all->parser_runtime.example_parser->words, _all->logger);
     }
   }
 
@@ -267,12 +267,14 @@ private:
       if (f.first.empty())
       {
         ns = " ";
-        _channel_hash = _all->hash_seed == 0 ? 0 : VW::uniform_hash("", 0, _all->hash_seed);
+        _channel_hash =
+            _all->runtime_config.hash_seed == 0 ? 0 : VW::uniform_hash("", 0, _all->runtime_config.hash_seed);
       }
       else
       {
         ns = f.first;
-        _channel_hash = _all->example_parser->hasher(ns.data(), ns.length(), _all->hash_seed);
+        _channel_hash =
+            _all->parser_runtime.example_parser->hasher(ns.data(), ns.length(), _all->runtime_config.hash_seed);
       }
 
       unsigned char _index = static_cast<unsigned char>(ns[0]);
@@ -321,46 +323,39 @@ private:
     if (!is_feature_float && _parser->options.csv_remove_outer_quotes) { remove_quotation_marks(string_feature_value); }
 
     if (is_feature_float) { _v = cur_channel_v * parsed_feature_value; }
-    else
-    {
-      _v = 1;
-    }
+    else { _v = 1; }
 
     // Case where feature value is string
     if (!is_feature_float)
     {
       // chain hash is hash(feature_value, hash(feature_name, namespace_hash)) & parse_mask
-      word_hash = (_all->example_parser->hasher(string_feature_value.data(), string_feature_value.length(),
-                       _all->example_parser->hasher(feature_name.data(), feature_name.length(), _channel_hash)) &
-          _all->parse_mask);
+      word_hash =
+          (_all->parser_runtime.example_parser->hasher(string_feature_value.data(), string_feature_value.length(),
+               _all->parser_runtime.example_parser->hasher(feature_name.data(), feature_name.length(), _channel_hash)) &
+              _all->runtime_state.parse_mask);
     }
     // Case where feature value is float and feature name is not empty
     else if (!feature_name.empty())
     {
       word_hash =
-          (_all->example_parser->hasher(feature_name.data(), feature_name.length(), _channel_hash) & _all->parse_mask);
+          (_all->parser_runtime.example_parser->hasher(feature_name.data(), feature_name.length(), _channel_hash) &
+              _all->runtime_state.parse_mask);
     }
     // Case where feature value is float and feature name is empty
-    else
-    {
-      word_hash = _channel_hash + _anon++;
-    }
+    else { word_hash = _channel_hash + _anon++; }
 
     // don't add 0 valued features to list of features
     if (_v == 0) { return; }
     fs.push_back(_v, word_hash);
 
-    if (_all->audit || _all->hash_inv)
+    if (_all->output_config.audit || _all->output_config.hash_inv)
     {
       if (!is_feature_float)
       {
         fs.space_names.emplace_back(
             VW::audit_strings(std::string{ns}, std::string{feature_name}, std::string{string_feature_value}));
       }
-      else
-      {
-        fs.space_names.emplace_back(VW::audit_strings(std::string{ns}, std::string{feature_name}));
-      }
+      else { fs.space_names.emplace_back(VW::audit_strings(std::string{ns}, std::string{feature_name})); }
     }
   }
 
@@ -456,7 +451,7 @@ private:
   inline FORCE_INLINE float string_to_float(VW::string_view sv)
   {
     size_t end_read = 0;
-    float parsed = parseFloat(sv.data(), end_read, sv.data() + sv.size());
+    float parsed = VW::details::parse_float(sv.data(), end_read, sv.data() + sv.size());
     // Not a valid float, return NaN
     if (!(end_read == sv.size())) { parsed = std::numeric_limits<float>::quiet_NaN(); }
     return parsed;
@@ -506,11 +501,10 @@ size_t csv_parser::read_line(VW::workspace* all, VW::example* ae, io_buf& buf)
     CSV_parser parse_line(all, ae, csv_line, this);
   }
   // EOF is reached, reset for possible next file.
-  else
-  {
-    reset();
-  }
+  else { reset(); }
   return num_chars_initial;
 }
+
+}  // namespace csv
 }  // namespace parsers
 }  // namespace VW

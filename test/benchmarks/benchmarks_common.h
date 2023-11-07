@@ -47,7 +47,9 @@ inline std::string get_x_string_fts_multi_ex(
   {
     ss << " | ";
     for (size_t j = start_index; j < start_index + feature_size; j++)
-    { ss << std::to_string(i) + "_" + std::to_string(j) << +" "; }
+    {
+      ss << std::to_string(i) + "_" + std::to_string(j) << +" ";
+    }
     ss << std::endl;
   }
   return ss.str();

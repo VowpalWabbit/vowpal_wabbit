@@ -5,13 +5,12 @@
 
 #include "vw/core/vw_fwd.h"
 
-using namespace VW::config;
-using namespace VW::LEARNER;
+#include <memory>
 
 namespace VW
 {
 namespace reductions
 {
-VW::LEARNER::base_learner* automl_setup(VW::setup_base_i&);
+std::shared_ptr<VW::LEARNER::learner> automl_setup(VW::setup_base_i&);
 }  // namespace reductions
 }  // namespace VW

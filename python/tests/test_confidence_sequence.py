@@ -1,10 +1,10 @@
-from confidence_sequence import ConfidenceSequence
+from confidence_sequence import confidence_sequence
 import numpy as np
 
 
 def test_confidence_sequence():
     rs = [0.5, 0.6, 0.7, 0.8] * 1000
-    cs = ConfidenceSequence()
+    cs = confidence_sequence()
     for r, w in zip(rs, rs):
         cs.addobs(w, r)
     alpha = 0.05

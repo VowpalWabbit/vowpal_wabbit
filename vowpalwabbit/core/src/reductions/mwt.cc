@@ -6,21 +6,23 @@
 
 #include "vw/config/options.h"
 #include "vw/core/cb.h"
+#include "vw/core/constant.h"
 #include "vw/core/io_buf.h"
 #include "vw/core/reductions/cb/cb_algs.h"
 #include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
+#include "vw/io/errno_handling.h"
 #include "vw/io/logger.h"
 
 #include <cmath>
 
 using namespace VW::LEARNER;
-using namespace CB_ALGS;
 using namespace VW::config;
 
-void MWT::print_scalars(VW::io::writer* f, VW::v_array<float>& scalars, VW::v_array<char>& tag, VW::io::logger& logger)
+void VW::details::print_scalars(
+    VW::io::writer* f, const VW::v_array<float>& scalars, const VW::v_array<char>& tag, VW::io::logger& logger)
 {
   if (f != nullptr)
   {
@@ -39,41 +41,41 @@ void MWT::print_scalars(VW::io::writer* f, VW::v_array<float>& scalars, VW::v_ar
     ss << '\n';
     ssize_t len = ss.str().size();
     ssize_t t = f->write(ss.str().c_str(), static_cast<unsigned int>(len));
-    if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
+    if (t != len) { logger.err_error("write error: {}", VW::io::strerror_to_string(errno)); }
   }
 }
 
 namespace
 {
-struct policy_data
+class policy_data
 {
+public:
   double cost = 0.0;
   uint32_t action = 0;
   bool seen = false;
 };
 
-struct mwt
+class mwt
 {
-  bool namespaces[256];            // the set of namespaces to evaluate.
-  std::vector<policy_data> evals;  // accrued losses of features.
-  std::pair<bool, CB::cb_class> optional_observation;
+public:
+  std::array<bool, VW::NUM_NAMESPACES> namespaces{};  // the set of namespaces to evaluate.
+  std::vector<policy_data> evals;                     // accrued losses of features.
+  std::pair<bool, VW::cb_class> optional_observation;
   VW::v_array<uint64_t> policies;
   double total = 0.;
   uint32_t num_classes = 0;
   bool learn = false;
 
   VW::v_array<VW::namespace_index> indices;  // excluded namespaces
-  features feature_space[256];
+  std::array<VW::features, VW::NUM_NAMESPACES> feature_space;
   VW::workspace* all = nullptr;
-
-  mwt() { std::fill(namespaces, namespaces + 256, false); }
 };
 
 void value_policy(mwt& c, float val, uint64_t index)  // estimate the value of a single feature.
 {
   if (val < 0 || std::floor(val) != val) { c.all->logger.out_error("error {} is not a valid action", val); }
 
-  uint32_t value = static_cast<uint32_t>(val);
+  auto value = static_cast<uint32_t>(val);
   uint64_t new_index = (index & c.all->weights.mask()) >> c.all->weights.stride_shift();
 
   if (!c.evals[new_index].seen)
@@ -86,7 +88,7 @@ void value_policy(mwt& c, float val, uint64_t index)  // estimate the value of a
 }
 
 template <bool learn, bool exclude, bool is_learn>
-void predict_or_learn(mwt& c, single_learner& base, VW::example& ec)
+void predict_or_learn(mwt& c, learner& base, VW::example& ec)
 {
   c.optional_observation = get_observed_cost_cb(ec.l.cb);
 
@@ -96,7 +98,7 @@ void predict_or_learn(mwt& c, single_learner& base, VW::example& ec)
     // For each nonzero feature in observed namespaces, check it's value.
     for (unsigned char ns : ec.indices)
     {
-      if (c.namespaces[ns]) { GD::foreach_feature<mwt, value_policy>(c.all, ec.feature_space[ns], c); }
+      if (c.namespaces[ns]) { VW::foreach_feature<mwt, value_policy>(c.all, ec.feature_space[ns], c); }
     }
     for (uint64_t policy : c.policies)
     {
@@ -120,7 +122,7 @@ void predict_or_learn(mwt& c, single_learner& base, VW::example& ec)
         if (learn)
         {
           c.feature_space[ns].clear();
-          for (features::iterator& f : ec.feature_space[ns])
+          for (VW::features::iterator& f : ec.feature_space[ns])
           {
             uint64_t new_index =
                 ((f.index() & weight_mask) >> stride_shift) * c.num_classes + static_cast<uint64_t>(f.value());
@@ -139,10 +141,7 @@ void predict_or_learn(mwt& c, single_learner& base, VW::example& ec)
   if (learn)
   {
     if (is_learn) { base.learn(ec); }
-    else
-    {
-      base.predict(ec);
-    }
+    else { base.predict(ec); }
   }
 
   VW_WARNING_STATE_PUSH
@@ -162,34 +161,57 @@ void predict_or_learn(mwt& c, single_learner& base, VW::example& ec)
   preds.clear();
   if (learn) { preds.push_back(static_cast<float>(ec.pred.multiclass)); }
   for (uint64_t index : c.policies)
-  { preds.push_back(static_cast<float>(c.evals[index].cost) / static_cast<float>(c.total)); }
+  {
+    preds.push_back(static_cast<float>(c.evals[index].cost) / static_cast<float>(c.total));
+  }
 
   ec.pred.scalars = preds;
 }
 
-void finish_example(VW::workspace& all, mwt& c, VW::example& ec)
+void update_stats_mwt(const VW::workspace& /* all */, VW::shared_data& sd, const mwt& data, const VW::example& ec,
+    VW::io::logger& /* logger */)
 {
   float loss = 0.;
-  if (c.learn)
+  if (data.learn)
   {
-    if (c.optional_observation.first)
-    { loss = get_cost_estimate(c.optional_observation.second, static_cast<uint32_t>(ec.pred.scalars[0])); }
+    if (data.optional_observation.first)
+    {
+      loss = get_cost_estimate(data.optional_observation.second, static_cast<uint32_t>(ec.pred.scalars[0]));
+    }
   }
-  all.sd->update(ec.test_only, c.optional_observation.first, loss, 1.f, ec.get_num_features());
-
-  for (auto& sink : all.final_prediction_sink) { MWT::print_scalars(sink.get(), ec.pred.scalars, ec.tag, all.logger); }
-
-  if (c.learn)
-  {
-    VW::v_array<float> temp = ec.pred.scalars;
-    ec.pred.multiclass = static_cast<uint32_t>(temp[0]);
-    CB::print_update(all, c.optional_observation.first, ec, nullptr, false, nullptr);
-    ec.pred.scalars = temp;
-  }
-  VW::finish_example(all, ec);
+  sd.update(ec.test_only, data.optional_observation.first, loss, 1.f, ec.get_num_features());
 }
 
-void save_load(mwt& c, io_buf& model_file, bool read, bool text)
+void output_example_prediction_mwt(
+    VW::workspace& all, const mwt& /* data */, const VW::example& ec, VW::io::logger& /* unused */)
+{
+  for (auto& sink : all.output_runtime.final_prediction_sink)
+  {
+    VW::details::print_scalars(sink.get(), ec.pred.scalars, ec.tag, all.logger);
+  }
+}
+
+void print_update_mwt(
+    VW::workspace& all, VW::shared_data& /* sd */, const mwt& data, const VW::example& ec, VW::io::logger& /* unused */)
+{
+  const bool should_print_driver_update =
+      all.sd->weighted_examples() >= all.sd->dump_interval && !all.output_config.quiet && !all.reduction_state.bfgs;
+
+  if (should_print_driver_update && data.learn)
+  {
+    size_t num_features = ec.get_num_features();
+    size_t pred = ec.pred.multiclass;
+
+    std::string label_buf;
+    if (data.optional_observation.first) { label_buf = "unknown"; }
+    else { label_buf = " known"; }
+
+    all.sd->print_update(*all.output_runtime.trace_message, all.passes_config.holdout_set_off,
+        all.passes_config.current_pass, label_buf, static_cast<uint32_t>(pred), num_features);
+  }
+}
+
+void save_load(mwt& c, VW::io_buf& model_file, bool read, bool text)
 {
   if (model_file.num_files() == 0) { return; }
 
@@ -197,39 +219,40 @@ void save_load(mwt& c, io_buf& model_file, bool read, bool text)
 
   // total
   msg << "total: " << c.total;
-  bin_text_read_write_fixed_validated(model_file, reinterpret_cast<char*>(&c.total), sizeof(c.total), read, msg, text);
+  VW::details::bin_text_read_write_fixed_validated(
+      model_file, reinterpret_cast<char*>(&c.total), sizeof(c.total), read, msg, text);
 
   // policies
   size_t policies_size = c.policies.size();
-  bin_text_read_write_fixed_validated(
+  VW::details::bin_text_read_write_fixed_validated(
       model_file, reinterpret_cast<char*>(&policies_size), sizeof(policies_size), read, msg, text);
 
-  if (read) { c.policies.resize_but_with_stl_behavior(policies_size); }
+  if (read) { c.policies.resize(policies_size); }
   else
   {
     msg << "policies: ";
-    for (feature_index& policy : c.policies) { msg << policy << " "; }
+    for (VW::feature_index& policy : c.policies) { msg << policy << " "; }
   }
 
-  bin_text_read_write_fixed_validated(
-      model_file, reinterpret_cast<char*>(c.policies.begin()), policies_size * sizeof(feature_index), read, msg, text);
+  VW::details::bin_text_read_write_fixed_validated(model_file, reinterpret_cast<char*>(c.policies.begin()),
+      policies_size * sizeof(VW::feature_index), read, msg, text);
 
   // c.evals is already initialized nicely to the same size as the regressor.
-  for (feature_index& policy : c.policies)
+  for (VW::feature_index& policy : c.policies)
   {
     policy_data& pd = c.evals[policy];
     if (read) { msg << "evals: " << policy << ":" << pd.action << ":" << pd.cost << " "; }
-    bin_text_read_write_fixed_validated(
+    VW::details::bin_text_read_write_fixed_validated(
         model_file, reinterpret_cast<char*>(&c.evals[policy].cost), sizeof(double), read, msg, text);
-    bin_text_read_write_fixed_validated(
+    VW::details::bin_text_read_write_fixed_validated(
         model_file, reinterpret_cast<char*>(&c.evals[policy].action), sizeof(uint32_t), read, msg, text);
-    bin_text_read_write_fixed_validated(
+    VW::details::bin_text_read_write_fixed_validated(
         model_file, reinterpret_cast<char*>(&c.evals[policy].seen), sizeof(bool), read, msg, text);
   }
 }
 }  // namespace
 
-base_learner* VW::reductions::mwt_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::mwt_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -269,8 +292,8 @@ base_learner* VW::reductions::mwt_setup(VW::setup_base_i& stack_builder)
   }
 
   std::string name_addition;
-  void (*learn_ptr)(mwt&, single_learner&, VW::example&);
-  void (*pred_ptr)(mwt&, single_learner&, VW::example&);
+  void (*learn_ptr)(mwt&, learner&, VW::example&) = nullptr;
+  void (*pred_ptr)(mwt&, learner&, VW::example&) = nullptr;
 
   if (c->learn)
   {
@@ -294,15 +317,19 @@ base_learner* VW::reductions::mwt_setup(VW::setup_base_i& stack_builder)
     pred_ptr = predict_or_learn<false, false, false>;
   }
 
-  auto* l = make_reduction_learner(std::move(c), as_singleline(stack_builder.setup_base_learner()), learn_ptr, pred_ptr,
-      stack_builder.get_setupfn_name(mwt_setup) + name_addition)
-                .set_learn_returns_prediction(true)
-                .set_output_prediction_type(VW::prediction_type_t::scalars)
-                .set_input_label_type(VW::label_type_t::cb)
-                .set_save_load(save_load)
-                .set_finish_example(::finish_example)
-                .build();
+  auto base = stack_builder.setup_base_learner();
 
-  all.example_parser->lbl_parser = CB::cb_label;
-  return make_base(*l);
+  auto l = make_reduction_learner(std::move(c), require_singleline(base), learn_ptr, pred_ptr,
+      stack_builder.get_setupfn_name(mwt_setup) + name_addition)
+               .set_learn_returns_prediction(true)
+               .set_input_prediction_type(base->get_output_prediction_type())
+               .set_output_prediction_type(VW::prediction_type_t::SCALARS)
+               .set_input_label_type(VW::label_type_t::CB)
+               .set_output_label_type(base->get_input_label_type())
+               .set_save_load(save_load)
+               .set_output_example_prediction(::output_example_prediction_mwt)
+               .set_update_stats(::update_stats_mwt)
+               .set_print_update(::print_update_mwt)
+               .build();
+  return l;
 }

@@ -6,7 +6,9 @@
 
 #include "vw/config/options.h"
 #include "vw/core/accumulate.h"
+#include "vw/core/guard.h"
 #include "vw/core/label_parser.h"
+#include "vw/core/learner.h"
 #include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/vw.h"
@@ -16,30 +18,32 @@
 #include <cfloat>
 #include <cmath>
 
-//#define MAGIC_ARGUMENT //MAY IT NEVER DIE //LIVE LONG AND PROSPER
-// TODO: This file makes extensive use of #ifdef DEBUG for printing
-//       leave this alone for now
+// #define MAGIC_ARGUMENT //MAY IT NEVER DIE //LIVE LONG AND PROSPER
+//  TODO: This file makes extensive use of #ifdef DEBUG for printing
+//        leave this alone for now
 
 using namespace VW::LEARNER;
 using namespace VW::config;
 
 namespace
 {
-static constexpr uint32_t parent_bit = 1;
-static constexpr uint32_t cycle_bit = 2;
-static constexpr uint32_t tree_atomics = 134;
-static constexpr float tolerance = 1e-9f;
-static constexpr uint32_t indicator_bit = 128;
-static constexpr uint32_t default_depth = 127;
+static constexpr uint32_t PARENT_BIT = 1;
+static constexpr uint32_t CYCLE_BIT = 2;
+static constexpr uint32_t TREE_ATOMICS = 134;
+static constexpr float TOLERANCE = 1e-9f;
+static constexpr uint32_t INDICATOR_BIT = 128;
+static constexpr uint32_t DEFAULT_DEPTH = 127;
 
-struct sort_data
+class sort_data
 {
+public:
   float weightsal;
   uint64_t wid;
 };
 
-struct stagewise_poly
+class stagewise_poly
 {
+public:
   VW::workspace* all = nullptr;  // many uses, unmodular reduction
 
   float sched_exponent = 0.f;
@@ -60,7 +64,7 @@ struct stagewise_poly
 
   VW::example synth_ec;
   // following is bookkeeping in synth_ec creation (dfs)
-  feature synth_rec_f{0.f, 0};
+  VW::feature synth_rec_f{0.f, 0};
   VW::example* original_ec = nullptr;
   uint32_t cur_depth = 0;
   bool training = false;
@@ -123,7 +127,10 @@ inline uint64_t wid_mask_un_shifted(const stagewise_poly& poly, uint64_t wid)
   return stride_un_shift(poly, wid & poly.all->weights.mask());
 }
 
-inline uint64_t constant_feat(const stagewise_poly& poly) { return stride_shift(poly, constant * poly.all->wpp); }
+inline uint64_t constant_feat(const stagewise_poly& poly)
+{
+  return stride_shift(poly, VW::details::CONSTANT * poly.all->reduction_state.total_feature_width);
+}
 
 inline uint64_t constant_feat_masked(const stagewise_poly& poly) { return wid_mask(poly, constant_feat(poly)); }
 
@@ -131,11 +138,11 @@ inline size_t depthsbits_sizeof(const stagewise_poly& poly) { return (2 * poly.a
 
 void depthsbits_create(stagewise_poly& poly)
 {
-  poly.depthsbits = calloc_or_throw<uint8_t>(2 * poly.all->length());
+  poly.depthsbits = VW::details::calloc_or_throw<uint8_t>(2 * poly.all->length());
   for (uint64_t i = 0; i < poly.all->length() * 2; i += 2)
   {
-    poly.depthsbits[i] = default_depth;
-    poly.depthsbits[i + 1] = indicator_bit;
+    poly.depthsbits[i] = DEFAULT_DEPTH;
+    poly.depthsbits[i + 1] = INDICATOR_BIT;
   }
 }
 
@@ -143,32 +150,29 @@ inline bool parent_get(const stagewise_poly& poly, uint64_t wid)
 {
   assert(wid % stride_shift(poly, 1) == 0);
   assert(do_ft_offset(poly, wid) % stride_shift(poly, 1) == 0);
-  return poly.depthsbits[wid_mask_un_shifted(poly, do_ft_offset(poly, wid)) * 2 + 1] & parent_bit;
+  return poly.depthsbits[wid_mask_un_shifted(poly, do_ft_offset(poly, wid)) * 2 + 1] & PARENT_BIT;
 }
 
 inline void parent_toggle(stagewise_poly& poly, uint64_t wid)
 {
   assert(wid % stride_shift(poly, 1) == 0);
   assert(do_ft_offset(poly, wid) % stride_shift(poly, 1) == 0);
-  poly.depthsbits[wid_mask_un_shifted(poly, do_ft_offset(poly, wid)) * 2 + 1] ^= parent_bit;
+  poly.depthsbits[wid_mask_un_shifted(poly, do_ft_offset(poly, wid)) * 2 + 1] ^= PARENT_BIT;
 }
 
 inline bool cycle_get(const stagewise_poly& poly, uint64_t wid)
 {
   // note: intentionally leaving out ft_offset.
   assert(wid % stride_shift(poly, 1) == 0);
-  if ((poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & cycle_bit) > 0) { return true; }
-  else
-  {
-    return false;
-  }
+  if ((poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & CYCLE_BIT) > 0) { return true; }
+  else { return false; }
 }
 
 inline void cycle_toggle(stagewise_poly& poly, uint64_t wid)
 {
   // note: intentionally leaving out ft_offset.
   assert(wid % stride_shift(poly, 1) == 0);
-  poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] ^= cycle_bit;
+  poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] ^= CYCLE_BIT;
 }
 
 inline uint8_t min_depths_get(const stagewise_poly& poly, uint64_t wid)
@@ -217,10 +221,7 @@ inline uint64_t child_wid(const stagewise_poly& poly, uint64_t wi_atomic, uint64
   assert((wi_general & (stride_shift(poly, 1) - 1)) == 0);
 
   if (wi_atomic == constant_feat_masked(poly)) { return wi_general; }
-  else if (wi_general == constant_feat_masked(poly))
-  {
-    return wi_atomic;
-  }
+  else if (wi_general == constant_feat_masked(poly)) { return wi_atomic; }
   else
   {
     // This is basically the "Fowler–Noll–Vo" hash.  Ideally, the hash would be invariant
@@ -252,7 +253,7 @@ void sort_data_ensure_sz(stagewise_poly& poly, size_t len)
     std::cout << ", new size " << poly.sd_len << std::endl;
 #endif              // DEBUG
     free(poly.sd);  // okay for null.
-    poly.sd = calloc_or_throw<sort_data>(poly.sd_len);
+    poly.sd = VW::details::calloc_or_throw<sort_data>(poly.sd_len);
   }
   assert(len <= poly.sd_len);
 }
@@ -302,7 +303,8 @@ void sort_data_update_support(stagewise_poly& poly)
     uint64_t wid = stride_shift(poly, i);
     if (!parent_get(poly, wid) && wid != constant_feat_masked(poly))
     {
-      float weightsal = (fabsf(poly.all->weights[wid]) * poly.all->weights[poly.all->normalized_idx + (wid)]);
+      float weightsal =
+          (fabsf(poly.all->weights[wid]) * poly.all->weights[poly.all->initial_weights_config.normalized_idx + (wid)]);
       /*
        * here's some depth penalization code.  It was found to not improve
        * statistical performance, and meanwhile it is verified as giving
@@ -312,7 +314,7 @@ void sort_data_update_support(stagewise_poly& poly)
        * sqrtf(min_depths_get(poly, stride_shift(poly, i)) * 1.0 / poly.num_examples)
        */
       ;
-      if (weightsal > tolerance)
+      if (weightsal > TOLERANCE)
       {
         assert(heap_end >= poly.sd);
         assert(heap_end <= poly.sd + num_new_features);
@@ -345,7 +347,7 @@ void sort_data_update_support(stagewise_poly& poly)
 
   for (uint64_t pos = 0; pos < num_new_features && pos < poly.sd_len; ++pos)
   {
-    assert(!parent_get(poly, poly.sd[pos].wid) && poly.sd[pos].weightsal > tolerance &&
+    assert(!parent_get(poly, poly.sd[pos].wid) && poly.sd[pos].weightsal > TOLERANCE &&
         poly.sd[pos].wid != constant_feat_masked(poly));
     parent_toggle(poly, poly.sd[pos].wid);
 #ifdef DEBUG
@@ -376,8 +378,8 @@ void synthetic_reset(stagewise_poly& poly, VW::example& ec)
   poly.synth_ec.weight = ec.weight;
   poly.synth_ec.tag = ec.tag;
   poly.synth_ec.example_counter = ec.example_counter;
-  poly.synth_ec.interactions = &poly.all->interactions;
-  poly.synth_ec.extent_interactions = &poly.all->extent_interactions;
+  poly.synth_ec.interactions = &poly.all->feature_tweaks_config.interactions;
+  poly.synth_ec.extent_interactions = &poly.all->feature_tweaks_config.extent_interactions;
 
   /**
    * Some comments on ft_offset.
@@ -404,15 +406,15 @@ void synthetic_reset(stagewise_poly& poly, VW::example& ec)
   poly.synth_ec.end_pass = ec.end_pass;
   poly.synth_ec.sorted = ec.sorted;
 
-  poly.synth_ec.feature_space[tree_atomics].clear();
+  poly.synth_ec.feature_space[TREE_ATOMICS].clear();
   poly.synth_ec.num_features = 0;
 
-  if (poly.synth_ec.indices.size() == 0) { poly.synth_ec.indices.push_back(tree_atomics); }
+  if (poly.synth_ec.indices.size() == 0) { poly.synth_ec.indices.push_back(TREE_ATOMICS); }
 }
 
 void synthetic_decycle(stagewise_poly& poly)
 {
-  features& fs = poly.synth_ec.feature_space[tree_atomics];
+  VW::features& fs = poly.synth_ec.feature_space[TREE_ATOMICS];
   for (size_t i = 0; i < fs.size(); ++i)
   {
     assert(cycle_get(poly, fs.indices[i]));
@@ -448,7 +450,7 @@ void synthetic_create_rec(stagewise_poly& poly, float v, uint64_t findex)
   }
 
   if (!cycle_get(poly, wid_cur) &&
-      ((poly.cur_depth > default_depth ? default_depth : poly.cur_depth) == min_depths_get(poly, wid_cur)))
+      ((poly.cur_depth > DEFAULT_DEPTH ? DEFAULT_DEPTH : poly.cur_depth) == min_depths_get(poly, wid_cur)))
   {
     cycle_toggle(poly, wid_cur);
 
@@ -456,19 +458,19 @@ void synthetic_create_rec(stagewise_poly& poly, float v, uint64_t findex)
     ++poly.depths[poly.cur_depth];
 #endif  // DEBUG
 
-    feature temp = {v * poly.synth_rec_f.x, wid_cur};
-    poly.synth_ec.feature_space[tree_atomics].push_back(temp.x, temp.weight_index);
+    VW::feature temp = {v * poly.synth_rec_f.x, wid_cur};
+    poly.synth_ec.feature_space[TREE_ATOMICS].push_back(temp.x, temp.weight_index);
     poly.synth_ec.num_features++;
 
     if (parent_get(poly, temp.weight_index))
     {
-      feature parent_f = poly.synth_rec_f;
+      VW::feature parent_f = poly.synth_rec_f;
       poly.synth_rec_f = temp;
       ++poly.cur_depth;
 #ifdef DEBUG
       poly.max_depth = (poly.max_depth > poly.cur_depth) ? poly.max_depth : poly.cur_depth;
 #endif  // DEBUG
-      GD::foreach_feature<stagewise_poly, uint64_t, synthetic_create_rec>(*(poly.all), *(poly.original_ec), poly);
+      VW::foreach_feature<stagewise_poly, uint64_t, synthetic_create_rec>(*(poly.all), *(poly.original_ec), poly);
       --poly.cur_depth;
       poly.synth_rec_f = parent_f;
     }
@@ -489,7 +491,7 @@ void synthetic_create(stagewise_poly& poly, VW::example& ec, bool training)
    * parent, and recurse just on that feature (which arguably correctly interprets poly.cur_depth).
    * Problem with this is if there is a collision with the root...
    */
-  GD::foreach_feature<stagewise_poly, uint64_t, synthetic_create_rec>(*poly.all, *poly.original_ec, poly);
+  VW::foreach_feature<stagewise_poly, uint64_t, synthetic_create_rec>(*poly.all, *poly.original_ec, poly);
   synthetic_decycle(poly);
 
   if (training)
@@ -500,7 +502,7 @@ void synthetic_create(stagewise_poly& poly, VW::example& ec, bool training)
   }
 }
 
-void predict(stagewise_poly& poly, single_learner& base, VW::example& ec)
+void predict(stagewise_poly& poly, learner& base, VW::example& ec)
 {
   poly.original_ec = &ec;
   synthetic_create(poly, ec, false);
@@ -510,9 +512,9 @@ void predict(stagewise_poly& poly, single_learner& base, VW::example& ec)
   ec.pred.scalar = poly.synth_ec.pred.scalar;
 }
 
-void learn(stagewise_poly& poly, single_learner& base, VW::example& ec)
+void learn(stagewise_poly& poly, learner& base, VW::example& ec)
 {
-  bool training = poly.all->training && ec.l.simple.label != FLT_MAX;
+  bool training = poly.all->runtime_config.training && ec.l.simple.label != FLT_MAX;
   poly.original_ec = &ec;
 
   if (training)
@@ -538,30 +540,21 @@ void learn(stagewise_poly& poly, single_learner& base, VW::example& ec)
             (!poly.batch_sz_double && !(ec.example_counter % poly.batch_sz))))
     {
       poly.next_batch_sz *= 2;  // no effect when !poly.batch_sz_double
-      poly.update_support = (poly.all->all_reduce == nullptr || poly.numpasses == 1);
+      poly.update_support = (poly.all->runtime_state.all_reduce == nullptr || poly.numpasses == 1);
     }
     poly.last_example_counter = ec.example_counter;
   }
-  else
-  {
-    predict(poly, base, ec);
-  }
+  else { predict(poly, base, ec); }
 }
 
 void reduce_min_max(uint8_t& v1, const uint8_t& v2)
 {
   bool parent_or_depth;
-  if (v1 & indicator_bit) { parent_or_depth = true; }
-  else
-  {
-    parent_or_depth = false;
-  }
+  if (v1 & INDICATOR_BIT) { parent_or_depth = true; }
+  else { parent_or_depth = false; }
   bool p_or_d2;
-  if (v2 & indicator_bit) { p_or_d2 = true; }
-  else
-  {
-    p_or_d2 = false;
-  }
+  if (v2 & INDICATOR_BIT) { p_or_d2 = true; }
+  else { p_or_d2 = false; }
   if (parent_or_depth != p_or_d2)
   {
 #ifdef DEBUG
@@ -573,17 +566,14 @@ void reduce_min_max(uint8_t& v1, const uint8_t& v2)
   if (parent_or_depth) { v1 = (v1 >= v2) ? v1 : v2; }
   else
   {
-    if (v1 == default_depth) { v1 = v2; }
-    else if (v2 != default_depth)
-    {
-      v1 = (v1 <= v2) ? v1 : v2;
-    }
+    if (v1 == DEFAULT_DEPTH) { v1 = v2; }
+    else if (v2 != DEFAULT_DEPTH) { v1 = (v1 <= v2) ? v1 : v2; }
   }
 }
 
 void end_pass(stagewise_poly& poly)
 {
-  if (!!poly.batch_sz || (poly.all->all_reduce != nullptr && poly.numpasses > 1)) { return; }
+  if (!!poly.batch_sz || (poly.all->runtime_state.all_reduce != nullptr && poly.numpasses > 1)) { return; }
 
   uint64_t sum_sparsity_inc = poly.sum_sparsity - poly.sum_sparsity_sync;
   uint64_t sum_input_sparsity_inc = poly.sum_input_sparsity - poly.sum_input_sparsity_sync;
@@ -595,7 +585,7 @@ void end_pass(stagewise_poly& poly)
 #endif  // DEBUG
 
   VW::workspace& all = *poly.all;
-  if (all.all_reduce != nullptr)
+  if (all.runtime_state.all_reduce != nullptr)
   {
     /*
      * The following is inconsistent with the transplant code in
@@ -603,11 +593,12 @@ void end_pass(stagewise_poly& poly)
      * But it's unclear what the right behavior is in general for either
      * case...
      */
-    all_reduce<uint8_t, reduce_min_max>(all, poly.depthsbits, depthsbits_sizeof(poly));
+    VW::details::all_reduce<uint8_t, reduce_min_max>(all, poly.depthsbits, depthsbits_sizeof(poly));
 
-    sum_input_sparsity_inc = static_cast<uint64_t>(accumulate_scalar(all, static_cast<float>(sum_input_sparsity_inc)));
-    sum_sparsity_inc = static_cast<uint64_t>(accumulate_scalar(all, static_cast<float>(sum_sparsity_inc)));
-    num_examples_inc = static_cast<uint64_t>(accumulate_scalar(all, static_cast<float>(num_examples_inc)));
+    sum_input_sparsity_inc =
+        static_cast<uint64_t>(VW::details::accumulate_scalar(all, static_cast<float>(sum_input_sparsity_inc)));
+    sum_sparsity_inc = static_cast<uint64_t>(VW::details::accumulate_scalar(all, static_cast<float>(sum_sparsity_inc)));
+    num_examples_inc = static_cast<uint64_t>(VW::details::accumulate_scalar(all, static_cast<float>(num_examples_inc)));
   }
 
   poly.sum_input_sparsity_sync = poly.sum_input_sparsity_sync + sum_input_sparsity_inc;
@@ -622,41 +613,32 @@ void end_pass(stagewise_poly& poly)
   sanity_check_state(poly);
 #endif  // DEBUG
 
-  if (poly.numpasses != poly.all->numpasses)
+  if (poly.numpasses != poly.all->runtime_config.numpasses)
   {
     poly.update_support = true;
     poly.numpasses++;
   }
 }
 
-void finish_example(VW::workspace& all, stagewise_poly& poly, VW::example& ec)
-{
-  size_t temp_num_features = ec.num_features;
-  ec.num_features = poly.synth_ec.get_num_features();
-  output_and_account_example(all, ec);
-  ec.num_features = temp_num_features;
-  VW::finish_example(all, ec);
-}
-
-void save_load(stagewise_poly& poly, io_buf& model_file, bool read, bool text)
+void save_load(stagewise_poly& poly, VW::io_buf& model_file, bool read, bool text)
 {
   if (model_file.num_files() > 0)
   {
     std::stringstream msg;
-    bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(poly.depthsbits),
+    VW::details::bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(poly.depthsbits),
         static_cast<uint32_t>(depthsbits_sizeof(poly)), read, msg, text);
   }
   // unfortunately, following can't go here since save_load called before gd::save_load and thus
   // weight vector state uninitialiazed.
-  //#ifdef DEBUG
+  // #ifdef DEBUG
   //      std::cout << "Sanity check after save_load... " << flush;
   //      sanity_check_state(poly);
   //      std::cout << "done" << std::endl;
-  //#endif //DEBUG
+  // #endif //DEBUG
 }
 }  // namespace
 
-base_learner* VW::reductions::stagewise_poly_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::stagewise_poly_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -697,14 +679,51 @@ base_learner* VW::reductions::stagewise_poly_setup(VW::setup_base_i& stack_build
   poly->original_ec = nullptr;
   poly->next_batch_sz = poly->batch_sz;
 
-  auto* l = VW::LEARNER::make_reduction_learner(std::move(poly), as_singleline(stack_builder.setup_base_learner()),
+  auto l = VW::LEARNER::make_reduction_learner(std::move(poly), require_singleline(stack_builder.setup_base_learner()),
       learn, predict, stack_builder.get_setupfn_name(stagewise_poly_setup))
-                .set_input_label_type(VW::label_type_t::simple)
-                .set_output_prediction_type(VW::prediction_type_t::scalar)
-                .set_save_load(save_load)
-                .set_finish_example(::finish_example)
-                .set_end_pass(end_pass)
-                .build();
+               .set_input_label_type(VW::label_type_t::SIMPLE)
+               .set_output_label_type(VW::label_type_t::SIMPLE)
+               .set_input_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_output_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_save_load(save_load)
+               .set_output_example_prediction(VW::details::output_example_prediction_simple_label<stagewise_poly>)
+               .set_update_stats(
+                   [](const VW::workspace& /* all */, shared_data& sd, const stagewise_poly& data,
+                       const VW::example& ec, VW::io::logger& /* logger */)
+                   {
+                     // This impl is the same as standard simple label reporting apart from the fact the feature count
+                     // from synth_ec is used.
 
-  return make_base(*l);
+                     const auto& ld = ec.l.simple;
+                     sd.update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, data.synth_ec.get_num_features());
+                     if (ld.label != FLT_MAX && !ec.test_only)
+                     {
+                       sd.weighted_labels += (static_cast<double>(ld.label)) * ec.weight;
+                     }
+                   }
+
+                   )
+               .set_print_update(
+                   [](VW::workspace& all, shared_data& sd, const stagewise_poly& data, const VW::example& ec,
+                       VW::io::logger& /* logger */)
+                   {
+                     // This impl is the same as standard simple label printing apart from the fact the feature count
+                     // from synth_ec is used.
+
+                     const bool should_print_driver_update = all.sd->weighted_examples() >= all.sd->dump_interval &&
+                         !all.output_config.quiet && !all.reduction_state.bfgs;
+
+                     if (should_print_driver_update)
+                     {
+                       sd.print_update(*all.output_runtime.trace_message, all.passes_config.holdout_set_off,
+                           all.passes_config.current_pass, ec.l.simple.label, ec.pred.scalar,
+                           data.synth_ec.get_num_features());
+                     }
+                   }
+
+                   )
+               .set_end_pass(end_pass)
+               .build();
+
+  return l;
 }

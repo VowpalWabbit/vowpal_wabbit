@@ -44,29 +44,61 @@ using socket_t = int;
 #  include <future>
 #endif
 
-namespace VW
+#include "vw/common/future_compat.h"
+
+namespace VW  // NOLINT
 {
-class SpanningTree
+class spanning_tree
 {
+public:
+  spanning_tree(short unsigned int port = 26543, bool quiet = false);
+  ~spanning_tree();
+
+  VW_DEPRECATED(
+      "VW::SpanningTree::BoundPort renamed to VW::spanning_tree::bound_port. VW::SpanningTree::BoundPort will be "
+      "removed in VW 10.")
+  inline short unsigned int BoundPort()  // NOLINT
+  {
+    return bound_port();
+  }
+  short unsigned int bound_port();
+
+  VW_DEPRECATED(
+      "VW::SpanningTree::Start renamed to VW::spanning_tree::start. VW::SpanningTree::Start will be removed in VW 10.")
+  inline void Start()  // NOLINT
+  {
+    return start();
+  }
+  void start();
+
+  VW_DEPRECATED(
+      "VW::SpanningTree::Run renamed to VW::spanning_tree::run. VW::SpanningTree::Run will be removed in VW 10.")
+  inline void Run()  // NOLINT
+  {
+    return run();
+  }
+  void run();
+
+  VW_DEPRECATED(
+      "VW::SpanningTree::Stop renamed to VW::spanning_tree::stop. VW::SpanningTree::Stop will be removed in VW 10.")
+  inline void Stop()  // NOLINT
+  {
+    return stop();
+  }
+  void stop();
+
 private:
-  bool m_stop;
-  socket_t sock;
-  uint16_t m_port;
+  bool _stop;
+  socket_t _sock;
+  uint16_t _port;
 
   // future to signal end of thread running.
   // Need a pointer since C++/CLI doesn't like futures yet
-  std::future<void>* m_future;
+  std::future<void>* _future;
 
-  bool m_quiet;
-
-public:
-  SpanningTree(short unsigned int port = 26543, bool quiet = false);
-  ~SpanningTree();
-
-  short unsigned int BoundPort();
-
-  void Start();
-  void Run();
-  void Stop();
+  bool _quiet;
 };
+
+using SpanningTree VW_DEPRECATED(
+    "VW::SpanningTree renamed to VW::spanning_tree. VW::SpanningTree will be removed in VW 10.") = spanning_tree;
 }  // namespace VW

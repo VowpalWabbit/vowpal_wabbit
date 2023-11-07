@@ -8,14 +8,14 @@ jobject action_scores_prediction(example* vec, JNIEnv* env)
   jclass action_score_class = env->FindClass("vowpalWabbit/responses/ActionScore");
   jmethodID action_score_constructor = env->GetMethodID(action_score_class, "<init>", "(IF)V");
 
-  ACTION_SCORE::action_scores a_s = vec->pred.a_s;
+  VW::action_scores a_s = vec->pred.a_s;
   size_t num_values = a_s.size();
   jobjectArray j_action_scores = env->NewObjectArray(num_values, action_score_class, 0);
 
   jclass action_scores_class = env->FindClass("vowpalWabbit/responses/ActionScores");
   for (uint32_t i = 0; i < num_values; ++i)
   {
-    ACTION_SCORE::action_score a = a_s[i];
+    VW::action_score a = a_s[i];
     jobject j_action_score = env->NewObject(action_score_class, action_score_constructor, a.action, a.score);
     env->SetObjectArrayElement(j_action_scores, i, j_action_score);
   }

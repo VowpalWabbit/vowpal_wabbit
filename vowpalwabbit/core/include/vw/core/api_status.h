@@ -65,8 +65,9 @@ private:
 /**
  * @brief Helper class used in report_error template funcstions to return status from API calls.
  */
-struct status_builder
+class status_builder
 {
+public:
   /**
    * @brief Construct a new status builder object
    *
@@ -148,9 +149,6 @@ int report_error(api_status* status, int scode, const All&... all)
   }
   return scode;
 }
-}  // namespace experimental
-}  // namespace VW
-
 /**
  * @brief left shift operator to serialize types into stringstream held in status_builder
  *
@@ -166,6 +164,8 @@ VW::experimental::status_builder& operator<<(VW::experimental::status_builder& s
   if (sb._status != nullptr) { sb._os << ", " << val; }
   return sb;
 }
+}  // namespace experimental
+}  // namespace VW
 
 // This is weird, but we want these to be able to use the left-shift operator, but that is undesirable to
 // have in the experimental namespace because we want to avoid forcing consumers to import it. So temporarily
@@ -220,8 +220,7 @@ int report_error(status_builder& sb, const First& first, const Rest&... rest)
  * @brief Error reporting macro for just returning an error code.
  */
 #  define RETURN_ERROR(status, code, ...)                                                         \
-    do                                                                                            \
-    {                                                                                             \
+    do {                                                                                          \
       if (status != nullptr)                                                                      \
       {                                                                                           \
         VW::experimental::status_builder sb(nullptr, status, VW::experimental::error_code::code); \
@@ -238,8 +237,7 @@ int report_error(status_builder& sb, const First& first, const Rest&... rest)
  * @brief Error reporting macro that takes a list of parameters
  */
 #  define RETURN_ERROR_ARG(status, code, ...)                                                     \
-    do                                                                                            \
-    {                                                                                             \
+    do {                                                                                          \
       if (status != nullptr)                                                                      \
       {                                                                                           \
         VW::experimental::status_builder sb(nullptr, status, VW::experimental::error_code::code); \

@@ -10,11 +10,13 @@ on:
     branches:
       - master
       - 'releases/**'
+      - rlos2023/test
   pull_request:
     branches:
       - '*'
-
-concurrency: 
+      - rlos2023/test
+      
+concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
@@ -70,8 +72,8 @@ jobs:
         shell: bash
         run: |
           pip install -r requirements.txt
-          pip install pytest twine
-          pip install built_wheel/*.whl
+          pip install pytest vw-executor twine
+          pip install --force-reinstall built_wheel/*.whl
           twine check built_wheel/*.whl
           python -m pytest ./python/tests/
           python ./python/tests/run_doctest.py
@@ -85,12 +87,12 @@ jobs:
         # Tests without datafiles are skipped
         run: |
           cd test
-          python run_tests.py -E 0.001 -f --skip_spanning_tree_tests --vw_bin_path "python3 -m vowpalwabbit" --skip_test 60 61 92 96 149 152 177 193 194 195 220 275 276 324 325 326 349 350 356 357 358 385 389 390 391 392 393 400 399 401 403
+          python run_tests.py -E 0.001 -f --skip_spanning_tree_tests --vw_bin_path "python3 -m vowpalwabbit" --skip_test 60 61 92 96 149 152 177 193 194 195 220 275 276 324 325 326 349 350 356 357 358 385 389 390 391 392 393 400 399 401 403 431 440
   linux-python-sdist-bundle:
     name: ubuntu-latest.amd64.py3.8.sdist-bundle
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
       - uses: actions/setup-python@v2
@@ -113,7 +115,7 @@ jobs:
     steps:
       - uses: actions/setup-python@v2
         with:
-          python-version: '3.8'
+          python-version: '3.10'
           architecture: 'x64'
       - uses: actions/download-artifact@v1
         with:
@@ -126,14 +128,14 @@ jobs:
       - name: Install source dist
         shell: bash
         run: pip install python_source_distribution/*.tar.gz
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
       - name: Install dependencies
         shell: bash
         run: |
           pip install -r requirements.txt
-          pip install pytest
+          pip install pytest vw-executor
       - name: Run unit tests
         shell: bash
         run: |
@@ -152,7 +154,7 @@ jobs:
       fail-fast: false
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: recursive
     - name: Set up QEMU
@@ -188,7 +190,7 @@ jobs:
       py: python${{ matrix.config.version }}
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: recursive
     - name: Set up QEMU
@@ -212,8 +214,8 @@ jobs:
             source .env/bin/activate && \
             pip install --upgrade pip && \
             pip install -r requirements.txt && \
-            pip install pytest twine && \
-            pip install built_wheel/*.whl && \
+            pip install pytest vw-executor twine && \
+            pip install --force-reinstall built_wheel/*.whl && \
             twine check built_wheel/*.whl && \
             python --version && \
             python -m pytest ./python/tests/ && \
@@ -231,7 +233,7 @@ jobs:
         - { version: "3.10", include_dir_name: python3.10/}
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
       - uses: conda-incubator/setup-miniconda@v2
@@ -258,7 +260,7 @@ jobs:
         version: [3.6, 3.7, 3.8, 3.9, "3.10"]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
       - uses: actions/setup-python@v2
@@ -272,8 +274,8 @@ jobs:
         shell: bash
         run: |
           pip install -r requirements.txt
-          pip install pytest twine
-          pip install built_wheel/*.whl
+          pip install pytest vw-executor twine
+          pip install --force-reinstall built_wheel/*.whl
           twine check built_wheel/*.whl
           python -m pytest ./python/tests/
           python ./python/tests/run_doctest.py
@@ -282,7 +284,7 @@ jobs:
     runs-on: windows-2019
     env:
       VCPKG_ROOT: ${{ github.workspace }}\\vcpkg
-      VCPKG_REF: cef0b3ec767df6e83806899fe9525f6cf8d7bc91
+      VCPKG_REF: 501db0f17ef6df184fcdbfbe0f87cde2313b6ab1
       VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}\vcpkg_binary_cache
     strategy:
       matrix:
@@ -297,11 +299,11 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.config.version }}
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
           path: ${{github.workspace}}\vowpal_wabbit
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           path: ${{ env.VCPKG_ROOT }}
           repository: 'microsoft/vcpkg'
@@ -309,7 +311,7 @@ jobs:
           # We need a deep clone so that we can go back in history for version selection.
           fetch-depth: '0'
       - name: Restore vcpkg and build artifacts
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
@@ -344,7 +346,7 @@ jobs:
         os: ["windows-2019"]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
       - uses: actions/setup-python@v2
@@ -361,8 +363,8 @@ jobs:
           export wheel_file="${wheel_files[0]}"
           echo Installing ${wheel_file}...
           pip install -r requirements.txt
-          pip install pytest twine
-          pip install ${wheel_file}
+          pip install pytest vw-executor twine
+          pip install --force-reinstall ${wheel_file}
           twine check ${wheel_file}
           python -m pytest .\\python\\tests\\
           python .\\python\\tests\\run_doctest.py

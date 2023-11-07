@@ -1,5 +1,6 @@
 set(vw_explore_sources
     include/vw/explore/explore_internal.h
+    include/vw/explore/explore_error_codes.h
     include/vw/explore/explore.h
 )
 
@@ -15,6 +16,6 @@ vw_add_library(
 
 vw_add_test_executable(
     FOR_LIB "explore"
-    SOURCES tests/explore_test.cc tests/main.cc
+    SOURCES tests/explore_test.cc
     EXTRA_DEPS vw_core
 )

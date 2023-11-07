@@ -4,17 +4,18 @@
 
 #pragma once
 
+#include "vw/core/feature_group.h"
+#include "vw/core/multi_ex.h"
 #include "vw/core/vw_fwd.h"
 
-#include <cstdint>
+#include <memory>
 #include <string>
-#include <vector>
 
 namespace VW
 {
 namespace reductions
 {
-VW::LEARNER::base_learner* ccb_explore_adf_setup(VW::setup_base_i& stack_builder);
+std::shared_ptr<VW::LEARNER::learner> ccb_explore_adf_setup(VW::setup_base_i& stack_builder);
 
 namespace ccb
 {

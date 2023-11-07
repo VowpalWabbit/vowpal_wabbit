@@ -13,7 +13,13 @@ if(LTO)
 endif()
 
 if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
-  set(LINUX_X86_64_OPT_FLAGS -msse2 -mfpmath=sse)
+  if(NOT "arm64" IN_LIST CMAKE_OSX_ARCHITECTURES)
+    # Use sse2 by default. Change to latest simd extensions such as avx512 on supported architecture.
+    set(LINUX_X86_64_OPT_FLAGS -msse2 -mfpmath=sse)
+    if(UNIX AND NOT APPLE)
+      set(LINUX_X86_64_OPT_FLAGS ${LINUX_X86_64_OPT_FLAGS} -mavx2)
+    endif()
+  endif()
 endif()
 
 # Add -ffast-math for speed, remove for testability.
@@ -21,7 +27,7 @@ endif()
 set(LINUX_RELEASE_CONFIG -fno-strict-aliasing ${LINUX_X86_64_OPT_FLAGS} -fno-stack-check -fomit-frame-pointer)
 set(LINUX_DEBUG_CONFIG -fno-stack-check)
 
-#Use default visiblity on UNIX otherwise a lot of the C++ symbols end up for exported and interpose'able
+# Use default visiblity on UNIX otherwise a lot of the C++ symbols end up for exported and interpose'able
 set(VW_LINUX_FLAGS $<$<CONFIG:Debug>:${LINUX_DEBUG_CONFIG}> $<$<CONFIG:Release>:${LINUX_RELEASE_CONFIG}> $<$<CONFIG:RelWithDebInfo>:${LINUX_RELEASE_CONFIG}>)
 set(VW_WIN_FLAGS /MP /Zc:__cplusplus)
 
@@ -31,7 +37,7 @@ if(WARNINGS)
   if(WIN32)
     set(WARNING_OPTIONS /W4)
   else()
-    set(WARNING_OPTIONS -Wall -Wextra -Wpedantic)
+    set(WARNING_OPTIONS -Wall -Wextra -Wpedantic -Wswitch)
   endif()
 endif(WARNINGS)
 

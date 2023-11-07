@@ -2,8 +2,8 @@ only testing
 predictions = 0001_ftrl_holdout_off.predict
 Enabling FTRL based optimization
 Algorithm used: Proximal-FTRL
-ftrl_alpha = 0.005
-ftrl_beta = 0.1
+ftrl_alpha = 0.5
+ftrl_beta = 1
 using no cache
 Reading datafile = train-sets/0001.dat
 num sources = 1
@@ -11,19 +11,19 @@ Num weight bits = 18
 learning rate = 0.5
 initial_t = 2000
 power_t = 0.5
-Enabled reductions: ftrl-Proximal-FTRL, scorer-identity, count_label
-Input label = simple
-Output pred = scalar
-average  since         example        example        current        current  current 
-loss     last          counter         weight          label        predict features 
-0.287783 0.287783            1            1.0         1.0000         0.4635       51 
-0.216831 0.145878            2            2.0         0.0000         0.3819      104 
-0.167839 0.118847            4            4.0         0.0000         0.3450      135 
-0.164572 0.161305            8            8.0         0.0000         0.3467      146 
-0.178211 0.191850           16           16.0         1.0000         0.4819       24 
-0.180740 0.183270           32           32.0         0.0000         0.3375       32 
-0.179899 0.179057           64           64.0         0.0000         0.3022       61 
-0.187408 0.194918          128          128.0         1.0000         0.4783      106 
+Enabled learners: ftrl-Proximal-FTRL, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.287783 0.287783            1            1.0         1.0000         0.4635       51
+0.216831 0.145878            2            2.0         0.0000         0.3819      104
+0.167839 0.118847            4            4.0         0.0000         0.3450      135
+0.164572 0.161305            8            8.0         0.0000         0.3467      146
+0.178211 0.191850           16           16.0         1.0000         0.4819       24
+0.180740 0.183270           32           32.0         0.0000         0.3375       32
+0.179899 0.179057           64           64.0         0.0000         0.3022       61
+0.187408 0.194918          128          128.0         1.0000         0.4783      106
 
 finished run
 number of examples = 200

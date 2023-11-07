@@ -6,6 +6,7 @@
 #include "vw/common/string_view.h"
 #include "vw/core/vw_fwd.h"
 
+#include <cstdint>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -14,15 +15,6 @@ namespace VW
 {
 class named_labels
 {
-private:
-  // NOTE: This ordering is critical. m_id2name and m_name2id contain pointers into m_label_list!
-  std::string m_label_list;
-  std::vector<string_view> m_id2name;
-  std::unordered_map<string_view, uint32_t> m_name2id;
-  uint32_t m_K;
-
-  void initialize_maps_from_input_string();
-
 public:
   named_labels(std::string label_list);
 
@@ -37,5 +29,14 @@ public:
   uint32_t getK() const;
   uint32_t get(string_view s, VW::io::logger& logger) const;
   string_view get(uint32_t v) const;
+
+private:
+  // NOTE: This ordering is critical. m_id2name and m_name2id contain pointers into m_label_list!
+  std::string m_label_list;
+  std::vector<string_view> m_id2name;
+  std::unordered_map<string_view, uint32_t> m_name2id;
+  uint32_t m_K;
+
+  void initialize_maps_from_input_string();
 };
 }  // namespace VW

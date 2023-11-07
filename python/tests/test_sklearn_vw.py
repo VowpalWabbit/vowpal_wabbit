@@ -15,6 +15,7 @@ from vowpalwabbit.sklearn import (
     VWRegressor,
     tovw,
     VWMultiClassifier,
+    VWRegressor,
 )
 
 
@@ -41,6 +42,14 @@ def test_tovw():
 
     assert tovw(x=x, y=y, sample_weight=w, convert_labels=True) == expected
     assert tovw(x=csr_matrix(x), y=y, sample_weight=w, convert_labels=True) == expected
+
+
+def test_tovw_raises_for_uint():
+    X = pd.DataFrame({"a": [1]}, dtype="uint32")
+    y = pd.Series(np.zeros(1))
+
+    with pytest.raises(TypeError):
+        VWRegressor().fit(X, y)
 
 
 class BaseVWTest:
@@ -303,7 +312,6 @@ class TestVWRegressor(BaseVWTest):
 
 
 class TestVWMultiClassifier(BaseVWTest):
-
     estimator = VWMultiClassifier
 
     def test_predict_proba(self, data):

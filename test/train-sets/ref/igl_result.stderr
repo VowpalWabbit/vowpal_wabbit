@@ -1,30 +1,33 @@
+creating quadratic features for pairs: UA
+Enabling FTRL based optimization
+Algorithm used: Coin Betting
+ftrl_alpha = 4
+ftrl_beta = 1
 using no cache
-Reading datafile = train-sets/rcv1_multiclass.dat
+Reading datafile = train-sets/igl.dsjson
 num sources = 1
 Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 cb_type = mtr
-Enabled reductions: gd, scorer-identity, csoaa_ldf-rank, cb_adf, experimental_igl, cb_explore_adf_greedy, shared_feature_merger, cbify-adf
-Input label = multiclass
-Output pred = multiclass
+Enabled learners: ftrl-Coin Betting, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, experimental_igl, shared_feature_merger
+Input label = CB_WITH_OBSERVATIONS
+Output pred = ACTION_PROBS
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
-1.000000 1.000000            1            1.0              2              1      128
-1.000000 1.000000            2            2.0              2              1       44
-0.750000 0.500000            4            4.0              2              1      190
-0.625000 0.500000            8            8.0              1              1       34
-0.562500 0.500000           16           16.0              1              1       43
-0.562500 0.562500           32           32.0              2              1       47
-0.578125 0.593750           64           64.0              1              1       54
-0.625000 0.671875          128          128.0              2              1       67
-0.703125 0.781250          256          256.0              1              2       86
-0.753906 0.804688          512          512.0              2              1      104
+0.000000 0.000000            1            1.0       0:0:0.25         0:0.25       21
+0.000000 0.000000            2            2.0       3:0:0.25         0:0.25       21
+0.000000 0.000000            4            4.0       3:0:0.25         0:0.25       21
+0.000000 0.000000            8            8.0       1:0:0.25         0:0.25       21
+0.000000 0.000000           16           16.0       1:0:0.25         0:0.25       21
+0.000000 0.000000           32           32.0       3:0:0.25         0:0.25       21
+-0.01562 -0.03125           64           64.0       1:0:0.25         0:0.25       21
+-0.34463 -0.67363          128          128.0      1:-1:0.85         1:0.85       21
 
 finished run
-number of examples = 1000
-weighted example sum = 1000.000000
+number of examples = 200
+weighted example sum = 200.000000
 weighted label sum = 0.000000
-average loss = 0.783000
-total feature number = 78739
+average loss = -0.554093
+total feature number = 5600

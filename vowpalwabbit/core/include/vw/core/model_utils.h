@@ -3,8 +3,8 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#include "vw/core/cache.h"
 #include "vw/core/io_buf.h"
+#include "vw/core/memory.h"
 #include "vw/core/v_array.h"
 
 #include <fmt/format.h>
@@ -134,6 +134,10 @@ template <typename K, typename V>
 size_t read_model_field(io_buf&, std::map<K, V>&);
 template <typename K, typename V>
 size_t write_model_field(io_buf&, const std::map<K, V>&, const std::string&, bool);
+template <typename T>
+size_t read_model_field(io_buf&, std::unique_ptr<T>&);
+template <typename T>
+size_t write_model_field(io_buf&, const std::unique_ptr<T>&, const std::string&, bool);
 
 inline size_t read_model_field(io_buf& io, std::string& str)
 {
@@ -142,7 +146,7 @@ inline size_t read_model_field(io_buf& io, std::string& str)
   bytes += read_model_field(io, str_size);
   char* cs = nullptr;
   bytes += io.buf_read(cs, str_size * sizeof(char));
-  str = std::string(cs);
+  str = std::string(cs, str_size);
   return bytes;
 }
 
@@ -154,10 +158,7 @@ inline size_t write_model_field(io_buf& io, const std::string& str, const std::s
   bytes += write_model_field(io, str_size, upstream_name + ".size()", text);
   std::string message;
   if (text) { message = fmt::format("{} = {}\n", upstream_name, str); }
-  else
-  {
-    message = str;
-  }
+  else { message = str; }
   bytes += io.bin_write_fixed(message.c_str(), message.size());
   return bytes;
 }
@@ -203,7 +204,7 @@ size_t read_model_field(io_buf& io, std::vector<T>& vec)
   {
     T v;
     bytes += read_model_field(io, v);
-    vec.push_back(v);
+    vec.push_back(std::move(v));
   }
   return bytes;
 }
@@ -216,7 +217,9 @@ size_t write_model_field(io_buf& io, const std::vector<T>& vec, const std::strin
   uint32_t vec_size = static_cast<uint32_t>(vec.size());
   bytes += write_model_field(io, vec_size, upstream_name + ".size()", text);
   for (uint32_t i = 0; i < vec_size; ++i)
-  { bytes += write_model_field(io, vec[i], fmt::format("{}[{}]", upstream_name, i), text); }
+  {
+    bytes += write_model_field(io, vec[i], fmt::format("{}[{}]", upstream_name, i), text);
+  }
   return bytes;
 }
 
@@ -243,7 +246,9 @@ size_t write_model_field(io_buf& io, const v_array<T>& vec, const std::string& u
   uint32_t vec_size = static_cast<uint32_t>(vec.size());
   bytes += write_model_field(io, vec_size, upstream_name + ".size()", text);
   for (uint32_t i = 0; i < vec_size; ++i)
-  { bytes += write_model_field(io, vec[i], fmt::format("{}[{}]", upstream_name, i), text); }
+  {
+    bytes += write_model_field(io, vec[i], fmt::format("{}[{}]", upstream_name, i), text);
+  }
   return bytes;
 }
 
@@ -285,7 +290,9 @@ template <typename T>
 size_t write_model_field(io_buf& io, const std::priority_queue<T>& pq, const std::string& upstream_name, bool text)
 {
   if (upstream_name.find("{}") != std::string::npos)
-  { THROW_OR_RETURN("Field template not allowed for priority_queue.", 0); }
+  {
+    THROW_OR_RETURN("Field template not allowed for priority_queue.", 0);
+  }
   std::priority_queue<T> pq_cp = pq;
   size_t bytes = 0;
   uint32_t queue_size = static_cast<uint32_t>(pq_cp.size());
@@ -327,9 +334,43 @@ size_t write_model_field(io_buf& io, const std::map<K, V>& map, const std::strin
   for (const auto& pair : map)
   {
     bytes += write_model_field(io, pair.first, fmt::format("{}.key{}", upstream_name, i), text);
-    bytes += write_model_field(io, pair.second, fmt::format("{}[{}]", upstream_name, pair.first), text);
+    bytes += write_model_field(io, pair.second, fmt::format("{}[key{}]", upstream_name, i), text);
     ++i;
   }
+  return bytes;
+}
+
+template <typename T>
+size_t read_model_field(io_buf& io, std::unique_ptr<T>& ptr)
+{
+  size_t bytes = 0;
+  bool is_null{};
+  bytes += read_model_field(io, is_null);
+
+  if (is_null)
+  {
+    ptr = nullptr;
+    return bytes;
+  }
+
+  ptr = VW::make_unique<T>();
+  bytes += read_model_field(io, *ptr);
+  return bytes;
+}
+
+template <typename T>
+size_t write_model_field(io_buf& io, const std::unique_ptr<T>& ptr, const std::string& upstream_name, bool text)
+{
+  size_t bytes = 0;
+  if (ptr == nullptr)
+  {
+    bytes += write_model_field(io, true, fmt::format("{}.is_null()", upstream_name), text);
+    return bytes;
+  }
+
+  bytes += write_model_field(io, false, fmt::format("{}.is_null()", upstream_name), text);
+  bytes += write_model_field(io, *ptr, upstream_name, text);
+
   return bytes;
 }
 

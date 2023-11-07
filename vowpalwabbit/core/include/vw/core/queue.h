@@ -26,55 +26,55 @@ template <typename T>
 class thread_safe_queue
 {
 public:
-  thread_safe_queue(size_t max_size) : max_size(max_size) {}
+  thread_safe_queue(size_t max_size) : _max_size(max_size) {}
 
   bool try_pop(T& item)
   {
-    std::unique_lock<std::mutex> lock(mut);
-    while (object_queue.size() == 0 && !done) { is_not_empty.wait(lock); }
+    std::unique_lock<std::mutex> lock(_mut);
+    while (_object_queue.size() == 0 && !_done) { _is_not_empty.wait(lock); }
 
-    if (done && object_queue.size() == 0) { return false; }
+    if (_done && _object_queue.size() == 0) { return false; }
 
-    item = std::move(object_queue.front());
-    object_queue.pop();
+    item = std::move(_object_queue.front());
+    _object_queue.pop();
 
-    is_not_full.notify_all();
+    _is_not_full.notify_all();
     return true;
   }
 
   void push(T item)
   {
-    std::unique_lock<std::mutex> lock(mut);
-    while (object_queue.size() == max_size) { is_not_full.wait(lock); }
-    object_queue.push(std::move(item));
+    std::unique_lock<std::mutex> lock(_mut);
+    while (_object_queue.size() == _max_size) { _is_not_full.wait(lock); }
+    _object_queue.push(std::move(item));
 
-    is_not_empty.notify_all();
+    _is_not_empty.notify_all();
   }
 
   void set_done()
   {
     {
-      std::unique_lock<std::mutex> lock(mut);
-      done = true;
+      std::unique_lock<std::mutex> lock(_mut);
+      _done = true;
     }
-    is_not_empty.notify_all();
-    is_not_full.notify_all();
+    _is_not_empty.notify_all();
+    _is_not_full.notify_all();
   }
 
   size_t size() const
   {
-    std::unique_lock<std::mutex> lock(mut);
-    return object_queue.size();
+    std::unique_lock<std::mutex> lock(_mut);
+    return _object_queue.size();
   }
 
 private:
-  size_t max_size;
-  std::queue<T> object_queue;
-  mutable std::mutex mut;
+  size_t _max_size;
+  std::queue<T> _object_queue;
+  mutable std::mutex _mut;
 
-  volatile bool done = false;
+  volatile bool _done = false;
 
-  std::condition_variable is_not_full;
-  std::condition_variable is_not_empty;
+  std::condition_variable _is_not_full;
+  std::condition_variable _is_not_empty;
 };
 }  // namespace VW

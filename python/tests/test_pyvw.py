@@ -9,6 +9,7 @@ import filecmp
 
 BIT_SIZE = 18
 
+
 # Since these tests still run with Python 2, this is required.
 # Otherwise we could use math.isclose
 def isclose(a, b, rel_tol=1e-05, abs_tol=0.0):
@@ -16,7 +17,6 @@ def isclose(a, b, rel_tol=1e-05, abs_tol=0.0):
 
 
 class TestVW:
-
     model = Workspace(quiet=True, b=BIT_SIZE)
 
     def test_constructor(self):
@@ -92,7 +92,7 @@ def test_multiclass_prediction_type():
     del model
 
 
-def test_prob_prediction_type():
+def test_csoaa_ldf_scalars_prediction_type():
     model = Workspace(
         loss_function="logistic",
         csoaa_ldf="mc",
@@ -104,10 +104,10 @@ def test_prob_prediction_type():
         model.example("2:0.8  | a b c"),
     ]
     model.learn(multi_ex)
-    assert model.get_prediction_type() == vowpalwabbit.PredictionType.PROB
+    assert model.get_prediction_type() == vowpalwabbit.PredictionType.SCALARS
     multi_ex = [model.example("1 | a b c"), model.example("2 | a b c")]
     prediction = model.predict(multi_ex)
-    assert isinstance(prediction, float)
+    assert isinstance(prediction, list)
     del model
 
 
@@ -540,14 +540,22 @@ def test_example_features():
 def test_example_features_dict():
     vw = Workspace(quiet=True)
     ex = vw.example(
-        {"a": {"two": 1, "features": 1.0}, "b": {"more": 1, "features": 1, 5: 1.5}}
+        {
+            "a": {"two": 1, "features": 1.0},
+            "namespace": {"more": 1, "feature": 1, 5: 1.5},
+        }
     )
     fs = list(ex.iter_features())
+    fs_keys = [f[0] for f in fs]
+
+    expected = [53373, 165129, 24716, 242309, 5]
+
+    assert set(fs_keys) == set(expected)
 
     assert (ex.get_feature_id("a", "two"), 1) in fs
     assert (ex.get_feature_id("a", "features"), 1) in fs
-    assert (ex.get_feature_id("b", "more"), 1) in fs
-    assert (ex.get_feature_id("b", "features"), 1) in fs
+    assert (ex.get_feature_id("namespace", "more"), 1) in fs
+    assert (ex.get_feature_id("namespace", "feature"), 1) in fs
     assert (5, 1.5) in fs
 
 
@@ -653,7 +661,7 @@ def test_dsjson_with_metrics():
         assert isclose(a, b)
 
     learner_metric_dict = vw.get_learner_metrics()
-    assert len(vw.get_learner_metrics()) == 17
+    assert len(vw.get_learner_metrics()) == 27
 
     assert learner_metric_dict["total_predict_calls"] == 2
     assert learner_metric_dict["total_learn_calls"] == 1
@@ -766,3 +774,17 @@ def test_merge_models_with_base():
     assert model2.get_weight_from_name("foo") == 0
     assert model2.get_weight_from_name("bar") != 0
     assert merged_model.get_weight_from_name("bar") != 0
+
+
+def test_get_explore_eval_stats():
+    vw = vowpalwabbit.Workspace(
+        "--cb_explore_adf --explore_eval --dsjson --extra_metrics"
+    )
+
+    ex_l_str = '{"_label_cost":-0.9,"_label_probability":0.5,"_label_Action":1,"_labelIndex":0,"o":[{"v":1.0,"EventId":"38cbf24f-70b2-4c76-aa0c-970d0c8d388e","ActionTaken":false}],"Timestamp":"2020-11-15T17:09:31.8350000Z","Version":"1","EventId":"38cbf24f-70b2-4c76-aa0c-970d0c8d388e","a":[1,2],"c":{ "GUser":{"id":"person5","major":"engineering","hobby":"hiking","favorite_character":"spock"}, "_multi": [ { "TAction":{"topic":"SkiConditions-VT"} }, { "TAction":{"topic":"HerbGarden"} } ] },"p":[0.5,0.5],"VWState":{"m":"N/A"}}\n'
+    ex_l = vw.parse(ex_l_str)
+    vw.learn(ex_l)
+    vw.finish_example(ex_l)
+    learner_metric_dict = vw.get_learner_metrics()
+    assert learner_metric_dict["weighted_update_count"] == 1.0
+    assert learner_metric_dict["average_accepted_example_weight"] == 1.0

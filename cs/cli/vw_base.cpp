@@ -71,7 +71,7 @@ VowpalWabbitBase::VowpalWabbitBase(VowpalWabbitSettings^ settings)
         }
         else
         {
-          io_buf model;
+          VW::io_buf model;
           auto* stream = new clr_stream_adapter(settings->ModelStream);
           model.add_file(std::unique_ptr<VW::io::reader>(stream));
           m_vw = VW::initialize(string, &model, false, trace_listener, trace_context);
@@ -115,7 +115,7 @@ void VowpalWabbitBase::DecrementReference()
 
 void VowpalWabbitBase::DisposeExample(VowpalWabbitExample^ ex)
 {
-  VW::dealloc_examples(ex->m_example, 1);
+  delete ex->m_example;
 
   // cleanup pointers in example chain
   auto inner = ex;
@@ -149,7 +149,8 @@ void VowpalWabbitBase::InternalDispose()
 
   try
   { if (m_vw != nullptr)
-    { reset_source(*m_vw, m_vw->num_bits);
+    {
+      VW::details::reset_source(*m_vw, m_vw->initial_weights_config.num_bits);
 
       // make sure don't try to free m_vw twice in case VW::finish throws.
       VW::workspace* vw_tmp = m_vw;
@@ -185,11 +186,12 @@ void VowpalWabbitBase::Reload([System::Runtime::InteropServices::Optional] Strin
   auto stringArgs = msclr::interop::marshal_as<std::string>(args);
 
   try
-  { reset_source(*m_vw, m_vw->num_bits);
+  {
+    VW::details::reset_source(*m_vw, m_vw->initial_weights_config.num_bits);
 
     auto buffer = std::make_shared<std::vector<char>>();
     {
-      io_buf write_buffer;
+      VW::io_buf write_buffer;
       write_buffer.add_file(VW::io::create_vector_writer(buffer));
       VW::save_predictor(*m_vw, write_buffer);
     }
@@ -201,7 +203,7 @@ void VowpalWabbitBase::Reload([System::Runtime::InteropServices::Optional] Strin
 
     // reload from model
     // seek to beginning
-    io_buf reader_view_of_buffer;
+    VW::io_buf reader_view_of_buffer;
     reader_view_of_buffer.add_file(VW::io::create_buffer_view(buffer->data(), buffer->size()));
     m_vw = VW::initialize(stringArgs.c_str(), &reader_view_of_buffer);
   }
@@ -223,7 +225,7 @@ void VowpalWabbitBase::ID::set(String^ value)
 }
 
 void VowpalWabbitBase::SaveModel()
-{ std::string name = m_vw->final_regressor_name;
+{ std::string name = m_vw->output_model_config.final_regressor_name;
   if (name.empty())
   { return;
   }
@@ -259,7 +261,7 @@ void VowpalWabbitBase::SaveModel(Stream^ stream)
 
   try
   {
-    io_buf buf;
+    VW::io_buf buf;
     auto* stream_adapter = new clr_stream_adapter(stream);
     buf.add_file(std::unique_ptr<VW::io::writer>(stream_adapter));
     VW::save_predictor(*m_vw, buf);

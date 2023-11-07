@@ -3,11 +3,12 @@
 #include "vw/allreduce/allreduce.h"
 #include "vw/common/string_view.h"
 #include "vw/core/best_constant.h"
-#include "vw/core/parse_example.h"
+#include "vw/core/learner.h"
 #include "vw/core/shared_data.h"
+#include "vw/text_parser/parse_example_text.h"
 
 vw_net_native::workspace_context* create_workspace(
-    std::string arguments, io_buf* model, trace_message_t trace_listener, void* trace_context)
+    std::string arguments, VW::io_buf* model, trace_message_t trace_listener, void* trace_context)
 {
   vw_net_native::workspace_context* context = new vw_net_native::workspace_context();
   context->vw = VW::initialize(arguments, model, false, trace_listener, trace_context);
@@ -55,7 +56,7 @@ API vw_net_native::workspace_context* CreateWorkspaceWithModelData(char* argumen
 {
   try
   {
-    io_buf model;
+    VW::io_buf model;
     model.add_file(std::unique_ptr<VW::io::reader>(new vw_net_native::stream_io_reader(model_reader_vtable)));
 
     std::string arguments_str(arguments, arguments_size);
@@ -91,7 +92,7 @@ API vw_net_native::ERROR_CODE DeleteWorkspace(
   CATCH_RETURN_STATUS
 }
 
-API prediction_type_t WorkspaceGetOutputPredictionType(vw_net_native::workspace_context* workspace)
+API VW::prediction_type_t WorkspaceGetOutputPredictionType(vw_net_native::workspace_context* workspace)
 {
   return workspace->vw->l->get_output_prediction_type();
 }
@@ -102,11 +103,11 @@ API vw_net_native::ERROR_CODE WorkspaceReload(vw_net_native::workspace_context* 
   try
   {
     std::string arguments_str(arguments, arguments_size);
-    reset_source(*workspace->vw, workspace->vw->num_bits);
+    VW::details::reset_source(*workspace->vw, workspace->vw->initial_weights_config.num_bits);
 
     auto buffer = std::make_shared<std::vector<char>>();
     {
-      io_buf write_buffer;
+      VW::io_buf write_buffer;
       write_buffer.add_file(VW::io::create_vector_writer(buffer));
       VW::save_predictor(*workspace->vw, write_buffer);
     }
@@ -118,7 +119,7 @@ API vw_net_native::ERROR_CODE WorkspaceReload(vw_net_native::workspace_context* 
 
     // reload from model
     // seek to beginning
-    io_buf reader_view_of_buffer;
+    VW::io_buf reader_view_of_buffer;
     reader_view_of_buffer.add_file(VW::io::create_buffer_view(buffer->data(), buffer->size()));
 
     workspace->vw = VW::initialize(arguments_str, &reader_view_of_buffer);
@@ -146,7 +147,7 @@ API vw_net_native::ERROR_CODE WorkspaceSavePredictorToWriter(vw_net_native::work
 {
   try
   {
-    io_buf write_buffer;
+    VW::io_buf write_buffer;
     write_buffer.add_file(std::unique_ptr<VW::io::writer>(new vw_net_native::stream_io_writer(writer_vtable)));
     VW::save_predictor(*workspace->vw, write_buffer);
 
@@ -158,28 +159,35 @@ API vw_net_native::ERROR_CODE WorkspaceSavePredictorToWriter(vw_net_native::work
 API void WorkspaceGetPerformanceStatistics(
     vw_net_native::workspace_context* workspace, vw_net_native::performance_statistics_t* statistics)
 {
-  if (workspace->vw->current_pass == 0) { statistics->examples_per_pass = workspace->vw->sd->example_number; }
+  if (workspace->vw->passes_config.current_pass == 0)
+  {
+    statistics->examples_per_pass = workspace->vw->sd->example_number;
+  }
   else
   {
-    statistics->examples_per_pass = workspace->vw->sd->example_number / workspace->vw->current_pass;
+    statistics->examples_per_pass = workspace->vw->sd->example_number / workspace->vw->passes_config.current_pass;
   }
 
   statistics->weighted_examples = workspace->vw->sd->weighted_examples();
   statistics->weighted_labels = workspace->vw->sd->weighted_labels;
 
-  if (workspace->vw->holdout_set_off)
+  if (workspace->vw->passes_config.holdout_set_off)
+  {
     if (workspace->vw->sd->weighted_labeled_examples > 0)
+    {
       statistics->average_loss = workspace->vw->sd->sum_loss / workspace->vw->sd->weighted_labeled_examples;
-    else
-      statistics->average_loss = NAN;
+    }
+    else { statistics->average_loss = NAN; }
+  }
   else if ((workspace->vw->sd->holdout_best_loss == FLT_MAX) || (workspace->vw->sd->holdout_best_loss == FLT_MAX * 0.5))
+  {
     statistics->average_loss = NAN;
-  else
-    statistics->average_loss = workspace->vw->sd->holdout_best_loss;
+  }
+  else { statistics->average_loss = workspace->vw->sd->holdout_best_loss; }
 
   float best_constant;
   float best_constant_loss;
-  if (get_best_constant(*workspace->vw->loss.get(), *workspace->vw->sd, best_constant, best_constant_loss))
+  if (get_best_constant(*workspace->vw->loss_config.loss.get(), *workspace->vw->sd, best_constant, best_constant_loss))
   {
     statistics->best_constant = best_constant;
     if (best_constant_loss != FLT_MIN) { statistics->best_constant_loss = best_constant_loss; }
@@ -203,27 +211,28 @@ API size_t WorkspaceHashFeature(
 
 API void WorkspaceSetUpAllReduceThreadsRoot(vw_net_native::workspace_context* workspace, size_t total, size_t node)
 {
-  workspace->vw->all_reduce_type = AllReduceType::Thread;
-  workspace->vw->all_reduce = new AllReduceThreads(total, node);
+  workspace->vw->runtime_config.selected_all_reduce_type = VW::all_reduce_type::THREAD;
+  workspace->vw->runtime_state.all_reduce.reset(new VW::all_reduce_threads(total, node));
 }
 
 API void WorkspaceSetUpAllReduceThreadsNode(vw_net_native::workspace_context* workspace, size_t total, size_t node,
     vw_net_native::workspace_context* root_workspace)
 {
-  workspace->vw->all_reduce_type = AllReduceType::Thread;
-  workspace->vw->all_reduce = new AllReduceThreads((AllReduceThreads*)root_workspace->vw->all_reduce, total, node);
+  workspace->vw->runtime_config.selected_all_reduce_type = VW::all_reduce_type::THREAD;
+  workspace->vw->runtime_state.all_reduce.reset(new VW::all_reduce_threads(
+      (VW::all_reduce_threads*)root_workspace->vw->runtime_state.all_reduce.get(), total, node));
 }
 
 API vw_net_native::ERROR_CODE WorkspaceRunMultiPass(
     vw_net_native::workspace_context* workspace, VW::experimental::api_status* status)
 {
-  if (workspace->vw->numpasses > 1)
+  if (workspace->vw->runtime_config.numpasses > 1)
   {
     try
     {
-      workspace->vw->do_reset_source = true;
+      workspace->vw->runtime_state.do_reset_source = true;
       VW::start_parser(*workspace->vw);
-      LEARNER::generic_driver(*workspace->vw);
+      VW::LEARNER::generic_driver(*workspace->vw);
       VW::end_parser(*workspace->vw);
     }
     CATCH_RETURN_STATUS
@@ -247,12 +256,12 @@ API vw_net_native::ERROR_CODE WorkspaceNotifyEndOfPass(
   CATCH_RETURN_STATUS
 }
 
-API vw_net_native::ERROR_CODE WorkspaceParseSingleLine(vw_net_native::workspace_context* workspace, example* ex,
+API vw_net_native::ERROR_CODE WorkspaceParseSingleLine(vw_net_native::workspace_context* workspace, VW::example* ex,
     char* line, size_t length, VW::experimental::api_status* status)
 {
   try
   {
-    VW::read_line(*workspace->vw, ex, VW::string_view(line, length));
+    VW::parsers::text::read_line(*workspace->vw, ex, VW::string_view(line, length));
 
     VW::setup_example(*workspace->vw, ex);
 
@@ -261,23 +270,23 @@ API vw_net_native::ERROR_CODE WorkspaceParseSingleLine(vw_net_native::workspace_
   CATCH_RETURN_STATUS
 }
 
-API vw_net_native::ERROR_CODE WorkspacePredict(vw_net_native::workspace_context* workspace, example* ex,
+API vw_net_native::ERROR_CODE WorkspacePredict(vw_net_native::workspace_context* workspace, VW::example* ex,
     vw_net_native::create_prediction_callback_fn create_prediction, VW::experimental::api_status* status)
 {
   try
   {
-    as_singleline(workspace->vw->l)->predict(*ex);
+    require_singleline(workspace->vw->l)->predict(*ex);
 
     if (create_prediction != nullptr) { create_prediction(); }
 
-    as_singleline(workspace->vw->l)->finish_example(*workspace->vw, *ex);
+    require_singleline(workspace->vw->l)->finish_example(*workspace->vw, *ex);
 
     return VW::experimental::error_code::success;
   }
   CATCH_RETURN_STATUS
 }
 
-API vw_net_native::ERROR_CODE WorkspaceLearn(vw_net_native::workspace_context* workspace, example* ex,
+API vw_net_native::ERROR_CODE WorkspaceLearn(vw_net_native::workspace_context* workspace, VW::example* ex,
     vw_net_native::create_prediction_callback_fn create_prediction, VW::experimental::api_status* status)
 {
   try
@@ -286,30 +295,30 @@ API vw_net_native::ERROR_CODE WorkspaceLearn(vw_net_native::workspace_context* w
 
     if (create_prediction != nullptr) { create_prediction(); }
 
-    as_singleline(workspace->vw->l)->finish_example(*workspace->vw, *ex);
+    require_singleline(workspace->vw->l)->finish_example(*workspace->vw, *ex);
 
     return VW::experimental::error_code::success;
   }
   CATCH_RETURN_STATUS
 }
 
-API vw_net_native::ERROR_CODE WorkspacePredictMulti(vw_net_native::workspace_context* workspace, multi_ex* ex_coll,
+API vw_net_native::ERROR_CODE WorkspacePredictMulti(vw_net_native::workspace_context* workspace, VW::multi_ex* ex_coll,
     vw_net_native::create_prediction_callback_fn create_prediction, VW::experimental::api_status* status)
 {
   try
   {
-    as_multiline(workspace->vw->l)->predict(*ex_coll);
+    require_multiline(workspace->vw->l)->predict(*ex_coll);
 
     if (create_prediction != nullptr) { create_prediction(); }
 
-    as_multiline(workspace->vw->l)->finish_example(*workspace->vw, *ex_coll);
+    require_multiline(workspace->vw->l)->finish_example(*workspace->vw, *ex_coll);
 
     return VW::experimental::error_code::success;
   }
   CATCH_RETURN_STATUS
 }
 
-API vw_net_native::ERROR_CODE WorkspaceLearnMulti(vw_net_native::workspace_context* workspace, multi_ex* ex_coll,
+API vw_net_native::ERROR_CODE WorkspaceLearnMulti(vw_net_native::workspace_context* workspace, VW::multi_ex* ex_coll,
     vw_net_native::create_prediction_callback_fn create_prediction, VW::experimental::api_status* status)
 {
   try
@@ -318,7 +327,7 @@ API vw_net_native::ERROR_CODE WorkspaceLearnMulti(vw_net_native::workspace_conte
 
     if (create_prediction != nullptr) { create_prediction(); }
 
-    as_multiline(workspace->vw->l)->finish_example(*workspace->vw, *ex_coll);
+    require_multiline(workspace->vw->l)->finish_example(*workspace->vw, *ex_coll);
 
     return VW::experimental::error_code::success;
   }
@@ -337,5 +346,5 @@ API void WorkspaceSetId(vw_net_native::workspace_context* workspace, char* id, s
 
 API VW::label_type_t WorkspaceGetLabelType(vw_net_native::workspace_context* workspace)
 {
-  return workspace->vw->example_parser->lbl_parser.label_type;
+  return workspace->vw->parser_runtime.example_parser->lbl_parser.label_type;
 }

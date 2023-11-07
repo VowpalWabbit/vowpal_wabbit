@@ -8,28 +8,28 @@ Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
-Enabled reductions: ksvm, scorer-identity, count_label
-Input label = simple
-Output pred = scalar
-average  since         example        example        current        current  current 
-loss     last          counter         weight          label        predict features 
-0.000000 0.000000            1            1.0         1.0000         1.0701       50 
-0.075673 0.151346            2            2.0        -1.0000        -0.8487      103 
-0.037837 0.000000            4            4.0        -1.0000        -1.1355      134 
-0.093621 0.149404            8            8.0        -1.0000        -1.0347      145 
-0.076917 0.060214           16           16.0         1.0000         1.0376       23 
-0.089349 0.101780           32           32.0        -1.0000        -0.9210       31 
-0.093988 0.098628           64           64.0        -1.0000        -1.0200       60 
-0.081547 0.069106          128          128.0         1.0000         0.8363      105 
+Enabled learners: ksvm, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.000000 0.000000            1            1.0         1.0000         1.1186       50
+0.028986 0.057973            2            2.0        -1.0000        -0.9420      103
+0.014493 0.000000            4            4.0        -1.0000        -1.0943      134
+0.068989 0.123484            8            8.0        -1.0000        -1.0258      145
+0.055026 0.041063           16           16.0         1.0000         0.9889       23
+0.068704 0.082382           32           32.0        -1.0000        -0.9003       31
+0.083263 0.097822           64           64.0        -1.0000        -1.0730       60
+0.076278 0.069292          128          128.0         1.0000         0.8545      105
 
 finished run
 number of examples = 250
 weighted example sum = 250.000000
 weighted label sum = -22.000000
-average loss = 0.070507
+average loss = 0.069696
 best constant = -1.000000
 best constant's loss = 0.912000
 total feature number = 19870
-Num support = 380
-Number of kernel evaluations = 409817 Number of cache queries = 264012
-Total loss = 17.626629
+Num support = 384
+Number of kernel evaluations = 419235 Number of cache queries = 258840
+Total loss = 17.424030

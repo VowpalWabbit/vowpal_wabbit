@@ -17,13 +17,14 @@
 #  include <mutex>
 #endif
 
-#include "hashstring.h"
-#include "object_pool.h"
-#include "queue.h"
+#include "vw/cache_parser/parse_example_cache.h"
 #include "vw/common/future_compat.h"
 #include "vw/common/string_view.h"
 #include "vw/core/example.h"
+#include "vw/core/hashstring.h"
 #include "vw/core/io_buf.h"
+#include "vw/core/object_pool.h"
+#include "vw/core/queue.h"
 #include "vw/core/vw_fwd.h"
 
 #include <atomic>
@@ -31,29 +32,20 @@
 
 namespace VW
 {
+namespace details
+{
+class dsjson_metrics;
+}
+
 void parse_example_label(string_view label, const VW::label_parser& lbl_parser, const named_labels* ldict,
     label_parser_reuse_mem& reuse_mem, example& ec, VW::io::logger& logger);
 void setup_examples(VW::workspace& all, VW::multi_ex& examples);
-namespace details
-{
-struct cache_temp_buffer
-{
-  std::shared_ptr<std::vector<char>> _backing_buffer;
-  io_buf _temporary_cache_buffer;
-  cache_temp_buffer()
-  {
-    _backing_buffer = std::make_shared<std::vector<char>>();
-    _temporary_cache_buffer.add_file(VW::io::create_vector_writer(_backing_buffer));
-  }
-};
-}  // namespace details
-}  // namespace VW
 
-struct input_options;
-struct dsjson_metrics;
+VW::example& get_unused_example(VW::workspace* all);
 
-struct parser
+class parser
 {
+public:
   parser(size_t example_queue_limit, bool strict_parse_);
 
   // delete copy constructor
@@ -76,14 +68,12 @@ struct parser
   /// call is made.
   int (*reader)(VW::workspace*, io_buf&, VW::multi_ex& examples);
   /// text_reader consumes the char* input and is for text based parsing
-  void (*text_reader)(VW::workspace*, const char*, size_t, VW::multi_ex&);
-
-  shared_data* _shared_data = nullptr;
+  void (*text_reader)(VW::workspace*, VW::string_view, VW::multi_ex&);
 
   hash_func_t hasher;
   bool resettable;  // Whether or not the input can be reset.
   io_buf output;    // Where to output the cache.
-  VW::details::cache_temp_buffer _cache_temp_buffer;
+  VW::parsers::cache::details::cache_temp_buffer cache_temp_buffer_obj;
   std::string currentname;
   std::string finalname;
 
@@ -114,27 +104,31 @@ struct parser
 
   bool strict_parse;
   std::exception_ptr exc_ptr;
-  std::unique_ptr<dsjson_metrics> metrics = nullptr;
+  std::unique_ptr<details::dsjson_metrics> metrics = nullptr;
 };
-
-struct dsjson_metrics
+namespace details
 {
-  size_t NumberOfSkippedEvents = 0;
-  size_t NumberOfEventsZeroActions = 0;
-  size_t LineParseError = 0;
-  float DsjsonSumCostOriginal = 0.f;
-  float DsjsonSumCostOriginalFirstSlot = 0.f;
-  float DsjsonSumCostOriginalBaseline = 0.f;
-  size_t DsjsonNumberOfLabelEqualBaselineFirstSlot = 0;
-  size_t DsjsonNumberOfLabelNotEqualBaselineFirstSlot = 0;
-  float DsjsonSumCostOriginalLabelEqualBaselineFirstSlot = 0.f;
-  std::string FirstEventId;
-  std::string FirstEventTime;
-  std::string LastEventId;
-  std::string LastEventTime;
+class input_options;
+
+class dsjson_metrics
+{
+public:
+  size_t number_of_skipped_events = 0;
+  size_t number_of_events_zero_actions = 0;
+  size_t line_parse_error = 0;
+  float dsjson_sum_cost_original = 0.f;
+  float dsjson_sum_cost_original_first_slot = 0.f;
+  float dsjson_sum_cost_original_baseline = 0.f;
+  size_t dsjson_number_of_label_equal_baseline_first_slot = 0;
+  size_t dsjson_number_of_label_not_equal_baseline_first_slot = 0;
+  float dsjson_sum_cost_original_label_equal_baseline_first_slot = 0.f;
+  std::string first_event_id;
+  std::string first_event_time;
+  std::string last_event_id;
+  std::string last_event_time;
 };
 
-void enable_sources(VW::workspace& all, bool quiet, size_t passes, input_options& input_options);
+void enable_sources(VW::workspace& all, bool quiet, size_t passes, const VW::details::input_options& input_options);
 
 // parser control
 void lock_done(parser& p);
@@ -143,3 +137,7 @@ void set_done(VW::workspace& all);
 // source control functions
 void reset_source(VW::workspace& all, size_t numbits);
 void free_parser(VW::workspace& all);
+}  // namespace details
+}  // namespace VW
+
+using parser VW_DEPRECATED("Use VW::parser instead of ::parser. ::parser will be removed in VW 10.") = VW::parser;

@@ -74,6 +74,11 @@ int recvall(int s, char* buf, int n)
 
 int main(int argc, char* argv[])
 {
+  std::cerr << "[Warning] The C++ version of active_interactor is deprecated and will be removed in VW 10.\n\nWe "
+               "recommend using the Python based tool active_interactor.py available "
+               "here:\n\thttps://github.com/VowpalWabbit/vowpal_wabbit/blob/master/utl/active_interactor.py\n\nPlease "
+               "open an issue on GitHub if the the C++ tool deprecation is a problem.\n"
+            << std::endl;
   char buf[256];
   char *toks, *itok, *ttag;
   std::string tag;

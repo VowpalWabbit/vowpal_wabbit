@@ -4,10 +4,12 @@
 
 #pragma once
 
-#include "vw/core/learner.h"
+#include "vw/core/learner_fwd.h"
+#include "vw/core/multi_ex.h"
 #include "vw/core/slates_label.h"
 #include "vw/core/vw_fwd.h"
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -15,8 +17,12 @@ namespace VW
 {
 namespace reductions
 {
-struct slates_data
+class slates_data
 {
+public:
+  void learn(VW::LEARNER::learner& base, multi_ex& examples);
+  void predict(VW::LEARNER::learner& base, multi_ex& examples);
+
 private:
   std::vector<slates::label> _stashed_labels;
 
@@ -44,14 +50,10 @@ private:
     ccb slot 3:0.8:0.6 3,4
   */
   template <bool is_learn>
-  void learn_or_predict(VW::LEARNER::multi_learner& base, multi_ex& examples);
-
-public:
-  void learn(VW::LEARNER::multi_learner& base, multi_ex& examples);
-  void predict(VW::LEARNER::multi_learner& base, multi_ex& examples);
+  void learn_or_predict(VW::LEARNER::learner& base, multi_ex& examples);
 };
 
-VW::LEARNER::base_learner* slates_setup(VW::setup_base_i&);
+std::shared_ptr<VW::LEARNER::learner> slates_setup(VW::setup_base_i&);
 std::string generate_slates_label_printout(const std::vector<example*>& slots);
 }  // namespace reductions
 }  // namespace VW

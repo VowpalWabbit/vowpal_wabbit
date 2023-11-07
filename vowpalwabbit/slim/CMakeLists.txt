@@ -5,6 +5,8 @@ set(VW_SLIM_SOURCES
   src/vw_slim_predict.cc
   ../core/src/feature_group.cc
   ../core/src/example_predict.cc
+  ../core/src/array_parameters_dense.cc
+  ../core/src/array_parameters_sparse.cc
   ../core/src/interactions.cc
 )
 
@@ -38,7 +40,6 @@ set(vw_slim_test_sources
   test/ut_explore.cc
   test/ut_opts.cc
   test/ut_util.cc
-  test/main.cc
 )
 
 vw_add_test_executable(

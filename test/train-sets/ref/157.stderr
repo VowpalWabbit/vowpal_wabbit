@@ -7,18 +7,18 @@ learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 decay_learning_rate = 1
-Enabled reductions: gd, scorer-identity, count_label
-Input label = simple
-Output pred = scalar
-average  since         example        example        current        current  current 
-loss     last          counter         weight          label        predict features 
-0.235695 0.235695           50           50.0         1.0000         0.4783       21 
-0.220808 0.205922          100          100.0         1.0000         0.6434       41 
-0.210682 0.190430          150          150.0         1.0000         0.4742       38 
-0.182729 0.182729          200          200.0         1.0000         1.0000       88  h
-0.167472 0.100343          250          250.0         0.0000         0.0920       41  h
-0.175114 0.209499          300          300.0         0.0000         0.0677       14  h
-0.179519 0.208593          350          350.0         0.0000         0.0000      122  h
+Enabled learners: gd, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.235697 0.235697           50           50.0         1.0000         0.4783       21
+0.220809 0.205921          100          100.0         1.0000         0.6434       41
+0.210683 0.190432          150          150.0         1.0000         0.4742       38
+0.182728 0.182728          200          200.0         1.0000         1.0000       88 h
+0.167471 0.100341          250          250.0         0.0000         0.0920       41 h
+0.175112 0.209492          300          300.0         0.0000         0.0677       14 h
+0.179518 0.208603          350          350.0         0.0000         0.0000      122 h
 
 finished run
 number of examples per pass = 180

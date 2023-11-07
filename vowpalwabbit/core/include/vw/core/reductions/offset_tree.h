@@ -3,22 +3,27 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#include "vw/config/options.h"
-#include "vw/core/learner.h"
+
+#include "vw/core/learner_fwd.h"
+#include "vw/core/vw_fwd.h"
+
+#include <cstdint>
+#include <memory>
 
 namespace VW
 {
 namespace reductions
 {
-LEARNER::base_learner* offset_tree_setup(VW::setup_base_i& stack_builder);
+std::shared_ptr<VW::LEARNER::learner> offset_tree_setup(VW::setup_base_i& stack_builder);
 
 namespace offset_tree
 {
-struct tree_node
+class tree_node
 {
+public:
   tree_node(uint32_t node_id, uint32_t left_node_id, uint32_t right_node_id, uint32_t parent_id, bool is_leaf);
 
-  inline bool operator==(const tree_node& rhs) const;
+  bool operator==(const tree_node& rhs) const;
   bool operator!=(const tree_node& rhs) const;
 
   uint32_t id;
@@ -28,8 +33,9 @@ struct tree_node
   bool is_leaf;
 };
 
-struct min_depth_binary_tree
+class min_depth_binary_tree
 {
+public:
   void build_tree(uint32_t num_nodes);
   inline uint32_t internal_node_count() const;
   inline uint32_t leaf_node_count() const;
@@ -42,16 +48,17 @@ private:
   bool _initialized = false;
 };
 
-struct offset_tree
+class offset_tree
 {
+public:
   using scores_t = std::vector<float>;
   using predict_buffer_t = std::vector<std::pair<float, float>>;
 
   offset_tree(uint32_t num_actions);
   void init();
   int32_t learner_count() const;
-  const scores_t& predict(LEARNER::single_learner& base, example& ec);
-  void learn(LEARNER::single_learner& base, example& ec);
+  const scores_t& predict(LEARNER::learner& base, example& ec);
+  void learn(LEARNER::learner& base, example& ec);
 
 private:
   min_depth_binary_tree binary_tree;

@@ -3,11 +3,14 @@
 #include "vw/config/option_group_definition.h"
 #include "vw/config/options_cli.h"
 #include "vw/core/io_buf.h"
-#include "vw/core/parse_example_json.h"
+#include "vw/core/learner.h"
+#include "vw/core/parse_primitives.h"
 #include "vw/core/vw.h"
 #include "vw/io/io_adapter.h"
+#include "vw/json_parser/parse_example_json.h"
+#include "vw/text_parser/parse_example_text.h"
 
-#ifdef VW_BUILD_CSV
+#ifdef VW_FEAT_CSV_ENABLED
 #  include "vw/csv_parser/parse_example_csv.h"
 #endif
 
@@ -20,26 +23,17 @@
 
 enum class parser_type
 {
-  text,
-  dsjson,
-  csv
+  TEXT,
+  DSJSON,
+  CSV
 };
 
 parser_type to_parser_type(const std::string& str)
 {
-  if (str == "text") { return parser_type::text; }
-  else if (str == "dsjson")
-  {
-    return parser_type::dsjson;
-  }
-  else if (str == "csv")
-  {
-    return parser_type::csv;
-  }
-  else
-  {
-    throw std::runtime_error("Unknown input type: " + str);
-  }
+  if (str == "text") { return parser_type::TEXT; }
+  else if (str == "dsjson") { return parser_type::DSJSON; }
+  else if (str == "csv") { return parser_type::CSV; }
+  else { throw std::runtime_error("Unknown input type: " + str); }
 }
 
 int main(int argc, char** argv)
@@ -84,7 +78,7 @@ int main(int argc, char** argv)
     return 1;
   }
 
-  std::string args = "--no_stdin --quiet ";
+  std::vector<std::string> args{"--no_stdin", "--quiet"};
   if (opts.was_supplied("args"))
   {
     const auto& illegal_options = {"--dsjson", "--json", "--data", "-d", "--csv"};
@@ -96,7 +90,8 @@ int main(int argc, char** argv)
         return 1;
       }
     }
-    args += extra_args;
+    auto split_args = VW::split_command_line(extra_args);
+    args.insert(args.end(), split_args.begin(), split_args.end());
   }
 
   size_t bytes = 0;
@@ -112,34 +107,31 @@ int main(int argc, char** argv)
     }
     file.close();
   }
-  else
-  {
-    std::cerr << "error: could not open file: '" << file_name << "'\n";
-  }
+  else { std::cerr << "error: could not open file: '" << file_name << "'\n"; }
 
   // Other option is the parser can use this io_buf. It's using more memory for no good reason, unless we run out it
   // shouldnt matter in this test tool.
-  io_buf file_contents_as_io_buf;
-  std::ifstream testFile(file_name, std::ios::binary);
-  std::vector<char> fileContents((std::istreambuf_iterator<char>(testFile)), std::istreambuf_iterator<char>());
-  file_contents_as_io_buf.add_file(VW::io::create_buffer_view(fileContents.data(), fileContents.size()));
+  VW::io_buf file_contents_as_io_buf;
+  std::ifstream test_file(file_name, std::ios::binary);
+  std::vector<char> file_contents((std::istreambuf_iterator<char>(test_file)), std::istreambuf_iterator<char>());
+  file_contents_as_io_buf.add_file(VW::io::create_buffer_view(file_contents.data(), file_contents.size()));
 
   const auto type = to_parser_type(type_str);
-  if (type == parser_type::dsjson) { args += " --dsjson"; }
-  else if (type == parser_type::csv)
+  if (type == parser_type::DSJSON) { args.push_back("--dsjson"); }
+  else if (type == parser_type::CSV)
   {
-#ifndef VW_BUILD_CSV
-    THROW("CSV parser not enabled. Please reconfigure cmake and rebuild with VW_BUILD_CSV=ON");
+#ifndef VW_FEAT_CSV_ENABLED
+    THROW("CSV parser not enabled. Please reconfigure cmake and rebuild with VW_FEAT_CSV=ON");
 #endif
 
-    args += " --csv";
+    args.push_back("--csv");
   }
 
-  auto vw = VW::initialize(args, nullptr, false, nullptr, nullptr);
+  auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
   const auto is_multiline = vw->l->is_multiline();
 
   const auto start = std::chrono::high_resolution_clock::now();
-  if (type == parser_type::text)
+  if (type == parser_type::TEXT)
   {
     if (is_multiline)
     {
@@ -152,9 +144,9 @@ int main(int argc, char** argv)
           exs.clear();
         }
 
-        auto* ae = &VW::get_unused_example(vw);
+        auto* ae = &VW::get_unused_example(vw.get());
         VW::string_view example(line.c_str(), line.size());
-        substring_to_example(vw, ae, example);
+        VW::parsers::text::details::substring_to_example(vw.get(), ae, example);
         exs.push_back(ae);
       }
 
@@ -168,39 +160,39 @@ int main(int argc, char** argv)
     {
       for (const auto& line : file_contents_as_lines)
       {
-        VW::example& ae = VW::get_unused_example(vw);
+        VW::example& ae = VW::get_unused_example(vw.get());
         VW::string_view example(line.c_str(), line.size());
-        substring_to_example(vw, &ae, example);
+        VW::parsers::text::details::substring_to_example(vw.get(), &ae, example);
         VW::finish_example(*vw, ae);
       }
     }
   }
-  else if (type == parser_type::dsjson)
+  else if (type == parser_type::DSJSON)
   {
-    DecisionServiceInteraction interaction;
+    VW::parsers::json::decision_service_interaction interaction;
     for (const auto& line : file_contents_as_lines)
     {
       VW::multi_ex examples;
-      examples.push_back(&VW::get_unused_example(vw));
-      VW::read_line_decision_service_json<false>(*vw, examples, const_cast<char*>(line.data()), line.length(), false,
-          (VW::example_factory_t)&VW::get_unused_example, (void*)vw, &interaction);
+      examples.push_back(&VW::get_unused_example(vw.get()));
+      VW::parsers::json::read_line_decision_service_json<false>(*vw, examples, const_cast<char*>(line.data()),
+          line.length(), false, std::bind(VW::get_unused_example, vw.get()), &interaction);
       VW::finish_example(*vw, examples);
     }
   }
   else
   {
-#ifdef VW_BUILD_CSV
+#ifdef VW_FEAT_CSV_ENABLED
     VW::multi_ex examples;
-    examples.push_back(&VW::get_unused_example(vw));
-    while (VW::parsers::parse_csv_examples(vw, file_contents_as_io_buf, examples) != 0)
+    examples.push_back(&VW::get_unused_example(vw.get()));
+    while (VW::parsers::csv::parse_csv_examples(vw.get(), file_contents_as_io_buf, examples) != 0)
     {
       VW::finish_example(*vw, *examples[0]);
       examples.clear();
-      examples.push_back(&VW::get_unused_example(vw));
+      examples.push_back(&VW::get_unused_example(vw.get()));
     }
     VW::finish_example(*vw, *examples[0]);
 #else
-    THROW("CSV parser not enabled. Please reconfigure cmake and rebuild with VW_BUILD_CSV=ON");
+    THROW("CSV parser not enabled. Please reconfigure cmake and rebuild with VW_FEAT_CSV=ON");
 #endif
   }
   const auto end = std::chrono::high_resolution_clock::now();
@@ -210,8 +202,6 @@ int main(int argc, char** argv)
   const auto megabytes_per_second = bytes_per_second / 1e6;
   std::cout << bytes << " bytes parsed in " << time_in_microseconds << "μs" << std::endl;
   std::cout << megabytes_per_second << "MB/s" << std::endl;
-
-  VW::finish(*vw);
 
   return 0;
 }

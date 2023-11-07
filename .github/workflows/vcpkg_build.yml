@@ -9,7 +9,10 @@ on:
     branches:
       - '*'
 
-concurrency: 
+env:
+  VCPKG_DEFAULT_BINARY_CACHE: ${{github.workspace}}/vcpkg_binary_cache
+
+concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
@@ -23,15 +26,23 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
         preset: [vcpkg-debug, vcpkg-release]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: true
       - uses: lukka/get-cmake@latest
-      - uses: lukka/run-vcpkg@main
+      - uses: ilammy/msvc-dev-cmd@v1
+      - run: echo "VCPKG_COMMIT=$(git rev-parse :ext_libs/vcpkg)" >> $GITHUB_ENV
+        shell: bash
+      - run: mkdir -p ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+      - uses: actions/cache@v3
+        env:
+          cache-name: vcpkg-cache
         with:
-          vcpkgDirectory: '${{ github.workspace }}/ext_libs/vcpkg'
-          vcpkgJsonGlob: "${{ github.workspace }}/vcpkg.json"
+          path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}/*
+          key: ${{ matrix.os }}-build-${{ env.cache-name }}-${{ hashFiles('vcpkg.json') }}-${{ env.VCPKG_COMMIT }}"
       - uses: lukka/run-cmake@v10
+        env:
+          VCPKG_ROOT: ${{github.workspace}}/ext_libs/vcpkg
         with:
           cmakeListsTxtPath: "${{ github.workspace }}/CMakeLists.txt"
           configurePreset: "${{ matrix.preset }}"

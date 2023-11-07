@@ -8,9 +8,9 @@ Num weight bits = 18
 learning rate = 0.0001
 initial_t = 0
 power_t = 0.5
-Enabled reductions: cbzo
-Input label = continuous
-Output pred = pdf
+Enabled learners: cbzo
+Input label = CONTINUOUS
+Output pred = PDF
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
 0.134630 0.134630            1            1.0 {-0.1,0.134... -0.1--0.1:3...        5

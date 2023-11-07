@@ -1,7 +1,7 @@
 Enabling FTRL based optimization
 Algorithm used: Proximal-FTRL
-ftrl_alpha = 0.005
-ftrl_beta = 0.1
+ftrl_alpha = 0.5
+ftrl_beta = 1
 creating cache_file = train-sets/wsj_small.dparser.vw.gz.cache
 Reading datafile = train-sets/wsj_small.dparser.vw.gz
 num sources = 1
@@ -9,17 +9,17 @@ Num weight bits = 20
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
-Enabled reductions: ftrl-Proximal-FTRL, nn, scorer-identity, csoaa, search_task
-Input label = cs
-Output pred = multiclass
+Enabled learners: ftrl-Proximal-FTRL, nn, scorer-identity, csoaa, search_task
+Input label = CS
+Output pred = MULTICLASS
 average    since      instance            current true      current predicted   cur   cur   predic    cache  examples          
 loss       last        counter           output prefix          output prefix  pass   pol     made     hits    gener  beta    
 89.000000  89.000000         1  [43:1 5:2 5:2 5:2 1..] [20:9 20:9 20:9 20:..]     0     0       96        0       94  0.000930
-48.500000  8.000000          2  [2:2 3:5 0:8 3:7 99..] [0:8 1:2 2:2 3:2 4:2 ]     0     0      104        0      100  0.000990
+47.000000  5.000000          2  [2:2 3:5 0:8 3:7 99..] [2:12 3:7 4:4 0:8 9..]     0     0      102        0      100  0.000990
 
 finished run
 number of examples = 2
 weighted example sum = 2.000000
 weighted label sum = 0.000000
-average loss = 48.500000
-total feature number = 29203
+average loss = 47.000000
+total feature number = 28636

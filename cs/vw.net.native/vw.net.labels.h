@@ -10,15 +10,15 @@
 
 extern "C"
 {
-  API float SimpleLabelReadFromExample(example* ex, float& weight, float& initial);
-  API void SimpleLabelUpdateExample(
-      vw_net_native::workspace_context* workspace, example* ex, float label, float* maybe_weight, float* maybe_initial);
+  API float SimpleLabelReadFromExample(VW::example* ex, float& weight, float& initial);
+  API void SimpleLabelUpdateExample(vw_net_native::workspace_context* workspace, VW::example* ex, float label,
+      float* maybe_weight, float* maybe_initial);
 
-  API CB::cb_class* CbLabelReadFromExampleDangerous(example* ex);
-  API void CbLabelUpdateExample(example* ex, const CB::cb_class* f);
+  API VW::cb_class* CbLabelReadFromExampleDangerous(VW::example* ex);
+  API void CbLabelUpdateExample(VW::example* ex, const VW::cb_class* f);
 
   API vw_net_native::ERROR_CODE StringLabelParseAndUpdateExample(vw_net_native::workspace_context* workspace,
-      example* ex, const char* label, size_t label_len, VW::experimental::api_status* status = nullptr);
+      VW::example* ex, const char* label, size_t label_len, VW::experimental::api_status* status = nullptr);
 
   API float SharedLabelGetCostConstant();
 
@@ -26,6 +26,6 @@ extern "C"
   // using FreeDupString(); This is an unfortunate side-effect of how this API works:
   // Constructing dynamic strings as a function of the input parameters on the native
   // side.
-  API char* ComputeDiffDescriptionSimpleLabels(example* ex1, example* ex2);
-  API char* ComputeDiffDescriptionCbLabels(example* ex1, example* ex2);
+  API char* ComputeDiffDescriptionSimpleLabels(VW::example* ex1, VW::example* ex2);
+  API char* ComputeDiffDescriptionCbLabels(VW::example* ex1, VW::example* ex2);
 }

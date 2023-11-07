@@ -2,8 +2,9 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "../automl_impl.h"
+#include "vw/core/automl_impl.h"
 #include "vw/core/interactions.h"
+#include "vw/core/multi_model_utils.h"
 #include "vw/core/vw.h"
 
 namespace VW
@@ -36,8 +37,10 @@ bool count_namespaces(const multi_ex& ecs, std::map<namespace_index, uint64_t>& 
   {
     for (const auto& ns : ex->indices)
     {
-      if (!INTERACTIONS::is_interaction_ns(ns)) { continue; }
-      if (!is_allowed_to_remove(ns)) { continue; }
+      if (!VW::is_interaction_ns(ns)) { continue; }
+      // CCB_SLOT_NAMESPACE should be accounted for since generate_interactions treats it as a normal namespace
+      // it should still not be removed from oracle so we have to keep track of it here
+      if (ns != VW::details::CCB_SLOT_NAMESPACE && !is_allowed_to_remove(ns)) { continue; }
       ns_counter[ns]++;
       if (ns_counter[ns] == 1) { new_ns_seen = true; }
     }
@@ -48,14 +51,8 @@ bool count_namespaces(const multi_ex& ecs, std::map<namespace_index, uint64_t>& 
 
 bool is_allowed_to_remove(const namespace_index ns)
 {
-  if (ns == ccb_slot_namespace || ns == ccb_id_namespace) { return false; }
+  if (ns == VW::details::CCB_SLOT_NAMESPACE || ns == VW::details::CCB_ID_NAMESPACE) { return false; }
   return true;
-}
-
-void clear_non_champ_weights(dense_parameters& weights, uint32_t total, uint32_t& wpp)
-{
-  for (int64_t current_slot_index = 1; static_cast<size_t>(current_slot_index) < total; ++current_slot_index)
-  { weights.clear_offset(current_slot_index, wpp); }
 }
 }  // namespace automl
 
@@ -65,10 +62,10 @@ namespace util
 // todo: audit if they reference global all interactions
 void fail_if_enabled(VW::workspace& all, const std::set<std::string>& not_compat)
 {
-  std::vector<std::string> enabled_reductions;
-  if (all.l != nullptr) { all.l->get_enabled_reductions(enabled_reductions); }
+  std::vector<std::string> enabled_learners;
+  if (all.l != nullptr) { all.l->get_enabled_learners(enabled_learners); }
 
-  for (const auto& reduction : enabled_reductions)
+  for (const auto& reduction : enabled_learners)
   {
     if (not_compat.count(reduction) > 0) THROW("automl does not yet support this reduction: " + reduction);
   }
@@ -76,45 +73,30 @@ void fail_if_enabled(VW::workspace& all, const std::set<std::string>& not_compat
 
 std::string ns_to_str(unsigned char ns)
 {
-  if (ns == constant_namespace) { return "[constant]"; }
-  else if (ns == ccb_slot_namespace)
-  {
-    return "[ccbslot]";
-  }
-  else if (ns == ccb_id_namespace)
-  {
-    return "[ccbid]";
-  }
-  else if (ns == wildcard_namespace)
-  {
-    return "[wild]";
-  }
-  else if (ns == default_namespace)
-  {
-    return "[default]";
-  }
-  else
-  {
-    return std::string(1, ns);
-  }
+  if (ns == VW::details::CONSTANT_NAMESPACE) { return "[constant]"; }
+  else if (ns == VW::details::CCB_SLOT_NAMESPACE) { return "[ccbslot]"; }
+  else if (ns == VW::details::CCB_ID_NAMESPACE) { return "[ccbid]"; }
+  else if (ns == VW::details::WILDCARD_NAMESPACE) { return "[wild]"; }
+  else if (ns == VW::details::DEFAULT_NAMESPACE) { return "[default]"; }
+  else { return std::string(1, ns); }
 }
 
-std::string interaction_vec_t_to_string(
-    const std::vector<std::vector<namespace_index>>& interactions, const std::string& interaction_type)
+std::string interaction_vec_t_to_string(const std::vector<std::vector<namespace_index>>& interactions)
 {
   std::stringstream ss;
   for (const std::vector<VW::namespace_index>& v : interactions)
   {
-    interaction_type == "quadratic" ? ss << "-q " : ss << "-cubic ";
+    if (v.size() == 2) { ss << "-q "; }
+    else if (v.size() == 3) { ss << "--cubic="; }
+    else { THROW("Only supports up to cubic interactions"); }
     for (VW::namespace_index c : v) { ss << ns_to_str(c); }
     ss << " ";
   }
   return ss.str();
 }
 
-std::string elements_to_string(const automl::set_ns_list_t& elements)
+std::string elements_to_string(const automl::set_ns_list_t& elements, const char* const delim)
 {
-  const char* const delim = ", ";
   std::stringstream ss;
   size_t total = elements.size();
   size_t count = 0;

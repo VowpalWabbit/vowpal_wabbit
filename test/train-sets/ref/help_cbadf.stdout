@@ -53,8 +53,8 @@ Feature Options:
                                             only (type: list[str], keep)
     --ignore_features_dsjson_experimental args...
                                             Ignore specified features from namespace. To ignore a feature
-                                            arg should be namespace|feature To ignore a feature in the default
-                                            namespace, arg should be |feature (type: list[str], keep, experimental)
+                                            arg should be <namespace>|<feature>. <namespace> should be empty
+                                            for default (type: list[str], keep, experimental)
     --keep args...                          Keep namespaces beginning with character <arg> (type: list[str],
                                             keep)
     --redefine args...                      Redefine namespaces beginning with characters of std::string
@@ -100,7 +100,8 @@ Input Options:
     --foreground                            In persistent daemon mode, do not run in the background (type:
                                             bool)
     --port arg                              Port to listen on; use 0 to pick unused port (type: uint)
-    --num_children arg                      Number of children for persistent daemon mode (type: uint)
+    --num_children arg                      Number of children for persistent daemon mode (type: uint, default:
+                                            10)
     --pid_file arg                          Write pid file in persistent daemon mode (type: str)
     --port_file arg                         Write port used in persistent daemon mode (type: str)
     -c, --cache                             Use a cache. The default is <data>.cache (type: bool)
@@ -120,6 +121,8 @@ Input Options:
                                             keep)
     --flatbuffer                            Data file will be interpreted as a flatbuffer file (type: bool,
                                             experimental)
+    --api_status                            api_status object will not be set to nullptr which will show
+                                            detailed error information (type: bool, experimental)
     --csv                                   Data file will be interpreted as a CSV file (type: bool, experimental)
     --csv_separator arg                     CSV Parser: Specify field separator in one character, " | : are
                                             not allowed for reservation. (type: str, default: ,, experimental)
@@ -158,6 +161,8 @@ Output Model Options:
                                             str)
     --invert_hash arg                       Output human-readable final regressor with feature names. Computationally
                                             expensive (type: str)
+    --hexfloat_weights                      Output hexfloat format for floats for human-readable final regressor.
+                                            Useful for debugging/comparing. (type: bool)
     --dump_json_weights_experimental arg    Output json representation of model parameters. (type: str, experimental)
     --dump_json_weights_include_feature_names_experimental
                                             Whether to include feature names in json output (type: bool,
@@ -222,6 +227,7 @@ Weight Options:
                                             (type: float, default: 0, keep)
     --cb_type arg                           Contextual bandit method to use (type: str, default: mtr, choices
                                             {dm, dr, ips, mtr, sm}, keep)
+    --per_model_save_load                   Save and load per model state (type: bool, keep)
 [Reduction] Contextual Bandit with Action Dependent Features Options:
     --cb_adf                                Do Contextual Bandit learning with multiline action dependent
                                             features (type: bool, keep, necessary)
@@ -231,6 +237,7 @@ Weight Options:
                                             (type: float, default: 0, keep)
     --cb_type arg                           Contextual bandit method to use (type: str, default: mtr, choices
                                             {dm, dr, ips, mtr, sm}, keep)
+    --per_model_save_load                   Save and load per model state (type: bool, keep)
 [Reduction] Contextual Bandit: cb -> cb_adf Options:
     --cb_to_cbadf arg                       Flag is unused and has no effect. It should not be passed. The
                                             cb_to_cbadf reduction is automatically enabled if cb, cb_explore
@@ -270,6 +277,7 @@ Weight Options:
                                             default: 0)
     --l2_state arg                          Amount of accumulated implicit l2 regularization (type: float,
                                             default: 1)
+    --per_model_save_load                   Save and load per model state (type: bool, keep)
 [Reduction] Scorer Options:
     --link arg                              Specify the link function (type: str, default: identity, choices
                                             {glf1, identity, logistic, poisson}, keep)

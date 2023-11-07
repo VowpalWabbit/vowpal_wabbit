@@ -1,0 +1,26 @@
+final_regressor = plt_sgd.model
+PLT k = 10
+kary_tree = 2
+using no cache
+Reading datafile = train-sets/multilabel
+num sources = 1
+Num weight bits = 18
+learning rate = 10
+initial_t = 1
+power_t = 0.5
+Enabled learners: gd, scorer-identity, plt
+Input label = MULTILABEL
+Output pred = MULTILABELS
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+4.852030 4.852030            1            1.0            0,1                       2
+8.835814 12.81959            2            2.0            1,2            0,1        2
+9.996288 11.15676            4            4.0            3,4            2,3        2
+12.75991 15.52353            8            8.0              8        5,2,3,7        2
+
+finished run
+number of examples = 10
+weighted example sum = 10.000000
+weighted label sum = 0.000000
+average loss = 12.127363
+total feature number = 20

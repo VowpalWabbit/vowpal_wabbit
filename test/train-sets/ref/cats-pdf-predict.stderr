@@ -10,9 +10,9 @@ Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
-Enabled reductions: ftrl-Coin Betting, scorer-identity, binary, cats_tree, get_pmf, pmf_to_pdf, cb_explore_pdf, cats_pdf
-Input label = continuous
-Output pred = pdf
+Enabled learners: ftrl-Coin Betting, scorer-identity, binary, cats_tree, get_pmf, pmf_to_pdf, cb_explore_pdf, cats_pdf
+Input label = CONTINUOUS
+Output pred = PDF
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
 0.657567 0.657567            1            1.0 {185.12,0.6... 185-18987.2...       10
@@ -28,4 +28,4 @@ weighted example sum = 57.000000
 weighted label sum = 57.000000
 average loss = 0.267669
 total feature number = 570
-Learn() count per node: id=0, #l=21; id=1, #l=37; id=2, #l=20;
+Learn() count per node: id=0, #l=21; id=1, #l=37; id=2, #l=20; 

@@ -3,7 +3,10 @@
 #include "vw/config/option_group_definition.h"
 #include "vw/config/options_cli.h"
 #include "vw/core/crossplat_compat.h"
+#include "vw/core/memory.h"
+#include "vw/core/parse_primitives.h"
 #include "vw/core/vw.h"
+#include "vw/io/errno_handling.h"
 
 #include <unistd.h>
 
@@ -53,12 +56,12 @@ void get_hashv(char* in, size_t len, unsigned* out)
 
 #define BIT_TEST(c, i) (c[i / 8] & (1 << (i % 8)))
 #define BIT_SET(c, i) (c[i / 8] |= (1 << (i % 8)))
-#define byte_len(b) (((1UL << b) / 8) + (((1UL << b) % 8) ? 1 : 0))
-#define num_bits(b) (1UL << b)
+#define BYTE_LEN(b) (((1UL << b) / 8) + (((1UL << b) % 8) ? 1 : 0))
+#define NUM_BITS(b) (1UL << b)
 
 char* bf_new(unsigned b)
 {
-  char* bf = (char*)calloc(1, byte_len(b));
+  char* bf = (char*)calloc(1, BYTE_LEN(b));
   return bf;
 }
 
@@ -72,12 +75,12 @@ void bf_add(char* bf, char* line)
 void bf_info(char* bf, FILE* f)
 {
   unsigned i, on = 0;
-  for (i = 0; i < num_bits(bits); i++)
+  for (i = 0; i < NUM_BITS(bits); i++)
   {
     if (BIT_TEST(bf, i)) { on++; }
   }
 
-  fprintf(f, "%.2f%% saturation\n%lu bf bit size\n", on * 100.0 / num_bits(bits), num_bits(bits));
+  fprintf(f, "%.2f%% saturation\n%lu bf bit size\n", on * 100.0 / NUM_BITS(bits), NUM_BITS(bits));
 }
 
 int bf_hit(char* bf, char* line)
@@ -149,25 +152,25 @@ int main(int argc, char* argv[])
     exit(2);
   }
 
-  FILE* fB;
-  FILE* fU;
-  FILE* fI;
+  FILE* fB;  // NOLINT
+  FILE* fU;  // NOLINT
+  FILE* fI;  // NOLINT
 
   if (VW::file_open(&fB, blacklistfilename.c_str(), "r") != 0)
   {
-    fprintf(stderr, "can't open %s: %s\n", blacklistfilename.c_str(), VW::strerror_to_string(errno).c_str());
+    fprintf(stderr, "can't open %s: %s\n", blacklistfilename.c_str(), VW::io::strerror_to_string(errno).c_str());
     cerr << help_message << endl;
     exit(2);
   }
   if (VW::file_open(&fU, userfilename.c_str(), "r") != 0)
   {
-    fprintf(stderr, "can't open %s: %s\n", userfilename.c_str(), VW::strerror_to_string(errno).c_str());
+    fprintf(stderr, "can't open %s: %s\n", userfilename.c_str(), VW::io::strerror_to_string(errno).c_str());
     cerr << help_message << endl;
     exit(2);
   }
   if (VW::file_open(&fI, itemfilename.c_str(), "r") != 0)
   {
-    fprintf(stderr, "can't open %s: %s\n", itemfilename.c_str(), VW::strerror_to_string(errno).c_str());
+    fprintf(stderr, "can't open %s: %s\n", itemfilename.c_str(), VW::io::strerror_to_string(errno).c_str());
     cerr << help_message << endl;
     exit(2);
   }
@@ -198,7 +201,7 @@ int main(int argc, char* argv[])
 
   // INITIALIZE WITH WHATEVER YOU WOULD PUT ON THE VW COMMAND LINE
   if (verbose > 0) { fprintf(stderr, "initializing vw...\n"); }
-  VW::workspace* model = VW::initialize(vwparams);
+  auto model = VW::initialize(VW::make_unique<VW::config::options_cli>(VW::split_command_line(vwparams)));
 
   char* estr = NULL;
 
@@ -261,7 +264,7 @@ int main(int argc, char* argv[])
 
   if (verbose > 0) { progress(); }
 
-  VW::finish(*model);
+  model->finish();
   fclose(fI);
   fclose(fU);
   return 0;

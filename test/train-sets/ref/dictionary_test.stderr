@@ -10,19 +10,19 @@ decay_learning_rate = 1
 scanned dictionary 'dictionary_test.dict' from 'train-sets/dictionary_test.dict', hash=3226e82e3d58b6b2
 dictionary dictionary_test.dict contains 4 items
 scanned dictionary 'dictionary_test.dict.gz' from 'train-sets/dictionary_test.dict.gz', hash=3226e82e3d58b6b2
-Enabled reductions: gd, scorer-identity, binary, count_label
-Input label = simple
-Output pred = scalar
-average  since         example        example        current        current  current 
-loss     last          counter         weight          label        predict features 
-1.000000 1.000000            1            1.0         1.0000        -1.0000        3 
-1.000000 1.000000            2            2.0        -1.0000         1.0000        3 
-0.500000 0.000000            4            4.0        -1.0000        -1.0000        3 
-0.250000 0.000000            8            8.0        -1.0000        -1.0000        3 
-0.125000 0.000000           16           16.0        -1.0000        -1.0000        3 
-0.062500 0.000000           32           32.0        -1.0000        -1.0000        3 
-0.031250 0.000000           64           64.0        -1.0000        -1.0000        3 
-0.015625 0.000000          128          128.0        -1.0000        -1.0000        3 
+Enabled learners: gd, scorer-identity, binary, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+1.000000 1.000000            1            1.0         1.0000        -1.0000        3
+1.000000 1.000000            2            2.0        -1.0000         1.0000        3
+0.500000 0.000000            4            4.0        -1.0000        -1.0000        3
+0.250000 0.000000            8            8.0        -1.0000        -1.0000        3
+0.125000 0.000000           16           16.0        -1.0000        -1.0000        3
+0.062500 0.000000           32           32.0        -1.0000        -1.0000        3
+0.031250 0.000000           64           64.0        -1.0000        -1.0000        3
+0.015625 0.000000          128          128.0        -1.0000        -1.0000        3
 
 finished run
 number of examples per pass = 4

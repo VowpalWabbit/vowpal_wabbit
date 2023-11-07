@@ -4,69 +4,56 @@
 
 #pragma once
 
-#include <cstdint>
-#include <string>
-#include <type_traits>
-#include <utility>
-#include <vector>
-
 // forward declarations
-class io_buf;
-class parameters;
-struct features;
-struct shared_data;
-struct parser;
-
 namespace VW
 {
-template <typename T, typename Enable = void>
-struct v_array;
-
-template <class T>
-struct v_array<T, typename std::enable_if<std::is_trivially_copyable<T>::value>::type>;
-
-struct label_parser;
-struct example;
-using multi_ex = std::vector<example*>;
-using namespace_index = unsigned char;
-struct workspace;
-struct setup_base_i;
-struct kskip_ngram_transformer;
-struct rand_state;
-class named_labels;
-struct setup_base_i;
+class parameters;
+class dense_parameters;
+class io_buf;
 class loss_function;
+class named_labels;
+class reduction_features;
+class example;
+class kskip_ngram_transformer;
+class label_parser;
+class polylabel;
+class rand_state;
+class setup_base_i;
+class workspace;
+class metric_sink;
+class shared_data;
+class parser;
+class features;
+
+using namespace_index = unsigned char;
 
 namespace LEARNER
 {
-template <class T, class E>
-struct learner;
-using base_learner = learner<char, char>;
-using single_learner = learner<char, example>;
-using multi_learner = learner<char, multi_ex>;
+class learner;
 }  // namespace LEARNER
 
 namespace config
 {
-struct options_i;
+class options_i;
 }  // namespace config
 
 namespace io
 {
-struct logger;
-struct reader;
-struct writer;
-
-enum class log_level;
-using logger_output_func_t = void (*)(void*, VW::io::log_level, const std::string&);
-
+class logger;
+class reader;
+class writer;
 }  // namespace io
 
+namespace parsers
+{
+namespace cache
+{
 namespace details
 {
-struct cache_temp_buffer;
+class cache_temp_buffer;
 }
 
-}  // namespace VW
+}  // namespace cache
+}  // namespace parsers
 
-using extent_term = std::pair<VW::namespace_index, uint64_t>;
+}  // namespace VW

@@ -1,115 +1,61 @@
 name: Run Benchmarks
 
 on:
-  pull_request:
+  push:
     branches:
       - master
-      - 'releases/**'
+  pull_request:
+    branches:
+      - '*'
 
-concurrency: 
+concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
+env:
+  VCPKG_DEFAULT_BINARY_CACHE: ${{github.workspace}}/vcpkg_binary_cache
+
 jobs:
-  build-benchmark-master:
-    container:
-      image: vowpalwabbit/ubuntu1804-build:latest
+  benchmark:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      deployments: write
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
         with:
-          ref: ${{ github.base_ref }}
-          submodules: 'recursive'
-      - name: Install google benchmarks
+          submodules: recursive
+      - uses: lukka/get-cmake@latest
+      - run: echo "VCPKG_COMMIT=$(git rev-parse :ext_libs/vcpkg)" >> $GITHUB_ENV
         shell: bash
-        run: ./.scripts/linux/install-benchmarks.sh
-      - name: Upload benchmark compare
-        uses: actions/upload-artifact@v2
+      - run: mkdir -p ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+      # This cache will probably be missing the benchmark dep, but that will be quick to fetch
+      - uses: actions/cache@v3
+        env:
+          cache-name: vcpkg-cache
         with:
-          name: benchmark-compare
-          path: benchmark/tools/
-          if-no-files-found: error
-      - name: Build ${{ github.base_ref }}
-        shell: bash
-        run: ./.scripts/linux/build-with-benchmarks.sh
-      - name: Upload benchmark binary
-        uses: actions/upload-artifact@v2
-        with:
-          name: master-benchmark-bin
-          path: build/test/benchmarks/vw-benchmarks.out
-          if-no-files-found: error
-  build-benchmark-branch:
-    container:
-      image: vowpalwabbit/ubuntu1804-build:latest
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v1
-        with:
-          submodules: 'recursive'
-      - name: Install google benchmarks
-        shell: bash
-        run: ./.scripts/linux/install-benchmarks.sh
-      - name: Build branch
-        shell: bash
-        run: ./.scripts/linux/build-with-benchmarks.sh
-      - name: Upload benchmark binary
-        uses: actions/upload-artifact@v2
-        with:
-          name: branch-benchmark-bin
-          path: build/test/benchmarks/vw-benchmarks.out
-          if-no-files-found: error
-  run-benchmarks:
-    container:
-      image: vowpalwabbit/ubuntu1804-build:latest
-    runs-on: ubuntu-latest
-    needs: [build-benchmark-master, build-benchmark-branch]
-    steps:
-      - name: Download benchmark compare
-        uses: actions/download-artifact@v2
-        with:
-          name: benchmark-compare
-          path: tools/
-      - name: Download master bin
-        uses: actions/download-artifact@v2
-        with:
-          name: master-benchmark-bin
-          path: master-benchmark-bin/
-      - name: Download branch bin
-        uses: actions/download-artifact@v2
-        with:
-          name: branch-benchmark-bin
-          path: branch-benchmark-bin/
-      - name: Update permissions
-        run: |
-          chmod +x ./master-benchmark-bin/vw-benchmarks.out
-          chmod +x ./branch-benchmark-bin/vw-benchmarks.out
-      - name: Run master benchmark
+          path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}/*
+          key: ${{ matrix.os }}-build-${{ env.cache-name }}-${{ hashFiles('vcpkg.json') }}-${{ env.VCPKG_COMMIT }}"
+      - name: Configure
+        run: cmake --preset vcpkg-release -DBUILD_BENCHMARKS=On
+      - name: Compile
+        run: cmake --build build --target vw-benchmarks.out
+      - name: Run benchmarks
         run: >
-          ./master-benchmark-bin/vw-benchmarks.out
+          ./build/test/benchmarks/vw-benchmarks.out
           --benchmark_min_time=3
-          --benchmark_format=console
+          --benchmark_format=json
           --benchmark_out_format=json
-          --benchmark_out=master-benchmarks.json
-      - name: Run branch benchmark
-        run: >
-          ./branch-benchmark-bin/vw-benchmarks.out
-          --benchmark_min_time=3
-          --benchmark_format=console
-          --benchmark_out_format=json
-          --benchmark_out=branch-benchmarks.json
-      - name: Install benchmark compare requirements
-        shell: bash
-        run: |
-          python3 -m pip install -r tools/requirements.txt
-          # The above requirements file is missing the pandas dependency.
-          python3 -m pip install pandas
-      - name: Compare benchmarks
-        shell: bash
-        run: python3 tools/compare.py benchmarks master-benchmarks.json branch-benchmarks.json
-      - name: Compare and output to job summary
-        shell: bash
-        run: |
-          echo "Benchmark | Time | CPU | Time Old | Time New | CPU Old | CPU New" >> $GITHUB_STEP_SUMMARY
-          echo "--------- | ---- | --- | -------- | -------- | ------- | -------" >> $GITHUB_STEP_SUMMARY
-          python3 tools/compare.py --no-color benchmarks master-benchmarks.json branch-benchmarks.json > compare.txt
-          cat compare.txt | tail --lines=+4 | sed 's/\s\+/ | /g' >> $GITHUB_STEP_SUMMARY
+          --benchmark_out=benchmark_results.json
+      - uses: benchmark-action/github-action-benchmark@v1
+        with:
+          tool: 'googlecpp'
+          output-file-path: benchmark_results.json
+          alert-threshold: '150%'
+          fail-on-alert: true
+          comment-on-alert: true
+          auto-push: false
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Push results to gh-pages branch
+        if: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
+        run: git push 'https://VowpalWabbit:${{ secrets.GITHUB_TOKEN }}@github.com/VowpalWabbit/vowpal_wabbit.git' gh-pages:gh-pages

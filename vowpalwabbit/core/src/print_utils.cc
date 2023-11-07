@@ -4,6 +4,7 @@
 
 #include "vw/core/print_utils.h"
 
+#include "vw/io/errno_handling.h"
 #include "vw/io/io_adapter.h"
 #include "vw/io/logger.h"
 
@@ -18,7 +19,7 @@ void global_print_newline(
   for (auto& sink : final_prediction_sink)
   {
     ssize_t t = sink->write(&temp, 1);
-    if (t != 1) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
+    if (t != 1) { logger.err_error("write error: {}", VW::io::strerror_to_string(errno)); }
   }
 }
 }  // namespace details

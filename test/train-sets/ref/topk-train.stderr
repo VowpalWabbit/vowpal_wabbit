@@ -8,28 +8,27 @@ learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 decay_learning_rate = 1
-Enabled reductions: gd, scorer-identity, count_label
-Input label = simple
-Output pred = scalar
+Enabled learners: gd, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
 9.000000 9.000000            1            1.0         3.0000         0.0000        4
 4.590362 0.180723            2            2.0         0.0000         0.4251        4
-3.928039 2.603395            4            4.0        unknown         0.2876        1
-3.523584 3.119128            8            8.0        unknown         0.4184        1
-2.610412 1.697241           16           16.0        unknown         0.6151        1
-1.917275 1.224138           32           32.0        unknown         0.7335        1
-1.246961 0.576646           64           64.0        unknown         0.8100        1
-0.784439 0.321916          128          128.0        unknown         0.8650        1
-0.439552 0.094665          256          256.0        unknown         0.9058        1
-0.226776 0.014000          512          512.0        unknown         0.9328        1
-0.113599 0.000422         1024         1024.0        unknown         0.9396        1
+3.008577 1.426792            4            4.0         0.0000         0.5002        4
+2.893238 2.777898            8            8.0         1.0000         0.7497        4
+2.321989 1.750740           16           16.0         2.0000         1.5635        4
+1.640977 0.959966           32           32.0         3.0000         1.4030        4
+1.041363 0.441749           64           64.0         3.0000         2.2510        4
+0.623755 0.206147          128          128.0         0.0000         0.4018        4
+0.336533 0.049310          256          256.0         0.0000         0.1610        4
+0.170349 0.004165          512          512.0         1.0000         1.0024        4
 
 finished run
-number of examples per pass = 12
+number of examples per pass = 9
 passes used = 100
-weighted example sum = 1200.000000
+weighted example sum = 900.000000
 weighted label sum = 1500.000000
 average loss = 0.096938
 best constant = 1.666667
-total feature number = 3900
+total feature number = 3600

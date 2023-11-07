@@ -6,7 +6,7 @@ pr:
 - '*'
 
 pool:
-  vmImage: 'ubuntu-18.04'
+  vmImage: 'ubuntu-latest'
 
 container:
   image: vowpalwabbit/centos7_6_1810-build:latest

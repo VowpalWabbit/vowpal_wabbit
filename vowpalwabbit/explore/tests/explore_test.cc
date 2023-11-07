@@ -4,6 +4,8 @@
 
 #include "vw/explore/explore.h"
 
+#include "vw/core/action_score.h"
+#include "vw/core/prob_dist_cont.h"
 #include "vw/core/reductions/cb/cb_explore_pdf.h"
 
 #include <gmock/gmock.h>
@@ -15,8 +17,9 @@ using namespace VW::continuous_actions;
 using std::vector;
 using namespace ::testing;
 
-struct pdf_seg
+class pdf_seg
 {
+public:
   float left;
   float right;
   float pdf_value;
@@ -27,12 +30,12 @@ bool continuous_action_range_check(std::vector<pdf_seg> scores, float range_min,
   float chosen_value = 0.f;
   float pdf_value = 0.f;
   uint64_t seed = 7791;
-  auto scode = exploration::sample_pdf(&seed, begin(scores), end(scores), chosen_value, pdf_value);
+  auto scode = VW::explore::sample_pdf(&seed, begin(scores), end(scores), chosen_value, pdf_value);
   EXPECT_EQ(scode, S_EXPLORATION_OK);
   return ((range_min <= chosen_value) && (chosen_value <= range_max));
 }
 
-TEST(explore_tests, sample_continuous_action)
+TEST(Explore, SampleContinuousAction)
 {
   EXPECT_TRUE(continuous_action_range_check(
       {{0.f, 20.f, 1.0f}, {20.f, 40.f, 2.0f}, {40.f, 50.f, 3.0f}, {50.f, 70.f, 4.0f}, {70.f, 100.f, 5.0f}}, .0f,
@@ -43,7 +46,7 @@ TEST(explore_tests, sample_continuous_action)
       1000.0f, 1100.f));
 }
 
-TEST(explore_tests, new_sample_pdf)
+TEST(Explore, NewSamplePdf)
 {
   probability_density_function the_pdf;
   the_pdf.push_back({2.f, 3.5f, 0.1f / 1.5f});
@@ -58,26 +61,27 @@ TEST(explore_tests, new_sample_pdf)
   float chosen_action = 0.f;
   float pdf_value = 0.f;
 
-  exploration::sample_pdf(&seed, std::begin(the_pdf), std::end(the_pdf), chosen_action, pdf_value);
+  VW::explore::sample_pdf(&seed, std::begin(the_pdf), std::end(the_pdf), chosen_action, pdf_value);
   EXPECT_TRUE(chosen_action >= the_pdf[0].left && chosen_action <= the_pdf.back().right && pdf_value > 0.f);
-  exploration::sample_pdf(&seed, std::begin(the_pdf), std::end(the_pdf), chosen_action, pdf_value);
+  VW::explore::sample_pdf(&seed, std::begin(the_pdf), std::end(the_pdf), chosen_action, pdf_value);
   EXPECT_TRUE(chosen_action >= the_pdf[0].left && chosen_action <= the_pdf.back().right && pdf_value > 0.f);
 }
 
-struct bins_calc
+class bins_calc
 {
-  bins_calc(vector<float>&& bins) : _bins(bins), _counts(_bins.size() - 1), _total_samples(0) {}
+public:
+  bins_calc(vector<float>&& bins) : bins(bins), counts(bins.size() - 1), total_samples(0) {}
 
   void add_to_bin(float val)
   {
-    ++_total_samples;
-    float left = _bins[0];
-    for (size_t i = 1; i < _bins.size(); i++)
+    ++total_samples;
+    float left = bins[0];
+    for (size_t i = 1; i < bins.size(); i++)
     {
-      float right = _bins[i];
+      float right = bins[i];
       if (left <= val && val < right)
       {
-        ++_counts[i - 1];
+        ++counts[i - 1];
         return;
       }
     }
@@ -86,12 +90,12 @@ struct bins_calc
     throw std::logic_error(err_strm.str());
   }
 
-  vector<float> _bins{};
-  vector<uint32_t> _counts{};
-  uint32_t _total_samples;
+  vector<float> bins{};
+  vector<uint32_t> counts{};
+  uint32_t total_samples;
 };
 
-TEST(explore_tests, sample_continuous_action_statistical)
+TEST(Explore, SampleContinuousActionStatistical)
 {
   std::vector<pdf_seg> scores = {
       {0.f, 10.f, .005f}, {10.f, 20.f, .01f}, {20.f, 30.f, .0125f}, {30.f, 40.f, .0075f}, {40.f, 100.f, .015f}};
@@ -106,7 +110,7 @@ TEST(explore_tests, sample_continuous_action_statistical)
   constexpr size_t iterate_count = 100000;
   for (size_t idx = 0; idx < iterate_count; idx++)
   {
-    const auto scode = exploration::sample_pdf(&random_seed, begin(scores), end(scores), chosen_value, pdf_value);
+    const auto scode = VW::explore::sample_pdf(&random_seed, begin(scores), end(scores), chosen_value, pdf_value);
     EXPECT_EQ(scode, S_EXPLORATION_OK);
     EXPECT_TRUE((range_min <= chosen_value) && (chosen_value <= range_max));
 
@@ -117,196 +121,262 @@ TEST(explore_tests, sample_continuous_action_statistical)
   const float total_mass = std::accumulate(std::begin(scores), std::end(scores), 0.f,
       [](const float& acc, const pdf_seg& rhs) { return acc + (rhs.pdf_value * (rhs.right - rhs.left)); });
 
-  for (uint32_t idx = 0; idx < bins._counts.size(); ++idx)
+  for (uint32_t idx = 0; idx < bins.counts.size(); ++idx)
   {
-    EXPECT_NEAR(bins._counts[idx] / (float)bins._total_samples,
+    EXPECT_NEAR(bins.counts[idx] / (float)bins.total_samples,
         (scores[idx].pdf_value * (scores[idx].right - scores[idx].left)) / total_mass, 1.5f);
   }
 }
 
-TEST(explore_tests, sample_after_nomalizing_basic)
+TEST(Explore, SampleAfterNormalizingBasic)
 {
   std::vector<float> pdf = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f};
   const std::vector<float> expected = {0.066666667f, 0.133333333f, 0.2f, 0.266666667f, 0.333333333f};
   uint32_t chosen_index;
 
-  auto scode = exploration::sample_after_normalizing(7791, begin(pdf), end(pdf), chosen_index);
+  auto scode = VW::explore::sample_after_normalizing(7791, begin(pdf), end(pdf), chosen_index);
   EXPECT_EQ(scode, S_EXPLORATION_OK);
   EXPECT_THAT(pdf, Pointwise(FloatNear(.0001f), expected));
 
-  scode = exploration::sample_after_normalizing(7791, begin(pdf), end(pdf), chosen_index);
+  scode = VW::explore::sample_after_normalizing(7791, begin(pdf), end(pdf), chosen_index);
   EXPECT_EQ(scode, S_EXPLORATION_OK);
   EXPECT_THAT(pdf, Pointwise(FloatNear(.0001f), expected));
 
-  scode = exploration::sample_after_normalizing(7791, begin(pdf), end(pdf), chosen_index);
+  scode = VW::explore::sample_after_normalizing(7791, begin(pdf), end(pdf), chosen_index);
   EXPECT_EQ(scode, S_EXPLORATION_OK);
   EXPECT_THAT(pdf, Pointwise(FloatNear(.0001f), expected));
 
-  scode = exploration::sample_after_normalizing(7791, begin(pdf), end(pdf), chosen_index);
+  scode = VW::explore::sample_after_normalizing(7791, begin(pdf), end(pdf), chosen_index);
   EXPECT_EQ(scode, S_EXPLORATION_OK);
   EXPECT_THAT(pdf, Pointwise(FloatNear(.0001f), expected));
 
-  scode = exploration::sample_after_normalizing(7791, begin(pdf), end(pdf), chosen_index);
+  scode = VW::explore::sample_after_normalizing(7791, begin(pdf), end(pdf), chosen_index);
   EXPECT_EQ(scode, S_EXPLORATION_OK);
   EXPECT_THAT(pdf, Pointwise(FloatNear(.0001f), expected));
 }
 
-TEST(explore_tests, sample_after_nomalizing_degenerate)
+TEST(Explore, SampleAfterNormalizingDegenerate)
 {
   std::vector<float> pdf = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
   const std::vector<float> expected = {1.0f, 0.0f, 0.0f, 0.0f, 0.0f};
   uint32_t chosen_index;
 
-  const auto scode = exploration::sample_after_normalizing(7791, begin(pdf), end(pdf), chosen_index);
+  const auto scode = VW::explore::sample_after_normalizing(7791, begin(pdf), end(pdf), chosen_index);
   EXPECT_EQ(scode, S_EXPLORATION_OK);
   EXPECT_THAT(pdf, Pointwise(FloatNear(.0001f), expected));
 }
 
-TEST(explore_tests, swap_test)
+TEST(Explore, SwapTest)
 {
   std::vector<float> pdf = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f};
   const std::vector<float> expected_pdf = {0.066666667f, 0.133333333f, 0.2f, 0.266666667f, 0.333333333f};
   uint32_t chosen_index;
 
-  auto scode = exploration::sample_after_normalizing(7791, begin(pdf), end(pdf), chosen_index);
+  auto scode = VW::explore::sample_after_normalizing(7791, begin(pdf), end(pdf), chosen_index);
   EXPECT_EQ(scode, S_EXPLORATION_OK);
   EXPECT_EQ(chosen_index, 3);
   EXPECT_THAT(pdf, Pointwise(FloatNear(.0001f), expected_pdf));
 
-  scode = exploration::swap_chosen(begin(pdf), end(pdf), chosen_index);
+  scode = VW::explore::swap_chosen(begin(pdf), end(pdf), chosen_index);
   const std::vector<float> expected_pdf_2 = {0.266666667f, 0.133333333f, 0.2f, 0.066666667f, 0.333333333f};
   EXPECT_THAT(pdf, Pointwise(FloatNear(.0001f), expected_pdf_2));
 }
 
-TEST(explore_tests, epsilon_greedy)
+TEST(Explore, EpsilonGreedy)
 {
   std::vector<float> pdf(4);
-  EXPECT_THAT(S_EXPLORATION_OK, exploration::generate_epsilon_greedy(0.4f, 2, begin(pdf), end(pdf)));
+  EXPECT_THAT(S_EXPLORATION_OK, VW::explore::generate_epsilon_greedy(0.4f, 2, begin(pdf), end(pdf)));
   EXPECT_THAT(pdf, Pointwise(FloatNear(1e-6f), std::vector<float>{0.1f, 0.1f, 0.7f, 0.1f}));
 }
 
-TEST(explore_tests, epsilon_greedy_top_action_out_of_bounds)
+TEST(Explore, EpsilonGreedyTopActionOutOfBounds)
 {
   std::vector<float> pdf(4);
-  EXPECT_THAT(S_EXPLORATION_OK, exploration::generate_epsilon_greedy(0.4f, 8, begin(pdf), end(pdf)));
+  EXPECT_THAT(S_EXPLORATION_OK, VW::explore::generate_epsilon_greedy(0.4f, 8, begin(pdf), end(pdf)));
   EXPECT_THAT(pdf, Pointwise(FloatNear(1e-6f), std::vector<float>{0.1f, 0.1f, 0.1f, 0.7f}));
 }
 
-TEST(explore_tests, epsilon_greedy_bad_range)
+TEST(Explore, EpsilonGreedyBadRange)
 {
   std::vector<float> pdf;
   float x;
-  EXPECT_THAT(E_EXPLORATION_BAD_RANGE, exploration::generate_epsilon_greedy(0.4f, 0, begin(pdf), end(pdf)));
-  EXPECT_THAT(E_EXPLORATION_BAD_RANGE, exploration::generate_epsilon_greedy(0.4f, 0, &x, &x - 3));
+  EXPECT_THAT(E_EXPLORATION_BAD_RANGE, VW::explore::generate_epsilon_greedy(0.4f, 0, begin(pdf), end(pdf)));
+  EXPECT_THAT(E_EXPLORATION_BAD_RANGE, VW::explore::generate_epsilon_greedy(0.4f, 0, &x, &x - 3));
   EXPECT_THAT(pdf.size(), 0);
 }
 
-TEST(explore_tests, softmax)
+TEST(Explore, Softmax)
 {
   std::vector<float> scores = {1, 2, 3, 8};
   std::vector<float> pdf(4);
-  EXPECT_THAT(S_EXPLORATION_OK, exploration::generate_softmax(0.2f, begin(scores), end(scores), begin(pdf), end(pdf)));
+  EXPECT_THAT(S_EXPLORATION_OK, VW::explore::generate_softmax(0.2f, begin(scores), end(scores), begin(pdf), end(pdf)));
   EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{0.128f, 0.157f, 0.192f, 0.522f}));
 }
 
-TEST(explore_tests, softmax_imbalanced)
+TEST(Explore, SoftmaxImbalanced)
 {
   std::vector<float> scores = {1, 2, 3};
   std::vector<float> pdf(4);
-  EXPECT_THAT(S_EXPLORATION_OK, exploration::generate_softmax(0.2f, begin(scores), end(scores), begin(pdf), end(pdf)));
+  EXPECT_THAT(S_EXPLORATION_OK, VW::explore::generate_softmax(0.2f, begin(scores), end(scores), begin(pdf), end(pdf)));
   EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{0.269f, 0.328f, 0.401f, 0}));
 }
 
-TEST(explore_tests, softmax_imbalanced2)
+TEST(Explore, SoftmaxImbalanced2)
 {
   std::vector<float> scores = {1, 2, 3, 8, 4};
   std::vector<float> pdf(4);
-  EXPECT_THAT(S_EXPLORATION_OK, exploration::generate_softmax(0.2f, begin(scores), end(scores), begin(pdf), end(pdf)));
+  EXPECT_THAT(S_EXPLORATION_OK, VW::explore::generate_softmax(0.2f, begin(scores), end(scores), begin(pdf), end(pdf)));
   EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{0.128f, 0.157f, 0.192f, 0.522f}));
 }
 
-TEST(explore_tests, softmax_bad_range)
+TEST(Explore, SoftmaxBadRange)
 {
   std::vector<float> scores;
   std::vector<float> pdf;
   float x;
   EXPECT_THAT(
-      E_EXPLORATION_BAD_RANGE, exploration::generate_softmax(0.2f, begin(scores), end(scores), begin(pdf), end(pdf)));
-  EXPECT_THAT(E_EXPLORATION_BAD_RANGE, exploration::generate_softmax(0.2f, begin(scores), end(scores), &x, &x - 3));
+      E_EXPLORATION_BAD_RANGE, VW::explore::generate_softmax(0.2f, begin(scores), end(scores), begin(pdf), end(pdf)));
+  EXPECT_THAT(E_EXPLORATION_BAD_RANGE, VW::explore::generate_softmax(0.2f, begin(scores), end(scores), &x, &x - 3));
 }
 
-TEST(explore_tests, bag)
+TEST(Explore, Bag)
 {
   std::vector<uint16_t> top_actions = {0, 0, 1, 1};
   std::vector<float> pdf(4);
-  EXPECT_THAT(S_EXPLORATION_OK, exploration::generate_bag(begin(top_actions), end(top_actions), begin(pdf), end(pdf)));
+  EXPECT_THAT(S_EXPLORATION_OK, VW::explore::generate_bag(begin(top_actions), end(top_actions), begin(pdf), end(pdf)));
   EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{0, 0, 0.5, 0.5f}));
 }
 
-TEST(explore_tests, bag10)
+TEST(Explore, Bag10)
 {
   std::vector<uint16_t> top_actions = {10};
   std::vector<float> pdf(4);
-  EXPECT_THAT(S_EXPLORATION_OK, exploration::generate_bag(begin(top_actions), end(top_actions), begin(pdf), end(pdf)));
+  EXPECT_THAT(S_EXPLORATION_OK, VW::explore::generate_bag(begin(top_actions), end(top_actions), begin(pdf), end(pdf)));
   EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{1.f, 0, 0, 0}));
 }
 
-TEST(explore_tests, bag_empty)
+TEST(Explore, BagEmpty)
 {
   std::vector<uint16_t> top_actions;
   std::vector<float> pdf(4);
-  EXPECT_THAT(S_EXPLORATION_OK, exploration::generate_bag(begin(top_actions), end(top_actions), begin(pdf), end(pdf)));
+  EXPECT_THAT(S_EXPLORATION_OK, VW::explore::generate_bag(begin(top_actions), end(top_actions), begin(pdf), end(pdf)));
   EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{1.f, 0, 0, 0}));
 }
 
-TEST(explore_tests, bag_bad_range)
+TEST(Explore, BagBadRange)
 {
   std::vector<uint16_t> top_actions;
   std::vector<float> pdf;
   float x;
 
   EXPECT_THAT(
-      E_EXPLORATION_BAD_RANGE, exploration::generate_bag(begin(top_actions), end(top_actions), begin(pdf), end(pdf)));
-  EXPECT_THAT(E_EXPLORATION_BAD_RANGE, exploration::generate_bag(begin(top_actions), end(top_actions), &x, &x - 3));
+      E_EXPLORATION_BAD_RANGE, VW::explore::generate_bag(begin(top_actions), end(top_actions), begin(pdf), end(pdf)));
+  EXPECT_THAT(E_EXPLORATION_BAD_RANGE, VW::explore::generate_bag(begin(top_actions), end(top_actions), &x, &x - 3));
 }
 
-TEST(explore_tests, enforce_minimum_probability)
+TEST(Explore, EnforceMinimumProbability)
 {
   std::vector<float> pdf = {1.f, 0, 0};
-  exploration::enforce_minimum_probability(0.3f, true, begin(pdf), end(pdf));
+  VW::explore::enforce_minimum_probability(0.3f, true, begin(pdf), end(pdf));
   EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.8f, .1f, .1f}));
 }
 
-TEST(explore_tests, enforce_minimum_probability_no_zeros)
+TEST(Explore, EnforceMinimumProbabilityNoZeros)
 {
   std::vector<float> pdf = {0.9f, 0.1f, 0};
-  EXPECT_THAT(S_EXPLORATION_OK, exploration::enforce_minimum_probability(0.6f, false, begin(pdf), end(pdf)));
-  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.8f, .2f, .0f}));
+  EXPECT_THAT(S_EXPLORATION_OK, VW::explore::enforce_minimum_probability(0.6f, false, begin(pdf), end(pdf)));
+  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.7f, .3f, .0f}));
 }
 
-TEST(explore_tests, enforce_minimum_probability_uniform)
+TEST(Explore, EnforceMinimumProbabilityAllZerosAndDontConsider)
+{
+  std::vector<float> pdf = {0.f, 0.f, 0.f};
+  EXPECT_THAT(S_EXPLORATION_OK, VW::explore::enforce_minimum_probability(0.6f, false, begin(pdf), end(pdf)));
+  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.0f, .0f, .0f}));
+}
+
+TEST(Explore, EnforceMinimumProbabilityAllZerosAndConsider)
+{
+  std::vector<float> pdf = {0.f, 0.f, 0.f};
+  EXPECT_THAT(S_EXPLORATION_OK, VW::explore::enforce_minimum_probability(0.6f, true, begin(pdf), end(pdf)));
+  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{1.f / 3.f, 1.f / 3.f, 1.f / 3.f}));
+}
+
+TEST(Explore, EnforceMinimumProbabilityEqualToAmt)
+{
+  std::vector<float> pdf = {0.f, 2.f / 3.f, 1.f / 3.f};
+  EXPECT_THAT(S_EXPLORATION_OK, VW::explore::enforce_minimum_probability(1.f, true, begin(pdf), end(pdf)));
+  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{1.f / 3.f, 1.f / 3.f, 1.f / 3.f}));
+}
+
+TEST(Explore, EnforceMinimumProbabilityUniform)
 {
   std::vector<float> pdf = {0.9f, 0.1f, 0, 0};
-  EXPECT_THAT(S_EXPLORATION_OK, exploration::enforce_minimum_probability(1.f, true, begin(pdf), end(pdf)));
+  EXPECT_THAT(S_EXPLORATION_OK, VW::explore::enforce_minimum_probability(1.f, true, begin(pdf), end(pdf)));
   EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.25f, .25f, .25f, .25f}));
 }
 
-TEST(explore_tests, enforce_minimum_probability_uniform_no_zeros)
+TEST(Explore, EnforceMinimumProbabilityUniformNoZeros)
 {
   std::vector<float> pdf = {0.9f, 0.1f, 0};
-  EXPECT_THAT(S_EXPLORATION_OK, exploration::enforce_minimum_probability(1.f, false, begin(pdf), end(pdf)));
+  EXPECT_THAT(S_EXPLORATION_OK, VW::explore::enforce_minimum_probability(1.f, false, begin(pdf), end(pdf)));
   EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.5f, .5f, .0f}));
 }
 
-TEST(explore_tests, enforce_minimum_probability_bad_range)
+TEST(Explore, EnforceMinimumProbabilityBadRange)
 {
   std::vector<float> pdf;
   float x;
-  EXPECT_THAT(E_EXPLORATION_BAD_RANGE, exploration::enforce_minimum_probability(1.f, false, begin(pdf), end(pdf)));
-  EXPECT_THAT(E_EXPLORATION_BAD_RANGE, exploration::enforce_minimum_probability(1.f, false, &x, &x - 3));
+  EXPECT_THAT(E_EXPLORATION_BAD_RANGE, VW::explore::enforce_minimum_probability(1.f, false, begin(pdf), end(pdf)));
+  EXPECT_THAT(E_EXPLORATION_BAD_RANGE, VW::explore::enforce_minimum_probability(1.f, false, &x, &x - 3));
 }
 
-TEST(explore_tests, sampling)
+TEST(Explore, EnforceMinimumProbabilityUniform1)
+{
+  std::vector<float> pdf = {0.9f, 0.1f, 0.f};
+  EXPECT_THAT(S_EXPLORATION_OK, VW::explore::enforce_minimum_probability(0.3f, true, begin(pdf), end(pdf)));
+  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.8f, .1f, .1f}));
+}
+
+TEST(Explore, EnforceMinimumProbabilityUniform2)
+{
+  std::vector<float> pdf = {0.8f, 0.1f, 0.1f};
+  EXPECT_THAT(S_EXPLORATION_OK, VW::explore::enforce_minimum_probability(0.3f, true, begin(pdf), end(pdf)));
+  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.8f, .1f, .1f}));
+}
+
+TEST(Explore, EnforceMinimumProbabilityUniformUnsorted)
+{
+  std::vector<float> pdf = {0.1f, 0.8f, 0.1f};
+  EXPECT_THAT(S_EXPLORATION_OK, VW::explore::enforce_minimum_probability(0.3f, true, begin(pdf), end(pdf)));
+  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.1f, .8f, .1f}));
+}
+
+TEST(Explore, EnforceMinimumProbabilityOldImplBugInclZero)
+{
+  std::vector<float> pdf = {0.89f, 0.11f, 0.0f};
+  EXPECT_THAT(S_EXPLORATION_OK, VW::explore::enforce_minimum_probability(0.3f, true, begin(pdf), end(pdf)));
+  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.8f, .1f, .1f}));
+}
+
+TEST(Explore, EnforceMinimumProbabilityOldImplBugDontInclZero)
+{
+  std::vector<float> pdf = {0.89f, 0.11f, 0.0f};
+  EXPECT_THAT(S_EXPLORATION_OK, VW::explore::enforce_minimum_probability(0.3f, false, begin(pdf), end(pdf)));
+  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.85f, .15f, .0f}));
+}
+
+TEST(Explore, EnforceMinimumProbabilityZeroEpsilon)
+{
+  std::vector<float> pdf = {0.89f, 0.11f, 0.0f};
+  EXPECT_THAT(S_EXPLORATION_OK, VW::explore::enforce_minimum_probability(0.0f, false, begin(pdf), end(pdf)));
+  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.89f, .11f, .0f}));
+
+  EXPECT_THAT(S_EXPLORATION_OK, VW::explore::enforce_minimum_probability(0.0f, true, begin(pdf), end(pdf)));
+  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.89f, .11f, .0f}));
+}
+
+TEST(Explore, Sampling)
 {
   std::vector<float> pdf = {0.8f, 0.1f, 0.1f};
   std::vector<float> histogram(3);
@@ -317,16 +387,16 @@ TEST(explore_tests, sampling)
   {
     std::stringstream s;
     s << "abcde" << i;
-    ASSERT_EQ(0, exploration::sample_after_normalizing(s.str().c_str(), std::begin(pdf), std::end(pdf), chosen_index));
+    ASSERT_EQ(0, VW::explore::sample_after_normalizing(s.str().c_str(), std::begin(pdf), std::end(pdf), chosen_index));
 
     histogram[chosen_index]++;
   }
-  for (auto& d : histogram) d /= rep;
+  for (auto& d : histogram) { d /= rep; }
 
   EXPECT_THAT(pdf, Pointwise(FloatNear(1e-2f), histogram));
 }
 
-TEST(explore_tests, sampling_rank_bad_range)
+TEST(Explore, SamplingRankBadRange)
 {
   std::vector<float> pdf;
   std::vector<float> scores;
@@ -335,11 +405,11 @@ TEST(explore_tests, sampling_rank_bad_range)
   uint32_t chosen_index;
 
   EXPECT_THAT(E_EXPLORATION_BAD_RANGE,
-      exploration::sample_after_normalizing("abc", std::begin(pdf), std::end(pdf), chosen_index));
-  EXPECT_THAT(E_EXPLORATION_BAD_RANGE, exploration::sample_after_normalizing("abc", &x, &x - 3, chosen_index));
+      VW::explore::sample_after_normalizing("abc", std::begin(pdf), std::end(pdf), chosen_index));
+  EXPECT_THAT(E_EXPLORATION_BAD_RANGE, VW::explore::sample_after_normalizing("abc", &x, &x - 3, chosen_index));
 }
 
-TEST(explore_tests, sampling_rank_zero_pdf)
+TEST(Explore, SamplingRankZeroPdf)
 {
   std::vector<float> pdf = {0.f, 0.f, 0.f};
   std::vector<float> expected_pdf = {1.f, 0.f, 0.f};
@@ -347,12 +417,12 @@ TEST(explore_tests, sampling_rank_zero_pdf)
   uint32_t chosen_index;
 
   EXPECT_THAT(
-      S_EXPLORATION_OK, exploration::sample_after_normalizing("abc", std::begin(pdf), std::end(pdf), chosen_index));
+      S_EXPLORATION_OK, VW::explore::sample_after_normalizing("abc", std::begin(pdf), std::end(pdf), chosen_index));
 
   EXPECT_THAT(expected_pdf, Pointwise(FloatNear(1e-2f), pdf));
 }
 
-TEST(explore_tests, sampling_rank_negative_pdf)
+TEST(Explore, SamplingRankNegativePdf)
 {
   std::vector<float> pdf = {1.0f, -2.f, -3.f};
   std::vector<float> expected_pdf = {1.f, 0.f, 0.f};
@@ -360,7 +430,74 @@ TEST(explore_tests, sampling_rank_negative_pdf)
   uint32_t chosen_index;
 
   EXPECT_THAT(
-      S_EXPLORATION_OK, exploration::sample_after_normalizing("abc", std::begin(pdf), std::end(pdf), chosen_index));
+      S_EXPLORATION_OK, VW::explore::sample_after_normalizing("abc", std::begin(pdf), std::end(pdf), chosen_index));
   EXPECT_THAT(expected_pdf, Pointwise(FloatNear(1e-2f), pdf));
   EXPECT_THAT(0, chosen_index);
+}
+
+TEST(Explore, MixWithUniformTest)
+{
+  VW::action_scores probs;
+  probs.push_back(VW::action_score{1, 1.f});
+  probs.push_back(VW::action_score{2, 0.f});
+  probs.push_back(VW::action_score{3, 0.f});
+
+  VW::explore::mix_with_uniform(0.3f, begin_scores(probs), end_scores(probs));
+
+  EXPECT_EQ(probs.size(), 3);
+  EXPECT_EQ(probs[0].action, 1);
+  EXPECT_FLOAT_EQ(probs[0].score, 0.8f);
+
+  EXPECT_EQ(probs[1].action, 2);
+  EXPECT_FLOAT_EQ(probs[1].score, 0.1f);
+
+  EXPECT_EQ(probs[2].action, 3);
+  EXPECT_FLOAT_EQ(probs[2].score, 0.1f);
+}
+
+TEST(Explore, MixWithUniformFloatsTest)
+{
+  std::vector<float> pdf = {1.f, 0.f, 0.f};
+  EXPECT_THAT(S_EXPLORATION_OK, VW::explore::mix_with_uniform(0.3f, begin(pdf), end(pdf)));
+  EXPECT_THAT(pdf, Pointwise(FloatNear(1e-3f), std::vector<float>{.8f, .1f, .1f}));
+}
+
+TEST(Explore, MixWithUniformTest2)
+{
+  VW::action_scores probs;
+  probs.push_back(VW::action_score{1, 0.9f});
+  probs.push_back(VW::action_score{2, 0.1f});
+  probs.push_back(VW::action_score{3, 0.f});
+
+  VW::explore::mix_with_uniform(0.3f, begin_scores(probs), end_scores(probs));
+
+  EXPECT_EQ(probs.size(), 3);
+  EXPECT_EQ(probs[0].action, 1);
+  EXPECT_FLOAT_EQ(probs[0].score, 0.73f);
+
+  EXPECT_EQ(probs[1].action, 2);
+  EXPECT_FLOAT_EQ(probs[1].score, 0.17f);
+
+  EXPECT_EQ(probs[2].action, 3);
+  EXPECT_FLOAT_EQ(probs[2].score, 0.1f);
+}
+
+TEST(Explore, MixWithUniformTest3)
+{
+  VW::action_scores probs;
+  probs.push_back(VW::action_score{1, 0.8f});
+  probs.push_back(VW::action_score{2, 0.2f});
+  probs.push_back(VW::action_score{3, 0.f});
+
+  VW::explore::mix_with_uniform(0.3f, begin_scores(probs), end_scores(probs));
+
+  EXPECT_EQ(probs.size(), 3);
+  EXPECT_EQ(probs[0].action, 1);
+  EXPECT_FLOAT_EQ(probs[0].score, 0.66f);
+
+  EXPECT_EQ(probs[1].action, 2);
+  EXPECT_FLOAT_EQ(probs[1].score, 0.24f);
+
+  EXPECT_EQ(probs[2].action, 3);
+  EXPECT_FLOAT_EQ(probs[2].score, 0.1f);
 }

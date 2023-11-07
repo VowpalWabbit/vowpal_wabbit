@@ -600,7 +600,7 @@ class VWClassifier(VW, LinearClassifierMixin):
 
         scores = self.decision_function(X)
         if len(scores.shape) == 1:
-            indices = (scores > 0).astype(np.int)
+            indices = (scores > 0).astype(int)
         else:
             indices = scores.argmax(axis=1)
         return self.classes_[indices]
@@ -738,12 +738,12 @@ class VWMultiClassifier(VWClassifier):
             >>> model = VWMultiClassifier(oaa=3, loss_function='logistic')
             >>> _ = model.fit(X, y)
             >>> model.predict_proba(X)
-            array([[0.38928846, 0.30534211, 0.30536944],
-                   [0.40664235, 0.29666999, 0.29668769],
-                   [0.52324486, 0.23841164, 0.23834346],
-                   [0.5268591 , 0.23660533, 0.23653553],
-                   [0.65397811, 0.17312808, 0.17289382],
-                   [0.61190444, 0.19416356, 0.19393198]])
+            array([[0.38924146, 0.30537927, 0.30537927],
+                   [0.40661219, 0.29669389, 0.29669389],
+                   [0.52335149, 0.23832427, 0.23832427],
+                   [0.52696788, 0.23651604, 0.23651604],
+                   [0.65430814, 0.17284594, 0.17284594],
+                   [0.61224216, 0.19387889, 0.19387889]])
         """
         return VW.predict(self, X=X)
 
@@ -801,7 +801,7 @@ def tovw(x, y=None, sample_weight=None, convert_labels=False):
 
     if use_weight:
         sample_weight = check_array(
-            sample_weight, accept_sparse=False, ensure_2d=False, dtype=np.int, order="C"
+            sample_weight, accept_sparse=False, ensure_2d=False, dtype=int, order="C"
         )
         if sample_weight.ndim != 1:
             raise ValueError("Sample weights must be 1D array or scalar")
@@ -812,7 +812,7 @@ def tovw(x, y=None, sample_weight=None, convert_labels=False):
                 )
             )
     else:
-        sample_weight = np.ones(x.shape[0], dtype=np.int)
+        sample_weight = np.ones(x.shape[0], dtype=int)
 
     # convert labels of the form [0,1] to [-1,1]
     if convert_labels:
@@ -825,6 +825,10 @@ def tovw(x, y=None, sample_weight=None, convert_labels=False):
         for row in rows:
             for col in cols:
                 x[row, col] = INVALID_CHARS.sub(".", x[row, col])
+    elif x.dtype.kind == "u":
+        raise TypeError(
+            "tovw does not support unsigned integers. Please convert to signed integers. See issue: https://github.com/VowpalWabbit/vowpal_wabbit/issues/4609"
+        )
 
     # convert input to svmlight format
     s = io.BytesIO()

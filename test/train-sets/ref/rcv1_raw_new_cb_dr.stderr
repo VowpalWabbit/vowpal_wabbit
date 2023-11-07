@@ -6,9 +6,9 @@ learning rate = 0.25
 initial_t = 0
 power_t = 0.5
 cb_type = dr
-Enabled reductions: gd, scorer-identity, csoaa_ldf-rank, cb_adf, shared_feature_merger, cb_to_cbadf
-Input label = cb
-Output pred = multiclass
+Enabled learners: gd, scorer-identity, csoaa_ldf-rank, cb_adf, shared_feature_merger, cb_to_cbadf
+Input label = CB
+Output pred = MULTICLASS
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
 2.000000 2.000000            1            1.0        0:1:0.5            0:0      560
@@ -16,15 +16,15 @@ loss     last          counter         weight          label        predict feat
 0.500000 0.000000            4            4.0        0:0:0.5            1:0     1568
 0.250000 0.000000            8            8.0        0:0:0.5            1:0     1700
 0.620199 0.990398           16           16.0        0:1:0.5         1:0.07      236
-0.326163 0.032127           32           32.0        0:0:0.5         0:0.07      332
-0.310652 0.295141           64           64.0        1:1:0.5         0:0.14      680
-0.249250 0.187847          128          128.0        0:1:0.5         1:0.32     1220
-0.214749 0.180249          256          256.0        1:0:0.5          1:0.6     1424
-0.189458 0.164166          512          512.0        1:1:0.5         0:0.29      848
+0.326201 0.032204           32           32.0        0:0:0.5         0:0.07      332
+0.310692 0.295182           64           64.0        1:1:0.5         0:0.14      680
+0.249281 0.187870          128          128.0        0:1:0.5         1:0.32     1220
+0.214765 0.180249          256          256.0        1:0:0.5          1:0.6     1424
+0.189467 0.164169          512          512.0        1:1:0.5         0:0.29      848
 
 finished run
 number of examples = 1000
 weighted example sum = 1000.000000
 weighted label sum = 0.000000
-average loss = 0.132501
+average loss = 0.132504
 total feature number = 880040

@@ -1,18 +1,20 @@
+#include "vw/config/options_cli.h"
 #include "vw/core/parser.h"
 #include "vw/core/vw.h"
 
 #include <cstdio>
 
-inline feature vw_feature_from_string(VW::workspace& v, const std::string& fstr, unsigned long seed, float val)
+inline VW::feature vw_feature_from_string(VW::workspace& v, const std::string& fstr, unsigned long seed, float val)
 {
   auto foo = VW::hash_feature(v, fstr, seed);
-  feature f = {val, foo};
+  VW::feature f = {val, foo};
   return f;
 }
 
 int main(int argc, char* argv[])
 {
-  VW::workspace* model = VW::initialize("--hash all -q st --noconstant -f train2.vw --no_stdin");
+  auto model = VW::initialize(VW::make_unique<VW::config::options_cli>(
+      std::vector<std::string>{"--hash", "all", "-q", "st", "--noconstant", "-f", "train2.vw", "--no_stdin"}));
 
   VW::example* vec2 = VW::read_example(*model, (char*)"|s p^the_man w^the w^man |t p^un_homme w^un w^homme");
   model->learn(*vec2);
@@ -26,9 +28,9 @@ int main(int argc, char* argv[])
 
   uint32_t s_hash = static_cast<uint32_t>(VW::hash_space(*model, "s"));
   uint32_t t_hash = static_cast<uint32_t>(VW::hash_space(*model, "t"));
-  s->fs = new feature[3];
+  s->fs = new VW::feature[3];
   s->len = 3;
-  t->fs = new feature[3];
+  t->fs = new VW::feature[3];
   t->len = 3;
 
   s->fs[0] = vw_feature_from_string(*model, "p^the_man", s_hash, 1.0);
@@ -43,10 +45,11 @@ int main(int argc, char* argv[])
   std::cerr << "p3 = " << vec3->pred.scalar << std::endl;
   // TODO: this does not invoke m_vw->l->finish_example()
   VW::finish_example(*model, *vec3);
+  model->finish();
+  model.reset();
 
-  VW::finish(*model);
-
-  VW::workspace* model2 = VW::initialize("--hash all -q st --noconstant -i train2.vw --no_stdin");
+  auto model2 = VW::initialize(VW::make_unique<VW::config::options_cli>(
+      std::vector<std::string>{"--hash", "all", "-q", "st", "--noconstant", "-i", "train2.vw", "--no_stdin"}));
   vec2 = VW::read_example(*model2, (char*)" |s p^the_man w^the w^man |t p^un_homme w^un w^homme");
   model2->learn(*vec2);
   std::cerr << "p4 = " << vec2->pred.scalar << std::endl;
@@ -65,5 +68,6 @@ int main(int argc, char* argv[])
   }
 
   VW::finish_example(*model2, *vec2);
-  VW::finish(*model2);
+  model2->finish();
+  model2.reset();
 }

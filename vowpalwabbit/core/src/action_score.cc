@@ -10,11 +10,10 @@
 #include "vw/core/model_utils.h"
 #include "vw/core/text_utils.h"
 #include "vw/core/v_array.h"
+#include "vw/io/errno_handling.h"
 #include "vw/io/logger.h"
 
-namespace ACTION_SCORE
-{
-void print_action_score(
+void VW::details::print_action_score(
     VW::io::writer* f, const VW::v_array<action_score>& a_s, const VW::v_array<char>& tag, VW::io::logger& logger)
 {
   if (f == nullptr) { return; }
@@ -26,19 +25,16 @@ void print_action_score(
   const auto ss_str = ss.str();
   ssize_t len = ss_str.size();
   ssize_t t = f->write(ss_str.c_str(), static_cast<unsigned int>(len));
-  if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
+  if (t != len) { logger.err_error("write error: {}", VW::io::strerror_to_string(errno)); }
 }
 
-std::ostream& operator<<(std::ostream& os, const action_score& a_s)
+std::ostream& VW::operator<<(std::ostream& os, const action_score& a_s)
 {
   os << "(" << a_s.action << "," << a_s.score << ")";
   return os;
 }
-}  // namespace ACTION_SCORE
 
-namespace VW
-{
-std::string to_string(const ACTION_SCORE::action_scores& action_scores_or_probs, int decimal_precision)
+std::string VW::to_string(const action_scores& action_scores_or_probs, int decimal_precision)
 {
   std::ostringstream ss;
   std::string delim;
@@ -50,9 +46,7 @@ std::string to_string(const ACTION_SCORE::action_scores& action_scores_or_probs,
   return ss.str();
 }
 
-namespace model_utils
-{
-size_t read_model_field(io_buf& io, ACTION_SCORE::action_score& a_s)
+size_t VW::model_utils::read_model_field(io_buf& io, action_score& a_s)
 {
   size_t bytes = 0;
   bytes += read_model_field(io, a_s.action);
@@ -60,12 +54,11 @@ size_t read_model_field(io_buf& io, ACTION_SCORE::action_score& a_s)
   return bytes;
 }
 
-size_t write_model_field(io_buf& io, const ACTION_SCORE::action_score a_s, const std::string& upstream_name, bool text)
+size_t VW::model_utils::write_model_field(
+    io_buf& io, const action_score a_s, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, a_s.action, upstream_name + "_action", text);
   bytes += write_model_field(io, a_s.score, upstream_name + "_score", text);
   return bytes;
 }
-}  // namespace model_utils
-}  // namespace VW

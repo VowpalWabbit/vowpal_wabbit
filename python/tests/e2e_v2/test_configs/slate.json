@@ -1,0 +1,145 @@
+[
+    {
+        "test_name": "slates",
+        "data_func": {
+            "name": "generate_slate_data",
+            "params": {
+                "num_examples": 1000,
+                "seed" : 1,
+                "reward_function": {
+                    "name": "reverse_reward_after_threshold",
+                    "params": {
+                        "reward": [
+                            [
+                                1,
+                                0
+                            ],
+                            [
+                                0,
+                                1
+                            ]
+                        ],
+                        "threshold": 500
+                    }
+                },
+                "logging_policy": {
+                    "name": "even_probability",
+                    "params": {}
+                },
+                "action_space": {
+                    "name": "new_action_after_threshold",
+                    "params": {
+                        "threshold": 500,
+                        "before": [
+                            [
+                                "longshirt",
+                                "tshirt"
+                            ],
+                            [
+                                "shorts",
+                                "jeans"
+                            ]
+                        ],
+                        "after": [
+                            [
+                                "rainshirt",
+                                "buttonupshirt"
+                            ],
+                            [
+                                "formalpants",
+                                "rainpants"
+                            ]
+                        ]
+                    }
+                }
+            }
+        },
+        "assert_functions": [
+            {
+                "name": "assert_loss",
+                "params": {
+                    "expected_loss": -1.9,
+                    "decimal": 0.1
+                }
+            },
+            {
+                "name": "assert_prediction",
+                "params": {
+                    "expected_value": [
+                        [
+                            0.1,
+                            0.9
+                        ],
+                        [
+                            0.9,
+                            0.1
+                        ]
+                    ],
+                    "threshold": 0.8,
+                    "atol": 0.01,
+                    "rtol": 0.01
+                }
+            }
+        ],
+        "grids": {
+            "slate": {
+                "#base": [
+                    "--slates"
+                ]
+            },
+            "epsilon": {
+                "--epsilon": [
+                    0.1,
+                    0.2,
+                    0.3
+                ]
+            },
+            "first": {
+                "--first": [
+                    1,
+                    2
+                ]
+            },
+            "bag": {
+                "--bag": [
+                    5,
+                    6,
+                    7
+                ]
+            },
+            "cover": {
+                "--cover": [
+                    1,
+                    2,
+                    3
+                ]
+            },
+            "squarecb": {
+                "--squarecb": [
+                    "--gamma_scale 1000",
+                    "--gamma_scale 10000"
+                ]
+            },
+            "synthcover": {
+                "--synthcover": [
+                    ""
+                ]
+            },
+            "regcb": {
+                "--regcb": [
+                    ""
+                ]
+            },
+            "softmax": {
+                "--softmax": [
+                    ""
+                ]
+            }
+        },
+        "grids_expression": "slate * (epsilon + first + bag + cover + squarecb + synthcover + regcb + softmax)",
+        "output": [
+            "--readable_model",
+            "-p"
+        ]
+    }
+]

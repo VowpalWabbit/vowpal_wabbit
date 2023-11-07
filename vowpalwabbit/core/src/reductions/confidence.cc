@@ -10,7 +10,9 @@
 #include "vw/core/learner.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
+#include "vw/core/simple_label.h"
 #include "vw/core/vw.h"
+#include "vw/io/errno_handling.h"
 #include "vw/io/logger.h"
 
 #include <cfloat>
@@ -21,13 +23,14 @@ using namespace VW::config;
 
 namespace
 {
-struct confidence
+class confidence
 {
+public:
   VW::workspace* all = nullptr;
 };
 
 template <bool is_learn, bool is_confidence_after_training>
-void predict_or_learn_with_confidence(confidence& /* c */, single_learner& base, VW::example& ec)
+void predict_or_learn_with_confidence(confidence& /* c */, learner& base, VW::example& ec)
 {
   float threshold = 0.f;
   float sensitivity = 0.f;
@@ -45,10 +48,7 @@ void predict_or_learn_with_confidence(confidence& /* c */, single_learner& base,
 
   ec.l.simple.label = existing_label;
   if (is_learn) { base.learn(ec); }
-  else
-  {
-    base.predict(ec);
-  }
+  else { base.predict(ec); }
 
   if (is_confidence_after_training) { sensitivity = base.sensitivity(ec); }
 
@@ -69,35 +69,22 @@ void confidence_print_result(
     auto ss_string(ss.str());
     ssize_t len = ss_string.size();
     ssize_t t = f->write(ss_string.c_str(), static_cast<unsigned int>(len));
-    if (t != len) { logger.err_error("write error: {}", VW::strerror_to_string(errno)); }
+    if (t != len) { logger.err_error("write error: {}", VW::io::strerror_to_string(errno)); }
   }
 }
 
-void output_and_account_confidence_example(VW::workspace& all, VW::example& ec)
+void output_example_prediction_confidence(
+    VW::workspace& all, const confidence& /* data */, const VW::example& ec, VW::io::logger& logger)
 {
-  label_data& ld = ec.l.simple;
-
-  all.sd->update(ec.test_only, ld.label != FLT_MAX, ec.loss, ec.weight, ec.get_num_features());
-  if (ld.label != FLT_MAX && !ec.test_only)
-  { all.sd->weighted_labels += static_cast<double>(ld.label) * static_cast<double>(ec.weight); }
-  all.sd->weighted_unlabeled_examples += ld.label == FLT_MAX ? ec.weight : 0;
-
-  all.print_by_ref(all.raw_prediction.get(), ec.partial_prediction, -1, ec.tag, all.logger);
-  for (const auto& sink : all.final_prediction_sink)
-  { confidence_print_result(sink.get(), ec.pred.scalar, ec.confidence, ec.tag, all.logger); }
-
-  print_update(all, ec);
+  all.print_by_ref(all.output_runtime.raw_prediction.get(), ec.partial_prediction, -1, ec.tag, logger);
+  for (const auto& sink : all.output_runtime.final_prediction_sink)
+  {
+    confidence_print_result(sink.get(), ec.pred.scalar, ec.confidence, ec.tag, logger);
+  }
 }
-
-void return_confidence_example(VW::workspace& all, confidence& /* c */, VW::example& ec)
-{
-  output_and_account_confidence_example(all, ec);
-  VW::finish_example(all, ec);
-}
-
 }  // namespace
 
-base_learner* VW::reductions::confidence_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::confidence_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -110,7 +97,7 @@ base_learner* VW::reductions::confidence_setup(VW::setup_base_i& stack_builder)
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  if (!all.training)
+  if (!all.runtime_config.training)
   {
     all.logger.out_warn(
         "Confidence does not work in test mode because learning algorithm state is needed.  Do not use "
@@ -123,8 +110,8 @@ base_learner* VW::reductions::confidence_setup(VW::setup_base_i& stack_builder)
   auto data = VW::make_unique<confidence>();
   data->all = &all;
 
-  void (*learn_with_confidence_ptr)(confidence&, single_learner&, VW::example&) = nullptr;
-  void (*predict_with_confidence_ptr)(confidence&, single_learner&, VW::example&) = nullptr;
+  void (*learn_with_confidence_ptr)(confidence&, learner&, VW::example&) = nullptr;
+  void (*predict_with_confidence_ptr)(confidence&, learner&, VW::example&) = nullptr;
 
   if (confidence_after_training)
   {
@@ -137,16 +124,20 @@ base_learner* VW::reductions::confidence_setup(VW::setup_base_i& stack_builder)
     predict_with_confidence_ptr = predict_or_learn_with_confidence<false, false>;
   }
 
-  auto base = as_singleline(stack_builder.setup_base_learner());
+  auto base = require_singleline(stack_builder.setup_base_learner());
 
   // Create new learner
-  auto* l = make_reduction_learner(std::move(data), base, learn_with_confidence_ptr, predict_with_confidence_ptr,
+  auto l = make_reduction_learner(std::move(data), base, learn_with_confidence_ptr, predict_with_confidence_ptr,
       stack_builder.get_setupfn_name(confidence_setup))
-                .set_learn_returns_prediction(true)
-                .set_input_label_type(VW::label_type_t::simple)
-                .set_output_prediction_type(VW::prediction_type_t::scalar)
-                .set_finish_example(return_confidence_example)
-                .build();
+               .set_learn_returns_prediction(true)
+               .set_input_label_type(VW::label_type_t::SIMPLE)
+               .set_output_label_type(VW::label_type_t::SIMPLE)
+               .set_input_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_output_prediction_type(VW::prediction_type_t::SCALAR)
+               .set_output_example_prediction(output_example_prediction_confidence)
+               .set_print_update(VW::details::print_update_simple_label<confidence>)
+               .set_update_stats(VW::details::update_stats_simple_label<confidence>)
+               .build();
 
-  return make_base(*l);
+  return l;
 }

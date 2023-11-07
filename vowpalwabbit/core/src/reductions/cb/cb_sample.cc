@@ -4,19 +4,18 @@
 
 #include "vw/core/reductions/cb/cb_sample.h"
 
+#include "vw/common/random.h"
 #include "vw/common/string_view.h"
 #include "vw/config/options.h"
 #include "vw/core/global_data.h"
 #include "vw/core/label_parser.h"
 #include "vw/core/learner.h"
-#include "vw/core/rand48.h"
-#include "vw/core/rand_state.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/tag_utils.h"
 #include "vw/explore/explore.h"
 
 #undef VW_DEBUG_LOG
-#define VW_DEBUG_LOG vw_dbg::cb_sample
+#define VW_DEBUG_LOG vw_dbg::CB_SAMPLE
 
 using namespace VW::LEARNER;
 using namespace VW;
@@ -25,20 +24,23 @@ using namespace VW::config;
 namespace
 {
 // cb_sample is used to automatically sample and swap from a cb explore pdf.
-struct cb_sample_data
+class cb_sample_data
 {
+public:
   explicit cb_sample_data(std::shared_ptr<VW::rand_state>& random_state) : _random_state(random_state) {}
   explicit cb_sample_data(std::shared_ptr<VW::rand_state>&& random_state) : _random_state(random_state) {}
 
   template <bool is_learn>
-  inline void learn_or_predict(multi_learner& base, VW::multi_ex& examples)
+  inline void learn_or_predict(learner& base, VW::multi_ex& examples)
   {
     // If base.learn() does not return prediction then we need to predict first
     // so that there is something to sample from
     VW_WARNING_STATE_PUSH
     VW_WARNING_DISABLE_COND_CONST_EXPR
     if (is_learn && !base.learn_returns_prediction)
-    { multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset); }
+    {
+      multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
+    }
     VW_WARNING_STATE_POP
 
     multiline_learn_or_predict<is_learn>(base, examples, examples[0]->ft_offset);
@@ -79,8 +81,8 @@ struct cb_sample_data
       if (tag_provided_seed) { seed = VW::uniform_hash(tag_seed.data(), tag_seed.size(), 0); }
 
       // Sampling is done after the base learner has generated a pdf.
-      auto result = exploration::sample_after_normalizing(
-          seed, ACTION_SCORE::begin_scores(action_scores), ACTION_SCORE::end_scores(action_scores), chosen_action);
+      auto result = VW::explore::sample_after_normalizing(
+          seed, VW::begin_scores(action_scores), VW::end_scores(action_scores), chosen_action);
       assert(result == S_EXPLORATION_OK);
       _UNUSED(result);
 
@@ -88,7 +90,7 @@ struct cb_sample_data
       if (!tag_provided_seed) { _random_state->get_and_update_random(); }
     }
 
-    auto result = exploration::swap_chosen(action_scores.begin(), action_scores.end(), chosen_action);
+    auto result = VW::explore::swap_chosen(action_scores.begin(), action_scores.end(), chosen_action);
     assert(result == S_EXPLORATION_OK);
 
     VW_DBG(examples) << "cb " << cb_decision_to_string(examples[0]->pred.a_s)
@@ -97,7 +99,7 @@ struct cb_sample_data
     _UNUSED(result);
   }
 
-  static std::string cb_decision_to_string(const ACTION_SCORE::action_scores& action_scores)
+  static std::string cb_decision_to_string(const VW::action_scores& action_scores)
   {
     std::ostringstream ostrm;
     if (action_scores.empty()) { return ""; }
@@ -109,13 +111,13 @@ private:
   std::shared_ptr<VW::rand_state> _random_state;
 };
 template <bool is_learn>
-void learn_or_predict(cb_sample_data& data, multi_learner& base, VW::multi_ex& examples)
+void learn_or_predict(cb_sample_data& data, learner& base, VW::multi_ex& examples)
 {
   data.learn_or_predict<is_learn>(base, examples);
 }
 }  // namespace
 
-base_learner* VW::reductions::cb_sample_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_sample_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -129,13 +131,13 @@ base_learner* VW::reductions::cb_sample_setup(VW::setup_base_i& stack_builder)
 
   auto data = VW::make_unique<cb_sample_data>(all.get_random_state());
 
-  auto* l = make_reduction_learner(std::move(data), as_multiline(stack_builder.setup_base_learner()),
+  auto l = make_reduction_learner(std::move(data), require_multiline(stack_builder.setup_base_learner()),
       learn_or_predict<true>, learn_or_predict<false>, stack_builder.get_setupfn_name(cb_sample_setup))
-                .set_input_label_type(VW::label_type_t::cb)
-                .set_output_label_type(VW::label_type_t::cb)
-                .set_input_prediction_type(VW::prediction_type_t::action_probs)
-                .set_output_prediction_type(VW::prediction_type_t::action_probs)
-                .set_learn_returns_prediction(true)
-                .build(&all.logger);
-  return make_base(*l);
+               .set_input_label_type(VW::label_type_t::CB)
+               .set_output_label_type(VW::label_type_t::CB)
+               .set_input_prediction_type(VW::prediction_type_t::ACTION_PROBS)
+               .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
+               .set_learn_returns_prediction(true)
+               .build();
+  return l;
 }

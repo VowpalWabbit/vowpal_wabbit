@@ -6,21 +6,21 @@ learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 decay_learning_rate = 1
-Enabled reductions: gd, scorer-identity, count_label
-Input label = simple
-Output pred = scalar
-average  since         example        example        current        current  current 
-loss     last          counter         weight          label        predict features 
-0.020368 0.020368          100          100.0         0.5266         0.5147       15 
-0.012680 0.004993          200          200.0         0.4325         0.4097       15 
-0.009549 0.003287          300          300.0         0.5299         0.5367       15 
-0.007654 0.001969          400          400.0         0.4884         0.4973       15 
-0.006393 0.001347          500          500.0         0.5113         0.5266       15 
-0.003060 0.003060          600          600.0         0.5266         0.5545       15  h
-0.003060 unknown           700          700.0         0.4325         0.4185       15  h
-0.003060 unknown           800          800.0         0.5299         0.5362       15  h
-0.003060 unknown           900          900.0         0.4884         0.4934       15  h
-0.003060 unknown          1000         1000.0         0.5113         0.5074       15  h
+Enabled learners: gd, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.020368 0.020368          100          100.0         0.5266         0.5147       15
+0.012680 0.004993          200          200.0         0.4325         0.4097       15
+0.009549 0.003287          300          300.0         0.5299         0.5367       15
+0.007654 0.001969          400          400.0         0.4884         0.4973       15
+0.006393 0.001347          500          500.0         0.5113         0.5266       15
+0.003059 0.003059          600          600.0         0.5266         0.5545       15 h
+0.003059 unknown           700          700.0         0.4325         0.4185       15 h
+0.003059 unknown           800          800.0         0.5299         0.5362       15 h
+0.003059 unknown           900          900.0         0.4884         0.4934       15 h
+0.003059 unknown          1000         1000.0         0.5113         0.5074       15 h
 
 finished run
 number of examples per pass = 500

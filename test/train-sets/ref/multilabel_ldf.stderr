@@ -6,23 +6,23 @@ Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
-Enabled reductions: gd, scorer-identity, csoaa_ldf-rank, shared_feature_merger
-Input label = cs
-Output pred = action_scores
-average  since         example        example        current        current  current 
-loss     last          counter         weight          label        predict features 
-1.000000 1.000000            1            1.0          known         1.....        9 
-0.500000 0.000000            2            2.0          known         2.....        6 
-1.000000 2.000000            3            3.0          known         3.....        6 
-1.250000 2.000000            4            4.0          known         2.....        9 
-1.400000 2.000000            5            5.0          known         2.....        9 
-1.166667 0.000000            6            6.0          known         3.....        9 
-1.000000 0.000000            7            7.0          known         3.....        9 
-0.875000 0.000000            8            8.0          known         3.....        9 
+Enabled learners: gd, scorer-identity, csoaa_ldf-rank, shared_feature_merger
+Input label = CS
+Output pred = ACTION_SCORES
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+1.000000 1.000000            1            1.0          known         1.....        9
+0.500000 0.000000            2            2.0          known         2.....        6
+1.000000 2.000000            3            3.0          known         3.....        6
+1.250000 2.000000            4            4.0          known         2.....        9
+1.400000 2.000000            5            5.0          known         2.....        9
+1.166667 0.000000            6            6.0          known         3.....        9
+1.000000 0.000000            7            7.0          known         3.....        9
+0.875000 0.000000            8            8.0          known         3.....        9
 
 finished run
 number of examples = 8
 weighted example sum = 8.000000
 weighted label sum = 0.000000
 average loss = 0.875000
-total feature number = 24
+total feature number = 66

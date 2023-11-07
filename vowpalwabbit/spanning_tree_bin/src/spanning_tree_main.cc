@@ -12,6 +12,7 @@ This creates a binary tree topology over a set of n nodes that connect.
 #include "vw/config/option_builder.h"
 #include "vw/config/option_group_definition.h"
 #include "vw/config/options_cli.h"
+#include "vw/io/errno_handling.h"
 #include "vw/spanning_tree/spanning_tree.h"
 
 #ifdef _WIN32
@@ -21,8 +22,6 @@ int getpid() { return (int)::GetCurrentProcessId(); }
 
 #include <fstream>
 #include <iostream>
-
-using namespace VW;
 
 void usage(const VW::config::options_cli& desc)
 {
@@ -80,7 +79,7 @@ int main(int argc, char* argv[])
       VW_WARNING_STATE_POP
     }
 
-    SpanningTree spanningTree(static_cast<short unsigned int>(port));
+    VW::spanning_tree spanning_tree_obj(static_cast<short unsigned int>(port));
 
     if (!pid_file_name.empty())
     {
@@ -95,10 +94,10 @@ int main(int argc, char* argv[])
       pid_file.close();
     }
 
-    spanningTree.Run();
+    spanning_tree_obj.run();
   }
   catch (VW::vw_exception& e)
   {
-    std::cerr << "spanning tree (" << e.Filename() << ":" << e.LineNumber() << "): " << e.what() << std::endl;
+    std::cerr << "spanning tree (" << e.filename() << ":" << e.line_number() << "): " << e.what() << std::endl;
   }
 }

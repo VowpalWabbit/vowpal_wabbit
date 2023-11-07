@@ -8,19 +8,19 @@ learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 decay_learning_rate = 1
-Enabled reductions: gd, scorer-identity, csoaa_ldf, shared_feature_merger
-Input label = cs
-Output pred = multiclass
-average  since         example        example        current        current  current 
-loss     last          counter         weight          label        predict features 
-1.000000 1.000000            1            1.0          known              1       30 
-0.500000 0.000000            2            2.0          known              0       30 
-0.500000 0.500000            4            4.0          known              1       30 
-0.250000 0.000000            8            8.0          known              1       30 
-0.125000 0.000000           16           16.0          known              1       30 
-0.062500 0.000000           32           32.0          known              1       30 
-0.031250 0.000000           64           64.0          known              1       30 
-0.015625 0.000000          128          128.0          known              1       30 
+Enabled learners: gd, scorer-identity, csoaa_ldf, shared_feature_merger
+Input label = CS
+Output pred = MULTICLASS
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+1.000000 1.000000            1            1.0          known              1       30
+1.000000 1.000000            2            2.0          known              2       30
+0.500000 0.000000            4            4.0          known              1       30
+0.250000 0.000000            8            8.0          known              1       30
+0.125000 0.000000           16           16.0          known              1       30
+0.062500 0.000000           32           32.0          known              1       30
+0.031250 0.000000           64           64.0          known              1       30
+0.015625 0.000000          128          128.0          known              1       30
 
 finished run
 number of examples per pass = 2

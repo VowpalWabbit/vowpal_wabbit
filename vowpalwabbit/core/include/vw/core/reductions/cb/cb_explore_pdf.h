@@ -3,13 +3,16 @@
 // license as described in the file LICENSE.
 
 #pragma once
-#include "vw/core/learner.h"
+
+#include "vw/core/vw_fwd.h"
+
+#include <memory>
 
 namespace VW
 {
 namespace reductions
 {
 // Setup reduction in stack
-LEARNER::base_learner* cb_explore_pdf_setup(VW::setup_base_i& stack_builder);
+std::shared_ptr<VW::LEARNER::learner> cb_explore_pdf_setup(VW::setup_base_i& stack_builder);
 }  // namespace reductions
 }  // namespace VW

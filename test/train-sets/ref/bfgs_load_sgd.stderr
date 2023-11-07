@@ -8,9 +8,9 @@ learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 decay_learning_rate = 1
-Enabled reductions: bfgs, scorer-identity, count_label
-Input label = simple
-Output pred = scalar
+Enabled learners: bfgs, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
  1 0.23560   	3.13607   	94.68915  	          	          	          	31119.57753	17991.60547	0.00304
 Maximum number of passes reached. To optimize further, increase the number of passes
 

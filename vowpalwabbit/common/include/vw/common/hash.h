@@ -14,6 +14,8 @@ license as described in the file LICENSE.
 //
 // Adopted for VW and contributed by Ariel Faigon.
 //
+// Constexpr changes from:
+//    https://github.com/AntonJohansson/StaticMurmur/blob/master/StaticMurmur.hpp
 
 //-----------------------------------------------------------------------------
 // MurmurHash3 was written by Austin Appleby, and is placed in the public
@@ -42,7 +44,7 @@ constexpr inline uint32_t rotl32(uint32_t x, int8_t r) noexcept { return (x << r
 
 //-----------------------------------------------------------------------------
 // Finalization mix - force all bits of a hash block to avalanche
-VW_STD14_CONSTEXPR static inline uint32_t fmix(uint32_t h) noexcept
+VW_STD14_CONSTEXPR inline uint32_t fmix(uint32_t h) noexcept
 {
   h ^= h >> 16;
   h *= 0x85ebca6b;
@@ -56,31 +58,26 @@ VW_STD14_CONSTEXPR static inline uint32_t fmix(uint32_t h) noexcept
 //-----------------------------------------------------------------------------
 // Block read - if your platform needs to do endian-swapping or can only
 // handle aligned reads, do the conversion here
-static inline uint32_t getblock(const uint32_t* p, int i) noexcept
+VW_STD14_CONSTEXPR inline uint32_t get_block(const char* p, size_t i)
 {
-  uint32_t block = 0;
-  memcpy(&block, &p[i], sizeof(uint32_t));
+  uint32_t block = static_cast<uint8_t>(p[0 + i * 4]) << 0 | static_cast<uint8_t>(p[1 + i * 4]) << 8 |
+      static_cast<uint8_t>(p[2 + i * 4]) << 16 | static_cast<uint8_t>(p[3 + i * 4]) << 24;
   return block;
 }
 
-}  // namespace details
-
-inline uint64_t uniform_hash(const void* key, size_t len, uint64_t seed)
+VW_STD14_CONSTEXPR inline uint32_t murmurhash_x86_32(const char* data, size_t len, uint32_t seed)
 {
-  const uint8_t* data = static_cast<const uint8_t*>(key);
-  const int nblocks = static_cast<int>(len) / 4;
+  const auto num_blocks = len / 4;
 
-  uint32_t h1 = static_cast<uint32_t>(seed);
+  auto h1 = seed;
 
   const uint32_t c1 = 0xcc9e2d51;
   const uint32_t c2 = 0x1b873593;
 
   // --- body
-  const uint32_t* blocks = (const uint32_t*)(data + nblocks * 4);
-
-  for (int i = -nblocks; i; i++)
+  for (size_t i = 0; i < num_blocks; i++)
   {
-    uint32_t k1 = details::getblock(blocks, i);
+    uint32_t k1 = details::get_block(data, i);
 
     k1 *= c1;
     k1 = details::rotl32(k1, 15);
@@ -92,7 +89,7 @@ inline uint64_t uniform_hash(const void* key, size_t len, uint64_t seed)
   }
 
   // --- tail
-  const uint8_t* tail = data + nblocks * 4;
+  const char* tail = data + num_blocks * 4;
 
   uint32_t k1 = 0;
 
@@ -101,13 +98,13 @@ inline uint64_t uniform_hash(const void* key, size_t len, uint64_t seed)
   switch (len & 3u)
   {
     case 3:
-      k1 ^= tail[2] << 16;
+      k1 ^= static_cast<unsigned char>(tail[2]) << 16;
       VW_FALLTHROUGH
     case 2:
-      k1 ^= tail[1] << 8;
+      k1 ^= static_cast<unsigned char>(tail[1]) << 8;
       VW_FALLTHROUGH
     case 1:
-      k1 ^= tail[0];
+      k1 ^= static_cast<unsigned char>(tail[0]);
       k1 *= c1;
       k1 = details::rotl32(k1, 15);
       k1 *= c2;
@@ -122,7 +119,16 @@ inline uint64_t uniform_hash(const void* key, size_t len, uint64_t seed)
 
   return details::fmix(h1);
 }
+}  // namespace details
+
+VW_STD14_CONSTEXPR inline uint32_t uniform_hash(const char* data, size_t len, uint32_t seed)
+{
+  return details::murmurhash_x86_32(data, len, seed);
+}
 }  // namespace VW
 
 VW_DEPRECATED("uniform_hash has been moved into VW namespace")
-inline uint64_t uniform_hash(const void* key, size_t len, uint64_t seed) { return VW::uniform_hash(key, len, seed); }
+inline uint64_t uniform_hash(const void* key, size_t len, uint64_t seed)
+{
+  return VW::uniform_hash(reinterpret_cast<const char*>(key), len, static_cast<uint32_t>(seed));
+}

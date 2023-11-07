@@ -2,7 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #pragma once
-#include "vw/core/rand_state.h"
+#include "vw/common/random.h"
 #include "vw/core/vw_fwd.h"
 
 #include <memory>
@@ -11,12 +11,12 @@ namespace VW
 {
 namespace reductions
 {
-VW::LEARNER::base_learner* bs_setup(VW::setup_base_i& stack_builder);
+std::shared_ptr<VW::LEARNER::learner> bs_setup(VW::setup_base_i& stack_builder);
 namespace bs
 {
-inline uint32_t weight_gen(std::shared_ptr<VW::rand_state>& state)  // sampling from Poisson with rate 1
+inline uint32_t weight_gen(VW::rand_state& state)  // sampling from Poisson with rate 1
 {
-  float temp = state->get_and_update_random();
+  float temp = state.get_and_update_random();
   if (temp <= 0.3678794411714423215955) { return 0; }
   if (temp <= 0.735758882342884643191) { return 1; }
   if (temp <= 0.919698602928605803989) { return 2; }

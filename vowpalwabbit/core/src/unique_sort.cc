@@ -8,15 +8,7 @@
 
 #include <algorithm>
 
-/**
- * \brief Remove all non unique features from a feature group.
- * - Uniqueness is determined by feature index.
- * - This function requires the feature group to be sorted. For sorting see features::sort.
- *
- * \param fs Feature group to remove non-unique features from
- * \param max The maximum number of unique features to keep. -1 to keep all unique features.
- */
-void unique_features(features& fs, int max)
+void VW::unique_features(features& fs, int max)
 {
   if (fs.indices.empty()) { return; }
   if (max == 0)
@@ -55,12 +47,12 @@ void unique_features(features& fs, int max)
   fs.truncate_to(last_index);
 }
 
-void unique_sort_features(uint64_t parse_mask, VW::example* ae)
+void VW::unique_sort_features(uint64_t parse_mask, VW::example& ae)
 {
-  for (features& fs : *ae)
+  for (features& fs : ae)
   {
     if (fs.sort(parse_mask)) { unique_features(fs); }
   }
 
-  ae->sorted = true;
+  ae.sorted = true;
 }

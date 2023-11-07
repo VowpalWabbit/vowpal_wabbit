@@ -13,8 +13,9 @@ namespace VW
 {
 namespace config
 {
-struct cli_help_formatter : public help_formatter
+class cli_help_formatter : public help_formatter
 {
+public:
   std::string format_help(const std::vector<option_group_definition>& groups) override;
 };
 

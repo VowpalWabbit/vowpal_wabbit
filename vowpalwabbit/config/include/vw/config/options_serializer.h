@@ -13,8 +13,9 @@ namespace VW
 {
 namespace config
 {
-struct options_serializer_i
+class options_serializer_i
 {
+public:
   virtual void add(base_option& argument) = 0;
   VW_ATTR(nodiscard) virtual std::string str() const = 0;
   VW_ATTR(nodiscard) virtual size_t size() const = 0;

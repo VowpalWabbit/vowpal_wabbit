@@ -7,19 +7,19 @@ Num weight bits = 18
 learning rate = 0.5
 initial_t = 500
 power_t = 0.5
-Enabled reductions: gd, generate_interactions, scorer-identity, count_label
-Input label = simple
-Output pred = scalar
-average  since         example        example        current        current  current 
-loss     last          counter         weight          label        predict features 
-0.077282 0.077282            1            1.0        -1.0000        -0.7220    32385 
-0.041673 0.006065            2            2.0        -1.0000        -0.9221     3741 
-0.030921 0.020169            4            4.0        -1.0000        -0.8484    71631 
-0.027502 0.024082            8            8.0         1.0000         0.9214     2211 
-0.035515 0.043528           16           16.0         1.0000         0.9767     3570 
-0.024694 0.013873           32           32.0        -1.0000        -0.9606     4278 
-0.031099 0.037503           64           64.0         1.0000         1.0000     5671 
-0.022095 0.013092          128          128.0        -1.0000        -1.0000     8778 
+Enabled learners: gd, generate_interactions, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.077284 0.077284            1            1.0        -1.0000        -0.7220    32385
+0.041675 0.006065            2            2.0        -1.0000        -0.9221     3741
+0.030923 0.020172            4            4.0        -1.0000        -0.8484    71631
+0.027503 0.024082            8            8.0         1.0000         0.9214     2211
+0.035516 0.043530           16           16.0         1.0000         0.9767     3570
+0.024695 0.013874           32           32.0        -1.0000        -0.9606     4278
+0.031099 0.037503           64           64.0         1.0000         1.0000     5671
+0.022095 0.013092          128          128.0        -1.0000        -1.0000     8778
 
 finished run
 number of examples = 250

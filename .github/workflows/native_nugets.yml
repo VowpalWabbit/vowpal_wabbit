@@ -9,7 +9,7 @@ on:
     branches:
       - '*'
 
-concurrency: 
+concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
@@ -25,7 +25,7 @@ jobs:
         - { arch: x64, generator_arch: x64}
     steps:
       # Get repository and setup dependencies
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: 'recursive'
       - uses: ilammy/msvc-dev-cmd@v1
@@ -40,7 +40,7 @@ jobs:
         run: |
           version=$(./utl/version_number.py)
           echo "Generated version number: $version"
-          echo "::set-output name=version::$version"
+          echo "version=$version" >> $GITHUB_OUTPUT
 
       # Compile code
       - name: Configure
@@ -50,7 +50,7 @@ jobs:
           -T ${{ matrix.toolset }}
           -DVW_NUGET_PACKAGE_VERSION="${{ steps.get_version.outputs.version }}"
           -DNATIVE_NUGET_PLATFORM_TAG="${{ matrix.arch_config.arch }}"
-          -DBUILD_FLATBUFFERS=Off
+          -DVW_FEAT_FLATBUFFERS=Off
           -DBUILD_TESTING=Off
           -DRAPIDJSON_SYS_DEP=Off
           -DFMT_SYS_DEP=Off
@@ -61,8 +61,8 @@ jobs:
           -DVW_INSTALL=On
       - name: Build and install
         run: |
-          cmake --build build --config Debug -t vw_io vw_core vw_cli_bin vw_allreduce vw_spanning_tree_bin vw_c_wrapper
-          cmake --build build --config Release -t vw_io vw_core vw_cli_bin vw_allreduce vw_spanning_tree_bin vw_c_wrapper
+          cmake --build build --config Debug -t vw_io vw_core vw_cli_bin vw_allreduce vw_spanning_tree_bin vw_c_wrapper vw_cache_parser vw_text_parser vw_json_parser
+          cmake --build build --config Release -t vw_io vw_core vw_cli_bin vw_allreduce vw_spanning_tree_bin vw_c_wrapper vw_cache_parser vw_text_parser vw_json_parser
 
           # Install debug first so that release overwrites the exe and nothing else
           cmake --install build --prefix ./nuget_staging --config Debug
@@ -79,7 +79,7 @@ jobs:
           cd nuget_staging
           nuget pack .\vowpalwabbit.nuspec
           $NugetFileName = Get-ChildItem *.nupkg -name
-          echo "::set-output name=NugetFileName::$NugetFileName"
+          echo "NugetFileName=$NugetFileName" >> $GITHUB_OUTPUT
       - name: Upload
         uses: actions/upload-artifact@v1
         with:
@@ -95,7 +95,7 @@ jobs:
         os: ["windows-2019"]
         toolset: ["v141", "v142"]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: 'recursive'
       - uses: ilammy/msvc-dev-cmd@v1
@@ -112,7 +112,7 @@ jobs:
         run: |
           version=$(./utl/version_number.py)
           echo "Generated version number: $version"
-          echo "::set-output name=version::$version"
+          echo "version=$version" >> $GITHUB_OUTPUT
 
       # Download and install nuget
       - uses: actions/download-artifact@v1

@@ -7,16 +7,16 @@ learning rate = 10
 initial_t = 1
 power_t = 0.5
 decay_learning_rate = 1
-Enabled reductions: gd, scorer-identity, csoaa_ldf, shared_feature_merger
-Input label = cs
-Output pred = multiclass
-average  since         example        example        current        current  current 
-loss     last          counter         weight          label        predict features 
-1.000000 1.000000            1            1.0          known              1        9 
-0.500000 0.000000            2            2.0          known              0        6 
-0.500000 0.500000            4            4.0          known              0        9 
-0.375000 0.250000            8            8.0          known              0        6 
-0.375000 0.375000           16           16.0          known              0        9 
+Enabled learners: gd, scorer-identity, csoaa_ldf, shared_feature_merger
+Input label = CS
+Output pred = MULTICLASS
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+1.000000 1.000000            1            1.0          known              1        9
+0.500000 0.000000            2            2.0          known              2        6
+0.500000 0.500000            4            4.0          known              2        9
+0.375000 0.250000            8            8.0          known              2        6
+0.375000 0.375000           16           16.0          known              2        9
 
 finished run
 number of examples per pass = 3

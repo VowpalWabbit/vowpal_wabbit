@@ -15,7 +15,9 @@ std::vector<VW::config::option_group_definition> VW::config::remove_disabled_nec
   {
     if ((group.contains_necessary_options() && group.check_necessary_enabled(options)) ||
         !group.contains_necessary_options())
-    { result.push_back(group); }
+    {
+      result.push_back(group);
+    }
   }
   return result;
 }

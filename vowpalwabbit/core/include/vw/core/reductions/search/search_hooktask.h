@@ -2,7 +2,8 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 #pragma once
-#include "search.h"
+#ifdef VW_FEAT_SEARCH_ENABLED
+#  include "search.h"
 
 namespace HookTask
 {
@@ -12,8 +13,9 @@ void run_setup(Search::search&, VW::multi_ex&);
 void run_takedown(Search::search&, VW::multi_ex&);
 extern Search::search_task task;
 
-struct task_data
+class task_data
 {
+public:
   void (*run_f)(Search::search&) = nullptr;
   void (*run_setup_f)(Search::search&) = nullptr;
   void (*run_takedown_f)(Search::search&) = nullptr;
@@ -27,3 +29,5 @@ struct task_data
   size_t num_actions = 0;                 // cache for easy access
 };
 }  // namespace HookTask
+
+#endif

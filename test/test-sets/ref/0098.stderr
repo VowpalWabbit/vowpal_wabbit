@@ -6,19 +6,19 @@ Num weight bits = 18
 learning rate = 0.5
 initial_t = 200
 power_t = 0.5
-Enabled reductions: gd, scorer-identity, count_label
-Input label = simple
-Output pred = scalar
-average  since         example        example        current        current  current 
-loss     last          counter         weight          label        predict features 
-0.159321 0.095131          256          256.0         0.0000         0.2566       71 
+Enabled learners: gd, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.159321 0.095132          256          256.0         0.0000         0.2566       71
 
 finished run
 number of examples per pass = 200
 passes used = 2
 weighted example sum = 400.000000
 weighted label sum = 182.000000
-average loss = 0.104046
+average loss = 0.104047
 best constant = 0.455000
 best constant's loss = 0.247975
 total feature number = 30964

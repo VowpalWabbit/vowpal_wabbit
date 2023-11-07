@@ -39,9 +39,9 @@ public class VWScalarsLearnerTest extends VWTestHelper {
         float[][] expected = new float[][]{
                 new float[]{0.333333f, 0.333333f, 0.333333f},
                 new float[]{0.475999f, 0.262000f, 0.262000f},
-                new float[]{0.373369f, 0.345915f, 0.280716f},
-                new float[]{0.360023f, 0.415352f, 0.224625f},
-                new float[]{0.340208f, 0.355738f, 0.304054f}
+                new float[]{0.374730f, 0.344860f, 0.280410f},
+                new float[]{0.365531f, 0.411037f, 0.223432f},
+                new float[]{0.341800f, 0.354783f, 0.303417f}
         };
         assertEquals(expected.length, pred.length);
         for (int i=0; i<expected.length; ++i)
@@ -114,6 +114,31 @@ public class VWScalarsLearnerTest extends VWTestHelper {
         float[] vector = v.predict(convertQuery("| wondering we look since"));
         assertNotNull(vector);
         assertEquals(3, vector.length);
+    }
+
+    @Test
+    public void csoaaLdf() throws IOException {
+        String[][] data = new String[][]{
+            new String[]{"1:1.0 | a_1 b_1 c_1", "2:0.0 | a_2 b_2 c_2", "3:2.0 | a_3 b_3 c_3"},
+            new String[]{"1:1.0 | b_1 c_1 d_1", "2:0.0 | b_2 c_2 d_2"},
+            new String[]{"1:1.0 | a_1 b_1 c_1", "3:2.0 | a_3 b_3 c_3"}
+        };
+
+        VWScalarsLearner vw = VWLearners.create("--quiet --csoaa_ldf=mc --loss_function=logistic --probabilities");
+        float[][] pred = new float[data.length][];
+        for (int i=0; i<data.length; ++i) {
+            pred[i] = vw.learn(data[i]);
+        }
+        vw.close();
+
+        float[][] expected = new float[][]{
+                new float[]{0.333333f, 0.33333334f, 0.33333334f},
+                new float[]{0.38244691f, 0.61757493f},
+                new float[]{0.4915067f, 0.50853986f},
+        };
+        assertEquals(expected.length, pred.length);
+        for (int i=0; i<expected.length; ++i)
+            assertArrayEquals(expected[i], pred[i], 0.001f);
     }
 
     private void writeVwModelToDisk() throws IOException {

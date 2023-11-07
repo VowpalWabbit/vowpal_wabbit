@@ -6,19 +6,19 @@ Num weight bits = 15
 learning rate = 0.001
 initial_t = 0
 power_t = 0.5
-Enabled reductions: gd, scorer-identity, memory_tree
-Input label = multiclass
-Output pred = multiclass
-average  since         example        example        current        current  current 
-loss     last          counter         weight          label        predict features 
-1.000000 1.000000            1            1.0              1              0       50 
-1.000000 n.a.                2            2.0        unknown              1      103 
-1.000000 n.a.                4            4.0        unknown              1      134 
-0.500000 0.000000            8            8.0        unknown              1      145 
-0.200000 0.000000           16           16.0              1              1       23 
-0.090909 0.000000           32           32.0        unknown              1       31 
-0.043478 0.000000           64           64.0        unknown              1       60 
-0.018868 0.000000          128          128.0              1              1      105 
+Enabled learners: gd, scorer-identity, memory_tree
+Input label = MULTICLASS
+Output pred = MULTICLASS
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+1.000000 1.000000            1            1.0              1              0       50
+1.000000 n.a.                2            2.0        unknown              1      103
+1.000000 n.a.                4            4.0        unknown              1      134
+0.500000 0.000000            8            8.0        unknown              1      145
+0.200000 0.000000           16           16.0              1              1       23
+0.090909 0.000000           32           32.0        unknown              1       31
+0.043478 0.000000           64           64.0        unknown              1       60
+0.018868 0.000000          128          128.0              1              1      105
 
 finished run
 number of examples = 250

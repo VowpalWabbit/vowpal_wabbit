@@ -15,6 +15,7 @@ set(vw_config_sources
     src/options_cli.cc
     src/options_name_extractor.cc
     src/options.cc
+    src/option.cc
 )
 
 vw_add_library(
@@ -31,10 +32,10 @@ vw_add_library(
 set(vw_config_test_sources
     tests/options_cli_test.cc
     tests/options_test.cc
-    tests/main.cc
 )
 
 vw_add_test_executable(
     FOR_LIB "config"
     SOURCES ${vw_config_test_sources}
+    EXTRA_DEPS vw_test_common
 )

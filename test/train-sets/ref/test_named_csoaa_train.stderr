@@ -8,17 +8,17 @@ learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 decay_learning_rate = 1
-Enabled reductions: gd, scorer-identity, csoaa
-Input label = cs
-Output pred = multiclass
-average  since         example        example        current        current  current 
-loss     last          counter         weight          label        predict features 
-0.000000 0.000000            1            1.0          known            det        2 
-0.500000 1.000000            2            2.0          known            det        2 
-0.666667 1.000000            4            4.0        unknown            det        2 
-0.571429 0.500000            8            8.0          known           noun        2 
-0.307692 0.000000           16           16.0        unknown            det        2 
-0.148148 0.000000           32           32.0          known           noun        2 
+Enabled learners: gd, scorer-identity, csoaa
+Input label = CS
+Output pred = MULTICLASS
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.000000 0.000000            1            1.0          known            det        2
+0.500000 1.000000            2            2.0          known            det        2
+0.666667 1.000000            4            4.0        unknown            det        2
+0.571429 0.500000            8            8.0          known           noun        2
+0.307692 0.000000           16           16.0        unknown            det        2
+0.148148 0.000000           32           32.0          known           noun        2
 
 finished run
 number of examples per pass = 6

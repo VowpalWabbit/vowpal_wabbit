@@ -9,17 +9,17 @@ Num weight bits = 18
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
-Enabled reductions: ftrl-Coin Betting, scorer-identity, binary, cats_tree, get_pmf, pmf_to_pdf, cb_explore_pdf, cats_pdf, sample_pdf, cats, cbify-reg, count_label
-Input label = simple
-Output pred = scalar
-average  since         example        example        current        current  current 
-loss     last          counter         weight          label        predict features 
-0.155230 0.155230            1            1.0      3879.0000       188.5713       10 
-0.161898 0.168566            2            2.0     16123.0000     12115.5234       10 
-0.264308 0.366718            4            4.0      4213.0000     17277.8926       10 
-0.219796 0.175284            8            8.0      7932.0000     16733.8242       10 
-0.224845 0.229895           16           16.0      8574.0000     12075.5098       10 
-0.170274 0.115702           32           32.0     15481.0000     15988.0898       10 
+Enabled learners: ftrl-Coin Betting, scorer-identity, binary, cats_tree, get_pmf, pmf_to_pdf, cb_explore_pdf, cats_pdf, sample_pdf, cats, cbify-reg, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.155230 0.155230            1            1.0      3879.0000       188.5713       10
+0.161898 0.168566            2            2.0     16123.0000     12115.5234       10
+0.264308 0.366718            4            4.0      4213.0000     17277.8926       10
+0.219796 0.175284            8            8.0      7932.0000     16733.8242       10
+0.224845 0.229895           16           16.0      8574.0000     12075.5098       10
+0.170274 0.115702           32           32.0     15481.0000     15988.0898       10
 
 finished run
 number of examples = 50

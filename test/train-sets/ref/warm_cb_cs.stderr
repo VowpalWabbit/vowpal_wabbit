@@ -6,9 +6,9 @@ learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 cb_type = mtr
-Enabled reductions: gd, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, shared_feature_merger, warm_cb-cs
-Input label = cs
-Output pred = multiclass
+Enabled learners: gd, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, shared_feature_merger, warm_cb-cs
+Input label = CS
+Output pred = MULTICLASS
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
 0.000000 0.000000            2            1.0          known              2        4

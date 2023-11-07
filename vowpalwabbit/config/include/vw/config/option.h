@@ -5,6 +5,7 @@
 #pragma once
 
 #include "vw/common/vw_exception.h"
+#include "vw/common/vw_throw.h"
 
 #include <memory>
 #include <set>
@@ -19,10 +20,11 @@ namespace VW
 namespace config
 {
 template <typename>
-struct typed_option;
+class typed_option;
 
-struct typed_option_visitor
+class typed_option_visitor
 {
+public:
   virtual void visit(typed_option<uint32_t>& /*option*/){};
   virtual void visit(typed_option<uint64_t>& /*option*/){};
   virtual void visit(typed_option<int64_t>& /*option*/){};
@@ -35,8 +37,9 @@ struct typed_option_visitor
   virtual ~typed_option_visitor() = default;
 };
 
-struct base_option
+class base_option
 {
+public:
   base_option(std::string name, size_t type_hash) : m_name(std::move(name)), m_type_hash(type_hash) {}
 
   std::string m_name = "";
@@ -53,11 +56,18 @@ struct base_option
   virtual void accept(typed_option_visitor& handler) = 0;
 
   virtual ~base_option() = default;
+
+  VW_ATTR(nodiscard) const std::vector<std::string>& get_tags() const { return _tags; }
+  void set_tags(std::vector<std::string> tags);
+
+private:
+  std::vector<std::string> _tags;
 };
 
 template <typename T>
-struct typed_option : base_option
+class typed_option : public base_option
 {
+public:
   using value_type = T;
 
   static_assert(std::is_same<T, uint32_t>::value || std::is_same<T, uint64_t>::value ||
@@ -71,17 +81,17 @@ struct typed_option : base_option
 
   static size_t type_hash() { return typeid(T).hash_code(); }
 
-  void set_default_value(const value_type& value) { m_default_value = std::make_shared<value_type>(value); }
+  void set_default_value(const value_type& value) { _m_default_value = std::make_shared<value_type>(value); }
 
-  bool default_value_supplied() const { return m_default_value.get() != nullptr; }
+  bool default_value_supplied() const { return _m_default_value.get() != nullptr; }
 
   T default_value() const
   {
-    if (m_default_value) { return *m_default_value; }
+    if (_m_default_value) { return *_m_default_value; }
     THROW("typed_option does not contain default value. use default_value_supplied to check if default value exists.")
   }
 
-  bool value_supplied() const { return m_value.get() != nullptr; }
+  bool value_supplied() const { return _m_value.get() != nullptr; }
 
   template <typename U>
   std::string invalid_choice_error(const U&)
@@ -93,7 +103,7 @@ struct typed_option : base_option
     std::ostringstream ss;
     ss << "Error: '" << value << "' is not a valid choice for option --" << m_name << ". Please select from {";
     std::string delim = "";
-    for (const auto& choice : m_one_of)
+    for (const auto& choice : _m_one_of)
     {
       ss << delim << choice;
       delim = ", ";
@@ -111,21 +121,24 @@ struct typed_option : base_option
   // parse, so we need to signal when that is the case.
   typed_option& value(T value, bool called_from_add_and_parse = false)
   {
-    m_value = std::make_shared<T>(value);
+    _m_value = std::make_shared<T>(value);
     value_set_callback(value, called_from_add_and_parse);
-    if (m_one_of.size() > 0 && (m_one_of.find(value) == m_one_of.end())) { m_one_of_err = invalid_choice_error(value); }
+    if (_m_one_of.size() > 0 && (_m_one_of.find(value) == _m_one_of.end()))
+    {
+      m_one_of_err = invalid_choice_error(value);
+    }
     return *this;
   }
 
   T value() const
   {
-    if (m_value) { return *m_value; }
+    if (_m_value) { return *_m_value; }
     THROW("typed_option " << m_name << " does not contain value. use value_supplied to check if value exists.")
   }
 
-  void set_one_of(const std::set<value_type>& one_of_set) { m_one_of = one_of_set; }
+  void set_one_of(const std::set<value_type>& one_of_set) { _m_one_of = one_of_set; }
 
-  const std::set<value_type>& one_of() const { return m_one_of; }
+  const std::set<value_type>& one_of() const { return _m_one_of; }
 
   void accept(typed_option_visitor& visitor) override { visitor.visit(*this); }
 
@@ -135,26 +148,27 @@ protected:
 
 private:
   // Would prefer to use std::optional (C++17) here but we are targeting C++11
-  std::shared_ptr<T> m_value{nullptr};
-  std::shared_ptr<T> m_default_value{nullptr};
-  std::set<T> m_one_of = {};
+  std::shared_ptr<T> _m_value{nullptr};
+  std::shared_ptr<T> _m_default_value{nullptr};
+  std::set<T> _m_one_of = {};
 };
 
 // The contract of typed_option_with_location is that the first set of the option value is written to the given
 // location, otherwise it is a noop.
 template <typename T>
-struct typed_option_with_location : typed_option<T>
+class typed_option_with_location : public typed_option<T>
 {
-  typed_option_with_location(const std::string& name, T& location) : typed_option<T>(name), m_location{&location} {}
+public:
+  typed_option_with_location(const std::string& name, T& location) : typed_option<T>(name), _location{&location} {}
   virtual void value_set_callback(const T& value, bool called_from_add_and_parse) override
   {
     // This should only be done when called from add_and_parse because the location is often a stack local variable that
     // is only valid for the inital call.
-    if (m_location != nullptr && called_from_add_and_parse) { *m_location = value; }
+    if (_location != nullptr && called_from_add_and_parse) { *_location = value; }
   }
 
 private:
-  T* m_location = nullptr;
+  T* _location = nullptr;
 };
 
 template <typename T>

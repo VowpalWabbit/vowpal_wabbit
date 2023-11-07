@@ -1,7 +1,7 @@
 #include "vw.net.multi_ex.h"
 
-API multi_ex* CreateMultiEx() { return new multi_ex; }
+API VW::multi_ex* CreateMultiEx() { return new VW::multi_ex; }
 
-API void DeleteMultiEx(multi_ex* multi_ex) { delete multi_ex; }
+API void DeleteMultiEx(VW::multi_ex* multi_ex) { delete multi_ex; }
 
-API void MultiExAddExample(multi_ex* multi_ex, example* ex) { multi_ex->push_back(ex); }
+API void MultiExAddExample(VW::multi_ex* multi_ex, VW::example* ex) { multi_ex->push_back(ex); }

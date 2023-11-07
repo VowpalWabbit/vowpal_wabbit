@@ -13,6 +13,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
+env:
+  VCPKG_DEFAULT_BINARY_CACHE: ${{github.workspace}}/vcpkg_binary_cache
+
 jobs:
   test_with_sanitizers:
     strategy:
@@ -31,37 +34,39 @@ jobs:
       UBSAN_OPTIONS: "print_stacktrace=1"
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
       - name: Setup MSVC Developer Command Prompt
         if: ${{ startsWith(matrix.os, 'windows') }}
         uses: ilammy/msvc-dev-cmd@v1
       - uses: lukka/get-cmake@latest
-      - uses: lukka/run-vcpkg@main
+      - run: echo "VCPKG_COMMIT=$(git rev-parse :ext_libs/vcpkg)" >> $GITHUB_ENV
+        shell: bash
+      - run: mkdir -p ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+      - uses: actions/cache@v3
+        env:
+          cache-name: vcpkg-cache
         with:
-          vcpkgDirectory: '${{ github.workspace }}/ext_libs/vcpkg'
-          vcpkgJsonGlob: "${{ github.workspace }}/vcpkg.json"
+          path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}/*
+          key: ${{ matrix.os }}-build-${{ env.cache-name }}-${{ hashFiles('vcpkg.json') }}-${{ env.VCPKG_COMMIT }}"
       - uses: lukka/run-cmake@v10
+        env:
+          VCPKG_ROOT: ${{github.workspace}}/ext_libs/vcpkg
         with:
           cmakeListsTxtPath: "${{ github.workspace }}/CMakeLists.txt"
           configurePreset: "${{ matrix.preset }}"
       - name: Build
         run: cmake --build build
       - name: Run unit tests
-        run: |
-          cd build
-          ctest --verbose --output-on-failure
-      - name: Run python test script - Windows
-        # separate case needed for windows because of test 67
-        if: ${{ startsWith(matrix.os, 'windows') && (success() || failure()) }}
-        run: python3 test/run_tests.py -f --clean_dirty -E 0.001 --include_flatbuffers --skip_test 67 --jobs 1
-      - name: Run python test script - Unix
-        if: ${{ !startsWith(matrix.os, 'windows') && (success() || failure()) }}
-        run: python3 test/run_tests.py -f --clean_dirty -E 0.001 --include_flatbuffers
+        working-directory: build
+        run: ctest --output-on-failure --no-tests=error --exclude-regex WIterations --label-regex VWTestList
+      - name: Run python test script
+        if: ${{ success() || failure() }}
+        run: python3 test/run_tests.py -f --clean_dirty -E 0.001 --include_flatbuffers --jobs 1
 
   test_ubsan_minimal:
-  # To avoid running out of disk space, build only VW executables and Boost unit tests on Linux
+    # To avoid running out of disk space, build only VW executables and some unit tests on Linux
     strategy:
       fail-fast: false
       matrix:
@@ -73,22 +78,29 @@ jobs:
       UBSAN_OPTIONS: "print_stacktrace=1"
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
       - uses: lukka/get-cmake@latest
-      - uses: lukka/run-vcpkg@main
+      - run: echo "VCPKG_COMMIT=$(git rev-parse :ext_libs/vcpkg)" >> $GITHUB_ENV
+        shell: bash
+      - run: mkdir -p ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
+      - uses: actions/cache@v3
+        env:
+          cache-name: vcpkg-cache
         with:
-          vcpkgDirectory: '${{ github.workspace }}/ext_libs/vcpkg'
-          vcpkgJsonGlob: "${{ github.workspace }}/vcpkg.json"
+          path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}/*
+          key: ${{ matrix.os }}-build-${{ env.cache-name }}-${{ hashFiles('vcpkg.json') }}-${{ env.VCPKG_COMMIT }}"
       - uses: lukka/run-cmake@v10
+        env:
+          VCPKG_ROOT: ${{github.workspace}}/ext_libs/vcpkg
         with:
           cmakeListsTxtPath: "${{ github.workspace }}/CMakeLists.txt"
           configurePreset: "${{ matrix.preset }}"
       - name: Build
-        run: cmake --build build --target vw_cli_bin spanning_tree vw-unit-test.out
+        run: cmake --build build -t vw_cli_bin vw_spanning_tree vw_spanning_tree_bin vw_core_test
       - name: Run unit tests
-        run: ./build/test/unit_test/vw-unit-test.out
+        run: ./build/vowpalwabbit/core/vw_core_test --gtest_filter=-\*WIiterations
       - name: Run python test script
         if: ${{ success() || failure() }}
         run: python3 test/run_tests.py -f --clean_dirty -E 0.001 --include_flatbuffers

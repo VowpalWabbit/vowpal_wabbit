@@ -53,8 +53,8 @@ Feature Options:
                                             only (type: list[str], keep)
     --ignore_features_dsjson_experimental args...
                                             Ignore specified features from namespace. To ignore a feature
-                                            arg should be namespace|feature To ignore a feature in the default
-                                            namespace, arg should be |feature (type: list[str], keep, experimental)
+                                            arg should be <namespace>|<feature>. <namespace> should be empty
+                                            for default (type: list[str], keep, experimental)
     --keep args...                          Keep namespaces beginning with character <arg> (type: list[str],
                                             keep)
     --redefine args...                      Redefine namespaces beginning with characters of std::string
@@ -100,7 +100,8 @@ Input Options:
     --foreground                            In persistent daemon mode, do not run in the background (type:
                                             bool)
     --port arg                              Port to listen on; use 0 to pick unused port (type: uint)
-    --num_children arg                      Number of children for persistent daemon mode (type: uint)
+    --num_children arg                      Number of children for persistent daemon mode (type: uint, default:
+                                            10)
     --pid_file arg                          Write pid file in persistent daemon mode (type: str)
     --port_file arg                         Write port used in persistent daemon mode (type: str)
     -c, --cache                             Use a cache. The default is <data>.cache (type: bool)
@@ -120,6 +121,8 @@ Input Options:
                                             keep)
     --flatbuffer                            Data file will be interpreted as a flatbuffer file (type: bool,
                                             experimental)
+    --api_status                            api_status object will not be set to nullptr which will show
+                                            detailed error information (type: bool, experimental)
     --csv                                   Data file will be interpreted as a CSV file (type: bool, experimental)
     --csv_separator arg                     CSV Parser: Specify field separator in one character, " | : are
                                             not allowed for reservation. (type: str, default: ,, experimental)
@@ -158,6 +161,8 @@ Output Model Options:
                                             str)
     --invert_hash arg                       Output human-readable final regressor with feature names. Computationally
                                             expensive (type: str)
+    --hexfloat_weights                      Output hexfloat format for floats for human-readable final regressor.
+                                            Useful for debugging/comparing. (type: bool)
     --dump_json_weights_experimental arg    Output json representation of model parameters. (type: str, experimental)
     --dump_json_weights_include_feature_names_experimental
                                             Whether to include feature names in json output (type: bool,
@@ -239,31 +244,31 @@ Weight Options:
 [Reduction] Automl Options:
     --automl arg                            Set number of live configs (type: uint, default: 4, keep, necessary,
                                             experimental)
-    --global_lease arg                      Set initial lease for automl interactions (type: uint, default:
+    --default_lease arg                     Set initial lease for automl interactions (type: uint, default:
                                             4000, keep, experimental)
-    --cm_type arg                           Set type of config manager (type: str, default: interaction,
-                                            choices {interaction}, keep, experimental)
     --priority_type arg                     Set function to determine next config (type: str, default: none,
                                             choices {favor_popular_namespaces, none}, keep, experimental)
-    --priority_challengers arg              Set number of priority challengers to use (type: int, default:
-                                            -1, keep, experimental)
+    --priority_challengers arg              Set number of priority challengers to use. Set to -1 to use half
+                                            of total live configs. (type: int, default: -1, keep, experimental)
     --verbose_metrics                       Extended metrics for debugging (type: bool, experimental)
+    --csv_trace                             Extended tracing for debugging (type: bool, experimental)
     --interaction_type arg                  Set what type of interactions to use (type: str, default: quadratic,
                                             choices {cubic, quadratic}, keep, experimental)
     --oracle_type arg                       Set oracle to generate configs (type: str, default: one_diff,
-                                            choices {champdupe, one_diff, rand}, keep, experimental)
+                                            choices {champdupe, one_diff, one_diff_inclusion, qbase_cubic,
+                                            rand}, keep, experimental)
     --debug_reversed_learn                  Debug: learn each config in reversed order (last to first). (type:
                                             bool, default: false, experimental)
-    --lb_trick                              Use 1-lower_bound as upper_bound for estimator (type: bool, default:
-                                            false, experimental)
-    --aml_predict_only_model arg            transform input automl model into predict only automl model (type:
-                                            str, experimental)
     --automl_significance_level arg         Set significance level for champion change (type: float, default:
                                             0.05, keep, experimental)
-    --automl_estimator_decay arg            Time constant for count decay (type: float, default: 1, keep,
-                                            experimental)
     --fixed_significance_level              Use fixed significance level as opposed to scaling by model count
                                             (bonferroni correction) (type: bool, keep, experimental)
+    --reward_as_cost                        Treat rewards as cost (do not negate sign) (type: bool, keep,
+                                            experimental)
+    --tol_x arg                             Tolerance for estimation optimization (type: float, default:
+                                            1e-06, keep, experimental)
+    --opt_func arg                          Optimization function for estimation) (type: str, default: bisect,
+                                            choices {bisect, brentq}, keep, experimental)
 [Reduction] Baseline Options:
     --baseline                              Learn an additive baseline (from constant features) and a residual
                                             separately in regression (type: bool, keep, necessary)
@@ -325,9 +330,9 @@ Weight Options:
     --min_value arg                         Minimum continuous value (type: float, keep)
     --max_value arg                         Maximum continuous value (type: float, keep)
     --loss_option arg                       Loss options for regression - 0:squared, 1:absolute, 2:0/1 (type:
-                                            int, default: 0)
+                                            int, default: 0, choices {0, 1, 2})
     --loss_report arg                       Loss report option - 0:normalized, 1:denormalized (type: int,
-                                            default: 0)
+                                            default: 0, choices {0, 1})
     --loss_01_ratio arg                     Ratio of zero loss for 0/1 loss (type: float, default: 0.1)
     --loss0 arg                             Loss for correct label (type: float, default: 0)
     --loss1 arg                             Loss for incorrect label (type: float, default: 1)
@@ -386,6 +391,8 @@ Weight Options:
                                             1, keep)
     --cb_type arg                           Contextual bandit method to use. SquareCB only supports supervised
                                             regression (mtr) (type: str, default: mtr, choices {mtr}, keep)
+    --epsilon arg                           The minimum probability of an action is this value divided by
+                                            the number of actions. (type: float, default: 0, keep)
 [Reduction] Contextual Bandit Exploration with ADF (bagging) Options:
     --cb_explore_adf                        Online explore-exploit for a contextual bandit problem with multiline
                                             action dependent features (type: bool, keep, necessary)
@@ -456,6 +463,7 @@ Weight Options:
                                             (type: float, default: 0, keep)
     --cb_type arg                           Contextual bandit method to use (type: str, default: mtr, choices
                                             {dm, dr, ips, mtr, sm}, keep)
+    --per_model_save_load                   Save and load per model state (type: bool, keep)
 [Reduction] Contextual Bandit: cb -> cb_adf Options:
     --cb_to_cbadf arg                       Flag is unused and has no effect. It should not be passed. The
                                             cb_to_cbadf reduction is automatically enabled if cb, cb_explore
@@ -553,6 +561,19 @@ Weight Options:
 [Reduction] Debug Metrics Options:
     --extra_metrics arg                     Specify filename to write metrics to. Note: There is no fixed
                                             schema (type: str, necessary)
+[Reduction] Eigen Memory Tree Options:
+    --emt                                   Make an eigen memory tree (type: bool, keep, necessary)
+    --emt_tree arg                          Indicates the maximum number of memories the tree can have (type:
+                                            uint, default: 0, keep)
+    --emt_leaf arg                          Indicates the maximum number of memories a leaf can have (type:
+                                            uint, default: 100, keep)
+    --emt_scorer arg                        Indicates the type of scorer to use (type: str, default: self_consistent_rank,
+                                            choices {distance, not_self_consistent_rank, random, self_consistent_rank},
+                                            keep)
+    --emt_initial arg                       Indicates how to initialize scorer (type: str, default: cosine,
+                                            choices {cosine, euclidean, gaussian, none}, keep)
+    --emt_router arg                        Indicates the type of router to use (type: str, default: eigen,
+                                            choices {eigen, random}, keep)
 [Reduction] Epsilon-Decaying Exploration Options:
     --epsilon_decay                         Use decay of exploration reduction (type: bool, keep, necessary,
                                             experimental)
@@ -562,16 +583,25 @@ Weight Options:
                                             100, keep, experimental)
     --epsilon_decay_significance_level arg  Set significance level for champion change (type: float, default:
                                             0.05, keep, experimental)
-    --epsilon_decay_estimator_decay arg     Time constant for count decay (type: float, default: 1, keep,
-                                            experimental)
     --epsilon_decay_audit arg               Epsilon decay audit file name (type: str, experimental)
     --constant_epsilon                      Keep epsilon constant across models (type: bool, keep, experimental)
-    --lb_trick                              Use 1-lower_bound as upper_bound for estimator (type: bool, default:
-                                            false, experimental)
-    --fixed_significance_level              Use fixed significance level as opposed to scaling by model count
-                                            (bonferroni correction) (type: bool, keep, experimental)
+    --bonferroni_denominator arg            Factor to scale down significance level by, defaults to model
+                                            count (bonferroni correction) (type: uint, default: 0, keep,
+                                            experimental)
     --min_champ_examples arg                Minimum number of examples for any challenger to become champion
                                             (type: uint, default: 0, keep, experimental)
+    --initial_epsilon arg                   Initial epsilon value (type: float, default: 1, keep, experimental)
+    --shift_model_bounds arg                Shift maximum update_count for model i from champ_update_count^(i
+                                            / num_models) to champ_update_count^((i + shift) / (num_models
+                                            + shift)) (type: uint, default: 0, keep, experimental)
+    --reward_as_cost                        Treat rewards as cost (do not negate sign) (type: bool, keep,
+                                            experimental)
+    --tol_x arg                             Tolerance for estimation optimization (type: float, default:
+                                            1e-06, keep, experimental)
+    --opt_func arg                          Optimization function for estimation (type: str, default: bisect,
+                                            choices {bisect, brentq}, keep, experimental)
+    --challenger_epsilon                    Use exploration for challenger model predictions (type: bool,
+                                            keep, experimental)
 [Reduction] Error Correcting Tournament Options:
     --ect arg                               Error correcting tournament with <k> labels (type: uint, keep,
                                             necessary)
@@ -596,10 +626,45 @@ Weight Options:
                                             uint, keep, necessary)
     --replay_m_count arg                    How many times (in expectation) should each example be played
                                             (default: 1 = permuting) (type: uint, default: 1)
+[Reduction] Experimental: Contextual Bandit Exploration with ADF with graph feedback Options:
+    --cb_explore_adf                        Online explore-exploit for a contextual bandit problem with multiline
+                                            action dependent features (type: bool, keep, necessary)
+    --gamma_scale arg                       Sets CB with graph feedback gamma parameter to gamma=[gamma_scale]*[num
+                                            examples]^1/2 (type: float, default: 1, keep)
+    --gamma_exponent arg                    Exponent on [num examples] in CB with graph feedback parameter
+                                            gamma (type: float, default: 0.5, keep)
+    --graph_feedback                        Graph feedback pdf (type: bool, keep, necessary, experimental)
+[Reduction] Experimental: Contextual Bandit Exploration with ADF with large action space filtering Options:
+    --cb_explore_adf                        Online explore-exploit for a contextual bandit problem with multiline
+                                            action dependent features (type: bool, keep, necessary)
+    --large_action_space                    Large action space filtering (type: bool, keep, necessary, experimental)
+    --max_actions arg                       Max number of actions to hold (type: uint, default: 20, keep,
+                                            experimental)
+    --spanner_c arg                         Parameter for computing c-approximate spanner (type: float, default:
+                                            2, keep, experimental)
+    --thread_pool_size arg                  Number of threads in the thread pool that will be used when running
+                                            with one pass svd implementation (default svd implementation
+                                            option). Default thread pool size will be half of the available
+                                            hardware threads (type: uint)
+    --block_size arg                        Number of actions in a block to be scheduled for multithreading
+                                            when using one pass svd implementation (by default, block_size
+                                            = num_actions / thread_pool_size) (type: uint, default: 0)
+    --las_hint_explicit_simd                Use explicit simd implementation in one pass svd. Only works
+                                            with quadratic interactions. (x86 Linux only) (type: bool, experimental)
+    --two_pass_svd                          A more accurate svd that is much slower than the default (one
+                                            pass svd) (type: bool, experimental)
+    --action_cache_slack arg                If actions do not change between example calls then some calculations
+                                            for this algorithm are cached. If action cache size exceeds the
+                                            number of active actions plus action_cache_slack, then the cache
+                                            will be cleared. Setting this to -1 disables any caching (type:
+                                            uint, default: 50, keep, experimental)
 [Reduction] Explore Evaluation Options:
     --explore_eval                          Evaluate explore_eval adf policies (type: bool, keep, necessary)
     --multiplier arg                        Multiplier used to make all rejection sample probabilities <=
                                             1 (type: float)
+    --target_rate arg                       The target rate will be used to adjust the rejection rate in
+                                            order to achieve an update count of #examples * target_rate (type:
+                                            float)
 [Reduction] Follow the Regularized Leader - Coin Options:
     --coin                                  Coin betting optimizer (type: bool, keep, necessary)
     --ftrl_alpha arg                        Learning rate for FTRL optimization (type: float)
@@ -643,6 +708,7 @@ Weight Options:
                                             default: 0)
     --l2_state arg                          Amount of accumulated implicit l2 regularization (type: float,
                                             default: 1)
+    --per_model_save_load                   Save and load per model state (type: bool, keep)
 [Reduction] Interact via Elementwise Multiplication Options:
     --interact arg                          Put weights on feature products from namespaces <n1> and <n2>
                                             (type: str, keep, necessary)
@@ -736,7 +802,8 @@ Weight Options:
     --learn arg                             Do Contextual Bandit learning on <n> classes (type: uint)
     --exclude_eval                          Discard mwt policy features before learning (type: bool)
 [Reduction] Network sending Options:
-    --sendto arg                            Send examples to <host> (type: str, keep, necessary)
+    --sendto arg                            Send examples to <host>. Host can be of form hostname or hostname:port
+                                            (type: str, keep, necessary)
 [Reduction] Neural Network Options:
     --nn arg                                Sigmoidal feedforward network with <k> hidden units (type: uint,
                                             keep, necessary)
@@ -754,7 +821,7 @@ Weight Options:
 [Reduction] OjaNewton Options:
     --OjaNewton                             Online Newton with Oja's Sketch (type: bool, keep, necessary)
     --sketch_size arg                       Size of sketch (type: int, default: 10)
-    --epoch_size arg                        Size of epoch (type: int, default: 1)
+    --epoch_size arg                        Size of epoch (type: uint, default: 1)
     --alpha arg                             Mutiplicative constant for indentiy (type: float, default: 1)
     --alpha_inverse arg                     One over alpha, similar to learning rate (type: float)
     --learning_rate_cnt arg                 Constant for the learning rate 1/t (type: float, default: 2)
@@ -777,6 +844,9 @@ Weight Options:
                                             than <thr> threshold (type: float, default: 0.5)
     --top_k arg                             Predict top-<k> labels instead of labels above threshold (type:
                                             uint, default: 0)
+    --probabilities                         Predict probabilities for the predicted labels (type: bool)
+    --plt_force_load_legacy_model           Force the loading of a pre 9.7 model. This option is a migration
+                                            measure and will be removed in the next VW version. (type: bool)
 [Reduction] Recall Tree Options:
     --recall_tree arg                       Use online tree for multiclass (type: uint, keep, necessary)
     --max_candidates arg                    Maximum number of labels per leaf in the tree (type: uint, keep)

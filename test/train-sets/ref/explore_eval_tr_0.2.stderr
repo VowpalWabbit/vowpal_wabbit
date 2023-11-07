@@ -1,0 +1,36 @@
+creating quadratic features for pairs: UA
+Enabling FTRL based optimization
+Algorithm used: Coin Betting
+ftrl_alpha = 4
+ftrl_beta = 1
+using no cache
+Reading datafile = train-sets/explore_eval_egreedy.dat
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+cb_type = mtr
+Enabled learners: ftrl-Coin Betting, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, explore_eval, shared_feature_merger
+Input label = CB
+Output pred = ACTION_PROBS
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.000000 0.000000            1            1.0          known         0:0.11     1287
+-0.50000 -1.00000            2            2.0          known         0:0.11     1287
+-0.50000 -0.50000            4            4.0          known         8:0.91     1287
+-0.50000 -0.50000            8            8.0          known         8:0.91     1287
+-0.62500 -0.75000           16           16.0          known         8:0.91     1287
+-0.43902 -0.25304           32           32.0          known         8:0.91     1287
+
+finished run
+number of examples = 50
+weighted example sum = 50.000000
+weighted label sum = 0.000000
+average loss = -0.303415
+total feature number = 63450
+weighted update count = 9.000000
+average accepted example weight = 1.000000
+final multiplier = 1.000000
+targeted update count = 10.000000
+final rate = 0.346828

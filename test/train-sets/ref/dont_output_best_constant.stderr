@@ -6,19 +6,19 @@ Num weight bits = 18
 learning rate = 2.56e+06
 initial_t = 128000
 power_t = 1
-Enabled reductions: gd, scorer-identity
-Input label = simple
-Output pred = scalar
-average  since         example        example        current        current  current 
-loss     last          counter         weight          label        predict features 
-1.000000 1.000000            1            1.0         1.0000         0.0000      290 
-0.500037 0.000074            2            2.0         0.0000         0.0086      608 
-0.250094 0.000151            4            4.0         0.0000         0.0040      794 
-0.248153 0.246212            8            8.0         0.0000         0.0242      860 
-0.302406 0.356658           16           16.0         1.0000         0.0460      128 
-0.317139 0.331872           32           32.0         0.0000         0.0606      176 
-0.314299 0.311458           64           64.0         0.0000         0.1362      350 
-0.305342 0.296385          128          128.0         1.0000         0.3033      620 
+Enabled learners: gd, scorer-identity
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+1.000000 1.000000            1            1.0         1.0000         0.0000      290
+0.500037 0.000074            2            2.0         0.0000         0.0086      608
+0.250094 0.000151            4            4.0         0.0000         0.0040      794
+0.248153 0.246212            8            8.0         0.0000         0.0242      860
+0.302406 0.356658           16           16.0         1.0000         0.0460      128
+0.317139 0.331872           32           32.0         0.0000         0.0606      176
+0.314299 0.311458           64           64.0         0.0000         0.1362      350
+0.305342 0.296385          128          128.0         1.0000         0.3033      620
 
 finished run
 number of examples = 200

@@ -9,21 +9,21 @@ learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 decay_learning_rate = 1
-Enabled reductions: freegrad, scorer-identity, count_label
-Input label = simple
-Output pred = scalar
-average  since         example        example        current        current  current 
-loss     last          counter         weight          label        predict features 
-1.000000 1.000000            1            1.0         1.0000         0.0000       51 
-0.570071 0.140141            2            2.0         0.0000         0.3744      104 
-0.290144 0.010218            4            4.0         0.0000         0.0364      135 
-0.270084 0.250024            8            8.0         0.0000         0.0000      146 
-0.295007 0.319929           16           16.0         1.0000         0.0000      143 
-0.292001 0.288995           32           32.0         1.0000         0.3208       70 
-0.275237 0.258473           64           64.0         0.0000         0.5163       34 
-0.258924 0.242611          128          128.0         0.0000         0.2918       30 
-0.209539 0.209539          256          256.0         0.0000         0.0000       72  h
-0.197807 0.186074          512          512.0         0.0000         0.1012       37  h
+Enabled learners: freegrad, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+1.000000 1.000000            1            1.0         1.0000         0.0000       51
+0.570071 0.140141            2            2.0         0.0000         0.3744      104
+0.290144 0.010218            4            4.0         0.0000         0.0364      135
+0.270084 0.250024            8            8.0         0.0000         0.0000      146
+0.295007 0.319929           16           16.0         1.0000         0.0000      143
+0.292001 0.288995           32           32.0         1.0000         0.3208       70
+0.275237 0.258473           64           64.0         0.0000         0.5163       34
+0.258924 0.242611          128          128.0         0.0000         0.2918       30
+0.209539 0.209539          256          256.0         0.0000         0.0000       72 h
+0.197807 0.186074          512          512.0         0.0000         0.1012       37 h
 
 finished run
 number of examples per pass = 180

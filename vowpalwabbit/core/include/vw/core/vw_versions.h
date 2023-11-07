@@ -59,9 +59,18 @@ constexpr VW::version_struct VERSION_PASS_UINT64{8, 3, 3};
 
 /// Added serialized seen min and max labels in the --active reduction
 constexpr VW::version_struct VERSION_FILE_WITH_ACTIVE_SEEN_LABELS{9, 0, 0};
+/// Active seen labels was accidentally reverted out in 9.4.0
+constexpr VW::version_struct VERSION_FILE_WITH_ACTIVE_SEEN_LABELS_REVERTED{9, 4, 0};
+constexpr VW::version_struct VERSION_FILE_WITH_ACTIVE_SEEN_LABELS_FIXED{9, 10, 0};
 
 /// Moved option values from command line to model data
 constexpr VW::version_struct VERSION_FILE_WITH_L1_AND_L2_STATE_IN_MODEL_DATA{9, 0, 0};
+
+/// Moved option values from command line to model data
+constexpr VW::version_struct VERSION_FILE_WITH_FLAT_EXAMPLE_TAG_FIX{9, 6, 0};
+
+/// PLT had an incorrect save_load impl which relied on the adaptive value prior to this version.
+constexpr VW::version_struct VERSION_FILE_WITH_PLT_SAVE_LOAD_FIX{9, 7, 0};
 
 }  // namespace version_definitions
 }  // namespace VW

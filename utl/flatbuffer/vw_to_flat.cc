@@ -96,7 +96,7 @@ void to_flat::write_to_file(bool collection, bool is_multiline, MultiExampleBuil
 
 void to_flat::create_simple_label(VW::example* v, ExampleBuilder& ex_builder)
 {
-  const auto& red_features = v->_reduction_features.template get<simple_label_reduction_features>();
+  const auto& red_features = v->ex_reduction_features.template get<VW::simple_label_reduction_features>();
   ex_builder.label =
       VW::parsers::flatbuffer::CreateSimpleLabel(_builder, v->l.simple.label, red_features.weight, red_features.initial)
           .Union();
@@ -133,19 +133,19 @@ void to_flat::create_ccb_label(VW::example* v, ExampleBuilder& ex_builder)
   auto weight = v->l.conditional_contextual_bandit.weight;
   auto e_type = v->l.conditional_contextual_bandit.type;
 
-  if (e_type == CCB::example_type::shared)
+  if (e_type == VW::ccb_example_type::SHARED)
   {
     auto type = VW::parsers::flatbuffer::CCB_Slates_example_type_shared;
     ex_builder.label = VW::parsers::flatbuffer::CreateCCBLabelDirect(_builder, type, 0, nullptr, weight).Union();
     ex_builder.label_type = VW::parsers::flatbuffer::Label_CCBLabel;
   }
-  else if (e_type == CCB::example_type::action)
+  else if (e_type == VW::ccb_example_type::ACTION)
   {
     auto type = VW::parsers::flatbuffer::CCB_Slates_example_type_action;
     ex_builder.label = VW::parsers::flatbuffer::CreateCCBLabelDirect(_builder, type, 0, nullptr, weight).Union();
     ex_builder.label_type = VW::parsers::flatbuffer::Label_CCBLabel;
   }
-  else if (e_type == CCB::example_type::slot)
+  else if (e_type == VW::ccb_example_type::SLOT)
   {
     auto type = VW::parsers::flatbuffer::CCB_Slates_example_type_slot;
     std::vector<uint32_t> explicit_included_actions;
@@ -163,7 +163,9 @@ void to_flat::create_ccb_label(VW::example* v, ExampleBuilder& ex_builder)
       if (&(v->l.conditional_contextual_bandit.explicit_included_actions) != nullptr)
       {
         for (auto const& action : v->l.conditional_contextual_bandit.explicit_included_actions)
-        { explicit_included_actions.push_back(action); }
+        {
+          explicit_included_actions.push_back(action);
+        }
       }
       ex_builder.label =
           VW::parsers::flatbuffer::CreateCCBLabelDirect(_builder, type, outcome, &explicit_included_actions).Union();
@@ -172,7 +174,9 @@ void to_flat::create_ccb_label(VW::example* v, ExampleBuilder& ex_builder)
     else if (&(v->l.conditional_contextual_bandit.explicit_included_actions) != nullptr)
     {
       for (auto const& action : v->l.conditional_contextual_bandit.explicit_included_actions)
-      { explicit_included_actions.push_back(action); }
+      {
+        explicit_included_actions.push_back(action);
+      }
       ex_builder.label =
           VW::parsers::flatbuffer::CreateCCBLabelDirect(_builder, type, 0, &explicit_included_actions).Union();
       ex_builder.label_type = VW::parsers::flatbuffer::Label_CCBLabel;
@@ -209,7 +213,9 @@ void to_flat::create_mc_label(VW::named_labels* ldict, VW::example* v, ExampleBu
   if (ldict)
   {
     if (ldict->get(v->l.multi.label).empty())
+    {
       ex_builder.label = VW::parsers::flatbuffer::CreateMultiClass(_builder, 0, 0U, v->l.multi.weight).Union();
+    }
     else
     {
       VW::string_view named_label = ldict->get(v->l.multi.label);
@@ -243,25 +249,27 @@ void to_flat::create_slates_label(VW::example* v, ExampleBuilder& ex_builder)
   auto e_type = v->l.slates.type;
   ex_builder.label_type = VW::parsers::flatbuffer::Label_Slates_Label;
 
-  if (e_type == VW::slates::example_type::shared)
+  if (e_type == VW::slates::example_type::SHARED)
   {
     auto type = VW::parsers::flatbuffer::CCB_Slates_example_type_shared;
     ex_builder.label = VW::parsers::flatbuffer::CreateSlates_LabelDirect(
         _builder, type, weight, v->l.slates.labeled, v->l.slates.cost, 0U, nullptr)
                            .Union();
   }
-  else if (e_type == VW::slates::example_type::action)
+  else if (e_type == VW::slates::example_type::ACTION)
   {
     auto type = VW::parsers::flatbuffer::CCB_Slates_example_type_action;
     ex_builder.label = VW::parsers::flatbuffer::CreateSlates_LabelDirect(
         _builder, type, weight, false, 0.0, v->l.slates.slot_id, nullptr)
                            .Union();
   }
-  else if (e_type == VW::slates::example_type::slot)
+  else if (e_type == VW::slates::example_type::SLOT)
   {
     auto type = VW::parsers::flatbuffer::CCB_Slates_example_type_slot;
     for (auto const& as : v->l.slates.probabilities)
-    { action_scores.push_back(VW::parsers::flatbuffer::Createaction_score(_builder, as.action, as.score)); }
+    {
+      action_scores.push_back(VW::parsers::flatbuffer::Createaction_score(_builder, as.action, as.score));
+    }
     ex_builder.label = VW::parsers::flatbuffer::CreateSlates_LabelDirect(
         _builder, type, weight, v->l.slates.labeled, 0.0, 0U, &action_scores)
                            .Union();
@@ -293,7 +301,7 @@ void to_flat::create_no_label(VW::example* v, ExampleBuilder& ex_builder)
 
 //Create namespace when audit is true
 flatbuffers::Offset<VW::parsers::flatbuffer::Namespace> to_flat::create_namespace_audit(
-    features::audit_iterator begin, features::audit_iterator end, VW::namespace_index index, uint64_t hash)
+    VW::features::audit_iterator begin, VW::features::audit_iterator end, VW::namespace_index index, uint64_t hash)
 {
   std::stringstream ss;
   ss << index;
@@ -358,7 +366,6 @@ flatbuffers::Offset<VW::parsers::flatbuffer::Namespace> to_flat::create_namespac
         (feature_values).push_back(it.value());
         (feature_hashes).push_back(it.index());
       }
-      
     }
     namespace_offset = VW::parsers::flatbuffer::CreateNamespaceDirect(_builder, nullptr, index, hash, nullptr, &feature_values, &feature_hashes);
   
@@ -393,50 +400,50 @@ std::vector<VW::namespace_extent> unflatten_namespace_extents_dont_skip(
 void to_flat::convert_txt_to_flat(VW::workspace& all)
 {
   std::ofstream outfile;
-  if (output_flatbuffer_name.empty()) { output_flatbuffer_name = all.data_filename + ".fb"; }
+  if (output_flatbuffer_name.empty()) { output_flatbuffer_name = all.parser_runtime.data_filename + ".fb"; }
   outfile.open(output_flatbuffer_name, std::ios::binary | std::ios::out);
 
   MultiExampleBuilder multi_ex_builder;
   ExampleBuilder ex_builder;
 
   VW::example* ae = nullptr;
-  all.example_parser->ready_parsed_examples.try_pop(ae);
+  all.parser_runtime.example_parser->ready_parsed_examples.try_pop(ae);
 
   while (ae != nullptr && !ae->end_pass)
   {
     // Create Label for current example
     flatbuffers::Offset<void> label;
     VW::parsers::flatbuffer::Label label_type = VW::parsers::flatbuffer::Label_NONE;
-    switch (all.example_parser->lbl_parser.label_type)
+    switch (all.parser_runtime.example_parser->lbl_parser.label_type)
     {
-      case VW::label_type_t::nolabel:
+      case VW::label_type_t::NOLABEL:
         to_flat::create_no_label(ae, ex_builder);
         break;
-      case VW::label_type_t::cb:
+      case VW::label_type_t::CB:
         to_flat::create_cb_label(ae, ex_builder);
         break;
-      case VW::label_type_t::ccb:
+      case VW::label_type_t::CCB:
         to_flat::create_ccb_label(ae, ex_builder);
         break;
-      case VW::label_type_t::multilabel:
+      case VW::label_type_t::MULTILABEL:
         to_flat::create_multi_label(ae, ex_builder);
         break;
-      case VW::label_type_t::multiclass:
+      case VW::label_type_t::MULTICLASS:
         to_flat::create_mc_label(all.sd->ldict.get(), ae, ex_builder);
         break;
-      case VW::label_type_t::cs:
+      case VW::label_type_t::CS:
         to_flat::create_cs_label(ae, ex_builder);
         break;
-      case VW::label_type_t::cb_eval:
+      case VW::label_type_t::CB_EVAL:
         to_flat::create_cb_eval_label(ae, ex_builder);
         break;
-      case VW::label_type_t::slates:
+      case VW::label_type_t::SLATES:
         to_flat::create_slates_label(ae, ex_builder);
         break;
-      case VW::label_type_t::simple:
+      case VW::label_type_t::SIMPLE:
         to_flat::create_simple_label(ae, ex_builder);
         break;
-      case VW::label_type_t::continuous:
+      case VW::label_type_t::CONTINUOUS:
         to_flat::create_continuous_action_label(ae, ex_builder);
         break;
       default:
@@ -444,10 +451,10 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
         break;
     }
 
-    uint64_t multiplier = (uint64_t)all.wpp << all.weights.stride_shift();
+    uint64_t multiplier = (uint64_t)all.reduction_state.total_feature_width << all.weights.stride_shift();
     if (multiplier != 1)
     {
-      for (features& fs : *ae)
+      for (VW::features& fs : *ae)
       {
         for (auto& j : fs.indices) { j /= multiplier; }
       }
@@ -464,7 +471,7 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
           VW::details::flatten_namespace_extents(ae->feature_space[ns].namespace_extents, ae->feature_space[ns].size());
       auto unflattened_with_ranges_that_dont_have_extents = unflatten_namespace_extents_dont_skip(flattened_extents);
 
-      if( all.audit || all.hash_inv )
+      if( all.output_config.audit || all.output_config.hash_inv )
       {
         for (const auto& extent : unflattened_with_ranges_that_dont_have_extents)
         {
@@ -491,12 +498,12 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
     if (all.l->is_multiline())
     {
       if (!VW::example_is_newline(*ae) ||
-          (all.example_parser->lbl_parser.label_type == VW::label_type_t::cb &&
-              !CB_ALGS::example_is_newline_not_header(*ae)) ||
-          ((all.example_parser->lbl_parser.label_type == VW::label_type_t::ccb &&
-               ae->l.conditional_contextual_bandit.type == CCB::example_type::slot) ||
-              (all.example_parser->lbl_parser.label_type == VW::label_type_t::slates &&
-                  ae->l.slates.type == VW::slates::example_type::slot)))
+          (all.parser_runtime.example_parser->lbl_parser.label_type == VW::label_type_t::CB &&
+              !VW::example_is_newline_not_header_cb(*ae)) ||
+          ((all.parser_runtime.example_parser->lbl_parser.label_type == VW::label_type_t::CCB &&
+               ae->l.conditional_contextual_bandit.type == VW::ccb_example_type::SLOT) ||
+              (all.parser_runtime.example_parser->lbl_parser.label_type == VW::label_type_t::SLATES &&
+                  ae->l.slates.type == VW::slates::example_type::SLOT)))
       {
         ex_builder.namespaces.insert(ex_builder.namespaces.end(), namespaces.begin(), namespaces.end());
         ex_builder.is_newline = ae->is_newline;
@@ -506,13 +513,10 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
         _multi_ex_index++;
         _examples++;
         ae = nullptr;
-        all.example_parser->ready_parsed_examples.try_pop(ae);
+        all.parser_runtime.example_parser->ready_parsed_examples.try_pop(ae);
         continue;
       }
-      else
-      {
-        ex_builder.is_newline = true;
-      }
+      else { ex_builder.is_newline = true; }
     }
     else
     {
@@ -525,7 +529,7 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
     write_to_file(collection, all.l->is_multiline(), multi_ex_builder, ex_builder, outfile);
 
     ae = nullptr;
-    all.example_parser->ready_parsed_examples.try_pop(ae);
+    all.parser_runtime.example_parser->ready_parsed_examples.try_pop(ae);
   }
 
   if (collection && _collection_count > 0)
@@ -539,6 +543,6 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
     write_to_file(collection, all.l->is_multiline(), multi_ex_builder, ex_builder, outfile);
   }
 
-  *(all.trace_message) << "Converted " << _examples << " examples" << std::endl;
-  *(all.trace_message) << "Flatbuffer " << output_flatbuffer_name << " created" << std::endl;
+  *(all.output_runtime.trace_message) << "Converted " << _examples << " examples" << std::endl;
+  *(all.output_runtime.trace_message) << "Flatbuffer " << output_flatbuffer_name << " created" << std::endl;
 }

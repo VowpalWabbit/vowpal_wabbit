@@ -13,8 +13,9 @@ namespace VW
 {
 namespace continuous_actions
 {
-struct reduction_features
+class reduction_features
 {
+public:
   probability_density_function pdf;
   float chosen_action;
   bool is_chosen_action_set() const { return !std::isnan(chosen_action); }

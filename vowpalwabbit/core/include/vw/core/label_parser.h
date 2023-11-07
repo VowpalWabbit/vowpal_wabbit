@@ -6,29 +6,23 @@
 
 #include "vw/common/string_view.h"
 #include "vw/core/label_type.h"
-#include "vw/io/logger.h"
+#include "vw/core/vw_fwd.h"
 
 #include <string>
 #include <vector>
 
-struct parser;
-struct shared_data;
-class io_buf;
 namespace VW
 {
-class reduction_features;
-struct example;
-struct polylabel;
-class named_labels;
-
-// To avoid allocating memory for each parse call each label parser has access to this struct as a helper.
-struct label_parser_reuse_mem
+// To avoid allocating memory for each parse call each label parser has access to this class as a helper.
+class label_parser_reuse_mem
 {
+public:
   std::vector<VW::string_view> tokens;
 };
 
-struct label_parser
+class label_parser
 {
+public:
   void (*default_label)(polylabel& label);
   void (*parse_label)(polylabel& label, reduction_features& red_features, VW::label_parser_reuse_mem& reuse_mem,
       const VW::named_labels* ldict, const std::vector<VW::string_view>& words, VW::io::logger& logger);

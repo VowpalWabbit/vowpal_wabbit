@@ -1,0 +1,29 @@
+creating quadratic features for pairs: UA
+predictions = squarecb_pred_epsilon.predict
+using no cache
+Reading datafile = train-sets/cb_load.dat
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+cb_type = mtr
+Enabled learners: gd, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_squarecb, shared_feature_merger
+Input label = CB
+Output pred = ACTION_PROBS
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.000000 0.000000            1            1.0       4:0:0.14         0:0.14       42
+0.000000 0.000000            2            2.0       0:0:0.14         0:0.14       42
+0.000000 0.000000            4            4.0       1:0:0.14         0:0.14       42
+0.000000 0.000000            8            8.0       3:0:0.14         0:0.14       42
+0.000000 0.000000           16           16.0       3:0:0.14         0:0.14       42
+0.000000 0.000000           32           32.0       3:0:0.14         0:0.14       42
+-0.24872 -0.49745           64           64.0       0:0:0.77         0:0.77       42
+
+finished run
+number of examples = 113
+weighted example sum = 113.000000
+weighted label sum = 0.000000
+average loss = -0.347914
+total feature number = 4746

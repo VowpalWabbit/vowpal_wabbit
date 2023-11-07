@@ -18,8 +18,9 @@ using namespace VW::config;
 std::string one_of_string(base_option& opt)
 {
   std::string ret_val = "";
-  struct extractor : typed_option_visitor
+  class extractor : public typed_option_visitor
   {
+  public:
     std::string& m_ret_val;
     extractor(std::string& ret_val) : m_ret_val(ret_val) {}
 
@@ -57,8 +58,9 @@ std::string one_of_string(base_option& opt)
 std::string type_string(base_option& opt)
 {
   std::string ret_val = "";
-  struct extractor : typed_option_visitor
+  class extractor : public typed_option_visitor
   {
+  public:
     std::string& m_ret_val;
     extractor(std::string& ret_val) : m_ret_val(ret_val) {}
 
@@ -81,8 +83,9 @@ std::string type_string(base_option& opt)
 std::string default_value_string(base_option& opt)
 {
   std::string ret_val = "";
-  struct extractor : typed_option_visitor
+  class extractor : public typed_option_visitor
   {
+  public:
     std::string& m_ret_val;
     extractor(std::string& ret_val) : m_ret_val(ret_val) {}
 
@@ -153,10 +156,7 @@ std::string cli_help_formatter::format_help(const std::vector<option_group_defin
       ss_option_name << "--" << option->m_name;
       auto type = type_string(*option);
       if (type == "list[str]") { ss_option_name << " args..."; }
-      else if (type != "bool")
-      {
-        ss_option_name << " arg";
-      }
+      else if (type != "bool") { ss_option_name << " arg"; }
       std::string option_name_str = ss_option_name.str();
 
       std::stringstream ss_description;
@@ -184,7 +184,9 @@ std::string cli_help_formatter::format_help(const std::vector<option_group_defin
       }
 
       for (size_t i = help_line_to_start_at; i < help_lines.size(); i++)
-      { overall_ss << INDENT << std::string(LEFT_COL_WIDTH, ' ') << help_lines[i] << "\n"; }
+      {
+        overall_ss << INDENT << std::string(LEFT_COL_WIDTH, ' ') << help_lines[i] << "\n";
+      }
     }
   }
 

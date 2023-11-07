@@ -9,7 +9,7 @@
 
 using namespace ::testing;
 
-TEST(ExploreTestSuite, sampling_rank)
+TEST(ExploreSlim, SamplingRank)
 {
   std::vector<float> scores = {0.f, 3.f, 1.f};  // 1,2,0 <-- top ranking
   std::vector<float> histogram(scores.size() * scores.size());
@@ -32,7 +32,7 @@ TEST(ExploreTestSuite, sampling_rank)
     // Sample from the pdf
     uint32_t chosen_action_idx;
     ASSERT_EQ(S_EXPLORATION_OK,
-        exploration::sample_after_normalizing(s.str().c_str(), std::begin(pdf), std::end(pdf), chosen_action_idx));
+        VW::explore::sample_after_normalizing(s.str().c_str(), std::begin(pdf), std::end(pdf), chosen_action_idx));
 
     // Swap top element with chosen one (unless chosen is the top)
     if (chosen_action_idx != 0)
@@ -41,10 +41,10 @@ TEST(ExploreTestSuite, sampling_rank)
       std::iter_swap(std::begin(pdf), std::begin(pdf) + chosen_action_idx);
     }
 
-    for (size_t i = 0; i < ranking.size(); i++) histogram[i * ranking.size() + ranking[i]]++;
+    for (size_t i = 0; i < ranking.size(); i++) { histogram[i * ranking.size() + ranking[i]]++; }
   }
 
-  for (auto& d : histogram) d /= rep;
+  for (auto& d : histogram) { d /= rep; }
 
   // best order is 0, 2, 1
   // rows: slots

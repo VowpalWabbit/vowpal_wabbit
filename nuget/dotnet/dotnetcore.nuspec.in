@@ -20,6 +20,10 @@
         <dependency id="System.Threading.Tasks.Dataflow" version="4.11.1" exclude="Build,Analyzers" />
         <dependency id="System.Runtime.Caching" version="4.7.0" exclude="Build,Analyzers" />
         <dependency id="Microsoft.NETCore.Platforms" version="6.0.5" exclude="Build,Analyzers" />
+
+        <dependency id="VowpalWabbit.runtime.linux-x64" version="@VW_NUGET_PACKAGE_VERSION_TRIMMED@" />
+        <dependency id="VowpalWabbit.runtime.win-x64" version="@VW_NUGET_PACKAGE_VERSION_TRIMMED@" />
+        <dependency id="VowpalWabbit.runtime.osx-x64" version="@VW_NUGET_PACKAGE_VERSION_TRIMMED@" />
       </group>
     </dependencies>
   </metadata>

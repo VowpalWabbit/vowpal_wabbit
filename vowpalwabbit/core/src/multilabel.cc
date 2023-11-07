@@ -7,6 +7,7 @@
 #include "vw/common/text_utils.h"
 #include "vw/core/example.h"
 #include "vw/core/model_utils.h"
+#include "vw/core/multilabel.h"
 #include "vw/core/parse_primitives.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
@@ -16,15 +17,11 @@
 // needed for printing ranges of objects (eg: all elements of a vector)
 #include <fmt/ranges.h>
 
-namespace MULTILABEL
+namespace
 {
-float weight(const MULTILABEL::labels&) { return 1.; }
+float weight_multilabel(const VW::multilabel_label&) { return 1.; }
 
-void default_label(MULTILABEL::labels& ld) { ld.label_v.clear(); }
-
-bool test_label(const MULTILABEL::labels& ld) { return ld.label_v.size() == 0; }
-
-void parse_label(MULTILABEL::labels& ld, VW::label_parser_reuse_mem& reuse_mem,
+void parse_label(VW::multilabel_label& ld, VW::label_parser_reuse_mem& reuse_mem,
     const std::vector<VW::string_view>& words, VW::io::logger& logger)
 {
   switch (words.size())
@@ -36,7 +33,7 @@ void parse_label(MULTILABEL::labels& ld, VW::label_parser_reuse_mem& reuse_mem,
 
       for (const auto& parse_name : reuse_mem.tokens)
       {
-        uint32_t n = int_of_string(parse_name, logger);
+        uint32_t n = VW::details::int_of_string(parse_name, logger);
         ld.label_v.push_back(n);
       }
       break;
@@ -44,57 +41,44 @@ void parse_label(MULTILABEL::labels& ld, VW::label_parser_reuse_mem& reuse_mem,
       logger.err_error("example with an odd label, what is {}", fmt::join(words, " "));
   }
 }
+}  // namespace
 
-VW::label_parser multilabel = {
+void VW::multilabel_label::reset_to_default() { label_v.clear(); }
+
+bool VW::multilabel_label::is_test() const { return label_v.empty(); }
+
+VW::label_parser VW::multilabel_label_parser_global = {
     // default_label
-    [](VW::polylabel& label) { default_label(label.multilabels); },
+    [](VW::polylabel& label) { label.multilabels.reset_to_default(); },
     // parse_label
     [](VW::polylabel& label, VW::reduction_features& /* red_features */, VW::label_parser_reuse_mem& reuse_mem,
-        const VW::named_labels* /* ldict */, const std::vector<VW::string_view>& words,
-        VW::io::logger& logger) { parse_label(label.multilabels, reuse_mem, words, logger); },
+        const VW::named_labels* /* ldict */, const std::vector<VW::string_view>& words, VW::io::logger& logger)
+    { parse_label(label.multilabels, reuse_mem, words, logger); },
     // cache_label
-    [](const VW::polylabel& label, const VW::reduction_features& /* red_features */, io_buf& cache,
-        const std::string& upstream_name,
-        bool text) { return VW::model_utils::write_model_field(cache, label.multilabels, upstream_name, text); },
+    [](const VW::polylabel& label, const VW::reduction_features& /* red_features */, VW::io_buf& cache,
+        const std::string& upstream_name, bool text)
+    { return VW::model_utils::write_model_field(cache, label.multilabels, upstream_name, text); },
     // read_cached_label
-    [](VW::polylabel& label, VW::reduction_features& /* red_features */, io_buf& cache) {
-      return VW::model_utils::read_model_field(cache, label.multilabels);
-    },
+    [](VW::polylabel& label, VW::reduction_features& /* red_features */, VW::io_buf& cache)
+    { return VW::model_utils::read_model_field(cache, label.multilabels); },
     // get_weight
-    [](const VW::polylabel& label, const VW::reduction_features& /* red_features */) {
-      return weight(label.multilabels);
-    },
+    [](const VW::polylabel& label, const VW::reduction_features& /* red_features */)
+    { return ::weight_multilabel(label.multilabels); },
     // test_label
-    [](const VW::polylabel& label) { return test_label(label.multilabels); },
+    [](const VW::polylabel& label) { return label.multilabels.is_test(); },
     // label type
-    VW::label_type_t::multilabel};
+    VW::label_type_t::MULTILABEL};
 
-void print_update(VW::workspace& all, bool is_test, const VW::example& ec)
-{
-  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.quiet && !all.bfgs)
-  {
-    std::stringstream label_string;
-    if (is_test) { label_string << "unknown"; }
-    else
-    {
-      label_string << VW::to_string(ec.l.multilabels);
-    }
-
-    all.sd->print_update(*all.trace_message, all.holdout_set_off, all.current_pass, label_string.str(),
-        VW::to_string(ec.pred.multilabels), ec.get_num_features(), all.progress_add, all.progress_arg);
-  }
-}
-
-void output_example(VW::workspace& all, const VW::example& ec)
+void VW::details::update_stats_multilabel(const VW::workspace& all, const VW::example& ec)
 {
   const auto& ld = ec.l.multilabels;
 
   float loss = 0.;
-  if (!test_label(ld))
+  if (!ld.is_test())
   {
     // need to compute exact loss
-    const labels& preds = ec.pred.multilabels;
-    const labels& given = ec.l.multilabels;
+    const auto& preds = ec.pred.multilabels;
+    const auto& given = ec.l.multilabels;
 
     uint32_t preds_index = 0;
     uint32_t given_index = 0;
@@ -121,9 +105,12 @@ void output_example(VW::workspace& all, const VW::example& ec)
     loss += preds.label_v.size() - preds_index;
   }
 
-  all.sd->update(ec.test_only, !test_label(ld), loss, 1.f, ec.get_num_features());
+  all.sd->update(ec.test_only, !ld.is_test(), loss, 1.f, ec.get_num_features());
+}
 
-  for (auto& sink : all.final_prediction_sink)
+void VW::details::output_example_prediction_multilabel(VW::workspace& all, const VW::example& ec)
+{
+  for (auto& sink : all.output_runtime.final_prediction_sink)
   {
     if (sink != nullptr)
     {
@@ -138,14 +125,39 @@ void output_example(VW::workspace& all, const VW::example& ec)
       all.print_text_by_ref(sink.get(), ss.str(), ec.tag, all.logger);
     }
   }
-
-  print_update(all, test_label(ld), ec);
 }
-}  // namespace MULTILABEL
+
+void VW::details::print_update_multilabel(VW::workspace& all, const VW::example& ec)
+{
+  const auto& ld = ec.l.multilabels;
+  const bool is_test = ld.is_test();
+  if (all.sd->weighted_examples() >= all.sd->dump_interval && !all.output_config.quiet && !all.reduction_state.bfgs)
+  {
+    std::stringstream label_string;
+    if (is_test) { label_string << "unknown"; }
+    else { label_string << VW::to_string(ec.l.multilabels); }
+
+    all.sd->print_update(*all.output_runtime.trace_message, all.passes_config.holdout_set_off,
+        all.passes_config.current_pass, label_string.str(), VW::to_string(ec.pred.multilabels), ec.get_num_features());
+  }
+}
 
 namespace VW
 {
-std::string to_string(const MULTILABEL::labels& multilabels)
+std::string to_string(const VW::multilabel_label& multilabels)
+{
+  std::ostringstream ss;
+
+  std::string delimiter;
+  for (unsigned int i : multilabels.label_v)
+  {
+    ss << delimiter << i;
+    delimiter = ",";
+  }
+  return ss.str();
+}
+
+std::string to_string(const VW::multilabel_prediction& multilabels)
 {
   std::ostringstream ss;
 
@@ -160,14 +172,14 @@ std::string to_string(const MULTILABEL::labels& multilabels)
 
 namespace model_utils
 {
-size_t read_model_field(io_buf& io, MULTILABEL::labels& multi)
+size_t read_model_field(io_buf& io, VW::multilabel_label& multi)
 {
   size_t bytes = 0;
   bytes += read_model_field(io, multi.label_v);
   return bytes;
 }
 
-size_t write_model_field(io_buf& io, const MULTILABEL::labels& multi, const std::string& upstream_name, bool text)
+size_t write_model_field(io_buf& io, const VW::multilabel_label& multi, const std::string& upstream_name, bool text)
 {
   size_t bytes = 0;
   bytes += write_model_field(io, multi.label_v, upstream_name + "_label_v", text);

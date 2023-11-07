@@ -1,4 +1,4 @@
-Version 9.4.0
+Version 9.9.0
 Id
 Min label:0
 Max label:1
@@ -27,6 +27,6 @@ sd::oec.weighted_labeled_examples 1
 current_pass 1
 l1_state 0
 l2_state 1
-34875:0 2e+10 2e+10 1e+10 0 2
-116060:0 2 2 1 0 2
-195802:0 2e+20 2e+20 1e+20 0 2
+f:34875:0 2e+10 2e+10 1e+10 0 2
+Constant:116060:0 2 2 1 0 2
+f*f:195802:0 2e+20 2e+20 1e+20 0 2

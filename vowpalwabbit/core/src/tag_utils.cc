@@ -8,7 +8,7 @@ bool try_extract_random_seed(const example& ex, VW::string_view& view)
 {
   if (!ex.tag.empty())
   {
-    const std::string SEED_IDENTIFIER = "seed=";
+    static const std::string SEED_IDENTIFIER = "seed=";
     const size_t prefix_length = SEED_IDENTIFIER.size();
     if (ex.tag.size() > prefix_length && strncmp(ex.tag.begin(), SEED_IDENTIFIER.c_str(), prefix_length) == 0)
     {

@@ -3,6 +3,7 @@
 #include "vw/config/option_group_definition.h"
 #include "vw/config/options_cli.h"
 #include "vw/core/crossplat_compat.h"
+#include "vw/core/parse_primitives.h"
 #include "vw/core/parser.h"
 #include "vw/core/vw.h"
 
@@ -52,8 +53,8 @@ int main(int argc, char* argv[])
   }
 
   // initialize model
-  VW::workspace* model = VW::initialize(vwparams);
-  model->audit = true;
+  auto model = VW::initialize(VW::make_unique<VW::config::options_cli>(VW::split_command_line(vwparams)));
+  model->output_config.audit = true;
 
   string target("--rank ");
   size_t loc = vwparams.find(target);
@@ -62,7 +63,7 @@ int main(int argc, char* argv[])
 
   // global model params
   std::vector<unsigned char> first_pair;
-  for (auto const& i : model->interactions)
+  for (auto const& i : model->feature_tweaks_config.interactions)
   {
     if (i.size() == 2)
     {
@@ -78,7 +79,7 @@ int main(int argc, char* argv[])
 
   unsigned char left_ns = first_pair[0];
   unsigned char right_ns = first_pair[1];
-  dense_parameters& weights = model->weights.dense_weights;
+  auto& weights = model->weights.dense_weights;
 
   FILE* file;
   VW::file_open(&file, infile.c_str(), "r");
@@ -101,7 +102,7 @@ int main(int argc, char* argv[])
     ec = VW::read_example(*model, line);
 
     // write out features for left namespace
-    features& left = ec->feature_space[left_ns];
+    VW::features& left = ec->feature_space[left_ns];
     for (size_t i = 0; i < left.size(); ++i)
     {
       left_linear << left.space_names[i].name << '\t' << weights[left.indices[i]];
@@ -113,7 +114,7 @@ int main(int argc, char* argv[])
     left_quadratic << std::endl;
 
     // write out features for right namespace
-    features& right = ec->feature_space[right_ns];
+    VW::features& right = ec->feature_space[right_ns];
     for (size_t i = 0; i < right.size(); ++i)
     {
       right_linear << right.space_names[i].name << '\t' << weights[right.indices[i]];
@@ -128,9 +129,9 @@ int main(int argc, char* argv[])
   }
 
   // write constant
-  constant << weights[ec->feature_space[constant_namespace].indices[0]] << std::endl;
+  constant << weights[ec->feature_space[VW::details::CONSTANT_NAMESPACE].indices[0]] << std::endl;
 
   // clean up
-  VW::finish(*model);
+  model->finish();
   fclose(file);
 }

@@ -4,10 +4,12 @@
 
 #pragma once
 
+#include "vw/common/future_compat.h"
+
 #include <cassert>
 #include <queue>
-#include <set>
 #include <stack>
+#include <unordered_set>
 
 // Mutex and CV cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed
 // project.
@@ -25,171 +27,124 @@
 
 namespace VW
 {
-template <typename T>
-struct default_cleanup
+namespace details
 {
-  void operator()(T*) {}
+struct null_mutex
+{
+  void lock() {}
+  void unlock() {}
+  bool try_lock() { return true; }
 };
 
 template <typename T>
-struct default_initializer
+class default_factory
 {
-  T* operator()(T* obj) { return obj; }
+public:
+  T* operator()() { return new T; }
 };
 
-template <typename T, typename TInitializer = default_initializer<T>, typename TCleanup = default_cleanup<T>>
-struct no_lock_object_pool
+template <typename T, typename TMutex = null_mutex, typename TFactory = default_factory<T>>
+class object_pool_impl
 {
-  no_lock_object_pool() = default;
-  no_lock_object_pool(size_t initial_chunk_size, TInitializer initializer = {}, size_t chunk_size = 8)
-      : m_initializer(initializer), m_initial_chunk_size(initial_chunk_size), m_chunk_size(chunk_size)
+public:
+  object_pool_impl() = default;
+  object_pool_impl(size_t initial_size, TFactory factory = {}) : _factory(factory)
   {
-    new_chunk(initial_chunk_size);
+    for (size_t i = 0; i < initial_size; ++i) { _pool.push(allocate_new()); }
   }
 
-  ~no_lock_object_pool()
-  {
-    assert(m_pool.size() == size());
-    while (!m_pool.empty())
-    {
-      auto front = m_pool.front();
-      m_cleanup(front);
-      m_pool.pop();
-    }
-  }
+  ~object_pool_impl() { assert(_pool.size() == size()); }
 
   void return_object(T* obj)
   {
-    assert(is_from_pool(obj));
-    m_pool.push(obj);
+    std::unique_lock<TMutex> lock(_lock);
+    _pool.push(std::unique_ptr<T>(obj));
   }
 
-  T* get_object()
+  void return_object(std::unique_ptr<T> obj)
   {
-    if (m_pool.empty()) { new_chunk(m_chunk_size); }
+    std::unique_lock<TMutex> lock(_lock);
+    _pool.push(std::move(obj));
+  }
 
-    auto obj = m_pool.front();
-    m_pool.pop();
+  std::unique_ptr<T> get_object()
+  {
+    std::unique_lock<TMutex> lock(_lock);
+    if (_pool.empty()) { return allocate_new(); }
+
+    auto obj = std::move(_pool.front());
+    _pool.pop();
     return obj;
   }
 
-  bool empty() const { return m_pool.empty(); }
+  bool empty() const
+  {
+    std::unique_lock<TMutex> lock(_lock);
+    return _pool.empty();
+  }
 
   size_t size() const
   {
-    size_t size = 0;
-    auto num_chunks = m_chunk_bounds.size();
-
-    if (m_chunk_bounds.size() > 0 && m_initial_chunk_size > 0)
-    {
-      size += m_initial_chunk_size;
-      num_chunks--;
-    }
-
-    size += num_chunks * m_chunk_size;
-    return size;
+    std::unique_lock<TMutex> lock(_lock);
+    return _pool.size();
   }
 
+  VW_DEPRECATED("Pools will no longer be able to check if an object is from the pool in VW 10.")
   bool is_from_pool(const T* obj) const
   {
-    for (auto& bound : m_chunk_bounds)
-    {
-      if (obj >= bound.first && obj <= bound.second) { return true; }
-    }
-
-    return false;
+    std::unique_lock<TMutex> lock(_lock);
+    return no_lock_is_from_pool(obj);
   }
 
 private:
-  void new_chunk(size_t size)
+  bool no_lock_is_from_pool(const T* obj) const { return _allocated_by_pool.find(obj) != _allocated_by_pool.end(); }
+
+  std::unique_ptr<T> allocate_new()
   {
-    if (size == 0) { return; }
-
-    m_chunks.push_back(std::unique_ptr<T[]>(new T[size]));
-    auto& chunk = m_chunks.back();
-    m_chunk_bounds.push_back({&chunk[0], &chunk[size - 1]});
-
-    for (size_t i = 0; i < size; i++) { m_pool.push(m_initializer(&chunk[i])); }
+    auto* obj = _factory();
+    _allocated_by_pool.insert(obj);
+    return std::unique_ptr<T>(obj);
   }
 
-  TInitializer m_initializer;
-  TCleanup m_cleanup;
-  size_t m_initial_chunk_size = 0;
-  size_t m_chunk_size = 8;
-
-  std::vector<std::unique_ptr<T[]>> m_chunks;
-  std::vector<std::pair<T*, T*>> m_chunk_bounds;
-  std::queue<T*> m_pool;
+  mutable TMutex _lock;
+  TFactory _factory;
+  std::unordered_set<const T*> _allocated_by_pool;
+  std::queue<std::unique_ptr<T>> _pool;
 };
 
+}  // namespace details
+
+template <typename T, typename TInitializer = details::default_factory<T>>
+using no_lock_object_pool = details::object_pool_impl<T, details::null_mutex, TInitializer>;
+
+template <typename T, typename TInitializer = details::default_factory<T>>
+using object_pool = details::object_pool_impl<T, std::mutex, TInitializer>;
+
 template <typename T>
-struct moved_object_pool
+class moved_object_pool
 {
+public:
   moved_object_pool() = default;
 
-  void reclaim_object(T&& obj) { m_pool.push(std::move(obj)); }
+  void reclaim_object(T&& obj) { _pool.push(std::move(obj)); }
 
   void acquire_object(T& dest)
   {
-    if (m_pool.empty())
+    if (_pool.empty())
     {
       dest = T();
       return;
     }
 
-    dest = std::move(m_pool.top());
-    m_pool.pop();
+    dest = std::move(_pool.top());
+    _pool.pop();
   }
 
-  bool empty() const { return m_pool.empty(); }
+  bool empty() const { return _pool.empty(); }
 
-  size_t size() const { return m_pool.size(); }
+  size_t size() const { return _pool.size(); }
 
 private:
-  std::stack<T> m_pool;
-};
-
-template <typename T, typename TInitializer = default_initializer<T>, typename TCleanup = default_cleanup<T>>
-struct object_pool
-{
-  object_pool() = default;
-  object_pool(size_t initial_chunk_size, TInitializer initializer = {}, size_t chunk_size = 8)
-      : inner_pool(initial_chunk_size, initializer, chunk_size)
-  {
-  }
-
-  void return_object(T* obj)
-  {
-    std::unique_lock<std::mutex> lock(m_lock);
-    inner_pool.return_object(obj);
-  }
-
-  T* get_object()
-  {
-    std::unique_lock<std::mutex> lock(m_lock);
-    return inner_pool.get_object();
-  }
-
-  bool empty() const
-  {
-    std::unique_lock<std::mutex> lock(m_lock);
-    return inner_pool.empty();
-  }
-
-  size_t size() const
-  {
-    std::unique_lock<std::mutex> lock(m_lock);
-    return inner_pool.size();
-  }
-
-  bool is_from_pool(const T* obj) const
-  {
-    std::unique_lock<std::mutex> lock(m_lock);
-    return inner_pool.is_from_pool(obj);
-  }
-
-private:
-  mutable std::mutex m_lock;
-  no_lock_object_pool<T, TInitializer, TCleanup> inner_pool;
+  std::stack<T> _pool;
 };
 }  // namespace VW

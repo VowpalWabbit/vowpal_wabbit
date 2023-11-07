@@ -6,7 +6,10 @@
 #include "vw/config/options.h"
 #include "vw/config/options_cli.h"
 #include "vw/core/global_data.h"
+#include "vw/core/learner.h"
 #include "vw/core/memory.h"
+#include "vw/core/parse_primitives.h"
+#include "vw/core/scope_exit.h"
 #include "vw/core/vw.h"
 #include "vw/io/logger.h"
 
@@ -16,8 +19,8 @@ using namespace VW::config;
 
 std::unique_ptr<VW::workspace> setup(std::unique_ptr<options_i> options)
 {
-  auto all = VW::initialize_experimental(std::move(options));
-  all->vw_is_main = true;
+  auto all = VW::initialize(std::move(options));
+  all->runtime_config.vw_is_main = true;
   return all;
 }
 
@@ -62,10 +65,7 @@ int main(int argc, char* argv[])
         const std::string new_args = sstr.str();
         std::cout << new_args << std::endl;
 
-        int l_argc;
-        char** l_argv = VW::to_argv(new_args, l_argc);
-        std::vector<std::string> args(l_argv + 1, l_argv + l_argc);
-        auto ptr = VW::make_unique<options_cli>(args);
+        auto ptr = VW::make_unique<options_cli>(VW::split_command_line(new_args));
         ptr->add_and_parse(driver_config);
         auto level = VW::io::get_log_level(log_level);
         main_logger.set_level(level);
@@ -92,7 +92,7 @@ int main(int argc, char* argv[])
     if (skip_driver)
     {
       // Leave deletion up to the unique_ptr
-      for (auto& v : alls) { VW::finish(*v, false); }
+      for (auto& v : alls) { v->finish(); }
       return 0;
     }
 
@@ -105,6 +105,8 @@ int main(int argc, char* argv[])
     else
     {
       VW::start_parser(all);
+      auto scope_guard = VW::scope_exit([&all] { VW::end_parser(all); });
+
       if (alls.size() == 1) { VW::LEARNER::generic_driver(all); }
       else
       {
@@ -113,21 +115,23 @@ int main(int argc, char* argv[])
         for (auto& v : alls) { alls_ptrs.push_back(v.get()); }
         VW::LEARNER::generic_driver(alls_ptrs);
       }
-      VW::end_parser(all);
     }
 
     for (auto& v : alls)
     {
-      if (v->example_parser->exc_ptr) { std::rethrow_exception(v->example_parser->exc_ptr); }
+      if (v->parser_runtime.example_parser->exc_ptr)
+      {
+        std::rethrow_exception(v->parser_runtime.example_parser->exc_ptr);
+      }
 
       VW::sync_stats(*v);
       // Leave deletion up to the unique_ptr
-      VW::finish(*v, false);
+      v->finish();
     }
   }
   catch (VW::vw_exception& e)
   {
-    main_logger.err_critical("vw ({}:{}): {}", e.Filename(), e.LineNumber(), e.what());
+    main_logger.err_critical("vw ({}:{}): {}", e.filename(), e.line_number(), e.what());
     return 1;
   }
   catch (std::exception& e)

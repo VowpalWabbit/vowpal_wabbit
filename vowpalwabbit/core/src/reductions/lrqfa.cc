@@ -4,12 +4,12 @@
 
 #include "vw/core/reductions/lrqfa.h"
 
+#include "vw/common/random.h"
 #include "vw/config/options.h"
 #include "vw/core/example.h"
 #include "vw/core/global_data.h"
 #include "vw/core/learner.h"
 #include "vw/core/parse_args.h"  // for spoof_hex_encoded_namespaces
-#include "vw/core/rand48.h"
 #include "vw/core/setup_base.h"
 #include "vw/core/text_utils.h"
 
@@ -21,15 +21,16 @@ using namespace VW::config;
 
 namespace
 {
-struct LRQFAstate
+class lrqfa_state
 {
+public:
   VW::workspace* all = nullptr;
   std::string field_name = "";
   int k = 0;
   int field_id[256];
   size_t orig_size[256];
 
-  LRQFAstate()
+  lrqfa_state()
   {
     std::fill(field_id, field_id + 256, 0);
     std::fill(orig_size, orig_size + 256, 0);
@@ -40,13 +41,13 @@ inline float cheesyrand(uint64_t x)
 {
   uint64_t seed = x;
 
-  return merand48(seed);
+  return VW::details::merand48(seed);
 }
 
 constexpr inline bool example_is_test(VW::example& ec) { return ec.l.simple.label == FLT_MAX; }
 
 template <bool is_learn>
-void predict_or_learn(LRQFAstate& lrq, single_learner& base, VW::example& ec)
+void predict_or_learn(lrqfa_state& lrq, learner& base, VW::example& ec)
 {
   VW::workspace& all = *lrq.all;
 
@@ -77,7 +78,7 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, VW::example& ec)
         unsigned int rfd_id = lrq.field_id[right];
         for (unsigned int lfn = 0; lfn < lrq.orig_size[left]; ++lfn)
         {
-          features& fs = ec.feature_space[left];
+          auto& fs = ec.feature_space[left];
           float lfx = fs.values[lfn];
           uint64_t lindex = fs.indices[lfn];
           for (unsigned int n = 1; n <= k; ++n)
@@ -93,7 +94,7 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, VW::example& ec)
 
             for (unsigned int rfn = 0; rfn < lrq.orig_size[right]; ++rfn)
             {
-              features& rfs = ec.feature_space[right];
+              auto& rfs = ec.feature_space[right];
               //                    feature* rf = ec.atomics[right].begin + rfn;
               // NB: ec.ft_offset added by base learner
               float rfx = rfs.values[rfn];
@@ -101,7 +102,7 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, VW::example& ec)
               uint64_t rwindex = (rindex + (static_cast<uint64_t>(lfd_id * k + n) << stride_shift));
 
               rfs.push_back(*lw * lfx * rfx, rwindex);
-              if (all.audit || all.hash_inv)
+              if (all.output_config.audit || all.output_config.hash_inv)
               {
                 std::stringstream new_feature_buffer;
                 new_feature_buffer << right << '^' << rfs.space_names[rfn].name << '^' << n;
@@ -114,10 +115,7 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, VW::example& ec)
     }
 
     if (is_learn) { base.learn(ec); }
-    else
-    {
-      base.predict(ec);
-    }
+    else { base.predict(ec); }
 
     // Restore example
     if (iter == 0)
@@ -134,15 +132,15 @@ void predict_or_learn(LRQFAstate& lrq, single_learner& base, VW::example& ec)
     for (char i : lrq.field_name)
     {
       VW::namespace_index right = i;
-      features& rfs = ec.feature_space[right];
-      rfs.values.resize_but_with_stl_behavior(lrq.orig_size[right]);
-      if (all.audit || all.hash_inv) { rfs.space_names.resize(lrq.orig_size[right]); }
+      auto& rfs = ec.feature_space[right];
+      rfs.values.resize(lrq.orig_size[right]);
+      if (all.output_config.audit || all.output_config.hash_inv) { rfs.space_names.resize(lrq.orig_size[right]); }
     }
   }
 }
 }  // namespace
 
-VW::LEARNER::base_learner* VW::reductions::lrqfa_setup(VW::setup_base_i& stack_builder)
+std::shared_ptr<VW::LEARNER::learner> VW::reductions::lrqfa_setup(VW::setup_base_i& stack_builder)
 {
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
@@ -153,7 +151,7 @@ VW::LEARNER::base_learner* VW::reductions::lrqfa_setup(VW::setup_base_i& stack_b
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
-  auto lrq = VW::make_unique<LRQFAstate>();
+  auto lrq = VW::make_unique<lrqfa_state>();
   lrq->all = &all;
 
   if (lrqfa.find(':') != std::string::npos) { THROW("--lrqfa does not support wildcards ':'"); }
@@ -166,15 +164,15 @@ VW::LEARNER::base_learner* VW::reductions::lrqfa_setup(VW::setup_base_i& stack_b
   int fd_id = 0;
   for (char i : lrq->field_name) { lrq->field_id[static_cast<int>(i)] = fd_id++; }
 
-  all.wpp = all.wpp * static_cast<uint64_t>(1 + lrq->k);
-  auto base = stack_builder.setup_base_learner();
-  size_t ws = 1 + lrq->field_name.size() * lrq->k;
+  all.reduction_state.total_feature_width = all.reduction_state.total_feature_width * static_cast<uint64_t>(1 + lrq->k);
+  size_t feature_width = 1 + lrq->field_name.size() * lrq->k;
+  auto base = stack_builder.setup_base_learner(feature_width);
 
-  auto* l = make_reduction_learner(std::move(lrq), as_singleline(base), predict_or_learn<true>, predict_or_learn<false>,
-      stack_builder.get_setupfn_name(lrqfa_setup))
-                .set_params_per_weight(ws)
-                .set_learn_returns_prediction(base->learn_returns_prediction)
-                .build();
+  auto l = make_reduction_learner(std::move(lrq), require_singleline(base), predict_or_learn<true>,
+      predict_or_learn<false>, stack_builder.get_setupfn_name(lrqfa_setup))
+               .set_feature_width(feature_width)
+               .set_learn_returns_prediction(base->learn_returns_prediction)
+               .build();
 
-  return make_base(*l);
+  return l;
 }

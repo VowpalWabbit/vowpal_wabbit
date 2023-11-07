@@ -4,6 +4,7 @@
 #include "vw/core/reductions/search/search_sequencetask.h"
 
 #include "vw/config/options.h"
+#include "vw/core/cost_sensitive.h"
 #include "vw/core/memory.h"
 #include "vw/core/numeric_casts.h"
 #include "vw/core/vw.h"
@@ -43,11 +44,11 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& /*optio
 
 void run(Search::search& sch, VW::multi_ex& ec)
 {
-  Search::predictor P(sch, static_cast<ptag>(0));
+  Search::predictor search_predictor(sch, static_cast<ptag>(0));
   for (size_t i = 0; i < ec.size(); i++)
   {
     action oracle = ec[i]->l.multi.label;
-    size_t prediction = P.set_tag(static_cast<ptag>(i) + 1)
+    size_t prediction = search_predictor.set_tag(static_cast<ptag>(i) + 1)
                             .set_input(*ec[i])
                             .set_oracle(oracle)
                             .set_condition_range(static_cast<ptag>(i), sch.get_history_length(), 'p')
@@ -60,7 +61,7 @@ void run(Search::search& sch, VW::multi_ex& ec)
 
 namespace SequenceSpanTask
 {
-enum class EncodingType
+enum class encoding_type
 {
   BIO,
   BILOU
@@ -99,7 +100,7 @@ void convert_bio_to_bilou(VW::multi_ex& ec)
 {
   for (size_t n = 0; n < ec.size(); n++)
   {
-    MULTICLASS::label_t& ylab = ec[n]->l.multi;
+    VW::multiclass_label& ylab = ec[n]->l.multi;
     action y = ylab.label;
     action nexty = (n == ec.size() - 1) ? 0 : ec[n + 1]->l.multi.label;
     if (y == 1)
@@ -132,9 +133,11 @@ void convert_bio_to_bilou(VW::multi_ex& ec)
   }
 }
 
-struct task_data
+class task_data
 {
-  EncodingType encoding;
+public:
+  encoding_type encoding;
+
   VW::v_array<action> allowed_actions;
   VW::v_array<action> only_two_allowed;  // used for BILOU encoding
   size_t multipass;
@@ -151,65 +154,62 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
       .add(make_option("search_span_multipass", multipass).default_value(1).help("Do multiple passes"));
   options.add_and_parse(new_options);
 
-  auto D = VW::make_unique<task_data>();
-  D->multipass = VW::cast_to_smaller_type<size_t>(multipass);
+  auto data = VW::make_unique<task_data>();
+  data->multipass = VW::cast_to_smaller_type<size_t>(multipass);
 
   if (search_span_bilou)
   {
     // TODO: is this the right logger?
-    *(sch.get_vw_pointer_unsafe().trace_message)
+    *(sch.get_vw_pointer_unsafe().output_runtime.trace_message)
         << "switching to BILOU encoding for sequence span labeling" << std::endl;
-    D->encoding = EncodingType::BILOU;
+    data->encoding = encoding_type::BILOU;
     num_actions = num_actions * 2 - 1;
   }
-  else
-  {
-    D->encoding = EncodingType::BIO;
-  }
+  else { data->encoding = encoding_type::BIO; }
 
-  D->allowed_actions.clear();
+  data->allowed_actions.clear();
 
-  if (D->encoding == EncodingType::BIO)
+  if (data->encoding == encoding_type::BIO)
   {
-    D->allowed_actions.push_back(1);
-    for (action l = 2; l < num_actions; l += 2) { D->allowed_actions.push_back(l); }
-    D->allowed_actions.push_back(1);  // push back an extra 1 that we can overwrite later if we want
+    data->allowed_actions.push_back(1);
+    for (action l = 2; l < num_actions; l += 2) { data->allowed_actions.push_back(l); }
+    data->allowed_actions.push_back(1);  // push back an extra 1 that we can overwrite later if we want
   }
-  else if (D->encoding == EncodingType::BILOU)
+  else if (data->encoding == encoding_type::BILOU)
   {
-    D->allowed_actions.push_back(1);
+    data->allowed_actions.push_back(1);
     for (action l = 2; l < num_actions; l += 4)
     {
-      D->allowed_actions.push_back(l);
-      D->allowed_actions.push_back(l + 1);
+      data->allowed_actions.push_back(l);
+      data->allowed_actions.push_back(l + 1);
     }
-    D->only_two_allowed.push_back(0);
-    D->only_two_allowed.push_back(0);
+    data->only_two_allowed.push_back(0);
+    data->only_two_allowed.push_back(0);
   }
 
   sch.set_options(Search::AUTO_CONDITION_FEATURES |  // automatically add history features to our examples, please
       Search::AUTO_HAMMING_LOSS |     // please just use hamming loss on individual predictions -- we won't declare loss
       Search::EXAMPLES_DONT_CHANGE |  // we don't do any internal example munging
       0);
-  sch.set_num_learners(D->multipass);
-  sch.set_task_data<task_data>(D.release());
+  sch.set_feature_width(num_actions);
+  sch.set_task_data<task_data>(data.release());
 }
 
 void setup(Search::search& sch, VW::multi_ex& ec)
 {
-  task_data& D = *sch.get_task_data<task_data>();
-  if (D.encoding == EncodingType::BILOU) { convert_bio_to_bilou(ec); }
+  task_data& data = *sch.get_task_data<task_data>();
+  if (data.encoding == encoding_type::BILOU) { convert_bio_to_bilou(ec); }
 }
 
 void takedown(Search::search& sch, VW::multi_ex& ec)
 {
-  task_data& D = *sch.get_task_data<task_data>();
+  task_data& data = *sch.get_task_data<task_data>();
 
-  if (D.encoding == EncodingType::BILOU)
+  if (data.encoding == encoding_type::BILOU)
   {
     for (size_t n = 0; n < ec.size(); n++)
     {
-      MULTICLASS::label_t ylab = ec[n]->l.multi;
+      VW::multiclass_label ylab = ec[n]->l.multi;
       ylab.label = bilou_to_bio(ylab.label);
     }
   }
@@ -217,65 +217,67 @@ void takedown(Search::search& sch, VW::multi_ex& ec)
 
 void run(Search::search& sch, VW::multi_ex& ec)
 {
-  task_data& D = *sch.get_task_data<task_data>();
-  VW::v_array<action>* y_allowed = &(D.allowed_actions);
-  Search::predictor P(sch, static_cast<ptag>(0));
-  for (size_t pass = 1; pass <= D.multipass; pass++)
+  task_data& data = *sch.get_task_data<task_data>();
+  VW::v_array<action>* y_allowed = &(data.allowed_actions);
+  Search::predictor search_predictor(sch, static_cast<ptag>(0));
+  for (size_t pass = 1; pass <= data.multipass; pass++)
   {
     action last_prediction = 1;
     for (size_t i = 0; i < ec.size(); i++)
     {
       action oracle = ec[i]->l.multi.label;
       size_t len = y_allowed->size();
-      P.set_tag(static_cast<ptag>(i) + 1);
-      P.set_learner_id(pass - 1);
-      if (D.encoding == EncodingType::BIO)
+      search_predictor.set_tag(static_cast<ptag>(i) + 1);
+      search_predictor.set_learner_id(pass - 1);
+      if (data.encoding == encoding_type::BIO)
       {
-        if (last_prediction == 1) { P.set_allowed(y_allowed->begin(), len - 1); }
+        if (last_prediction == 1) { search_predictor.set_allowed(y_allowed->begin(), len - 1); }
         else if (last_prediction % 2 == 0)
         {
           (*y_allowed)[len - 1] = last_prediction + 1;
-          P.set_allowed(*y_allowed);
+          search_predictor.set_allowed(*y_allowed);
         }
         else
         {
           (*y_allowed)[len - 1] = last_prediction;
-          P.set_allowed(*y_allowed);
+          search_predictor.set_allowed(*y_allowed);
         }
         if ((oracle > 1) && (oracle % 2 == 1) && (last_prediction != oracle) && (last_prediction != oracle - 1))
         {
           oracle = 1;  // if we are supposed to I-X, but last wasn't B-X or I-X, then say O
         }
       }
-      else if (D.encoding == EncodingType::BILOU)
+      else if (data.encoding == encoding_type::BILOU)
       {
         if ((last_prediction == 1) || ((last_prediction - 2) % 4 == 0) ||
             ((last_prediction - 2) % 4 == 3))  // O or unit-X or last-X
         {
-          P.set_allowed(D.allowed_actions);
+          search_predictor.set_allowed(data.allowed_actions);
           // we cannot allow in-X or last-X next
           if ((oracle > 1) && (((oracle - 2) % 4 == 2) || ((oracle - 2) % 4 == 3))) { oracle = 1; }
         }
         else  // begin-X or in-X
         {
           action other = ((last_prediction - 2) % 4 == 1) ? (last_prediction + 2) : last_prediction;
-          P.set_allowed(last_prediction + 1);
-          P.add_allowed(other);
+          search_predictor.set_allowed(last_prediction + 1);
+          search_predictor.add_allowed(other);
           if ((oracle != last_prediction + 1) && (oracle != other)) { oracle = other; }
         }
       }
-      P.set_input(*ec[i]);
-      P.set_condition_range(static_cast<ptag>(i), sch.get_history_length(), 'p');
+      search_predictor.set_input(*ec[i]);
+      search_predictor.set_condition_range(static_cast<ptag>(i), sch.get_history_length(), 'p');
       if (pass > 1)
       {
-        P.add_condition_range(static_cast<ptag>(i + 1 + sch.get_history_length()), sch.get_history_length() + 1, 'a');
+        search_predictor.add_condition_range(
+            static_cast<ptag>(i + 1 + sch.get_history_length()), sch.get_history_length() + 1, 'a');
       }
-      P.set_oracle(oracle);
-      last_prediction = P.predict();
+      search_predictor.set_oracle(oracle);
+      last_prediction = search_predictor.predict();
 
-      if ((pass == D.multipass) && sch.output().good())
+      if ((pass == data.multipass) && sch.output().good())
       {
-        sch.output() << ((D.encoding == EncodingType::BIO) ? last_prediction : bilou_to_bio(last_prediction)) << ' ';
+        sch.output() << ((data.encoding == encoding_type::BIO) ? last_prediction : bilou_to_bio(last_prediction))
+                     << ' ';
       }
     }
   }
@@ -296,15 +298,15 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& /*options*/
 
 void run(Search::search& sch, VW::multi_ex& ec)
 {
-  size_t K = *sch.get_task_data<size_t>();
-  float* costs = calloc_or_throw<float>(K);
-  Search::predictor P(sch, static_cast<ptag>(0));
+  size_t K = *sch.get_task_data<size_t>();  // NOLINT
+  float* costs = VW::details::calloc_or_throw<float>(K);
+  Search::predictor search_predictor(sch, static_cast<ptag>(0));
   for (size_t i = 0; i < ec.size(); i++)
   {
     action oracle = ec[i]->l.multi.label;
     for (size_t k = 0; k < K; k++) { costs[k] = 1.; }
     costs[oracle - 1] = 0.;
-    size_t prediction = P.set_tag(static_cast<ptag>(i) + 1)
+    size_t prediction = search_predictor.set_tag(static_cast<ptag>(i) + 1)
                             .set_input(*ec[i])
                             .set_allowed(nullptr, costs, K)
                             .set_condition_range(static_cast<ptag>(i), sch.get_history_length(), 'p')
@@ -317,8 +319,9 @@ void run(Search::search& sch, VW::multi_ex& ec)
 
 namespace ArgmaxTask
 {
-struct task_data
+class task_data
 {
+public:
   float false_negative_cost;
   float negative_weight;
   bool predict_max;
@@ -326,19 +329,19 @@ struct task_data
 
 void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options)
 {
-  task_data* D = new task_data();
+  task_data* data = new task_data();
 
   option_group_definition new_options("[Search] Argmax");
-  new_options.add(make_option("cost", D->false_negative_cost).default_value(10.0f).help("False Negative Cost"))
-      .add(make_option("negative_weight", D->negative_weight)
+  new_options.add(make_option("cost", data->false_negative_cost).default_value(10.0f).help("False Negative Cost"))
+      .add(make_option("negative_weight", data->negative_weight)
                .default_value(1.f)
                .help("Relative weight of negative examples"))
-      .add(make_option("max", D->predict_max).help("Disable structure: just predict the max"));
+      .add(make_option("max", data->predict_max).help("Disable structure: just predict the max"));
   options.add_and_parse(new_options);
 
-  sch.set_task_data(D);
+  sch.set_task_data(data);
 
-  if (D->predict_max)
+  if (data->predict_max)
   {
     sch.set_options(Search::EXAMPLES_DONT_CHANGE);  // we don't do any internal example munging
   }
@@ -351,7 +354,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
 
 void run(Search::search& sch, VW::multi_ex& ec)
 {
-  task_data& D = *sch.get_task_data<task_data>();
+  task_data& data = *sch.get_task_data<task_data>();
   uint32_t max_prediction = 1;
   uint32_t max_label = 1;
 
@@ -360,17 +363,14 @@ void run(Search::search& sch, VW::multi_ex& ec)
   for (ptag i = 0; i < ec.size(); i++)
   {
     // labels should be 1 or 2, and our output is MAX of all predicted values
-    uint32_t oracle = D.predict_max ? max_label : ec[i]->l.multi.label;
+    uint32_t oracle = data.predict_max ? max_label : ec[i]->l.multi.label;
     uint32_t prediction = sch.predict(*ec[i], i + 1, &oracle, 1, &i, "p");
 
     max_prediction = std::max(prediction, max_prediction);
   }
   float loss = 0.;
-  if (max_label > max_prediction) { loss = D.false_negative_cost / D.negative_weight; }
-  else if (max_prediction > max_label)
-  {
-    loss = 1.;
-  }
+  if (max_label > max_prediction) { loss = data.false_negative_cost / data.negative_weight; }
+  else if (max_prediction > max_label) { loss = 1.; }
   sch.loss(loss);
 
   if (sch.output().good()) { sch.output() << max_prediction; }
@@ -379,26 +379,26 @@ void run(Search::search& sch, VW::multi_ex& ec)
 
 namespace SequenceTask_DemoLDF  // this is just to debug/show off how to do LDF
 {
-namespace CS = COST_SENSITIVE;
-struct task_data
+class task_data
 {
+public:
   std::vector<VW::example> ldf_examples;
   size_t num_actions;
 };
 
 void initialize(Search::search& sch, size_t& num_actions, options_i& /*options*/)
 {
-  CS::wclass default_wclass = {0., 0, 0., 0.};
+  VW::cs_class default_wclass = {0., 0, 0., 0.};
 
   task_data* data = new task_data;
   data->ldf_examples.resize(num_actions);
   for (size_t a = 0; a < num_actions; a++)
   {
-    CS::label& lab = data->ldf_examples[a].l.cs;
-    CS::default_label(lab);
+    auto& lab = data->ldf_examples[a].l.cs;
+    lab.reset_to_default();
     lab.costs.push_back(default_wclass);
-    data->ldf_examples[a].interactions = &sch.get_vw_pointer_unsafe().interactions;
-    data->ldf_examples[a].extent_interactions = &sch.get_vw_pointer_unsafe().extent_interactions;
+    data->ldf_examples[a].interactions = &sch.get_vw_pointer_unsafe().feature_tweaks_config.interactions;
+    data->ldf_examples[a].extent_interactions = &sch.get_vw_pointer_unsafe().feature_tweaks_config.extent_interactions;
   }
 
   data->num_actions = num_actions;
@@ -413,16 +413,16 @@ void my_update_example_indices(
     Search::search& sch, bool /* audit */, VW::example* ec, uint64_t mult_amount, uint64_t plus_amount)
 {
   size_t ss = sch.get_stride_shift();
-  for (features& fs : *ec)
+  for (VW::features& fs : *ec)
   {
-    for (feature_index& idx : fs.indices) { idx = (((idx >> ss) * mult_amount) + plus_amount) << ss; }
+    for (VW::feature_index& idx : fs.indices) { idx = (((idx >> ss) * mult_amount) + plus_amount) << ss; }
   }
 }
 
 void run(Search::search& sch, VW::multi_ex& ec)
 {
-  task_data* data = sch.get_task_data<task_data>();
-  Search::predictor P(sch, static_cast<ptag>(0));
+  auto* data = sch.get_task_data<task_data>();
+  Search::predictor search_predictor(sch, static_cast<ptag>(0));
   for (ptag i = 0; i < ec.size(); i++)
   {
     for (uint32_t a = 0; a < data->num_actions; a++)
@@ -435,7 +435,7 @@ void run(Search::search& sch, VW::multi_ex& ec)
       }
 
       // regardless of whether the example is needed or not, the class info is needed
-      CS::label& lab = data->ldf_examples[a].l.cs;
+      auto& lab = data->ldf_examples[a].l.cs;
       // need to tell search what the action id is, so that it can add history features correctly!
       lab.costs[0].x = 0.;
       lab.costs[0].class_index = a + 1;
@@ -444,7 +444,7 @@ void run(Search::search& sch, VW::multi_ex& ec)
     }
 
     action oracle = ec[i]->l.multi.label - 1;
-    action pred_id = P.set_tag(static_cast<ptag>(i + 1))
+    action pred_id = search_predictor.set_tag(static_cast<ptag>(i + 1))
                          .set_input(data->ldf_examples.data(), data->num_actions)
                          .set_oracle(oracle)
                          .set_condition_range(i, sch.get_history_length(), 'p')

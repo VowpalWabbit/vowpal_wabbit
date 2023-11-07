@@ -8,18 +8,18 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug' And '$(Platform)'=='x64'">
     <Link>
-      <AdditionalDependencies>vw_configd.lib;vw_allreduced.lib;fmtd.lib;spdlogd.lib;vw_iod.lib;vw_cored.lib;zlibstaticd.lib;wsock32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vw_configd.lib;vw_allreduced.lib;vw_cache_parserd.lib;vw_text_parserd.lib;vw_json_parserd.lib;fmtd.lib;spdlogd.lib;vw_iod.lib;vw_cored.lib;zlibstaticd.lib;wsock32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
-      <AdditionalDependencies>vw_configd.lib;vw_allreduced.lib;fmtd.lib;spdlogd.lib;vw_iod.lib;vw_cored.lib;zlibstaticd.lib;wsock32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vw_configd.lib;vw_allreduced.lib;vw_cache_parserd.lib;vw_text_parserd.lib;vw_json_parserd.lib;fmtd.lib;spdlogd.lib;vw_iod.lib;vw_cored.lib;zlibstaticd.lib;wsock32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)'=='Release' And '$(Platform)'=='x64'">
     <Link>
-      <AdditionalDependencies>vw_config.lib;vw_allreduce.lib;fmt.lib;spdlog.lib;vw_io.lib;vw_core.lib;zlibstatic.lib;wsock32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vw_config.lib;vw_allreduce.lib;vw_cache_parser.lib;vw_text_parser.lib;vw_json_parser.lib;fmt.lib;spdlog.lib;vw_io.lib;vw_core.lib;zlibstatic.lib;wsock32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
-      <AdditionalDependencies>vw_config.lib;vw_allreduce.lib;fmt.lib;spdlog.lib;vw_io.lib;vw_core.lib;zlibstatic.lib;wsock32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vw_config.lib;vw_allreduce.lib;vw_cache_parser.lib;vw_text_parser.lib;vw_json_parser.lib;fmt.lib;spdlog.lib;vw_io.lib;vw_core.lib;zlibstatic.lib;wsock32.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
