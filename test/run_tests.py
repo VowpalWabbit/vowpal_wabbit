@@ -1027,7 +1027,7 @@ def main():
         "-j",
         "--jobs",
         type=int,
-        default=os.cpu_count(),
+        default=1,
         help="Number of tests to run in parallel. Default is current machine core count.",
     )
     parser.add_argument(
