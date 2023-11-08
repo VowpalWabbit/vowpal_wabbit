@@ -49,6 +49,6 @@ if __name__ == '__main__':
     create_vw_data_file(num_samples, num_features, noise_stddev, file_name)
     # Show sample of the dataset
     print(f'Sample of the dataset:')
-    vw_data = generate_vw_data(num_samples=100, num_features=5, noise_stddev=0.05)
+    vw_data = generate_vw_data(num_samples, num_features, noise_stddev)
     sample_data = '\n'.join(vw_data[:5])
     print(sample_data)

@@ -1,0 +1,23 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: run_vw.py",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/vowpalwabbit/core/tests/dnn/run_vw.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "cwd": "${workspaceFolder}/vowpalwabbit/core/tests/dnn/"
+        },
+        {
+            "name": "Python: generate_data.py",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/vowpalwabbit/core/tests/dnn/generate_data.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "cwd": "${workspaceFolder}/vowpalwabbit/core/tests/dnn/"
+        }
+    ]
+}
