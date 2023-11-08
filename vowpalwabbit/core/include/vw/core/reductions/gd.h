@@ -64,6 +64,7 @@ namespace details
 {
 
 float finalize_prediction(VW::shared_data& sd, VW::io::logger& logger, float ret);
+float finalize_prediction(uint64_t example_number, float max_label, float min_label, VW::io::logger& logger, float ret);
 void print_features(VW::workspace& all, VW::example& ec);
 void print_audit_features(VW::workspace&, VW::example& ec);
 void save_load_regressor_gd(VW::workspace& all, VW::io_buf& model_file, bool read, bool text);
@@ -196,6 +197,7 @@ inline float inline_predict(VW::workspace& all, VW::example& ec, size_t& num_gen
             all.runtime_state.generate_interactions_object_cache_state, simple_red_features.initial);
 }
 
+// Reduce magnitude of weight by gravity
 inline float trunc_weight(const float w, const float gravity)
 {
   return (gravity < fabsf(w)) ? w - VW::math::sign(w) * gravity : 0.f;

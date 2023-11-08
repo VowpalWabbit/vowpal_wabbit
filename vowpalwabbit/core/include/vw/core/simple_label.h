@@ -19,6 +19,7 @@ public:
   simple_label();
   simple_label(float label);
   void reset_to_default();
+  bool is_labeled() const { return label != FLT_MAX; }
 };
 
 inline bool operator==(const simple_label& lhs, const simple_label& rhs) { return lhs.label == rhs.label; }

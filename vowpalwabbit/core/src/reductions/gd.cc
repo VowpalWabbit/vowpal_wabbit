@@ -479,14 +479,19 @@ void VW::details::print_audit_features(VW::workspace& all, VW::example& ec)
 
 float VW::details::finalize_prediction(VW::shared_data& sd, VW::io::logger& logger, float ret)
 {
+  return finalize_prediction(sd.example_number, sd.max_label, sd.min_label, logger, ret);
+}
+
+float VW::details::finalize_prediction(uint64_t example_number, float max_label, float min_label, VW::io::logger& logger, float ret)
+{
   if (std::isnan(ret))
   {
     ret = 0.;
-    logger.err_warn("NAN prediction in example {0}, forcing {1}", sd.example_number + 1, ret);
+    logger.err_warn("NAN prediction in example {0}, forcing {1}", example_number + 1, ret);
     return ret;
   }
-  if (ret > sd.max_label) { return sd.max_label; }
-  if (ret < sd.min_label) { return sd.min_label; }
+  if (ret > max_label) { return max_label; }
+  if (ret < min_label) { return min_label; }
   return ret;
 }
 
@@ -499,8 +504,10 @@ public:
   float gravity;
 };
 
+// Reduce magnitude of weight by gravity before applying
 inline void vec_add_trunc(trunc_data& p, const float fx, float& fw)
 {
+  // Reduce magnitude of weight by gravity before multiplying with fx
   p.prediction += VW::trunc_weight(fw, p.gravity) * fx;
 }
 
@@ -532,6 +539,9 @@ void predict(VW::reductions::gd& g, VW::example& ec)
   if (audit) { VW::details::print_audit_features(all, ec); }
 }
 
+// Accumulate result of truncated_weight * value for feature_index (fi) into mp.pred vector
+// This will be called once for each feature in the example and will result in mp.count predictions
+// Truncation reduces the magnitude of the weight by value of gravity
 template <class T>
 inline void vec_add_trunc_multipredict(VW::details::multipredict_info<T>& mp, const float fx, uint64_t fi)
 {
@@ -542,11 +552,13 @@ inline void vec_add_trunc_multipredict(VW::details::multipredict_info<T>& mp, co
   }
 }
 
+// Many (count) examples are passed in.  Count predictions are stored in pred[count] vector
 template <bool l1, bool audit>
 void multipredict(VW::reductions::gd& g, VW::example& ec, size_t count, size_t step, VW::polyprediction* pred,
     bool finalize_predictions)
 {
   VW::workspace& all = *g.all;
+  // initialize all predictions to some initial value (typically 0)
   for (size_t c = 0; c < count; c++)
   {
     const auto& simple_red_features = ec.ex_reduction_features.template get<VW::simple_label_reduction_features>();
@@ -556,30 +568,37 @@ void multipredict(VW::reductions::gd& g, VW::example& ec, size_t count, size_t s
   size_t num_features_from_interactions = 0;
   if (g.all->weights.sparse)
   {
+    // For sparse, we can't use the fast loop, because we need to look up weights for each feature
+    // Sparse weights are stored in a hash_map
     VW::details::multipredict_info<VW::sparse_parameters> mp = {
         count, step, pred, g.all->weights.sparse_weights, static_cast<float>(all.sd->gravity)};
     if (l1)
     {
+      // dot product with truncated weights for all examples in the batch 
       VW::foreach_feature<VW::details::multipredict_info<VW::sparse_parameters>, uint64_t, vec_add_trunc_multipredict>(
           all, ec, mp, num_features_from_interactions);
     }
     else
     {
+      // dot product with weights for all examples in the batch 
       VW::foreach_feature<VW::details::multipredict_info<VW::sparse_parameters>, uint64_t,
           VW::details::vec_add_multipredict>(all, ec, mp, num_features_from_interactions);
     }
   }
   else
   {
+    // Fast loop for dense parameters
     VW::details::multipredict_info<VW::dense_parameters> mp = {
         count, step, pred, g.all->weights.dense_weights, static_cast<float>(all.sd->gravity)};
     if (l1)
     {
+      // dot product with truncated weights for all examples in the batch 
       VW::foreach_feature<VW::details::multipredict_info<VW::dense_parameters>, uint64_t, vec_add_trunc_multipredict>(
           all, ec, mp, num_features_from_interactions);
     }
     else
     {
+      // dot product with weights for all examples in the batch 
       VW::foreach_feature<VW::details::multipredict_info<VW::dense_parameters>, uint64_t,
           VW::details::vec_add_multipredict>(all, ec, mp, num_features_from_interactions);
     }
