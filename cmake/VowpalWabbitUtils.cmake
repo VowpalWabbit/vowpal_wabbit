@@ -170,9 +170,6 @@ function(vw_add_library)
   endif()
   if(VW_LIB_PRIVATE_DEPS)
     target_link_libraries(${FULL_LIB_NAME} PRIVATE ${VW_LIB_PRIVATE_DEPS})
-    if("sse2neon" IN_LIST VW_LIB_PRIVATE_DEPS)
-      target_compile_definitions(${FULL_LIB_NAME} PRIVATE SSE2NEON_PRECISE_SQRT)
-    endif()
   endif()
 
   target_include_directories(
