@@ -155,29 +155,7 @@ VW_WARNING_STATE_POP
 
 static inline float inv_sqrt(float x)
 {
-#if !defined(VW_NO_INLINE_SIMD)
-#  if defined(__ARM_NEON__)
-  // Propagate into vector
-  float32x2_t v1 = vdup_n_f32(x);
-  // Estimate
-  float32x2_t e1 = vrsqrte_f32(v1);
-  // N-R iteration 1
-  float32x2_t e2 = vmul_f32(e1, vrsqrts_f32(v1, vmul_f32(e1, e1)));
-  // N-R iteration 2
-  float32x2_t e3 = vmul_f32(e2, vrsqrts_f32(v1, vmul_f32(e2, e2)));
-  // Extract result
-  return vget_lane_f32(e3, 0);
-#  elif defined(__SSE2__)
-  __m128 eta = _mm_load_ss(&x);
-  eta = _mm_rsqrt_ss(eta);
-  _mm_store_ss(&x, eta);
-#  else
   x = quake_inv_sqrt(x);
-#  endif
-#else
-  x = quake_inv_sqrt(x);
-#endif
-
   return x;
 }
 
@@ -629,7 +607,7 @@ inline float compute_rate_decay(power_data& s, float& fw)
   std::cout << std::fixed << std::setprecision(10); // Set high precision for floating-point output
 
   VW::weight* w = &fw;
-  std::cout << "Input fw: " << fw << std::endl;
+  //std::cout << "Input fw: " << fw << std::endl;
 
   float rate_decay = 1.f;
   if (adaptive)
@@ -637,12 +615,12 @@ inline float compute_rate_decay(power_data& s, float& fw)
     if (sqrt_rate)
     {
       rate_decay = inv_sqrt(w[adaptive]);
-      std::cout << "Rate decay after inv_sqrt: " << rate_decay << " (inv_sqrt of " << w[adaptive] << ")" << std::endl;
+      //std::cout << "Rate decay after inv_sqrt: " << rate_decay << " (inv_sqrt of " << w[adaptive] << ")" << std::endl;
     }
     else
     {
       rate_decay = powf(w[adaptive], s.minus_power_t);
-      std::cout << "Rate decay after powf (adaptive): " << rate_decay << " (powf of " << w[adaptive] << " ^ " << s.minus_power_t << ")" << std::endl;
+      //std::cout << "Rate decay after powf (adaptive): " << rate_decay << " (powf of " << w[adaptive] << " ^ " << s.minus_power_t << ")" << std::endl;
     }
   }
   if VW_STD17_CONSTEXPR (normalized != 0)
@@ -650,17 +628,17 @@ inline float compute_rate_decay(power_data& s, float& fw)
     if (sqrt_rate)
     {
       float inv_norm = 1.f / w[normalized];
-      std::cout << "Intermediate inv_norm: " << inv_norm << std::endl;
+      //std::cout << "Intermediate inv_norm: " << inv_norm << std::endl;
 
       if (adaptive) { rate_decay *= inv_norm; }
       else { rate_decay *= inv_norm * inv_norm; }
 
-      std::cout << "Rate decay after normalization (sqrt_rate): " << rate_decay << std::endl;
+      //std::cout << "Rate decay after normalization (sqrt_rate): " << rate_decay << std::endl;
     }
     else
     {
       rate_decay *= powf(w[normalized] * w[normalized], s.neg_norm_power);
-      std::cout << "Rate decay after powf (normalized): " << rate_decay << " (powf of " << w[normalized] << " * " << w[normalized] << " ^ " << s.neg_norm_power << ")" << std::endl;
+      //std::cout << "Rate decay after powf (normalized): " << rate_decay << " (powf of " << w[normalized] << " * " << w[normalized] << " ^ " << s.neg_norm_power << ")" << std::endl;
     }
   }
   return rate_decay;
