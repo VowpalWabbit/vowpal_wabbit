@@ -4,3 +4,4 @@
 [warning] NAN prediction in example 2, forcing 0
 [error] The features have too much magnitude
 [warning] update is NAN, replacing with 0
+[warning] update is NAN, replacing with 0

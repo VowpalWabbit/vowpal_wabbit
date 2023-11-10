@@ -153,33 +153,33 @@ VW_WARNING_STATE_POP
 
 static inline float inv_sqrt(float x)
 {
-  return 1.0f / std::sqrt(x);
-  /*
-  #if !defined(VW_NO_INLINE_SIMD)
-  #  if defined(__ARM_NEON__)
-    // Propagate into vector
-    float32x2_t v1 = vdup_n_f32(x);
-    // Estimate
-    float32x2_t e1 = vrsqrte_f32(v1);
-    // N-R iteration 1
-    float32x2_t e2 = vmul_f32(e1, vrsqrts_f32(v1, vmul_f32(e1, e1)));
-    // N-R iteration 2
-    float32x2_t e3 = vmul_f32(e2, vrsqrts_f32(v1, vmul_f32(e2, e2)));
-    // Extract result
-    return vget_lane_f32(e3, 0);
-  #  elif defined(__SSE2__)
-    __m128 eta = _mm_load_ss(&x);
-    eta = _mm_rsqrt_ss(eta);
-    _mm_store_ss(&x, eta);
-  #  else
-    x = quake_inv_sqrt(x);
-  #  endif
-  #else
-    x = quake_inv_sqrt(x);
-  #endif
+#if !defined(VW_NO_INLINE_SIMD)
+#  if defined(__ARM_NEON__)
+  // Propagate into vector
+  float32x2_t v1 = vdup_n_f32(x);
+  // Estimate
+  float32x2_t e1 = vrsqrte_f32(v1);
+  // N-R iteration 1
+  float32x2_t e2 = vmul_f32(e1, vrsqrts_f32(v1, vmul_f32(e1, e1)));
+  // N-R iteration 2
+  float32x2_t e3 = vmul_f32(e2, vrsqrts_f32(v1, vmul_f32(e2, e2)));
+  // Extract result
+  return vget_lane_f32(e3, 0);
+#  elif defined(__SSE2__)
+  __m128 eta = _mm_load_ss(&x);
+  eta = _mm_rsqrt_ss(eta);  // Fast approximate inverse square root
+  // One iteration of Newton-Raphson refinement:
+  __m128 half_x = _mm_set_ss(0.5f * x);
+  eta = _mm_mul_ss(eta, _mm_sub_ss(_mm_set_ss(1.5f), _mm_mul_ss(half_x, _mm_mul_ss(eta, eta))));
+  _mm_store_ss(&x, eta);
+#  else
+  x = quake_inv_sqrt(x);
+#  endif
+#else
+  x = quake_inv_sqrt(x);
+#endif
 
-    return x;
-  */
+  return x;
 }
 
 VW_WARNING_STATE_PUSH

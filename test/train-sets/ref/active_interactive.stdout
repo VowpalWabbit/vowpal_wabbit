@@ -4,25 +4,6 @@ Connecting to localhost:12353...
 Done
 Sending unlabeled examples...
 Request for example 0: tag="", prediction=0.0: 
-Provide? [0/1/skip]: Request for example 1: tag="", prediction=0.0: 
-Provide? [0/1/skip]: Request for example 2: tag="", prediction=0.076144: 
-Provide? [0/1/skip]: Request for example 3: tag="", prediction=0.147194: 
-Provide? [0/1/skip]: Request for example 4: tag="", prediction=0.060332: 
-Provide? [0/1/skip]: Request for example 5: tag="", prediction=0.060998: 
-Provide? [0/1/skip]: Request for example 6: tag="", prediction=0.090767: 
-Provide? [0/1/skip]: Request for example 7: tag="", prediction=0.049165: 
-Provide? [0/1/skip]: Request for example 8: tag="", prediction=0.147871: 
-Provide? [0/1/skip]: Request for example 9: tag="", prediction=0.099147: 
-Provide? [0/1/skip]: Request for example 10: tag="", prediction=0.006728: 
-Provide? [0/1/skip]: Request for example 11: tag="", prediction=0.16017: 
-Provide? [0/1/skip]: Request for example 12: tag="", prediction=0.117594: 
-Provide? [0/1/skip]: Request for example 13: tag="", prediction=0.052956: 
-Provide? [0/1/skip]: Request for example 14: tag="", prediction=0.17299: 
-Provide? [0/1/skip]: Request for example 15: tag="", prediction=0.521811: 
-Provide? [0/1/skip]: Request for example 16: tag="", prediction=0.761672: 
-Provide? [0/1/skip]: Request for example 17: tag="", prediction=0.992553: 
-Provide? [0/1/skip]: Request for example 18: tag="", prediction=0.360711: 
-Provide? [0/1/skip]: Request for example 19: tag="", prediction=0.195309: 
 Provide? [0/1/skip]: 
 active_interactor stderr: 
 
@@ -44,17 +25,14 @@ average  since         example        example        current        current  cur
 loss     last          counter         weight          label        predict features
 n.a.     n.a.                1            1.0        unknown         0.0000       41
 0.000000 0.000000            2            2.0         0.0000         0.0000       41
-0.500000 1.000000            4            4.0         1.0000         0.0000       75
-0.256866 0.013732            8            8.0         0.0000         0.1472       44
-0.130685 0.004504           16           16.0         0.0000         0.0492       42
-0.182888 0.235091           32           32.0         1.0000         0.5218       34
+0.000000 n.a.                4            4.0        unknown         0.0000       62
+0.000000 n.a.                8            8.0        unknown         0.0000      108
+0.000000 n.a.               16           16.0        unknown         0.0000       31
 
 finished run
-number of examples = 40
-weighted example sum = 40.000000
-weighted label sum = 6.000000
-average loss = 0.157566
-best constant = 0.300000
-best constant's loss = 0.210000
-total feature number = 2522
+number of examples = 21
+weighted example sum = 21.000000
+weighted label sum = 0.000000
+average loss = 0.000000
+total feature number = 1302
 
