@@ -153,6 +153,8 @@ VW_WARNING_STATE_POP
 
 static inline float inv_sqrt(float x)
 {
+  return 1 / std::sqrt(x);
+/*
 #if !defined(VW_NO_INLINE_SIMD)
 #  if defined(__ARM_NEON__)
   // Propagate into vector
@@ -177,6 +179,7 @@ static inline float inv_sqrt(float x)
 #endif
 
   return x;
+*/
 }
 
 VW_WARNING_STATE_PUSH
