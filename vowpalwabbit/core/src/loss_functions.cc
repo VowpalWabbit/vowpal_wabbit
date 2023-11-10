@@ -43,22 +43,22 @@ inline float squared_loss_impl_get_loss(const VW::shared_data* sd, float predict
 
 inline float squared_loss_impl_get_update(float prediction, float label, float update_scale, float pred_per_update)
 {
-    std::cout << "Prediction: " << prediction << ", Label: " << label << ", Update Scale: " << update_scale 
-              << ", Pred Per Update: " << pred_per_update << "\n";
+    //std::cout << "Prediction: " << prediction << ", Label: " << label << ", Update Scale: " << update_scale 
+             // << ", Pred Per Update: " << pred_per_update << "\n";
 
     if (update_scale * pred_per_update < 1e-6)
     {
-        std::cout << "Entering first branch (update_scale * pred_per_update < 1e-6)" << "\n";
+       // std::cout << "Entering first branch (update_scale * pred_per_update < 1e-6)" << "\n";
         float update = 2.f * (label - prediction) * update_scale;
-        std::cout << "Update (first branch): " << update << "\n";
+       // std::cout << "Update (first branch): " << update << "\n";
         return update;
     }
 
-    std::cout << "Entering second branch" << "\n";
+   // std::cout << "Entering second branch" << "\n";
     float exp_component = VW::details::correctedExp(-2.f * update_scale * pred_per_update);
-    std::cout << "Exp Component: " << exp_component << "\n";
+   // std::cout << "Exp Component: " << exp_component << "\n";
     float update = (label - prediction) * (1.f - exp_component) / pred_per_update;
-    std::cout << "Update (second branch): " << update << "\n";
+   // std::cout << "Update (second branch): " << update << "\n";
 
     return update;
 }
