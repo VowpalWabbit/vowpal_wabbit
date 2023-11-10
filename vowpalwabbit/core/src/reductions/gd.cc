@@ -16,8 +16,6 @@
 
 #include <algorithm>
 #include <cfloat>
-#include <iostream>
-#include <iomanip>
 
 #if !defined(VW_NO_INLINE_SIMD)
 #  if !defined(__SSE2__) && (defined(_M_AMD64) || defined(_M_X64))
@@ -166,19 +164,15 @@ static inline float inv_sqrt(float x)
   // N-R iteration 2
   float32x2_t e3 = vmul_f32(e2, vrsqrts_f32(v1, vmul_f32(e2, e2)));
   // Extract result
-  std::cout << "__ARM_NEON__" << "\n";
   return vget_lane_f32(e3, 0);
 #  elif defined(__SSE2__)
   __m128 eta = _mm_load_ss(&x);
   eta = _mm_rsqrt_ss(eta);
   _mm_store_ss(&x, eta);
-  std::cout << "__SSE2__" << "\n";
 #  else
-  std::cout << "None" << "\n";
   x = quake_inv_sqrt(x);
 #  endif
 #else
-  std::cout << "VW_NO_INLINE_SIMD" << "\n";
   x = quake_inv_sqrt(x);
 #endif
 
@@ -194,12 +188,7 @@ inline void update_feature(float& update, float x, float& fw)
   bool modify = x < FLT_MAX && x > -FLT_MAX && (feature_mask_off || fw != 0.);
   if (modify)
   {
-    if VW_STD17_CONSTEXPR (spare != 0)
-    {
-      //std::cout << "Upd spare: " << w[spare] << "\n";
-      x *= w[spare];
-    }
-    //std::cout << "Upd update: " << update << "\n";
+    if VW_STD17_CONSTEXPR (spare != 0) { x *= w[spare]; }
     w[0] += update * x;
   }
 }
@@ -630,42 +619,22 @@ public:
 template <bool sqrt_rate, size_t adaptive, size_t normalized>
 inline float compute_rate_decay(power_data& s, float& fw)
 {
-  std::cout << std::fixed << std::setprecision(10); // Set high precision for floating-point output
-
   VW::weight* w = &fw;
-  //std::cout << "Input fw: " << fw << std::endl;
-
   float rate_decay = 1.f;
   if (adaptive)
   {
-    if (sqrt_rate)
-    {
-      rate_decay = inv_sqrt(w[adaptive]);
-      //std::cout << "Rate decay after inv_sqrt: " << rate_decay << " (inv_sqrt of " << w[adaptive] << ")" << std::endl;
-    }
-    else
-    {
-      rate_decay = powf(w[adaptive], s.minus_power_t);
-      //std::cout << "Rate decay after powf (adaptive): " << rate_decay << " (powf of " << w[adaptive] << " ^ " << s.minus_power_t << ")" << std::endl;
-    }
+    if (sqrt_rate) { rate_decay = inv_sqrt(w[adaptive]); }
+    else { rate_decay = powf(w[adaptive], s.minus_power_t); }
   }
   if VW_STD17_CONSTEXPR (normalized != 0)
   {
     if (sqrt_rate)
     {
       float inv_norm = 1.f / w[normalized];
-      //std::cout << "Intermediate inv_norm: " << inv_norm << std::endl;
-
       if (adaptive) { rate_decay *= inv_norm; }
       else { rate_decay *= inv_norm * inv_norm; }
-
-      //std::cout << "Rate decay after normalization (sqrt_rate): " << rate_decay << std::endl;
     }
-    else
-    {
-      rate_decay *= powf(w[normalized] * w[normalized], s.neg_norm_power);
-      //std::cout << "Rate decay after powf (normalized): " << rate_decay << " (powf of " << w[normalized] << " * " << w[normalized] << " ^ " << s.neg_norm_power << ")" << std::endl;
-    }
+    else { rate_decay *= powf(w[normalized] * w[normalized], s.neg_norm_power); }
   }
   return rate_decay;
 }
@@ -745,37 +714,27 @@ template <bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive, siz
     bool stateless>
 float get_pred_per_update(VW::reductions::gd& g, VW::example& ec)
 {
-  std::cout << std::fixed << std::setprecision(10); // Set high precision for floating-point output
-
+  // We must traverse the features in _precisely_ the same order as during training.
   auto& ld = ec.l.simple;
   VW::workspace& all = *g.all;
 
   float grad_squared = ec.weight;
-  if (!adax) {
-    grad_squared *= all.loss_config.loss->get_square_grad(ec.pred.scalar, ld.label);
-    //std::cout << "Grad Squared: " << grad_squared << std::endl;
-  }
+  if (!adax) { grad_squared *= all.loss_config.loss->get_square_grad(ec.pred.scalar, ld.label); }
 
-  if (grad_squared == 0 && !stateless) {
-    std::cout << "Returning early due to grad_squared == 0 and stateless == false" << std::endl;
-    return 1.;
-  }
+  if (grad_squared == 0 && !stateless) { return 1.; }
 
   norm_data nd = {grad_squared, 0., 0., {g.neg_power_t, g.neg_norm_power}, {0}, &g.all->logger};
-  // Print values in nd here if needed
-
-  VW::foreach_feature<norm_data, pred_per_update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare, stateless>>(all, ec, nd);
-  // Add prints inside VW::foreach_feature if possible to check individual feature contributions
-
+  VW::foreach_feature<norm_data,
+      pred_per_update_feature<sqrt_rate, feature_mask_off, adaptive, normalized, spare, stateless>>(all, ec, nd);
   if VW_STD17_CONSTEXPR (normalized != 0)
   {
     if (!stateless)
     {
       g.current_model_state->normalized_sum_norm_x += (static_cast<double>(ec.weight)) * nd.norm_x;
       g.current_model_state->total_weight += ec.weight;
-      g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(
-        static_cast<float>(g.current_model_state->total_weight),
-        static_cast<float>(g.current_model_state->normalized_sum_norm_x), g.neg_norm_power);
+      g.update_multiplier =
+          average_update<sqrt_rate, adaptive, normalized>(static_cast<float>(g.current_model_state->total_weight),
+              static_cast<float>(g.current_model_state->normalized_sum_norm_x), g.neg_norm_power);
     }
     else
     {
@@ -783,14 +742,10 @@ float get_pred_per_update(VW::reductions::gd& g, VW::example& ec)
       float tw = static_cast<float>(g.current_model_state->total_weight) + ec.weight;
       g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(tw, nsnx, g.neg_norm_power);
     }
-    //std::cout << "Update Multiplier: " << g.update_multiplier << std::endl;
     nd.pred_per_update *= g.update_multiplier;
   }
-
-  //std::cout << "Pred Per Update: " << nd.pred_per_update << std::endl;
   return nd.pred_per_update;
 }
-
 
 template <bool sqrt_rate, bool feature_mask_off, bool adax, size_t adaptive, size_t normalized, size_t spare,
     bool stateless>
@@ -889,8 +844,6 @@ void update(VW::reductions::gd& g, VW::example& ec)
   if ((update = compute_update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare>(
            g, ec)) != 0.)
   {
-    //std::cout << "Mult: " << g.update_multiplier << "\n";
-    //std::cout << "Update: " << update << "\n";
     train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
   }
 

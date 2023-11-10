@@ -1027,7 +1027,7 @@ def main():
         "-j",
         "--jobs",
         type=int,
-        default=1,
+        default=os.cpu_count(),
         help="Number of tests to run in parallel. Default is current machine core count.",
     )
     parser.add_argument(
@@ -1234,7 +1234,7 @@ def main():
     tasks: List[Future[TestOutcome]] = []
     completed_tests = Completion()
 
-    executor = ThreadPoolExecutor(max_workers=1)
+    executor = ThreadPoolExecutor(max_workers=args.jobs)
 
     for test in tests:
         tasks.append(

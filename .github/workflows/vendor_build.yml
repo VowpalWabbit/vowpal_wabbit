@@ -22,7 +22,7 @@ jobs:
         build_type: ["Debug", "Release"]
         compiler:
         - { cc: "gcc", cxx: "g++"}
-        #- { cc: "clang", cxx: "clang++"}
+        - { cc: "clang", cxx: "clang++"}
     runs-on: ${{matrix.os}}
     steps:
       - uses: actions/checkout@v3
@@ -56,8 +56,6 @@ jobs:
         run: ctest --output-on-failure --no-tests=error --label-regex VWTestList --parallel 2
       - name: Test
         run: python3 test/run_tests.py -f --clean_dirty -E 0.001
-        env:
-          NUM_JOBS: 1
   build_vendor_windows:
     name: core-cli.${{ matrix.os }}.amd64.${{ matrix.build_type }}.msvc.standalone
     runs-on: ${{matrix.os}}

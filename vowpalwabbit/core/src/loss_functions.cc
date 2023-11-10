@@ -13,7 +13,6 @@
 #include <cfloat>
 #include <cmath>
 #include <cstdlib>
-#include <iostream> // Make sure to include this at the top of your file
 
 namespace
 {
@@ -43,24 +42,16 @@ inline float squared_loss_impl_get_loss(const VW::shared_data* sd, float predict
 
 inline float squared_loss_impl_get_update(float prediction, float label, float update_scale, float pred_per_update)
 {
-    //std::cout << "Prediction: " << prediction << ", Label: " << label << ", Update Scale: " << update_scale 
-             // << ", Pred Per Update: " << pred_per_update << "\n";
-
-    if (update_scale * pred_per_update < 1e-6)
-    {
-       // std::cout << "Entering first branch (update_scale * pred_per_update < 1e-6)" << "\n";
-        float update = 2.f * (label - prediction) * update_scale;
-       // std::cout << "Update (first branch): " << update << "\n";
-        return update;
-    }
-
-   // std::cout << "Entering second branch" << "\n";
-    float exp_component = VW::details::correctedExp(-2.f * update_scale * pred_per_update);
-   // std::cout << "Exp Component: " << exp_component << "\n";
-    float update = (label - prediction) * (1.f - exp_component) / pred_per_update;
-   // std::cout << "Update (second branch): " << update << "\n";
-
-    return update;
+  if (update_scale * pred_per_update < 1e-6)
+  {
+    /* When exp(-eta_t)~= 1 we replace 1-exp(-eta_t)
+     * with its first order Taylor expansion around 0
+     * to avoid catastrophic cancellation.
+     */
+    return 2.f * (label - prediction) * update_scale;
+  }
+  return (label - prediction) * (1.f - VW::details::correctedExp(-2.f * update_scale * pred_per_update)) /
+      pred_per_update;
 }
 
 inline float squared_loss_impl_get_unsafe_update(float prediction, float label, float update_scale)

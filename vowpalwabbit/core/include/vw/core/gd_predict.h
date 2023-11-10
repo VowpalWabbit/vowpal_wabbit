@@ -7,7 +7,6 @@
 #include "vw/core/example_predict.h"
 #include "vw/core/interactions_predict.h"
 #include "vw/core/v_array.h"
-#include <iostream>
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::GD_PREDICT
@@ -38,15 +37,7 @@ inline void foreach_feature(WeightsT& weights, const VW::features& fs, DataT& da
   for (const auto& f : fs)
   {
     VW::weight& w = weights[(f.index() + offset)];
-    //std::cout << "Upd Index: " << f.index() << "\n";
-    //std::cout << "Upd Value: " << f.value() << "\n";
-    //std::cout << "Upd Mult: " << mult << "\n";
     FuncT(dat, mult * f.value(), w);
-    //VW::weight* w_ptr = &w;
-    //std::cout << "Upd w[0]: " << w_ptr[0] << "\n";
-    //std::cout << "Upd w[1]: " << w_ptr[1] << "\n";
-    //std::cout << "Upd w[2]: " << w_ptr[2] << "\n";
-    //std::cout << "Upd w[3]: " << w_ptr[3] << "\n";
   }
 }
 
@@ -55,12 +46,7 @@ template <class DataT, void (*FuncT)(DataT&, float, float), class WeightsT>
 inline void foreach_feature(
     const WeightsT& weights, const VW::features& fs, DataT& dat, uint64_t offset = 0, float mult = 1.)
 {
-  for (const auto& f : fs)
-  {
-    //std::cout << "Pred Index: " << f.index() << "\n";
-    //std::cout << "Pred Weight: " << weights[static_cast<size_t>(f.index() + offset)] << "\n";
-    FuncT(dat, mult * f.value(), weights[static_cast<size_t>(f.index() + offset)]);
-  }
+  for (const auto& f : fs) { FuncT(dat, mult * f.value(), weights[static_cast<size_t>(f.index() + offset)]); }
 }
 
 template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT),
