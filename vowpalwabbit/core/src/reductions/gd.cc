@@ -626,22 +626,42 @@ public:
 template <bool sqrt_rate, size_t adaptive, size_t normalized>
 inline float compute_rate_decay(power_data& s, float& fw)
 {
+  std::cout << std::fixed << std::setprecision(10); // Set high precision for floating-point output
+
   VW::weight* w = &fw;
+  std::cout << "Input fw: " << fw << std::endl;
+
   float rate_decay = 1.f;
   if (adaptive)
   {
-    if (sqrt_rate) { rate_decay = inv_sqrt(w[adaptive]); }
-    else { rate_decay = powf(w[adaptive], s.minus_power_t); }
+    if (sqrt_rate)
+    {
+      rate_decay = inv_sqrt(w[adaptive]);
+      std::cout << "Rate decay after inv_sqrt: " << rate_decay << " (inv_sqrt of " << w[adaptive] << ")" << std::endl;
+    }
+    else
+    {
+      rate_decay = powf(w[adaptive], s.minus_power_t);
+      std::cout << "Rate decay after powf (adaptive): " << rate_decay << " (powf of " << w[adaptive] << " ^ " << s.minus_power_t << ")" << std::endl;
+    }
   }
   if VW_STD17_CONSTEXPR (normalized != 0)
   {
     if (sqrt_rate)
     {
       float inv_norm = 1.f / w[normalized];
+      std::cout << "Intermediate inv_norm: " << inv_norm << std::endl;
+
       if (adaptive) { rate_decay *= inv_norm; }
       else { rate_decay *= inv_norm * inv_norm; }
+
+      std::cout << "Rate decay after normalization (sqrt_rate): " << rate_decay << std::endl;
     }
-    else { rate_decay *= powf(w[normalized] * w[normalized], s.neg_norm_power); }
+    else
+    {
+      rate_decay *= powf(w[normalized] * w[normalized], s.neg_norm_power);
+      std::cout << "Rate decay after powf (normalized): " << rate_decay << " (powf of " << w[normalized] << " * " << w[normalized] << " ^ " << s.neg_norm_power << ")" << std::endl;
+    }
   }
   return rate_decay;
 }
@@ -729,7 +749,7 @@ float get_pred_per_update(VW::reductions::gd& g, VW::example& ec)
   float grad_squared = ec.weight;
   if (!adax) {
     grad_squared *= all.loss_config.loss->get_square_grad(ec.pred.scalar, ld.label);
-    std::cout << "Grad Squared: " << grad_squared << std::endl;
+    //std::cout << "Grad Squared: " << grad_squared << std::endl;
   }
 
   if (grad_squared == 0 && !stateless) {
@@ -759,11 +779,11 @@ float get_pred_per_update(VW::reductions::gd& g, VW::example& ec)
       float tw = static_cast<float>(g.current_model_state->total_weight) + ec.weight;
       g.update_multiplier = average_update<sqrt_rate, adaptive, normalized>(tw, nsnx, g.neg_norm_power);
     }
-    std::cout << "Update Multiplier: " << g.update_multiplier << std::endl;
+    //std::cout << "Update Multiplier: " << g.update_multiplier << std::endl;
     nd.pred_per_update *= g.update_multiplier;
   }
 
-  std::cout << "Pred Per Update: " << nd.pred_per_update << std::endl;
+  //std::cout << "Pred Per Update: " << nd.pred_per_update << std::endl;
   return nd.pred_per_update;
 }
 
