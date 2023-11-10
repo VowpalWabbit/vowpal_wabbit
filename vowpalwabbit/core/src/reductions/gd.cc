@@ -849,8 +849,8 @@ void update(VW::reductions::gd& g, VW::example& ec)
   if ((update = compute_update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare>(
            g, ec)) != 0.)
   {
-    std::cout << "Mult: " << g.update_multiplier << "\n";
-    std::cout << "Update: " << update << "\n";
+    //std::cout << "Mult: " << g.update_multiplier << "\n";
+    //std::cout << "Update: " << update << "\n";
     train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
   }
 
