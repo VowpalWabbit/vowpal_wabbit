@@ -7,6 +7,7 @@
 #include "vw/core/example_predict.h"
 #include "vw/core/interactions_predict.h"
 #include "vw/core/v_array.h"
+#include <iostream>
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::GD_PREDICT
@@ -46,7 +47,12 @@ template <class DataT, void (*FuncT)(DataT&, float, float), class WeightsT>
 inline void foreach_feature(
     const WeightsT& weights, const VW::features& fs, DataT& dat, uint64_t offset = 0, float mult = 1.)
 {
-  for (const auto& f : fs) { FuncT(dat, mult * f.value(), weights[static_cast<size_t>(f.index() + offset)]); }
+  for (const auto& f : fs)
+  {
+    std::cout << f.index() << "\n";
+    std::cout << weights[static_cast<size_t>(f.index() + offset)] << "\n";
+    FuncT(dat, mult * f.value(), weights[static_cast<size_t>(f.index() + offset)]);
+  }
 }
 
 template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT),
