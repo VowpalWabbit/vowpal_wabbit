@@ -190,10 +190,10 @@ inline void update_feature(float& update, float x, float& fw)
   {
     if VW_STD17_CONSTEXPR (spare != 0)
     {
-      std::cout << "Upd spare: " << w[spare] << "\n";
+      //std::cout << "Upd spare: " << w[spare] << "\n";
       x *= w[spare];
     }
-    std::cout << "Upd update: " << update << "\n";
+    //std::cout << "Upd update: " << update << "\n";
     w[0] += update * x;
   }
 }
@@ -849,6 +849,8 @@ void update(VW::reductions::gd& g, VW::example& ec)
   if ((update = compute_update<sparse_l2, invariant, sqrt_rate, feature_mask_off, adax, adaptive, normalized, spare>(
            g, ec)) != 0.)
   {
+    std::cout << "Mult: " << g.update_multiplier << "\n";
+    std::cout << "Update: " << update << "\n";
     train<sqrt_rate, feature_mask_off, adaptive, normalized, spare>(g, ec, update);
   }
 
