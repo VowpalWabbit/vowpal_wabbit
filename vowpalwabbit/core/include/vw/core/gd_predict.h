@@ -38,7 +38,15 @@ inline void foreach_feature(WeightsT& weights, const VW::features& fs, DataT& da
   for (const auto& f : fs)
   {
     VW::weight& w = weights[(f.index() + offset)];
+    std::cout << "Upd Index: " << f.index() << "\n";
+    std::cout << "Upd Value: " << f.value() << "\n";
+    std::cout << "Upd Mult: " << mult << "\n";
     FuncT(dat, mult * f.value(), w);
+    VW::weight* w_ptr = &w;
+    std::cout << "Upd w[0]: " << w_ptr[0] << "\n";
+    std::cout << "Upd w[1]: " << w_ptr[1] << "\n";
+    std::cout << "Upd w[2]: " << w_ptr[2] << "\n";
+    std::cout << "Upd w[3]: " << w_ptr[3] << "\n";
   }
 }
 
@@ -49,8 +57,8 @@ inline void foreach_feature(
 {
   for (const auto& f : fs)
   {
-    std::cout << f.index() << "\n";
-    std::cout << weights[static_cast<size_t>(f.index() + offset)] << "\n";
+    std::cout << "Pred Index: " << f.index() << "\n";
+    std::cout << "Pred Weight: " << weights[static_cast<size_t>(f.index() + offset)] << "\n";
     FuncT(dat, mult * f.value(), weights[static_cast<size_t>(f.index() + offset)]);
   }
 }

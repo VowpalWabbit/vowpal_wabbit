@@ -188,7 +188,12 @@ inline void update_feature(float& update, float x, float& fw)
   bool modify = x < FLT_MAX && x > -FLT_MAX && (feature_mask_off || fw != 0.);
   if (modify)
   {
-    if VW_STD17_CONSTEXPR (spare != 0) { x *= w[spare]; }
+    if VW_STD17_CONSTEXPR (spare != 0)
+    {
+      std::cout << "Upd spare: " << w[spare] << "\n";
+      x *= w[spare];
+    }
+    std::cout << "Upd update: " << update << "\n";
     w[0] += update * x;
   }
 }
