@@ -283,7 +283,7 @@ void learn_freegrad(freegrad& a, VW::example& ec)
   freegrad_update_after_prediction(a, ec);
 }
 
-void save_load(freegrad& fg, VW::io_buf& model_file, bool read, bool text)
+void save_load(freegrad& fg, VW::io_buf& model_file, bool read, bool text, const VW::version_struct&)
 {
   VW::workspace* all = fg.all;
   if (read) { VW::details::initialize_regressor(*all); }

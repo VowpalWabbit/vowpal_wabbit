@@ -112,7 +112,7 @@ void pre_save_load_automl(VW::workspace& all, automl<CMType>& data)
 }
 
 template <typename CMType>
-void save_load_automl(automl<CMType>& aml, VW::io_buf& io, bool read, bool text)
+void save_load_automl(automl<CMType>& aml, VW::io_buf& io, bool read, bool text, const VW::version_struct&)
 {
   if (io.num_files() == 0) { return; }
   if (read) { VW::model_utils::read_model_field(io, aml); }

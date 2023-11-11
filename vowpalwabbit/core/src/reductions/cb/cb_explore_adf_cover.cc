@@ -36,12 +36,12 @@ class cb_explore_adf_cover
 public:
   cb_explore_adf_cover(size_t cover_size, float psi, bool nounif, float epsilon, bool epsilon_decay, bool first_only,
       VW::LEARNER::learner* cs_ldf_learner, VW::LEARNER::learner* scorer, VW::cb_type_t cb_type,
-      VW::version_struct model_file_version, VW::io::logger logger);
+      VW::io::logger logger);
 
   // Should be called through cb_explore_adf_base for pre/post-processing
   void predict(VW::LEARNER::learner& base, VW::multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
   void learn(VW::LEARNER::learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
-  void save_load(VW::io_buf& io, bool read, bool text);
+  void save_load(VW::io_buf& io, bool read, bool text, const VW::version_struct&);
 
 private:
   size_t _cover_size;
@@ -56,7 +56,6 @@ private:
   VW::details::cb_to_cs_adf_dr _gen_cs_dr;
   VW::cb_type_t _cb_type = VW::cb_type_t::DM;
 
-  VW::version_struct _model_file_version;
   VW::io::logger _logger;
 
   VW::v_array<VW::action_score> _action_probs;
@@ -71,7 +70,7 @@ private:
 
 cb_explore_adf_cover::cb_explore_adf_cover(size_t cover_size, float psi, bool nounif, float epsilon, bool epsilon_decay,
     bool first_only, VW::LEARNER::learner* cs_ldf_learner, VW::LEARNER::learner* scorer, VW::cb_type_t cb_type,
-    VW::version_struct model_file_version, VW::io::logger logger)
+    VW::io::logger logger)
     : _cover_size(cover_size)
     , _psi(psi)
     , _nounif(nounif)
@@ -81,7 +80,6 @@ cb_explore_adf_cover::cb_explore_adf_cover(size_t cover_size, float psi, bool no
     , _counter(0)
     , _cs_ldf_learner(cs_ldf_learner)
     , _cb_type(cb_type)
-    , _model_file_version(model_file_version)
     , _logger(std::move(logger))
 {
   _gen_cs_dr.scorer = scorer;
@@ -222,10 +220,10 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::learner& base, VW:
   if (is_learn) { ++_counter; }
 }
 
-void cb_explore_adf_cover::save_load(VW::io_buf& io, bool read, bool text)
+void cb_explore_adf_cover::save_load(VW::io_buf& io, bool read, bool text, const VW::version_struct& ver)
 {
   if (io.num_files() == 0) { return; }
-  if (!read || _model_file_version >= VW::version_definitions::VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG)
+  if (!read || ver >= VW::version_definitions::VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG)
   {
     std::stringstream msg;
     if (!read) { msg << "cb cover adf storing example counter:  = " << _counter << "\n"; }
@@ -326,7 +324,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_cover_setup
   using explore_type = cb_explore_adf_base<cb_explore_adf_cover>;
   auto data = VW::make_unique<explore_type>(all.output_runtime.global_metrics.are_metrics_enabled(),
       VW::cast_to_smaller_type<size_t>(cover_size), psi, nounif, epsilon, epsilon_decay, first_only, cost_sensitive,
-      scorer, cb_type, all.runtime_state.model_file_ver, all.logger);
+      scorer, cb_type, all.logger);
   auto l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_cover_setup))
                .set_input_label_type(VW::label_type_t::CB)

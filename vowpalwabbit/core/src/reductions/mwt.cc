@@ -211,7 +211,7 @@ void print_update_mwt(
   }
 }
 
-void save_load(mwt& c, VW::io_buf& model_file, bool read, bool text)
+void save_load(mwt& c, VW::io_buf& model_file, bool read, bool text, const VW::version_struct&)
 {
   if (model_file.num_files() == 0) { return; }
 

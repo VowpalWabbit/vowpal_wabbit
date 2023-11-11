@@ -230,7 +230,7 @@ inline void save_load_regressor(VW::workspace& all, VW::io_buf& model_file, bool
   VW::details::save_load_regressor_gd(all, model_file, read, text);
 }
 
-void save_load(cbzo& data, VW::io_buf& model_file, bool read, bool text)
+void save_load(cbzo& data, VW::io_buf& model_file, bool read, bool text, const VW::version_struct&)
 {
   VW::workspace& all = *data.all;
   if (read)

@@ -78,7 +78,7 @@ public:
   // Should be called through cb_explore_adf_base for pre/post-processing
   void predict(VW::LEARNER::learner& base, multi_ex& examples);
   void learn(VW::LEARNER::learner& base, multi_ex& examples);
-  void save_load(io_buf& io, bool read, bool text);
+  void save_load(io_buf& io, bool read, bool text, const VW::version_struct&);
   size_t _counter = 0;
   float _gamma_scale;
   float _gamma_exponent;
@@ -506,7 +506,7 @@ void cb_explore_adf_graph_feedback::learn(VW::LEARNER::learner& base, multi_ex& 
   predict_or_learn_impl<true>(base, examples);
 }
 
-void cb_explore_adf_graph_feedback::save_load(VW::io_buf& io, bool read, bool text)
+void cb_explore_adf_graph_feedback::save_load(VW::io_buf& io, bool read, bool text, const VW::version_struct&)
 {
   if (io.num_files() == 0) { return; }
 

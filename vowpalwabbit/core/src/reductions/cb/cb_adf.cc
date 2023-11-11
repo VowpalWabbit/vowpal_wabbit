@@ -345,10 +345,9 @@ void print_update_cb_adf(VW::workspace& all, VW::shared_data& /* sd */, const VW
   else { VW::details::print_update_cb(all, !labeled_example, ec, &ec_seq, true, nullptr); }
 }
 
-void save_load(VW::reductions::cb_adf& c, VW::io_buf& model_file, bool read, bool text)
+void save_load(VW::reductions::cb_adf& c, VW::io_buf& model_file, bool read, bool text, const VW::version_struct& ver)
 {
-  if (c.get_model_file_ver() != nullptr &&
-      *c.get_model_file_ver() < VW::version_definitions::VERSION_FILE_WITH_CB_ADF_SAVE)
+  if (ver < VW::version_definitions::VERSION_FILE_WITH_CB_ADF_SAVE)
   {
     return;
   }

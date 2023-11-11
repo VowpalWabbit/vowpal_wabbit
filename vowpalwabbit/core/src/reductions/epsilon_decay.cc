@@ -288,7 +288,7 @@ void learn(VW::reductions::epsilon_decay::epsilon_decay_data& data, VW::LEARNER:
 }
 
 void save_load_epsilon_decay(
-    VW::reductions::epsilon_decay::epsilon_decay_data& epsilon_decay, VW::io_buf& io, bool read, bool text)
+    VW::reductions::epsilon_decay::epsilon_decay_data& epsilon_decay, VW::io_buf& io, bool read, bool text, const VW::version_struct&)
 {
   if (io.num_files() == 0) { return; }
   if (read) { VW::model_utils::read_model_field(io, epsilon_decay); }

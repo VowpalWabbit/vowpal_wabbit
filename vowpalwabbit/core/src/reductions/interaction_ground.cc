@@ -249,7 +249,7 @@ void learn(VW::reductions::igl::igl_data& igl, learner& base, VW::multi_ex& ec_s
   ec_seq[0]->pred.a_s = std::move(stashed_prediction);
 }
 
-void save_load_igl(VW::reductions::igl::igl_data& igl, VW::io_buf& io, bool read, bool text)
+void save_load_igl(VW::reductions::igl::igl_data& igl, VW::io_buf& io, bool read, bool text, const VW::version_struct&)
 {
   if (io.num_files() == 0) { return; }
   if (read) { VW::reductions::model_utils::read_model_field(io, igl); }

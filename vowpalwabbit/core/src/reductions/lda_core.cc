@@ -762,7 +762,7 @@ public:
   uint64_t stride;
 };
 
-void save_load(lda& l, VW::io_buf& model_file, bool read, bool text)
+void save_load(lda& l, VW::io_buf& model_file, bool read, bool text, const VW::version_struct& ver)
 {
   VW::workspace& all = *(l.all);
   uint64_t length = static_cast<uint64_t>(1) << all.initial_weights_config.num_bits;
@@ -800,7 +800,7 @@ void save_load(lda& l, VW::io_buf& model_file, bool read, bool text)
       size_t K = all.reduction_state.lda;  // NOLINT
       if (!read && text) { msg << i << " "; }
 
-      if (!read || all.runtime_state.model_file_ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_ID)
+      if (!read || ver >= VW::version_definitions::VERSION_FILE_WITH_HEADER_ID)
       {
         brw +=
             VW::details::bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&i), sizeof(i), read, msg, text);

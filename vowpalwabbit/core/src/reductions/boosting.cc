@@ -239,7 +239,7 @@ void predict_or_learn_adaptive(boosting& o, VW::LEARNER::learner& base, VW::exam
   ec.pred.scalar = final_prediction;
 }
 
-void save_load_sampling(boosting& o, VW::io_buf& model_file, bool read, bool text)
+void save_load_sampling(boosting& o, VW::io_buf& model_file, bool read, bool text, const VW::version_struct&)
 {
   if (model_file.num_files() == 0) { return; }
   std::stringstream os;
@@ -298,7 +298,7 @@ void save_load_sampling(boosting& o, VW::io_buf& model_file, bool read, bool tex
   o.logger.err_info("{}", fmt::to_string(buffer));
 }
 
-void save_load(boosting& o, VW::io_buf& model_file, bool read, bool text)
+void save_load(boosting& o, VW::io_buf& model_file, bool read, bool text, const VW::version_struct&)
 {
   if (model_file.num_files() == 0) { return; }
   std::stringstream os;
@@ -340,7 +340,7 @@ void save_load(boosting& o, VW::io_buf& model_file, bool read, bool text)
   }
 }
 
-void save_load_boosting_noop(boosting&, VW::io_buf&, bool, bool) {}
+void save_load_boosting_noop(boosting&, VW::io_buf&, bool, bool, const VW::version_struct&) {}
 }  // namespace
 
 std::shared_ptr<VW::LEARNER::learner> VW::reductions::boosting_setup(VW::setup_base_i& stack_builder)
@@ -383,7 +383,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::boosting_setup(VW::setup_b
   std::string name_addition;
   void (*learn_ptr)(boosting&, VW::LEARNER::learner&, VW::example&);
   void (*pred_ptr)(boosting&, VW::LEARNER::learner&, VW::example&);
-  void (*save_load_fn)(boosting&, io_buf&, bool, bool);
+  void (*save_load_fn)(boosting&, io_buf&, bool, bool, const VW::version_struct&);
 
   if (data->alg == "BBM")
   {

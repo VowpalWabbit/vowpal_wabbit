@@ -256,7 +256,7 @@ void initialize_weights(VW::weight* weights, uint64_t index, uint32_t stride)
   }
 }
 
-void save_load(gdmf& d, VW::io_buf& model_file, bool read, bool text)
+void save_load(gdmf& d, VW::io_buf& model_file, bool read, bool text, const VW::version_struct&)
 {
   VW::workspace& all = *d.all;
   uint64_t length = static_cast<uint64_t>(1) << all.initial_weights_config.num_bits;

@@ -1132,7 +1132,7 @@ void save_load_node(node& cn, VW::io_buf& model_file, bool& read, bool& text, st
   for (uint32_t k = 0; k < leaf_n_examples; k++) DEPRECATED_WRITEIT(cn.examples_index[k], "example_location");
 }
 
-void save_load_memory_tree(memory_tree& b, VW::io_buf& model_file, bool read, bool text)
+void save_load_memory_tree(memory_tree& b, VW::io_buf& model_file, bool read, bool text, const VW::version_struct&)
 {
   std::stringstream msg;
   if (model_file.num_files() > 0)

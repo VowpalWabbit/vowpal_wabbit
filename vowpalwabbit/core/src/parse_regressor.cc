@@ -489,7 +489,7 @@ void VW::details::dump_regressor(VW::workspace& all, VW::io_buf& buf, bool as_te
   std::string unused;
   if (all.l != nullptr) { all.l->pre_save_load(all); }
   VW::details::save_load_header(all, buf, false, as_text, unused, *all.options);
-  if (all.l != nullptr) { all.l->save_load(buf, false, as_text); }
+  if (all.l != nullptr) { all.l->save_load(buf, false, as_text, all.runtime_state.model_file_ver); }
 
   buf.flush();  // close_file() should do this for me ...
   buf.close_file();
@@ -580,7 +580,7 @@ void VW::details::parse_mask_regressor_args(
     io_temp_mask.add_file(VW::io::open_file_reader(feature_mask));
 
     save_load_header(all, io_temp_mask, true, false, file_options, *all.options);
-    all.l->save_load(io_temp_mask, true, false);
+    all.l->save_load(io_temp_mask, true, false, all.runtime_state.model_file_ver);
     io_temp_mask.close_file();
 
     // Deal with the over-written header from initial regressor

@@ -620,7 +620,7 @@ void end_pass(stagewise_poly& poly)
   }
 }
 
-void save_load(stagewise_poly& poly, VW::io_buf& model_file, bool read, bool text)
+void save_load(stagewise_poly& poly, VW::io_buf& model_file, bool read, bool text, const VW::version_struct&)
 {
   if (model_file.num_files() > 0)
   {

@@ -70,7 +70,6 @@ public:
   uint32_t fn = 0;          // false negatives
   uint32_t ec_count = 0;    // number of examples
 
-  VW::version_struct model_file_version;
   bool force_load_legacy_model = false;
 
   plt()
@@ -376,11 +375,11 @@ void finish(plt& p)
   }
 }
 
-void save_load_tree(plt& p, VW::io_buf& model_file, bool read, bool text)
+void save_load_tree(plt& p, VW::io_buf& model_file, bool read, bool text, const VW::version_struct& ver)
 {
   if (model_file.num_files() == 0) { return; }
 
-  if (read && p.model_file_version < VW::version_definitions::VERSION_FILE_WITH_PLT_SAVE_LOAD_FIX &&
+  if (read && ver < VW::version_definitions::VERSION_FILE_WITH_PLT_SAVE_LOAD_FIX &&
       p.force_load_legacy_model)
   {
     bool resume = false;
@@ -399,7 +398,7 @@ void save_load_tree(plt& p, VW::io_buf& model_file, bool read, bool text)
     return;
   }
 
-  if (read && p.model_file_version < VW::version_definitions::VERSION_FILE_WITH_PLT_SAVE_LOAD_FIX)
+  if (read && ver < VW::version_definitions::VERSION_FILE_WITH_PLT_SAVE_LOAD_FIX)
   {
     THROW(
         "PLT models before 9.7 had a bug which caused incorrect loading under certain conditions, so by default they "
@@ -482,8 +481,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::plt_setup(VW::setup_base_i
     tree->p_at.resize(tree->top_k);
     tree->r_at.resize(tree->top_k);
   }
-
-  tree->model_file_version = all.runtime_state.model_file_ver;
 
   size_t feature_width = tree->t;
   std::string name_addition = "";

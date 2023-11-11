@@ -127,16 +127,16 @@ void active_print_result(
   if (t != len) { logger.err_error("write error: {}", VW::io::strerror_to_string(errno)); }
 }
 
-void save_load(active& a, VW::io_buf& io, bool read, bool text)
+void save_load(active& a, VW::io_buf& io, bool read, bool text, const VW::version_struct& ver)
 {
   using namespace VW::version_definitions;
   if (io.num_files() == 0) { return; }
   // This code is valid if version is within
   // [VERSION_FILE_WITH_ACTIVE_SEEN_LABELS, VERSION_FILE_WITH_ACTIVE_SEEN_LABELS_REVERTED)
   // or >= VERSION_FILE_WITH_ACTIVE_SEEN_LABELS_FIXED
-  if ((a._model_version >= VERSION_FILE_WITH_ACTIVE_SEEN_LABELS &&
-          a._model_version < VERSION_FILE_WITH_ACTIVE_SEEN_LABELS_REVERTED) ||
-      a._model_version >= VERSION_FILE_WITH_ACTIVE_SEEN_LABELS_FIXED)
+  if ((ver >= VERSION_FILE_WITH_ACTIVE_SEEN_LABELS &&
+          ver < VERSION_FILE_WITH_ACTIVE_SEEN_LABELS_REVERTED) ||
+      ver >= VERSION_FILE_WITH_ACTIVE_SEEN_LABELS_FIXED)
   {
     if (read)
     {
@@ -201,7 +201,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::active_setup(VW::setup_bas
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
   if (options.was_supplied("lda")) { THROW("lda cannot be combined with active learning") }
-  auto data = VW::make_unique<active>(active_c0, all.sd, all.get_random_state(), all.runtime_state.model_file_ver);
+  auto data = VW::make_unique<active>(active_c0, all.sd, all.get_random_state());
   auto base = require_singleline(stack_builder.setup_base_learner());
 
   using learn_pred_func_t = void (*)(active&, VW::LEARNER::learner&, VW::example&);

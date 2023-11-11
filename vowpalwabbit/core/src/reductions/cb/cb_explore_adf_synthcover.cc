@@ -34,20 +34,18 @@ class cb_explore_adf_synthcover
 {
 public:
   cb_explore_adf_synthcover(float epsilon, float psi, size_t synthcoversize,
-      std::shared_ptr<VW::rand_state> random_state, VW::version_struct model_file_version);
+      std::shared_ptr<VW::rand_state> random_state);
 
   // Should be called through cb_explore_adf_base for pre/post-processing
   void predict(VW::LEARNER::learner& base, VW::multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
   void learn(VW::LEARNER::learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
-  void save_load(VW::io_buf& model_file, bool read, bool text);
+  void save_load(VW::io_buf& model_file, bool read, bool text, const VW::version_struct&);
 
 private:
   float _epsilon;
   float _psi;
   size_t _synthcoversize;
   std::shared_ptr<VW::rand_state> _random_state;
-
-  VW::version_struct _model_file_version;
 
   VW::v_array<VW::action_score> _action_probs;
   float _min_cost;
@@ -57,12 +55,11 @@ private:
 };
 
 cb_explore_adf_synthcover::cb_explore_adf_synthcover(float epsilon, float psi, size_t synthcoversize,
-    std::shared_ptr<VW::rand_state> random_state, VW::version_struct model_file_version)
+    std::shared_ptr<VW::rand_state> random_state)
     : _epsilon(epsilon)
     , _psi(psi)
     , _synthcoversize(synthcoversize)
     , _random_state(std::move(random_state))
-    , _model_file_version(model_file_version)
     , _min_cost(0.0)
     , _max_cost(0.0)
 {
@@ -127,10 +124,10 @@ void cb_explore_adf_synthcover::predict_or_learn_impl(VW::LEARNER::learner& base
   for (size_t i = 0; i < num_actions; i++) { preds[i] = _action_probs[i]; }
 }
 
-void cb_explore_adf_synthcover::save_load(VW::io_buf& model_file, bool read, bool text)
+void cb_explore_adf_synthcover::save_load(VW::io_buf& model_file, bool read, bool text, const VW::version_struct& ver)
 {
   if (model_file.num_files() == 0) { return; }
-  if (!read || _model_file_version >= VW::version_definitions::VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG)
+  if (!read || ver >= VW::version_definitions::VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG)
   {
     std::stringstream msg;
     if (!read) { msg << "_min_cost " << _min_cost << "\n"; }
@@ -196,7 +193,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_synthcover_
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_synthcover>;
   auto data = VW::make_unique<explore_type>(all.output_runtime.global_metrics.are_metrics_enabled(), epsilon, psi,
-      VW::cast_to_smaller_type<size_t>(synthcoversize), all.get_random_state(), all.runtime_state.model_file_ver);
+      VW::cast_to_smaller_type<size_t>(synthcoversize), all.get_random_state());
   auto l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_synthcover_setup))
                .set_input_label_type(VW::label_type_t::CB)

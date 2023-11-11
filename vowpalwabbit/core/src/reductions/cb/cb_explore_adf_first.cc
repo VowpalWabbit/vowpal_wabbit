@@ -31,25 +31,24 @@ namespace
 class cb_explore_adf_first
 {
 public:
-  cb_explore_adf_first(size_t tau, float epsilon, VW::version_struct model_file_version);
+  cb_explore_adf_first(size_t tau, float epsilon);
   ~cb_explore_adf_first() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing
   void predict(learner& base, VW::multi_ex& examples) { predict_or_learn_impl<false>(base, examples); }
   void learn(learner& base, VW::multi_ex& examples) { predict_or_learn_impl<true>(base, examples); }
-  void save_load(VW::io_buf& io, bool read, bool text);
+  void save_load(VW::io_buf& io, bool read, bool text, const VW::version_struct&);
 
 private:
   size_t _tau;
   float _epsilon;
 
-  VW::version_struct _model_file_version;
   template <bool is_learn>
   void predict_or_learn_impl(learner& base, VW::multi_ex& examples);
 };
 
-cb_explore_adf_first::cb_explore_adf_first(size_t tau, float epsilon, VW::version_struct model_file_version)
-    : _tau(tau), _epsilon(epsilon), _model_file_version(model_file_version)
+cb_explore_adf_first::cb_explore_adf_first(size_t tau, float epsilon)
+    : _tau(tau), _epsilon(epsilon)
 {
 }
 
@@ -78,10 +77,10 @@ void cb_explore_adf_first::predict_or_learn_impl(learner& base, VW::multi_ex& ex
   VW::explore::enforce_minimum_probability(_epsilon, true, begin_scores(preds), end_scores(preds));
 }
 
-void cb_explore_adf_first::save_load(VW::io_buf& io, bool read, bool text)
+void cb_explore_adf_first::save_load(VW::io_buf& io, bool read, bool text, const VW::version_struct& ver)
 {
   if (io.num_files() == 0) { return; }
-  if (!read || _model_file_version >= VW::version_definitions::VERSION_FILE_WITH_FIRST_SAVE_RESUME)
+  if (!read || ver >= VW::version_definitions::VERSION_FILE_WITH_FIRST_SAVE_RESUME)
   {
     std::stringstream msg;
     if (!read) { msg << "cb first adf storing example counter:  = " << _tau << "\n"; }
@@ -122,7 +121,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_first_setup
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_first>;
   auto data = VW::make_unique<explore_type>(all.output_runtime.global_metrics.are_metrics_enabled(),
-      VW::cast_to_smaller_type<size_t>(tau), epsilon, all.runtime_state.model_file_ver);
+      VW::cast_to_smaller_type<size_t>(tau), epsilon);
 
   if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
   auto l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,

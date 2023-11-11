@@ -343,15 +343,15 @@ void save_load_svm_model(svm_params& params, VW::io_buf& model_file, bool read, 
       static_cast<uint32_t>(model->num_support) * sizeof(float), read, msg, text);
 }
 
-void save_load(svm_params& params, VW::io_buf& model_file, bool read, bool text)
+void save_load(svm_params& params, VW::io_buf& model_file, bool read, bool text, const VW::version_struct& ver)
 {
   if (text)
   {
     *params.all->output_runtime.trace_message << "Not supporting readable model for kernel svm currently" << endl;
     return;
   }
-  else if (params.all->runtime_state.model_file_ver > VW::version_definitions::EMPTY_VERSION_FILE &&
-      params.all->runtime_state.model_file_ver < VW::version_definitions::VERSION_FILE_WITH_FLAT_EXAMPLE_TAG_FIX)
+  else if (ver > VW::version_definitions::EMPTY_VERSION_FILE &&
+      ver < VW::version_definitions::VERSION_FILE_WITH_FLAT_EXAMPLE_TAG_FIX)
   {
     THROW("Models using ksvm from before version 9.6 are not compatable with this version of VW.")
   }

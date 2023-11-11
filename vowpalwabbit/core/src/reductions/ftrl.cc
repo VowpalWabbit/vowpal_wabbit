@@ -331,7 +331,7 @@ void learn_coin_betting(ftrl& a, VW::example& ec)
   coin_betting_update_after_prediction(a, ec);
 }
 
-void save_load(ftrl& b, VW::io_buf& model_file, bool read, bool text)
+void save_load(ftrl& b, VW::io_buf& model_file, bool read, bool text, const VW::version_struct&)
 {
   VW::workspace* all = b.all;
   if (read) { VW::details::initialize_regressor(*all); }

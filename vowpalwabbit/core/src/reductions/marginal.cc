@@ -280,7 +280,7 @@ void predict_or_learn(data& sm, VW::LEARNER::learner& base, VW::example& ec)
   undo_marginal(sm, ec);
 }
 
-void save_load(data& sm, VW::io_buf& io, bool read, bool text)
+void save_load(data& sm, VW::io_buf& io, bool read, bool text, const VW::version_struct&)
 {
   const uint64_t stride_shift = sm.m_all->weights.stride_shift();
 

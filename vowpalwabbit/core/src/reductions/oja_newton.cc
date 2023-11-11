@@ -465,7 +465,7 @@ void learn(OjaNewton& oja_newton_ptr, VW::example& ec)
   oja_newton_ptr.check();
 }
 
-void save_load(OjaNewton& oja_newton_ptr, VW::io_buf& model_file, bool read, bool text)
+void save_load(OjaNewton& oja_newton_ptr, VW::io_buf& model_file, bool read, bool text, const VW::version_struct&)
 {
   VW::workspace& all = *oja_newton_ptr.all;
   if (read)

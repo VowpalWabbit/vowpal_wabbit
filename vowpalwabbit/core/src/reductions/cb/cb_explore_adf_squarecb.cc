@@ -43,13 +43,13 @@ class cb_explore_adf_squarecb
 {
 public:
   cb_explore_adf_squarecb(float gamma_scale, float gamma_exponent, bool elim, float c0, float min_cb_cost,
-      float max_cb_cost, VW::version_struct model_file_version, float epsilon, bool store_gamma_in_reduction_features);
+      float max_cb_cost, float epsilon, bool store_gamma_in_reduction_features);
   ~cb_explore_adf_squarecb() = default;
 
   // Should be called through cb_explore_adf_base for pre/post-processing
   void predict(learner& base, VW::multi_ex& examples);
   void learn(learner& base, VW::multi_ex& examples);
-  void save_load(VW::io_buf& io, bool read, bool text);
+  void save_load(VW::io_buf& io, bool read, bool text, const VW::version_struct&);
 
 private:
   size_t _counter;
@@ -66,8 +66,6 @@ private:
   std::vector<float> _min_costs;
   std::vector<float> _max_costs;
 
-  VW::version_struct _model_file_version;
-
   bool _store_gamma_in_reduction_features;
 
   // for backing up cb example data when computing sensitivities
@@ -78,7 +76,7 @@ private:
 };
 
 cb_explore_adf_squarecb::cb_explore_adf_squarecb(float gamma_scale, float gamma_exponent, bool elim, float c0,
-    float min_cb_cost, float max_cb_cost, VW::version_struct model_file_version, float epsilon,
+    float min_cb_cost, float max_cb_cost, float epsilon,
     bool store_gamma_in_reduction_features)
     : _counter(0)
     , _gamma_scale(gamma_scale)
@@ -88,7 +86,6 @@ cb_explore_adf_squarecb::cb_explore_adf_squarecb(float gamma_scale, float gamma_
     , _min_cb_cost(min_cb_cost)
     , _max_cb_cost(max_cb_cost)
     , _epsilon(epsilon)
-    , _model_file_version(model_file_version)
     , _store_gamma_in_reduction_features(store_gamma_in_reduction_features)
 {
 }
@@ -296,10 +293,10 @@ void cb_explore_adf_squarecb::learn(learner& base, VW::multi_ex& examples)
   examples[0]->pred.a_s = std::move(preds);
 }
 
-void cb_explore_adf_squarecb::save_load(VW::io_buf& io, bool read, bool text)
+void cb_explore_adf_squarecb::save_load(VW::io_buf& io, bool read, bool text, const VW::version_struct& ver)
 {
   if (io.num_files() == 0) { return; }
-  if (!read || _model_file_version >= VW::version_definitions::VERSION_FILE_WITH_SQUARE_CB_SAVE_RESUME)
+  if (!read || ver >= VW::version_definitions::VERSION_FILE_WITH_SQUARE_CB_SAVE_RESUME)
   {
     std::stringstream msg;
     if (!read) { msg << "cb squarecb adf storing example counter:  = " << _counter << "\n"; }
@@ -396,7 +393,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_squarecb_se
 
   using explore_type = cb_explore_adf_base<cb_explore_adf_squarecb>;
   auto data = VW::make_unique<explore_type>(all.output_runtime.global_metrics.are_metrics_enabled(), gamma_scale,
-      gamma_exponent, elim, c0, min_cb_cost, max_cb_cost, all.runtime_state.model_file_ver, epsilon,
+      gamma_exponent, elim, c0, min_cb_cost, max_cb_cost, epsilon,
       store_gamma_in_reduction_features);
   auto l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_squarecb_setup))

@@ -302,7 +302,7 @@ void learn(log_multi& b, learner& base, VW::example& ec)
   }
 }
 
-void save_load_tree(log_multi& b, VW::io_buf& model_file, bool read, bool text)
+void save_load_tree(log_multi& b, VW::io_buf& model_file, bool read, bool text, const VW::version_struct&)
 {
   if (model_file.num_files() > 0)
   {

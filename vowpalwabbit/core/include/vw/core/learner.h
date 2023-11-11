@@ -70,6 +70,7 @@ using multipredict_func =
 
 using sensitivity_func = std::function<float(example& ex)>;
 using save_load_func = std::function<void(io_buf&, bool read, bool text)>;
+using save_load_ver_func = std::function<void(io_buf&, bool read, bool text, const VW::version_struct&)>;
 using pre_save_load_func = std::function<void(VW::workspace& all)>;
 using save_metric_func = std::function<void(metric_sink& metrics)>;
 
@@ -182,7 +183,7 @@ public:
   float sensitivity(example& ec, size_t i = 0);
 
   // Called anytime saving or loading needs to happen. Autorecursive.
-  void save_load(io_buf& io, const bool read, const bool text);
+  void save_load(io_buf& io, const bool read, const bool text, const VW::version_struct& model_version);
 
   // Called to edit the command-line from a learner. Autorecursive
   void pre_save_load(VW::workspace& all);
@@ -287,6 +288,7 @@ private:
   details::cleanup_example_func _cleanup_example_f;
 
   details::save_load_func _save_load_f;
+  details::save_load_ver_func _save_load_ver_f;
   details::void_func _end_pass_f;
   details::void_func _end_examples_f;
   details::pre_save_load_func _pre_save_load_f;
@@ -417,11 +419,18 @@ public:
     learner_ptr->learn_returns_prediction = learn_returns_prediction;
   )
 
+  // TODO: deprecate?
   LEARNER_BUILDER_DEFINE(set_save_load(void (*fn_ptr)(DataT&, io_buf&, bool, bool)),
     assert(fn_ptr != nullptr);
     DataT* data = this->learner_data.get();
     this->learner_ptr->_save_load_f = [fn_ptr, data](io_buf& buf, bool read, bool text)
     { fn_ptr(*data, buf, read, text); };
+  )
+  LEARNER_BUILDER_DEFINE(set_save_load(void (*fn_ptr)(DataT&, io_buf&, bool, bool, const VW::version_struct&)),
+    assert(fn_ptr != nullptr);
+    DataT* data = this->learner_data.get();
+    this->learner_ptr->_save_load_ver_f = [fn_ptr, data](io_buf& buf, bool read, bool text, const VW::version_struct& ver)
+    { fn_ptr(*data, buf, read, text, ver); };
   )
 
   LEARNER_BUILDER_DEFINE(set_finish(void (*fn_ptr)(DataT&)),

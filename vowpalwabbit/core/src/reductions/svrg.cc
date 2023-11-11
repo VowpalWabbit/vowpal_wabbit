@@ -155,7 +155,7 @@ void learn(svrg& s, VW::example& ec)
   s.prev_pass = pass;
 }
 
-void save_load(svrg& s, VW::io_buf& model_file, bool read, bool text)
+void save_load(svrg& s, VW::io_buf& model_file, bool read, bool text, const VW::version_struct&)
 {
   if (read) { VW::details::initialize_regressor(*s.all); }
 

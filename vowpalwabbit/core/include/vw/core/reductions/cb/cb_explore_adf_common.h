@@ -93,7 +93,7 @@ public:
     if (with_metrics) { _metrics = VW::make_unique<cb_explore_metrics>(); }
   }
 
-  static void save_load(cb_explore_adf_base<ExploreType>& data, io_buf& io, bool read, bool text);
+  static void save_load(cb_explore_adf_base<ExploreType>& data, io_buf& io, bool read, bool text, const VW::version_struct& ver);
   static void persist_metrics(cb_explore_adf_base<ExploreType>& data, metric_sink& metrics);
   static void predict(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::learner& base, multi_ex& examples);
   static void learn(cb_explore_adf_base<ExploreType>& data, VW::LEARNER::learner& base, multi_ex& examples);
@@ -302,9 +302,9 @@ void cb_explore_adf_base<ExploreType>::_print_update(
 
 template <typename ExploreType>
 inline void cb_explore_adf_base<ExploreType>::save_load(
-    cb_explore_adf_base<ExploreType>& data, io_buf& io, bool read, bool text)
+    cb_explore_adf_base<ExploreType>& data, io_buf& io, bool read, bool text, const VW::version_struct& ver)
 {
-  data.explore.save_load(io, read, text);
+  data.explore.save_load(io, read, text, ver);
 }
 
 template <typename ExploreType>

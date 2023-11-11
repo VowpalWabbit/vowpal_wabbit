@@ -1362,7 +1362,7 @@ void load_input_model(VW::workspace& all, VW::io_buf& io_temp)
       all.feature_mask == all.initial_weights_config.initial_regressors[0])
   {
     // load rest of regressor
-    all.l->save_load(io_temp, true, false);
+    all.l->save_load(io_temp, true, false, all.runtime_state.model_file_ver);
     io_temp.close_file();
 
     VW::details::parse_mask_regressor_args(all, all.feature_mask, all.initial_weights_config.initial_regressors);
@@ -1372,7 +1372,7 @@ void load_input_model(VW::workspace& all, VW::io_buf& io_temp)
     VW::details::parse_mask_regressor_args(all, all.feature_mask, all.initial_weights_config.initial_regressors);
 
     // load rest of regressor
-    all.l->save_load(io_temp, true, false);
+    all.l->save_load(io_temp, true, false, all.runtime_state.model_file_ver);
     io_temp.close_file();
   }
 }

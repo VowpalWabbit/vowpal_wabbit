@@ -1048,7 +1048,7 @@ void save_load_regularizer(VW::workspace& all, bfgs& b, VW::io_buf& model_file, 
   if (read) { regularizer_to_weight(all, b); }
 }
 
-void save_load(bfgs& b, VW::io_buf& model_file, bool read, bool text)
+void save_load(bfgs& b, VW::io_buf& model_file, bool read, bool text, const VW::version_struct&)
 {
   VW::workspace* all = b.all;
 

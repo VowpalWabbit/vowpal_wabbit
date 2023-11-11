@@ -442,7 +442,7 @@ float learner::sensitivity(example& ec, size_t i)
   return ret;
 }
 
-void learner::save_load(io_buf& io, const bool read, const bool text)
+void learner::save_load(io_buf& io, const bool read, const bool text, const VW::version_struct& model_version)
 {
   if (_save_load_f)
   {
@@ -457,7 +457,20 @@ void learner::save_load(io_buf& io, const bool read, const bool text)
       throw VW::save_load_model_exception(vwex.filename(), vwex.line_number(), better_msg.str());
     }
   }
-  if (_base_learner) { _base_learner->save_load(io, read, text); }
+  else if (_save_load_ver_f)
+  {
+    try
+    {
+      _save_load_ver_f(io, read, text, model_version);
+    }
+    catch (VW::vw_exception& vwex)
+    {
+      std::stringstream better_msg;
+      better_msg << "model " << std::string(read ? "load" : "save") << " failed. Error Details: " << vwex.what();
+      throw VW::save_load_model_exception(vwex.filename(), vwex.line_number(), better_msg.str());
+    }
+  }
+  if (_base_learner) { _base_learner->save_load(io, read, text, model_version); }
 }
 
 void learner::pre_save_load(VW::workspace& all)

@@ -1284,7 +1284,7 @@ void VW::details::save_load_online_state_gd(VW::workspace& all, VW::io_buf& mode
 
 namespace
 {
-void save_load(VW::reductions::gd& g, VW::io_buf& model_file, bool read, bool text)
+void save_load(VW::reductions::gd& g, VW::io_buf& model_file, bool read, bool text, const VW::version_struct&)
 {
   VW::workspace& all = *g.all;
   if (read)

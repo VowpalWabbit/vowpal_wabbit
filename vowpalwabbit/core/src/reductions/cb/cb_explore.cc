@@ -54,7 +54,6 @@ public:
   float psi = 0.f;
   bool nounif = false;
   bool epsilon_decay = false;
-  VW::version_struct model_file_version;
   VW::io::logger logger;
 
   size_t counter = 0;
@@ -270,11 +269,11 @@ float calc_loss(const cb_explore& data, const VW::example& ec, const VW::cb_labe
   return loss;
 }
 
-void save_load(cb_explore& cb, VW::io_buf& io, bool read, bool text)
+void save_load(cb_explore& cb, VW::io_buf& io, bool read, bool text, const VW::version_struct& ver)
 {
   if (io.num_files() == 0) { return; }
 
-  if (!read || cb.model_file_version >= VW::version_definitions::VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG)
+  if (!read || ver >= VW::version_definitions::VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG)
   {
     std::stringstream msg;
     if (!read) { msg << "cb cover storing VW::example counter:  = " << cb.counter << "\n"; }
@@ -372,7 +371,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_setup(VW::setup
   if (data->epsilon < 0.0 || data->epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
 
   data->cbcs.cb_type = VW::cb_type_t::DR;
-  data->model_file_version = all.runtime_state.model_file_ver;
 
   size_t params_per_weight = 1;
   if (options.was_supplied("cover")) { params_per_weight = data->cover_size + 1; }

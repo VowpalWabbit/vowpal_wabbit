@@ -85,7 +85,6 @@ public:
   VW::vector_pool<VW::cb_class> cb_label_pool;
   VW::v_array_pool<VW::action_score> action_score_pool;
 
-  VW::version_struct model_file_version;
   // If the reduction has not yet seen a multi slot example, it will behave the same as if it were CB.
   // This means the interactions aren't added and the slot feature is not added.
   bool has_seen_multi_slot_example = false;
@@ -609,13 +608,13 @@ void cleanup_example_ccb(ccb_data& data, VW::multi_ex& ec_seq)
   }
 }
 
-void save_load(ccb_data& sm, VW::io_buf& io, bool read, bool text)
+void save_load(ccb_data& sm, VW::io_buf& io, bool read, bool text, const VW::version_struct& ver)
 {
   if (io.num_files() == 0) { return; }
 
   // We need to check if reading a model file after the version in which this was added.
   if (read &&
-      (sm.model_file_version >= VW::version_definitions::VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG &&
+      (ver >= VW::version_definitions::VERSION_FILE_WITH_CCB_MULTI_SLOTS_SEEN_FLAG &&
           sm.is_ccb_input_model))
   {
     VW::model_utils::read_model_field(io, sm.has_seen_multi_slot_example);
@@ -698,7 +697,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::ccb_explore_adf_setup(VW::
   // Extract from lower level reductions
   data->shared = nullptr;
   data->all = &all;
-  data->model_file_version = all.runtime_state.model_file_ver;
 
   data->id_namespace_str = "_id";
   data->id_namespace_audit_str = "_ccb_slot_index";
