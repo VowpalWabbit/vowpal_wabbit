@@ -60,7 +60,7 @@ struct Net : torch::nn::Module {
     float contraction,
     uint32_t mini_batch_size)
 {
-   std::cout << "dnn_init(): num_layers: " << num_layers << " hidden_layer_size: " << hidden_layer_size << " num_inputs: " << num_inputs << " contraction: " << contraction << ", activation: relu, optimizer: SGD"<<  std::endl;
+   std::cout << "dnn_init(): num_layers: " << num_layers << " hidden_layer_size: " << hidden_layer_size << " num_inputs: " << num_inputs << ", mini_batch_size: " << mini_batch_size << ", activation: relu, optimizer: SGD" << " contraction: " << contraction << std::endl;
   _contraction = contraction;
   _num_layers = num_layers;
   _hidden_layer_size = hidden_layer_size;
