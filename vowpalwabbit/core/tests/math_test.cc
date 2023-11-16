@@ -7,6 +7,10 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#  if defined(__SSE2__)
+#   include <xmmintrin.h>
+#  endif
+
 TEST(MathTests, MathFactorial)
 {
   EXPECT_EQ(VW::math::factorial(0), 1);
@@ -55,3 +59,14 @@ TEST(MathTests, MathChoose)
   EXPECT_EQ(VW::math::choose(0, 1), 0);
   EXPECT_EQ(VW::math::choose(1, 0), 1);
 }
+
+# if defined(__SSE2__)
+TEST(MathTests, InvSqrt)
+{
+  float x = 4;
+  __m128 eta = _mm_load_ss(&x);
+  eta = _mm_rsqrt_ss(eta);
+  _mm_store_ss(&x, eta);
+  EXPECT_NEAR(x, 0.49987793, 1e-8);
+}
+# endif
