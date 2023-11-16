@@ -63,10 +63,18 @@ TEST(MathTests, MathChoose)
 # if defined(__SSE2__)
 TEST(MathTests, InvSqrt)
 {
-  float x = 4;
+  float x = 4.0f;
+  float y;
   __m128 eta = _mm_load_ss(&x);
   eta = _mm_rsqrt_ss(eta);
-  _mm_store_ss(&x, eta);
-  EXPECT_NEAR(x, 0.49987793, 1e-8);
+  _mm_store_ss(&y, eta);
+  EXPECT_NEAR(y, 0.49987793, 1e-8);
 }
 # endif
+
+TEST(MathTests, InvSqrtStd)
+{
+  float x = 4.0f;
+  float y = 1.0f / std::sqrt(x);
+  EXPECT_NEAR(y, 0.5, 1e-8);
+}

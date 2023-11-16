@@ -12,7 +12,7 @@ if (NOT BUILD_ONLY_STANDALONE_BENCHMARKS)
     ../../vowpalwabbit/core/tests/simulator.cc
 
     # These are just for benchmarking specific standard library operations
-    #benchmark_std_function.cc
+    benchmark_std_function.cc
     #benchmark_pointers.cc
   )
 endif()

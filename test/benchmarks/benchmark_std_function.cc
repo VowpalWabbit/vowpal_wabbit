@@ -2,6 +2,11 @@
 
 #include <functional>
 #include <memory>
+#include <cmath>
+
+#  if defined(__SSE2__)
+#   include <xmmintrin.h>
+#  endif
 
 struct Context;
 using FnPtrContext = void(Context*, int);
@@ -71,6 +76,75 @@ struct TestObj
   }
 };
 
+void std_sq_inv(benchmark::State& state)
+{
+  float x = 4.0;
+  Context context{0};
+  for (auto _ : state)
+  {
+    float y = 1.0 / std::sqrt(x);
+    benchmark::ClobberMemory();
+  }
+}
+
+# if defined(__SSE2__)
+void simd_sq_inv(benchmark::State& state)
+{
+  float x = 4.0;
+  Context context{0};
+  for (auto _ : state)
+  {
+    float y;
+    __m128 eta = _mm_load_ss(&x);
+    eta = _mm_rsqrt_ss(eta);
+    _mm_store_ss(&y, eta);
+    benchmark::ClobberMemory();
+  }
+}
+# endif
+
+# if defined(__SSE2__)
+void simd_one_step_sq_inv(benchmark::State& state)
+{
+  float x = 4.0;
+  Context context{0};
+  for (auto _ : state)
+  {
+    float y;
+    __m128 eta = _mm_load_ss(&x);
+    eta = _mm_rsqrt_ss(eta);  // Fast approximate inverse square root
+    // One iteration of Newton-Raphson refinement:
+    __m128 half_x = _mm_set_ss(0.5f * x);
+    eta = _mm_mul_ss(eta, _mm_sub_ss(_mm_set_ss(1.5f), _mm_mul_ss(half_x, _mm_mul_ss(eta, eta))));
+    _mm_store_ss(&y, eta);
+    benchmark::ClobberMemory();
+  }
+}
+# endif
+
+inline float quake_inv_sqrt(float x)
+{
+  // Carmack/Quake/SGI fast method:
+  float xhalf = 0.5f * x;
+  static_assert(sizeof(int) == sizeof(float), "Floats and ints are converted between, they must be the same size.");
+  int i = reinterpret_cast<int&>(x);  // store floating-point bits in integer
+  i = 0x5f3759d5 - (i >> 1);          // initial guess for Newton's method
+  x = reinterpret_cast<float&>(i);    // convert new bits into float
+  x = x * (1.5f - xhalf * x * x);     // One round of Newton's method
+  return x;
+}
+
+void quake_sq_inv(benchmark::State& state)
+{
+  float x = 4.0;
+  Context context{0};
+  for (auto _ : state)
+  {
+    float y = quake_inv_sqrt(x);
+    benchmark::ClobberMemory();
+  }
+}
+
 void function_call_direct(benchmark::State& state)
 {
   Context context{0};
@@ -136,6 +210,14 @@ void function_call_std_function_lambda(benchmark::State& state)
   }
 }
 
+BENCHMARK(std_sq_inv);
+# if defined(__SSE2__)
+BENCHMARK(simd_sq_inv);
+# endif
+# if defined(__SSE2__)
+BENCHMARK(simd_one_step_sq_inv);
+# endif
+BENCHMARK(quake_sq_inv);
 BENCHMARK(function_call_direct);
 BENCHMARK(function_call_direct_noinline);
 BENCHMARK(function_call_pointer<false>)->Name("function_call_pointer");
