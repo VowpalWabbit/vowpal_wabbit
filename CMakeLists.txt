@@ -155,6 +155,7 @@ option(vw_BUILD_NET_FRAMEWORK "Build .NET Framework targets" OFF)
 option(VW_USE_ASAN "Compile with AddressSanitizer" OFF)
 option(VW_USE_UBSAN "Compile with UndefinedBehaviorSanitizer" OFF)
 option(VW_BUILD_WASM "Add WASM target" OFF)
+option(SSE2_OPT "Add SSE2 optimization" OFF)
 
 if(VW_USE_ASAN)
   add_compile_definitions(VW_USE_ASAN)
