@@ -29,3 +29,15 @@ endif()
 if(STATIC_LINK_VW)
   target_link_libraries(vw_cli_bin PRIVATE ${unix_static_flag})
 endif()
+
+if (WIN32 AND VW_FEAT_DNN)
+  find_package(Torch REQUIRED)
+  set(TORCH_INSTALL_PREFIX ${TORCH_INSTALL_PREFIX} CACHE INTERNAL "Torch install prefix")
+  file(GLOB TORCH_DLLS "${TORCH_INSTALL_PREFIX}/lib/*.dll")
+  message("TORCH_DLLS: ${TORCH_DLLS}")  # Debugging line
+  add_custom_command(TARGET vw_cli_bin
+                     POST_BUILD
+                     COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                     ${TORCH_DLLS}
+                     $<TARGET_FILE_DIR:vw_cli_bin>)
+endif (WIN32 AND VW_FEAT_DNN)

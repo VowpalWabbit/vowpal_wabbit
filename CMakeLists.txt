@@ -71,7 +71,11 @@ if(BUILD_BENCHMARKS)
 endif()
 
 if(VW_FEAT_DNN)
-  list(APPEND VCPKG_MANIFEST_FEATURES "dnn")
+  if(VW_PYTORCH_SYS_DEP)
+    message(STATUS "Using PyTorch System Dependency")
+  else()
+    list(APPEND VCPKG_MANIFEST_FEATURES "dnn")
+  endif()
 endif()
 
 # CMake project() does not support semantic versioning
