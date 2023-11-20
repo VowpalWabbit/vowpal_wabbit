@@ -12,10 +12,11 @@ namespace VW { namespace reductions
 {
 struct Net : torch::nn::Module {
 
-  Net(int16_t num_initial_inputs, int16_t hidden_layer_size, int32_t num_layers) :
+  Net(int16_t num_initial_inputs, int16_t hidden_layer_size, int32_t num_layers, uint32_t num_learners) :
     _num_initial_inputs(num_initial_inputs),
     _hidden_layer_size(hidden_layer_size),
-    _num_layers(num_layers)
+    _num_layers(num_layers),
+    _num_learners(num_learners)
   {
     // Construct and register n Linear submodules.
     // Save the module pointers in a vector.
@@ -26,19 +27,21 @@ struct Net : torch::nn::Module {
         _layers.push_back(layer);
     }
 
-    // The last layer has only one output
-    layer = register_module("fc"+ std::to_string(_num_layers), torch::nn::Linear(_num_initial_inputs, 1));
-    _layers.push_back(layer);
-
+    for(int i = 0; i < _num_learners; ++i) {
+        // The last layer has only one output
+        auto layer = register_module("fc_branch" + std::to_string(i), torch::nn::Linear(_hidden_layer_size, 1));
+        _learners.push_back(layer);
+    }
   }
 
   // Implement the Net's algorithm.
-  torch::Tensor forward(torch::Tensor x) {
+  torch::Tensor forward(torch::Tensor x, uint32_t learner = 0) {
     for(int i = 0; i < _layers.size() - 1; ++i ) {
         x = torch::relu(_layers[i]->forward(x));
     }
+    
     // no relu on last layer
-    x = _layers[_layers.size()-1]->forward(x);
+    x = _learners[learner]->forward(x);
     return x;
   }
 
@@ -48,9 +51,11 @@ struct Net : torch::nn::Module {
 
   private:
     std::vector<std::shared_ptr<torch::nn::LinearImpl>> _layers;
+    std::vector<std::shared_ptr<torch::nn::LinearImpl>> _learners;
     int16_t _num_initial_inputs;
     int16_t _hidden_layer_size;
     int32_t _num_layers;
+    uint32_t _num_learners;
 };
 
  void dnn_learner::init(
@@ -58,15 +63,18 @@ struct Net : torch::nn::Module {
     uint16_t hidden_layer_size,
     uint32_t num_inputs,
     float contraction,
-    uint32_t mini_batch_size)
+    uint32_t mini_batch_size,
+    uint32_t num_learners
+ )
 {
-   std::cout << "dnn_init(): num_layers: " << num_layers << " hidden_layer_size: " << hidden_layer_size << " num_inputs: " << num_inputs << ", mini_batch_size: " << mini_batch_size << ", activation: relu, optimizer: SGD" << " contraction: " << contraction << std::endl;
+   std::cout << "dnn_init(): num_layers: " << num_layers << ", hidden_layer_size: " << hidden_layer_size << ", num_inputs: " << num_inputs << ", num_learners: " << _num_learners << ", mini_batch_size: " << mini_batch_size << ", activation: relu, optimizer: SGD" << " contraction: " << contraction << std::endl;
   _contraction = contraction;
   _num_layers = num_layers;
   _hidden_layer_size = hidden_layer_size;
   _num_initial_inputs = num_inputs;
+  _num_learners = num_learners;
   _tensor_buffer = new float[_num_initial_inputs];
-  _pmodel = std::make_shared<Net>(_num_initial_inputs, _hidden_layer_size, _num_layers);
+  _pmodel = std::make_shared<Net>(_num_initial_inputs, _hidden_layer_size, _num_layers, _num_learners);
   _poptimizer = std::shared_ptr<torch::optim::SGD>(new torch::optim::SGD(_pmodel->parameters(),0.01));
   _phash_location_mapper = std::make_shared<hash_location_mapper>(_tensor_buffer,_num_initial_inputs);
 }
@@ -76,7 +84,7 @@ at::Tensor dnn_learner::predict(example& ec)
   //printf("dnn_predict()\n"); 
   at::Tensor input = _phash_location_mapper->tensor_from_example(ec);
   //std::cout << "input: \n" << input;
-  at::Tensor output = _pmodel->forward(input);
+  at::Tensor output = _pmodel->forward(input, ec.ft_offset);
 
   //std::cout << "output: \n" << output;
   ec.partial_prediction = output.item<float>();
@@ -181,6 +189,8 @@ std::shared_ptr<learner> dnn_setup(VW::setup_base_i& stack_builder)
   int num_layers = 3;
   int hidden_layer_size = 20;
   int mini_batch_size = 10;
+  uint32_t num_learners = stack_builder.get_feature_width_above();
+
   new_options.add(make_option("dnn", use_dnn).keep().necessary().help("Fully connected deep neural network base learner."))
              .add(make_option("num_layers", num_layers).help("Number of Layers in the dnn"))
              .add(make_option("hidden_layer_size", hidden_layer_size).help("Size of hidden layers"))
@@ -195,7 +205,8 @@ std::shared_ptr<learner> dnn_setup(VW::setup_base_i& stack_builder)
     hidden_layer_size,
     num_inputs,
     all.sd->contraction,
-    mini_batch_size
+    mini_batch_size,
+    num_learners
   );
 
   auto l = make_bottom_learner(

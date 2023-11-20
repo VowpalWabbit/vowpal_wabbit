@@ -38,11 +38,13 @@ public:
     uint16_t hidden_layer_size,
     uint32_t num_inputs,
     float contraction /*How much to contract the prediction of dnn*/,
-    uint32_t mini_batch_size);
+    uint32_t mini_batch_size,
+    uint32_t num_learners);
   at::Tensor predict(example& ec);
   void learn(example& ec);
   void mini_batch_update();
   ~dnn_learner();
+
 private:
   std::shared_ptr<hash_location_mapper> _phash_location_mapper;
   std::shared_ptr<Net> _pmodel;
@@ -53,7 +55,8 @@ private:
   uint16_t _hidden_layer_size = 0;  // Size of the hidden layer
   uint32_t _num_initial_inputs = 0; // Number of inputs to the network
   uint32_t _mini_batch_size = 1;    // Number of examples to process in a batch
-  uint32_t _accumulate_gradient_count = 0;
+  uint32_t _accumulate_gradient_count = 0; // How many gradients have been accumulated
+  uint32_t _num_learners = 1;       // Number of learners
 };
 
 
