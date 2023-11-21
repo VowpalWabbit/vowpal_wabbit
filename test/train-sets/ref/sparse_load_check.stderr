@@ -1,3 +1,4 @@
+creating quadratic features for pairs: ::
 using no cache
 Reading datafile = train-sets/cb_test.ldf
 num sources = 1
@@ -6,17 +7,17 @@ learning rate = 0.5
 initial_t = 3
 power_t = 0.5
 cb_type = mtr
-Enabled learners: gd, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, shared_feature_merger
+Enabled learners: gd, generate_interactions, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, shared_feature_merger
 Input label = CB
 Output pred = ACTION_PROBS
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
-0.066667 0.066667            1            1.0        0:1:0.5         1:0.48       15
-0.033333 0.000000            2            2.0        1:0:0.5         1:0.95        6
+0.066667 0.066667            1            1.0        0:1:0.5         1:0.48       60
+0.033333 0.000000            2            2.0        1:0:0.5         1:0.95       18
 
 finished run
 number of examples = 3
 weighted example sum = 3.000000
 weighted label sum = 0.000000
 average loss = 0.033333
-total feature number = 27
+total feature number = 96
