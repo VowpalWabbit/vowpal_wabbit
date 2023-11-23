@@ -39,8 +39,9 @@ public:
     uint32_t num_inputs,
     float contraction /*How much to contract the prediction of dnn*/,
     uint32_t mini_batch_size,
-    uint32_t num_learners);
-  at::Tensor predict(example& ec);
+    uint32_t num_learners,
+    bool debug_regression);
+  at::Tensor predict(example& ec, bool debug_regression=false);
   void learn(example& ec);
   void mini_batch_update();
   ~dnn_learner();
@@ -57,6 +58,7 @@ private:
   uint32_t _mini_batch_size = 1;    // Number of examples to process in a batch
   uint32_t _accumulate_gradient_count = 0; // How many gradients have been accumulated
   uint32_t _num_learners = 1;       // Number of learners
+  bool _debug_regression = false;   // Generate regression data 
 };
 
 

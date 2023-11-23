@@ -4,6 +4,7 @@
 #include "vw/config/options.h"
 #include "vw/core/learner.h"
 #include <torch/torch.h>
+#include <algorithm>
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -64,33 +65,42 @@ struct Net : torch::nn::Module {
     uint32_t num_inputs,
     float contraction,
     uint32_t mini_batch_size,
-    uint32_t num_learners
+    uint32_t num_learners,
+    bool debug_regression
  )
 {
-   std::cout << "dnn_init(): num_layers: " << num_layers << ", hidden_layer_size: " << hidden_layer_size << ", num_inputs: " << num_inputs << ", num_learners: " << _num_learners << ", mini_batch_size: " << mini_batch_size << ", activation: relu, optimizer: SGD" << " contraction: " << contraction << std::endl;
+   std::cerr << "dnn_init(): num_layers: " << num_layers << ", hidden_layer_size: " << hidden_layer_size << ", num_inputs: " << num_inputs << ", num_learners: " << _num_learners << ", mini_batch_size: " << mini_batch_size << ", activation: relu, optimizer: SGD" << " contraction: " << contraction << std::endl;
   _contraction = contraction;
   _num_layers = num_layers;
   _hidden_layer_size = hidden_layer_size;
   _num_initial_inputs = num_inputs;
   _num_learners = num_learners;
+  _debug_regression = debug_regression;
   _tensor_buffer = new float[_num_initial_inputs];
   _pmodel = std::make_shared<Net>(_num_initial_inputs, _hidden_layer_size, _num_layers, _num_learners);
   _poptimizer = std::shared_ptr<torch::optim::SGD>(new torch::optim::SGD(_pmodel->parameters(),0.01));
   _phash_location_mapper = std::make_shared<hash_location_mapper>(_tensor_buffer,_num_initial_inputs);
 }
 
-at::Tensor dnn_learner::predict(example& ec)
-{
-  //printf("dnn_predict()\n"); 
-  at::Tensor input = _phash_location_mapper->tensor_from_example(ec);
-  //std::cout << "input: \n" << input;
-  at::Tensor output = _pmodel->forward(input, ec.ft_offset);
+std::string tensorToString(const at::Tensor& tensor) {
+    std::ostringstream oss;
+    for (int64_t i = 0; i < tensor.numel(); ++i) {
+        oss << i << ":"<< tensor[i].item<float>();
+        if (i != tensor.numel() - 1) {
+            oss << " ";
+        }
+    }
+    return oss.str();
+}
 
-  //std::cout << "output: \n" << output;
+at::Tensor dnn_learner::predict(example& ec, bool debug_regression)
+{
+  at::Tensor input = _phash_location_mapper->tensor_from_example(ec);
+  if(debug_regression)
+    std::cout << tensorToString(input);
+  at::Tensor output = _pmodel->forward(input, ec.ft_offset);
   ec.partial_prediction = output.item<float>();
-  //std::cout << "predicted: \n" << output;
   ec.partial_prediction *= static_cast<float>(_contraction);
-  //std::cout << "contracted prediction: \n" << ec.partial_prediction;
   ec.pred.scalar = ec.partial_prediction;
 
   return output;
@@ -116,30 +126,32 @@ at::Tensor hash_location_mapper::tensor_from_example(const example& ec)
 {
   example_predict& ep = (example_predict&)ec;
   float* dense = _tensor_buffer;
-  for (VW::example_predict::iterator ns = ep.begin(); ns != ep.end(); ++ns) {
-    for ( auto feat = (*ns).begin(); feat != (*ns).end(); ++feat) {
+
+  // Zero out the tensor 
+  std::fill(dense, dense + _num_inputs, 0.0);
+
+  for (auto& ns : ep)
+  {
+    for ( auto feat = ns.begin(); feat != ns.end(); ++feat) {
       uint64_t loc = get_dense_location((*feat).index());
       dense[loc] = (*feat).value();
     }
   }
 
-  // Zero pad the rest of the tensor up to input_sz
-  for (uint32_t i = _map_hash_to_dense.size(); i < _num_inputs; ++i) {
-   dense[i] = 0.0;
-  }
   return torch::from_blob(dense,_num_inputs);
 }
 
 void dnn_learner::learn(example& ec)
 {
-  //printf("dnn_learn()\n");
-  auto output = predict(ec);
+  if(_debug_regression)
+    std::cout << ec.l.simple.label << " |a ";  // need the a so constant does not get a hash value of 0
+  auto output = predict(ec, _debug_regression);
+  if(_debug_regression)
+    std::cout << std::endl;
   auto y = torch::tensor({ec.l.simple.label});
-  //std::cout << "expected: \n" << y;
   auto err = torch::mse_loss(output,y);
   ec.loss = err.item<float>();
   err.backward();
-  //std::cout << "error: \n" << err;
   ++_accumulate_gradient_count;
 }
 
@@ -169,7 +181,6 @@ void learn(dnn_learner& dnn, VW::example& ec)
 
 void update_stats(const VW::workspace& all, shared_data& sd, const dnn_learner&, const VW::example& ex, VW::io::logger& logger)
 {
-  //printf("dnn_update_stats()\n");
   sd.update(ex.test_only, ex.l.simple.is_labeled(), ex.loss, ex.weight, ex.get_num_features());
 }
 
@@ -189,11 +200,13 @@ std::shared_ptr<learner> dnn_setup(VW::setup_base_i& stack_builder)
   int num_layers = 3;
   int hidden_layer_size = 20;
   int mini_batch_size = 10;
+  bool debug_regression = false;
   uint32_t num_learners = stack_builder.get_feature_width_above();
 
   new_options.add(make_option("dnn", use_dnn).keep().necessary().help("Fully connected deep neural network base learner."))
              .add(make_option("num_layers", num_layers).help("Number of Layers in the dnn"))
              .add(make_option("hidden_layer_size", hidden_layer_size).help("Size of hidden layers"))
+             .add(make_option("debug_regression", debug_regression).help("Generate regression learning data in cerr"))
              .add(make_option("mini_batch_size", mini_batch_size).help("Number of gradients to accumulate before updating parameters."))
              .add(make_option("num_inputs", num_inputs).help("Size of the initial input vector to dnn"));
 
@@ -206,7 +219,8 @@ std::shared_ptr<learner> dnn_setup(VW::setup_base_i& stack_builder)
     num_inputs,
     all.sd->contraction,
     mini_batch_size,
-    num_learners
+    num_learners,
+    debug_regression
   );
 
   auto l = make_bottom_learner(
