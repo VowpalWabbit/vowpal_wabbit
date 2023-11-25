@@ -531,6 +531,10 @@ if(VW_FEAT_CB_GRAPH_FEEDBACK)
   list(APPEND vw_core_test_sources tests/cb_graph_feedback_test.cc)
 endif()
 
+if(VW_FEAT_DNN)
+  list(APPEND vw_core_test_sources tests/dnn/dnn_test.cc)
+endif()
+
 vw_add_test_executable(
     FOR_LIB "core"
     EXTRA_DEPS vw_test_common
@@ -541,3 +545,15 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
   # Tests are allowed to access private headers.
   target_include_directories(vw_core_test PRIVATE $<TARGET_PROPERTY:vw_core,INCLUDE_DIRECTORIES>)
 endif()
+
+if (WIN32 AND VW_FEAT_DNN)
+  find_package(Torch REQUIRED)
+  set(TORCH_INSTALL_PREFIX ${TORCH_INSTALL_PREFIX} CACHE INTERNAL "Torch install prefix")
+  file(GLOB TORCH_DLLS "${TORCH_INSTALL_PREFIX}/lib/*.dll")
+  message("TORCH_DLLS: ${TORCH_DLLS}")  # Debugging line
+  add_custom_command(TARGET vw_core_test
+                     POST_BUILD
+                     COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                     ${TORCH_DLLS}
+                     $<TARGET_FILE_DIR:vw_core_test>)
+endif (WIN32 AND VW_FEAT_DNN)
