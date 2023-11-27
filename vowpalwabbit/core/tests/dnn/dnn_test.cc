@@ -30,20 +30,15 @@
  {
    dnn_learner learner;
    learner.init(
-     3, // num_layers
-     2, // hidden_layer_size
-     2, // num_inputs
-     1.0, // prediction_contraction
-     1, // mini_batch_size
-     1, // num_learners
-     false
+     3 /*num_layers*/,  2 /*hidden_layer_size*/ , 2 /*num_inputs*/
+     , 1.0 /*prediction_contraction*/ ,1 /*mini_batch_size*/ ,1 /*num_learners*/ ,false /*debug_regression*/
    );
 
    ExampleCreator ex_creator;
    auto ec = ex_creator.create_example("1.0 |x f1:10 f2:20");
    learner.predict(*ec);
    learner.learn(*ec);
-   ec = ex_creator.create_example("1.0 |x f3:10 f4:20");
+   ec = ex_creator.create_example("1.0 |y f3:10 f4:20");
    learner.learn(*ec);
    // Did the network expand?
    // Did the weights get copied over properly?
