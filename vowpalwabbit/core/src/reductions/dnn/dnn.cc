@@ -35,8 +35,32 @@ struct Net : torch::nn::Module {
     }
   }
 
+
+  using LinearPtr = std::shared_ptr<torch::nn::LinearImpl>;
+  LinearPtr copy_and_expand(LinearPtr& old_layer, int64_t new_input_size)
+  {
+    using namespace torch::nn;
+    int64_t old_input_size = old_layer->weight.size(0);
+    int64_t old_output_size = old_layer->weight.size(1);
+    // Create the new linear layer with the specified input and output sizes
+    auto new_linear = std::make_shared<LinearImpl>(new_input_size, old_output_size);
+    // Get the weights and biases from the old layer
+    auto old_weights = old_layer->weight;
+    auto old_biases = old_layer->bias;
+    // Copy the old parameters into the corresponding part of the new layer
+    new_linear->weight.slice(1, 0, old_input_size).copy_(old_weights);
+    new_linear->bias.copy_(old_biases);
+
+    return new_linear;
+  }
+
   // Implement the Net's algorithm.
   torch::Tensor forward(torch::Tensor x, uint32_t learner = 0) {
+    //If the input size is larger than the first layer, expand the layer
+    if(x.size(0) > _layers[0]->weight.size(1)) {
+      _layers[0] = copy_and_expand(_layers[0], x.size(0));
+    }
+
     for(int i = 0; i < _layers.size() - 1; ++i ) {
         x = torch::relu(_layers[i]->forward(x));
     }
@@ -76,10 +100,9 @@ struct Net : torch::nn::Module {
   _num_initial_inputs = num_inputs;
   _num_learners = num_learners;
   _debug_regression = debug_regression;
-  _tensor_buffer = new float[_num_initial_inputs];
   _pmodel = std::make_shared<Net>(_num_initial_inputs, _hidden_layer_size, _num_layers, _num_learners);
   _poptimizer = std::shared_ptr<torch::optim::SGD>(new torch::optim::SGD(_pmodel->parameters(),0.01));
-  _phash_location_mapper = std::make_shared<hash_location_mapper>(_tensor_buffer,_num_initial_inputs);
+  _phash_location_mapper = std::make_shared<hash_location_mapper>(_num_initial_inputs);
 }
 
 std::string tensorToString(const at::Tensor& tensor) {
@@ -93,12 +116,13 @@ std::string tensorToString(const at::Tensor& tensor) {
     return oss.str();
 }
 
-at::Tensor dnn_learner::predict(example& ec, bool debug_regression)
+at::Tensor dnn_learner::predict(example& ec, bool grow_model, bool debug_regression)
 {
-  at::Tensor input = _phash_location_mapper->tensor_from_example(ec);
+  at::Tensor input = _phash_location_mapper->tensor_from_example(ec, grow_model);
   if(debug_regression)
     std::cout << tensorToString(input);
-  at::Tensor output = _pmodel->forward(input, ec.ft_offset);
+  at::Tensor output = at::tensor(0.f);
+  output = _pmodel->forward(input, ec.ft_offset);
   ec.partial_prediction = output.item<float>();
   ec.partial_prediction *= static_cast<float>(_contraction);
   ec.pred.scalar = ec.partial_prediction;
@@ -106,46 +130,89 @@ at::Tensor dnn_learner::predict(example& ec, bool debug_regression)
   return output;
 }
 
-uint64_t hash_location_mapper::get_dense_location(uint64_t hash)
+int64_t hash_location_mapper::get_dense_location(uint64_t hash, bool grow_buffer)
 {
-  auto it = _map_hash_to_dense.find(hash);
-  if (it == _map_hash_to_dense.end()) {
-    uint64_t loc = _map_hash_to_dense.size();
-    _map_hash_to_dense[hash] = loc;
-    return loc;
+  const auto it = _map_hash_to_dense.find(hash);
+  if (it == _map_hash_to_dense.end())
+  {
+    if(grow_buffer)
+    {
+      const uint64_t loc = _map_hash_to_dense.size();
+      _map_hash_to_dense[hash] = loc;
+      return loc;
+    }
+    else
+    {
+      return -1;
+    }
   }
   return it->second;
 }
 
-hash_location_mapper::hash_location_mapper(float* tensor_buffer, uint32_t num_inputs) :
-  _tensor_buffer(tensor_buffer),
-  _num_inputs(num_inputs)
-{}
+hash_location_mapper::hash_location_mapper(uint32_t num_initial_inputs)
+: _buffer_sz(num_initial_inputs), _tensor_buffer(new float[num_initial_inputs])
+ {
+    std::fill_n(_tensor_buffer, _buffer_sz, 0.0);
+ }
 
-at::Tensor hash_location_mapper::tensor_from_example(const example& ec)
+at::Tensor hash_location_mapper::tensor_from_example(const example& ec, bool grow_buffer)
 {
-  example_predict& ep = (example_predict&)ec;
-  float* dense = _tensor_buffer;
+  auto& ep = (example_predict&)ec;
 
   // Zero out the tensor 
-  std::fill(dense, dense + _num_inputs, 0.0);
+  std::fill_n(_tensor_buffer, _map_hash_to_dense.size(), 0.0);
 
   for (auto& ns : ep)
   {
-    for ( auto feat = ns.begin(); feat != ns.end(); ++feat) {
-      uint64_t loc = get_dense_location((*feat).index());
-      dense[loc] = (*feat).value();
+    for (auto& n : ns)
+    {
+      const int64_t loc = get_dense_location(n.index(), grow_buffer);
+      if(loc != -1)
+        _tensor_buffer[loc] = n.value();
     }
   }
 
-  return torch::from_blob(dense,_num_inputs);
+  return torch::from_blob(_tensor_buffer,_buffer_sz);
 }
+
+hash_location_mapper::~hash_location_mapper()
+ {
+   delete [] _tensor_buffer;
+   _tensor_buffer = nullptr;
+ }
+
+uint32_t hash_location_mapper::tensor_growth_schedule(uint32_t min_size) const
+{
+   uint32_t proposal = 0; 
+   // fast growth initially
+   if (_buffer_sz <= 16)
+   {
+     proposal = _buffer_sz << 1; 
+   }
+   else // slow growth later
+   {
+     proposal = _buffer_sz + static_cast<uint32_t>(log(_buffer_sz) / log(2.0));
+   }
+
+   return (proposal > min_size)? proposal : min_size;
+ }
+
+void hash_location_mapper::grow_tensor_buffer(uint32_t desired_size)
+ {
+   if(desired_size <= _buffer_sz)
+     return;
+   const auto new_size = tensor_growth_schedule(desired_size);
+   delete [] _tensor_buffer;
+   _tensor_buffer = new float[new_size];
+   _buffer_sz = new_size;
+    std::fill_n(_tensor_buffer, _buffer_sz, 0.0);
+ }
 
 void dnn_learner::learn(example& ec)
 {
   if(_debug_regression)
     std::cout << ec.l.simple.label << " |a ";  // need the a so constant does not get a hash value of 0
-  auto output = predict(ec, _debug_regression);
+  auto output = predict(ec, true, _debug_regression);
   if(_debug_regression)
     std::cout << std::endl;
   auto y = torch::tensor({ec.l.simple.label});
@@ -153,10 +220,6 @@ void dnn_learner::learn(example& ec)
   ec.loss = err.item<float>();
   err.backward();
   ++_accumulate_gradient_count;
-}
-
-dnn_learner::~dnn_learner() {
-  delete[] _tensor_buffer;
 }
 
 void dnn_learner::mini_batch_update()
