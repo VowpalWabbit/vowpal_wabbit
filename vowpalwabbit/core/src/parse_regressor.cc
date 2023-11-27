@@ -94,23 +94,20 @@ void initialize_regressor(VW::workspace& all, T& weights)
   }
   else if (all.initial_weights_config.initial_weight != 0.)
   {
-    auto initial_weight = all.initial_weights_config.initial_weight;
-    auto initial_value_weight_initializer = [initial_weight](VW::weight* weights, uint64_t /*index*/)
-    { weights[0] = initial_weight; };
+    auto initial_value_weight_initializer = [&all](VW::weight* weights, uint64_t /*index*/)
+    { weights[0] = all.initial_weights_config.initial_weight; };
     weights.set_default(initial_value_weight_initializer);
   }
   else if (all.initial_weights_config.random_positive_weights)
   {
-    auto rand_state = *all.get_random_state();
-    auto random_positive = [&rand_state](VW::weight* weights, uint64_t)
-    { weights[0] = 0.1f * rand_state.get_and_update_random(); };
+    auto random_positive = [&all](VW::weight* weights, uint64_t)
+    { weights[0] = 0.1f * all.get_random_state()->get_and_update_random(); };
     weights.set_default(random_positive);
   }
   else if (all.initial_weights_config.random_weights)
   {
-    auto rand_state = *all.get_random_state();
-    auto random_neg_pos = [&rand_state](VW::weight* weights, uint64_t)
-    { weights[0] = rand_state.get_and_update_random() - 0.5f; };
+    auto random_neg_pos = [&all](VW::weight* weights, uint64_t)
+    { weights[0] = all.get_random_state()->get_and_update_random() - 0.5f; };
     weights.set_default(random_neg_pos);
   }
   else if (all.initial_weights_config.normal_weights) { weights.set_default(&initialize_weights_as_polar_normal); }

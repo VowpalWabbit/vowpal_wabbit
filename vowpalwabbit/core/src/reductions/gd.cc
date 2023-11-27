@@ -137,49 +137,6 @@ void sync_weights(VW::workspace& all)
 }
 
 VW_WARNING_STATE_PUSH
-VW_WARNING_DISABLE_UNUSED_FUNCTION
-inline float quake_inv_sqrt(float x)
-{
-  // Carmack/Quake/SGI fast method:
-  float xhalf = 0.5f * x;
-  static_assert(sizeof(int) == sizeof(float), "Floats and ints are converted between, they must be the same size.");
-  int i = reinterpret_cast<int&>(x);  // store floating-point bits in integer
-  i = 0x5f3759d5 - (i >> 1);          // initial guess for Newton's method
-  x = reinterpret_cast<float&>(i);    // convert new bits into float
-  x = x * (1.5f - xhalf * x * x);     // One round of Newton's method
-  return x;
-}
-VW_WARNING_STATE_POP
-
-static inline float inv_sqrt(float x)
-{
-#if !defined(VW_NO_INLINE_SIMD)
-#  if defined(__ARM_NEON__)
-  // Propagate into vector
-  float32x2_t v1 = vdup_n_f32(x);
-  // Estimate
-  float32x2_t e1 = vrsqrte_f32(v1);
-  // N-R iteration 1
-  float32x2_t e2 = vmul_f32(e1, vrsqrts_f32(v1, vmul_f32(e1, e1)));
-  // N-R iteration 2
-  float32x2_t e3 = vmul_f32(e2, vrsqrts_f32(v1, vmul_f32(e2, e2)));
-  // Extract result
-  return vget_lane_f32(e3, 0);
-#  elif defined(__SSE2__)
-  __m128 eta = _mm_load_ss(&x);
-  eta = _mm_rsqrt_ss(eta);
-  _mm_store_ss(&x, eta);
-#  else
-  x = quake_inv_sqrt(x);
-#  endif
-#else
-  x = quake_inv_sqrt(x);
-#endif
-
-  return x;
-}
-
-VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_COND_CONST_EXPR
 template <bool sqrt_rate, bool feature_mask_off, size_t adaptive, size_t normalized, size_t spare>
 inline void update_feature(float& update, float x, float& fw)
@@ -623,7 +580,7 @@ inline float compute_rate_decay(power_data& s, float& fw)
   float rate_decay = 1.f;
   if (adaptive)
   {
-    if (sqrt_rate) { rate_decay = inv_sqrt(w[adaptive]); }
+    if (sqrt_rate) { rate_decay = 1.0f / std::sqrt(w[adaptive]); }
     else { rate_decay = powf(w[adaptive], s.minus_power_t); }
   }
   if VW_STD17_CONSTEXPR (normalized != 0)

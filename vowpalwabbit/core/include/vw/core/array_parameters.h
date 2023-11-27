@@ -25,6 +25,12 @@ public:
     else { return dense_weights[i]; }
   }
 
+  inline VW::weight& get(size_t i)
+  {
+    if (sparse) { return sparse_weights.get(i); }
+    else { return dense_weights.get(i); }
+  }
+
   template <typename Lambda>
   void set_default(Lambda&& default_func)
   {
