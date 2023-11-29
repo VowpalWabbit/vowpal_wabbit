@@ -81,9 +81,13 @@ public:
   const_iterator cbegin() const { return const_iterator(_map.begin()); }
   const_iterator cend() const { return const_iterator(_map.end()); }
 
+  // operator[] will find weight in _map and return and insert a default value if not found. Does alter _map.
   inline VW::weight& operator[](size_t i) { return *(get_or_default_and_get(i)); }
-
   inline const VW::weight& operator[](size_t i) const { return *(get_or_default_and_get(i)); }
+
+  // get() will find weight in _map and return a default value if not found. Does not alter _map.
+  inline VW::weight& get(size_t i) { return *(get_impl(i)); };
+  inline const VW::weight& get(size_t i) const { return *(get_impl(i)); };
 
   inline VW::weight& strided_index(size_t index) { return operator[](index << _stride_shift); }
   inline const VW::weight& strided_index(size_t index) const { return operator[](index << _stride_shift); }
@@ -119,6 +123,7 @@ private:
   // It is marked const so it can be used from both const and non const operator[]
   // The map itself is mutable to facilitate this
   VW::weight* get_or_default_and_get(size_t i) const;
+  VW::weight* get_impl(size_t i) const;
 };
 }  // namespace VW
 using sparse_parameters VW_DEPRECATED("sparse_parameters moved into VW namespace") = VW::sparse_parameters;
