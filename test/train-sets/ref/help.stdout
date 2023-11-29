@@ -121,21 +121,6 @@ Input Options:
                                             keep)
     --flatbuffer                            Data file will be interpreted as a flatbuffer file (type: bool,
                                             experimental)
-    --csv                                   Data file will be interpreted as a CSV file (type: bool, experimental)
-    --csv_separator arg                     CSV Parser: Specify field separator in one character, " | : are
-                                            not allowed for reservation. (type: str, default: ,, experimental)
-    --csv_no_file_header                    CSV Parser: First line is NOT a header. By default, CSV files
-                                            are assumed to have a header with feature and/or namespaces names.
-                                            You MUST specify the header with --csv_header if you use this
-                                            option. (type: bool, default: false, experimental)
-    --csv_header arg                        CSV Parser: Override the CSV header by providing (namespace,
-                                            '|' and) feature name separated with ','. By default, CSV files
-                                            are assumed to have a header with feature and/or namespaces names
-                                            in the CSV first line. You can override it by specifying here.
-                                            Combined with --csv_no_file_header, we assume that there is no
-                                            header in the CSV file. (type: str, experimental)
-    --csv_ns_value arg                      CSV Parser: Scale the namespace values by specifying the float
-                                            ratio. e.g. --csv_ns_value=a:0.5,b:0.3,:8 (type: str, experimental)
 Logging Options:
     --quiet                                 Don't output diagnostics and progress updates. Supplying this
                                             implies --log_level off and --driver_output_off. Supplying this
@@ -221,8 +206,12 @@ Weight Options:
 [Reduction] Active Learning Options:
     --active                                Enable active learning (type: bool, keep, necessary)
     --simulation                            Active learning simulation mode (type: bool)
-    --mellowness arg                        Active learning mellowness parameter c_0. Default 8 (type: float,
-                                            default: 8, keep)
+    --direct                                Active learning via the tag and predictions interface. Tag should
+                                            start with "query?" to get query decision. Returned prediction
+                                            is either -1 for no or the importance weight for yes. (type:
+                                            bool)
+    --mellowness arg                        Active learning mellowness parameter c_0. Default 1. (type: float,
+                                            default: 1, keep)
 [Reduction] Active Learning with Cover Options:
     --active_cover                          Enable active learning with cover (type: bool, keep, necessary)
     --mellowness arg                        Active learning mellowness parameter c_0 (type: float, default:
@@ -624,14 +613,6 @@ Weight Options:
                                             uint, keep, necessary)
     --replay_m_count arg                    How many times (in expectation) should each example be played
                                             (default: 1 = permuting) (type: uint, default: 1)
-[Reduction] Experimental: Contextual Bandit Exploration with ADF with graph feedback Options:
-    --cb_explore_adf                        Online explore-exploit for a contextual bandit problem with multiline
-                                            action dependent features (type: bool, keep, necessary)
-    --gamma_scale arg                       Sets CB with graph feedback gamma parameter to gamma=[gamma_scale]*[num
-                                            examples]^1/2 (type: float, default: 1, keep)
-    --gamma_exponent arg                    Exponent on [num examples] in CB with graph feedback parameter
-                                            gamma (type: float, default: 0.5, keep)
-    --graph_feedback                        Graph feedback pdf (type: bool, keep, necessary, experimental)
 [Reduction] Experimental: Contextual Bandit Exploration with ADF with large action space filtering Options:
     --cb_explore_adf                        Online explore-exploit for a contextual bandit problem with multiline
                                             action dependent features (type: bool, keep, necessary)
