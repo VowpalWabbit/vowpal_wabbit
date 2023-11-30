@@ -44,10 +44,9 @@ public:
     uint32_t mini_batch_size,
     uint32_t num_learners,
     bool debug_regression);
-  at::Tensor predict(example& ec, bool grow_model=false, bool debug_regression=false);
+  at::Tensor predict(example& ec, bool debug_regression=false);
   void learn(example& ec);
-  void mini_batch_update();
-
+  void mini_batch_update(bool force=false);
 private:
   std::shared_ptr<hash_location_mapper> _phash_location_mapper;
   std::shared_ptr<Net> _pmodel;
@@ -60,6 +59,9 @@ private:
   uint32_t _accumulate_gradient_count = 0; // How many gradients have been accumulated
   uint32_t _num_learners = 1;       // Number of learners
   bool _debug_regression = false;   // Generate regression data 
+
+  at::Tensor predict(const at::Tensor& input, uint32_t learner, bool debug_regression = false);
+  void save_prediction(example& ec, float prediction);
 };
 
 
