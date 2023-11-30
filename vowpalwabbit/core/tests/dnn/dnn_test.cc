@@ -17,7 +17,7 @@
    }
 
    std::shared_ptr<VW::example> create_example(std::string txt_example) {
-     auto* ex = VW::read_example(*_vw, "1 |x a:2 |y b:3");
+     auto* ex = VW::read_example(*_vw, txt_example.c_str());
      return std::shared_ptr<VW::example>(ex,
        [this](VW::example* ex) { VW::finish_example(*_vw, *ex); });
    }
@@ -38,7 +38,9 @@
    auto ec = ex_creator.create_example("1.0 |x f1:10 f2:20");
    learner.predict(*ec);
    learner.learn(*ec);
-   ec = ex_creator.create_example("1.0 |y f3:10 f4:20");
+   ec = ex_creator.create_example("1.0 |x f3:10 f4:20");
+
+
    learner.learn(*ec);
    // Did the network expand?
    // Did the weights get copied over properly?
