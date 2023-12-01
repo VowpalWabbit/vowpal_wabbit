@@ -3,7 +3,6 @@
 // license as described in the file LICENSE.
 #pragma once
 
-#define VW_FEAT_SEARCH_ENABLED
 #ifdef VW_FEAT_SEARCH_ENABLED
 
 #  include "vw/core/example.h"
