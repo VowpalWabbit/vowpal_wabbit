@@ -75,14 +75,14 @@ class task_data
 public:
   size_t max_branches, kbest;
   std::vector<branch> branches;
-  std::vector<std::pair<branch, std::unique_ptr<std::string>> > final;
+  std::vector<std::pair<branch, std::unique_ptr<std::string>>> final;
   path trajectory;
   float total_cost;
   size_t cur_branch;
   std::unique_ptr<std::string> output_string = nullptr;
   std::unique_ptr<std::stringstream> kbest_out = nullptr;
 
-  task_data(size_t mb, size_t kb) : max_branches(mb), kbest(kb) { }
+  task_data(size_t mb, size_t kb) : max_branches(mb), kbest(kb) {}
 };
 
 void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options)
@@ -99,7 +99,8 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
                .help("Number of best items to output (0=just like non-selectional-branching, default)"));
   options.add_and_parse(new_options);
 
-  auto d = std::make_shared<task_data>(VW::cast_to_smaller_type<size_t>(max_branches), VW::cast_to_smaller_type<size_t>(kbest));
+  auto d = std::make_shared<task_data>(
+      VW::cast_to_smaller_type<size_t>(max_branches), VW::cast_to_smaller_type<size_t>(kbest));
   sch.set_metatask_data(std::move(d));
 }
 
@@ -204,8 +205,8 @@ void run(Search::search& sch, VW::multi_ex& ec)
 
   // sort the finals by cost
   stable_sort(d.final.begin(), d.final.end(),
-      [](const std::pair<branch, std::unique_ptr<std::string>>& a, const std::pair<branch, std::unique_ptr<std::string>>& b) -> bool
-      { return a.first.first < b.first.first; });
+      [](const std::pair<branch, std::unique_ptr<std::string>>& a,
+          const std::pair<branch, std::unique_ptr<std::string>>& b) -> bool { return a.first.first < b.first.first; });
 
   d.kbest_out.reset();
   if (d.output_string && (d.kbest > 0))

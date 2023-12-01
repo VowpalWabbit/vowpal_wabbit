@@ -124,7 +124,7 @@ public:
   action a = 0;
   std::shared_ptr<VW::features> repr = nullptr;
   action_repr() = default;
-  //action_repr(action _a, std::shared_ptr<VW::features> _repr) : a(_a), repr(std::move(_repr)) {}
+  // action_repr(action _a, std::shared_ptr<VW::features> _repr) : a(_a), repr(std::move(_repr)) {}
   action_repr(action _a, VW::features* _repr) : a(_a)
   {
     // Copy construct the features object
@@ -191,7 +191,7 @@ public:
   auto_condition_settings acset;           // settings for auto-conditioning
   size_t history_length = 0;               // value of --search_history_length, used by some tasks, default 1
 
-  size_t A = 0;             // NOLINT total number of actions, [1..A]; 0 means ldf
+  size_t A = 0;              // NOLINT total number of actions, [1..A]; 0 means ldf
   size_t feature_width = 0;  // total number of learners;
   bool cb_learner = false;  // do contextual bandit learning on action (was "! rollout_all_actions" which was confusing)
   search_state state;       // current state of learning
@@ -315,22 +315,13 @@ public:
 
   ~search_private()
   {
-    if (all)
-    {
-      clear_memo_foreach_action(*this);
-    }
+    if (all) { clear_memo_foreach_action(*this); }
   }
 };
 
-void clear_memo_foreach_action(search_private& priv)
-{
-  priv.memo_foreach_action.clear();
-}
+void clear_memo_foreach_action(search_private& priv) { priv.memo_foreach_action.clear(); }
 
-search::search()
-{
-  priv = std::make_shared<search_private>();
-}
+search::search() { priv = std::make_shared<search_private>(); }
 
 std::string audit_feature_space("conditional");
 uint64_t conditional_constant = 8290743;
@@ -817,7 +808,8 @@ void add_example_conditioning(search_private& priv, VW::example& ec, size_t cond
       {
         auto old_ft_index_offset = ec.ft_offset;
         ec.ft_offset = 0;
-        auto restore_ft_index_offset = VW::scope_exit([&ec, old_ft_index_offset] { ec.ft_offset = old_ft_index_offset; });
+        auto restore_ft_index_offset =
+            VW::scope_exit([&ec, old_ft_index_offset] { ec.ft_offset = old_ft_index_offset; });
         VW::foreach_feature<search_private, uint64_t, add_new_feature>(*priv.all, ec, priv);
       }
     }
@@ -835,7 +827,8 @@ void add_example_conditioning(search_private& priv, VW::example& ec, size_t cond
       {
         if ((fs.values[k] > 1e-10) || (fs.values[k] < -1e-10))
         {
-          uint64_t fid = 84913 + 48371803 * (extra_offset + 8392817 * name) + 840137 * (4891 + fs.indices[k] / multiplier);
+          uint64_t fid =
+              84913 + 48371803 * (extra_offset + 8392817 * name) + 840137 * (4891 + fs.indices[k] / multiplier);
           if (priv.all->output_config.audit)
           {
             priv.dat_new_feature_audit_ss.str("");
@@ -1330,11 +1323,13 @@ action single_prediction_ldf(search_private& priv, VW::example* ecs, size_t ec_c
 
     VW::polylabel old_label = ecs[a].l;
     uint64_t old_offset = ecs[a].ft_offset;
-    auto restore_example = VW::scope_exit([&ecs, a, start_K, &old_label, old_offset] {
-      ecs[a].l = old_label;
-      ecs[a].ft_offset = old_offset;
-      if (start_K > 0) { VW::details::truncate_example_namespaces_from_example(ecs[a], ecs[0]); }
-    });
+    auto restore_example = VW::scope_exit(
+        [&ecs, a, start_K, &old_label, old_offset]
+        {
+          ecs[a].l = old_label;
+          ecs[a].ft_offset = old_offset;
+          if (start_K > 0) { VW::details::truncate_example_namespaces_from_example(ecs[a], ecs[0]); }
+        });
 
     if (start_K > 0) { VW::details::append_example_namespaces_from_example(ecs[a], ecs[0]); }
     ecs[a].l.cs = priv.ldf_test_label;
@@ -1520,10 +1515,12 @@ void generate_training_example(search_private& priv, VW::polylabel& losses, floa
 
     VW::example& ec = priv.learn_ec_ref[0];
     VW::polylabel old_label = ec.l;
-    auto restore_example = VW::scope_exit([&priv, &ec, &old_label, add_conditioning] {
-      if (add_conditioning) { del_example_conditioning(priv, ec); }
-      ec.l = old_label;
-    });
+    auto restore_example = VW::scope_exit(
+        [&priv, &ec, &old_label, add_conditioning]
+        {
+          if (add_conditioning) { del_example_conditioning(priv, ec); }
+          ec.l = old_label;
+        });
 
     ec.l = losses;  // labels;
     if (add_conditioning)
@@ -1546,17 +1543,19 @@ void generate_training_example(search_private& priv, VW::polylabel& losses, floa
   {
     assert(cs_get_costs_size(priv.cb_learner, losses) == priv.learn_ec_ref_cnt);
     size_t start_K = (priv.is_ldf && VW::is_cs_example_header(priv.learn_ec_ref[0])) ? 1 : 0;  // NOLINT
-    
-    auto restore_example = VW::scope_exit([&priv, start_K, add_conditioning] {
-      if (add_conditioning)
-      {
-        for (action a = static_cast<uint32_t>(start_K); a < priv.learn_ec_ref_cnt; a++)
+
+    auto restore_example = VW::scope_exit(
+        [&priv, start_K, add_conditioning]
         {
-          VW::example& ec = priv.learn_ec_ref[a];
-          del_example_conditioning(priv, ec);
-        }
-      }
-    });
+          if (add_conditioning)
+          {
+            for (action a = static_cast<uint32_t>(start_K); a < priv.learn_ec_ref_cnt; a++)
+            {
+              VW::example& ec = priv.learn_ec_ref[a];
+              del_example_conditioning(priv, ec);
+            }
+          }
+        });
 
     // TODO: weight
     if (add_conditioning)
@@ -1874,12 +1873,14 @@ action search_predict(search_private& priv, VW::example* ecs, size_t ec_cnt, pta
         size_t start_K = (priv.is_ldf && VW::is_cs_example_header(ecs[0])) ? 1 : 0;  // NOLINT
         priv.last_action_repr.clear();
 
-        auto restore_example = VW::scope_exit([&priv, start_K, ec_cnt, ecs] {
-          if (priv.auto_condition_features)
-          {
-            for (size_t n = start_K; n < ec_cnt; n++) { del_example_conditioning(priv, ecs[n]); }
-          }
-        });
+        auto restore_example = VW::scope_exit(
+            [&priv, start_K, ec_cnt, ecs]
+            {
+              if (priv.auto_condition_features)
+              {
+                for (size_t n = start_K; n < ec_cnt; n++) { del_example_conditioning(priv, ecs[n]); }
+              }
+            });
         if (priv.auto_condition_features)
         {
           for (size_t n = start_K; n < ec_cnt; n++)
@@ -1986,10 +1987,10 @@ void hoopla_permute(size_t* B, size_t* end)
   std::sort(B, end, cmp_size_t);
   // make some temporary space
   std::vector<size_t> A((N + 1) * 2, 0);  // NOLINT
-  A[N] = B[0];                                                    // arbitrarily choose the maximum in the middle
-  A[N + 1] = B[N - 1];                                            // so the maximum goes next to it
-  size_t lo = N, hi = N + 1;                                      // which parts of A have we filled in? [lo,hi]
-  size_t i = 0, j = N - 1;  // which parts of B have we already covered? [0,i] and [j,N-1]
+  A[N] = B[0];                            // arbitrarily choose the maximum in the middle
+  A[N + 1] = B[N - 1];                    // so the maximum goes next to it
+  size_t lo = N, hi = N + 1;              // which parts of A have we filled in? [lo,hi]
+  size_t i = 0, j = N - 1;                // which parts of B have we already covered? [0,i] and [j,N-1]
   while (i + 1 < j)
   {
     // there are four options depending on where things get placed
@@ -2085,15 +2086,17 @@ void BaseTask::Run()
   float old_test_loss = priv.test_loss;
   // float old_learn_loss = priv.learn_loss;
   float old_train_loss = priv.train_loss;
-  auto restore_priv = VW::scope_exit([this, &priv, old_should_produce_string, old_test_loss, old_train_loss] {
-    priv.should_produce_string = old_should_produce_string;
-    if (!this->_final_run)
-    {
-      priv.test_loss = old_test_loss;
-      // priv.learn_loss = old_learn_loss;
-      priv.train_loss = old_train_loss;
-    }
-  });
+  auto restore_priv = VW::scope_exit(
+      [this, &priv, old_should_produce_string, old_test_loss, old_train_loss]
+      {
+        priv.should_produce_string = old_should_produce_string;
+        if (!this->_final_run)
+        {
+          priv.test_loss = old_test_loss;
+          // priv.learn_loss = old_learn_loss;
+          priv.train_loss = old_train_loss;
+        }
+      });
 
   if (!_final_run && !_with_output_string) { priv.should_produce_string = false; }
   priv.learn_loss *= 0.5;

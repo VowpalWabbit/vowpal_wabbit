@@ -12,12 +12,12 @@
 //       (going to clog [which in turn goes to err, with some differences])
 //       We may want to create/use some macro-based loggers (which will wrap the spdlog ones)
 //       to mimic this behavior.
-#define cdbg std::clog
-#undef cdbg
-#define cdbg \
-  if (1) {}  \
-  else       \
-    std::clog
+#  define cdbg std::clog
+#  undef cdbg
+#  define cdbg \
+    if (1) {}  \
+    else       \
+      std::clog
 // comment the previous two lines if you want loads of debug output :)
 
 using action = uint32_t;
