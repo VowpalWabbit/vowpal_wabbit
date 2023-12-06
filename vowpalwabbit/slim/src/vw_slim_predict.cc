@@ -17,14 +17,23 @@ namespace_copy_guard::namespace_copy_guard(VW::example_predict& ex, unsigned cha
   {
     _ex.indices.push_back(_ns);
     _remove_ns = true;
+    _old_size = 0;
   }
-  else { _remove_ns = false; }
+  else
+  {
+    _remove_ns = false;
+    _old_size = _ex.feature_space[_ns].size();
+  }
 }
 
 namespace_copy_guard::~namespace_copy_guard()
 {
-  _ex.indices.pop_back();
-  if (_remove_ns) { _ex.feature_space[_ns].clear(); }
+  if (_remove_ns)
+  {
+    _ex.feature_space[_ns].clear();
+    _ex.indices.pop_back();
+  }
+  else { _ex.feature_space[_ns].truncate_to(_old_size); }
 }
 
 void namespace_copy_guard::feature_push_back(VW::feature_value v, VW::feature_index idx)

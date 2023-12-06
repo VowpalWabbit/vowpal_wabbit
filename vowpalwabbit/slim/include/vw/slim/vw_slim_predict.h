@@ -44,6 +44,7 @@ private:
   VW::example_predict& _ex;
   unsigned char _ns;
   bool _remove_ns;
+  size_t _old_size;
 };
 
 class feature_offset_guard
@@ -291,9 +292,9 @@ public:
 
     out_scores.resize(num_actions);
 
-    VW::example_predict* action = actions;
-    for (size_t i = 0; i < num_actions; i++, action++)
+    for (size_t i = 0; i < num_actions; i++)
     {
+      VW::example_predict* action = &actions[i];
       std::vector<std::unique_ptr<namespace_copy_guard>> ns_copy_guards;
 
       // shared feature copying
