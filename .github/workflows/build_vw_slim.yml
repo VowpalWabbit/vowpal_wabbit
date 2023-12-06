@@ -23,6 +23,12 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Install dependencies
+        shell: bash
+        run: |
+          sudo apt update
+          sudo apt install -y xxd
+
       - name: Configure VW Slim
         shell: bash
         run: |
@@ -36,7 +42,7 @@ jobs:
               -DVW_ZLIB_SYS_DEP=Off \
               -DVW_BOOST_MATH_SYS_DEP=Off
 
-      - name: Build VW Slim
+      - name: Build VW and VW Slim
         shell: bash
         run: cmake --build build --target vw_cli_bin vw_slim vw_slim_test
 
@@ -44,11 +50,11 @@ jobs:
         shell: bash
         working-directory: build
         run: ctest --output-on-failure --no-tests=error --tests-regex "VowpalWabbitSlim|ExploreSlim|CommandLineOptionsSlim" --parallel 2
-      
+
       - name: Generate test data with new VW executable
         shell: bash
         working-directory: vowpalwabbit/slim/test/data/
-        run: ./generate-data.sh ${{github.workspace}}/build/vowpalwabbit/cli/vw
+        run: ./generate-data.sh ../../../../build/vowpalwabbit/cli/vw
 
       - name: Build VW Slim again
         shell: bash
@@ -58,4 +64,3 @@ jobs:
         shell: bash
         working-directory: build
         run: ctest --output-on-failure --no-tests=error --tests-regex "VowpalWabbitSlim|ExploreSlim|CommandLineOptionsSlim" --parallel 2
-      
