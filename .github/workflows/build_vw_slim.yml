@@ -48,7 +48,7 @@ jobs:
       - name: Generate test data with new VW executable
         shell: bash
         working-directory: vowpalwabbit/slim/test/data/
-        run: ./generate_data.sh ${{github.workspace}}/build/vowpalwabbit/cli/vw
+        run: ./generate-data.sh ${{github.workspace}}/build/vowpalwabbit/cli/vw
 
       - name: Build VW Slim again
         shell: bash
