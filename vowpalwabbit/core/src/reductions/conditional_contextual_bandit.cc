@@ -549,13 +549,13 @@ void update_stats_ccb(const VW::workspace& /* all */, shared_data& sd, const ccb
       auto* outcome = data.slots[i]->l.conditional_contextual_bandit.outcome;
       if (outcome != nullptr)
       {
+        // It is possible for the prediction to be empty if there were no actions available at the time of taking the
+        // slot decision. In this case it does not contribute to loss.
+        if (preds[i].empty()) { continue; }
+
         num_labeled++;
         if (i == 0 || data.all_slots_loss_report)
         {
-          // It is possible for the prediction to be empty if there were no actions available at the time of taking the
-          // slot decision. In this case it does not contribute to loss.
-          if (preds[i].empty()) { continue; }
-
           const float l = VW::get_cost_estimate(outcome->probabilities[VW::details::TOP_ACTION_INDEX], outcome->cost,
               preds[i][VW::details::TOP_ACTION_INDEX].action);
           loss += l * preds[i][VW::details::TOP_ACTION_INDEX].score * ec_seq[VW::details::SHARED_EX_INDEX]->weight;
