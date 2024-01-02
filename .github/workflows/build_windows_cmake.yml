@@ -1,13 +1,14 @@
 name: Windows / C++ - CMake only
 
 on:
-  push:
-    branches:
-      - master
-      - 'releases/**'
-  pull_request:
-    branches:
-      - '*'
+  # push:
+  #   branches:
+  #     - master
+  #     - 'releases/**'
+  # pull_request:
+  #   branches:
+  #     - '*'
+  workflow_dispatch
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
