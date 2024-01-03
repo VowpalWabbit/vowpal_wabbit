@@ -179,8 +179,6 @@ option(VW_SSE2NEON_SYS_DEP "Override using the submodule for SSE2Neon dependency
 option(VW_BUILD_VW_C_WRAPPER "Enable building the c_wrapper project" ON)
 option(vw_BUILD_NET_CORE "Build .NET Core targets" OFF)
 option(vw_BUILD_NET_FRAMEWORK "Build .NET Framework targets" OFF)
-option(VW_USE_ASAN "Compile with AddressSanitizer" OFF)
-option(VW_USE_UBSAN "Compile with UndefinedBehaviorSanitizer" OFF)
 option(VW_BUILD_WASM "Add WASM target" OFF)
 
 if(VW_INSTALL AND NOT VW_ZLIB_SYS_DEP)
