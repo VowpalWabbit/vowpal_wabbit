@@ -116,6 +116,6 @@ The model predicted a value of **0**. This result means our house will not need 
 ## More to explore
 
 - See [Python tutorial](python_first_steps.ipynb) for a quick introduction to the basics of training and testing your model.
-- To learn more about how to approach a contextual bandits problem using  tVowpal Wabbit — including how to  work with different contextual bandits approaches, how to format data, and understand the results — see the [Contextual Bandit Reinforcement Learning Tutorial](python_Contextual_bandits_and_Vowpal_Wabbit.ipynb).
+- To learn more about how to approach a contextual bandits problem using  Vowpal Wabbit — including how to  work with different contextual bandits approaches, how to format data, and understand the results — see the [Contextual Bandit Reinforcement Learning Tutorial](python_Contextual_bandits_and_Vowpal_Wabbit.ipynb).
 - For more on the contextual bandits approach to reinforcement learning, including a content personalization scenario, see the [Contextual Bandit Simulation Tutorial](python_Simulating_a_news_personalization_scenario_using_Contextual_Bandits.ipynb).
 - See the [Linear Regression Tutorial](cmd_linear_regression.md) for a different look at the roof replacement problem and learn more about Vowpal Wabbit's format and understanding the results.
