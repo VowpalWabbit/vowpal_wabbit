@@ -41,7 +41,7 @@
         },
         "VW_GTEST_SYS_DEP": {
           "type": "BOOL",
-          "value": "ON"
+          "value": "OFF"
         },
         "VW_EIGEN_SYS_DEP": {
           "type": "BOOL",
