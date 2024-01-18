@@ -21,8 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        #os: [windows-latest, ubuntu-latest, macos-latest]
-        os: [ubuntu-latest, macos-latest] # Temporarily remove windows asan
+        os: [windows-latest, ubuntu-latest, macos-latest]
         preset: [vcpkg-asan-debug, vcpkg-ubsan-debug]
         exclude:
           # UBSan not supported by MSVC on Windows
