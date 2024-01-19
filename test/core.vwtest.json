@@ -6021,7 +6021,7 @@
   {
     "id": 465,
     "desc": "cb_explore_adf with epsilon-greedy exploration using --sparse_weights and saving model",
-    "vw_command": "--cb_explore_adf --epsilon 0.1 -d train-sets/cb_test.ldf --noconstant --sparse_weights -f standard_sparse_model.vw",
+    "vw_command": "--cb_explore_adf --epsilon 0.1 -d train-sets/cb_test.ldf --noconstant --sparse_weights -f standard_sparse_model.vw -q::",
     "diff_files": {
       "stderr": "train-sets/ref/sparse_save_check.stderr",
       "stdout": "train-sets/ref/sparse_save_check.stdout"
@@ -6033,7 +6033,7 @@
   {
     "id": 466,
     "desc": "cb_explore_adf with epsilon-greedy exploration using --sparse_weights and loading model",
-    "vw_command": "--cb_explore_adf --epsilon 0.1 -d train-sets/cb_test.ldf --noconstant --sparse_weights -i standard_sparse_model.vw",
+    "vw_command": "--cb_explore_adf --epsilon 0.1 -d train-sets/cb_test.ldf --noconstant --sparse_weights -i standard_sparse_model.vw -q::",
     "diff_files": {
       "stderr": "train-sets/ref/sparse_load_check.stderr",
       "stdout": "train-sets/ref/sparse_load_check.stdout"
@@ -6044,6 +6044,34 @@
     ],
     "depends_on": [
       465
+    ]
+  },
+  {
+    "id": 467,
+    "desc": "cb_explore_adf with epsilon-greedy exploration using --sparse_weights and saving model with random_weights",
+    "vw_command": "--cb_explore_adf --epsilon 0.1 -d train-sets/cb_test.ldf --noconstant --sparse_weights -f standard_sparse_random_model.vw -q:: --random_weights",
+    "diff_files": {
+      "stderr": "train-sets/ref/sparse_save_check_random.stderr",
+      "stdout": "train-sets/ref/sparse_save_check_random.stdout"
+    },
+    "input_files": [
+      "train-sets/cb_test.ldf"
+    ]
+  },
+  {
+    "id": 468,
+    "desc": "cb_explore_adf with epsilon-greedy exploration using --sparse_weights and loading model with random_weights",
+    "vw_command": "--cb_explore_adf --epsilon 0.1 -d train-sets/cb_test.ldf --noconstant --sparse_weights -i standard_sparse_random_model.vw -q:: --random_weights",
+    "diff_files": {
+      "stderr": "train-sets/ref/sparse_load_check_random.stderr",
+      "stdout": "train-sets/ref/sparse_load_check_random.stdout"
+    },
+    "input_files": [
+      "train-sets/cb_test.ldf",
+      "standard_sparse_random_model.vw"
+    ],
+    "depends_on": [
+      467
     ]
   }
 ]

@@ -1,5 +1,5 @@
 creating quadratic features for pairs: ::
-final_regressor = standard_sparse_model.vw
+final_regressor = standard_sparse_random_model.vw
 using no cache
 Reading datafile = train-sets/cb_test.ldf
 num sources = 1
@@ -13,12 +13,12 @@ Input label = CB
 Output pred = ACTION_PROBS
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
-0.666667 0.666667            1            1.0        0:1:0.5         0:0.33       60
-0.333333 0.000000            2            2.0        1:0:0.5         1:0.95       18
+0.066667 0.066667            1            1.0        0:1:0.5         1:0.93       60
+0.033333 0.000000            2            2.0        1:0:0.5         0:0.95       18
 
 finished run
 number of examples = 3
 weighted example sum = 3.000000
 weighted label sum = 0.000000
-average loss = 0.333333
+average loss = 0.033333
 total feature number = 96
