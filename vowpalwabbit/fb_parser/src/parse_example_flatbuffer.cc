@@ -24,10 +24,13 @@ namespace flatbuffer
 {
 int flatbuffer_to_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& examples)
 {
-  // if (all->options->was_supplied("api_status"))
   if (all->parser_runtime.api_status)
+  {
+    // TODO: At what point do we report the error?
+    VW::experimental::api_status status;
     return static_cast<int>(all->parser_runtime.flat_converter->parse_examples(all, buf, examples, nullptr,
-                                new VW::experimental::api_status()) == VW::experimental::error_code::success);
+                                &status) == VW::experimental::error_code::success);
+  }
   else
     return static_cast<int>(all->parser_runtime.flat_converter->parse_examples(all, buf, examples, nullptr, nullptr) ==
         VW::experimental::error_code::success);

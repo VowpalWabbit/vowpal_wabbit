@@ -122,7 +122,7 @@ TEST(flatbuffer_parser_tests, test_flatbuffer_standalone_example_audit)
   // Check vw example
   EXPECT_EQ(examples.size(), 1);
   EXPECT_FLOAT_EQ(examples[0]->l.simple.label, 0.f);
-  const auto& red_features = examples[0]->ex_reduction_features.template get<simple_label_reduction_features>();
+  const auto& red_features = examples[0]->ex_reduction_features.template get<VW::simple_label_reduction_features>();
   EXPECT_FLOAT_EQ(red_features.weight, 1.f);
 
   EXPECT_EQ(examples[0]->indices[0], VW::details::CONSTANT_NAMESPACE);
@@ -137,7 +137,7 @@ TEST(flatbuffer_parser_tests, test_flatbuffer_standalone_example_audit)
 TEST(flatbuffer_parser_tests, test_flatbuffer_standalone_example_no_audit)
 {
   // Testcase where user would provide feature names and feature values (no feature hashes)
-  auto all = VW::initialize("--no_stdin --quiet --flatbuffer", nullptr, false, nullptr, nullptr);
+  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer"));
 
   flatbuffers::FlatBufferBuilder builder;
 
@@ -147,9 +147,9 @@ TEST(flatbuffer_parser_tests, test_flatbuffer_standalone_example_no_audit)
   uint8_t* buf = builder.GetBufferPointer();
 
   VW::multi_ex examples;
-  examples.push_back(&VW::get_unused_example(all));
-  io_buf unused_buffer;
-  all->parser_runtime.flat_converter->parse_examples(all, unused_buffer, examples, buf);
+  examples.push_back(&VW::get_unused_example(all.get()));
+  VW::io_buf unused_buffer;
+  all->parser_runtime.flat_converter->parse_examples(all.get(), unused_buffer, examples, buf);
 
   auto example = all->parser_runtime.flat_converter->data()->example_obj_as_Example();
   EXPECT_EQ(example->namespaces()->size(), 1);
@@ -224,7 +224,7 @@ TEST(FlatbufferParser, FlatbufferCollection)
 TEST(flatbuffer_parser_tests, test_flatbuffer_standalone_example_error_code)
 {
   // Testcase where user would provide feature names and feature values (no feature hashes)
-  auto all = VW::initialize("--no_stdin --quiet --flatbuffer --api_status --audit", nullptr, false, nullptr, nullptr);
+  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer", "--api_status", "--audit"));
 
   flatbuffers::FlatBufferBuilder builder;
 
@@ -234,10 +234,10 @@ TEST(flatbuffer_parser_tests, test_flatbuffer_standalone_example_error_code)
   uint8_t* buf = builder.GetBufferPointer();
 
   VW::multi_ex examples;
-  examples.push_back(&VW::get_unused_example(all));
-  io_buf unused_buffer;
-  EXPECT_EQ(all->parser_runtime.flat_converter->parse_examples(all, unused_buffer, examples, buf), 8);
-  EXPECT_EQ(all->parser_runtime.example_parser->reader(all, unused_buffer, examples), 0);
+  examples.push_back(&VW::get_unused_example(all.get()));
+  VW::io_buf unused_buffer;
+  EXPECT_EQ(all->parser_runtime.flat_converter->parse_examples(all.get(), unused_buffer, examples, buf), 8);
+  EXPECT_EQ(all->parser_runtime.example_parser->reader(all.get(), unused_buffer, examples), 0);
 
   auto example = all->parser_runtime.flat_converter->data()->example_obj_as_Example();
   EXPECT_EQ(example->namespaces()->size(), 1);
@@ -251,10 +251,9 @@ TEST(flatbuffer_parser_tests, test_flatbuffer_standalone_example_error_code)
   // Check vw example
   EXPECT_EQ(examples.size(), 1);
   EXPECT_FLOAT_EQ(examples[0]->l.simple.label, 0.f);
-  const auto& red_features = examples[0]->ex_reduction_features.template get<simple_label_reduction_features>();
+  const auto& red_features = examples[0]->ex_reduction_features.template get<VW::simple_label_reduction_features>();
   EXPECT_FLOAT_EQ(red_features.weight, 1.f);
   EXPECT_EQ(examples[0]->indices[0], VW::details::CONSTANT_NAMESPACE);
 
   VW::finish_example(*all, *examples[0]);
-  VW::finish(*all);
 }
