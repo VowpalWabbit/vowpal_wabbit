@@ -131,7 +131,7 @@ TEST(EigenMemoryTree, ExactMatchWithRouterTest)
   }
 }
 
-TEST(EigenMemoryTree, Bounding)
+TEST(EigenMemoryTree, BoundingDrop)
 {
   auto vw = VW::initialize(vwtest::make_args("--quiet", "--emt", "--emt_tree", "5"));
   auto* tree = get_emt_tree(*vw);
@@ -146,6 +146,45 @@ TEST(EigenMemoryTree, Bounding)
   EXPECT_EQ(tree->bounder->list.size(), 5);
   EXPECT_EQ(tree->root->examples.size(), 5);
   EXPECT_EQ(tree->root->router_weights.size(), 0);
+}
+
+TEST(EigenMemoryTree, BoundingPredict)
+{
+  auto vw = VW::initialize(vwtest::make_args("--quiet", "--emt", "--emt_tree", "3"));
+  auto* tree = get_emt_tree(*vw);
+
+  auto* ex = VW::read_example(*vw, "1 | 1");
+  vw->predict(*ex);
+  vw->finish_example(*ex);
+
+  EXPECT_EQ(tree->bounder->list.size(), 0);
+}
+
+TEST(EigenMemoryTree, BoundingRecency)
+{
+  auto vw = VW::initialize(vwtest::make_args("--quiet", "--emt", "--emt_tree", "3"));
+  auto* tree = get_emt_tree(*vw);
+
+  for (int i = 0; i < 3; i++)
+  {
+    auto* ex = VW::read_example(*vw, std::to_string(i) + " | " + std::to_string(i));
+    vw->learn(*ex);
+    vw->finish_example(*ex);
+  }
+
+  EXPECT_EQ((*tree->bounder->list.begin())->base[0].first, 2);
+
+  auto* ex1 = VW::read_example(*vw, "1 | 1");
+  vw->predict(*ex1);
+  vw->finish_example(*ex1);
+
+  EXPECT_EQ((*tree->bounder->list.begin())->base[0].first, 1);
+
+  auto* ex2 = VW::read_example(*vw, "1 | 0");
+  vw->predict(*ex2);
+  vw->finish_example(*ex2);
+
+  EXPECT_EQ((*tree->bounder->list.begin())->base[0].first, 0);
 }
 
 TEST(EigenMemoryTree, Split)
