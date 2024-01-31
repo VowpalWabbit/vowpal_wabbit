@@ -35,7 +35,7 @@ int flatbuffer_to_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& exampl
       std::cerr << "Error parsing examples: " << status.get_error_msg() << std::endl;
     }
 
-    return static_cast<int>(status.get_error_code());
+    return static_cast<int>(status.get_error_code() == VW::experimental::error_code::success);
   }
   else
     return static_cast<int>(all->parser_runtime.flat_converter->parse_examples(all, buf, examples, nullptr, nullptr) ==
