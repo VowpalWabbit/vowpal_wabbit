@@ -28,6 +28,7 @@ public:
       VW::experimental::api_status* status = nullptr);
 
 private:
+  size_t _num_example_roots = 0;
   const VW::parsers::flatbuffer::ExampleRoot* _data;
   uint8_t* _flatbuffer_pointer;
   flatbuffers::uoffset_t _object_size = 0;
@@ -39,7 +40,7 @@ private:
   uint32_t _labeled_action = 0;
   uint64_t _c_hash = 0;
 
-  bool parse(io_buf& buf, uint8_t* buffer_pointer = nullptr);
+  int parse(io_buf& buf, uint8_t* buffer_pointer = nullptr, VW::experimental::api_status* status = nullptr);
   int process_collection_item(
       VW::workspace* all, VW::multi_ex& examples, VW::experimental::api_status* status = nullptr);
   int parse_example(VW::workspace* all, example* ae, const Example* eg, VW::experimental::api_status* status = nullptr);

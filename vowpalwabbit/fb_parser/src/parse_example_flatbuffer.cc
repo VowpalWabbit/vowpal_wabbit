@@ -15,6 +15,7 @@
 #include <cfloat>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 
 namespace VW
 {
@@ -28,8 +29,13 @@ int flatbuffer_to_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& exampl
   {
     // TODO: At what point do we report the error?
     VW::experimental::api_status status;
-    return static_cast<int>(all->parser_runtime.flat_converter->parse_examples(all, buf, examples, nullptr,
-                                &status) == VW::experimental::error_code::success);
+    if (all->parser_runtime.flat_converter->parse_examples(all, buf, examples, nullptr,
+                                &status) != VW::experimental::error_code::success)
+    {
+      std::cerr << "Error parsing examples: " << status.get_error_msg() << std::endl;
+    }
+
+    return static_cast<int>(status.get_error_code());
   }
   else
     return static_cast<int>(all->parser_runtime.flat_converter->parse_examples(all, buf, examples, nullptr, nullptr) ==
@@ -38,32 +44,59 @@ int flatbuffer_to_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& exampl
 
 const VW::parsers::flatbuffer::ExampleRoot* parser::data() { return _data; }
 
-bool parser::parse(io_buf& buf, uint8_t* buffer_pointer)
+int parser::parse(io_buf& buf, uint8_t* buffer_pointer, VW::experimental::api_status* status)
 {
+#define RETURN_IF_ALIGN_ERROR(target_align, actual_ptr, example_root_count) \
+  if (!target_align.is_aligned(actual_ptr))             \
+  {                                                      \
+    size_t address = reinterpret_cast<size_t>(actual_ptr); \
+    RETURN_ERROR_LS(status, internal_error)              \
+    << "fb_parser error: flatbuffer data not aligned to " << target_align << '\n' \
+      << "   example_root[" << example_root_count << "] => @" << address << " % "  \
+                            << target_align.align << " - " << target_align.offset << " = " \
+                            << address % target_align.align - target_align.offset  << '\n' \
+      << "      ^^  -4 is the size of the flatbuffer prefix, which we read explicitly."; \
+  }
+
+  constexpr std::size_t EXPECTED_ALIGNMENT = 8; // this is where FB expects the size-prefixed FB to be aligned
+  constexpr std::size_t EXPECTED_OFFSET = sizeof(uint32_t); // 
+
+  desired_align align_prefixed = {EXPECTED_ALIGNMENT, 0};
+  desired_align align_data = {EXPECTED_ALIGNMENT, EXPECTED_OFFSET};
+
   if (buffer_pointer)
   {
+    RETURN_IF_ALIGN_ERROR(align_prefixed, buffer_pointer, _num_example_roots);
+
     _flatbuffer_pointer = buffer_pointer;
 
     _data = VW::parsers::flatbuffer::GetSizePrefixedExampleRoot(_flatbuffer_pointer);
-    return true;
+    _num_example_roots++;
+    return VW::experimental::error_code::success;
   }
 
   char* line = nullptr;
-  auto len = buf.buf_read(line, sizeof(uint32_t));
+  auto len = buf.buf_read(line, sizeof(uint32_t), align_prefixed);
 
-  if (len < sizeof(uint32_t)) { return false; }
+  if (len < sizeof(uint32_t)) { RETURN_ERROR(status, nothing_to_parse); }
 
   _object_size = flatbuffers::ReadScalar<flatbuffers::uoffset_t>(line);
 
   // read one object, object size defined by the read prefix
-  buf.buf_read(line, _object_size);
+  buf.buf_read(line, _object_size, align_data);
+
+  RETURN_IF_ALIGN_ERROR(align_data, line, _num_example_roots);
 
   _flatbuffer_pointer = reinterpret_cast<uint8_t*>(line);
   _data = VW::parsers::flatbuffer::GetExampleRoot(_flatbuffer_pointer);
-  return true;
+
+  _num_example_roots++;
+  return VW::experimental::error_code::success;
+
+#undef RETURN_IF_ALIGN_ERROR
 }
 
-int parser::process_collection_item(VW::workspace* all, VW::multi_ex& examples, VW::experimental::api_status* status)
+int parser::process_collection_item(VW::workspace* all, VW::multi_ex& examples, VW::experimental::api_status*)
 {
   // new example/multi example object to process from collection
   if (_data->example_obj_as_ExampleCollection()->is_multiline())
@@ -101,7 +134,7 @@ int parser::parse_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& exampl
   else
   {
     // new object to be read from file
-    if (!parse(buf, buffer_pointer)) { RETURN_ERROR(status, nothing_to_parse); }
+    RETURN_IF_FAIL(parse(buf, buffer_pointer));
 
     switch (_data->example_obj_type())
     {
@@ -132,7 +165,7 @@ int parser::parse_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& exampl
   return VW::experimental::error_code::success;
 }
 
-int parser::parse_example(VW::workspace* all, example* ae, const Example* eg, VW::experimental::api_status* status)
+int parser::parse_example(VW::workspace* all, example* ae, const Example* eg, VW::experimental::api_status*)
 {
   all->parser_runtime.example_parser->lbl_parser.default_label(ae->l);
   ae->is_newline = eg->is_newline();
@@ -150,7 +183,7 @@ int parser::parse_example(VW::workspace* all, example* ae, const Example* eg, VW
 }
 
 int parser::parse_multi_example(
-    VW::workspace* all, example* ae, const MultiExample* eg, VW::experimental::api_status* status)
+    VW::workspace* all, example* ae, const MultiExample* eg, VW::experimental::api_status*)
 {
   all->parser_runtime.example_parser->lbl_parser.default_label(ae->l);
   if (_multi_ex_index >= eg->examples()->size())

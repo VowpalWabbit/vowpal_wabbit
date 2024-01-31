@@ -44,6 +44,56 @@
 namespace VW
 {
 
+struct desired_align
+{
+  using align_t = size_t;
+
+  align_t align;
+
+  // DO NOT USE THIS UNLESS YOU *REALLY* KNOW WHAT YOU ARE DOING
+  // Off-alignment reads are UB. Only use this if you know you need an offset
+  // from a true aligned address.
+  align_t offset;
+
+  template <typename T>
+  static constexpr desired_align align_for(align_t offset = 0)
+  {
+    return desired_align{compute_align<T>(), offset};
+  }
+
+  desired_align(align_t align = 1, align_t offset = 0) : align(align), offset(offset) {}
+  
+  struct flatbuffer_t { flatbuffer_t() = delete; };
+
+  // print to ostream
+  friend std::ostream& operator<<(std::ostream& os, const desired_align& da)
+  {
+    os << "align: " << da.align << ", offset: " << da.offset;
+    return os;
+  }
+
+  inline bool is_aligned(const void* ptr) const
+  {
+    return (reinterpret_cast<size_t>(ptr) % align) == offset;
+  }
+
+private:
+  template <typename T>
+  static constexpr align_t compute_align()
+  {
+    // if T is a flatbuffer type, we need to align to 8 bytes,
+    // otherwise alignof(T)
+    return std::is_base_of<flatbuffer_t, T>::value ? 8 : alignof(T);
+  }
+};
+
+
+
+namespace known_alignments
+{
+  const desired_align TEXT = desired_align::align_for<char>();
+}
+
 class io_buf
 {
 public:
@@ -204,7 +254,7 @@ public:
   }
 
   void buf_write(char*& pointer, size_t n);
-  size_t buf_read(char*& pointer, size_t n);
+  size_t buf_read(char*& pointer, size_t n, desired_align align = known_alignments::TEXT);
 
   size_t bin_read_fixed(char* data, size_t len)
   {
@@ -274,15 +324,29 @@ private:
       memset(end, 0, sizeof(char) * (end_array - end));
     }
 
-    void shift_to_front(char* head_ptr)
+    void shift_to_front(char*& head_ptr, desired_align align = known_alignments::TEXT)
     {
+      size_t required_padding = 0;
+      if (align.align != 1)
+      {
+        // we are moving head => begin, but if begin is misaligned, we need to pad it
+        size_t begin_address = reinterpret_cast<size_t>(begin);
+        if (begin_address % align.align != align.offset)
+        {
+          required_padding = ((align.align << 1) - (begin_address % align.align) + align.offset) % align.align;
+
+          required_padding /= sizeof(char); // sizeof(char) = 1, but this is more explicit
+        }
+      }
+
       assert(end >= head_ptr);
       const size_t space_left = end - head_ptr;
       // Only call memmove if we are within the bounds of the loaded buffer.
       // Also, this ensures we don't memmove when head_ptr == end_array which
       // would be undefined behavior.
-      if (head_ptr >= begin && head_ptr < end) { std::memmove(begin, head_ptr, space_left); }
-      end = begin + space_left;
+      if (head_ptr >= (begin + required_padding) && head_ptr < end) { std::memmove(begin + required_padding, head_ptr, space_left); }
+      end = begin + required_padding + space_left;
+      head_ptr = begin + required_padding;
     }
 
     size_t capacity() const { return end_array - begin; }

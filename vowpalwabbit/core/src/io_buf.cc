@@ -3,7 +3,7 @@
 // license as described in the file LICENSE.
 #include "vw/core/io_buf.h"
 
-size_t VW::io_buf::buf_read(char*& pointer, size_t n)
+size_t VW::io_buf::buf_read(char*& pointer, size_t n, desired_align align)
 {
   // return a pointer to the next n bytes.  n must be smaller than the maximum size.
   if (_head + n <= _buffer.end)
@@ -17,8 +17,7 @@ size_t VW::io_buf::buf_read(char*& pointer, size_t n)
     if (_head != _buffer.begin)  // There exists room to shift.
     {
       // Out of buffer so swap to beginning.
-      _buffer.shift_to_front(_head);
-      _head = _buffer.begin;
+      _buffer.shift_to_front(_head, align);
     }
     if (_current < _input_files.size() && fill(_input_files[_current].get()) > 0)
     {                               // read more bytes from _current file if present
