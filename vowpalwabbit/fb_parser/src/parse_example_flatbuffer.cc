@@ -58,8 +58,10 @@ int parser::parse(io_buf& buf, uint8_t* buffer_pointer, VW::experimental::api_st
       << "      ^^  -4 is the size of the flatbuffer prefix, which we read explicitly."; \
   }
 
+  using size_prefix_t = uint32_t;
   constexpr std::size_t EXPECTED_ALIGNMENT = 8; // this is where FB expects the size-prefixed FB to be aligned
-  constexpr std::size_t EXPECTED_OFFSET = sizeof(uint32_t); // 
+  constexpr std::size_t EXPECTED_OFFSET = sizeof(size_prefix_t); // when we manually read the size-prefix, the data
+                                                                 // block of the flat buffer is offset by its size
 
   desired_align align_prefixed = {EXPECTED_ALIGNMENT, 0};
   desired_align align_data = {EXPECTED_ALIGNMENT, EXPECTED_OFFSET};
@@ -76,14 +78,16 @@ int parser::parse(io_buf& buf, uint8_t* buffer_pointer, VW::experimental::api_st
   }
 
   char* line = nullptr;
-  auto len = buf.buf_read(line, sizeof(uint32_t), align_prefixed);
+  auto len = buf.buf_read(line, sizeof(size_prefix_t), align_prefixed); // the prefixed flatbuffer block should be
+                                                                        // aligned to 8 bytse, no offset
 
   if (len < sizeof(uint32_t)) { RETURN_ERROR(status, nothing_to_parse); }
 
   _object_size = flatbuffers::ReadScalar<flatbuffers::uoffset_t>(line);
 
   // read one object, object size defined by the read prefix
-  buf.buf_read(line, _object_size, align_data);
+  buf.buf_read(line, _object_size, align_data); // the data block of the flatbuffer should be aligned to 8 bytes,
+                                                // offset by the size of the prefix
 
   RETURN_IF_ALIGN_ERROR(align_data, line, _num_example_roots);
 

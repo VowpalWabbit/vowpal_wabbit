@@ -56,7 +56,7 @@ struct desired_align
   align_t offset;
 
   template <typename T>
-  static constexpr desired_align align_for(align_t offset = 0)
+  static desired_align align_for(align_t offset = 0)
   {
     return desired_align{compute_align<T>(), offset};
   }
