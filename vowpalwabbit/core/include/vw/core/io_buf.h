@@ -62,8 +62,11 @@ struct desired_align
   }
 
   desired_align(align_t align = 1, align_t offset = 0) : align(align), offset(offset) {}
-  
-  struct flatbuffer_t { flatbuffer_t() = delete; };
+
+  struct flatbuffer_t
+  {
+    flatbuffer_t() = delete;
+  };
 
   // print to ostream
   friend std::ostream& operator<<(std::ostream& os, const desired_align& da)
@@ -72,10 +75,7 @@ struct desired_align
     return os;
   }
 
-  inline bool is_aligned(const void* ptr) const
-  {
-    return (reinterpret_cast<size_t>(ptr) % align) == offset;
-  }
+  inline bool is_aligned(const void* ptr) const { return (reinterpret_cast<size_t>(ptr) % align) == offset; }
 
 private:
   template <typename T>
@@ -87,11 +87,9 @@ private:
   }
 };
 
-
-
 namespace known_alignments
 {
-  const desired_align TEXT = desired_align::align_for<char>();
+const desired_align TEXT = desired_align::align_for<char>();
 }
 
 class io_buf
@@ -335,7 +333,7 @@ private:
         {
           required_padding = ((align.align << 1) - (begin_address % align.align) + align.offset) % align.align;
 
-          required_padding /= sizeof(char); // sizeof(char) = 1, but this is more explicit
+          required_padding /= sizeof(char);  // sizeof(char) = 1, but this is more explicit
         }
       }
 
@@ -344,7 +342,10 @@ private:
       // Only call memmove if we are within the bounds of the loaded buffer.
       // Also, this ensures we don't memmove when head_ptr == end_array which
       // would be undefined behavior.
-      if (head_ptr >= (begin + required_padding) && head_ptr < end) { std::memmove(begin + required_padding, head_ptr, space_left); }
+      if (head_ptr >= (begin + required_padding) && head_ptr < end)
+      {
+        std::memmove(begin + required_padding, head_ptr, space_left);
+      }
       end = begin + required_padding + space_left;
       head_ptr = begin + required_padding;
     }

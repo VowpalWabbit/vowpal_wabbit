@@ -26,7 +26,6 @@ ERROR_CODE_DEFINITION(
     13, fb_parser_size_mismatch_ft_names_ft_values, "Size of feature names and feature values do not match. ")
 ERROR_CODE_DEFINITION(14, unknown_label_type, "Label type in Flatbuffer not understood. ")
 
-
 // TODO: This is temporary until we switch to the new error handling mechanism.
 ERROR_CODE_DEFINITION(10000, vw_exception, "vw_exception: ")
 ERROR_CODE_DEFINITION(20000, internal_error, "BUGBUG: ")
