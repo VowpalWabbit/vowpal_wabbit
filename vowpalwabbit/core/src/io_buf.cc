@@ -3,19 +3,16 @@
 // license as described in the file LICENSE.
 #include "vw/core/io_buf.h"
 
-#if false // AUDIT IO BUFFER ALIGNMENTS
-#define __AUDIT_VW_IO_BUF(operation, target_align)           \
-  std::cerr.flush();                                         \
-  std::cerr << std::endl                                     \
-            << "+++ io_buf " #operation ": @"                \
-              << std::hex << reinterpret_cast<size_t>(_head) << std::dec                 \
-              << " % " << target_align.align << " = " << reinterpret_cast<size_t>(_head) % target_align.align \
-              << " vs " << target_align.offset << ")"  \
-              << std::endl;
+#if false  // AUDIT IO BUFFER ALIGNMENTS
+#  define __AUDIT_VW_IO_BUF(operation, target_align)                                                                \
+    std::cerr.flush();                                                                                              \
+    std::cerr << std::endl                                                                                          \
+              << "+++ io_buf " #operation ": @" << std::hex << reinterpret_cast<size_t>(_head) << std::dec << " % " \
+              << target_align.align << " = " << reinterpret_cast<size_t>(_head) % target_align.align << " vs "      \
+              << target_align.offset << ")" << std::endl;
 #else
-#define __AUDIT_VW_IO_BUF(operation, target_align)
+#  define __AUDIT_VW_IO_BUF(operation, target_align)
 #endif
-
 
 size_t VW::io_buf::buf_read(char*& pointer, size_t n, desired_align align)
 {
@@ -29,10 +26,7 @@ size_t VW::io_buf::buf_read(char*& pointer, size_t n, desired_align align)
         __AUDIT_VW_IO_BUF(SHIFT, align);
         _buffer.shift_to_front(_head, align);
       }
-      else
-      {
-        THROW("io_buf cannot be aligned to desired alignment")
-      }
+      else { THROW("io_buf cannot be aligned to desired alignment") }
     }
 
     __AUDIT_VW_IO_BUF(READ, align);
@@ -51,7 +45,7 @@ size_t VW::io_buf::buf_read(char*& pointer, size_t n, desired_align align)
     if (_current < _input_files.size() && fill(_input_files[_current].get()) > 0)
     {
       __AUDIT_VW_IO_BUF(FILL, align);
-                                           // read more bytes from _current file if present
+      // read more bytes from _current file if present
       return buf_read(pointer, n, align);  // more bytes are read.
     }
     else if (++_current < _input_files.size())
@@ -61,7 +55,7 @@ size_t VW::io_buf::buf_read(char*& pointer, size_t n, desired_align align)
     }
     else
     {
-      // we aleady attempted to shift in this fork, so no point; we if we cannot be 
+      // we aleady attempted to shift in this fork, so no point; we if we cannot be
       // aligned properly, we should throw an error.
       if (!align.is_aligned(_head)) { THROW("io_buf cannot be aligned to desired alignment"); }
 
@@ -87,8 +81,8 @@ bool VW::io_buf::isbinary()
   return ret;
 }
 
-size_t VW::io_buf::readto(char*& pointer, char terminal) // note that "readto" assumes we are operating in byte mode,
-                                                         // and thus does not support desired_alignment APIs
+size_t VW::io_buf::readto(char*& pointer, char terminal)  // note that "readto" assumes we are operating in byte mode,
+                                                          // and thus does not support desired_alignment APIs
 {
   // Return a pointer to the bytes before the terminal.  Must be less than the buffer size.
   pointer = _head;

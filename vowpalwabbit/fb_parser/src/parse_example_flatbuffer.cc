@@ -35,7 +35,7 @@ int flatbuffer_to_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& exampl
       case VW::experimental::error_code::success:
         return 1;
       case VW::experimental::error_code::nothing_to_parse:
-        return 0; // this is not a true error, but indicates that the parser is done
+        return 0;  // this is not a true error, but indicates that the parser is done
       default:
         std::stringstream sstream;
         sstream << "Error parsing examples: " << status.get_error_msg() << std::endl;
@@ -52,30 +52,31 @@ int flatbuffer_to_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& exampl
       case VW::experimental::error_code::success:
         return 1;
       case VW::experimental::error_code::nothing_to_parse:
-        return 0; // this is not a true error, but indicates that the parser is done
+        return 0;  // this is not a true error, but indicates that the parser is done
       default:
         THROW("Error parsing examples.");
     }
   }
-    
 }
 
 const VW::parsers::flatbuffer::ExampleRoot* parser::data() { return _data; }
 
 int parser::parse(io_buf& buf, uint8_t* buffer_pointer, VW::experimental::api_status* status)
 {
-#define RETURN_IF_ALIGN_ERROR(target_align, actual_ptr, example_root_count)                           \
-  if (!target_align.is_aligned(actual_ptr))                                                           \
-  {                                                                                                   \
-    size_t address = reinterpret_cast<size_t>(actual_ptr);                                            \
-    std::stringstream sstream;                                                                        \
-    sstream /* R_E_LS() joins <<s via ',' which makes reading hard; sstream to avoid that */          \
-            /* this is fine, because we are already about to bail from parsing */                     \
-        << "fb_parser error: flatbuffer data not aligned to " << target_align << '\n'                 \
-        << "   example_root[" << example_root_count << "] => @"  << std::hex << address << std::dec   \
-        << " % " << target_align.align << " = " << address % target_align.align                       \
-        << " (vs desired = " << target_align.offset << ")";                                           \
-    RETURN_ERROR_LS(status, internal_error) << sstream.str();                                         \
+#define RETURN_IF_ALIGN_ERROR(target_align, actual_ptr, example_root_count)                                           \
+  if (!target_align.is_aligned(actual_ptr))                                                                           \
+  {                                                                                                                   \
+    size_t address = reinterpret_cast<size_t>(actual_ptr);                                                            \
+    std::stringstream sstream;                                                                                        \
+    sstream /* R_E_LS() joins <<s via ',' which makes reading hard; sstream to avoid that */ /* this is fine, because \
+                                                                                                we are already about  \
+                                                                                                to bail from parsing  \
+                                                                                              */                      \
+        << "fb_parser error: flatbuffer data not aligned to " << target_align << '\n'                                 \
+        << "   example_root[" << example_root_count << "] => @" << std::hex << address << std::dec << " % "           \
+        << target_align.align << " = " << address % target_align.align << " (vs desired = " << target_align.offset    \
+        << ")";                                                                                                       \
+    RETURN_ERROR_LS(status, internal_error) << sstream.str();                                                         \
   }
 
   using size_prefix_t = uint32_t;
@@ -101,13 +102,13 @@ int parser::parse(io_buf& buf, uint8_t* buffer_pointer, VW::experimental::api_st
   auto len = buf.buf_read(line, sizeof(size_prefix_t), align_prefixed);  // the prefixed flatbuffer block should be
                                                                          // aligned to 8 bytse, no offset
 
-  if (len < sizeof(uint32_t)) 
+  if (len < sizeof(uint32_t))
   {
     if (len == 0)
     {
       // nothing to read
-       RETURN_ERROR(status, nothing_to_parse); 
-    } 
+      RETURN_ERROR(status, nothing_to_parse);
+    }
     else
     {
       // broken file
