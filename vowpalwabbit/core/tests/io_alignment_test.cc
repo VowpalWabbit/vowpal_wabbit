@@ -25,9 +25,11 @@ struct positioned_ptr
   {
   }
   positioned_ptr(const positioned_ptr&) = delete;
-  positioned_ptr(positioned_ptr&& original) : allocation(original.allocation), allocation_unit(original.allocation_unit)
+  positioned_ptr(positioned_ptr&& original) : allocation(original.allocation), allocation_unit(original.allocation_unit), p(original.p)
   {
     original.allocation_unit = nullptr;
+    original.allocation = 0;
+    original.p = nullptr;
   }
 
   ~positioned_ptr()
