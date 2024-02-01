@@ -223,7 +223,7 @@ void VW::parsers::json::details::parse_slates_example_json(const VW::label_parse
     VW::example_factory_t example_factory, const std::unordered_map<uint64_t, VW::example*>* dedup_examples)
 {
   Document document;
-  document.ParseInsitu(line);
+  document.Parse(line);
 
   // Build shared example
   const Value& context = document.GetObject();
@@ -248,7 +248,7 @@ void VW::parsers::json::details::parse_slates_example_dsjson(VW::workspace& all,
     const std::unordered_map<uint64_t, VW::example*>* dedup_examples)
 {
   Document document;
-  document.ParseInsitu(line);
+  document.Parse(line);
   // Build shared example
   const Value& context = document["c"].GetObject();
   VW::multi_ex slot_examples;
