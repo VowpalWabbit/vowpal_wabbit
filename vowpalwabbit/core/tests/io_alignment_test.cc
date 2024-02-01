@@ -24,7 +24,16 @@ struct positioned_ptr
       : allocation(allocation), allocation_unit(malloc(allocation)), p(reinterpret_cast<int8_t*>(allocation_unit))
   {
   }
-  ~positioned_ptr() { free(allocation_unit); }
+  positioned_ptr(const positioned_ptr&) = delete;
+  positioned_ptr(positioned_ptr&& original) : allocation(original.allocation), allocation_unit(original.allocation_unit)
+  {
+    original.allocation_unit = nullptr;
+  }
+
+  ~positioned_ptr()
+  {
+    if (allocation_unit != nullptr) { free(allocation_unit); }
+  }
 
   void realign(align_t alignment, align_t offset)
   {
