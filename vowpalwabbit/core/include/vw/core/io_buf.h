@@ -66,6 +66,8 @@ struct desired_align
   struct flatbuffer_t
   {
     flatbuffer_t() = delete;
+
+    static constexpr align_t align = 8;
   };
 
   // print to ostream
@@ -83,7 +85,7 @@ private:
   {
     // if T is a flatbuffer type, we need to align to 8 bytes,
     // otherwise alignof(T)
-    return std::is_base_of<flatbuffer_t, T>::value ? 8 : alignof(T);
+    return std::is_base_of<flatbuffer_t, T>::value ? flatbuffer_t::align : alignof(T);
   }
 };
 

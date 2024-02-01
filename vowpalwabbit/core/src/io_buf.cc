@@ -20,12 +20,12 @@ size_t VW::io_buf::buf_read(char*& pointer, size_t n, desired_align align)
       _buffer.shift_to_front(_head, align);
     }
     if (_current < _input_files.size() && fill(_input_files[_current].get()) > 0)
-    {                               // read more bytes from _current file if present
-      return buf_read(pointer, n);  // more bytes are read.
+    {                                      // read more bytes from _current file if present
+      return buf_read(pointer, n, align);  // more bytes are read.
     }
     else if (++_current < _input_files.size())
     {
-      return buf_read(pointer, n);  // No more bytes, so go to next file and try again.
+      return buf_read(pointer, n, align);  // No more bytes, so go to next file and try again.
     }
     else
     {
