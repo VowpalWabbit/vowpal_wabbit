@@ -9,15 +9,15 @@
 
 using namespace testing;
 
-using VW::desired_align::align_t;
-using VW::desired_align::flatbuffer_t;
+using align_t = VW::desired_align::align_t;
+using flatbuffer_t = VW::desired_align::flatbuffer_t;
 using VW::desired_align;
 
 struct positioned_ptr
 {
+  size_t allocation;
   void* allocation_unit;
   int8_t* p; static_assert(sizeof(int8_t) == 1, "int8_t is not 1 byte");
-  size_t allocation;
 
   positioned_ptr(size_t allocation) : allocation(allocation), allocation_unit(malloc(allocation)), p(reinterpret_cast<int8_t*>(allocation_unit)) {}
   ~positioned_ptr() { free(allocation_unit); }
@@ -37,7 +37,7 @@ struct positioned_ptr
 template <typename T>
 positioned_ptr prepare_pointer(align_t offset)
 {
-  VW::align_t base_alignment = alignof(T);
+  align_t base_alignment = alignof(T);
   size_t playground = 2 * sizeof(T);
 
   positioned_ptr ptr(playground);
@@ -49,7 +49,7 @@ positioned_ptr prepare_pointer(align_t offset)
 template <>
 positioned_ptr prepare_pointer<flatbuffer_t>(align_t offset)
 {
-  VW::align_t base_alignment = flatbuffer_t::align;
+  align_t base_alignment = flatbuffer_t::align;
   size_t playground = 16;
 
   positioned_ptr ptr(playground);
@@ -61,9 +61,9 @@ positioned_ptr prepare_pointer<flatbuffer_t>(align_t offset)
 template <typename T>
 void test_desired_alignment_checker(align_t offset)
 {
-  typename desired_align da = desired_align::align_for<T>(offset);
+  desired_align da = desired_align::align_for<T>(offset);
   
-  for (size_t i_offset = 0; i_offset < da.alignment, i_offset++)
+  for (size_t i_offset = 0; i_offset < da.align; i_offset++)
   {
     positioned_ptr ptr = prepare_pointer<T>(i_offset);
 
@@ -81,7 +81,7 @@ void test_desired_alignment_checker(align_t offset)
 template <typename T>
 void test_all_alignments()
 {
-  for (size_t i_offset = 0; i_offset < alignof(T); i_offset++)
+  for (align_t i_offset = 0; i_offset < alignof(T); i_offset++)
   {
     test_desired_alignment_checker<T>(i_offset);
   }
