@@ -17,9 +17,13 @@ struct positioned_ptr
 {
   size_t allocation;
   void* allocation_unit;
-  int8_t* p; static_assert(sizeof(int8_t) == 1, "int8_t is not 1 byte");
+  int8_t* p;
+  static_assert(sizeof(int8_t) == 1, "int8_t is not 1 byte");
 
-  positioned_ptr(size_t allocation) : allocation(allocation), allocation_unit(malloc(allocation)), p(reinterpret_cast<int8_t*>(allocation_unit)) {}
+  positioned_ptr(size_t allocation)
+      : allocation(allocation), allocation_unit(malloc(allocation)), p(reinterpret_cast<int8_t*>(allocation_unit))
+  {
+  }
   ~positioned_ptr() { free(allocation_unit); }
 
   void realign(align_t alignment, align_t offset)
@@ -62,29 +66,20 @@ template <typename T>
 void test_desired_alignment_checker(align_t offset)
 {
   desired_align da = desired_align::align_for<T>(offset);
-  
+
   for (size_t i_offset = 0; i_offset < da.align; i_offset++)
   {
     positioned_ptr ptr = prepare_pointer<T>(i_offset);
 
-    if (i_offset == offset)
-    {
-      EXPECT_TRUE(da.is_aligned(ptr.p));
-    }
-    else
-    {
-      EXPECT_FALSE(da.is_aligned(ptr.p));
-    }
+    if (i_offset == offset) { EXPECT_TRUE(da.is_aligned(ptr.p)); }
+    else { EXPECT_FALSE(da.is_aligned(ptr.p)); }
   }
 }
 
 template <typename T>
 void test_all_alignments()
 {
-  for (align_t i_offset = 0; i_offset < alignof(T); i_offset++)
-  {
-    test_desired_alignment_checker<T>(i_offset);
-  }
+  for (align_t i_offset = 0; i_offset < alignof(T); i_offset++) { test_desired_alignment_checker<T>(i_offset); }
 }
 
 TEST(DesiredAlign, TestsAlignmentCorrectly)
