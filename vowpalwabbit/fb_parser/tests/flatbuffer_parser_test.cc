@@ -301,16 +301,22 @@ void run_parse_and_verify_test(VW::workspace& w, const root_prototype_t& root_ob
     switch (result)
     {
       case VW::experimental::error_code::success:
-        if (!w.l->is_multiline() || !dispatch_examples[0]->is_newline) { examples.push_back(dispatch_examples[0]); }
-        else { VW::finish_example(w, dispatch_examples); }
+        if (!w.l->is_multiline() || !dispatch_examples[0]->is_newline)
+        {
+          examples.push_back(dispatch_examples[0]);
+          dispatch_examples.clear();
+        }
 
         break;
       case VW::experimental::error_code::nothing_to_parse:
+
         done = true;
         break;
       default:
         throw std::runtime_error(status.get_error_msg());
     }
+
+    VW::finish_example(w, dispatch_examples);
   }
 
   vwtest::verify_example_root<test_audit_strings>(w, w.parser_runtime.flat_converter->data(), root_obj);
