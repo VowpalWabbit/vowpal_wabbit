@@ -107,3 +107,25 @@ TEST(DesiredAlign, TestsAlignmentCorrectly)
   test_all_alignments<char>();
   test_all_alignments<flatbuffer_t>();
 }
+
+TEST(IoAlignedReads, BasicAlignedReadTest)
+{
+  std::vector<uint16_t> data = {0x1050, 0x2060, 0x3070, 0x4080, 0x0000, 0x0000};
+
+  VW::io_buf buf;
+  buf.add_file(VW::io::create_buffer_view((const char*)&data[0], data.size() * sizeof(uint16_t)));
+
+  desired_align uint16_align = desired_align::align_for<uint16_t>();
+  desired_align uint64_align = desired_align::align_for<uint64_t>();
+
+  char* p = nullptr;
+  buf.buf_read(p, 2 * sizeof(uint16_t), uint16_align);
+  EXPECT_TRUE(uint16_align.is_aligned(p));
+  char* first_p = p;
+
+  buf.buf_read(p, 4 * sizeof(uint16_t), uint64_align);
+  EXPECT_TRUE(uint64_align.is_aligned(p));
+  char* second_p = p;
+
+  EXPECT_EQ(first_p, second_p); // make sure that we triggered the move-back code
+}
