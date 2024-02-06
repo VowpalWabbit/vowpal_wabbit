@@ -18,8 +18,6 @@ namespace vwtest
 
 struct prototype_example_t
 {
-  
-
   std::vector<prototype_namespace_t> namespaces;
   prototype_label_t label;
   const char* tag = nullptr;

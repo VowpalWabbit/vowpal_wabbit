@@ -28,11 +28,9 @@ struct feature_t
   {
   }
 
-  feature_t(feature_t&& other) : name(std::move(other.name)), value(other.value), hash(other.hash)
-  {
-  }
+  feature_t(feature_t&& other) = delete;
 
-  feature_t(const feature_t& other) : name(other.name), value(other.value), hash(other.hash)
+  feature_t(const feature_t& other) : has_name(other.has_name), name(other.name), value(other.value), hash(other.hash)
   {
   }
   
@@ -44,16 +42,16 @@ struct feature_t
 
 struct prototype_namespace_t
 {
-  prototype_namespace_t(const char* name, std::vector<feature_t>&& features) : has_name(true), name(name), features(features), hash(0), feature_group(name[0])
+  prototype_namespace_t(const char* name, const std::vector<feature_t>& features) : has_name(true), name(name), features{features}, hash(0), feature_group(name[0])
   {
   }
 
-  prototype_namespace_t(char feature_group, uint64_t hash, std::vector<feature_t>&& features) : has_name(false), name(nullptr), features(features), hash(hash), feature_group(feature_group)
+  prototype_namespace_t(char feature_group, uint64_t hash, const std::vector<feature_t>& features) : has_name(false), name(nullptr), features{features}, hash(hash), feature_group(feature_group)
   {
   }
 
   prototype_namespace_t(prototype_namespace_t&& other) = delete;
-  prototype_namespace_t(const prototype_namespace_t& other) : has_name(other.has_name), name(other.name), features(other.features), hash(other.hash), feature_group(other.feature_group)
+  prototype_namespace_t(const prototype_namespace_t& other) : has_name(other.has_name), name(other.name), features{other.features}, hash(other.hash), feature_group(other.feature_group)
   {
   }
 
@@ -91,7 +89,7 @@ struct prototype_namespace_t
 
     const auto name_offset = has_name ? builder.CreateString(name) : Offset<String>();
     
-    Offset<Vector<Offset<String>>> feature_names_offset = include_feature_names ? builder.CreateVector(feature_names) : Offset<Vector<Offset<String>>>() /* nullptr */;
+    Offset<Vector<Offset<String>>> feature_names_offset = builder.CreateVector(feature_names);
     Offset<Vector<float>> feature_values_offset = builder.CreateVector(feature_values);
     Offset<Vector<uint64_t>> feature_hashes_offset = builder.CreateVector(feature_hashes);
 
@@ -175,9 +173,9 @@ struct prototype_namespace_t
     EXPECT_LT(extent_index, features.namespace_extents.size());
     const auto& extent = features.namespace_extents[extent_index];
     
-    for (size_t i_f = extent.begin_index; i_f < extent.end_index; i_f++)
+    for (size_t i_f = extent.begin_index, i = 0; i_f < extent.end_index && i < this->features.size(); i_f++, i++)
     {
-      auto& f = this->features[i_f];
+      auto& f = this->features[i];
       if (f.has_name)
       {
         EXPECT_EQ(features.indices[i_f], VW::hash_feature(w, f.name, hash));
