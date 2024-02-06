@@ -107,7 +107,7 @@ int parser::parse(io_buf& buf, uint8_t* buffer_pointer, VW::experimental::api_st
     if (len == 0)
     {
       // nothing to read
-      RETURN_ERROR(status, nothing_to_parse);
+      return VW::experimental::error_code::nothing_to_parse;
     }
     else
     {

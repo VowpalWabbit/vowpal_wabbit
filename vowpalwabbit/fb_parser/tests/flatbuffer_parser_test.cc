@@ -5,14 +5,32 @@
 #include "vw/core/constant.h"
 #include "vw/core/feature_group.h"
 #include "vw/core/vw.h"
+#include "vw/core/example.h"
+#include "vw/core/learner.h"
 #include "vw/fb_parser/parse_example_flatbuffer.h"
 #include "vw/test_common/test_common.h"
+#include "vw/common/string_view.h"
+#include "vw/common/future_compat.h"
+
+#include "vw/core/error_constants.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <string>
 #include <vector>
+
+#include "prototype_label.h"
+#include "prototype_namespace.h"
+#include "prototype_example.h"
+#include "prototype_example_root.h"
+
+USE_PROTOTYPE_MNEMONICS
+
+
+namespace fb = VW::parsers::flatbuffer;
+using namespace flatbuffers;
+using namespace vwtest;
 
 flatbuffers::Offset<void> get_label(flatbuffers::FlatBufferBuilder& builder, VW::parsers::flatbuffer::Label label_type)
 {
@@ -257,3 +275,79 @@ TEST(flatbuffer_parser_tests, test_flatbuffer_standalone_example_error_code)
 
   VW::finish_example(*all, *examples[0]);
 }
+
+template <typename root_prototype_t, bool test_audit_strings = true>
+void run_parse_and_verify_test(VW::workspace& w, const root_prototype_t& root_obj)
+{
+  flatbuffers::FlatBufferBuilder builder;
+  auto root = vwtest::create_example_root<test_audit_strings>(builder, w, root_obj);
+  builder.FinishSizePrefixed(root);
+
+  VW::io_buf buf;
+
+  span<uint8_t> fb_span = builder.GetBufferSpan();
+  buf.add_file(VW::io::create_buffer_view((const char*)fb_span.data(), fb_span.size()));
+
+  VW::multi_ex examples;
+
+  bool done = false;
+  while (!done && !w.parser_runtime.example_parser->done)
+  {
+    VW::multi_ex dispatch_examples;
+    dispatch_examples.push_back(&VW::get_unused_example(&w));
+
+    VW::experimental::api_status status;
+    int result = w.parser_runtime.flat_converter->parse_examples(&w, buf, dispatch_examples, nullptr, &status);
+
+    switch (result)
+    {
+    case VW::experimental::error_code::success:
+      if (!w.l->is_multiline() || !dispatch_examples[0]->is_newline)
+      {
+        examples.push_back(dispatch_examples[0]);
+      }
+      
+      break;
+    case VW::experimental::error_code::nothing_to_parse:
+      done = true;
+      break;
+    default:
+      throw std::runtime_error(status.get_error_msg());
+    }
+  }
+
+  vwtest::verify_example_root<test_audit_strings>(w, w.parser_runtime.flat_converter->data(), root_obj);
+  vwtest::verify_example_root<test_audit_strings>(w, examples, root_obj);
+
+  VW::finish_example(w, examples);
+}
+
+TEST(FlatbufferParser, MultiExample)
+{
+  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer", "--cb_explore_adf"));
+
+  flatbuffers::FlatBufferBuilder builder;
+
+  multiex prototype = {
+    {
+      {
+        {
+          { "U_a", { { "a", 1.f }, { "b", 2.f } } },
+          { "U_b", { { "a", 3.f }, { "b", 4.f } } },
+        },
+        vwtest::cb_label_shared(),
+        "tag1"
+      },
+      {
+        {
+          { "T_a", { { "a", 5.f }, { "b", 6.f } } },
+          { "T_b", { { "a", 7.f }, { "b", 8.f } } },
+        },
+        vwtest::cb_label({ { 1, 1, 0.5f } }),
+      },
+    }
+  };
+
+  run_parse_and_verify_test(*all, prototype);
+}
+
