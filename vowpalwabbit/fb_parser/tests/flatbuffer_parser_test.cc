@@ -2,17 +2,20 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "prototype_example.h"
+#include "prototype_example_root.h"
+#include "prototype_label.h"
+#include "prototype_namespace.h"
+#include "vw/common/future_compat.h"
+#include "vw/common/string_view.h"
 #include "vw/core/constant.h"
-#include "vw/core/feature_group.h"
-#include "vw/core/vw.h"
+#include "vw/core/error_constants.h"
 #include "vw/core/example.h"
+#include "vw/core/feature_group.h"
 #include "vw/core/learner.h"
+#include "vw/core/vw.h"
 #include "vw/fb_parser/parse_example_flatbuffer.h"
 #include "vw/test_common/test_common.h"
-#include "vw/common/string_view.h"
-#include "vw/common/future_compat.h"
-
-#include "vw/core/error_constants.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -20,13 +23,7 @@
 #include <string>
 #include <vector>
 
-#include "prototype_label.h"
-#include "prototype_namespace.h"
-#include "prototype_example.h"
-#include "prototype_example_root.h"
-
 USE_PROTOTYPE_MNEMONICS
-
 
 namespace fb = VW::parsers::flatbuffer;
 using namespace flatbuffers;
@@ -303,18 +300,15 @@ void run_parse_and_verify_test(VW::workspace& w, const root_prototype_t& root_ob
 
     switch (result)
     {
-    case VW::experimental::error_code::success:
-      if (!w.l->is_multiline() || !dispatch_examples[0]->is_newline)
-      {
-        examples.push_back(dispatch_examples[0]);
-      }
-      
-      break;
-    case VW::experimental::error_code::nothing_to_parse:
-      done = true;
-      break;
-    default:
-      throw std::runtime_error(status.get_error_msg());
+      case VW::experimental::error_code::success:
+        if (!w.l->is_multiline() || !dispatch_examples[0]->is_newline) { examples.push_back(dispatch_examples[0]); }
+
+        break;
+      case VW::experimental::error_code::nothing_to_parse:
+        done = true;
+        break;
+      default:
+        throw std::runtime_error(status.get_error_msg());
     }
   }
 
@@ -330,60 +324,55 @@ TEST(FlatbufferParser, MultiExample)
 
   flatbuffers::FlatBufferBuilder builder;
 
-  multiex prototype = {
-    {
+  multiex prototype = {{
+      {{
+           {"U_a", {{"a", 1.f}, {"b", 2.f}}},
+           {"U_b", {{"a", 3.f}, {"b", 4.f}}},
+       },
+          vwtest::cb_label_shared(), "tag1"},
       {
-        {
-          { "U_a", { { "a", 1.f }, { "b", 2.f } } },
-          { "U_b", { { "a", 3.f }, { "b", 4.f } } },
-        },
-        vwtest::cb_label_shared(),
-        "tag1"
+          {
+              {"T_a", {{"a", 5.f}, {"b", 6.f}}},
+              {"T_b", {{"a", 7.f}, {"b", 8.f}}},
+          },
+          vwtest::cb_label({{1, 1, 0.5f}}),
       },
-      {
-        {
-          { "T_a", { { "a", 5.f }, { "b", 6.f } } },
-          { "T_b", { { "a", 7.f }, { "b", 8.f } } },
-        },
-        vwtest::cb_label({ { 1, 1, 0.5f } }),
-      },
-    }
-  };
-  
+  }};
+
   run_parse_and_verify_test(*all, prototype);
 }
 
 namespace vwtest
 {
-  template <typename T>
-  struct fb_type
-  {
-  };
+template <typename T>
+struct fb_type
+{
+};
 
-  template <>
-  struct fb_type<prototype_namespace_t>
-  {
-    using type = VW::parsers::flatbuffer::Namespace;
-  };
+template <>
+struct fb_type<prototype_namespace_t>
+{
+  using type = VW::parsers::flatbuffer::Namespace;
+};
 
-  template <>
-  struct fb_type<prototype_example_t>
-  {
-    using type = VW::parsers::flatbuffer::Example;
-  };
+template <>
+struct fb_type<prototype_example_t>
+{
+  using type = VW::parsers::flatbuffer::Example;
+};
 
-  template <>
-  struct fb_type<prototype_multiexample_t>
-  {
-    using type = VW::parsers::flatbuffer::MultiExample;
-  };
+template <>
+struct fb_type<prototype_multiexample_t>
+{
+  using type = VW::parsers::flatbuffer::MultiExample;
+};
 
-  template <>
-  struct fb_type<prototype_example_collection_t>
-  {
-    using type = VW::parsers::flatbuffer::ExampleCollection;
-  };
-}
+template <>
+struct fb_type<prototype_example_collection_t>
+{
+  using type = VW::parsers::flatbuffer::ExampleCollection;
+};
+}  // namespace vwtest
 
 template <typename T, typename FB_t = typename vwtest::fb_type<T>::type>
 void create_flatbuffer_and_validate(VW::workspace& w, const T& prototype)
@@ -401,29 +390,27 @@ void create_flatbuffer_and_validate(VW::workspace& w, const T& prototype)
 TEST(FlatbufferParser, ValidateTestAffordances_Namespace)
 {
   auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer"));
-  
-  prototype_namespace_t ns_prototype = { "U_a", { { "a", 1.f }, { "b", 2.f } } };
+
+  prototype_namespace_t ns_prototype = {"U_a", {{"a", 1.f}, {"b", 2.f}}};
   create_flatbuffer_and_validate(*all, ns_prototype);
 }
 
 TEST(FlatbufferParser, ValidateTestAffordances_Example_Simple)
 {
   auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer"));
-  
-  prototype_example_t ex_prototype = {
-    {
-      { "U_a", { { "a", 1.f }, { "b", 2.f } } },
-      { "U_b", { { "a", 3.f }, { "b", 4.f } } },
-    },
-    vwtest::simple_label(0.5, 1.0)
-  };
+
+  prototype_example_t ex_prototype = {{
+                                          {"U_a", {{"a", 1.f}, {"b", 2.f}}},
+                                          {"U_b", {{"a", 3.f}, {"b", 4.f}}},
+                                      },
+      vwtest::simple_label(0.5, 1.0)};
   create_flatbuffer_and_validate(*all, ex_prototype);
 }
 
 // TEST(FlatbufferParser, ValidateTestAffordances_Example_Unlabeled)
 // {
 //   auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer"));
-  
+
 //   prototype_example_t ex_prototype = {
 //     {
 //       { "U_a", { { "a", 1.f }, { "b", 2.f } } },
@@ -437,55 +424,44 @@ TEST(FlatbufferParser, ValidateTestAffordances_Example_Simple)
 TEST(FlatbufferParser, ValidateTestAffordances_Example_CBShared)
 {
   auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer", "--cb_explore_adf"));
-  
-  prototype_example_t ex_prototype = {
-    {
-      { "U_a", { { "a", 1.f }, { "b", 2.f } } },
-      { "U_b", { { "a", 3.f }, { "b", 4.f } } },
-    },
-    vwtest::cb_label_shared(),
-    "tag1"
-  };
+
+  prototype_example_t ex_prototype = {{
+                                          {"U_a", {{"a", 1.f}, {"b", 2.f}}},
+                                          {"U_b", {{"a", 3.f}, {"b", 4.f}}},
+                                      },
+      vwtest::cb_label_shared(), "tag1"};
   create_flatbuffer_and_validate(*all, ex_prototype);
 }
 
 TEST(FlatbufferParser, ValidateTestAffordances_Example_CB)
 {
   auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer", "--cb_explore_adf"));
-  
-  prototype_example_t ex_prototype = {
-    {
-      { "T_a", { { "a", 5.f }, { "b", 6.f } } },
-      { "T_b", { { "a", 7.f }, { "b", 8.f } } },
-    },
-    vwtest::cb_label({ 1, 1, 0.5f }),
-    "tag1"
-  };
+
+  prototype_example_t ex_prototype = {{
+                                          {"T_a", {{"a", 5.f}, {"b", 6.f}}},
+                                          {"T_b", {{"a", 7.f}, {"b", 8.f}}},
+                                      },
+      vwtest::cb_label({1, 1, 0.5f}), "tag1"};
   create_flatbuffer_and_validate(*all, ex_prototype);
 }
 
 TEST(FlatbufferParser, ValidateTestAffordances_MultiExample)
 {
   auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer"));
-  
-  prototype_multiexample_t multiex_prototype = {
-    {
+
+  prototype_multiexample_t multiex_prototype = {{
+      {{
+           {"U_a", {{"a", 1.f}, {"b", 2.f}}},
+           {"U_b", {{"a", 3.f}, {"b", 4.f}}},
+       },
+          vwtest::cb_label_shared(), "tag1"},
       {
-        {
-          { "U_a", { { "a", 1.f }, { "b", 2.f } } },
-          { "U_b", { { "a", 3.f }, { "b", 4.f } } },
-        },
-        vwtest::cb_label_shared(),
-        "tag1"
+          {
+              {"T_a", {{"a", 5.f}, {"b", 6.f}}},
+              {"T_b", {{"a", 7.f}, {"b", 8.f}}},
+          },
+          vwtest::cb_label({{1, 1, 0.5f}}),
       },
-      {
-        {
-          { "T_a", { { "a", 5.f }, { "b", 6.f } } },
-          { "T_b", { { "a", 7.f }, { "b", 8.f } } },
-        },
-        vwtest::cb_label({ { 1, 1, 0.5f } }),
-      },
-    }
-  };
+  }};
   create_flatbuffer_and_validate(*all, multiex_prototype);
 }

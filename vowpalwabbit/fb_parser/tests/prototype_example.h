@@ -4,16 +4,15 @@
 
 #pragma once
 
-#include "vw/fb_parser/parse_example_flatbuffer.h"
 #include "flatbuffers/flatbuffers.h"
-
 #include "prototype_label.h"
 #include "prototype_namespace.h"
+#include "vw/fb_parser/parse_example_flatbuffer.h"
 
 namespace fb = VW::parsers::flatbuffer;
 using namespace flatbuffers;
 
-namespace vwtest 
+namespace vwtest
 {
 
 struct prototype_example_t
@@ -25,7 +24,7 @@ struct prototype_example_t
   inline size_t count_indices() const
   {
     size_t count = 0;
-    bool seen [VW::NUM_NAMESPACES] = {false};
+    bool seen[VW::NUM_NAMESPACES] = {false};
     for (auto& ns : namespaces)
     {
       count += !seen[ns.feature_group];
@@ -39,10 +38,7 @@ struct prototype_example_t
   Offset<fb::Example> create_flatbuffer(flatbuffers::FlatBufferBuilder& builder, VW::workspace& w) const
   {
     std::vector<Offset<fb::Namespace>> fb_namespaces;
-    for (auto& ns : namespaces)
-    {
-      fb_namespaces.push_back(ns.create_flatbuffer<>(builder, w));
-    }
+    for (auto& ns : namespaces) { fb_namespaces.push_back(ns.create_flatbuffer<>(builder, w)); }
 
     Offset<Vector<Offset<fb::Namespace>>> fb_namespaces_vector = builder.CreateVector(fb_namespaces);
 
@@ -88,10 +84,7 @@ struct prototype_multiexample_t
   Offset<fb::MultiExample> create_flatbuffer(flatbuffers::FlatBufferBuilder& builder, VW::workspace& w) const
   {
     std::vector<Offset<fb::Example>> fb_examples;
-    for (auto& ex : examples)
-    {
-      fb_examples.push_back(ex.create_flatbuffer<include_feature_names>(builder, w));
-    }
+    for (auto& ex : examples) { fb_examples.push_back(ex.create_flatbuffer<include_feature_names>(builder, w)); }
 
     Offset<Vector<Offset<fb::Example>>> fb_examples_vector = builder.CreateVector(fb_examples);
 
@@ -99,14 +92,11 @@ struct prototype_multiexample_t
   }
 
   template <bool expect_feature_names = true>
-  void verify(VW::workspace& w,  const fb::MultiExample* e) const
+  void verify(VW::workspace& w, const fb::MultiExample* e) const
   {
     EXPECT_EQ(e->examples()->size(), examples.size());
 
-    for (size_t i = 0; i < examples.size(); i++)
-    {
-      examples[i].verify<expect_feature_names>(w, e->examples()->Get(i));
-    }
+    for (size_t i = 0; i < examples.size(); i++) { examples[i].verify<expect_feature_names>(w, e->examples()->Get(i)); }
   }
 
   template <bool expect_feature_names = true>
@@ -114,10 +104,7 @@ struct prototype_multiexample_t
   {
     EXPECT_EQ(e.size(), examples.size());
 
-    for (size_t i = 0; i < examples.size(); i++)
-    {
-      examples[i].verify<expect_feature_names>(w, *e[i]);
-    }
+    for (size_t i = 0; i < examples.size(); i++) { examples[i].verify<expect_feature_names>(w, *e[i]); }
   }
 };
 
@@ -130,10 +117,7 @@ struct prototype_example_collection_t
   Offset<fb::ExampleCollection> create_flatbuffer(flatbuffers::FlatBufferBuilder& builder, VW::workspace& w) const
   {
     std::vector<Offset<fb::Example>> fb_examples;
-    for (auto& ex : examples)
-    {
-      fb_examples.push_back(ex.create_flatbuffer<include_feature_names>(builder, w));
-    }
+    for (auto& ex : examples) { fb_examples.push_back(ex.create_flatbuffer<include_feature_names>(builder, w)); }
 
     std::vector<Offset<fb::MultiExample>> fb_multi_examples;
     for (auto& ex : multi_examples)
@@ -153,10 +137,7 @@ struct prototype_example_collection_t
     EXPECT_EQ(e->examples()->size(), examples.size());
     EXPECT_EQ(e->multi_examples()->size(), multi_examples.size());
 
-    for (size_t i = 0; i < examples.size(); i++)
-    {
-      examples[i].verify<expect_feature_names>(w, e->examples()->Get(i));
-    }
+    for (size_t i = 0; i < examples.size(); i++) { examples[i].verify<expect_feature_names>(w, e->examples()->Get(i)); }
 
     for (size_t i = 0; i < multi_examples.size(); i++)
     {
@@ -167,52 +148,47 @@ struct prototype_example_collection_t
   template <bool expect_feature_names = true>
   void verify(VW::workspace& w, const VW::multi_ex& e) const
   {
-    for (size_t i = 0; i < examples.size(); i++)
-    {
-      examples[i].verify<expect_feature_names>(w, e[i]);
-    }
+    for (size_t i = 0; i < examples.size(); i++) { examples[i].verify<expect_feature_names>(w, e[i]); }
 
-    for (size_t i = 0; i < multi_examples.size(); i++)
-    {
-      multi_examples[i].verify<expect_feature_names>(w, e[i]);
-    }
+    for (size_t i = 0; i < multi_examples.size(); i++) { multi_examples[i].verify<expect_feature_names>(w, e[i]); }
   }
 };
 
-}
+}  // namespace vwtest
 
-#define USE_PROTOTYPE_MNEMONICS_EX \
-namespace vwtest { \
-  using example = vwtest::prototype_example_t; \
-  using multiex = vwtest::prototype_multiexample_t; \
+#define USE_PROTOTYPE_MNEMONICS_EX                              \
+  namespace vwtest                                              \
+  {                                                             \
+  using example = vwtest::prototype_example_t;                  \
+  using multiex = vwtest::prototype_multiexample_t;             \
   using ex_collection = vwtest::prototype_example_collection_t; \
-}
+  }
 
-  // // template function is_example_root_type, returns true if T is prototype_example, 
-  // // prototype_multiexample, or prototype_example_collection
-  // template <typename T>
-  // struct is_example_root_type
-  // {
-  //   static constexpr bool value = 
-  //       std::is_same<T, prototype_example_t>::value || 
-  //       std::is_same<T, prototype_multiexample_t>::value || 
-  //       std::is_same<T, prototype_example_collection_t>::value;
-  // };
+// // template function is_example_root_type, returns true if T is prototype_example,
+// // prototype_multiexample, or prototype_example_collection
+// template <typename T>
+// struct is_example_root_type
+// {
+//   static constexpr bool value =
+//       std::is_same<T, prototype_example_t>::value ||
+//       std::is_same<T, prototype_multiexample_t>::value ||
+//       std::is_same<T, prototype_example_collection_t>::value;
+// };
 
-  // template <typename T, class = typename std::enable_if<is_example_root_type<T>::value>::type>
-  // struct prototype_example_root
-  // {
-  // public:
-  //   using fb_type = ExampleRoot;
+// template <typename T, class = typename std::enable_if<is_example_root_type<T>::value>::type>
+// struct prototype_example_root
+// {
+// public:
+//   using fb_type = ExampleRoot;
 
-  //   template <typename... Args>
-  //   prototype_example_root(Args&&... args) : _example(std::forward<Args>(args)...) {}
+//   template <typename... Args>
+//   prototype_example_root(Args&&... args) : _example(std::forward<Args>(args)...) {}
 
-  //   ::flatbuffers::Offset<ExampleRoot> create(flatbuffers::FlatBufferBuilder& builder) const;
+//   ::flatbuffers::Offset<ExampleRoot> create(flatbuffers::FlatBufferBuilder& builder) const;
 
-  //   void assert_equivalent(const flatbuffers::Table* table) const;
-  //   void assert_equivalent(const VW::multi_ex& examples) const;
+//   void assert_equivalent(const flatbuffers::Table* table) const;
+//   void assert_equivalent(const VW::multi_ex& examples) const;
 
-  // private:
-  //   T _prototype_example;
-  // };
+// private:
+//   T _prototype_example;
+// };

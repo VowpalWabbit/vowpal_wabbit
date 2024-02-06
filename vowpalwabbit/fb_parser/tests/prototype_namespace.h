@@ -4,10 +4,9 @@
 
 #pragma once
 
-#include "vw/core/vw.h"
-
-#include "vw/fb_parser/parse_example_flatbuffer.h"
 #include "flatbuffers/flatbuffers.h"
+#include "vw/core/vw.h"
+#include "vw/fb_parser/parse_example_flatbuffer.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -15,25 +14,21 @@
 namespace fb = VW::parsers::flatbuffer;
 using namespace flatbuffers;
 
-namespace vwtest 
+namespace vwtest
 {
 
 struct feature_t
 {
-  feature_t(std::string name, float value) : has_name(true), name(name), value(value), hash(0)
-  {
-  }
+  feature_t(std::string name, float value) : has_name(true), name(name), value(value), hash(0) {}
 
-  feature_t(uint64_t hash, float value) : has_name(false), name(nullptr), value(value), hash(hash)
-  {
-  }
+  feature_t(uint64_t hash, float value) : has_name(false), name(nullptr), value(value), hash(hash) {}
 
   feature_t(feature_t&& other) = delete;
 
   feature_t(const feature_t& other) : has_name(other.has_name), name(other.name), value(other.value), hash(other.hash)
   {
   }
-  
+
   bool has_name;
   std::string name;
   float value;
@@ -42,16 +37,23 @@ struct feature_t
 
 struct prototype_namespace_t
 {
-  prototype_namespace_t(const char* name, const std::vector<feature_t>& features) : has_name(true), name(name), features{features}, hash(0), feature_group(name[0])
+  prototype_namespace_t(const char* name, const std::vector<feature_t>& features)
+      : has_name(true), name(name), features{features}, hash(0), feature_group(name[0])
   {
   }
 
-  prototype_namespace_t(char feature_group, uint64_t hash, const std::vector<feature_t>& features) : has_name(false), name(nullptr), features{features}, hash(hash), feature_group(feature_group)
+  prototype_namespace_t(char feature_group, uint64_t hash, const std::vector<feature_t>& features)
+      : has_name(false), name(nullptr), features{features}, hash(hash), feature_group(feature_group)
   {
   }
 
   prototype_namespace_t(prototype_namespace_t&& other) = delete;
-  prototype_namespace_t(const prototype_namespace_t& other) : has_name(other.has_name), name(other.name), features{other.features}, hash(other.hash), feature_group(other.feature_group)
+  prototype_namespace_t(const prototype_namespace_t& other)
+      : has_name(other.has_name)
+      , name(other.name)
+      , features{other.features}
+      , hash(other.hash)
+      , feature_group(other.feature_group)
   {
   }
 
@@ -67,10 +69,7 @@ struct prototype_namespace_t
     // When building these objects, we interpret the presence of a string as a signal to
     // hash the string
     uint64_t hash = this->hash;
-    if (has_name)
-    {
-      hash = VW::hash_space(w, name);
-    }
+    if (has_name) { hash = VW::hash_space(w, name); }
 
     std::vector<Offset<String>> feature_names;
     std::vector<float> feature_values;
@@ -80,7 +79,7 @@ struct prototype_namespace_t
     {
       if VW_STD17_CONSTEXPR (include_feature_names)
       {
-        feature_names.push_back(f.has_name ? builder.CreateString(f.name) : Offset<String>() /* nullptr */ );
+        feature_names.push_back(f.has_name ? builder.CreateString(f.name) : Offset<String>() /* nullptr */);
       }
 
       feature_values.push_back(f.value);
@@ -88,14 +87,14 @@ struct prototype_namespace_t
     }
 
     const auto name_offset = has_name ? builder.CreateString(name) : Offset<String>();
-    
+
     Offset<Vector<Offset<String>>> feature_names_offset = builder.CreateVector(feature_names);
     Offset<Vector<float>> feature_values_offset = builder.CreateVector(feature_values);
     Offset<Vector<uint64_t>> feature_hashes_offset = builder.CreateVector(feature_hashes);
 
-    return fb::CreateNamespace(builder, name_offset, feature_group, hash, feature_names_offset, feature_values_offset, feature_hashes_offset);
+    return fb::CreateNamespace(
+        builder, name_offset, feature_group, hash, feature_names_offset, feature_values_offset, feature_hashes_offset);
   }
-
 
   template <bool expect_feature_names = true>
   void verify(VW::workspace& w, const fb::Namespace* ns) const
@@ -106,18 +105,12 @@ struct prototype_namespace_t
       hash = VW::hash_space(w, name);
       EXPECT_EQ(ns->name()->str(), name);
     }
-    else
-    {
-      EXPECT_EQ(ns->name(), nullptr);
-    }
+    else { EXPECT_EQ(ns->name(), nullptr); }
 
     EXPECT_EQ(ns->full_hash(), hash);
     EXPECT_EQ(ns->hash(), feature_group);
 
-    if VW_STD17_CONSTEXPR (expect_feature_names)
-    {
-      EXPECT_EQ(ns->feature_names()->size(), features.size());
-    }
+    if VW_STD17_CONSTEXPR (expect_feature_names) { EXPECT_EQ(ns->feature_names()->size(), features.size()); }
 
     EXPECT_EQ(ns->feature_values()->size(), features.size());
     EXPECT_EQ(ns->feature_hashes()->size(), features.size());
@@ -143,11 +136,8 @@ struct prototype_namespace_t
   void verify(VW::workspace& w, const size_t, const VW::example& e) const
   {
     uint64_t hash = this->hash;
-    if (has_name)
-    {
-      hash = VW::hash_space(w, name);
-    }
-    
+    if (has_name) { hash = VW::hash_space(w, name); }
+
     bool is_indexed = false;
     for (size_t i = 0; i < e.indices.size(); i++)
     {
@@ -164,15 +154,12 @@ struct prototype_namespace_t
     size_t extent_index = 0;
     for (; extent_index < features.namespace_extents.size(); extent_index++)
     {
-      if (features.namespace_extents[extent_index].hash == hash)
-      {
-        break;
-      }
+      if (features.namespace_extents[extent_index].hash == hash) { break; }
     }
 
     EXPECT_LT(extent_index, features.namespace_extents.size());
     const auto& extent = features.namespace_extents[extent_index];
-    
+
     for (size_t i_f = extent.begin_index, i = 0; i_f < extent.end_index && i < this->features.size(); i_f++, i++)
     {
       auto& f = this->features[i];
@@ -180,24 +167,19 @@ struct prototype_namespace_t
       {
         EXPECT_EQ(features.indices[i_f], VW::hash_feature(w, f.name, hash));
 
-        if VW_STD17_CONSTEXPR (expect_feature_names)
-        {
-          EXPECT_EQ(features.space_names[i_f].name, f.name);
-        }
+        if VW_STD17_CONSTEXPR (expect_feature_names) { EXPECT_EQ(features.space_names[i_f].name, f.name); }
       }
-      else
-      {
-        EXPECT_EQ(features.indices[i_f], f.hash);
-      }
+      else { EXPECT_EQ(features.indices[i_f], f.hash); }
 
       EXPECT_EQ(features.values[i_f], f.value);
     }
   }
 };
 
-}
+}  // namespace vwtest
 
-#define USE_PROTOTYPE_MNEMONICS_NS \
-namespace vwtest { \
+#define USE_PROTOTYPE_MNEMONICS_NS          \
+  namespace vwtest                          \
+  {                                         \
   using ns = vwtest::prototype_namespace_t; \
-}
+  }

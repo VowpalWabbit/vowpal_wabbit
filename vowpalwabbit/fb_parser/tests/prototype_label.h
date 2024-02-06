@@ -5,11 +5,9 @@
 #pragma once
 
 #include "vw/common/future_compat.h"
-
-#include "vw/core/vw.h"
-#include "vw/core/reduction_features.h"
 #include "vw/core/example.h"
-
+#include "vw/core/reduction_features.h"
+#include "vw/core/vw.h"
 #include "vw/fb_parser/parse_example_flatbuffer.h"
 
 #include <gmock/gmock.h>
@@ -32,12 +30,11 @@ struct prototype_label_t
   void verify(VW::workspace& w, const VW::example& e) const;
 
 private:
-  void verify_simple_label(const fb::Example* e) const;  
+  void verify_simple_label(const fb::Example* e) const;
   void verify_simple_label(const VW::example& e) const;
 
   void verify_cb_label(const fb::Example* e) const;
   void verify_cb_label(const VW::example& e) const;
-
 };
 
 prototype_label_t simple_label(float label, float weight, float initial = 0.f);
@@ -45,4 +42,4 @@ prototype_label_t simple_label(float label, float weight, float initial = 0.f);
 prototype_label_t cb_label(std::vector<VW::cb_class> costs, float weight = 1.0f);
 prototype_label_t cb_label(VW::cb_class single_class, float weight = 1.0f);
 prototype_label_t cb_label_shared();
-}
+}  // namespace vwtest

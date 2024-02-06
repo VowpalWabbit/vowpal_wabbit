@@ -25,7 +25,8 @@ struct positioned_ptr
   {
   }
   positioned_ptr(const positioned_ptr&) = delete;
-  positioned_ptr(positioned_ptr&& original) : allocation(original.allocation), allocation_unit(original.allocation_unit), p(original.p)
+  positioned_ptr(positioned_ptr&& original)
+      : allocation(original.allocation), allocation_unit(original.allocation_unit), p(original.p)
   {
     original.allocation_unit = nullptr;
     original.allocation = 0;
@@ -127,5 +128,5 @@ TEST(IoAlignedReads, BasicAlignedReadTest)
   EXPECT_TRUE(uint64_align.is_aligned(p));
   char* second_p = p;
 
-  EXPECT_EQ(first_p, second_p); // make sure that we triggered the move-back code
+  EXPECT_EQ(first_p, second_p);  // make sure that we triggered the move-back code
 }

@@ -5,7 +5,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-
 namespace fb = VW::parsers::flatbuffer;
 using namespace flatbuffers;
 
@@ -13,7 +12,8 @@ namespace vwtest
 {
 
 template <bool include_feature_names = true>
-inline Offset<fb::ExampleRoot> create_example_root(FlatBufferBuilder& builder, VW::workspace& vw, const prototype_example_t& example)
+inline Offset<fb::ExampleRoot> create_example_root(
+    FlatBufferBuilder& builder, VW::workspace& vw, const prototype_example_t& example)
 {
   auto fb_example = example.create_flatbuffer<include_feature_names>(builder, vw);
   return fb::CreateExampleRoot(builder, fb::ExampleType_Example, fb_example.Union());
@@ -36,14 +36,16 @@ inline void verify_example_root(VW::workspace& vw, VW::multi_ex examples, const 
 }
 
 template <bool include_feature_names = true>
-inline Offset<fb::ExampleRoot> create_example_root(FlatBufferBuilder& builder, VW::workspace& vw, const prototype_multiexample_t& multiex)
+inline Offset<fb::ExampleRoot> create_example_root(
+    FlatBufferBuilder& builder, VW::workspace& vw, const prototype_multiexample_t& multiex)
 {
   auto fb_multiex = multiex.create_flatbuffer<include_feature_names>(builder, vw);
   return fb::CreateExampleRoot(builder, fb::ExampleType_MultiExample, fb_multiex.Union());
 }
 
 template <bool expect_feature_names = true>
-inline void verify_example_root(VW::workspace& vw, const fb::ExampleRoot* root, const prototype_multiexample_t& expected)
+inline void verify_example_root(
+    VW::workspace& vw, const fb::ExampleRoot* root, const prototype_multiexample_t& expected)
 {
   EXPECT_EQ(root->example_obj_type(), fb::ExampleType_MultiExample);
 
@@ -59,14 +61,16 @@ inline void verify_example_root(VW::workspace& vw, VW::multi_ex examples, const 
 }
 
 template <bool include_feature_names = true>
-inline Offset<fb::ExampleRoot> create_example_root(FlatBufferBuilder& builder, VW::workspace& vw, const prototype_example_collection_t& collection)
+inline Offset<fb::ExampleRoot> create_example_root(
+    FlatBufferBuilder& builder, VW::workspace& vw, const prototype_example_collection_t& collection)
 {
   auto fb_collection = collection.create_flatbuffer<include_feature_names>(builder, vw);
   return fb::CreateExampleRoot(builder, fb::ExampleType_ExampleCollection, fb_collection.Union());
 }
 
 template <bool expect_feature_names = true>
-inline void verify_example_root(VW::workspace& vw, const fb::ExampleRoot* root, const prototype_example_collection_t& expected)
+inline void verify_example_root(
+    VW::workspace& vw, const fb::ExampleRoot* root, const prototype_example_collection_t& expected)
 {
   EXPECT_EQ(root->example_obj_type(), fb::ExampleType_ExampleCollection);
 
@@ -75,18 +79,16 @@ inline void verify_example_root(VW::workspace& vw, const fb::ExampleRoot* root, 
 }
 
 template <bool expect_feature_names = true>
-inline void verify_example_root(VW::workspace& vw, VW::multi_ex examples, const prototype_example_collection_t& expected)
+inline void verify_example_root(
+    VW::workspace& vw, VW::multi_ex examples, const prototype_example_collection_t& expected)
 {
   EXPECT_EQ(examples.size(), expected.examples.size());
 
-  for (size_t i = 0; i < examples.size(); i++)
-  {
-    expected.verify<expect_feature_names>(vw, examples[i]);
-  }
+  for (size_t i = 0; i < examples.size(); i++) { expected.verify<expect_feature_names>(vw, examples[i]); }
 }
 
-}
+}  // namespace vwtest
 
 #define USE_PROTOTYPE_MNEMONICS \
-  USE_PROTOTYPE_MNEMONICS_EX; \
-  USE_PROTOTYPE_MNEMONICS_NS; 
+  USE_PROTOTYPE_MNEMONICS_EX;   \
+  USE_PROTOTYPE_MNEMONICS_NS;

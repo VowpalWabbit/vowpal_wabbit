@@ -3,4 +3,3 @@
 // license as described in the file LICENSE.
 
 #include "prototype_namespace.h"
-
