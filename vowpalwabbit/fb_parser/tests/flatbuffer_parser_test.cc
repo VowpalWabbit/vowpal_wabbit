@@ -302,6 +302,7 @@ void run_parse_and_verify_test(VW::workspace& w, const root_prototype_t& root_ob
     {
       case VW::experimental::error_code::success:
         if (!w.l->is_multiline() || !dispatch_examples[0]->is_newline) { examples.push_back(dispatch_examples[0]); }
+        else { VW::finish_example(w, dispatch_examples[0]); }
 
         break;
       case VW::experimental::error_code::nothing_to_parse:
