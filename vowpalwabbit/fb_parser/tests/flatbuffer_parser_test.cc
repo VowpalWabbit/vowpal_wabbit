@@ -2,6 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "example_data_generator.h"
 #include "prototype_example.h"
 #include "prototype_example_root.h"
 #include "prototype_label.h"
@@ -106,7 +107,7 @@ flatbuffers::Offset<VW::parsers::flatbuffer::ExampleRoot> sample_flatbuffer_erro
   return CreateExampleRoot(builder, VW::parsers::flatbuffer::ExampleType_Example, example.Union());
 }
 
-TEST(flatbuffer_parser_tests, test_flatbuffer_standalone_example_audit)
+TEST(FlatbufferParser, SingleExample_SimpleLabel_FeatureNames)
 {
   // Testcase where user would provide feature names and feature values (no feature hashes)
   auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer"));
@@ -149,7 +150,7 @@ TEST(flatbuffer_parser_tests, test_flatbuffer_standalone_example_audit)
   VW::finish_example(*all, *examples[0]);
 }
 
-TEST(flatbuffer_parser_tests, test_flatbuffer_standalone_example_no_audit)
+TEST(FlatbufferParser, SingleExample_SimpleLabel_FeatureHashes)
 {
   // Testcase where user would provide feature names and feature values (no feature hashes)
   auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer"));
@@ -193,7 +194,7 @@ TEST(flatbuffer_parser_tests, test_flatbuffer_standalone_example_no_audit)
   VW::finish_example(*all, *examples[0]);
 }
 
-TEST(FlatbufferParser, FlatbufferCollection)
+TEST(FlatbufferParser, ExampleCollection_Singleline)
 {
   auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer"));
 
@@ -236,7 +237,7 @@ TEST(FlatbufferParser, FlatbufferCollection)
   VW::finish_example(*all, *examples[0]);
 }
 
-TEST(flatbuffer_parser_tests, test_flatbuffer_standalone_example_error_code)
+TEST(FlatbufferParser, SingleExample_MissingFeatureIndices)
 {
   // Testcase where user would provide feature names and feature values (no feature hashes)
   auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer", "--api_status", "--audit"));
@@ -287,6 +288,7 @@ void run_parse_and_verify_test(VW::workspace& w, const root_prototype_t& root_ob
 
   buf.add_file(VW::io::create_buffer_view((const char*)buf_ptr, buf_size));
 
+  std::vector<VW::multi_ex> wrapped;
   VW::multi_ex examples;
 
   bool done = false;
@@ -306,6 +308,18 @@ void run_parse_and_verify_test(VW::workspace& w, const root_prototype_t& root_ob
           examples.push_back(dispatch_examples[0]);
           dispatch_examples.clear();
         }
+        else if (w.l->is_multiline())
+        {
+          EXPECT_TRUE(dispatch_examples[0]->is_newline);
+
+          // since we are in multiline mode, we have a complete multi_ex, so put it
+          // in 'wrapped', and move to the next one
+          wrapped.push_back(std::move(examples));
+          examples.clear();
+
+          // note that we do not clean up dispatch_examples, because we want the
+          // extra newline example to be cleaned up below
+        }
 
         break;
       case VW::experimental::error_code::nothing_to_parse:
@@ -319,13 +333,34 @@ void run_parse_and_verify_test(VW::workspace& w, const root_prototype_t& root_ob
     VW::finish_example(w, dispatch_examples);
   }
 
-  vwtest::verify_example_root<test_audit_strings>(w, w.parser_runtime.flat_converter->data(), root_obj);
-  vwtest::verify_example_root<test_audit_strings>(w, examples, root_obj);
+  if (examples.size() > 0)
+  {
+    wrapped.push_back(std::move(examples));
+    examples.clear();
+  }
 
-  VW::finish_example(w, examples);
+  vwtest::verify_example_root<test_audit_strings>(w, w.parser_runtime.flat_converter->data(), root_obj);
+  vwtest::verify_example_root<test_audit_strings>(w, (std::vector<VW::multi_ex>)wrapped, root_obj);
+
+  for (size_t i = 0; i < wrapped.size(); i++)
+  {
+    VW::finish_example(w, wrapped[i]);
+    wrapped[i].clear();
+  }
 }
 
-TEST(FlatbufferParser, MultiExample)
+TEST(FlatbufferParser, ExampleCollection_Multiline)
+{
+  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer", "--cb_explore_adf"));
+
+  example_data_generator data_gen;
+
+  auto prototype = data_gen.create_cb_adf_log(3, 4, 0.4f);
+
+  run_parse_and_verify_test(*all, prototype);
+}
+
+TEST(FlatbufferParser, MultiExample_Multiline)
 {
   auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer", "--cb_explore_adf"));
 
@@ -379,6 +414,14 @@ struct fb_type<prototype_example_collection_t>
 {
   using type = VW::parsers::flatbuffer::ExampleCollection;
 };
+
+using union_t = void;
+
+template <>
+struct fb_type<prototype_label_t>
+{
+  using type = union_t;
+};
 }  // namespace vwtest
 
 template <typename T, typename FB_t = typename vwtest::fb_type<T>::type>
@@ -392,6 +435,56 @@ void create_flatbuffer_and_validate(VW::workspace& w, const T& prototype)
   const FB_t* fb_obj = GetRoot<FB_t>(builder.GetBufferPointer());
 
   prototype.verify(w, fb_obj);
+}
+
+template <>
+void create_flatbuffer_and_validate<prototype_label_t, void>(VW::workspace& w, const prototype_label_t& prototype)
+{
+  if (prototype.label_type == fb::Label_NONE) { return; }  // there is no flatbuffer to create
+
+  flatbuffers::FlatBufferBuilder builder;
+
+  Offset<void> buffer_offset = prototype.create_flatbuffer(builder, w);
+  builder.Finish(buffer_offset);
+
+  switch (prototype.label_type)
+  {
+    case fb::Label_SimpleLabel:
+    case fb::Label_CBLabel:
+    {
+      prototype.verify(w, prototype.label_type, builder.GetBufferPointer());
+      break;
+    }
+    case fb::Label_NONE:
+    {
+      break;
+    }
+    default:
+    {
+      THROW("Label type not currently supported");
+      break;
+    }
+  }
+}
+
+TEST(FlatBufferParser, ValidateTestAffordances_NoLabel)
+{
+  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer"));
+
+  prototype_label_t label_prototype = vwtest::no_label();
+  create_flatbuffer_and_validate(*all, label_prototype);
+}
+
+TEST(FlatBufferParser, ValidateTestAffordances_SimpleLabel)
+{
+  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer"));
+  create_flatbuffer_and_validate(*all, simple_label(0.5, 1.0));
+}
+
+TEST(FlatBufferParser, ValidateTestAffordances_CBLabel)
+{
+  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer", "--cb_explore_adf"));
+  create_flatbuffer_and_validate(*all, cb_label({1.5, 2, 0.25f}));
 }
 
 TEST(FlatbufferParser, ValidateTestAffordances_Namespace)
@@ -414,19 +507,16 @@ TEST(FlatbufferParser, ValidateTestAffordances_Example_Simple)
   create_flatbuffer_and_validate(*all, ex_prototype);
 }
 
-// TEST(FlatbufferParser, ValidateTestAffordances_Example_Unlabeled)
-// {
-//   auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer"));
+TEST(FlatbufferParser, ValidateTestAffordances_Example_Unlabeled)
+{
+  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer"));
 
-//   prototype_example_t ex_prototype = {
-//     {
-//       { "U_a", { { "a", 1.f }, { "b", 2.f } } },
-//       { "U_b", { { "a", 3.f }, { "b", 4.f } } },
-//     }
-//   };
-//   create_flatbuffer_and_validate(*all, ex_prototype);
-
-// }
+  prototype_example_t ex_prototype = {{
+      {"U_a", {{"a", 1.f}, {"b", 2.f}}},
+      {"U_b", {{"a", 3.f}, {"b", 4.f}}},
+  }};
+  create_flatbuffer_and_validate(*all, ex_prototype);
+}
 
 TEST(FlatbufferParser, ValidateTestAffordances_Example_CBShared)
 {
@@ -471,4 +561,14 @@ TEST(FlatbufferParser, ValidateTestAffordances_MultiExample)
       },
   }};
   create_flatbuffer_and_validate(*all, multiex_prototype);
+}
+
+TEST(FlatbufferParser, ValidateTestAffordances_ExampleCollectionMultiline)
+{
+  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer", "--cb_explore_adf"));
+
+  example_data_generator data_gen;
+  prototype_example_collection_t prototype = data_gen.create_cb_adf_log(2, 2, 0.5f);
+
+  create_flatbuffer_and_validate(*all, prototype);
 }

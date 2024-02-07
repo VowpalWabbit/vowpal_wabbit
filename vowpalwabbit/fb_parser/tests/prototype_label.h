@@ -26,16 +26,36 @@ struct prototype_label_t
 
   Offset<void> create_flatbuffer(flatbuffers::FlatBufferBuilder& builder, VW::workspace& w) const;
 
-  void verify(VW::workspace& w, const fb::Example* e) const;
-  void verify(VW::workspace& w, const VW::example& e) const;
+  void verify(VW::workspace& w, const fb::Example* ex) const;
+  void verify(VW::workspace& w, const VW::example& ex) const;
+
+  void verify(VW::workspace& w, fb::Label label_type, const void* label) const;
 
 private:
-  void verify_simple_label(const fb::Example* e) const;
-  void verify_simple_label(const VW::example& e) const;
+  inline void verify_simple_label(const fb::Example* ex) const
+  {
+    EXPECT_EQ(ex->label_type(), fb::Label_SimpleLabel);
 
-  void verify_cb_label(const fb::Example* e) const;
-  void verify_cb_label(const VW::example& e) const;
+    const fb::SimpleLabel* actual_label = ex->label_as_SimpleLabel();
+    verify_simple_label(actual_label);
+  }
+
+  void verify_simple_label(const fb::SimpleLabel* label) const;
+  void verify_simple_label(const VW::example& ex) const;
+
+  inline void verify_cb_label(const fb::Example* ex) const
+  {
+    EXPECT_EQ(ex->label_type(), fb::Label_CBLabel);
+
+    const fb::CBLabel* actual_label = ex->label_as_CBLabel();
+    verify_cb_label(actual_label);
+  }
+
+  void verify_cb_label(const fb::CBLabel* label) const;
+  void verify_cb_label(const VW::example& ex) const;
 };
+
+prototype_label_t no_label();
 
 prototype_label_t simple_label(float label, float weight, float initial = 0.f);
 

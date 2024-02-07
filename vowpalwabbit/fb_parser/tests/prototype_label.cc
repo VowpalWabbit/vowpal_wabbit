@@ -24,17 +24,21 @@ Offset<void> prototype_label_t::create_flatbuffer(FlatBufferBuilder& builder, VW
         for (const auto& cost : label.cb.costs)
         {
           action_costs.push_back(
-              fb::CreateCB_class(builder, cost.action, cost.cost, cost.probability, cost.partial_prediction));
+              fb::CreateCB_class(builder, cost.cost, cost.action, cost.probability, cost.partial_prediction));
         }
 
         Offset<Vector<Offset<fb::CB_class>>> action_costs_vector = builder.CreateVector(action_costs);
 
         return fb::CreateCBLabel(builder, label.cb.weight, action_costs_vector).Union();
       }
+      case fb::Label_NONE:
+      {
+        return 0;
+      }
       default:
       {
         THROW("Label type not currently supported");
-        return Offset<void>();
+        return 0;
       }
     }
   }
@@ -52,6 +56,10 @@ void prototype_label_t::verify(VW::workspace&, const fb::Example* e) const
     case fb::Label_CBLabel:
     {
       verify_cb_label(e);
+      break;
+    }
+    case fb::Label_NONE:
+    {
       break;
     }
     // TODO: other label types
@@ -77,7 +85,10 @@ void prototype_label_t::verify(VW::workspace&, const VW::example& e) const
       verify_cb_label(e);
       break;
     }
-    // TODO: other label types
+    case fb::Label_NONE:
+    {
+      break;
+    }
     default:
     {
       THROW("Label type not currently supported");
@@ -86,9 +97,35 @@ void prototype_label_t::verify(VW::workspace&, const VW::example& e) const
   }
 }
 
-void prototype_label_t::verify_simple_label(const fb::Example* e) const
+void prototype_label_t::verify(VW::workspace&, fb::Label label_type, const void* label) const
 {
-  const fb::SimpleLabel* actual_label = e->label_as_SimpleLabel();
+  switch (label_type)
+  {
+    case fb::Label_SimpleLabel:
+    {
+      verify_simple_label(GetRoot<fb::SimpleLabel>(label));
+      break;
+    }
+    case fb::Label_CBLabel:
+    {
+      verify_cb_label(GetRoot<fb::CBLabel>(label));
+      break;
+    }
+    case fb::Label_NONE:
+    {
+      EXPECT_EQ(label, nullptr);
+      break;
+    }
+    default:
+    {
+      THROW("Label type not currently supported");
+      break;
+    }
+  }
+}
+
+void prototype_label_t::verify_simple_label(const fb::SimpleLabel* actual_label) const
+{
   const auto expected_reduction_features = reduction_features.get<VW::simple_label_reduction_features>();
 
   EXPECT_FLOAT_EQ(actual_label->label(), label.simple.label);
@@ -110,9 +147,8 @@ void prototype_label_t::verify_simple_label(const VW::example& e) const
   EXPECT_FLOAT_EQ(actual_reduction_features.weight, expected_reduction_features.weight);
 }
 
-void prototype_label_t::verify_cb_label(const fb::Example* e) const
+void prototype_label_t::verify_cb_label(const fb::CBLabel* actual_label) const
 {
-  const fb::CBLabel* actual_label = e->label_as_CBLabel();
   EXPECT_FLOAT_EQ(actual_label->weight(), label.cb.weight);
   EXPECT_EQ(actual_label->costs()->size(), label.cb.costs.size());
 
@@ -144,6 +180,14 @@ void prototype_label_t::verify_cb_label(const VW::example& e) const
   }
 }
 
+prototype_label_t no_label()
+{
+  VW::polylabel actual_label;
+  actual_label.empty = {};
+
+  return prototype_label_t{fb::Label_NONE, actual_label, {}};
+}
+
 prototype_label_t simple_label(float label, float weight, float initial)
 {
   VW::reduction_features reduction_features;
@@ -153,7 +197,7 @@ prototype_label_t simple_label(float label, float weight, float initial)
   VW::polylabel actual_label;
   actual_label.simple.label = label;
 
-  return prototype_label_t{fb::Label_SimpleLabel, actual_label, std::move(reduction_features)};
+  return prototype_label_t{fb::Label_SimpleLabel, actual_label, reduction_features};
 }
 
 prototype_label_t cb_label(std::vector<VW::cb_class> costs, float weight)

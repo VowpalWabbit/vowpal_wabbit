@@ -32,6 +32,8 @@ target_include_directories(vw_fb_parser PUBLIC ${FLATBUFFERS_INCLUDE_DIR})
 # endif()
 
 set(vw_fb_parser_test_sources
+      tests/example_data_generator.h
+      tests/example_data_generator.cc
       tests/prototype_example.h
       tests/prototype_example_root.h
       tests/prototype_label.cc

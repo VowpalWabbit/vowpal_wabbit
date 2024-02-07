@@ -23,7 +23,8 @@ struct feature_t
 
   feature_t(uint64_t hash, float value) : has_name(false), name(nullptr), value(value), hash(hash) {}
 
-  feature_t(feature_t&& other) = delete;
+  feature_t(feature_t&& other)
+      : has_name(other.has_name), name(std::move(other.name)), value(other.value), hash(other.hash){};
 
   feature_t(const feature_t& other) : has_name(other.has_name), name(other.name), value(other.value), hash(other.hash)
   {
@@ -47,7 +48,15 @@ struct prototype_namespace_t
   {
   }
 
-  prototype_namespace_t(prototype_namespace_t&& other) = delete;
+  prototype_namespace_t(prototype_namespace_t&& other)
+      : has_name(other.has_name)
+      , name(std::move(other.name))
+      , features(std::move(other.features))
+      , hash(other.hash)
+      , feature_group(other.feature_group)
+  {
+  }
+
   prototype_namespace_t(const prototype_namespace_t& other)
       : has_name(other.has_name)
       , name(other.name)

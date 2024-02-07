@@ -33,9 +33,11 @@ inline void verify_example_root(VW::workspace& vw, const fb::ExampleRoot* root, 
 }
 
 template <bool expect_feature_names = true>
-inline void verify_example_root(VW::workspace& vw, VW::multi_ex examples, const prototype_example_t& expected)
+inline void verify_example_root(
+    VW::workspace& vw, std::vector<VW::multi_ex> examples, const prototype_example_t& expected)
 {
   EXPECT_EQ(examples.size(), 1);
+  EXPECT_EQ(examples[0].size(), 1);
   expected.verify<expect_feature_names>(vw, examples[0]);
 }
 
@@ -58,10 +60,14 @@ inline void verify_example_root(
 }
 
 template <bool expect_feature_names = true>
-inline void verify_example_root(VW::workspace& vw, VW::multi_ex examples, const prototype_multiexample_t& expected)
+inline void verify_example_root(
+    VW::workspace& vw, std::vector<VW::multi_ex> examples, const prototype_multiexample_t& expected)
 {
-  EXPECT_EQ(examples.size(), expected.examples.size());
-  expected.verify<expect_feature_names>(vw, examples);
+  bool expecting_none = expected.examples.size() == 0;
+  EXPECT_EQ(examples.size(), 1 - expecting_none);
+
+  EXPECT_EQ(examples[0].size(), expected.examples.size());
+  expected.verify<expect_feature_names>(vw, examples[0]);
 }
 
 template <bool include_feature_names = true>
@@ -84,11 +90,21 @@ inline void verify_example_root(
 
 template <bool expect_feature_names = true>
 inline void verify_example_root(
-    VW::workspace& vw, VW::multi_ex examples, const prototype_example_collection_t& expected)
+    VW::workspace& vw, std::vector<VW::multi_ex> examples, const prototype_example_collection_t& expected)
 {
-  EXPECT_EQ(examples.size(), expected.examples.size());
+  // either we have a list of single examples (so a single multi_ex), or a list of multi_ex
+  EXPECT_TRUE(expected.is_multiline || examples.size() == 1);
 
-  for (size_t i = 0; i < examples.size(); i++) { expected.verify<expect_feature_names>(vw, examples[i]); }
+  if (expected.is_multiline)
+  {
+    EXPECT_EQ(examples.size(), expected.multi_examples.size());
+    expected.verify_multiline<expect_feature_names>(vw, examples);
+  }
+  else
+  {
+    EXPECT_EQ(examples[0].size(), expected.examples.size());
+    expected.verify_singleline<expect_feature_names>(vw, examples[0]);
+  }
 }
 
 }  // namespace vwtest
