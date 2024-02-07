@@ -18,6 +18,7 @@ using namespace flatbuffers;
 
 namespace vwtest
 {
+
 struct prototype_label_t
 {
   fb::Label label_type;
@@ -53,6 +54,28 @@ private:
 
   void verify_cb_label(const fb::CBLabel* label) const;
   void verify_cb_label(const VW::example& ex) const;
+
+  inline void verify_continuous_label(const fb::Example* ex) const
+  {
+    EXPECT_EQ(ex->label_type(), fb::Label_ContinuousLabel);
+
+    const fb::ContinuousLabel* actual_label = ex->label_as_ContinuousLabel();
+    verify_continuous_label(actual_label);
+  }
+
+  void verify_continuous_label(const fb::ContinuousLabel* label) const;
+  void verify_continuous_label(const VW::example& ex) const;
+
+  inline void verify_slates_label(const fb::Example* ex) const
+  {
+    EXPECT_EQ(ex->label_type(), fb::Label_Slates_Label);
+
+    const fb::Slates_Label* actual_label = ex->label_as_Slates_Label();
+    verify_slates_label(actual_label);
+  }
+
+  void verify_slates_label(const fb::Slates_Label* label) const;
+  void verify_slates_label(const VW::example& ex) const;
 };
 
 prototype_label_t no_label();
@@ -62,4 +85,29 @@ prototype_label_t simple_label(float label, float weight, float initial = 0.f);
 prototype_label_t cb_label(std::vector<VW::cb_class> costs, float weight = 1.0f);
 prototype_label_t cb_label(VW::cb_class single_class, float weight = 1.0f);
 prototype_label_t cb_label_shared();
+
+prototype_label_t continuous_label(std::vector<VW::cb_continuous::continuous_label_elm> costs);
+
+prototype_label_t slates_label_raw(VW::slates::example_type type, float weight, bool labeled, float cost,
+    uint32_t slot_id, std::vector<VW::action_score> probabilities);
+
+namespace slates
+{
+inline prototype_label_t shared()
+{
+  return vwtest::slates_label_raw(VW::slates::example_type::SHARED, 0.0f, false, 0.0f, 0, {});
+}
+inline prototype_label_t shared(float global_reward)
+{
+  return vwtest::slates_label_raw(VW::slates::example_type::SHARED, 0.0f, true, global_reward, 0, {});
+}
+inline prototype_label_t action(uint32_t for_slot)
+{
+  return vwtest::slates_label_raw(VW::slates::example_type::ACTION, 0.0f, false, 0.0f, for_slot, {});
+}
+inline prototype_label_t slot(uint32_t slot_id, std::vector<VW::action_score> probabilities = {})
+{
+  return vwtest::slates_label_raw(VW::slates::example_type::SLOT, 0.0f, false, 0.0f, slot_id, probabilities);
+}
+};  // namespace slates
 }  // namespace vwtest

@@ -384,6 +384,62 @@ TEST(FlatbufferParser, MultiExample_Multiline)
   run_parse_and_verify_test(*all, prototype);
 }
 
+TEST(FlatBufferParser, LabelSmokeTest_ContinuousLabel)
+{
+  using namespace vwtest;
+  using example = vwtest::example;
+
+  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer"));
+  example_data_generator datagen;
+
+  example ex = {{datagen.create_namespace("U_a", 1, 1)},
+
+      continuous_label({{1, 0.5f, 0.25}})};
+
+  run_parse_and_verify_test(*all, ex);
+}
+
+TEST(FlatBufferParser, LabelSmokeTest_Slates)
+{
+  using namespace vwtest;
+
+  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer", "--slates"));
+  example_data_generator datagen;
+
+  // this is not the best way to describe it as it is technically labelled in the strictest sense
+  // (namely, having slates labels associated with the examples), but there is no labelling data
+  // there, because we do not have a global cost or probabilities for the slots.
+  multiex unlabeled_example = {{{{datagen.create_namespace("Context", 1, 1)},
+
+                                    slates::shared()},
+      {{datagen.create_namespace("Action", 1, 1)},
+
+          slates::action(0)},
+      {{datagen.create_namespace("Action", 1, 1)},
+
+          slates::action(0)},
+      {{datagen.create_namespace("Slot", 1, 1)},
+
+          slates::slot(0)}}};
+
+  run_parse_and_verify_test(*all, unlabeled_example);
+
+  multiex labeled_example{{{{datagen.create_namespace("Context", 1, 1)},
+
+                               slates::shared(0.5)},
+      {{datagen.create_namespace("Action", 1, 1)},
+
+          slates::action(0)},
+      {{datagen.create_namespace("Action", 1, 1)},
+
+          slates::action(0)},
+      {{datagen.create_namespace("Slot", 1, 1)},
+
+          slates::slot(0, {{1, 0.6}, {0, 0.4}})}}};
+
+  run_parse_and_verify_test(*all, labeled_example);
+}
+
 namespace vwtest
 {
 template <typename T>
@@ -451,6 +507,8 @@ void create_flatbuffer_and_validate<prototype_label_t, void>(VW::workspace& w, c
   {
     case fb::Label_SimpleLabel:
     case fb::Label_CBLabel:
+    case fb::Label_ContinuousLabel:
+    case fb::Label_Slates_Label:
     {
       prototype.verify(w, prototype.label_type, builder.GetBufferPointer());
       break;
@@ -461,7 +519,7 @@ void create_flatbuffer_and_validate<prototype_label_t, void>(VW::workspace& w, c
     }
     default:
     {
-      THROW("Label type not currently supported");
+      THROW("Label type not currently supported for create_flatbuffer_and_validate");
       break;
     }
   }
@@ -485,6 +543,34 @@ TEST(FlatBufferParser, ValidateTestAffordances_CBLabel)
 {
   auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer", "--cb_explore_adf"));
   create_flatbuffer_and_validate(*all, cb_label({1.5, 2, 0.25f}));
+}
+
+TEST(FlatBufferParser, ValidateTestAffordances_ContinuousLabel)
+{
+  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer"));
+
+  std::vector<VW::cb_continuous::continuous_label_elm> probabilities = {{1, 0.5f, 0.25}};
+
+  create_flatbuffer_and_validate(*all, continuous_label(probabilities));
+}
+
+TEST(FlatBufferParser, ValidateTestAffordances_Slates)
+{
+  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer", "--slates"));
+
+  std::vector<VW::action_score> probabilities = {{1, 0.5f}, {2, 0.25f}};
+
+  VW::slates::example_type types[] = {
+      VW::slates::example_type::UNSET,
+      VW::slates::example_type::ACTION,
+      VW::slates::example_type::SHARED,
+      VW::slates::example_type::SLOT,
+  };
+
+  for (VW::slates::example_type type : types)
+  {
+    create_flatbuffer_and_validate(*all, slates_label_raw(type, 0.5, true, 0.3, 1, probabilities));
+  }
 }
 
 TEST(FlatbufferParser, ValidateTestAffordances_Namespace)

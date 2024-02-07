@@ -38,7 +38,8 @@ inline void verify_example_root(
 {
   EXPECT_EQ(examples.size(), 1);
   EXPECT_EQ(examples[0].size(), 1);
-  expected.verify<expect_feature_names>(vw, examples[0]);
+
+  expected.verify<expect_feature_names>(vw, *(examples[0][0]));
 }
 
 template <bool include_feature_names = true>
