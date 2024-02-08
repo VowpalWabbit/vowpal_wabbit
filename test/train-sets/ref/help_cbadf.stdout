@@ -121,8 +121,6 @@ Input Options:
                                             keep)
     --flatbuffer                            Data file will be interpreted as a flatbuffer file (type: bool,
                                             experimental)
-    --api_status                            api_status object will not be set to nullptr which will show
-                                            detailed error information (type: bool, experimental)
     --csv                                   Data file will be interpreted as a CSV file (type: bool, experimental)
     --csv_separator arg                     CSV Parser: Specify field separator in one character, " | : are
                                             not allowed for reservation. (type: str, default: ,, experimental)
