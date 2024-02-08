@@ -240,7 +240,7 @@ TEST(FlatbufferParser, ExampleCollection_Singleline)
 TEST(FlatbufferParser, SingleExample_MissingFeatureIndices)
 {
   // Testcase where user would provide feature names and feature values (no feature hashes)
-  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer", "--api_status", "--audit"));
+  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer", "--audit"));
 
   flatbuffers::FlatBufferBuilder builder;
 

@@ -19,13 +19,21 @@ size_t VW::io_buf::buf_read(char*& pointer, size_t n, desired_align align)
   // return a pointer to the next n bytes.  n must be smaller than the maximum size.
   if (_head + n <= _buffer.end)
   {
+    // When using the io_buf to read binary data, we may run into aligment requirements
+    // that are non-standard (e.g. in the middle of reading data, a buffer may be off-align,
+    // but by a very specific number of bytes; this happened with Flatbuffers, which require
+    // the root of the parse to be 8-byte aligned, but the first element is a 4-byte integer,
+    // so the "true root element" of the Flatbuffer is positioned on an align of (8, 4).
     if (!align.is_aligned(_head))
     {
+      // If we are not correctly aligned when in the "more bytes already available in buffer"
+      // fork of buf_read, we can try to shift the buffer to the front to align it.
       if (_head > _buffer.begin + align.offset)
       {
         __AUDIT_VW_IO_BUF(SHIFT, align);
         _buffer.shift_to_front(_head, align);
       }
+      // Unaligned reads are UB. If we cannot align the buffer, we should throw an error.
       else { THROW("io_buf cannot be aligned to desired alignment") }
     }
 

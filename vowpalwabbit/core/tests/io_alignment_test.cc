@@ -13,12 +13,15 @@ using align_t = VW::desired_align::align_t;
 using flatbuffer_t = VW::desired_align::flatbuffer_t;
 using VW::desired_align;
 
+// positioned_ptr is a helper class to allocate a pointer at a partiular alignment+offset, for use in
+// testing whether desired_align functions properly when testing the alignment of pointers.
 struct positioned_ptr
 {
-  size_t allocation;
-  void* allocation_unit;
-  int8_t* p;
-  static_assert(sizeof(int8_t) == 1, "int8_t is not 1 byte");
+  size_t allocation;      // The size of the allocated buffer - used to ensure we don't run off the end of the buffer.
+  void* allocation_unit;  // The actual allocated buffer within which we will be positioning our test pointer.
+  int8_t* p;              // The alignable pointer. Once realign() is called, it will be the pointer we are testing.
+  static_assert(sizeof(int8_t) == 1, "int8_t is not 1 byte");  // this should only happen IFF someone messed with
+                                                               // typedefs but it would invalidate the test.
 
   positioned_ptr(size_t allocation)
       : allocation(allocation), allocation_unit(malloc(allocation)), p(reinterpret_cast<int8_t*>(allocation_unit))
@@ -38,6 +41,12 @@ struct positioned_ptr
     if (allocation_unit != nullptr) { free(allocation_unit); }
   }
 
+  // Move p so that it reflects the desired alignment. Technically this can run past the
+  // end of the allocation unit, which is largely fine because we are never expecting to
+  // read this pointer anyways, and are only using it for math.
+  //
+  // At the same time, if this was ever promoted to live code, rather than test code, we
+  // would want to fix that edge-case beyond being an assert-check.
   void realign(align_t alignment, align_t offset)
   {
     size_t base_address = reinterpret_cast<size_t>(allocation_unit);
@@ -46,7 +55,7 @@ struct positioned_ptr
     size_t padding = alignment - base_offset + offset;
     assert(padding < allocation);
 
-    p += padding;
+    p = reinterpret_cast<int8_t*>(allocation_unit) + padding;
   }
 };
 

@@ -25,38 +25,21 @@ namespace flatbuffer
 {
 int flatbuffer_to_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& examples)
 {
-  if (all->parser_runtime.api_status)
+  VW::experimental::api_status status;
+  int result = all->parser_runtime.flat_converter->parse_examples(all, buf, examples, nullptr, &status);
+  switch (result)
   {
-    // TODO: At what point do we report the error?
-    VW::experimental::api_status status;
-    int result = all->parser_runtime.flat_converter->parse_examples(all, buf, examples, nullptr, &status);
-    switch (result)
-    {
-      case VW::experimental::error_code::success:
-        return 1;
-      case VW::experimental::error_code::nothing_to_parse:
-        return 0;  // this is not a true error, but indicates that the parser is done
-      default:
-        std::stringstream sstream;
-        sstream << "Error parsing examples: " << status.get_error_msg() << std::endl;
-        THROW(sstream.str());
-    }
+    case VW::experimental::error_code::success:
+      return 1;
+    case VW::experimental::error_code::nothing_to_parse:
+      return 0;  // this is not a true error, but indicates that the parser is done
+    default:
+      std::stringstream sstream;
+      sstream << "Error parsing examples: " << status.get_error_msg() << std::endl;
+      THROW(sstream.str());
+  }
 
-    return static_cast<int>(status.get_error_code() == VW::experimental::error_code::success);
-  }
-  else
-  {
-    int result = all->parser_runtime.flat_converter->parse_examples(all, buf, examples, nullptr, nullptr);
-    switch (result)
-    {
-      case VW::experimental::error_code::success:
-        return 1;
-      case VW::experimental::error_code::nothing_to_parse:
-        return 0;  // this is not a true error, but indicates that the parser is done
-      default:
-        THROW("Error parsing examples.");
-    }
-  }
+  return static_cast<int>(status.get_error_code() == VW::experimental::error_code::success);
 }
 
 const VW::parsers::flatbuffer::ExampleRoot* parser::data() { return _data; }
@@ -100,7 +83,7 @@ int parser::parse(io_buf& buf, uint8_t* buffer_pointer, VW::experimental::api_st
 
   char* line = nullptr;
   auto len = buf.buf_read(line, sizeof(size_prefix_t), align_prefixed);  // the prefixed flatbuffer block should be
-                                                                         // aligned to 8 bytse, no offset
+                                                                         // aligned to 8 bytes, no offset
 
   if (len < sizeof(uint32_t))
   {

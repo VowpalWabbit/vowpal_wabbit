@@ -333,7 +333,15 @@ private:
         size_t begin_address = reinterpret_cast<size_t>(begin);
         if (begin_address % align.align != align.offset)
         {
-          required_padding = ((align.align << 1) - (begin_address % align.align) + align.offset) % align.align;
+          // The easiest way to explain this is by breaking down the pointer arightmetic. Let's start with
+          // the case where desired align.offset = 0. In this case, we only care about align.align, and can
+          // use a simple computation for it:
+          //
+          //  required_padding = (align.align - (begin_address % align.align)) % align.align;
+          //
+          // Once we need to be able to also shift forward, we need to add the desired additional offset,
+          // but this can run past align.align, so we need to take another modulus to avoid overpadding.
+          required_padding = (align.align - (begin_address % align.align) + align.offset) % align.align;
 
           required_padding /= sizeof(char);  // sizeof(char) = 1, but this is more explicit
         }

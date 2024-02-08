@@ -254,7 +254,6 @@ public:
   std::thread parse_thread;
   size_t max_examples;  // for TLC
   bool chain_hash_json = false;
-  bool api_status = false;
 #ifdef VW_FEAT_FLATBUFFERS_ENABLED
   std::unique_ptr<VW::parsers::flatbuffer::parser> flat_converter;
 #endif
