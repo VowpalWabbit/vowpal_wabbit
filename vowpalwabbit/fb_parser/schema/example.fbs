@@ -1,19 +1,15 @@
 namespace VW.parsers.flatbuffer;
 
-table Feature {
-  name:string;
-  value:float;
-  hash:uint64;
-}
-
 table Namespace {
   name:string;
   /// The index of the namespace which is either the first character of the namespace
   /// string or a reserved namespace identifier.
   hash:uint8;
-  features:[Feature];
   /// The 64 bit hash of the full namespace string.
   full_hash:uint64;
+  feature_names: [string];
+  feature_values:[float];
+  feature_hashes:[uint64];
 }
 
 table SimpleLabel {

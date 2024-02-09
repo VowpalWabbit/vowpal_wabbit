@@ -532,9 +532,9 @@ class Workspace(pylibvw.vw):
                     for ex in str_ex
                 ]
             ):
-                str_ex: List[
-                    Example
-                ] = str_ex  # pytype: disable=annotation-type-mismatch
+                str_ex: List[Example] = (
+                    str_ex  # pytype: disable=annotation-type-mismatch
+                )
                 return str_ex
 
         if not isinstance(str_ex, (list, str)):

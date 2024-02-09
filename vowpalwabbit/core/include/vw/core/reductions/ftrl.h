@@ -47,5 +47,5 @@ size_t write_model_field(io_buf&, VW::reductions::ftrl&, const std::string&, boo
 }  // namespace model_utils
 
 std::shared_ptr<VW::LEARNER::learner> ftrl_setup(VW::setup_base_i& stack_builder);
-}
+}  // namespace reductions
 }  // namespace VW
