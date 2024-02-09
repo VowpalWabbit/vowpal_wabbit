@@ -31,8 +31,22 @@ target_include_directories(vw_fb_parser PUBLIC ${FLATBUFFERS_INCLUDE_DIR})
 #     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 # endif()
 
+set(vw_fb_parser_test_sources
+      tests/example_data_generator.h
+      tests/example_data_generator.cc
+      tests/prototype_example.h
+      tests/prototype_example_root.h
+      tests/prototype_label.cc
+      tests/prototype_label.h
+      tests/prototype_namespace.h
+
+      tests/flatbuffer_parser_test.cc
+)
+
+message(STATUS "vw_fb_parser_test_sources: ${vw_fb_parser_test_sources}")
+
 vw_add_test_executable(
-  FOR_LIB "fb_parser"
-  SOURCES "tests/flatbuffer_parser_test.cc"
-  EXTRA_DEPS vw_core vw_test_common
+    FOR_LIB "fb_parser"
+    EXTRA_DEPS vw_core vw_test_common
+    SOURCES ${vw_fb_parser_test_sources}
 )
