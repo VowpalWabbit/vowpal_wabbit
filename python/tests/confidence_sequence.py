@@ -189,6 +189,5 @@ class confidence_sequence(object):
 
         return max(
             0,
-            (sumXt - sqrt(gamma1**2 * ll * v + gamma2**2 * ll**2) - gamma2 * ll)
-            / t,
+            (sumXt - sqrt(gamma1**2 * ll * v + gamma2**2 * ll**2) - gamma2 * ll) / t,
         )

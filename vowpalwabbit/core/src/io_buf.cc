@@ -3,11 +3,41 @@
 // license as described in the file LICENSE.
 #include "vw/core/io_buf.h"
 
-size_t VW::io_buf::buf_read(char*& pointer, size_t n)
+#if false  // AUDIT IO BUFFER ALIGNMENTS
+#  define __AUDIT_VW_IO_BUF(operation, target_align)                                                                \
+    std::cerr.flush();                                                                                              \
+    std::cerr << std::endl                                                                                          \
+              << "+++ io_buf " #operation ": @" << std::hex << reinterpret_cast<size_t>(_head) << std::dec << " % " \
+              << target_align.align << " = " << reinterpret_cast<size_t>(_head) % target_align.align << " vs "      \
+              << target_align.offset << ")" << std::endl;
+#else
+#  define __AUDIT_VW_IO_BUF(operation, target_align)
+#endif
+
+size_t VW::io_buf::buf_read(char*& pointer, size_t n, desired_align align)
 {
   // return a pointer to the next n bytes.  n must be smaller than the maximum size.
   if (_head + n <= _buffer.end)
   {
+    // When using the io_buf to read binary data, we may run into aligment requirements
+    // that are non-standard (e.g. in the middle of reading data, a buffer may be off-align,
+    // but by a very specific number of bytes; this happened with Flatbuffers, which require
+    // the root of the parse to be 8-byte aligned, but the first element is a 4-byte integer,
+    // so the "true root element" of the Flatbuffer is positioned on an align of (8, 4).
+    if (!align.is_aligned(_head))
+    {
+      // If we are not correctly aligned when in the "more bytes already available in buffer"
+      // fork of buf_read, we can try to shift the buffer to the front to align it.
+      if (_head > _buffer.begin + align.offset)
+      {
+        __AUDIT_VW_IO_BUF(SHIFT, align);
+        _buffer.shift_to_front(_head, align);
+      }
+      // Unaligned reads are UB. If we cannot align the buffer, we should throw an error.
+      else { THROW("io_buf cannot be aligned to desired alignment") }
+    }
+
+    __AUDIT_VW_IO_BUF(READ, align);
     pointer = _head;
     _head += n;
     return n;
@@ -16,20 +46,28 @@ size_t VW::io_buf::buf_read(char*& pointer, size_t n)
   {
     if (_head != _buffer.begin)  // There exists room to shift.
     {
+      __AUDIT_VW_IO_BUF(SHIFT, align);
       // Out of buffer so swap to beginning.
-      _buffer.shift_to_front(_head);
-      _head = _buffer.begin;
+      _buffer.shift_to_front(_head, align);
     }
     if (_current < _input_files.size() && fill(_input_files[_current].get()) > 0)
-    {                               // read more bytes from _current file if present
-      return buf_read(pointer, n);  // more bytes are read.
+    {
+      __AUDIT_VW_IO_BUF(FILL, align);
+      // read more bytes from _current file if present
+      return buf_read(pointer, n, align);  // more bytes are read.
     }
     else if (++_current < _input_files.size())
     {
-      return buf_read(pointer, n);  // No more bytes, so go to next file and try again.
+      __AUDIT_VW_IO_BUF(NEXT_FILE, align);
+      return buf_read(pointer, n, align);  // No more bytes, so go to next file and try again.
     }
     else
     {
+      // we aleady attempted to shift in this fork, so no point; we if we cannot be
+      // aligned properly, we should throw an error.
+      if (!align.is_aligned(_head)) { THROW("io_buf cannot be aligned to desired alignment"); }
+
+      __AUDIT_VW_IO_BUF(FINAL_READ, align);
       // no more bytes to read, return all that we have left.
       pointer = _head;
       _head = _buffer.end;
@@ -51,7 +89,8 @@ bool VW::io_buf::isbinary()
   return ret;
 }
 
-size_t VW::io_buf::readto(char*& pointer, char terminal)
+size_t VW::io_buf::readto(char*& pointer, char terminal)  // note that "readto" assumes we are operating in byte mode,
+                                                          // and thus does not support desired_alignment APIs
 {
   // Return a pointer to the bytes before the terminal.  Must be less than the buffer size.
   pointer = _head;
