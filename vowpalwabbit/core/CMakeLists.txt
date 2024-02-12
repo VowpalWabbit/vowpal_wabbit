@@ -420,7 +420,7 @@ if(VW_FEAT_CSV)
 endif()
 
 if(VW_FEAT_FLATBUFFERS)
-  target_link_libraries(vw_core PRIVATE vw_fb_parser)
+  target_link_libraries(vw_core PUBLIC vw_fb_parser)
 endif()
 
 # Handle generated header

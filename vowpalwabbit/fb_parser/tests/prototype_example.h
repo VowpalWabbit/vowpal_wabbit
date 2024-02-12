@@ -9,6 +9,11 @@
 #include "prototype_namespace.h"
 #include "vw/fb_parser/parse_example_flatbuffer.h"
 
+#ifndef VWFB_BUILDERS_ONLY
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+#endif
+
 namespace fb = VW::parsers::flatbuffer;
 using namespace flatbuffers;
 
@@ -51,6 +56,7 @@ struct prototype_example_t
     return example;
   }
 
+#ifndef VWFB_BUILDERS_ONLY
   template <bool expect_feature_names = true>
   void verify(VW::workspace& w, const fb::Example* e) const
   {
@@ -74,6 +80,7 @@ struct prototype_example_t
 
     label.verify(w, e);
   }
+#endif
 };
 
 struct prototype_multiexample_t
@@ -91,6 +98,7 @@ struct prototype_multiexample_t
     return fb::CreateMultiExample(builder, fb_examples_vector);
   }
 
+#ifndef VWFB_BUILDERS_ONLY
   template <bool expect_feature_names = true>
   void verify(VW::workspace& w, const fb::MultiExample* e) const
   {
@@ -106,6 +114,7 @@ struct prototype_multiexample_t
 
     for (size_t i = 0; i < examples.size(); i++) { examples[i].verify<expect_feature_names>(w, *e[i]); }
   }
+#endif
 };
 
 struct prototype_example_collection_t
@@ -134,6 +143,7 @@ struct prototype_example_collection_t
     return fb::CreateExampleCollection(builder, fb_examples_vector, fb_multi_example_vector, is_multiline);
   }
 
+#ifndef VWFB_BUILDERS_ONLY
   template <bool expect_feature_names = true>
   void verify(VW::workspace& w, const fb::ExampleCollection* e) const
   {
@@ -163,6 +173,7 @@ struct prototype_example_collection_t
 
     for (size_t i = 0; i < multi_examples.size(); i++) { multi_examples[i].verify<expect_feature_names>(w, e[i]); }
   }
+#endif
 };
 
 }  // namespace vwtest

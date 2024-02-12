@@ -8,8 +8,10 @@
 #include "vw/core/vw.h"
 #include "vw/fb_parser/parse_example_flatbuffer.h"
 
+#ifndef VWFB_BUILDERS_ONLY
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#endif
 
 namespace fb = VW::parsers::flatbuffer;
 using namespace flatbuffers;
@@ -105,6 +107,7 @@ struct prototype_namespace_t
         builder, name_offset, feature_group, hash, feature_names_offset, feature_values_offset, feature_hashes_offset);
   }
 
+#ifndef VWFB_BUILDERS_ONLY
   template <bool expect_feature_names = true>
   void verify(VW::workspace& w, const fb::Namespace* ns) const
   {
@@ -183,6 +186,7 @@ struct prototype_namespace_t
       EXPECT_EQ(features.values[i_f], f.value);
     }
   }
+#endif
 };
 
 }  // namespace vwtest

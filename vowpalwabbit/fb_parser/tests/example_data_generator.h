@@ -12,9 +12,6 @@
 #include "vw/common/hash.h"
 #include "vw/common/random.h"
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include <vector>
 
 USE_PROTOTYPE_MNEMONICS_EX

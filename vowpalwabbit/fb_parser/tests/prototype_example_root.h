@@ -6,8 +6,10 @@
 
 #include "prototype_example.h"
 
+#ifndef VWFB_BUILDERS_ONLY
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#endif
 
 namespace fb = VW::parsers::flatbuffer;
 using namespace flatbuffers;
@@ -23,6 +25,7 @@ inline Offset<fb::ExampleRoot> create_example_root(
   return fb::CreateExampleRoot(builder, fb::ExampleType_Example, fb_example.Union());
 }
 
+#ifndef VWFB_BUILDERS_ONLY
 template <bool expect_feature_names = true>
 inline void verify_example_root(VW::workspace& vw, const fb::ExampleRoot* root, const prototype_example_t& expected)
 {
@@ -41,6 +44,7 @@ inline void verify_example_root(
 
   expected.verify<expect_feature_names>(vw, *(examples[0][0]));
 }
+#endif
 
 template <bool include_feature_names = true>
 inline Offset<fb::ExampleRoot> create_example_root(
@@ -50,6 +54,7 @@ inline Offset<fb::ExampleRoot> create_example_root(
   return fb::CreateExampleRoot(builder, fb::ExampleType_MultiExample, fb_multiex.Union());
 }
 
+#ifndef VWFB_BUILDERS_ONLY
 template <bool expect_feature_names = true>
 inline void verify_example_root(
     VW::workspace& vw, const fb::ExampleRoot* root, const prototype_multiexample_t& expected)
@@ -70,6 +75,7 @@ inline void verify_example_root(
   EXPECT_EQ(examples[0].size(), expected.examples.size());
   expected.verify<expect_feature_names>(vw, examples[0]);
 }
+#endif
 
 template <bool include_feature_names = true>
 inline Offset<fb::ExampleRoot> create_example_root(
@@ -79,6 +85,7 @@ inline Offset<fb::ExampleRoot> create_example_root(
   return fb::CreateExampleRoot(builder, fb::ExampleType_ExampleCollection, fb_collection.Union());
 }
 
+#ifndef VWFB_BUILDERS_ONLY
 template <bool expect_feature_names = true>
 inline void verify_example_root(
     VW::workspace& vw, const fb::ExampleRoot* root, const prototype_example_collection_t& expected)
@@ -107,6 +114,7 @@ inline void verify_example_root(
     expected.verify_singleline<expect_feature_names>(vw, examples[0]);
   }
 }
+#endif
 
 }  // namespace vwtest
 

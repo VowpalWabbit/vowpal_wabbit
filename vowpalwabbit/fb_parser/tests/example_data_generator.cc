@@ -1,5 +1,8 @@
 #include "example_data_generator.h"
 
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
 namespace vwtest
 {
 

@@ -42,9 +42,80 @@ int flatbuffer_to_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& exampl
   return static_cast<int>(status.get_error_code() == VW::experimental::error_code::success);
 }
 
+bool read_span_flatbuffer(VW::workspace* all, const uint8_t* span, size_t length, example_factory_t example_factory, VW::multi_ex& examples)
+{
+  // we expect context to contain a size_prefixed flatbuffer (technically a binary string)
+  // which means:
+  //
+  //    /   4b   /    *length b                           /
+  //    +--------+----------------------------------------+
+  //    | length | flatbuffer                             |
+  //    +--------+----------------------------------------+
+  //    |                   context                       |
+  //    +--------+----------------------------------------+
+  //
+  //    thus context.size() = sizeof(length) + length
+  io_buf unused;
+
+  // TODO: How do we report errors out of here? (This is a general API problem with the parsers)
+  size_t address = reinterpret_cast<size_t>(span);
+  if (address % 8 != 0)
+  {
+    std::stringstream sstream;
+    sstream << "fb_parser error: flatbuffer data not aligned to 8 bytes" << std::endl;
+    sstream << "   span => @" << std::hex << address << std::dec << " % " << 8 << " = " << address % 8
+            << " (vs desired = " << 0 << ")";
+    THROW(sstream.str());
+    return false;
+  }
+
+  uint32_t flatbuffer_object_size = *reinterpret_cast<const uint32_t*>(span);
+  if (length != flatbuffer_object_size + sizeof(uint32_t))
+  {
+    std::stringstream sstream;
+    sstream << "fb_parser error: flatbuffer size prefix does not match actual size" << std::endl;
+    sstream << "   span => @" << std::hex << address << std::dec << " size_prefix = " << flatbuffer_object_size
+            << " length = " << length;
+    THROW(sstream.str());
+    return false;
+  }
+
+  VW::multi_ex temp_ex;
+  temp_ex.push_back(&example_factory());
+
+  bool has_more = true;
+  VW::experimental::api_status status;
+  do
+  {
+    switch (all->parser_runtime.flat_converter->parse_examples(all, unused, temp_ex, span, &status))
+    {
+      case VW::experimental::error_code::success:
+        has_more = true;
+        break;
+      case VW::experimental::error_code::nothing_to_parse:
+        has_more = false;
+        break;
+      default:
+        std::stringstream sstream;
+        sstream << "Error parsing examples: " << std::endl;
+        THROW(sstream.str());
+        return false;
+    }
+
+    if (has_more &= !temp_ex[0]->is_newline)
+    {
+      examples.push_back(&example_factory());
+      std::swap(examples[examples.size() - 1], temp_ex[0]);
+    }
+  } while (has_more);
+
+  delete temp_ex[0];
+  return true;
+}
+
 const VW::parsers::flatbuffer::ExampleRoot* parser::data() { return _data; }
 
-int parser::parse(io_buf& buf, uint8_t* buffer_pointer, VW::experimental::api_status* status)
+int parser::parse(io_buf& buf, const uint8_t* buffer_pointer, VW::experimental::api_status* status)
 {
 #define RETURN_IF_ALIGN_ERROR(target_align, actual_ptr, example_root_count)                                           \
   if (!target_align.is_aligned(actual_ptr))                                                                           \
@@ -146,7 +217,7 @@ int parser::process_collection_item(VW::workspace* all, VW::multi_ex& examples, 
   return VW::experimental::error_code::success;
 }
 
-int parser::parse_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& examples, uint8_t* buffer_pointer,
+int parser::parse_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& examples, const uint8_t* buffer_pointer,
     VW::experimental::api_status* status)
 {
   if (_active_multi_ex) { RETURN_IF_FAIL(parse_multi_example(all, examples[0], _multi_example_object, status)); }
