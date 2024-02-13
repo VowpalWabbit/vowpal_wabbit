@@ -87,6 +87,8 @@ void create_flatbuffer_span_and_validate(VW::workspace& w, const T& prototype)
   VW::parsers::flatbuffer::read_span_flatbuffer(&w, buffer, size, ex_fac, parsed_examples);
 
   verify_multi_ex(w, prototype, parsed_examples);
+
+  VW::finish_example(w, parsed_examples);
 }
 
 TEST(FlatbufferParser, ReadSpanFlatbuffer_SingleExample)

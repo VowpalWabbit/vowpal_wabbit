@@ -11,6 +11,7 @@
 #include "vw/core/error_constants.h"
 #include "vw/core/global_data.h"
 #include "vw/core/parser.h"
+#include "vw/core/vw.h"
 
 #include <cfloat>
 #include <fstream>
@@ -112,7 +113,7 @@ bool read_span_flatbuffer(
     }
   } while (has_more);
 
-  delete temp_ex[0];
+  VW::finish_example(*all, temp_ex);
   return true;
 }
 
