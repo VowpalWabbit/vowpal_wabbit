@@ -11,8 +11,8 @@
 #include "vw/fb_parser/parse_example_flatbuffer.h"
 
 #ifndef VWFB_BUILDERS_ONLY
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#  include <gmock/gmock.h>
+#  include <gtest/gtest.h>
 #endif
 
 namespace fb = VW::parsers::flatbuffer;
@@ -86,7 +86,7 @@ private:
 
 prototype_label_t no_label();
 
-prototype_label_t simple_label(float label, float weight, float initial = 0.f);
+prototype_label_t simple_label(float label, float weight = 1.f, float initial = 0.f);
 
 prototype_label_t cb_label(std::vector<VW::cb_class> costs, float weight = 1.0f);
 prototype_label_t cb_label(VW::cb_class single_class, float weight = 1.0f);

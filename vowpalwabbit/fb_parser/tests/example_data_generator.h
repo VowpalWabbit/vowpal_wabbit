@@ -27,6 +27,8 @@ public:
   static VW::rand_state create_test_random_state();
 
   prototype_namespace_t create_namespace(std::string name, uint8_t numeric_features, uint8_t string_features);
+
+  prototype_example_t create_simple_example(uint8_t numeric_features, uint8_t string_features);
   prototype_example_t create_cb_action(
       uint8_t action, float probability = 0.0, bool rewarded = false, const char* tag = nullptr);
   prototype_example_t create_shared_context(
@@ -35,6 +37,8 @@ public:
   prototype_multiexample_t create_cb_adf_example(
       uint8_t num_actions, uint8_t reward_action_id, const char* tag = nullptr);
   prototype_example_collection_t create_cb_adf_log(uint8_t num_examples, uint8_t num_actions, float reward_p);
+  prototype_example_collection_t create_simple_log(
+      uint8_t num_examples, uint8_t numeric_features, uint8_t string_features);
 
 private:
   VW::rand_state rng;

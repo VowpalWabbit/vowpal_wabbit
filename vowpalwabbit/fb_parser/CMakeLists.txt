@@ -40,7 +40,9 @@ set(vw_fb_parser_test_sources
       tests/prototype_label.h
       tests/prototype_namespace.h
 
-      tests/flatbuffer_parser_test.cc
+      tests/affordance_validation_tests.cc
+      tests/read_span_tests.cc
+      tests/flatbuffer_parser_tests.cc
 )
 
 message(STATUS "vw_fb_parser_test_sources: ${vw_fb_parser_test_sources}")

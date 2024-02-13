@@ -9,8 +9,8 @@
 #include "vw/fb_parser/parse_example_flatbuffer.h"
 
 #ifndef VWFB_BUILDERS_ONLY
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#  include <gmock/gmock.h>
+#  include <gtest/gtest.h>
 #endif
 
 namespace fb = VW::parsers::flatbuffer;
@@ -18,6 +18,20 @@ using namespace flatbuffers;
 
 namespace vwtest
 {
+
+enum FeatureSerialization
+{
+  ExcludeFeatureNames,
+  IncludeFeatureNames,
+  ExcludeFeatureHash
+};
+
+constexpr bool include_hashes(FeatureSerialization serialization) { return serialization != ExcludeFeatureHash; }
+
+constexpr bool include_feature_names(FeatureSerialization serialization)
+{
+  return serialization != ExcludeFeatureNames;
+}
 
 struct feature_t
 {
@@ -74,7 +88,7 @@ struct prototype_namespace_t
   uint64_t hash;
   uint8_t feature_group;
 
-  template <bool include_feature_names = true>
+  template <FeatureSerialization feature_serialization = FeatureSerialization::IncludeFeatureNames>
   Offset<fb::Namespace> create_flatbuffer(FlatBufferBuilder& builder, VW::workspace& w) const
   {
     // When building these objects, we interpret the presence of a string as a signal to
@@ -88,13 +102,17 @@ struct prototype_namespace_t
 
     for (const auto& f : features)
     {
-      if VW_STD17_CONSTEXPR (include_feature_names)
+      if VW_STD17_CONSTEXPR (include_feature_names(feature_serialization))
       {
         feature_names.push_back(f.has_name ? builder.CreateString(f.name) : Offset<String>() /* nullptr */);
       }
 
+      if VW_STD17_CONSTEXPR (include_hashes(feature_serialization))
+      {
+        feature_hashes.push_back(f.has_name ? VW::hash_feature(w, f.name, hash) : f.hash);
+      }
+
       feature_values.push_back(f.value);
-      feature_hashes.push_back(f.has_name ? VW::hash_feature(w, f.name, hash) : f.hash);
     }
 
     const auto name_offset = has_name ? builder.CreateString(name) : Offset<String>();
@@ -108,9 +126,14 @@ struct prototype_namespace_t
   }
 
 #ifndef VWFB_BUILDERS_ONLY
-  template <bool expect_feature_names = true>
+  template <FeatureSerialization feature_serialization = FeatureSerialization::IncludeFeatureNames>
   void verify(VW::workspace& w, const fb::Namespace* ns) const
   {
+    constexpr bool expect_feature_names = include_feature_names(feature_serialization);
+    constexpr bool expect_feature_hashes = include_hashes(feature_serialization);
+    static_assert(
+        expect_feature_names || expect_feature_hashes, "At least one of feature names or hashes must be included");
+
     uint64_t hash = this->hash;
     if (has_name)
     {
@@ -123,30 +146,30 @@ struct prototype_namespace_t
     EXPECT_EQ(ns->hash(), feature_group);
 
     if VW_STD17_CONSTEXPR (expect_feature_names) { EXPECT_EQ(ns->feature_names()->size(), features.size()); }
+    if VW_STD17_CONSTEXPR (expect_feature_hashes) { EXPECT_EQ(ns->feature_hashes()->size(), features.size()); }
 
     EXPECT_EQ(ns->feature_values()->size(), features.size());
-    EXPECT_EQ(ns->feature_hashes()->size(), features.size());
 
     for (size_t i = 0; i < features.size(); i++)
     {
-      if (features[i].has_name)
-      {
-        EXPECT_EQ(ns->feature_names()->Get(i)->str(), features[i].name);
-        EXPECT_EQ(ns->feature_hashes()->Get(i), VW::hash_feature(w, features[i].name, hash));
-      }
-      else
-      {
-        EXPECT_EQ(ns->feature_names()->Get(i), nullptr);
-        EXPECT_EQ(ns->feature_hashes()->Get(i), features[i].hash);
-      }
+      if VW_STD17_CONSTEXPR (expect_feature_names) { EXPECT_EQ(ns->feature_names()->Get(i)->str(), features[i].name); }
+
+      const uint64_t expected_hash =
+          features[i].has_name ? VW::hash_feature(w, features[i].name, hash) : features[i].hash;
+      if VW_STD17_CONSTEXPR (expect_feature_hashes) { EXPECT_EQ(ns->feature_hashes()->Get(i), expected_hash); }
 
       EXPECT_EQ(ns->feature_values()->Get(i), features[i].value);
     }
   }
 
-  template <bool expect_feature_names = true>
+  template <FeatureSerialization feature_serialization = FeatureSerialization::IncludeFeatureNames>
   void verify(VW::workspace& w, const size_t, const VW::example& e) const
   {
+    constexpr bool expect_feature_names = include_feature_names(feature_serialization);
+    constexpr bool expect_feature_hashes = include_hashes(feature_serialization);
+    static_assert(
+        expect_feature_names || expect_feature_hashes, "At least one of feature names or hashes must be included");
+
     uint64_t hash = this->hash;
     if (has_name) { hash = VW::hash_space(w, name); }
 
@@ -175,13 +198,10 @@ struct prototype_namespace_t
     for (size_t i_f = extent.begin_index, i = 0; i_f < extent.end_index && i < this->features.size(); i_f++, i++)
     {
       auto& f = this->features[i];
-      if (f.has_name)
-      {
-        EXPECT_EQ(features.indices[i_f], VW::hash_feature(w, f.name, hash));
+      if VW_STD17_CONSTEXPR (expect_feature_names) { EXPECT_EQ(features.space_names[i_f].name, f.name); }
 
-        if VW_STD17_CONSTEXPR (expect_feature_names) { EXPECT_EQ(features.space_names[i_f].name, f.name); }
-      }
-      else { EXPECT_EQ(features.indices[i_f], f.hash); }
+      const uint64_t expected_hash = f.has_name ? VW::hash_feature(w, f.name, hash) : f.hash;
+      if VW_STD17_CONSTEXPR (expect_feature_hashes) { EXPECT_EQ(features.indices[i_f], expected_hash); }
 
       EXPECT_EQ(features.values[i_f], f.value);
     }

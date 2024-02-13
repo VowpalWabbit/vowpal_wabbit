@@ -28,6 +28,14 @@ prototype_namespace_t example_data_generator::create_namespace(
   return {name.c_str(), features};
 }
 
+prototype_example_t example_data_generator::create_simple_example(uint8_t numeric_features, uint8_t string_features)
+{
+  return {{
+              create_namespace("Simple", numeric_features, string_features),
+          },
+      simple_label(rng.get_and_update_random())};
+}
+
 prototype_example_t example_data_generator::create_cb_action(
     uint8_t action, float probability, bool rewarded, const char* tag)
 {
@@ -80,6 +88,18 @@ prototype_example_collection_t example_data_generator::create_cb_adf_log(
   }
 
   return {{}, examples, true};
+}
+
+prototype_example_collection_t example_data_generator::create_simple_log(
+    uint8_t num_examples, uint8_t numeric_features, uint8_t string_features)
+{
+  std::vector<prototype_example_t> examples;
+  for (uint8_t i = 0; i < num_examples; i++)
+  {
+    examples.push_back(create_simple_example(numeric_features, string_features));
+  }
+
+  return {examples, {}, false};
 }
 
 }  // namespace vwtest
