@@ -11,6 +11,7 @@
 #include "vw/core/error_constants.h"
 #include "vw/core/global_data.h"
 #include "vw/core/parser.h"
+#include "vw/core/scope_exit.h"
 #include "vw/core/vw.h"
 
 #include <cfloat>
@@ -87,6 +88,11 @@ bool read_span_flatbuffer(VW::workspace* all, const uint8_t* span, size_t length
   }
 
   VW::multi_ex temp_ex;
+  auto scope_guard = VW::scope_exit([&temp_ex, &all, &example_sink]()
+  {
+    if (example_sink == nullptr) { VW::finish_example(*all, temp_ex); }
+    else { example_sink(std::move(temp_ex)); }
+  });
 
   // There is a bit of unhappiness with the interface of the read_XYZ_<format>() functions, because they often
   // expect the input multi_ex to have a single "empty" example there. This contributes, in part, to the large
@@ -102,6 +108,7 @@ bool read_span_flatbuffer(VW::workspace* all, const uint8_t* span, size_t length
 
   bool has_more = true;
   VW::experimental::api_status status;
+
   do {
     switch (all->parser_runtime.flat_converter->parse_examples(all, unused, temp_ex, span, &status))
     {
@@ -126,9 +133,6 @@ bool read_span_flatbuffer(VW::workspace* all, const uint8_t* span, size_t length
       std::swap(examples[examples.size() - 1], temp_ex[0]);
     }
   } while (has_more);
-
-  if (example_sink == nullptr) { VW::finish_example(*all, temp_ex); }
-  else { example_sink(std::move(temp_ex)); }
 
   return true;
 }
