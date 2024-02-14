@@ -98,6 +98,7 @@ Offset<void> prototype_label_t::create_flatbuffer(FlatBufferBuilder& builder, VW
   }
 }
 
+#ifndef VWFB_BUILDERS_ONLY
 void prototype_label_t::verify(VW::workspace&, const fb::Example* e) const
 {
   switch (label_type)
@@ -348,6 +349,7 @@ void prototype_label_t::verify_slates_label(const VW::example& e) const
     EXPECT_FLOAT_EQ(actual_label.probabilities[i].score, label.slates.probabilities[i].score);
   }
 }
+#endif
 
 prototype_label_t no_label()
 {
