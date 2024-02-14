@@ -16,13 +16,17 @@ namespace VW
 
 class api_status;
 
+using example_sink_f = std::function<void(VW::multi_ex&& spare_examples)>;
+
 namespace parsers
 {
 namespace flatbuffer
 {
 int flatbuffer_to_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& examples);
+
+
 bool read_span_flatbuffer(
-    VW::workspace* all, const uint8_t* span, size_t length, example_factory_t example_factory, VW::multi_ex& examples);
+    VW::workspace* all, const uint8_t* span, size_t length, example_factory_t example_factory, VW::multi_ex& examples, example_sink_f example_sink = nullptr);
 
 class parser
 {

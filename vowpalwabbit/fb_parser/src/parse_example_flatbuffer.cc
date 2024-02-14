@@ -43,9 +43,12 @@ int flatbuffer_to_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& exampl
   return static_cast<int>(status.get_error_code() == VW::experimental::error_code::success);
 }
 
-bool read_span_flatbuffer(
-    VW::workspace* all, const uint8_t* span, size_t length, example_factory_t example_factory, VW::multi_ex& examples)
+bool read_span_flatbuffer(VW::workspace* all, const uint8_t* span, size_t length, example_factory_t example_factory,
+    VW::multi_ex& examples, example_sink_f example_sink)
 {
+  int a = 0;
+  a++;
+
   // we expect context to contain a size_prefixed flatbuffer (technically a binary string)
   // which means:
   //
@@ -84,7 +87,18 @@ bool read_span_flatbuffer(
   }
 
   VW::multi_ex temp_ex;
-  temp_ex.push_back(&example_factory());
+
+  // There is a bit of unhappiness with the interface of the read_XYZ_<format>() functions, because they often
+  // expect the input multi_ex to have a single "empty" example there. This contributes, in part, to the large
+  // proliferation of entry points into the JSON parser(s). We want to avoid exposing that insofar as possible,
+  // so we will check whether we already received a perfectly good example and use that, or create a new one if
+  // needed.
+  if (examples.size() > 0)
+  {
+    temp_ex.push_back(examples[0]);
+    examples.pop_back();
+  }
+  else { temp_ex.push_back(&example_factory()); }
 
   bool has_more = true;
   VW::experimental::api_status status;
@@ -113,7 +127,9 @@ bool read_span_flatbuffer(
     }
   } while (has_more);
 
-  VW::finish_example(*all, temp_ex);
+  if (example_sink == nullptr) { VW::finish_example(*all, temp_ex); }
+  else { example_sink(std::move(temp_ex)); }
+
   return true;
 }
 
