@@ -27,8 +27,8 @@ namespace flatbuffer
 int flatbuffer_to_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& examples);
 
 
-bool read_span_flatbuffer(
-    VW::workspace* all, const uint8_t* span, size_t length, example_factory_t example_factory, VW::multi_ex& examples, example_sink_f example_sink = nullptr);
+int read_span_flatbuffer(
+    VW::workspace* all, const uint8_t* span, size_t length, example_factory_t example_factory, VW::multi_ex& examples, example_sink_f example_sink = nullptr, VW::experimental::api_status* status = nullptr);
 
 class parser
 {

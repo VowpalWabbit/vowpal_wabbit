@@ -9,6 +9,7 @@
 #include "prototype_namespace.h"
 #include "vw/common/future_compat.h"
 #include "vw/common/string_view.h"
+#include "vw/core/api_status.h"
 #include "vw/core/constant.h"
 #include "vw/core/error_constants.h"
 #include "vw/core/example.h"
