@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "vw/core/api_status.h"
 #include "vw/core/example.h"
 #include "vw/core/multi_ex.h"
 #include "vw/core/shared_data.h"
@@ -14,7 +13,10 @@
 namespace VW
 {
 
-class api_status;
+namespace experimental
+{
+  class api_status;
+}
 
 using example_sink_f = std::function<void(VW::multi_ex&& spare_examples)>;
 

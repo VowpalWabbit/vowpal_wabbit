@@ -4,6 +4,7 @@
 
 #include "vw/fb_parser/parse_example_flatbuffer.h"
 
+#include "vw/core/api_status.h"
 #include "vw/core/action_score.h"
 #include "vw/core/best_constant.h"
 #include "vw/core/cb.h"
