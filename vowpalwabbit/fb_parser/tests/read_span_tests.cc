@@ -152,7 +152,7 @@ Offset<fb::Example> create_bad_ns_root_example(FlatBufferBuilder& builder, VW::w
 {
   std::vector<Offset<fb::Namespace>> namespaces = { ns_fac(builder, w) };
 
-  Offset<> label_offset = fb::Createno_label(builder).Union();
+  Offset<void> label_offset = fb::Createno_label(builder).Union();
   return fb::CreateExample(builder, builder.CreateVector(namespaces), fb::Label_no_label, label_offset);
 }
 
@@ -185,7 +185,7 @@ template <int error_code, typename FB_t, fb::ExampleType root_type>
 void create_flatbuffer_span_and_expect_error(VW::workspace& w, namespace_factory_f ns_fac, builder_f<FB_t> root_builder)
 {
   FlatBufferBuilder builder;
-  Offset<> data_obj = root_builder(builder, w, ns_fac).Union();
+  Offset<void> data_obj = root_builder(builder, w, ns_fac).Union();
 
   Offset<fb::ExampleRoot> root_obj = fb::CreateExampleRoot(builder, root_type, data_obj);
 
