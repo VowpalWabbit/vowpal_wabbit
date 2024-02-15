@@ -178,13 +178,15 @@ Offset<fb::ExampleCollection> create_bad_ns_root_collection(
 {
   if VW_STD17_CONSTEXPR (multiline)
   {
-    auto inner_examples = {create_bad_ns_root_multiex(builder, w, ns_fac)};
+    // using "auto" here breaks the code coverage build due to template substitution failure
+    std::vector<Offset<fb::MultiExample>> inner_examples = {create_bad_ns_root_multiex(builder, w, ns_fac)};
     return fb::CreateExampleCollection(builder, builder.CreateVector(std::vector<Offset<fb::Example>>()),
         builder.CreateVector(inner_examples), multiline);
   }
   else
   {
-    auto inner_examples = {create_bad_ns_root_example(builder, w, ns_fac)};
+    // using "auto" here breaks the code coverage build due to template substitution failure
+    std::vector<Offset<fb::Example>> inner_examples = {create_bad_ns_root_example(builder, w, ns_fac)};
     return fb::CreateExampleCollection(builder, builder.CreateVector(inner_examples),
         builder.CreateVector(std::vector<Offset<fb::MultiExample>>()), multiline);
   }
