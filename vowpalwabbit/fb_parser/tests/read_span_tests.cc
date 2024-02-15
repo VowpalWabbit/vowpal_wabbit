@@ -85,10 +85,7 @@ void create_flatbuffer_span_and_validate(VW::workspace& w, vwtest::example_data_
   flatbuffers::uoffset_t size = builder.GetSize();
 
   VW::multi_ex parsed_examples;
-  if (data_gen.random_bool())
-  {
-    parsed_examples.push_back(&ex_fac());
-  }
+  if (data_gen.random_bool()) { parsed_examples.push_back(&ex_fac()); }
 
   VW::parsers::flatbuffer::read_span_flatbuffer(&w, buffer, size, ex_fac, parsed_examples);
 
