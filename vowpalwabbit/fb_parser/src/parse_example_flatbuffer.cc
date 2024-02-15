@@ -4,8 +4,8 @@
 
 #include "vw/fb_parser/parse_example_flatbuffer.h"
 
-#include "vw/core/api_status.h"
 #include "vw/core/action_score.h"
+#include "vw/core/api_status.h"
 #include "vw/core/best_constant.h"
 #include "vw/core/cb.h"
 #include "vw/core/constant.h"
@@ -48,9 +48,6 @@ int flatbuffer_to_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& exampl
 int read_span_flatbuffer(VW::workspace* all, const uint8_t* span, size_t length, example_factory_t example_factory,
     VW::multi_ex& examples, example_sink_f example_sink, VW::experimental::api_status* status)
 {
-  int a = 0;
-  a++;
-
   // we expect context to contain a size_prefixed flatbuffer (technically a binary string)
   // which means:
   //
@@ -88,11 +85,12 @@ int read_span_flatbuffer(VW::workspace* all, const uint8_t* span, size_t length,
   }
 
   VW::multi_ex temp_ex;
-  auto scope_guard = VW::scope_exit([&temp_ex, &all, &example_sink]()
-  {
-    if (example_sink == nullptr) { VW::finish_example(*all, temp_ex); }
-    else { example_sink(std::move(temp_ex)); }
-  });
+  auto scope_guard = VW::scope_exit(
+      [&temp_ex, &all, &example_sink]()
+      {
+        if (example_sink == nullptr) { VW::finish_example(*all, temp_ex); }
+        else { example_sink(std::move(temp_ex)); }
+      });
 
   // There is a bit of unhappiness with the interface of the read_XYZ_<format>() functions, because they often
   // expect the input multi_ex to have a single "empty" example there. This contributes, in part, to the large
@@ -120,12 +118,33 @@ int read_span_flatbuffer(VW::workspace* all, const uint8_t* span, size_t length,
         RETURN_IF_FAIL(result);
     }
 
+    // The underlying parser will emit a newline example when terminating the parsing
+    // of a multi_ex block. Since we are collecting it into a multi_ex, we want to
+    // swallow it here, but should the parser not have followed its contract w.r.t.
+    // the return value, we should use the presence of the newline example to override
+    // has_more.
     has_more &= !temp_ex[0]->is_newline;
 
+    // If this is a real example, we need to move it to the output multi_ex; we also
+    // need to create a new example to replace it, so create the example in the output
+    // multi_ex, then swap it with the one we just parsed.
     if (!temp_ex[0]->is_newline)
     {
-      examples.push_back(&example_factory());
-      std::swap(examples[examples.size() - 1], temp_ex[0]);
+      // We avoid doing moves or copy construction here because multi_ex contains
+      // example pointers. The compile-time code here is meant to call attention
+      // to here if the underlying type changes.
+      using temp_ex_element_t = std::remove_reference<decltype(temp_ex[0])>::type;
+      using examples_element_t = std::remove_reference<decltype(examples[0])>::type;
+
+      static_assert(std::is_same<temp_ex_element_t, examples_element_t>::value &&
+              std::is_same<temp_ex_element_t, VW::example*>::value,
+          "temp_ex and example must be vector-like over VW::example*");
+
+      examples.push_back(temp_ex[0]);
+
+      // Since we are using a vector of pointers, we can simply reassign the slot to
+      // the pointer of the newly created destination example for the parser.
+      temp_ex[0] = &example_factory();
     }
   } while (has_more);
 
@@ -213,16 +232,17 @@ int parser::process_collection_item(VW::workspace* all, VW::multi_ex& examples, 
   {
     _active_multi_ex = true;
     _multi_example_object = _data->example_obj_as_ExampleCollection()->multi_examples()->Get(_example_index);
-    RETURN_IF_FAIL(parse_multi_example(all, examples[0], _multi_example_object, status));
-    // read from active collection
 
+    // read from active multi_ex
+    RETURN_IF_FAIL(parse_multi_example(all, examples[0], _multi_example_object, status));
+
+    // if we are done with the multi example, move to the next one, or finish the collection
     if (!_active_multi_ex)
     {
       _example_index++;
       if (_example_index == _data->example_obj_as_ExampleCollection()->multi_examples()->size())
       {
-        _example_index = 0;
-        _active_collection = false;
+        reset_active_collection();
       }
     }
   }
@@ -231,11 +251,7 @@ int parser::process_collection_item(VW::workspace* all, VW::multi_ex& examples, 
     const auto ex = _data->example_obj_as_ExampleCollection()->examples()->Get(_example_index);
     RETURN_IF_FAIL(parse_example(all, examples[0], ex, status));
     _example_index++;
-    if (_example_index == _data->example_obj_as_ExampleCollection()->examples()->size())
-    {
-      _example_index = 0;
-      _active_collection = false;
-    }
+    if (_example_index == _data->example_obj_as_ExampleCollection()->examples()->size()) { reset_active_collection(); }
   }
   return VW::experimental::error_code::success;
 }
@@ -246,6 +262,20 @@ int parser::parse_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& exampl
 #define RETURN_SUCCESS_FINISHED() \
   return buffer_pointer ? VW::experimental::error_code::nothing_to_parse : VW::experimental::error_code::success;
 
+  // If we are re-using a single parser instance across multiple invocations, we need to reset
+  // the state when we get a new buffer_pointer. Otherwise we may be in the middle of a multi_ex
+  // or example_collection, and the following parse will attempt to reuse the object references
+  // from the previous buffer, which may have been deallocated.
+  // TODO: Rewrite the parser to avoid this convoluted, re-entrant logic.
+  if (buffer_pointer && _flatbuffer_pointer != buffer_pointer)
+  {
+    reset_active_multi_ex();
+    reset_active_collection();
+  }
+
+  // The ExampleCollection processing code owns dispatching to parse_multi_example to handle
+  // iteration through the outer collection correctly, thus it must have the first chance to
+  // incoming parse request.
   if (_active_collection)
   {
     RETURN_IF_FAIL(process_collection_item(all, examples, status));
@@ -322,9 +352,7 @@ int parser::parse_multi_example(
   {
     // done with multi example, send a newline example and reset
     ae->is_newline = true;
-    _multi_ex_index = 0;
-    _active_multi_ex = false;
-    _multi_example_object = nullptr;
+    reset_active_multi_ex();
     return VW::experimental::error_code::success;
   }
 
@@ -477,7 +505,7 @@ int parser::parse_namespaces(VW::workspace* all, example* ae, const Namespace* n
   }
   else
   {
-    if (!has_hashes) { RETURN_NS_PARSER_ERROR(status, fb_parser_name_hash_missing) }
+    if (!has_hashes) { RETURN_NS_PARSER_ERROR(status, fb_parser_feature_hashes_names_missing) }
 
     if (ns->feature_hashes()->size() != ns->feature_values()->size())
     {

@@ -3,12 +3,13 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
-#include "prototype_typemappings.h"
 #include "example_data_generator.h"
+#include "prototype_typemappings.h"
 #include "vw/common/future_compat.h"
 #include "vw/common/string_view.h"
 #include "vw/core/constant.h"
 #include "vw/core/error_constants.h"
+#include "vw/core/scope_exit.h"
 #include "vw/core/vw.h"
 #include "vw/fb_parser/parse_example_flatbuffer.h"
 #include "vw/test_common/test_common.h"
@@ -142,23 +143,28 @@ void finish_flatbuffer_and_expect_error(FlatBufferBuilder& builder, Offset<fb::E
   const uint8_t* buffer = builder.GetBufferPointer();
   flatbuffers::uoffset_t size = builder.GetSize();
 
+  std::vector<uint8_t> buffer_copy(buffer, buffer + size);
+
   VW::multi_ex parsed_examples;
-  EXPECT_EQ(VW::parsers::flatbuffer::read_span_flatbuffer(&w, buffer, size, ex_fac, parsed_examples), error_code);
+  EXPECT_EQ(VW::parsers::flatbuffer::read_span_flatbuffer(
+                &w, buffer_copy.data(), buffer_copy.size(), ex_fac, parsed_examples),
+      error_code);
 }
 
 using namespace_factory_f = std::function<Offset<fb::Namespace>(FlatBufferBuilder&, VW::workspace&)>;
 
 Offset<fb::Example> create_bad_ns_root_example(FlatBufferBuilder& builder, VW::workspace& w, namespace_factory_f ns_fac)
 {
-  std::vector<Offset<fb::Namespace>> namespaces = { ns_fac(builder, w) };
+  std::vector<Offset<fb::Namespace>> namespaces = {ns_fac(builder, w)};
 
   Offset<void> label_offset = fb::Createno_label(builder).Union();
   return fb::CreateExample(builder, builder.CreateVector(namespaces), fb::Label_no_label, label_offset);
 }
 
-Offset<fb::MultiExample> create_bad_ns_root_multiex(FlatBufferBuilder& builder, VW::workspace& w, namespace_factory_f ns_fac)
+Offset<fb::MultiExample> create_bad_ns_root_multiex(
+    FlatBufferBuilder& builder, VW::workspace& w, namespace_factory_f ns_fac)
 {
-  std::vector<Offset<fb::Example>> examples = { create_bad_ns_root_example(builder, w, ns_fac) };
+  std::vector<Offset<fb::Example>> examples = {create_bad_ns_root_example(builder, w, ns_fac)};
 
   return fb::CreateMultiExample(builder, builder.CreateVector(examples));
 }
@@ -167,17 +173,20 @@ template <typename T, typename FB_t = typename vwtest::fb_type<T>::type>
 using builder_f = Offset<FB_t> (*)(FlatBufferBuilder&, VW::workspace&, namespace_factory_f);
 
 template <bool multiline>
-Offset<fb::ExampleCollection> create_bad_ns_root_collection(FlatBufferBuilder& builder, VW::workspace& w, namespace_factory_f ns_fac)
+Offset<fb::ExampleCollection> create_bad_ns_root_collection(
+    FlatBufferBuilder& builder, VW::workspace& w, namespace_factory_f ns_fac)
 {
   if VW_STD17_CONSTEXPR (multiline)
   {
-    auto inner_examples = { create_bad_ns_root_multiex(builder, w, ns_fac) };
-    return fb::CreateExampleCollection(builder, builder.CreateVector(std::vector<Offset<fb::Example>>()), builder.CreateVector(inner_examples), multiline);
+    auto inner_examples = {create_bad_ns_root_multiex(builder, w, ns_fac)};
+    return fb::CreateExampleCollection(builder, builder.CreateVector(std::vector<Offset<fb::Example>>()),
+        builder.CreateVector(inner_examples), multiline);
   }
   else
   {
-    auto inner_examples = { create_bad_ns_root_example(builder, w, ns_fac) };
-    return fb::CreateExampleCollection(builder, builder.CreateVector(inner_examples), builder.CreateVector(std::vector<Offset<fb::MultiExample>>()), multiline);
+    auto inner_examples = {create_bad_ns_root_example(builder, w, ns_fac)};
+    return fb::CreateExampleCollection(builder, builder.CreateVector(inner_examples),
+        builder.CreateVector(std::vector<Offset<fb::MultiExample>>()), multiline);
   }
 }
 
@@ -199,23 +208,71 @@ void run_bad_namespace_test(VW::workspace& w)
   vwtest::example_data_generator data_gen;
 
   static_assert(errors != NamespaceErrors::BAD_NAMESPACE_NO_ERROR, "This test is intended to test bad namespaces");
-  namespace_factory_f ns_fac = [&data_gen](FlatBufferBuilder& builder, VW::workspace& w) -> Offset<fb::Namespace> {
-    return data_gen.create_bad_namespace<errors>(builder, w);
-  };
+  namespace_factory_f ns_fac = [&data_gen](FlatBufferBuilder& builder, VW::workspace& w) -> Offset<fb::Namespace>
+  { return data_gen.create_bad_namespace<errors>(builder, w); };
 
-  create_flatbuffer_span_and_expect_error<error_code, vwtest::example, fb::ExampleType_Example>(w, ns_fac, &create_bad_ns_root_example);
-  create_flatbuffer_span_and_expect_error<error_code, vwtest::multiex, fb::ExampleType_MultiExample>(w, ns_fac, &create_bad_ns_root_multiex);
+  create_flatbuffer_span_and_expect_error<error_code, vwtest::example, fb::ExampleType_Example>(
+      w, ns_fac, &create_bad_ns_root_example);
+  create_flatbuffer_span_and_expect_error<error_code, vwtest::multiex, fb::ExampleType_MultiExample>(
+      w, ns_fac, &create_bad_ns_root_multiex);
 
-  //create_flatbuffer_span_and_expect_error<error_code, vwtest::ex_collection, fb::ExampleType_ExampleCollection>(w, ns_fac, &create_bad_ns_root_collection<false>);
+  create_flatbuffer_span_and_expect_error<error_code, vwtest::ex_collection, fb::ExampleType_ExampleCollection>(
+      w, ns_fac, &create_bad_ns_root_collection<false>);
 
-  //create_flatbuffer_span_and_expect_error<error_code, vwtest::ex_collection, fb::ExampleType_ExampleCollection>(w, ns_fac, &create_bad_ns_root_collection<true>);
+  create_flatbuffer_span_and_expect_error<error_code, vwtest::ex_collection, fb::ExampleType_ExampleCollection>(
+      w, ns_fac, &create_bad_ns_root_collection<true>);
+}
+
+template <NamespaceErrors target_errors, int expected_error_code>
+void run_bad_namespace_test()
+{
+  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer"));
+
+  run_bad_namespace_test<target_errors, expected_error_code>(*all);
 }
 
 TEST(FlatbufferParser, BadNamespace_FeatureValuesMissing)
 {
   namespace err = VW::experimental::error_code;
+  constexpr NamespaceErrors target_errors = NamespaceErrors::BAD_NAMESPACE_FEATURE_VALUES_MISSING;
+  constexpr int expected_error_code = err::fb_parser_feature_values_missing;
 
-  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer"));
-
-  run_bad_namespace_test<NamespaceErrors::BAD_NAMESPACE_FEATURE_VALUES_MISSING,err::fb_parser_feature_values_missing>(*all);
+  run_bad_namespace_test<target_errors, expected_error_code>();
 }
+
+TEST(FlatbufferParser, BadNamespace_FeatureHashesNamesMissing)
+{
+  namespace err = VW::experimental::error_code;
+  constexpr NamespaceErrors target_errors = NamespaceErrors::BAD_NAMESPACE_FEATURE_HASHES_NAMES_MISSING;
+  constexpr int expected_error_code = err::fb_parser_feature_hashes_names_missing;
+
+  run_bad_namespace_test<target_errors, expected_error_code>();
+}
+
+TEST(FlatbufferParser, BadNamespace_FeatureValuesHashMismatch)
+{
+  namespace err = VW::experimental::error_code;
+  constexpr NamespaceErrors target_errors = NamespaceErrors::BAD_NAMESPACE_FEATURE_VALUES_HASHES_MISMATCH;
+  constexpr int expected_error_code = err::fb_parser_size_mismatch_ft_hashes_ft_values;
+
+  run_bad_namespace_test<target_errors, expected_error_code>();
+}
+
+TEST(FlatbufferParser, BadNamespace_FeatureValuesNamesMismatch)
+{
+  namespace err = VW::experimental::error_code;
+  constexpr NamespaceErrors target_errors = NamespaceErrors::BAD_NAMESPACE_FEATURE_VALUES_NAMES_MISMATCH;
+  constexpr int expected_error_code = err::fb_parser_size_mismatch_ft_names_ft_values;
+
+  run_bad_namespace_test<target_errors, expected_error_code>();
+}
+
+// This test is disabled because it is not possible to create a flatbuffer with a missing namespace name hash.
+// TEST(FlatbufferParser, BadNamespace_NameHashMissing)
+// {
+//   namespace err = VW::experimental::error_code;
+//   constexpr NamespaceErrors target_errors = NamespaceErrors::BAD_NAMESPACE_NAME_HASH_MISSING;
+//   constexpr int expected_error_code = err::success;
+
+//   run_bad_namespace_test<target_errors, expected_error_code>();
+// }

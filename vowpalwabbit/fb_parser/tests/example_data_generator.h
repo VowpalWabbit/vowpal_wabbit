@@ -5,17 +5,15 @@
 #pragma once
 
 #include "flatbuffers/flatbuffers.h"
-#include "vw/fb_parser/generated/example_generated.h"
-
 #include "prototype_example.h"
 #include "prototype_example_root.h"
 #include "prototype_label.h"
 #include "prototype_namespace.h"
+#include "vw/common/future_compat.h"
 #include "vw/common/hash.h"
 #include "vw/common/random.h"
-#include "vw/common/future_compat.h"
-
 #include "vw/core/error_constants.h"
+#include "vw/fb_parser/generated/example_generated.h"
 
 #include <vector>
 
@@ -52,7 +50,7 @@ public:
   enum NamespaceErrors
   {
     BAD_NAMESPACE_NO_ERROR = 0,
-    BAD_NAMESPACE_NAME_HASH_MISSING = 1,
+    BAD_NAMESPACE_NAME_HASH_MISSING = 1,  // not actually possible, due to how fb works
     BAD_NAMESPACE_FEATURE_VALUES_MISSING = 2,
     BAD_NAMESPACE_FEATURE_VALUES_HASHES_MISMATCH = 4,
     BAD_NAMESPACE_FEATURE_VALUES_NAMES_MISMATCH = 8,
@@ -75,7 +73,10 @@ Offset<fb::Namespace> example_data_generator::create_bad_namespace(FlatBufferBui
   constexpr bool include_ns_name_hash = !(errors & NamespaceErrors::BAD_NAMESPACE_NAME_HASH_MISSING);
   constexpr bool include_feature_values = !(errors & NamespaceErrors::BAD_NAMESPACE_FEATURE_VALUES_MISSING);
 
-  constexpr bool include_feature_hashes = !(errors & NamespaceErrors::BAD_NAMESPACE_FEATURE_HASHES_NAMES_MISSING);
+  constexpr bool include_feature_hashes = !(errors & NamespaceErrors::BAD_NAMESPACE_FEATURE_HASHES_NAMES_MISSING ||
+      // If we want to check for name/value mismatch, then we need to avoid
+      // including the feature hashes, as they will be used as a backup
+      errors & NamespaceErrors::BAD_NAMESPACE_FEATURE_VALUES_NAMES_MISMATCH);
   constexpr bool skip_a_feature_hash = (errors & NamespaceErrors::BAD_NAMESPACE_FEATURE_VALUES_HASHES_MISMATCH);
   static_assert(!skip_a_feature_hash || include_feature_hashes, "Cannot skip a feature hash if they are not included");
 
@@ -91,32 +92,29 @@ Offset<fb::Namespace> example_data_generator::create_bad_namespace(FlatBufferBui
   {
     const auto& f = ns.features[i];
 
-    if VW_STD17_CONSTEXPR (include_feature_names && (!skip_a_feature_name || i == 1))
+    if (include_feature_names && (!skip_a_feature_name || i == 1))
     {
       feature_names.push_back(builder.CreateString(f.name));
     }
 
     if VW_STD17_CONSTEXPR (include_feature_values) feature_values.push_back(f.value);
 
-    if VW_STD17_CONSTEXPR (include_feature_hashes && (!skip_a_feature_hash || i == 0))
-    {
-      feature_hashes.push_back(f.hash);
-    }
+    if (include_feature_hashes && (!skip_a_feature_hash || i == 0)) { feature_hashes.push_back(f.hash); }
   }
 
   Offset<String> name_offset = Offset<String>();
-  if (include_ns_name_hash)
-  {
-    name_offset = builder.CreateString(ns.name);
-  }
+  if (include_ns_name_hash) { name_offset = builder.CreateString(ns.name); }
 
   // This function attempts to, insofar as possible, generate a layout that looks like it could have
   // been created using the normal serialization code: In this case, that means that the strings for
   // the feature names are serialized into the builder before a call to CreateNamespaceDirect is made,
   // which is where the feature_names vector is allocated.
-  Offset<Vector<Offset<String>>> feature_names_offset = include_feature_names ? builder.CreateVector(feature_names) : Offset<Vector<Offset<String>>>();
-  Offset<Vector<float>> feature_values_offset = include_feature_values ? builder.CreateVector(feature_values) : Offset<Vector<float>>();
-  Offset<Vector<uint64_t>> feature_hashes_offset = include_feature_hashes ? builder.CreateVector(feature_hashes) : Offset<Vector<uint64_t>>();
+  Offset<Vector<Offset<String>>> feature_names_offset =
+      include_feature_names ? builder.CreateVector(feature_names) : Offset<Vector<Offset<String>>>();
+  Offset<Vector<float>> feature_values_offset =
+      include_feature_values ? builder.CreateVector(feature_values) : Offset<Vector<float>>();
+  Offset<Vector<uint64_t>> feature_hashes_offset =
+      include_feature_hashes ? builder.CreateVector(feature_hashes) : Offset<Vector<uint64_t>>();
 
   fb::NamespaceBuilder ns_builder(builder);
 
