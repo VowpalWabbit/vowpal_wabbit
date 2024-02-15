@@ -85,6 +85,9 @@ int read_span_flatbuffer(VW::workspace* all, const uint8_t* span, size_t length,
   }
 
   VW::multi_ex temp_ex;
+
+  // Use scope_exit because the parser reports errors by throwing exceptions (the code path in the vw driver
+  // uses the return value to signal completion, not errors).
   auto scope_guard = VW::scope_exit(
       [&temp_ex, &all, &example_sink]()
       {
@@ -99,6 +102,7 @@ int read_span_flatbuffer(VW::workspace* all, const uint8_t* span, size_t length,
   // needed.
   if (examples.size() > 0)
   {
+    assert(examples.size() == 1);
     temp_ex.push_back(examples[0]);
     examples.pop_back();
   }
@@ -111,6 +115,8 @@ int read_span_flatbuffer(VW::workspace* all, const uint8_t* span, size_t length,
       case VW::experimental::error_code::success:
         has_more = true;
         break;
+      // Because nothing_to_parse is not an error we have to filter it out here, otherwise
+      // we could simply do RETURN_IF_FAIL(result) and let the macro handle it.
       case VW::experimental::error_code::nothing_to_parse:
         has_more = false;
         break;
@@ -126,8 +132,7 @@ int read_span_flatbuffer(VW::workspace* all, const uint8_t* span, size_t length,
     has_more &= !temp_ex[0]->is_newline;
 
     // If this is a real example, we need to move it to the output multi_ex; we also
-    // need to create a new example to replace it, so create the example in the output
-    // multi_ex, then swap it with the one we just parsed.
+    // need to create a new example to replace it for the next run through the parser.
     if (!temp_ex[0]->is_newline)
     {
       // We avoid doing moves or copy construction here because multi_ex contains
