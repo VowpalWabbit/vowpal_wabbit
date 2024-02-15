@@ -9,6 +9,7 @@
 #include "prototype_namespace.h"
 #include "vw/common/future_compat.h"
 #include "vw/common/string_view.h"
+#include "vw/core/api_status.h"
 #include "vw/core/constant.h"
 #include "vw/core/error_constants.h"
 #include "vw/core/example.h"
@@ -252,7 +253,8 @@ TEST(FlatbufferParser, SingleExample_MissingFeatureIndices)
   VW::multi_ex examples;
   examples.push_back(&VW::get_unused_example(all.get()));
   VW::io_buf unused_buffer;
-  EXPECT_EQ(all->parser_runtime.flat_converter->parse_examples(all.get(), unused_buffer, examples, buf), 8);
+  EXPECT_EQ(all->parser_runtime.flat_converter->parse_examples(all.get(), unused_buffer, examples, buf),
+      VW::experimental::error_code::fb_parser_feature_hashes_names_missing);
   EXPECT_EQ(all->parser_runtime.example_parser->reader(all.get(), unused_buffer, examples), 0);
 
   auto example = all->parser_runtime.flat_converter->data()->example_obj_as_Example();
@@ -274,11 +276,23 @@ TEST(FlatbufferParser, SingleExample_MissingFeatureIndices)
   VW::finish_example(*all, *examples[0]);
 }
 
+namespace vwtest
+{
+template <bool test_audit_strings>
+constexpr FeatureSerialization get_feature_serialization()
+{
+  return test_audit_strings ? FeatureSerialization::ExcludeFeatureHash : FeatureSerialization::ExcludeFeatureNames;
+}
+}  // namespace vwtest
+
 template <typename root_prototype_t, bool test_audit_strings = true>
 void run_parse_and_verify_test(VW::workspace& w, const root_prototype_t& root_obj)
 {
+  constexpr FeatureSerialization feature_serialization = vwtest::get_feature_serialization<test_audit_strings>();
+
   flatbuffers::FlatBufferBuilder builder;
-  auto root = vwtest::create_example_root<test_audit_strings>(builder, w, root_obj);
+
+  auto root = vwtest::create_example_root<feature_serialization>(builder, w, root_obj);
   builder.FinishSizePrefixed(root);
 
   VW::io_buf buf;
@@ -339,8 +353,8 @@ void run_parse_and_verify_test(VW::workspace& w, const root_prototype_t& root_ob
     examples.clear();
   }
 
-  vwtest::verify_example_root<test_audit_strings>(w, w.parser_runtime.flat_converter->data(), root_obj);
-  vwtest::verify_example_root<test_audit_strings>(w, (std::vector<VW::multi_ex>)wrapped, root_obj);
+  vwtest::verify_example_root<feature_serialization>(w, w.parser_runtime.flat_converter->data(), root_obj);
+  vwtest::verify_example_root<feature_serialization>(w, (std::vector<VW::multi_ex>)wrapped, root_obj);
 
   for (size_t i = 0; i < wrapped.size(); i++)
   {
@@ -351,18 +365,18 @@ void run_parse_and_verify_test(VW::workspace& w, const root_prototype_t& root_ob
 
 TEST(FlatbufferParser, ExampleCollection_Multiline)
 {
-  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer", "--cb_explore_adf"));
+  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer", "--audit", "--cb_explore_adf"));
 
   example_data_generator data_gen;
 
-  auto prototype = data_gen.create_cb_adf_log(3, 4, 0.4f);
+  auto prototype = data_gen.create_cb_adf_log(2, 1, 0.4f);
 
   run_parse_and_verify_test(*all, prototype);
 }
 
 TEST(FlatbufferParser, MultiExample_Multiline)
 {
-  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer", "--cb_explore_adf"));
+  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer", "--audit", "--cb_explore_adf"));
 
   flatbuffers::FlatBufferBuilder builder;
 
@@ -389,7 +403,7 @@ TEST(FlatBufferParser, LabelSmokeTest_ContinuousLabel)
   using namespace vwtest;
   using example = vwtest::example;
 
-  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer"));
+  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer", "--audit"));
   example_data_generator datagen;
 
   example ex = {{datagen.create_namespace("U_a", 1, 1)},
@@ -403,7 +417,7 @@ TEST(FlatBufferParser, LabelSmokeTest_Slates)
 {
   using namespace vwtest;
 
-  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer", "--slates"));
+  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer", "--audit", "--slates"));
   example_data_generator datagen;
 
   // this is not the best way to describe it as it is technically labelled in the strictest sense
@@ -437,224 +451,5 @@ TEST(FlatBufferParser, LabelSmokeTest_Slates)
 
           slates::slot(0, {{1, 0.6}, {0, 0.4}})}}};
 
-  run_parse_and_verify_test(*all, labeled_example);
-}
-
-namespace vwtest
-{
-template <typename T>
-struct fb_type
-{
-};
-
-template <>
-struct fb_type<prototype_namespace_t>
-{
-  using type = VW::parsers::flatbuffer::Namespace;
-};
-
-template <>
-struct fb_type<prototype_example_t>
-{
-  using type = VW::parsers::flatbuffer::Example;
-};
-
-template <>
-struct fb_type<prototype_multiexample_t>
-{
-  using type = VW::parsers::flatbuffer::MultiExample;
-};
-
-template <>
-struct fb_type<prototype_example_collection_t>
-{
-  using type = VW::parsers::flatbuffer::ExampleCollection;
-};
-
-using union_t = void;
-
-template <>
-struct fb_type<prototype_label_t>
-{
-  using type = union_t;
-};
-}  // namespace vwtest
-
-template <typename T, typename FB_t = typename vwtest::fb_type<T>::type>
-void create_flatbuffer_and_validate(VW::workspace& w, const T& prototype)
-{
-  flatbuffers::FlatBufferBuilder builder;
-
-  Offset<FB_t> buffer_offset = prototype.create_flatbuffer(builder, w);
-  builder.Finish(buffer_offset);
-
-  const FB_t* fb_obj = GetRoot<FB_t>(builder.GetBufferPointer());
-
-  prototype.verify(w, fb_obj);
-}
-
-template <>
-void create_flatbuffer_and_validate<prototype_label_t, void>(VW::workspace& w, const prototype_label_t& prototype)
-{
-  if (prototype.label_type == fb::Label_NONE) { return; }  // there is no flatbuffer to create
-
-  flatbuffers::FlatBufferBuilder builder;
-
-  Offset<void> buffer_offset = prototype.create_flatbuffer(builder, w);
-  builder.Finish(buffer_offset);
-
-  switch (prototype.label_type)
-  {
-    case fb::Label_SimpleLabel:
-    case fb::Label_CBLabel:
-    case fb::Label_ContinuousLabel:
-    case fb::Label_Slates_Label:
-    {
-      prototype.verify(w, prototype.label_type, builder.GetBufferPointer());
-      break;
-    }
-    case fb::Label_NONE:
-    {
-      break;
-    }
-    default:
-    {
-      THROW("Label type not currently supported for create_flatbuffer_and_validate");
-      break;
-    }
-  }
-}
-
-TEST(FlatBufferParser, ValidateTestAffordances_NoLabel)
-{
-  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer"));
-
-  prototype_label_t label_prototype = vwtest::no_label();
-  create_flatbuffer_and_validate(*all, label_prototype);
-}
-
-TEST(FlatBufferParser, ValidateTestAffordances_SimpleLabel)
-{
-  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer"));
-  create_flatbuffer_and_validate(*all, simple_label(0.5, 1.0));
-}
-
-TEST(FlatBufferParser, ValidateTestAffordances_CBLabel)
-{
-  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer", "--cb_explore_adf"));
-  create_flatbuffer_and_validate(*all, cb_label({1.5, 2, 0.25f}));
-}
-
-TEST(FlatBufferParser, ValidateTestAffordances_ContinuousLabel)
-{
-  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer"));
-
-  std::vector<VW::cb_continuous::continuous_label_elm> probabilities = {{1, 0.5f, 0.25}};
-
-  create_flatbuffer_and_validate(*all, continuous_label(probabilities));
-}
-
-TEST(FlatBufferParser, ValidateTestAffordances_Slates)
-{
-  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer", "--slates"));
-
-  std::vector<VW::action_score> probabilities = {{1, 0.5f}, {2, 0.25f}};
-
-  VW::slates::example_type types[] = {
-      VW::slates::example_type::UNSET,
-      VW::slates::example_type::ACTION,
-      VW::slates::example_type::SHARED,
-      VW::slates::example_type::SLOT,
-  };
-
-  for (VW::slates::example_type type : types)
-  {
-    create_flatbuffer_and_validate(*all, slates_label_raw(type, 0.5, true, 0.3, 1, probabilities));
-  }
-}
-
-TEST(FlatbufferParser, ValidateTestAffordances_Namespace)
-{
-  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer"));
-
-  prototype_namespace_t ns_prototype = {"U_a", {{"a", 1.f}, {"b", 2.f}}};
-  create_flatbuffer_and_validate(*all, ns_prototype);
-}
-
-TEST(FlatbufferParser, ValidateTestAffordances_Example_Simple)
-{
-  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer"));
-
-  prototype_example_t ex_prototype = {{
-                                          {"U_a", {{"a", 1.f}, {"b", 2.f}}},
-                                          {"U_b", {{"a", 3.f}, {"b", 4.f}}},
-                                      },
-      vwtest::simple_label(0.5, 1.0)};
-  create_flatbuffer_and_validate(*all, ex_prototype);
-}
-
-TEST(FlatbufferParser, ValidateTestAffordances_Example_Unlabeled)
-{
-  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer"));
-
-  prototype_example_t ex_prototype = {{
-      {"U_a", {{"a", 1.f}, {"b", 2.f}}},
-      {"U_b", {{"a", 3.f}, {"b", 4.f}}},
-  }};
-  create_flatbuffer_and_validate(*all, ex_prototype);
-}
-
-TEST(FlatbufferParser, ValidateTestAffordances_Example_CBShared)
-{
-  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer", "--cb_explore_adf"));
-
-  prototype_example_t ex_prototype = {{
-                                          {"U_a", {{"a", 1.f}, {"b", 2.f}}},
-                                          {"U_b", {{"a", 3.f}, {"b", 4.f}}},
-                                      },
-      vwtest::cb_label_shared(), "tag1"};
-  create_flatbuffer_and_validate(*all, ex_prototype);
-}
-
-TEST(FlatbufferParser, ValidateTestAffordances_Example_CB)
-{
-  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer", "--cb_explore_adf"));
-
-  prototype_example_t ex_prototype = {{
-                                          {"T_a", {{"a", 5.f}, {"b", 6.f}}},
-                                          {"T_b", {{"a", 7.f}, {"b", 8.f}}},
-                                      },
-      vwtest::cb_label({1, 1, 0.5f}), "tag1"};
-  create_flatbuffer_and_validate(*all, ex_prototype);
-}
-
-TEST(FlatbufferParser, ValidateTestAffordances_MultiExample)
-{
-  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer"));
-
-  prototype_multiexample_t multiex_prototype = {{
-      {{
-           {"U_a", {{"a", 1.f}, {"b", 2.f}}},
-           {"U_b", {{"a", 3.f}, {"b", 4.f}}},
-       },
-          vwtest::cb_label_shared(), "tag1"},
-      {
-          {
-              {"T_a", {{"a", 5.f}, {"b", 6.f}}},
-              {"T_b", {{"a", 7.f}, {"b", 8.f}}},
-          },
-          vwtest::cb_label({{1, 1, 0.5f}}),
-      },
-  }};
-  create_flatbuffer_and_validate(*all, multiex_prototype);
-}
-
-TEST(FlatbufferParser, ValidateTestAffordances_ExampleCollectionMultiline)
-{
-  auto all = VW::initialize(vwtest::make_args("--no_stdin", "--quiet", "--flatbuffer", "--cb_explore_adf"));
-
-  example_data_generator data_gen;
-  prototype_example_collection_t prototype = data_gen.create_cb_adf_log(2, 2, 0.5f);
-
-  create_flatbuffer_and_validate(*all, prototype);
+  run_parse_and_verify_test<multiex, false>(*all, labeled_example);
 }

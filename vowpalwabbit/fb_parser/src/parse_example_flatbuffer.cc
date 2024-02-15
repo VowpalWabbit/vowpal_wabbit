@@ -5,12 +5,15 @@
 #include "vw/fb_parser/parse_example_flatbuffer.h"
 
 #include "vw/core/action_score.h"
+#include "vw/core/api_status.h"
 #include "vw/core/best_constant.h"
 #include "vw/core/cb.h"
 #include "vw/core/constant.h"
 #include "vw/core/error_constants.h"
 #include "vw/core/global_data.h"
 #include "vw/core/parser.h"
+#include "vw/core/scope_exit.h"
+#include "vw/core/vw.h"
 
 #include <cfloat>
 #include <fstream>
@@ -42,9 +45,120 @@ int flatbuffer_to_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& exampl
   return static_cast<int>(status.get_error_code() == VW::experimental::error_code::success);
 }
 
+int read_span_flatbuffer(VW::workspace* all, const uint8_t* span, size_t length, example_factory_t example_factory,
+    VW::multi_ex& examples, example_sink_f example_sink, VW::experimental::api_status* status)
+{
+  // we expect context to contain a size_prefixed flatbuffer (technically a binary string)
+  // which means:
+  //
+  //    /   4b   /    *length b                           /
+  //    +--------+----------------------------------------+
+  //    | length | flatbuffer                             |
+  //    +--------+----------------------------------------+
+  //    |                   context                       |
+  //    +--------+----------------------------------------+
+  //
+  //    thus context.size() = sizeof(length) + length
+  io_buf unused;
+
+  size_t address = reinterpret_cast<size_t>(span);
+  if (address % 8 != 0)
+  {
+    std::stringstream sstream;
+    sstream << "fb_parser error: flatbuffer data not aligned to 8 bytes" << std::endl;
+    sstream << "   span => @" << std::hex << address << std::dec << " % " << 8 << " = " << address % 8
+            << " (vs desired = " << 0 << ")";
+
+    RETURN_ERROR_LS(status, fb_parser_span_misaligned) << sstream.str();
+  }
+
+  flatbuffers::uoffset_t flatbuffer_object_size =
+      flatbuffers::ReadScalar<flatbuffers::uoffset_t>(span);  //*reinterpret_cast<const uint32_t*>(span);
+  if (length != flatbuffer_object_size + sizeof(flatbuffers::uoffset_t))
+  {
+    std::stringstream sstream;
+    sstream << "fb_parser error: flatbuffer size prefix does not match actual size" << std::endl;
+    sstream << "   span => @" << std::hex << address << std::dec << " size_prefix = " << flatbuffer_object_size
+            << " length = " << length;
+
+    RETURN_ERROR_LS(status, fb_parser_span_length_mismatch) << sstream.str();
+  }
+
+  VW::multi_ex temp_ex;
+
+  // Use scope_exit because the parser reports errors by throwing exceptions (the code path in the vw driver
+  // uses the return value to signal completion, not errors).
+  auto scope_guard = VW::scope_exit(
+      [&temp_ex, &all, &example_sink]()
+      {
+        if (example_sink == nullptr) { VW::finish_example(*all, temp_ex); }
+        else { example_sink(std::move(temp_ex)); }
+      });
+
+  // There is a bit of unhappiness with the interface of the read_XYZ_<format>() functions, because they often
+  // expect the input multi_ex to have a single "empty" example there. This contributes, in part, to the large
+  // proliferation of entry points into the JSON parser(s). We want to avoid exposing that insofar as possible,
+  // so we will check whether we already received a perfectly good example and use that, or create a new one if
+  // needed.
+  if (examples.size() > 0)
+  {
+    assert(examples.size() == 1);
+    temp_ex.push_back(examples[0]);
+    examples.pop_back();
+  }
+  else { temp_ex.push_back(&example_factory()); }
+
+  bool has_more = true;
+  do {
+    switch (int result = all->parser_runtime.flat_converter->parse_examples(all, unused, temp_ex, span, status))
+    {
+      case VW::experimental::error_code::success:
+        has_more = true;
+        break;
+      // Because nothing_to_parse is not an error we have to filter it out here, otherwise
+      // we could simply do RETURN_IF_FAIL(result) and let the macro handle it.
+      case VW::experimental::error_code::nothing_to_parse:
+        has_more = false;
+        break;
+      default:
+        RETURN_IF_FAIL(result);
+    }
+
+    // The underlying parser will emit a newline example when terminating the parsing
+    // of a multi_ex block. Since we are collecting it into a multi_ex, we want to
+    // swallow it here, but should the parser not have followed its contract w.r.t.
+    // the return value, we should use the presence of the newline example to override
+    // has_more.
+    has_more &= !temp_ex[0]->is_newline;
+
+    // If this is a real example, we need to move it to the output multi_ex; we also
+    // need to create a new example to replace it for the next run through the parser.
+    if (!temp_ex[0]->is_newline)
+    {
+      // We avoid doing moves or copy construction here because multi_ex contains
+      // example pointers. The compile-time code here is meant to call attention
+      // to here if the underlying type changes.
+      using temp_ex_element_t = std::remove_reference<decltype(temp_ex[0])>::type;
+      using examples_element_t = std::remove_reference<decltype(examples[0])>::type;
+
+      static_assert(std::is_same<temp_ex_element_t, examples_element_t>::value &&
+              std::is_same<temp_ex_element_t, VW::example*>::value,
+          "temp_ex and example must be vector-like over VW::example*");
+
+      examples.push_back(temp_ex[0]);
+
+      // Since we are using a vector of pointers, we can simply reassign the slot to
+      // the pointer of the newly created destination example for the parser.
+      temp_ex[0] = &example_factory();
+    }
+  } while (has_more);
+
+  return VW::experimental::error_code::success;
+}
+
 const VW::parsers::flatbuffer::ExampleRoot* parser::data() { return _data; }
 
-int parser::parse(io_buf& buf, uint8_t* buffer_pointer, VW::experimental::api_status* status)
+int parser::parse(io_buf& buf, const uint8_t* buffer_pointer, VW::experimental::api_status* status)
 {
 #define RETURN_IF_ALIGN_ERROR(target_align, actual_ptr, example_root_count)                                           \
   if (!target_align.is_aligned(actual_ptr))                                                                           \
@@ -123,13 +237,18 @@ int parser::process_collection_item(VW::workspace* all, VW::multi_ex& examples, 
   {
     _active_multi_ex = true;
     _multi_example_object = _data->example_obj_as_ExampleCollection()->multi_examples()->Get(_example_index);
+
+    // read from active multi_ex
     RETURN_IF_FAIL(parse_multi_example(all, examples[0], _multi_example_object, status));
-    // read from active collection
-    _example_index++;
-    if (_example_index == _data->example_obj_as_ExampleCollection()->multi_examples()->size())
+
+    // if we are done with the multi example, move to the next one, or finish the collection
+    if (!_active_multi_ex)
     {
-      _example_index = 0;
-      _active_collection = false;
+      _example_index++;
+      if (_example_index == _data->example_obj_as_ExampleCollection()->multi_examples()->size())
+      {
+        reset_active_collection();
+      }
     }
   }
   else
@@ -137,20 +256,41 @@ int parser::process_collection_item(VW::workspace* all, VW::multi_ex& examples, 
     const auto ex = _data->example_obj_as_ExampleCollection()->examples()->Get(_example_index);
     RETURN_IF_FAIL(parse_example(all, examples[0], ex, status));
     _example_index++;
-    if (_example_index == _data->example_obj_as_ExampleCollection()->examples()->size())
-    {
-      _example_index = 0;
-      _active_collection = false;
-    }
+    if (_example_index == _data->example_obj_as_ExampleCollection()->examples()->size()) { reset_active_collection(); }
   }
   return VW::experimental::error_code::success;
 }
 
-int parser::parse_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& examples, uint8_t* buffer_pointer,
+int parser::parse_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& examples, const uint8_t* buffer_pointer,
     VW::experimental::api_status* status)
 {
-  if (_active_multi_ex) { RETURN_IF_FAIL(parse_multi_example(all, examples[0], _multi_example_object, status)); }
-  else if (_active_collection) { RETURN_IF_FAIL(process_collection_item(all, examples, status)); }
+#define RETURN_SUCCESS_FINISHED() \
+  return buffer_pointer ? VW::experimental::error_code::nothing_to_parse : VW::experimental::error_code::success;
+
+  // If we are re-using a single parser instance across multiple invocations, we need to reset
+  // the state when we get a new buffer_pointer. Otherwise we may be in the middle of a multi_ex
+  // or example_collection, and the following parse will attempt to reuse the object references
+  // from the previous buffer, which may have been deallocated.
+  // TODO: Rewrite the parser to avoid this convoluted, re-entrant logic.
+  if (buffer_pointer && _flatbuffer_pointer != buffer_pointer)
+  {
+    reset_active_multi_ex();
+    reset_active_collection();
+  }
+
+  // The ExampleCollection processing code owns dispatching to parse_multi_example to handle
+  // iteration through the outer collection correctly, thus it must have the first chance to
+  // incoming parse request.
+  if (_active_collection)
+  {
+    RETURN_IF_FAIL(process_collection_item(all, examples, status));
+    if (!_active_collection) RETURN_SUCCESS_FINISHED();
+  }
+  else if (_active_multi_ex)
+  {
+    RETURN_IF_FAIL(parse_multi_example(all, examples[0], _multi_example_object, status));
+    if (!_active_multi_ex) RETURN_SUCCESS_FINISHED();
+  }
   else
   {
     // new object to be read from file
@@ -162,26 +302,33 @@ int parser::parse_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& exampl
       {
         const auto example = _data->example_obj_as_Example();
         RETURN_IF_FAIL(parse_example(all, examples[0], example, status));
+        RETURN_SUCCESS_FINISHED();
       }
       break;
       case VW::parsers::flatbuffer::ExampleType_MultiExample:
       {
         _multi_example_object = _data->example_obj_as_MultiExample();
         _active_multi_ex = true;
+
         RETURN_IF_FAIL(parse_multi_example(all, examples[0], _multi_example_object, status));
+        if (!_active_multi_ex) RETURN_SUCCESS_FINISHED();
       }
       break;
       case VW::parsers::flatbuffer::ExampleType_ExampleCollection:
       {
         _active_collection = true;
+
         RETURN_IF_FAIL(process_collection_item(all, examples, status));
+        if (!_active_collection) RETURN_SUCCESS_FINISHED();
       }
       break;
 
       default:
+        RETURN_ERROR_LS(status, fb_parser_unknown_example_type) << "Unknown example type";
         break;
     }
   }
+
   return VW::experimental::error_code::success;
 }
 
@@ -210,9 +357,7 @@ int parser::parse_multi_example(
   {
     // done with multi example, send a newline example and reset
     ae->is_newline = true;
-    _multi_ex_index = 0;
-    _active_multi_ex = false;
-    _multi_example_object = nullptr;
+    reset_active_multi_ex();
     return VW::experimental::error_code::success;
   }
 
@@ -228,29 +373,10 @@ int parser::get_namespace_index(const Namespace* ns, namespace_index& ni, VW::ex
     ni = static_cast<uint8_t>(ns->name()->c_str()[0]);
     return VW::experimental::error_code::success;
   }
-  else if (flatbuffers::IsFieldPresent(ns, Namespace::VT_HASH))
+  else
   {
     ni = ns->hash();
     return VW::experimental::error_code::success;
-  }
-
-  if (_active_collection && _active_multi_ex)
-  {
-    RETURN_ERROR_LS(status, fb_parser_name_hash_missing)
-        << "Either name or hash field must be specified to get the namespace index in collection item with example "
-           "index "
-        << _example_index << "and multi example index " << _multi_ex_index;
-  }
-  else if (_active_multi_ex)
-  {
-    RETURN_ERROR_LS(status, fb_parser_name_hash_missing)
-        << "Either name or hash field must be specified to get the namespace index in multi example index "
-        << _multi_ex_index;
-  }
-  else
-  {
-    RETURN_ERROR_LS(status, fb_parser_name_hash_missing)
-        << "Either name or hash field must be specified to get the namespace index";
   }
 }
 
@@ -271,8 +397,36 @@ bool get_namespace_hash(VW::workspace* all, const Namespace* ns, uint64_t& hash)
   return false;
 }
 
+bool features_have_names(const Namespace& ns)
+{
+  return flatbuffers::IsFieldPresent(&ns, Namespace::VT_FEATURE_NAMES) && (ns.feature_names()->size() != 0);
+  // TODO: It is not clear what the right answer is when feature_values->size is 0
+}
+
+bool features_have_hashes(const Namespace& ns)
+{
+  return flatbuffers::IsFieldPresent(&ns, Namespace::VT_FEATURE_HASHES) && (ns.feature_hashes()->size() != 0);
+}
+
+bool features_have_values(const Namespace& ns)
+{
+  return flatbuffers::IsFieldPresent(&ns, Namespace::VT_FEATURE_VALUES) && (ns.feature_values()->size() != 0);
+}
+
 int parser::parse_namespaces(VW::workspace* all, example* ae, const Namespace* ns, VW::experimental::api_status* status)
 {
+#define RETURN_NS_PARSER_ERROR(status, error_code)                                                                 \
+  if (_active_collection && _active_multi_ex)                                                                      \
+  {                                                                                                                \
+    RETURN_ERROR_LS(status, error_code) << "Unable to parse namespace in collection item with example index "      \
+                                        << _example_index << "and multi example index " << _multi_ex_index;        \
+  }                                                                                                                \
+  else if (_active_multi_ex)                                                                                       \
+  {                                                                                                                \
+    RETURN_ERROR_LS(status, error_code) << "Unable to parse namespace in multi example index " << _multi_ex_index; \
+  }                                                                                                                \
+  else { RETURN_ERROR_LS(status, error_code) << "Unable to parse namespace "; }
+
   namespace_index index;
   RETURN_IF_FAIL(parser::get_namespace_index(ns, index, status));
   uint64_t hash = 0;
@@ -284,46 +438,24 @@ int parser::parse_namespaces(VW::workspace* all, example* ae, const Namespace* n
 
   if (hash_found) { fs.start_ns_extent(hash); }
 
-  if (!flatbuffers::IsFieldPresent(ns, Namespace::VT_FEATURE_VALUES))
-  {
-    if (_active_collection && _active_multi_ex)
-    {
-      RETURN_ERROR_LS(status, fb_parser_feature_values_missing)
-          << "Unable to parse namespace in collection item with example index " << _example_index
-          << "and multi example index " << _multi_ex_index;
-    }
-    else if (_active_multi_ex)
-    {
-      RETURN_ERROR_LS(status, fb_parser_feature_values_missing)
-          << "Unable to parse namespace in multi example index " << _multi_ex_index;
-    }
-    else { RETURN_ERROR_LS(status, fb_parser_feature_values_missing) << "Unable to parse namespace "; }
-  }
+  if (!features_have_values(*ns)) { RETURN_NS_PARSER_ERROR(status, fb_parser_feature_values_missing) }
 
   auto feature_value_iter = (ns->feature_values())->begin();
   const auto feature_value_iter_end = (ns->feature_values())->end();
 
+  bool has_hashes = features_have_hashes(*ns);
+  bool has_names = features_have_names(*ns);
+
   // assuming the usecase that if feature names would exist, they would exist for all features in the namespace
-  if (flatbuffers::IsFieldPresent(ns, Namespace::VT_FEATURE_NAMES))
+  if (has_names)
   {
     const auto ns_name = ns->name();
     auto feature_name_iter = (ns->feature_names())->begin();
-    if (flatbuffers::IsFieldPresent(ns, Namespace::VT_FEATURE_HASHES))
+    if (has_hashes)
     {
       if (ns->feature_hashes()->size() != ns->feature_values()->size())
       {
-        if (_active_collection && _active_multi_ex)
-        {
-          RETURN_ERROR_LS(status, fb_parser_size_mismatch_ft_hashes_ft_values)
-              << "Unable to parse namespace in collection item with example index " << _example_index
-              << "and multi example index " << _multi_ex_index;
-        }
-        else if (_active_multi_ex)
-        {
-          RETURN_ERROR_LS(status, fb_parser_size_mismatch_ft_hashes_ft_values)
-              << "Unable to parse namespace in multi example index " << _multi_ex_index;
-        }
-        else { RETURN_ERROR_LS(status, fb_parser_size_mismatch_ft_hashes_ft_values) << "Unable to parse namespace "; }
+        RETURN_NS_PARSER_ERROR(status, fb_parser_size_mismatch_ft_hashes_ft_values)
       }
 
       auto feature_hash_iter = (ns->feature_hashes())->begin();
@@ -342,23 +474,13 @@ int parser::parse_namespaces(VW::workspace* all, example* ae, const Namespace* n
       // assuming the usecase that if feature names would exist, they would exist for all features in the namespace
       if (ns->feature_names()->size() != ns->feature_values()->size())
       {
-        if (_active_collection && _active_multi_ex)
-        {
-          RETURN_ERROR_LS(status, fb_parser_size_mismatch_ft_names_ft_values)
-              << "Unable to parse namespace in collection item with example index " << _example_index
-              << "and multi example index " << _multi_ex_index;
-        }
-        else if (_active_multi_ex)
-        {
-          RETURN_ERROR_LS(status, fb_parser_size_mismatch_ft_names_ft_values)
-              << "Unable to parse namespace in multi example index " << _multi_ex_index;
-        }
-        else { RETURN_ERROR_LS(status, fb_parser_size_mismatch_ft_names_ft_values) << "Unable to parse namespace "; }
+        RETURN_NS_PARSER_ERROR(status, fb_parser_size_mismatch_ft_names_ft_values)
       }
       for (; feature_value_iter != feature_value_iter_end; ++feature_value_iter, ++feature_name_iter)
       {
         const uint64_t word_hash =
-            all->parser_runtime.example_parser->hasher(feature_name_iter->c_str(), feature_name_iter->size(), _c_hash);
+            all->parser_runtime.example_parser->hasher(feature_name_iter->c_str(), feature_name_iter->size(), _c_hash) &
+            all->runtime_state.parse_mask;
         fs.push_back(*feature_value_iter, word_hash);
         if (ns_name != nullptr)
         {
@@ -369,36 +491,13 @@ int parser::parse_namespaces(VW::workspace* all, example* ae, const Namespace* n
   }
   else
   {
-    if (!flatbuffers::IsFieldPresent(ns, Namespace::VT_FEATURE_HASHES))
-    {
-      if (_active_collection && _active_multi_ex)
-      {
-        RETURN_ERROR_LS(status, fb_parser_feature_hashes_names_missing)
-            << "Unable to parse namespace in collection item with example index " << _example_index
-            << "and multi example index " << _multi_ex_index;
-      }
-      else if (_active_multi_ex)
-      {
-        RETURN_ERROR_LS(status, fb_parser_feature_hashes_names_missing)
-            << "Unable to parse namespace in multi example index " << _multi_ex_index;
-      }
-      else { RETURN_ERROR_LS(status, fb_parser_feature_hashes_names_missing) << "Unable to parse namespace "; }
-    }
+    if (!has_hashes) { RETURN_NS_PARSER_ERROR(status, fb_parser_feature_hashes_names_missing) }
+
     if (ns->feature_hashes()->size() != ns->feature_values()->size())
     {
-      if (_active_collection && _active_multi_ex)
-      {
-        RETURN_ERROR_LS(status, fb_parser_size_mismatch_ft_hashes_ft_values)
-            << "Unable to parse namespace in collection item with example index " << _example_index
-            << "and multi example index " << _multi_ex_index;
-      }
-      else if (_active_multi_ex)
-      {
-        RETURN_ERROR_LS(status, fb_parser_size_mismatch_ft_hashes_ft_values)
-            << "Unable to parse namespace in multi example index " << _multi_ex_index;
-      }
-      else { RETURN_ERROR_LS(status, fb_parser_size_mismatch_ft_hashes_ft_values) << "Unable to parse namespace "; }
+      RETURN_NS_PARSER_ERROR(status, fb_parser_size_mismatch_ft_hashes_ft_values)
     }
+
     auto feature_hash_iter = (ns->feature_hashes())->begin();
     for (; feature_value_iter != feature_value_iter_end; ++feature_value_iter, ++feature_hash_iter)
     {
@@ -471,6 +570,7 @@ int parser::parse_flat_label(
       break;
     }
     case Label_NONE:
+    case Label_no_label:
       break;
     default:
       if (_active_collection && _active_multi_ex)

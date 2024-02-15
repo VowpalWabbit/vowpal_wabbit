@@ -10,8 +10,10 @@
 #include "vw/core/vw.h"
 #include "vw/fb_parser/parse_example_flatbuffer.h"
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#ifndef VWFB_BUILDERS_ONLY
+#  include <gmock/gmock.h>
+#  include <gtest/gtest.h>
+#endif
 
 namespace fb = VW::parsers::flatbuffer;
 using namespace flatbuffers;
@@ -27,12 +29,15 @@ struct prototype_label_t
 
   Offset<void> create_flatbuffer(flatbuffers::FlatBufferBuilder& builder, VW::workspace& w) const;
 
+#ifndef VWFB_BUILDERS_ONLY
   void verify(VW::workspace& w, const fb::Example* ex) const;
   void verify(VW::workspace& w, const VW::example& ex) const;
 
   void verify(VW::workspace& w, fb::Label label_type, const void* label) const;
+#endif
 
 private:
+#ifndef VWFB_BUILDERS_ONLY
   inline void verify_simple_label(const fb::Example* ex) const
   {
     EXPECT_EQ(ex->label_type(), fb::Label_SimpleLabel);
@@ -76,11 +81,12 @@ private:
 
   void verify_slates_label(const fb::Slates_Label* label) const;
   void verify_slates_label(const VW::example& ex) const;
+#endif
 };
 
 prototype_label_t no_label();
 
-prototype_label_t simple_label(float label, float weight, float initial = 0.f);
+prototype_label_t simple_label(float label, float weight = 1.f, float initial = 0.f);
 
 prototype_label_t cb_label(std::vector<VW::cb_class> costs, float weight = 1.0f);
 prototype_label_t cb_label(VW::cb_class single_class, float weight = 1.0f);

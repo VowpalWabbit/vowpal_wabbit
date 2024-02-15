@@ -9,6 +9,11 @@
 #include "prototype_namespace.h"
 #include "vw/fb_parser/parse_example_flatbuffer.h"
 
+#ifndef VWFB_BUILDERS_ONLY
+#  include <gmock/gmock.h>
+#  include <gtest/gtest.h>
+#endif
+
 namespace fb = VW::parsers::flatbuffer;
 using namespace flatbuffers;
 
@@ -34,11 +39,11 @@ struct prototype_example_t
     return count;
   }
 
-  template <bool include_feature_names = true>
+  template <FeatureSerialization feature_serialization = FeatureSerialization::IncludeFeatureNames>
   Offset<fb::Example> create_flatbuffer(flatbuffers::FlatBufferBuilder& builder, VW::workspace& w) const
   {
     std::vector<Offset<fb::Namespace>> fb_namespaces;
-    for (auto& ns : namespaces) { fb_namespaces.push_back(ns.create_flatbuffer<>(builder, w)); }
+    for (auto& ns : namespaces) { fb_namespaces.push_back(ns.create_flatbuffer<feature_serialization>(builder, w)); }
 
     Offset<Vector<Offset<fb::Namespace>>> fb_namespaces_vector = builder.CreateVector(fb_namespaces);
 
@@ -51,61 +56,68 @@ struct prototype_example_t
     return example;
   }
 
-  template <bool expect_feature_names = true>
+#ifndef VWFB_BUILDERS_ONLY
+  template <FeatureSerialization feature_serialization = FeatureSerialization::IncludeFeatureNames>
   void verify(VW::workspace& w, const fb::Example* e) const
   {
     for (size_t i = 0; i < namespaces.size(); i++)
     {
-      namespaces[i].verify<expect_feature_names>(w, e->namespaces()->Get(i));
+      namespaces[i].verify<feature_serialization>(w, e->namespaces()->Get(i));
     }
 
     label.verify(w, e);
   }
 
-  template <bool expect_feature_names = true>
+  template <FeatureSerialization feature_serialization = FeatureSerialization::IncludeFeatureNames>
   void verify(VW::workspace& w, const VW::example& e) const
   {
     EXPECT_EQ(e.indices.size(), count_indices());
 
     for (size_t i = 0; i < namespaces.size(); i++)
     {
-      namespaces[i].verify<expect_feature_names>(w, namespaces[i].feature_group, e);
+      namespaces[i].verify<feature_serialization>(w, namespaces[i].feature_group, e);
     }
 
     label.verify(w, e);
   }
+#endif
 };
 
 struct prototype_multiexample_t
 {
   std::vector<prototype_example_t> examples;
 
-  template <bool include_feature_names = true>
+  template <FeatureSerialization feature_serialization = FeatureSerialization::IncludeFeatureNames>
   Offset<fb::MultiExample> create_flatbuffer(flatbuffers::FlatBufferBuilder& builder, VW::workspace& w) const
   {
     std::vector<Offset<fb::Example>> fb_examples;
-    for (auto& ex : examples) { fb_examples.push_back(ex.create_flatbuffer<include_feature_names>(builder, w)); }
+    for (auto& ex : examples) { fb_examples.push_back(ex.create_flatbuffer<feature_serialization>(builder, w)); }
 
     Offset<Vector<Offset<fb::Example>>> fb_examples_vector = builder.CreateVector(fb_examples);
 
     return fb::CreateMultiExample(builder, fb_examples_vector);
   }
 
-  template <bool expect_feature_names = true>
+#ifndef VWFB_BUILDERS_ONLY
+  template <FeatureSerialization feature_serialization = FeatureSerialization::IncludeFeatureNames>
   void verify(VW::workspace& w, const fb::MultiExample* e) const
   {
     EXPECT_EQ(e->examples()->size(), examples.size());
 
-    for (size_t i = 0; i < examples.size(); i++) { examples[i].verify<expect_feature_names>(w, e->examples()->Get(i)); }
+    for (size_t i = 0; i < examples.size(); i++)
+    {
+      examples[i].verify<feature_serialization>(w, e->examples()->Get(i));
+    }
   }
 
-  template <bool expect_feature_names = true>
+  template <FeatureSerialization feature_serialization = FeatureSerialization::IncludeFeatureNames>
   void verify(VW::workspace& w, const VW::multi_ex& e) const
   {
     EXPECT_EQ(e.size(), examples.size());
 
-    for (size_t i = 0; i < examples.size(); i++) { examples[i].verify<expect_feature_names>(w, *e[i]); }
+    for (size_t i = 0; i < examples.size(); i++) { examples[i].verify<feature_serialization>(w, *e[i]); }
   }
+#endif
 };
 
 struct prototype_example_collection_t
@@ -116,16 +128,16 @@ struct prototype_example_collection_t
   std::vector<prototype_multiexample_t> multi_examples;
   bool is_multiline;
 
-  template <bool include_feature_names = true>
+  template <FeatureSerialization feature_serialization = FeatureSerialization::IncludeFeatureNames>
   Offset<fb::ExampleCollection> create_flatbuffer(flatbuffers::FlatBufferBuilder& builder, VW::workspace& w) const
   {
     std::vector<Offset<fb::Example>> fb_examples;
-    for (auto& ex : examples) { fb_examples.push_back(ex.create_flatbuffer<include_feature_names>(builder, w)); }
+    for (auto& ex : examples) { fb_examples.push_back(ex.create_flatbuffer<feature_serialization>(builder, w)); }
 
     std::vector<Offset<fb::MultiExample>> fb_multi_examples;
     for (auto& ex : multi_examples)
     {
-      fb_multi_examples.push_back(ex.create_flatbuffer<include_feature_names>(builder, w));
+      fb_multi_examples.push_back(ex.create_flatbuffer<feature_serialization>(builder, w));
     }
 
     Offset<Vector<Offset<fb::Example>>> fb_examples_vector = builder.CreateVector(fb_examples);
@@ -134,35 +146,40 @@ struct prototype_example_collection_t
     return fb::CreateExampleCollection(builder, fb_examples_vector, fb_multi_example_vector, is_multiline);
   }
 
-  template <bool expect_feature_names = true>
+#ifndef VWFB_BUILDERS_ONLY
+  template <FeatureSerialization feature_serialization = FeatureSerialization::IncludeFeatureNames>
   void verify(VW::workspace& w, const fb::ExampleCollection* e) const
   {
     EXPECT_EQ(e->examples()->size(), examples.size());
     EXPECT_EQ(e->multi_examples()->size(), multi_examples.size());
 
-    for (size_t i = 0; i < examples.size(); i++) { examples[i].verify<expect_feature_names>(w, e->examples()->Get(i)); }
+    for (size_t i = 0; i < examples.size(); i++)
+    {
+      examples[i].verify<feature_serialization>(w, e->examples()->Get(i));
+    }
 
     for (size_t i = 0; i < multi_examples.size(); i++)
     {
-      multi_examples[i].verify<expect_feature_names>(w, e->multi_examples()->Get(i));
+      multi_examples[i].verify<feature_serialization>(w, e->multi_examples()->Get(i));
     }
   }
 
-  template <bool expect_feature_names = true>
+  template <FeatureSerialization feature_serialization = FeatureSerialization::IncludeFeatureNames>
   void verify_singleline(VW::workspace& w, const VW::multi_ex& e) const
   {
     EXPECT_EQ(is_multiline, false);
 
-    for (size_t i = 0; i < examples.size(); i++) { examples[i].verify<expect_feature_names>(w, *e[i]); }
+    for (size_t i = 0; i < examples.size(); i++) { examples[i].verify<feature_serialization>(w, *e[i]); }
   }
 
-  template <bool expect_feature_names = true>
+  template <FeatureSerialization feature_serialization = FeatureSerialization::IncludeFeatureNames>
   void verify_multiline(VW::workspace& w, const std::vector<VW::multi_ex>& e) const
   {
     EXPECT_EQ(is_multiline, true);
 
-    for (size_t i = 0; i < multi_examples.size(); i++) { multi_examples[i].verify<expect_feature_names>(w, e[i]); }
+    for (size_t i = 0; i < multi_examples.size(); i++) { multi_examples[i].verify<feature_serialization>(w, e[i]); }
   }
+#endif
 };
 
 }  // namespace vwtest
