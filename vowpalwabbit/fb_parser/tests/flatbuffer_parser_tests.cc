@@ -254,7 +254,7 @@ TEST(FlatbufferParser, SingleExample_MissingFeatureIndices)
   examples.push_back(&VW::get_unused_example(all.get()));
   VW::io_buf unused_buffer;
   EXPECT_EQ(all->parser_runtime.flat_converter->parse_examples(all.get(), unused_buffer, examples, buf),
-      VW::experimental::error_code::fb_parser_name_hash_missing);
+      VW::experimental::error_code::fb_parser_feature_hashes_names_missing);
   EXPECT_EQ(all->parser_runtime.example_parser->reader(all.get(), unused_buffer, examples), 0);
 
   auto example = all->parser_runtime.flat_converter->data()->example_obj_as_Example();
