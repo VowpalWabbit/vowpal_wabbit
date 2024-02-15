@@ -142,8 +142,8 @@ template <int error_code>
 void finish_flatbuffer_and_expect_error(FlatBufferBuilder& builder, Offset<fb::ExampleRoot> root, VW::workspace& w)
 {
   VW::example_factory_t ex_fac = [&w]() -> VW::example& { return VW::get_unused_example(&w); };
-  VW::example_sink_f ex_sink = [&w](VW::example& ex) { VW::finish_example(w, ex); };
-  if (vwtest::example_data_generator{}::random_bool())
+  VW::example_sink_f ex_sink = [&w](VW::multi_ex&& ex) { VW::finish_example(w, ex); };
+  if (vwtest::example_data_generator{}.random_bool())
   {
     // This is only valid because ex_fac is grabbing an example from the VW example pool
     ex_sink = nullptr;
