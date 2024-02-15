@@ -373,29 +373,10 @@ int parser::get_namespace_index(const Namespace* ns, namespace_index& ni, VW::ex
     ni = static_cast<uint8_t>(ns->name()->c_str()[0]);
     return VW::experimental::error_code::success;
   }
-  else if (flatbuffers::IsFieldPresent(ns, Namespace::VT_HASH))
+  else
   {
     ni = ns->hash();
     return VW::experimental::error_code::success;
-  }
-
-  if (_active_collection && _active_multi_ex)
-  {
-    RETURN_ERROR_LS(status, fb_parser_name_hash_missing)
-        << "Either name or hash field must be specified to get the namespace index in collection item with example "
-           "index "
-        << _example_index << "and multi example index " << _multi_ex_index;
-  }
-  else if (_active_multi_ex)
-  {
-    RETURN_ERROR_LS(status, fb_parser_name_hash_missing)
-        << "Either name or hash field must be specified to get the namespace index in multi example index "
-        << _multi_ex_index;
-  }
-  else
-  {
-    RETURN_ERROR_LS(status, fb_parser_name_hash_missing)
-        << "Either name or hash field must be specified to get the namespace index";
   }
 }
 

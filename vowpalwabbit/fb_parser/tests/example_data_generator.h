@@ -32,6 +32,10 @@ public:
 
   static VW::rand_state create_test_random_state();
 
+  inline bool random_bool() { return rng.get_and_update_random() >= 0.5; }
+
+  inline int random_int(int min, int max) { return static_cast<int>(rng.get_and_update_random() * (max - min) + min); }
+
   prototype_namespace_t create_namespace(std::string name, uint8_t numeric_features, uint8_t string_features);
 
   prototype_example_t create_simple_example(uint8_t numeric_features, uint8_t string_features);

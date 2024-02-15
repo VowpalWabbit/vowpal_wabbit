@@ -67,7 +67,7 @@ inline void verify_multi_ex(
 }  // namespace vwtest
 
 template <typename T, typename FB_t = typename vwtest::fb_type<T>::type>
-void create_flatbuffer_span_and_validate(VW::workspace& w, const T& prototype)
+void create_flatbuffer_span_and_validate(VW::workspace& w, vwtest::example_data_generator& data_gen, const T& prototype)
 {
   // This is what we expect to see when we use read_span_flatbuffer, since this is intended
   // to be used for inference, and we would prefer not to force consumers of the API to have
@@ -85,6 +85,11 @@ void create_flatbuffer_span_and_validate(VW::workspace& w, const T& prototype)
   flatbuffers::uoffset_t size = builder.GetSize();
 
   VW::multi_ex parsed_examples;
+  if (data_gen.random_bool())
+  {
+    parsed_examples.push_back(&ex_fac());
+  }
+
   VW::parsers::flatbuffer::read_span_flatbuffer(&w, buffer, size, ex_fac, parsed_examples);
 
   verify_multi_ex(w, prototype, parsed_examples);
@@ -100,7 +105,7 @@ TEST(FlatbufferParser, ReadSpanFlatbuffer_SingleExample)
   vwtest::prototype_example_t prototype = {
       {data_gen.create_namespace("A", 3, 4), data_gen.create_namespace("B", 2, 5)}, vwtest::simple_label(1.0f)};
 
-  create_flatbuffer_span_and_validate(*all, prototype);
+  create_flatbuffer_span_and_validate(*all, data_gen, prototype);
 }
 
 TEST(FlatbufferParser, ReadSpanFlatbuffer_MultiExample)
@@ -110,7 +115,7 @@ TEST(FlatbufferParser, ReadSpanFlatbuffer_MultiExample)
   vwtest::example_data_generator data_gen;
   vwtest::prototype_multiexample_t prototype = data_gen.create_cb_adf_example(3, 1, "tag");
 
-  create_flatbuffer_span_and_validate(*all, prototype);
+  create_flatbuffer_span_and_validate(*all, data_gen, prototype);
 }
 
 TEST(FlatbufferParser, ReadSpanFlatbuffer_ExampleCollectionSinglelines)
@@ -120,7 +125,7 @@ TEST(FlatbufferParser, ReadSpanFlatbuffer_ExampleCollectionSinglelines)
   vwtest::example_data_generator data_gen;
   vwtest::prototype_example_collection_t prototype = data_gen.create_simple_log(3, 3, 4);
 
-  create_flatbuffer_span_and_validate(*all, prototype);
+  create_flatbuffer_span_and_validate(*all, data_gen, prototype);
 }
 
 TEST(FlatbufferParser, ReadSpanFlatbuffer_ExampleCollectionMultiline)
@@ -130,13 +135,19 @@ TEST(FlatbufferParser, ReadSpanFlatbuffer_ExampleCollectionMultiline)
   vwtest::example_data_generator data_gen;
   vwtest::prototype_example_collection_t prototype = data_gen.create_cb_adf_log(1, 3, 4);
 
-  create_flatbuffer_span_and_validate(*all, prototype);
+  create_flatbuffer_span_and_validate(*all, data_gen, prototype);
 }
 
 template <int error_code>
 void finish_flatbuffer_and_expect_error(FlatBufferBuilder& builder, Offset<fb::ExampleRoot> root, VW::workspace& w)
 {
   VW::example_factory_t ex_fac = [&w]() -> VW::example& { return VW::get_unused_example(&w); };
+  VW::example_sink_f ex_sink = [&w](VW::example& ex) { VW::finish_example(w, ex); };
+  if (vwtest::example_data_generator{}::random_bool())
+  {
+    // This is only valid because ex_fac is grabbing an example from the VW example pool
+    ex_sink = nullptr;
+  }
 
   builder.FinishSizePrefixed(root);
 
@@ -147,7 +158,7 @@ void finish_flatbuffer_and_expect_error(FlatBufferBuilder& builder, Offset<fb::E
 
   VW::multi_ex parsed_examples;
   EXPECT_EQ(VW::parsers::flatbuffer::read_span_flatbuffer(
-                &w, buffer_copy.data(), buffer_copy.size(), ex_fac, parsed_examples),
+                &w, buffer_copy.data(), buffer_copy.size(), ex_fac, parsed_examples, ex_sink),
       error_code);
 }
 
