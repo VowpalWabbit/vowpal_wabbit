@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include "vw/core/api_status.h"
 #include "vw/core/example.h"
 #include "vw/core/multi_ex.h"
 #include "vw/core/shared_data.h"
@@ -14,15 +13,21 @@
 namespace VW
 {
 
+namespace experimental
+{
 class api_status;
+}
+
+using example_sink_f = std::function<void(VW::multi_ex&& spare_examples)>;
 
 namespace parsers
 {
 namespace flatbuffer
 {
 int flatbuffer_to_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& examples);
-bool read_span_flatbuffer(
-    VW::workspace* all, const uint8_t* span, size_t length, example_factory_t example_factory, VW::multi_ex& examples);
+
+int read_span_flatbuffer(VW::workspace* all, const uint8_t* span, size_t length, example_factory_t example_factory,
+    VW::multi_ex& examples, example_sink_f example_sink = nullptr, VW::experimental::api_status* status = nullptr);
 
 class parser
 {
@@ -56,6 +61,19 @@ private:
   int parse_flat_label(shared_data* sd, example* ae, const Example* eg, VW::io::logger& logger,
       VW::experimental::api_status* status = nullptr);
   int get_namespace_index(const Namespace* ns, namespace_index& ni, VW::experimental::api_status* status = nullptr);
+
+  inline void reset_active_multi_ex()
+  {
+    _multi_ex_index = 0;
+    _active_multi_ex = false;
+    _multi_example_object = nullptr;
+  }
+
+  inline void reset_active_collection()
+  {
+    _example_index = 0;
+    _active_collection = false;
+  }
 
   void parse_simple_label(shared_data* sd, polylabel* l, reduction_features* red_features, const SimpleLabel* label);
   void parse_cb_label(polylabel* l, const CBLabel* label);
