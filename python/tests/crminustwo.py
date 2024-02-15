@@ -440,21 +440,23 @@ class CrMinusTwo:
                     candidates.append(
                         (
                             gstar,
-                            None
-                            if isclose(kappa, 0)
-                            else {
-                                "kappastar": kappa,
-                                "betastar": beta,
-                                "gammastar": gamma,
-                                "taustar": tau,
-                                "ufake": ufake,
-                                "wfake": wfake,
-                                "rfake": rex,
-                                "qfunc": lambda c, u, w, r, k=kappa, g=gamma, b=beta, t=tau, s=sign, num=n: -c
-                                * (b + g * u + t * w + s * (u - w) * r)
-                                / ((num + 1) * k),
-                                "mle": mle,
-                            },
+                            (
+                                None
+                                if isclose(kappa, 0)
+                                else {
+                                    "kappastar": kappa,
+                                    "betastar": beta,
+                                    "gammastar": gamma,
+                                    "taustar": tau,
+                                    "ufake": ufake,
+                                    "wfake": wfake,
+                                    "rfake": rex,
+                                    "qfunc": lambda c, u, w, r, k=kappa, g=gamma, b=beta, t=tau, s=sign, num=n: -c
+                                    * (b + g * u + t * w + s * (u - w) * r)
+                                    / ((num + 1) * k),
+                                    "mle": mle,
+                                }
+                            ),
                         )
                     )
 
