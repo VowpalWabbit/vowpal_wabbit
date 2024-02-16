@@ -9,6 +9,7 @@
 #include "vw/core/v_array.h"
 #include "vw/core/vw_fwd.h"
 
+#include <cstdint>
 #include <iterator>
 #include <string>
 
@@ -46,7 +47,7 @@ class action_scores_score_iterator
 public:
   using iterator_category = std::random_access_iterator_tag;
   using value_type = float;
-  using difference_type = long;
+  using difference_type = intptr_t;
   using pointer = float*;
   using reference = float;
 

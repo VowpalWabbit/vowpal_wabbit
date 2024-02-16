@@ -146,7 +146,7 @@ void print_update_topk(VW::workspace& all, VW::shared_data& sd, const topk& /* d
 
   if (should_print_driver_update)
   {
-    size_t num_features = std::accumulate(ec_seq.begin(), ec_seq.end(), 0,
+    size_t num_features = std::accumulate(ec_seq.begin(), ec_seq.end(), (size_t)0,
         [](size_t features_so_far, VW::example* ex) { return features_so_far + ex->get_num_features(); });
 
     std::ostringstream label_ss;

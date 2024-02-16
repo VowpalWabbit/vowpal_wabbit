@@ -122,7 +122,7 @@ int enforce_minimum_probability(float uniform_epsilon, bool consider_zero_valued
 
   if (uniform_epsilon < 0.f || uniform_epsilon > 1.f) { return E_EXPLORATION_BAD_EPSILON; }
 
-  const auto num_actions = std::distance(pmf_first, pmf_last);
+  const size_t num_actions = std::distance(pmf_first, pmf_last);
 
   size_t support_size = num_actions;
   if (!consider_zero_valued_elements) { support_size -= std::count(pmf_first, pmf_last, 0.f); }
