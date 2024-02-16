@@ -161,13 +161,13 @@ private:
       {
         // chain hash is hash(feature_value, hash(feature_name, namespace_hash)) & parse_mask
         word_hash = (_p->hasher(str_feat_value.data(), str_feat_value.length(),
-                         _p->hasher(feature_name.data(), feature_name.length(), _channel_hash)) &
+                         _p->hasher(feature_name.data(), feature_name.length(), static_cast<uint32_t>(_channel_hash))) &
             _parse_mask);
       }
       // Case where string:float
       else if (!feature_name.empty())
       {
-        word_hash = (_p->hasher(feature_name.data(), feature_name.length(), _channel_hash) & _parse_mask);
+        word_hash = (_p->hasher(feature_name.data(), feature_name.length(), static_cast<uint32_t>(_channel_hash)) & _parse_mask);
       }
       // Case where :float
       else { word_hash = _channel_hash + _anon++; }
@@ -208,8 +208,12 @@ private:
             else { affix_name.remove_prefix(affix_name.size() - len); }
           }
 
-          word_hash = _p->hasher(affix_name.data(), affix_name.length(), (uint64_t)_channel_hash) *
-              (VW::details::AFFIX_CONSTANT + (affix & 0xF) * VW::details::QUADRATIC_CONSTANT);
+          word_hash = _p->hasher(affix_name.data(), affix_name.length(),
+            // TODO: Does this actually fit inside a uint32_t? If not, we should change the hasher to take a uint64_t
+            // but that will be dangerous because we also need to avoid changing the meanings of hashes with older
+            // models. Fixing this right is a potential breaking change.
+            static_cast<uint32_t>((uint64_t)_channel_hash) *
+              (VW::details::AFFIX_CONSTANT + (affix & 0xF) * VW::details::QUADRATIC_CONSTANT));
           affix_fs.push_back(_v, word_hash, VW::details::AFFIX_NAMESPACE);
           if (audit)
           {
@@ -245,7 +249,7 @@ private:
 
         VW::string_view spelling_strview(_spelling.data(), _spelling.size());
         word_hash =
-            VW::details::hashstring(spelling_strview.data(), spelling_strview.length(), (uint64_t)_channel_hash);
+            VW::details::hashstring(spelling_strview.data(), spelling_strview.length(), static_cast<uint32_t>(_channel_hash));
         spell_fs.push_back(_v, word_hash, VW::details::SPELLING_NAMESPACE);
         if (audit)
         {

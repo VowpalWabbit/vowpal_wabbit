@@ -80,7 +80,7 @@ void one_pass_svd_impl::generate_AOmega(const multi_ex& examples, const std::vec
     }
   }
 
-  const float scaling_factor = 1.f / std::sqrt(p);
+  const float scaling_factor = static_cast<float>(1.f / std::sqrt(p));
   // resize is a no-op if size does not change
   AOmega.resize(num_actions, p);
 

@@ -40,9 +40,9 @@ void cressieread::reset_stats(double alpha, double tau)
   update_count = 0;
 }
 
-float cressieread::lower_bound() { return chisq.cressieread_lower_bound(); }
+float cressieread::lower_bound() { return static_cast<float>(chisq.cressieread_lower_bound()); }
 
-float cressieread::upper_bound() { return chisq.cressieread_upper_bound(); }
+float cressieread::upper_bound() { return static_cast<float>(chisq.cressieread_upper_bound()); }
 }  // namespace estimators
 
 namespace model_utils

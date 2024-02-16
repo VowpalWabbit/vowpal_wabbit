@@ -448,8 +448,8 @@ void csoaa_ldf_multiclass_printline(
       }
     }
 
-    if (predicted_example) { all.print_by_ref(output, predicted_class, 0, ec->tag, logger); }
-    else { all.print_by_ref(output, 0, 0, ec->tag, logger); }
+    if (predicted_example) { all.print_by_ref(output, static_cast<float>(predicted_class), 0.f, ec->tag, logger); }
+    else { all.print_by_ref(output, 0.f, 0.f, ec->tag, logger); }
   }
 }
 

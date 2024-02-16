@@ -99,7 +99,7 @@ void confidence_sequence::update(double w, double r, double p_drop, double n_dro
     double bhigh = t + 1.0;
     sumxhathighsq += std::pow(ahigh, 2) * (approxpolygammaone(bhigh) - approxpolygammaone(bhigh + n_drop));
 
-    t += n_drop;
+    t += static_cast<int>(n_drop);
   }
 
   sumXlow = (sumwr - sumw * rmin) / (rmax - rmin);
@@ -129,8 +129,8 @@ void confidence_sequence::persist(metric_sink& metrics, const std::string& suffi
   metrics.set_uint("upcnt" + suffix, update_count);
   metrics.set_float("lb" + suffix, lower_bound());
   metrics.set_float("ub" + suffix, upper_bound());
-  metrics.set_float("last_w" + suffix, last_w);
-  metrics.set_float("last_r" + suffix, last_r);
+  metrics.set_float("last_w" + suffix, static_cast<float>(last_w));
+  metrics.set_float("last_r" + suffix, static_cast<float>(last_r));
 }
 
 void confidence_sequence::reset_stats()

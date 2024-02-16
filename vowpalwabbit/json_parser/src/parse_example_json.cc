@@ -261,7 +261,7 @@ public:
 
   BaseState<audit>* Uint(Context<audit>& ctx, unsigned v) override
   {
-    if (!_stricmp(ctx.key, "val")) { graph_triplet.val = v; }
+    if (!_stricmp(ctx.key, "val")) { graph_triplet.val = static_cast<float>(v); }
     else if (!_stricmp(ctx.key, "row")) { graph_triplet.row = v; }
     else if (!_stricmp(ctx.key, "col")) { graph_triplet.col = v; }
     else
@@ -1190,7 +1190,7 @@ public:
   BaseState<audit>* Float(Context<audit>& ctx, float f) override
   {
     auto& ns = ctx.CurrentNamespace();
-    auto hash_index = ctx._hash_func(ctx.key, strlen(ctx.key), ns.namespace_hash) & ctx._parse_mask;
+    auto hash_index = ctx._hash_func(ctx.key, strlen(ctx.key), static_cast<uint32_t>(ns.namespace_hash)) & ctx._parse_mask;
     ns.add_feature(f, hash_index, ctx.key);
     return this;
   }

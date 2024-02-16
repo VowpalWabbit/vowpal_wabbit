@@ -22,9 +22,10 @@ inline void kernel_impl(float feature_value, uint64_t index, uint64_t weights_ma
   constexpr static std::array<float, 4> VALUE_MAP = {0.f, 0.f, 1.f, -1.f};
 
 #ifdef _MSC_VER
-  int select_sparsity = __popcnt((index & weights_mask) + column_index) & 1;
+  // TODO: should we be using __popcnt64 here?
+  int select_sparsity = __popcnt(static_cast<unsigned int>((index & weights_mask) + column_index)) & 1;
   int sparsity_index = INDEX_MAP[select_sparsity];
-  int select_sign = __popcnt((index & weights_mask) + column_index + seed) & 1;
+  int select_sign = __popcnt(static_cast<unsigned int>((index & weights_mask) + column_index + seed)) & 1;
   int value_index = sparsity_index + select_sign;
   float val = VALUE_MAP[value_index];
 #else
@@ -34,6 +35,8 @@ inline void kernel_impl(float feature_value, uint64_t index, uint64_t weights_ma
   int value_index = sparsity_index + select_sign;
   float val = VALUE_MAP[value_index];
 #endif
+
+  
 
   final_dot_product += feature_value * val;
 }

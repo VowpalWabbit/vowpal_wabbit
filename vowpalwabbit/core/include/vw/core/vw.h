@@ -295,24 +295,24 @@ inline uint64_t hash_space_cstr(VW::workspace& all, const char* fstr)
 // Then use it as the seed for hashing features.
 inline uint64_t hash_feature(VW::workspace& all, const std::string& s, uint64_t u)
 {
-  return all.parser_runtime.example_parser->hasher(s.data(), s.length(), u) & all.runtime_state.parse_mask;
+  return all.parser_runtime.example_parser->hasher(s.data(), s.length(), static_cast<uint32_t>(u)) & all.runtime_state.parse_mask;
 }
 inline uint64_t hash_feature_static(const std::string& s, uint64_t u, const std::string& h, uint32_t num_bits)
 {
   size_t parse_mark = (1 << num_bits) - 1;
-  return get_hasher(h)(s.data(), s.length(), u) & parse_mark;
+  return get_hasher(h)(s.data(), s.length(), static_cast<uint32_t>(u)) & parse_mark;
 }
 
 inline uint64_t hash_feature_cstr(VW::workspace& all, const char* fstr, uint64_t u)
 {
-  return all.parser_runtime.example_parser->hasher(fstr, strlen(fstr), u) & all.runtime_state.parse_mask;
+  return all.parser_runtime.example_parser->hasher(fstr, strlen(fstr), static_cast<uint32_t>(u)) & all.runtime_state.parse_mask;
 }
 
 inline uint64_t chain_hash(VW::workspace& all, const std::string& name, const std::string& value, uint64_t u)
 {
   // chain hash is hash(feature_value, hash(feature_name, namespace_hash)) & parse_mask
   return all.parser_runtime.example_parser->hasher(
-             value.data(), value.length(), all.parser_runtime.example_parser->hasher(name.data(), name.length(), u)) &
+             value.data(), value.length(), all.parser_runtime.example_parser->hasher(name.data(), name.length(), static_cast<uint32_t>(u))) &
       all.runtime_state.parse_mask;
 }
 
@@ -320,7 +320,7 @@ inline uint64_t chain_hash_static(
     const std::string& name, const std::string& value, uint64_t u, hash_func_t hash_func, uint64_t parse_mask)
 {
   // chain hash is hash(feature_value, hash(feature_name, namespace_hash)) & parse_mask
-  return hash_func(value.data(), value.length(), hash_func(name.data(), name.length(), u)) & parse_mask;
+  return hash_func(value.data(), value.length(), hash_func(name.data(), name.length(), static_cast<uint32_t>(u))) & parse_mask;
 }
 
 inline float get_weight(VW::workspace& all, uint32_t index, uint32_t offset)
@@ -335,7 +335,7 @@ inline void set_weight(VW::workspace& all, uint32_t index, uint32_t offset, floa
 
 inline uint32_t num_weights(VW::workspace& all) { return static_cast<uint32_t>(all.length()); }
 
-inline uint32_t get_stride(VW::workspace& all) { return all.weights.stride(); }
+inline uint32_t get_stride(VW::workspace& all) { return static_cast<uint32_t>(all.weights.stride()); }
 
 inline void init_features(primitive_feature_space& fs, size_t features_count)
 {

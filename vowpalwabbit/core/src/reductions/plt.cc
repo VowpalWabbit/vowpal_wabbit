@@ -249,7 +249,7 @@ void predict(plt& p, learner& base, VW::example& ec)
     if (p.true_labels.size() > 0)
     {
       uint32_t tp = 0;
-      uint32_t pred_size = pred.multilabels.label_v.size();
+      uint32_t pred_size = static_cast<uint32_t>(pred.multilabels.label_v.size());
 
       for (uint32_t i = 0; i < pred_size; ++i)
       {

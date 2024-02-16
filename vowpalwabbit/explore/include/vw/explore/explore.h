@@ -154,7 +154,7 @@ namespace exploration
 {
 /// Function moved to VW::explore::generate_epsilon_greedy()
 template <typename It>
-VW_DEPRECATED("Moved to VW::exploration explorece")
+VW_DEPRECATED("Moved to VW::exploration namespace")
 int generate_epsilon_greedy(float epsilon, uint32_t top_action, It pmf_first, It pmf_last)
 {
   // call vw version
@@ -163,7 +163,7 @@ int generate_epsilon_greedy(float epsilon, uint32_t top_action, It pmf_first, It
 
 /// Function moved to VW::explore::generate_softmax()
 template <typename InputIt, typename OutputIt>
-VW_DEPRECATED("Moved to VW::exploration explorece")
+VW_DEPRECATED("Moved to VW::exploration namespace")
 int generate_softmax(float lambda, InputIt scores_first, InputIt scores_last, OutputIt pmf_first, OutputIt pmf_last)
 {
   // call vw version
@@ -172,7 +172,7 @@ int generate_softmax(float lambda, InputIt scores_first, InputIt scores_last, Ou
 
 /// Function moved to VW::explore::generate_bag()
 template <typename InputIt, typename OutputIt>
-VW_DEPRECATED("Moved to VW::exploration explorece")
+VW_DEPRECATED("Moved to VW::exploration namespace")
 int generate_bag(InputIt top_actions_first, InputIt top_actions_last, OutputIt pmf_first, OutputIt pmf_last)
 {
   // call vw version
@@ -181,7 +181,7 @@ int generate_bag(InputIt top_actions_first, InputIt top_actions_last, OutputIt p
 
 /// Function moved to VW::explore::enforce_minimum_probability()
 template <typename It>
-VW_DEPRECATED("Moved to VW::exploration explorece")
+VW_DEPRECATED("Moved to VW::exploration namespace")
 int enforce_minimum_probability(float uniform_epsilon, bool consider_zero_valued_elements, It pmf_first, It pmf_last)
 {
   // call vw version
@@ -190,7 +190,7 @@ int enforce_minimum_probability(float uniform_epsilon, bool consider_zero_valued
 
 /// Function moved to VW::explore::mix_with_uniform()
 template <typename It>
-VW_DEPRECATED("Moved to VW::exploration explorece")
+VW_DEPRECATED("Moved to VW::exploration namespace")
 int mix_with_uniform(float uniform_epsilon, It pmf_first, It pmf_last)
 {
   // call vw version
@@ -199,7 +199,7 @@ int mix_with_uniform(float uniform_epsilon, It pmf_first, It pmf_last)
 
 /// Function moved to VW::explore::sample_after_normalizing()
 template <typename It>
-VW_DEPRECATED("Moved to VW::exploration explorece")
+VW_DEPRECATED("Moved to VW::exploration namespace")
 int sample_after_normalizing(uint64_t seed, It pmf_first, It pmf_last, uint32_t& chosen_index)
 {
   // call vw version
@@ -208,7 +208,7 @@ int sample_after_normalizing(uint64_t seed, It pmf_first, It pmf_last, uint32_t&
 
 /// Function moved to VW::explore::sample_after_normalizing()
 template <typename It>
-VW_DEPRECATED("Moved to VW::exploration explorece")
+VW_DEPRECATED("Moved to VW::exploration namespace")
 int sample_after_normalizing(const char* seed, It pmf_first, It pmf_last, uint32_t& chosen_index)
 {
   // call vw version
@@ -217,7 +217,7 @@ int sample_after_normalizing(const char* seed, It pmf_first, It pmf_last, uint32
 
 /// Function moved to VW::explore::swap_chosen()
 template <typename ActionIt>
-VW_DEPRECATED("Moved to VW::exploration explorece")
+VW_DEPRECATED("Moved to VW::exploration namespace")
 int swap_chosen(ActionIt action_first, ActionIt action_last, uint32_t chosen_index)
 {
   // call vw version
@@ -226,7 +226,7 @@ int swap_chosen(ActionIt action_first, ActionIt action_last, uint32_t chosen_ind
 
 /// Function moved to VW::explore::sample_pdf()
 template <typename It>
-VW_DEPRECATED("Moved to VW::exploration explorece")
+VW_DEPRECATED("Moved to VW::exploration namespace")
 int sample_pdf(uint64_t* p_seed, It pdf_first, It pdf_last, float& chosen_value, float& pdf_value)
 {
   // call vw version

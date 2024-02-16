@@ -163,7 +163,7 @@ void output_example_prediction_bs(
     const auto min_max = std::minmax_element(data.pred_vec.begin(), data.pred_vec.end());
     for (auto& sink : all.output_runtime.final_prediction_sink)
     {
-      print_result(sink.get(), ec.pred.scalar, ec.tag, *min_max.first, *min_max.second, logger);
+      print_result(sink.get(), ec.pred.scalar, ec.tag, float(*min_max.first), float(*min_max.second), logger);
     }
   }
 }

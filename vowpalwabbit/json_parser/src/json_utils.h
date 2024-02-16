@@ -40,7 +40,7 @@ public:
 
   void add_feature(const char* str, hash_func_t hash_func, uint64_t parse_mask)
   {
-    auto hashed_feature = hash_func(str, strlen(str), namespace_hash) & parse_mask;
+    auto hashed_feature = hash_func(str, strlen(str), static_cast<uint32_t>(namespace_hash)) & parse_mask;
     ftrs->push_back(1., hashed_feature);
     feature_count++;
 
@@ -61,7 +61,7 @@ void push_ns(VW::example* ex, const char* ns, std::vector<namespace_builder<audi
 {
   namespace_builder<audit> n;
   n.feature_group = ns[0];
-  n.namespace_hash = hash_func(ns, strlen(ns), hash_seed);
+  n.namespace_hash = hash_func(ns, strlen(ns), static_cast<uint32_t>(hash_seed));
   n.ftrs = ex->feature_space.data() + ns[0];
   n.feature_count = 0;
   n.name = ns;

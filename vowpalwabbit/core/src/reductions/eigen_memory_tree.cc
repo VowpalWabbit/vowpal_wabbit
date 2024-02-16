@@ -191,7 +191,7 @@ float emt_median(std::vector<float>& array)
     const auto v1 = (*nth);
     std::nth_element(array.begin(), nth - 1, array.end());
     const auto v2 = *(nth - 1);
-    return (v1 + v2) / 2.;
+    return (v1 + v2) / 2.f;
   }
 
   std::nth_element(array.begin(), nth, array.end());
@@ -381,7 +381,7 @@ emt_feats emt_scale_add(float s1, const emt_feats& f1, float s2, const emt_feats
 
 emt_feats emt_router_random(std::vector<emt_feats>& exs, VW::rand_state& rng)
 {
-  std::set<int> is;
+  std::set<uint64_t> is;
   emt_feats weights;
 
   for (auto& e : exs)
@@ -403,7 +403,7 @@ emt_feats emt_router_eigen(std::vector<emt_feats>& exs, VW::rand_state& rng)
 
   auto weights = emt_router_random(exs, rng);
 
-  std::map<int, float> sums;
+  std::map<uint64_t, float> sums;
   emt_feats means;
 
   for (auto& ex : exs)
@@ -699,18 +699,19 @@ void scorer_learn(emt_tree& b, learner& base, emt_node& cn, const emt_example& e
     if (b.random_state->get_and_update_random() < .5)
     {
       scorer_example(b, ex, *preferred_ex);
-      scorer_learn(base, *b.ex, int(preferred_error > alternative_error), weight);
+
+      scorer_learn(base, *b.ex, static_cast<float>(preferred_error > alternative_error), weight);
 
       scorer_example(b, ex, *alternative_ex);
-      scorer_learn(base, *b.ex, int(alternative_error > preferred_error), weight);
+      scorer_learn(base, *b.ex, static_cast<float>(alternative_error > preferred_error), weight);
     }
     else
     {
       scorer_example(b, ex, *alternative_ex);
-      scorer_learn(base, *b.ex, int(alternative_error > preferred_error), weight);
+      scorer_learn(base, *b.ex, static_cast<float>(alternative_error > preferred_error), weight);
 
       scorer_example(b, ex, *preferred_ex);
-      scorer_learn(base, *b.ex, int(preferred_error > alternative_error), weight);
+      scorer_learn(base, *b.ex, static_cast<float>(preferred_error > alternative_error), weight);
     }
   }
 }

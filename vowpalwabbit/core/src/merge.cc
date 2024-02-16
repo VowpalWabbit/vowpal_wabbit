@@ -180,7 +180,7 @@ VW::model_delta merge_deltas(const std::vector<const VW::model_delta*>& deltas_t
   // Get example counts and compute weighting of models
   std::vector<float> example_counts;
   example_counts.reserve(workspaces_to_merge.size());
-  for (const auto* delta : workspaces_to_merge) { example_counts.push_back(delta->sd->weighted_labeled_examples); }
+  for (const auto* delta : workspaces_to_merge) { example_counts.push_back(static_cast<float>(delta->sd->weighted_labeled_examples)); }
   const auto per_model_weighting = calc_per_model_weighting(example_counts);
 
   // Iterate through learners and merge each one

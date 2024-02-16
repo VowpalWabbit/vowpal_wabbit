@@ -38,7 +38,7 @@ public:
       auto combined_index = _row_index + _column_index + _seed;
       // index is the equivalent of going over A's rows which turn out to be A.transpose()'s columns
       auto calc = feature_value * VW::details::merand48_boxmuller(combined_index) * _shrink_factors[_row_index];
-      _triplets.emplace_back(Eigen::Triplet<float>(index & _weights_mask, _column_index, calc));
+      _triplets.emplace_back(Eigen::Triplet<float>(static_cast<int>(index & _weights_mask), static_cast<int>(_column_index), calc));
       if ((index & _weights_mask) > _max_col) { _max_col = (index & _weights_mask); }
     }
   }

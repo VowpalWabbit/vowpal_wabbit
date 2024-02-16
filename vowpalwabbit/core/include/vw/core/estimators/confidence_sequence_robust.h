@@ -48,15 +48,15 @@ public:
   countable_discrete_base(double tol_x = 1e-6, bool is_brentq = false, double eta = 0.95f, double k = 1.5,
       double lambda_max = 0.5, double xi = 1.6);
   double get_ci(double alpha) const;
-  double get_lam_sqrt_tp1(double j) const;
+  double get_lam_sqrt_tp1(uint64_t j) const;
   double get_v_impl(std::map<uint64_t, double>& memo, uint64_t j) const;
   double log_wealth_mix(double mu, double s, double thres, std::map<uint64_t, double>& memo) const;
   double root_bisect(double s, double thres, std::map<uint64_t, double>& memo, double min_mu, double max_mu) const;
   double root_brentq(double s, double thres, std::map<uint64_t, double>& memo, double min_mu, double max_mu) const;
   double log_sum_exp(const std::vector<double>& combined) const;
   double lb_log_wealth(double alpha) const;
-  double get_log_weight(double j) const;
-  double get_log_remaining_weight(double j) const;
+  double get_log_weight(uint64_t j) const;
+  double get_log_remaining_weight(uint64_t j) const;
   double get_s() const;
   double get_v(double lam_sqrt_tp1) const;
   void add_obs(double x);

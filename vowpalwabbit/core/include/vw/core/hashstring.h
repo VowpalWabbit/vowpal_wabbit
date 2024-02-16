@@ -37,7 +37,7 @@ VW_STD14_CONSTEXPR inline uint32_t hashstring(const char* s, size_t len, uint32_
     else { return VW::uniform_hash(front, len, h); }
   }
 
-  return ret + h;
+  return static_cast<uint32_t>(ret + h);
 }
 }  // namespace details
 

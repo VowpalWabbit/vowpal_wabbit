@@ -112,7 +112,7 @@ inline void reduce_innermost_model_weights(dense_parameters& weights, const size
   }
   for (auto weights_it = weights.begin(); weights_it < weights.end(); weights_it += total_feature_width)
   {
-    uint32_t cb_ind = weights_it.index() / innermost_feature_width_size;
+    uint32_t cb_ind = static_cast<uint32_t>(weights_it.index() / innermost_feature_width_size);
     for (size_t outer_offset = 0; outer_offset < overall_without_innermost_feature_width_size; ++outer_offset)
     {
       for (size_t stride_offset = 0; stride_offset < weights.stride(); ++stride_offset)

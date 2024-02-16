@@ -40,7 +40,7 @@ double g_tilde::histo_variance(double lam_sqrt_tp1) const
 
 void g_tilde::histo_insert(double x)
 {
-  uint64_t n = std::floor(std::log(x) / log_k);
+  uint64_t n = static_cast<uint64_t>(std::floor(std::log(x) / log_k));
   double x1 = std::pow(k, n);
   double alpha = (k * x1 - x) / ((k - 1.0) * x1);
   // TODO: Kahan summation
@@ -107,9 +107,9 @@ countable_discrete_base::countable_discrete_base(
 
 double countable_discrete_base::get_ci(double alpha) const { return lb_log_wealth(alpha); }
 
-double countable_discrete_base::get_lam_sqrt_tp1(double j) const
+double countable_discrete_base::get_lam_sqrt_tp1(uint64_t j) const
 {
-  double log_den = (j + 0.5) * log_xi - 0.5 * std::log(t + 1);
+  double log_den = (static_cast<double>(j) + 0.5) * log_xi - 0.5 * std::log(t + 1);
   return lambda_max * std::exp(-log_den);
 }
 
@@ -282,9 +282,9 @@ double countable_discrete_base::lb_log_wealth(double alpha) const
   else { return root_bisect(s, thres, memo, min_mu, max_mu); }
 }
 
-double countable_discrete_base::get_log_weight(double j) const { return log_scale_fac + log_xi_m1 - (1 + j) * log_xi; }
+double countable_discrete_base::get_log_weight(size_t j) const { return log_scale_fac + log_xi_m1 - (1 + static_cast<double>(j)) * log_xi; }
 
-double countable_discrete_base::get_log_remaining_weight(double j) const { return log_scale_fac - j * log_xi; }
+double countable_discrete_base::get_log_remaining_weight(size_t j) const { return log_scale_fac - static_cast<double>(j) * log_xi; }
 
 double countable_discrete_base::get_s() const { return gt.get_s(); }
 
@@ -324,10 +324,10 @@ void confidence_sequence_robust::update(double w, double r)
 void confidence_sequence_robust::persist(metric_sink& metrics, const std::string& suffix)
 {
   metrics.set_uint("upcnt" + suffix, update_count);
-  metrics.set_float("lb" + suffix, lower_bound());
-  metrics.set_float("ub" + suffix, upper_bound());
-  metrics.set_float("last_w" + suffix, last_w);
-  metrics.set_float("last_r" + suffix, last_r);
+  metrics.set_float("lb" + suffix, static_cast<float>(lower_bound()));
+  metrics.set_float("ub" + suffix, static_cast<float>(upper_bound()));
+  metrics.set_float("last_w" + suffix, static_cast<float>(last_w));
+  metrics.set_float("last_r" + suffix, static_cast<float>(last_r));
 }
 
 void confidence_sequence_robust::reset_stats()

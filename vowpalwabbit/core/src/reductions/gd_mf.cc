@@ -265,7 +265,7 @@ void save_load(gdmf& d, VW::io_buf& model_file, bool read, bool text)
     VW::details::initialize_regressor(all);
     if (all.initial_weights_config.random_weights)
     {
-      uint32_t stride = all.weights.stride();
+      uint32_t stride = static_cast<uint32_t>(all.weights.stride());
       auto weight_initializer = [stride](VW::weight* weights, uint64_t index)
       { initialize_weights(weights, index, stride); };
 

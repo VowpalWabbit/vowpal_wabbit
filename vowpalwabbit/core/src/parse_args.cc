@@ -83,7 +83,7 @@ uint64_t hash_file_contents(VW::io::reader* file_reader)
 
 bool directory_exists(const std::string& path)
 {
-  class stat info;
+  struct stat info;
   if (stat(path.c_str(), &info) != 0) { return false; }
   else { return (info.st_mode & S_IFDIR) > 0; }
   //  boost::filesystem::path p(path);

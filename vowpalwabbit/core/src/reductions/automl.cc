@@ -17,12 +17,40 @@
 #include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
 
+#include <time.h>
 #include <cfloat>
 #include <iomanip>
 
 using namespace VW::config;
 using namespace VW::LEARNER;
 using namespace VW::reductions::automl;
+
+// Under the Windows VC++ runtime, localtime_s is not available in the C++ standard library; instead
+// a pre-standard implementation (which reverses the order of the arguments from the standard) exists.
+// Note that if _CRT_USE_CONFORMING_ANNEX_K_TIME is defined and set to 1, localtime_s is available in
+// the C++ standard library.
+#ifdef _WIN32
+
+// If we do not have a standard-compliant localtime_s, we need to define it here.
+#if !defined(_CRT_USE_CONFORMING_ANNEX_K_TIME) || _CRT_USE_CONFORMING_ANNEX_K_TIME == 0
+namespace std
+{
+  errno_t localtime_s(const time_t* _Time, struct tm* _Tm)
+  {
+    return ::localtime_s(_Tm, _Time);
+  }
+}  // namespace std
+#else
+// If we do have a standard-compliant localtime_s, we need to forward to it.
+namespace std
+{
+  errno_t localtime_s(const time_t* _Time, struct tm* _Tm)
+  {
+    return ::localtime_s(_Time, _Tm);
+  }
+}  // namespace std
+#endif
+#endif
 
 namespace
 {
@@ -159,11 +187,16 @@ std::shared_ptr<VW::LEARNER::learner> make_automl_with_impl(VW::setup_base_i& st
 
   if (trace_logging)
   {
+    struct tm lc;
     auto t = std::time(nullptr);
-    auto lc = *std::localtime(&t);
-    std::ostringstream oss;
-    oss << std::put_time(&lc, "%d%m.%H%M%S");
-    trace_file_name_prefix = oss.str();
+
+    if (std::localtime_s(&t, &lc) == 0)
+    {
+      std::ostringstream oss;
+      oss << std::put_time(&lc, "%d%m.%H%M%S");
+      trace_file_name_prefix = oss.str();
+    }
+    else { trace_file_name_prefix = "trace"; }
   }
 
   auto cm = VW::make_unique<config_manager_type>(default_lease, max_live_configs, all.get_random_state(),

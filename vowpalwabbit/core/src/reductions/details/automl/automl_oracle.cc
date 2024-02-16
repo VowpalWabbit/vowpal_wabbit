@@ -398,15 +398,15 @@ void config_oracle<oracle_impl>::gen_configs(
     }
   }
 
-  std::vector<int> indexes(_impl.total_space.size());
+  std::vector<size_t> indexes(_impl.total_space.size());
 
   for (size_t i = 0; i < _impl.total_space.size(); i++) { indexes.push_back(i); }
   for (size_t i = 0; i < _impl.total_space.size(); i++)
   {
-    std::swap(indexes[_impl.random_state->get_and_update_random() * indexes.size()], indexes[i]);
+    std::swap(indexes[static_cast<size_t>(_impl.random_state->get_and_update_random() * indexes.size())], indexes[i]);
   }
 
-  for (std::vector<int>::iterator it = indexes.begin(); it != indexes.end(); ++it)
+  for (std::vector<size_t>::iterator it = indexes.begin(); it != indexes.end(); ++it)
   {
     auto copy_champ = configs[0].elements;
     _impl.gen_ns_groupings_at(_impl.total_space, *it, copy_champ);

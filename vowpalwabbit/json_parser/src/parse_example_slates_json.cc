@@ -140,7 +140,7 @@ void handle_features_value(const char* key_namespace, const Value& value, VW::ex
     {
       assert(!namespaces.empty());
       float number = get_number(value);
-      auto hash_index = hash_func(key_namespace, strlen(key_namespace), namespaces.back().namespace_hash) & parse_mask;
+      auto hash_index = hash_func(key_namespace, strlen(key_namespace), static_cast<uint32_t>(namespaces.back().namespace_hash)) & parse_mask;
       namespaces.back().add_feature(number, hash_index, key_namespace);
     }
     break;
