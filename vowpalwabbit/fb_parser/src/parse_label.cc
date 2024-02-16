@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "vw/core/action_score.h"
+#include "vw/core/api_status.h"
 #include "vw/core/best_constant.h"
 #include "vw/core/cb.h"
 #include "vw/core/constant.h"
