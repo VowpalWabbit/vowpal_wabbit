@@ -240,9 +240,9 @@ cb_explore_adf_large_action_space<T, S>::cb_explore_adf_large_action_space(uint6
     , _all(all)
     , _seed(seed)
     , _impl_type(impl_type)
+    , _non_degenerate_singular_values(0)
     , spanner_state(c, d)
     , shrink_fact_config(apply_shrink_factor)
-    , _non_degenerate_singular_values(0)
     , impl(all, d, _seed, total_size, thread_pool_size, block_size, action_cache_slack, use_explicit_simd)
 {
 }
