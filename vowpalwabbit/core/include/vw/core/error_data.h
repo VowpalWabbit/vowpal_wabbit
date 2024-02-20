@@ -25,6 +25,9 @@ ERROR_CODE_DEFINITION(
 ERROR_CODE_DEFINITION(
     13, fb_parser_size_mismatch_ft_names_ft_values, "Size of feature names and feature values do not match. ")
 ERROR_CODE_DEFINITION(14, unknown_label_type, "Label type in Flatbuffer not understood. ")
+ERROR_CODE_DEFINITION(15, fb_parser_span_misaligned, "Input Flatbuffer span is not aligned to an 8-byte boundary. ")
+ERROR_CODE_DEFINITION(
+    16, fb_parser_span_length_mismatch, "Input Flatbuffer span does not match flatbuffer size prefix. ")
 
 // TODO: This is temporary until we switch to the new error handling mechanism.
 ERROR_CODE_DEFINITION(10000, vw_exception, "vw_exception: ")
