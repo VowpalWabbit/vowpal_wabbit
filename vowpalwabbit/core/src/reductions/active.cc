@@ -128,7 +128,6 @@ void predict_or_learn_active_direct(active& a, learner& base, VW::example& ec)
     
   if (ec.l.simple.label == FLT_MAX)
   {
-    std::cout << "test label" << std::endl;
     if (std::string(ec.tag.begin(), ec.tag.begin()+6) == "query?")
     { 
       const float threshold = (a._shared_data->max_label + a._shared_data->min_label) * 0.5f;
@@ -137,10 +136,8 @@ void predict_or_learn_active_direct(active& a, learner& base, VW::example& ec)
       // and max labels to be coming in from the active interactor.
       ec.l.simple.label = (ec.pred.scalar >= threshold) ? a._min_seen_label : a._max_seen_label;
       ec.confidence = std::abs(ec.pred.scalar - threshold) / base.sensitivity(ec);
-      std::cout << "query, threshold = " << threshold << " label = " << ec.l.simple.label << " prediction = " << ec.pred.scalar << " confidence = " << ec.confidence << " wue = " << a._shared_data->weighted_unlabeled_examples << std::endl;
       ec.l.simple.label = FLT_MAX;
       ec.pred.scalar = query_decision(a, ec.confidence, static_cast<float>(a._shared_data->weighted_unlabeled_examples));
-      std::cout << "query decision = " << ec.pred.scalar << std::endl;
     }
   }
   else
