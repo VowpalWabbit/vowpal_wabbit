@@ -317,10 +317,7 @@ void build_cb_example(VW::multi_ex& cb_ex, VW::example* slot, const VW::ccb_labe
     for (uint32_t included_action_id : explicit_includes)
     {
       // The action may be included but not actually exist in the list of possible actions.
-      if (included_action_id < data.actions.size())
-      {
-        data.include_list[included_action_id] = true;
-      }
+      if (included_action_id < data.actions.size()) { data.include_list[included_action_id] = true; }
     }
   }
 
