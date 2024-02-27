@@ -314,7 +314,14 @@ void build_cb_example(VW::multi_ex& cb_ex, VW::example* slot, const VW::ccb_labe
     // First time seeing this, initialize the vector with falses so we can start setting each included action.
     if (data.include_list.empty()) { data.include_list.assign(data.actions.size(), false); }
 
-    for (uint32_t included_action_id : explicit_includes) { data.include_list[included_action_id] = true; }
+    for (uint32_t included_action_id : explicit_includes)
+    {
+      // The action may be included but not actually exist in the list of possible actions.
+      if (included_action_id < data.actions.size())
+      {
+        data.include_list[included_action_id] = true;
+      }
+    }
   }
 
   // set the available actions in the cb multi-example
