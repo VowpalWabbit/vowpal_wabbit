@@ -6073,5 +6073,34 @@
     "depends_on": [
       467
     ]
+  },
+  {
+    "id": 469,
+    "desc": "https://github.com/VowpalWabbit/vowpal_wabbit/issues/4669",
+    "vw_command": "--ccb_explore_adf --dsjson -d train-sets/issue4669.dsjson -f issue4669.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/issue4669_train.stderr",
+      "stdout": "train-sets/ref/issue4669_train.stdout"
+    },
+    "input_files": [
+      "train-sets/issue4669.dsjson"
+    ]
+  },
+  {
+    "id": 470,
+    "desc": "https://github.com/VowpalWabbit/vowpal_wabbit/issues/4669",
+    "vw_command": "--ccb_explore_adf --dsjson --all_slots_loss --epsilon 0 -t -i issue4669.model -t -d train-sets/issue4669.dsjson -p issue4669_test_pred.txt",
+    "diff_files": {
+      "stderr": "train-sets/ref/issue4669_test.stderr",
+      "stdout": "train-sets/ref/issue4669_test.stdout",
+      "issue4669_test_pred.txt": "train-sets/ref/issue4669_test_pred.txt"
+    },
+    "input_files": [
+      "train-sets/issue4669.dsjson",
+      "issue4669.model"
+    ],
+    "depends_on": [
+      469
+    ]
   }
 ]
