@@ -221,8 +221,12 @@ Weight Options:
 [Reduction] Active Learning Options:
     --active                                Enable active learning (type: bool, keep, necessary)
     --simulation                            Active learning simulation mode (type: bool)
-    --mellowness arg                        Active learning mellowness parameter c_0. Default 8 (type: float,
-                                            default: 8, keep)
+    --direct                                Active learning via the tag and predictions interface. Tag should
+                                            start with "query?" to get query decision. Returned prediction
+                                            is either -1 for no or the importance weight for yes. (type:
+                                            bool)
+    --mellowness arg                        Active learning mellowness parameter c_0. Default 1. (type: float,
+                                            default: 1, keep)
 [Reduction] Active Learning with Cover Options:
     --active_cover                          Enable active learning with cover (type: bool, keep, necessary)
     --mellowness arg                        Active learning mellowness parameter c_0 (type: float, default:
