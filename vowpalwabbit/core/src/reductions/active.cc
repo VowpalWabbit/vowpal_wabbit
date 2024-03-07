@@ -74,7 +74,7 @@ float query_decision(const active& a, float updates_to_change_prediction, float 
     //    const auto weighted_queries = static_cast<float>(a._shared_data->weighted_labeled_examples);
     const float avg_loss = (static_cast<float>(a._shared_data->sum_loss) / example_count);
     //+ std::sqrt((1.f + 0.5f * std::log(example_count)) / (weighted_queries + 0.0001f));  Commented this out, not
-    //following why we need it from the theory.
+    // following why we need it from the theory.
     //    std::cout << "avg_loss = " << avg_loss << " weighted_queries = " << weighted_queries << " sum_loss = " <<
     //    a._shared_data->sum_loss << " example_count = " << example_count << std::endl;
     bias = get_active_coin_bias(example_count, avg_loss, updates_to_change_prediction / example_count, a.active_c0);
