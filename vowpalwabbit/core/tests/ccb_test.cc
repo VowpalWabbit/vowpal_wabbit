@@ -145,3 +145,59 @@ TEST(Ccb, InsertInteractionsImplTest)
 
   EXPECT_THAT(result, testing::ContainerEq(expected_after));
 }
+
+TEST(Ccb, ExplicitIncludedActionsNonExistentAction)
+{
+  auto vw = VW::initialize(vwtest::make_args("--ccb_explore_adf", "--quiet"));
+  VW::multi_ex examples;
+  examples.push_back(VW::read_example(*vw, "ccb shared |"));
+  examples.push_back(VW::read_example(*vw, "ccb action |"));
+  examples.push_back(VW::read_example(*vw, "ccb slot 0:10:10 10 |"));
+
+  vw->learn(examples);
+
+  auto& decision_scores = examples[0]->pred.decision_scores;
+  EXPECT_EQ(decision_scores.size(), 1);
+  EXPECT_EQ(decision_scores[0].size(), 0);
+  vw->finish_example(examples);
+}
+
+TEST(Ccb, NoAvailableActions)
+{
+  auto vw = VW::initialize(vwtest::make_args("--ccb_explore_adf", "--quiet", "--all_slots_loss"));
+  {
+    VW::multi_ex examples;
+    examples.push_back(VW::read_example(*vw, "ccb shared |"));
+    examples.push_back(VW::read_example(*vw, "ccb action | a"));
+    examples.push_back(VW::read_example(*vw, "ccb action | b"));
+    examples.push_back(VW::read_example(*vw, "ccb slot 0:-1:0.5 0,1 |"));
+    examples.push_back(VW::read_example(*vw, "ccb slot |"));
+
+    vw->learn(examples);
+
+    auto& decision_scores = examples[0]->pred.decision_scores;
+    EXPECT_EQ(decision_scores.size(), 2);
+    vw->finish_example(examples);
+  }
+
+  {
+    VW::multi_ex examples;
+    examples.push_back(VW::read_example(*vw, "ccb shared |"));
+    examples.push_back(VW::read_example(*vw, "ccb action | a"));
+    examples.push_back(VW::read_example(*vw, "ccb action | b"));
+    examples.push_back(VW::read_example(*vw, "ccb slot 0:-1:0.5 0,1 |"));
+    // This time restrict slot 1 to only have action 0 available
+    examples.push_back(VW::read_example(*vw, "ccb slot 0:-1:0.5 0 |"));
+
+    vw->predict(examples);
+
+    auto& decision_scores = examples[0]->pred.decision_scores;
+    EXPECT_EQ(decision_scores.size(), 2);
+    EXPECT_EQ(decision_scores[0].size(), 2);
+    EXPECT_EQ(decision_scores[0][0].action, 0);
+    EXPECT_EQ(decision_scores[0][1].action, 1);
+    EXPECT_EQ(decision_scores[1].size(), 0);
+
+    vw->finish_example(examples);
+  }
+}

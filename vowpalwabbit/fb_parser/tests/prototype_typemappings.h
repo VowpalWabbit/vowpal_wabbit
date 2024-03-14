@@ -20,18 +20,24 @@ template <>
 struct fb_type<prototype_example_t>
 {
   using type = VW::parsers::flatbuffer::Example;
+
+  constexpr static fb::ExampleType root_type = fb::ExampleType::ExampleType_Example;
 };
 
 template <>
 struct fb_type<prototype_multiexample_t>
 {
   using type = VW::parsers::flatbuffer::MultiExample;
+
+  constexpr static fb::ExampleType root_type = fb::ExampleType::ExampleType_MultiExample;
 };
 
 template <>
 struct fb_type<prototype_example_collection_t>
 {
   using type = VW::parsers::flatbuffer::ExampleCollection;
+
+  constexpr static fb::ExampleType root_type = fb::ExampleType::ExampleType_ExampleCollection;
 };
 
 using union_t = void;
