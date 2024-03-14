@@ -6021,7 +6021,7 @@
   {
     "id": 465,
     "desc": "cb_explore_adf with epsilon-greedy exploration using --sparse_weights and saving model",
-    "vw_command": "--cb_explore_adf --epsilon 0.1 -d train-sets/cb_test.ldf --noconstant --sparse_weights -f standard_sparse_model.vw",
+    "vw_command": "--cb_explore_adf --epsilon 0.1 -d train-sets/cb_test.ldf --noconstant --sparse_weights -f standard_sparse_model.vw -q::",
     "diff_files": {
       "stderr": "train-sets/ref/sparse_save_check.stderr",
       "stdout": "train-sets/ref/sparse_save_check.stdout"
@@ -6033,7 +6033,7 @@
   {
     "id": 466,
     "desc": "cb_explore_adf with epsilon-greedy exploration using --sparse_weights and loading model",
-    "vw_command": "--cb_explore_adf --epsilon 0.1 -d train-sets/cb_test.ldf --noconstant --sparse_weights -i standard_sparse_model.vw",
+    "vw_command": "--cb_explore_adf --epsilon 0.1 -d train-sets/cb_test.ldf --noconstant --sparse_weights -i standard_sparse_model.vw -q::",
     "diff_files": {
       "stderr": "train-sets/ref/sparse_load_check.stderr",
       "stdout": "train-sets/ref/sparse_load_check.stdout"
@@ -6044,6 +6044,63 @@
     ],
     "depends_on": [
       465
+    ]
+  },
+  {
+    "id": 467,
+    "desc": "cb_explore_adf with epsilon-greedy exploration using --sparse_weights and saving model with random_weights",
+    "vw_command": "--cb_explore_adf --epsilon 0.1 -d train-sets/cb_test.ldf --noconstant --sparse_weights -f standard_sparse_random_model.vw -q:: --random_weights",
+    "diff_files": {
+      "stderr": "train-sets/ref/sparse_save_check_random.stderr",
+      "stdout": "train-sets/ref/sparse_save_check_random.stdout"
+    },
+    "input_files": [
+      "train-sets/cb_test.ldf"
+    ]
+  },
+  {
+    "id": 468,
+    "desc": "cb_explore_adf with epsilon-greedy exploration using --sparse_weights and loading model with random_weights",
+    "vw_command": "--cb_explore_adf --epsilon 0.1 -d train-sets/cb_test.ldf --noconstant --sparse_weights -i standard_sparse_random_model.vw -q:: --random_weights",
+    "diff_files": {
+      "stderr": "train-sets/ref/sparse_load_check_random.stderr",
+      "stdout": "train-sets/ref/sparse_load_check_random.stdout"
+    },
+    "input_files": [
+      "train-sets/cb_test.ldf",
+      "standard_sparse_random_model.vw"
+    ],
+    "depends_on": [
+      467
+    ]
+  },
+  {
+    "id": 469,
+    "desc": "https://github.com/VowpalWabbit/vowpal_wabbit/issues/4669",
+    "vw_command": "--ccb_explore_adf --dsjson -d train-sets/issue4669.dsjson -f issue4669.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/issue4669_train.stderr",
+      "stdout": "train-sets/ref/issue4669_train.stdout"
+    },
+    "input_files": [
+      "train-sets/issue4669.dsjson"
+    ]
+  },
+  {
+    "id": 470,
+    "desc": "https://github.com/VowpalWabbit/vowpal_wabbit/issues/4669",
+    "vw_command": "--ccb_explore_adf --dsjson --all_slots_loss --epsilon 0 -t -i issue4669.model -t -d train-sets/issue4669.dsjson -p issue4669_test_pred.txt",
+    "diff_files": {
+      "stderr": "train-sets/ref/issue4669_test.stderr",
+      "stdout": "train-sets/ref/issue4669_test.stdout",
+      "issue4669_test_pred.txt": "train-sets/ref/issue4669_test_pred.txt"
+    },
+    "input_files": [
+      "train-sets/issue4669.dsjson",
+      "issue4669.model"
+    ],
+    "depends_on": [
+      469
     ]
   }
 ]

@@ -68,17 +68,21 @@ def are_dicts_equal(
         elif isinstance(expected, (int, bool, str)):
             return (
                 expected == actual,
-                f"Key '{key}' value mismatch. Expected: '{expected}', but found: '{actual}'"
-                if expected != actual
-                else "",
+                (
+                    f"Key '{key}' value mismatch. Expected: '{expected}', but found: '{actual}'"
+                    if expected != actual
+                    else ""
+                ),
             )
         elif isinstance(expected, (float)):
             delta = abs(expected - actual)
             return (
                 delta < epsilon,
-                f"Key '{key}' value mismatch. Expected: '{expected}', but found: '{actual}' (using epsilon: '{epsilon}')"
-                if delta >= epsilon
-                else "",
+                (
+                    f"Key '{key}' value mismatch. Expected: '{expected}', but found: '{actual}' (using epsilon: '{epsilon}')"
+                    if delta >= epsilon
+                    else ""
+                ),
             )
         elif isinstance(expected, dict):
             expected_keys = set(expected.keys())
