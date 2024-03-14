@@ -26,7 +26,8 @@ void print_update(VW::workspace& all, const VW::multi_ex& slots, const VW::decis
   std::string delim;
   for (const auto& slot : decision_scores)
   {
-    pred_ss << delim << slot[0].action;
+    if (slot.empty()) { pred_ss << delim << "None"; }
+    else { pred_ss << delim << slot[0].action; }
     delim = ",";
   }
   all.sd->print_update(*all.output_runtime.trace_message, all.passes_config.holdout_set_off,
