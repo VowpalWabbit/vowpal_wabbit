@@ -420,7 +420,7 @@ if(VW_FEAT_CSV)
 endif()
 
 if(VW_FEAT_FLATBUFFERS)
-  target_link_libraries(vw_core PRIVATE vw_fb_parser)
+  target_link_libraries(vw_core PUBLIC vw_fb_parser)
 endif()
 
 # Handle generated header
@@ -481,6 +481,7 @@ set(vw_core_test_sources
       tests/flat_example_test.cc
       tests/guard_test.cc
       tests/interactions_test.cc
+      tests/io_alignment_test.cc
       tests/loss_functions_test.cc
       tests/math_test.cc
       tests/merge_header_opts_test.cc

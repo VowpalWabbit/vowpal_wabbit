@@ -5,6 +5,7 @@
 #include "vw/core/reductions/conditional_contextual_bandit.h"
 
 #include "vw/config/options.h"
+#include "vw/core/cb.h"
 #include "vw/core/ccb_label.h"
 #include "vw/core/ccb_reduction_features.h"
 #include "vw/core/constant.h"
@@ -212,8 +213,12 @@ void clear_pred_and_label(ccb_data& data)
   data.actions[data.action_with_label]->l.cb.costs.clear();
 }
 
-// true if there exists at least 1 action in the cb multi-example
-bool has_action(VW::multi_ex& cb_ex) { return !cb_ex.empty(); }
+// true if there exists at least 2 examples (since there can only be up to 1
+// shared example), or the 0th example is not shared.
+bool has_action(VW::multi_ex& cb_ex)
+{
+  return cb_ex.size() > 1 || (!cb_ex.empty() && !VW::ec_is_example_header_cb(*cb_ex[0]));
+}
 
 // This function intentionally does not handle increasing the num_features of the example because
 // the output_example function has special logic to ensure the number of features is correctly calculated.
@@ -308,7 +313,11 @@ void build_cb_example(VW::multi_ex& cb_ex, VW::example* slot, const VW::ccb_labe
     // First time seeing this, initialize the vector with falses so we can start setting each included action.
     if (data.include_list.empty()) { data.include_list.assign(data.actions.size(), false); }
 
-    for (uint32_t included_action_id : explicit_includes) { data.include_list[included_action_id] = true; }
+    for (uint32_t included_action_id : explicit_includes)
+    {
+      // The action may be included but not actually exist in the list of possible actions.
+      if (included_action_id < data.actions.size()) { data.include_list[included_action_id] = true; }
+    }
   }
 
   // set the available actions in the cb multi-example
@@ -544,6 +553,9 @@ void update_stats_ccb(const VW::workspace& /* all */, shared_data& sd, const ccb
       if (outcome != nullptr)
       {
         num_labeled++;
+        // It is possible for the prediction to be empty if there were no actions available at the time of taking the
+        // slot decision. In this case it does not contribute to loss.
+        if (preds[i].empty()) { continue; }
         if (i == 0 || data.all_slots_loss_report)
         {
           const float l = VW::get_cost_estimate(outcome->probabilities[VW::details::TOP_ACTION_INDEX], outcome->cost,

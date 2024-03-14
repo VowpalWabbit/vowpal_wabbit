@@ -9,7 +9,7 @@ vw_add_library(
     NAME "test_common"
     TYPE "STATIC_ONLY"
     SOURCES ${vw_test_common_sources}
-    PUBLIC_DEPS vw_common vw_config vw_core
+    PUBLIC_DEPS vw_common vw_config vw_core GTest::gmock GTest::gtest
     DESCRIPTION "Test utilties"
     EXCEPTION_DESCRIPTION "Yes"
 )
