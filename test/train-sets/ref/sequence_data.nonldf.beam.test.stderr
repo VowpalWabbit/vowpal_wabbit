@@ -12,7 +12,7 @@ Input label = MULTICLASS
 Output pred = MULTICLASS
 average    since      instance            current true      current predicted   cur   cur   predic    cache  examples          
 loss       last        counter           output prefix          output prefix  pass   pol     made     hits    gener  beta    
-0.000000   0.000000          1  [5 4 3 2 1           ] [5 4 3 2 1  8.34465..]     0     0       24        0        0  0.000000
+0.000000   0.000000          1  [5 4 3 2 1           ] [5 4 3 2 1           ]     0     0       24        0        0  0.000000
 
 finished run
 number of examples = 1

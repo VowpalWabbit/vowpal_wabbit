@@ -22,7 +22,7 @@ public:
 
 void initialize(Search::search& sch, size_t& num_actions, VW::config::options_i& /*vm*/)
 {
-  task_data* my_task_data = new task_data();
+  auto my_task_data = std::make_shared<task_data>();
   sch.set_options(0);
   size_t num_learner_ceil = 1;
   while (num_learner_ceil < num_actions) { num_learner_ceil *= 2; }

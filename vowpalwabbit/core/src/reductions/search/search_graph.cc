@@ -98,7 +98,7 @@ inline bool example_is_test(const VW::polylabel& l) { return l.cs.costs.empty();
 
 void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 {
-  auto D = VW::make_unique<task_data>();  // NOLINT
+  auto D = std::make_shared<task_data>();  // NOLINT
   uint64_t num_loops;
 
   option_group_definition new_options("[Search] Search Graphtask");
@@ -132,7 +132,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 
   if (D->separate_learners) { sch.set_feature_width(D->num_loops); }
 
-  sch.set_task_data<task_data>(D.release());
+  sch.set_task_data<task_data>(std::move(D));
   sch.set_options(0);  // Search::AUTO_HAMMING_LOSS
   sch.set_label_parser(VW::cs_label_parser_global, example_is_test);
 }

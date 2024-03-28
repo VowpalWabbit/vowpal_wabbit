@@ -45,7 +45,7 @@ public:
 
 void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options)
 {
-  task_data* my_task_data = new task_data();
+  auto my_task_data = std::make_shared<task_data>();
   sch.set_task_data<task_data>(my_task_data);
   uint64_t search_order;
 
