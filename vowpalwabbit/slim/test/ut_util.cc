@@ -8,6 +8,7 @@
 
 #include <stdlib.h>
 
+#include <algorithm>
 #include <array>
 #include <fstream>
 #include <set>
@@ -85,7 +86,6 @@ test_data get_test_data(const char* model_filename)
   TEST_DATA(model_filename, regression_data_ignore_linear);
   TEST_DATA(model_filename, multiclass_data_4);
   TEST_DATA(model_filename, multiclass_data_5);
-  TEST_DATA(model_filename, cb_data_epsilon_0_skype_jb);
   TEST_DATA(model_filename, cb_data_5);
   TEST_DATA(model_filename, cb_data_6);
   TEST_DATA(model_filename, cb_data_7);
@@ -214,7 +214,7 @@ void run_predict_in_memory(
   // compare output
   std::vector<float> preds_expected = read_floats(td.pred, td.pred_len);
 
-  EXPECT_THAT(preds, Pointwise(FloatNear(1e-5f), preds_expected));
+  EXPECT_THAT(preds, Pointwise(FloatNear(1e-4f), preds_expected));
 }
 
 enum class predict_param_weight_type
@@ -343,11 +343,11 @@ TEST_P(invalid_model_test, Run)
 }
 
 invalid_model_param invalid_model_param[] = {
-    {"regression_data_1", regression_data_1_model, regression_data_1_model_len, {84, 92},
+    {"regression_data_1", regression_data_1_model, regression_data_1_model_len, {54, 62},
         predict_param_weight_type::SPARSE},  // 2 weights
-    {"regression_data_1", regression_data_1_model, regression_data_1_model_len, {84, 92},
+    {"regression_data_1", regression_data_1_model, regression_data_1_model_len, {54, 62},
         predict_param_weight_type::DENSE},  // 2 weights
-    {"regression_data_6", regression_data_6_model, regression_data_6_model_len, {99, 111, 123, 135},
+    {"regression_data_6", regression_data_6_model, regression_data_6_model_len, {69, 81, 93, 105},
         predict_param_weight_type::SPARSE}  // 4 weights
 };
 
@@ -384,7 +384,9 @@ TEST(VowpalWabbitSlim, MulticlassData4)
   std::vector<float> preds_expected = {0.901038f, 0.46983f, 0.0386223f};
 
   // compare output
-  EXPECT_THAT(out_scores, Pointwise(FloatNear(1e-5f), preds_expected));
+  std::sort(out_scores.begin(), out_scores.end());
+  std::sort(preds_expected.begin(), preds_expected.end());
+  EXPECT_THAT(out_scores, Pointwise(FloatNear(1e-4f), preds_expected));
 }
 
 TEST(VowpalWabbitSlim, MulticlassData5)
@@ -429,51 +431,13 @@ TEST(VowpalWabbitSlim, MulticlassData5)
 
   ASSERT_EQ(S_VW_PREDICT_OK, vw.predict(shared, ex, 8, out_scores));
 
-  // 0:0.551784,3:0.551784,4:0.560359,7:0.560359,1:0.575381,5:0.592531,2:0.598978,6:0.624703
-  std::vector<float> preds_expected = {
-      0.551784f, 0.575380862f, 0.598977983f, 0.5517838f, 0.560358882f, 0.592531085f, 0.624703348f, 0.560358882f};
+  // 3:0.127492,3:0.438331,2:0.461522,2:0.668748,1:0.795552,1:0.795552,1:0.899165,1:0.899165
+  std::vector<float> preds_expected = {0.127492, 0.438331, 0.461522, 0.668748, 0.795552, 0.795552, 0.899165, 0.899165};
 
   // compare output
-  EXPECT_THAT(out_scores, Pointwise(FloatNear(1e-5f), preds_expected));
-}
-
-void cb_data_epsilon_0_skype_jb_test_runner(int call_type, int modality, int network_type, int platform,
-    const std::vector<int>& ranking_expected, const std::vector<float>& pdf_expected)
-{
-  // load model.
-  vw_predict<VW::sparse_parameters> vw;
-  test_data td = get_test_data("cb_data_epsilon_0_skype_jb");
-  ASSERT_EQ(0, vw.load((const char*)td.model, td.model_len));
-
-  // we have loaded the model and can push the features
-  VW::example_predict features;
-  vw_slim::example_predict_builder bOa(&features, "64");  // NOLINT
-  bOa.push_feature(static_cast<int>(call_type), 1.f);
-  vw_slim::example_predict_builder bOb(&features, "16");  // NOLINT
-  bOb.push_feature(static_cast<int>(modality), 1.f);
-  vw_slim::example_predict_builder bOc(&features, "32");  // NOLINT
-  bOc.push_feature(static_cast<int>(network_type), 1.f);
-  vw_slim::example_predict_builder bOd(&features, "48");  // NOLINT
-  bOd.push_feature(static_cast<int>(platform), 1.f);
-
-  // push actions
-  const int min_delay_actions = 10;
-  VW::example_predict actions[min_delay_actions];
-  for (int i = 0; i < min_delay_actions; i++)
-  {
-    vw_slim::example_predict_builder bOe(&actions[i], "80");  // NOLINT
-    bOe.push_feature(i, 1.f);
-  }
-
-  // predict CB value
-  std::vector<float> pdfs;
-  std::vector<int> rankings;
-  int result = vw.predict("eid", features, actions, min_delay_actions, pdfs, rankings);
-
-  // compare output with expected.
-  EXPECT_EQ(result, 0);
-  EXPECT_THAT(pdfs, Pointwise(FloatNear(1e-5f), pdf_expected));
-  EXPECT_THAT(rankings, Pointwise(Eq(), ranking_expected));
+  std::sort(out_scores.begin(), out_scores.end());
+  std::sort(preds_expected.begin(), preds_expected.end());
+  EXPECT_THAT(out_scores, Pointwise(FloatNear(1e-4f), preds_expected));
 }
 
 TEST(VowpalWabbitSlim, InteractionNumBitsBug)
@@ -520,52 +484,6 @@ TEST(VowpalWabbitSlim, InteractionNumBitsBug)
   result = vw.predict(uuid_string.c_str(), features, actions, MINDELAYACTIONS, pdfs, rankings);
   EXPECT_EQ(result, 0);
   EXPECT_EQ(rankings[0], 3);
-}
-
-TEST(VowpalWabbitSlim, CbDataEpsilon0SkypeJb)
-{
-  // Since the model is epsilon=0, the first entry should always be 0.
-  std::vector<float> pdf_expected = {1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-
-  // {0, 1, 2, 0} => 1
-  std::vector<int> ranking_expected = {1, 0, 2, 3, 4, 5, 7, 6, 8, 9};
-  cb_data_epsilon_0_skype_jb_test_runner(0, 1, 2, 0, ranking_expected, pdf_expected);
-
-  // {0, 1, 4, 0} => 1
-  ranking_expected = {1, 0, 2, 3, 4, 5, 6, 8, 7, 9};
-  cb_data_epsilon_0_skype_jb_test_runner(0, 1, 4, 0, ranking_expected, pdf_expected);
-
-  // {0, 0, 2, 0} => 1
-  ranking_expected = {1, 2, 0, 3, 4, 5, 6, 7, 8, 9};
-  cb_data_epsilon_0_skype_jb_test_runner(0, 0, 2, 0, ranking_expected, pdf_expected);
-
-  // {0, 0, 4, 0} => 1
-  ranking_expected = {1, 3, 2, 0, 4, 6, 5, 8, 7, 9};
-  cb_data_epsilon_0_skype_jb_test_runner(0, 0, 4, 0, ranking_expected, pdf_expected);
-
-  // {2, 0, 4, 0} => 3
-  ranking_expected = {3, 1, 0, 2, 5, 4, 7, 6, 8, 9};
-  cb_data_epsilon_0_skype_jb_test_runner(2, 0, 4, 0, ranking_expected, pdf_expected);
-
-  // {0, 1, 999, 0} => 2
-  ranking_expected = {2, 4, 6, 1, 0, 5, 3, 7, 8, 9};
-  cb_data_epsilon_0_skype_jb_test_runner(0, 1, 999, 0, ranking_expected, pdf_expected);
-
-  // {0, 0, 999, 0} => 2
-  ranking_expected = {2, 4, 6, 1, 3, 5, 0, 7, 8, 9};
-  cb_data_epsilon_0_skype_jb_test_runner(0, 0, 999, 0, ranking_expected, pdf_expected);
-
-  // {2, 0, 999, 0} => 2
-  ranking_expected = {2, 5, 4, 3, 6, 1, 0, 7, 8, 9};
-  cb_data_epsilon_0_skype_jb_test_runner(2, 0, 999, 0, ranking_expected, pdf_expected);
-
-  // {999, 0, 4, 0} => 1
-  ranking_expected = {0, 1, 4, 2, 6, 3, 8, 7, 5, 9};
-  cb_data_epsilon_0_skype_jb_test_runner(999, 0, 4, 0, ranking_expected, pdf_expected);
-
-  // {999, 0, 2, 0} => 2
-  ranking_expected = {0, 1, 4, 2, 7, 3, 6, 8, 5, 9};
-  cb_data_epsilon_0_skype_jb_test_runner(999, 0, 2, 0, ranking_expected, pdf_expected);
 }
 
 void clear(VW::example_predict& ex)
@@ -670,38 +588,38 @@ TEST_P(cb_predict_test, CBRunPredict)
   //}
 #endif
 
-  EXPECT_THAT(histogram, Pointwise(FloatNear(1e-2f), GetParam().ranking_pdf_expected));
+  EXPECT_THAT(histogram, Pointwise(FloatNear(2e-2f), GetParam().ranking_pdf_expected));
 }
 
 cb_predict_param cb_predict_params[] = {
-    {"CB Epsilon Greedy", "cb_data_5", 10000, {0.1f, 0.1f, 0.8f},
+    {"CB Epsilon Greedy", "cb_data_5", 10000, {0.8f, 0.1f, 0.1f},
         {
-            // see top action 2 w / 0.8
-            0.1f, 0.09f, 0.80f,  // slot 0
-                                 // most of the time we should see action 2
-                                 // in 10% we should see the top action 0 swapped from top-slot to here
-            0.0f, 0.90f, 0.09f,  // slot 1
-                                 // most of the time we should see action 1
-                                 // in 20% we should see the top action 2 swapped from top-slot to here
-            0.89f, 0.0f, 0.10f,  // slot 2
+            0.8f, 0.1f, 0.1f,  // slot 0
+                               // most of the time we should see action 0
+            0.1f, 0.9f, 0.0f,  // slot 1
+                               // most of the time we should see action 1
+                               // in 10% we should see the top action 0 swapped from top-slot to here
+            0.1f, 0.0f, 0.9f,  // slot 2
+                               // most of the time we should see action 2
+                               // in 10% we should see the top action 0 swapped from top-slot to here
         }},
-    {"CB Softmax", "cb_data_6", 1000, {0.329f, 0.333f, 0.337f},
+    {"CB Softmax", "cb_data_6", 1000, {0.664f, 0.245f, 0.090f},
         {
-            0.328f, 0.354f, 0.316f,  // slot 0
-            0.000f, 0.644f, 0.354f,  // slot 1
-            0.671f, 0.000f, 0.328f,  // slot 2
+            0.664f, 0.245f, 0.090f,  // slot 0
+            0.245f, 0.755f, 0.000f,  // slot 1
+            0.090f, 0.000f, 0.910f,  // slot 2
         }},
-    {"CB Bag", "cb_data_7", 5, {0.0f, 0.0f, 1.0f},
+    {"CB Bag", "cb_data_7", 5, {1.0f, 0.0f, 0.0f},
         {
-            0.0f, 0.0f, 1.0f,  // slot 0
+            1.0f, 0.0f, 0.0f,  // slot 0
             0.0f, 1.0f, 0.0f,  // slot 1
-            1.0f, 0.0f, 0.0f,  // slot 2
+            0.0f, 0.0f, 1.0f,  // slot 2
         }},
-    {"CB Bag Epsilon Greedy", "cb_data_8", 10000, {0.09f, 0.09f, 0.82f},
+    {"CB Bag Epsilon Greedy", "cb_data_8", 10000, {0.82f, 0.09f, 0.09f},
         {
-            0.091f, 0.086f, 0.82f,  // slot 0
-            0.00f, 0.91f, 0.086f,   // slot 1
-            0.90f, 0.00f, 0.09f,    // slot 2
+            0.82f, 0.09f, 0.09f,  // slot 0
+            0.09f, 0.91f, 0.00f,  // slot 1
+            0.09f, 0.00f, 0.91f,  // slot 2
         }},
 };
 

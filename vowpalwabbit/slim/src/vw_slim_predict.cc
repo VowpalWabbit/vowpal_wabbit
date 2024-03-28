@@ -17,14 +17,23 @@ namespace_copy_guard::namespace_copy_guard(VW::example_predict& ex, unsigned cha
   {
     _ex.indices.push_back(_ns);
     _remove_ns = true;
+    _old_size = 0;
   }
-  else { _remove_ns = false; }
+  else
+  {
+    _remove_ns = false;
+    _old_size = _ex.feature_space[_ns].size();
+  }
 }
 
 namespace_copy_guard::~namespace_copy_guard()
 {
-  _ex.indices.pop_back();
-  if (_remove_ns) { _ex.feature_space[_ns].clear(); }
+  if (_remove_ns)
+  {
+    _ex.feature_space[_ns].clear();
+    _ex.indices.pop_back();
+  }
+  else { _ex.feature_space[_ns].truncate_to(_old_size); }
 }
 
 void namespace_copy_guard::feature_push_back(VW::feature_value v, VW::feature_index idx)
@@ -32,32 +41,33 @@ void namespace_copy_guard::feature_push_back(VW::feature_value v, VW::feature_in
   _ex.feature_space[_ns].push_back(v, idx);
 }
 
-feature_offset_guard::feature_offset_guard(VW::example_predict& ex, uint64_t ft_offset)
-    : _ex(ex), _old_ft_offset(ex.ft_offset)
+feature_offset_guard::feature_offset_guard(VW::example_predict& ex, uint64_t ft_index_offset)
+    : _ex(ex), _old_ft_index_offset(ex.ft_offset)
 {
-  _ex.ft_offset = ft_offset;
+  _ex.ft_offset = ft_index_offset;
 }
 
-feature_offset_guard::~feature_offset_guard() { _ex.ft_offset = _old_ft_offset; }
+feature_offset_guard::~feature_offset_guard() { _ex.ft_offset = _old_ft_index_offset; }
 
-stride_shift_guard::stride_shift_guard(VW::example_predict& ex, uint64_t shift) : _ex(ex), _shift(shift)
+feature_scale_guard::feature_scale_guard(VW::example_predict& ex, uint64_t ft_index_scale)
+    : _ex(ex), _ft_index_scale(ft_index_scale)
 {
-  if (_shift > 0)
+  if (_ft_index_scale > 1)
   {
     for (auto ns : _ex.indices)
     {
-      for (auto& f : _ex.feature_space[ns]) { f.index() <<= _shift; }
+      for (auto& f : _ex.feature_space[ns]) { f.index() *= _ft_index_scale; }
     }
   }
 }
 
-stride_shift_guard::~stride_shift_guard()
+feature_scale_guard::~feature_scale_guard()
 {
-  if (_shift > 0)
+  if (_ft_index_scale > 1)
   {
     for (auto ns : _ex.indices)
     {
-      for (auto& f : _ex.feature_space[ns]) { f.index() >>= _shift; }
+      for (auto& f : _ex.feature_space[ns]) { f.index() /= _ft_index_scale; }
     }
   }
 }
