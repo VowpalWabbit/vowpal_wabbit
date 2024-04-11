@@ -9,7 +9,7 @@ pool:
   vmImage: 'ubuntu-latest'
 
 container:
-  image: vowpalwabbit/centos7_6_1810-build:latest
+  image: vowpalwabbit/ubuntu2004-build:latest
   endpoint: DockerHub
 
 steps:
