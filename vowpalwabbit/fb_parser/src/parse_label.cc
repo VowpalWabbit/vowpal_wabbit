@@ -3,9 +3,11 @@
 // license as described in the file LICENSE.
 
 #include "vw/core/action_score.h"
+#include "vw/core/api_status.h"
 #include "vw/core/best_constant.h"
 #include "vw/core/cb.h"
 #include "vw/core/constant.h"
+#include "vw/core/error_constants.h"
 #include "vw/core/example.h"
 #include "vw/core/global_data.h"
 #include "vw/core/named_labels.h"
@@ -127,7 +129,7 @@ void parser::parse_multi_label(polylabel* l, const MultiLabel* label)
   for (auto const& lab : *(label->labels())) l->multilabels.label_v.push_back(lab);
 }
 
-void parser::parse_slates_label(polylabel* l, const Slates_Label* label)
+int parser::parse_slates_label(polylabel* l, const Slates_Label* label, VW::experimental::api_status* status)
 {
   l->slates.weight = label->weight();
   if (label->example_type() == VW::parsers::flatbuffer::CCB_Slates_example_type::CCB_Slates_example_type_shared)
@@ -149,7 +151,8 @@ void parser::parse_slates_label(polylabel* l, const Slates_Label* label)
 
     for (auto const& as : *(label->probabilities())) l->slates.probabilities.push_back({as->action(), as->score()});
   }
-  else { THROW("Example type not understood") }
+  else { RETURN_ERROR(status, not_implemented, "Example type not understood"); }
+  return VW::experimental::error_code::success;
 }
 
 void parser::parse_continuous_action_label(polylabel* l, const VW::parsers::flatbuffer::ContinuousLabel* label)

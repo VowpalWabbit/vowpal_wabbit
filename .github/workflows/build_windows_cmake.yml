@@ -1,13 +1,15 @@
 name: Windows / C++ - CMake only
 
 on:
-  push:
-    branches:
-      - master
-      - 'releases/**'
-  pull_request:
-    branches:
-      - '*'
+  # only run on explicit user request, since this build is duplicated by the vcpkg builds
+  workflow_dispatch
+  # push:
+  #   branches:
+  #     - master
+  #     - 'releases/**'
+  # pull_request:
+  #   branches:
+  #     - '*'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
