@@ -154,7 +154,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
       .add(make_option("search_span_multipass", multipass).default_value(1).help("Do multiple passes"));
   options.add_and_parse(new_options);
 
-  auto data = VW::make_unique<task_data>();
+  auto data = std::make_shared<task_data>();
   data->multipass = VW::cast_to_smaller_type<size_t>(multipass);
 
   if (search_span_bilou)
@@ -192,7 +192,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
       Search::EXAMPLES_DONT_CHANGE |  // we don't do any internal example munging
       0);
   sch.set_feature_width(num_actions);
-  sch.set_task_data<task_data>(data.release());
+  sch.set_task_data<task_data>(std::move(data));
 }
 
 void setup(Search::search& sch, VW::multi_ex& ec)
@@ -293,13 +293,14 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& /*options*/
       Search::EXAMPLES_DONT_CHANGE |  // we don't do any internal example munging
       Search::ACTION_COSTS |          // we'll provide cost-per-action (rather than oracle)
       0);
-  sch.set_task_data<size_t>(new size_t{num_actions});
+  std::shared_ptr<size_t> td(new size_t{num_actions});
+  sch.set_task_data<size_t>(std::move(td));
 }
 
 void run(Search::search& sch, VW::multi_ex& ec)
 {
   size_t K = *sch.get_task_data<size_t>();  // NOLINT
-  float* costs = VW::details::calloc_or_throw<float>(K);
+  std::vector<float> costs(K, 0.);
   Search::predictor search_predictor(sch, static_cast<ptag>(0));
   for (size_t i = 0; i < ec.size(); i++)
   {
@@ -308,12 +309,11 @@ void run(Search::search& sch, VW::multi_ex& ec)
     costs[oracle - 1] = 0.;
     size_t prediction = search_predictor.set_tag(static_cast<ptag>(i) + 1)
                             .set_input(*ec[i])
-                            .set_allowed(nullptr, costs, K)
+                            .set_allowed(nullptr, costs.data(), K)
                             .set_condition_range(static_cast<ptag>(i), sch.get_history_length(), 'p')
                             .predict();
     if (sch.output().good()) { sch.output() << sch.pretty_label(static_cast<uint32_t>(prediction)) << ' '; }
   }
-  free(costs);
 }
 }  // namespace SequenceTaskCostToGo
 
@@ -329,7 +329,7 @@ public:
 
 void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options)
 {
-  task_data* data = new task_data();
+  auto data = std::make_shared<task_data>();
 
   option_group_definition new_options("[Search] Argmax");
   new_options.add(make_option("cost", data->false_negative_cost).default_value(10.0f).help("False Negative Cost"))
@@ -390,7 +390,7 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& /*options*/
 {
   VW::cs_class default_wclass = {0., 0, 0., 0.};
 
-  task_data* data = new task_data;
+  auto data = std::make_shared<task_data>();
   data->ldf_examples.resize(num_actions);
   for (size_t a = 0; a < num_actions; a++)
   {

@@ -15,7 +15,7 @@ Search::search_task task = {"hook", run, initialize, nullptr, run_setup, run_tak
 
 void initialize(Search::search& sch, size_t& num_actions, options_i& arg)
 {
-  task_data* td = new task_data;
+  auto td = std::make_shared<task_data>();
   td->run_f = nullptr;
   td->run_setup_f = nullptr;
   td->run_takedown_f = nullptr;

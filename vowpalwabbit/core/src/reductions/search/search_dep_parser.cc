@@ -67,7 +67,7 @@ constexpr uint32_t MY_NULL = 9999999; /*representing_default*/
 void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options)
 {
   VW::workspace& all = sch.get_vw_pointer_unsafe();
-  task_data* data = new task_data();
+  auto data = std::make_shared<task_data>();
   sch.set_task_data<task_data>(data);
   data->action_loss.resize(5);
   uint64_t root_label;

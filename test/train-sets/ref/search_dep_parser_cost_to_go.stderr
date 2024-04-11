@@ -13,13 +13,13 @@ average    since      instance            current true      current predicted   
 loss       last        counter           output prefix          output prefix  pass   pol     made     hits    gener  beta    
 88.000000  88.000000         1  [43:1 5:2 5:2 5:2 1..] [0:8 1:1 2:1 3:1 4:..]     0     0      144        0      141  0.000000
 46.500000  5.000000          2  [2:2 3:5 0:8 3:7 99..] [2:2 0:8 4:2 2:3 99..]     0     0      153        0      150  0.001409
-30.750000  15.000000         4  [2:2 3:5 0:8 3:7 99..] [2:2 3:5 0:8 3:7 99..]     1     0      306        0      300  0.002906
-17.125000  3.500000          8  [2:2 3:5 0:8 3:7 99..] [2:2 3:5 0:8 3:7 99..]     3     0      606        0      600  0.005893
+29.250000  12.000000         4  [2:2 3:5 0:8 3:7 99..] [2:2 3:5 0:8 3:7 99..]     1     0      306        0      300  0.002906
+16.375000  3.500000          8  [2:2 3:5 0:8 3:7 99..] [2:2 3:5 0:8 3:7 99..]     3     0      606        0      600  0.005893
 
 finished run
 number of examples per pass = 2
 passes used = 6
 weighted example sum = 12.000000
 weighted label sum = 0.000000
-average loss = 11.416667
-total feature number = 270404
+average loss = 10.916667
+total feature number = 269977
