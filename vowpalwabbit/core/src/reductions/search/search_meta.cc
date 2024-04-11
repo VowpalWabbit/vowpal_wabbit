@@ -75,22 +75,14 @@ class task_data
 public:
   size_t max_branches, kbest;
   std::vector<branch> branches;
-  std::vector<std::pair<branch, std::string*> > final;
+  std::vector<std::pair<branch, std::unique_ptr<std::string>>> final;
   path trajectory;
   float total_cost;
   size_t cur_branch;
-  std::string* output_string;
-  std::stringstream* kbest_out;
-  task_data(size_t mb, size_t kb) : max_branches(mb), kbest(kb)
-  {
-    output_string = nullptr;
-    kbest_out = nullptr;
-  }
-  ~task_data()
-  {
-    delete output_string;
-    delete kbest_out;
-  }
+  std::unique_ptr<std::string> output_string = nullptr;
+  std::unique_ptr<std::stringstream> kbest_out = nullptr;
+
+  task_data(size_t mb, size_t kb) : max_branches(mb), kbest(kb) {}
 };
 
 void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options)
@@ -107,8 +99,9 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
                .help("Number of best items to output (0=just like non-selectional-branching, default)"));
   options.add_and_parse(new_options);
 
-  task_data* d = new task_data(VW::cast_to_smaller_type<size_t>(max_branches), VW::cast_to_smaller_type<size_t>(kbest));
-  sch.set_metatask_data(d);
+  auto d = std::make_shared<task_data>(
+      VW::cast_to_smaller_type<size_t>(max_branches), VW::cast_to_smaller_type<size_t>(kbest));
+  sch.set_metatask_data(std::move(d));
 }
 
 void run(Search::search& sch, VW::multi_ex& ec)
@@ -151,7 +144,7 @@ void run(Search::search& sch, VW::multi_ex& ec)
             d.total_cost += a_cost;
           })
       .with_output_string([](Search::search& sch, std::stringstream& output) -> void
-          { sch.get_metatask_data<task_data>()->output_string = new std::string(output.str()); })
+          { sch.get_metatask_data<task_data>()->output_string.reset(new std::string(output.str())); })
       .Run();
 
   // the last item the trajectory stack is complete and therefore not a branch
@@ -161,7 +154,7 @@ void run(Search::search& sch, VW::multi_ex& ec)
   {
     // construct the final trajectory
     path original_final = d.trajectory;
-    d.final.push_back(std::make_pair(std::make_pair(d.total_cost, original_final), d.output_string));
+    d.final.push_back(std::make_pair(std::make_pair(d.total_cost, original_final), std::move(d.output_string)));
   }
 
   // sort the branches by cost
@@ -200,25 +193,25 @@ void run(Search::search& sch, VW::multi_ex& ec)
               d.total_cost += a_cost;
             })
         .with_output_string([](Search::search& sch, std::stringstream& output) -> void
-            { sch.get_metatask_data<task_data>()->output_string = new std::string(output.str()); })
+            { sch.get_metatask_data<task_data>()->output_string.reset(new std::string(output.str())); })
         .Run();
 
     {
       // construct the final trajectory
       path this_final = d.trajectory;
-      d.final.push_back(std::make_pair(std::make_pair(d.total_cost, this_final), d.output_string));
+      d.final.push_back(std::make_pair(std::make_pair(d.total_cost, this_final), std::move(d.output_string)));
     }
   }
 
   // sort the finals by cost
   stable_sort(d.final.begin(), d.final.end(),
-      [](const std::pair<branch, std::string*>& a, const std::pair<branch, std::string*>& b) -> bool
-      { return a.first.first < b.first.first; });
+      [](const std::pair<branch, std::unique_ptr<std::string>>& a,
+          const std::pair<branch, std::unique_ptr<std::string>>& b) -> bool { return a.first.first < b.first.first; });
 
-  d.kbest_out = nullptr;
+  d.kbest_out.reset();
   if (d.output_string && (d.kbest > 0))
   {
-    d.kbest_out = new std::stringstream();
+    d.kbest_out.reset(new std::stringstream());
     for (size_t i = 0; i < std::min(d.final.size(), d.kbest); i++)
     {
       (*d.kbest_out) << *d.final[i].second << "\t" << d.final[i].first.first << std::endl;
@@ -257,9 +250,6 @@ void run(Search::search& sch, VW::multi_ex& ec)
 
   // clean up memory
   d.branches.clear();
-  for (size_t i = 0; i < d.final.size(); i++) { delete d.final[i].second; }
   d.final.clear();
-  delete d.kbest_out;
-  d.kbest_out = nullptr;
 }
 }  // namespace SelectiveBranchingMT
