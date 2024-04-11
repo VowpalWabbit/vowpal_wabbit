@@ -1,10 +1,15 @@
 trigger:
-  - master
-  - releases/**
+  branches:
+    include:
+      - master
+      - releases/**
 
 pr:
-  - master
-  - releases/**
+  autoCancel: true
+  branches:
+    include:
+      - master
+      - releases/**
 
 pool:
   vmImage: 'ubuntu-latest'
@@ -23,10 +28,17 @@ strategy:
 
 steps:
 - bash: ./.scripts/linux/build.sh $(BUILD_CONFIGURATION)
-  displayName: Build C++
+  displayName: 'Build C++'
+  condition: succeeded()
+
 - bash: ./.scripts/linux/test.sh
-  displayName: Test C++
+  displayName: 'Test C++'
+  condition: succeeded()
+
 - bash: ./.scripts/linux/test-flatbuffers.sh
-  displayName: RunTest flatbuffers C++
+  displayName: 'Run Test Flatbuffers C++'
+  condition: succeeded()
+
 - bash: ./.scripts/linux/java.sh
-  displayName: Build + test Java
+  displayName: 'Build + Test Java'
+  condition: succeeded()
