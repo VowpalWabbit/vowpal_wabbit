@@ -1,0 +1,83 @@
+trigger:
+- master
+- 'releases/**'
+
+pr:
+- '*'
+
+resources:
+- repo: self
+
+pool:
+  vmImage: windows-2019
+
+variables:
+  SuppressTag: $[ eq(variables.officialbuild, 'true') ]
+  VCPKG_ARCHIVE_DIR: $(LOCALAPPDATA)\vcpkg\archives
+  NUGET_PACKAGES: $(Pipeline.Workspace)\.nuget\packages
+  VCPKG_BINARY_SOURCES: 'clear;files,C:\Users\VssAdministrator\AppData\Local\vcpkg\archives,readwrite'
+
+steps:
+- task: VisualStudioTestPlatformInstaller@1
+  inputs:
+    packageFeedSelector: 'nugetOrg' # Options: nugetOrg, customFeed, netShare
+    versionSelector: 'latestStable' # Required when packageFeedSelector == NugetOrg || PackageFeedSelector == CustomFeed# Options: latestPreRelease, latestStable, specificVersion
+    #testPlatformVersion: # Required when versionSelector == SpecificVersion
+    #customFeed: # Required when packageFeedSelector == CustomFeed
+    #username: # Optional
+    #password: # Optional
+    #netShare: # Required when packageFeedSelector == NetShare
+- task: Cache@2
+  inputs:
+    key: 'v2 | vcpkg | archives'
+    path: $(VCPKG_ARCHIVE_DIR)
+  displayName: Cache vcpkg dependencies
+  continueOnError: true
+- task: Cache@2
+  inputs:
+    key: 'nuget | "$(Agent.OS)" | $(Build.SourcesDirectory)\cs\**\packages.config'
+    restoreKeys: |
+       nuget | "$(Agent.OS)"
+       nuget
+    path: $(NUGET_PACKAGES)
+  displayName: Cache NuGet packages
+  continueOnError: true
+- script: CALL .scripts/restore.cmd
+  displayName: 'Restore dependencies'
+  env:
+    nugetPath: $(Build.SourcesDirectory)\vowpalwabbit\.nuget\nuget.exe
+  failOnStderr: true
+- script: CALL .scripts/build.cmd
+  displayName: 'Build vw.sln'
+  env:
+    nugetPath: $(Build.SourcesDirectory)\vowpalwabbit\.nuget\nuget.exe
+  failOnStderr: false
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact: target'
+  inputs:
+    PathtoPublish: $(Build.SourcesDirectory)\build\binaries
+    ArtifactName: target
+  condition: succeededOrFailed()
+- script: CALL .scripts/test.cmd
+  displayName: 'Run tests'
+  env:
+    nugetPath: $(Build.SourcesDirectory)\vowpalwabbit\.nuget\nuget.exe
+  failOnStderr: false
+- task: PublishTestResults@2
+  displayName: 'Publish Test Results'
+  inputs:
+    testResultsFormat: VSTest
+    testResultsFiles: '**/vowpalwabbit/out/test/Release/x64/*.trx'
+- script: CALL .scripts/package.cmd
+  displayName: 'Package artifacts'
+  env:
+    nugetPath: $(Build.SourcesDirectory)\vowpalwabbit\.nuget\nuget.exe
+    Tag: -$(Build.BuildId)--$(Build.SourceVersion)
+    SourceInfo: 'Built from commit id: $(Build.SourceVersion)'
+  failOnStderr: true
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact: package'
+  inputs:
+    PathtoPublish: $(Build.SourcesDirectory)\vowpalwabbit\out\package
+    ArtifactName: package
+  condition: succeededOrFailed()

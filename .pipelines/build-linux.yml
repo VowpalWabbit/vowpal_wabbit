@@ -1,0 +1,31 @@
+trigger:
+- master
+- 'releases/**'
+
+pr:
+- '*'
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+container:
+  image: vowpalwabbit/ubuntu1804-build:latest
+  endpoint: DockerHub
+
+strategy:
+  matrix:
+    Debug:
+      BUILD_CONFIGURATION: 'Debug'
+    Release:
+      BUILD_CONFIGURATION: 'Release'
+  maxParallel: 2
+
+steps:
+- bash: ./.scripts/linux/build.sh $(BUILD_CONFIGURATION)
+  displayName: Build C++
+- bash: ./.scripts/linux/test.sh
+  displayName: Test C++
+- bash: ./.scripts/linux/test-flatbuffers.sh
+  displayName: RunTest flatbuffers C++
+- bash: ./.scripts/linux/java.sh
+  displayName: Build + test Java
