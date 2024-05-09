@@ -44,31 +44,32 @@ private:
   VW::example_predict& _ex;
   unsigned char _ns;
   bool _remove_ns;
+  size_t _old_size;
 };
 
 class feature_offset_guard
 {
 public:
-  feature_offset_guard(VW::example_predict& ex, uint64_t ft_offset);
+  feature_offset_guard(VW::example_predict& ex, uint64_t ft_index_offset);
   ~feature_offset_guard();
 
 private:
   VW::example_predict& _ex;
-  uint64_t _old_ft_offset;
+  uint64_t _old_ft_index_offset;
 };
 
-class stride_shift_guard
+class feature_scale_guard
 {
 public:
-  stride_shift_guard(VW::example_predict& ex, uint64_t shift);
-  ~stride_shift_guard();
+  feature_scale_guard(VW::example_predict& ex, uint64_t ft_index_scale);
+  ~feature_scale_guard();
 
 private:
   VW::example_predict& _ex;
-  uint64_t _shift;
+  uint64_t _ft_index_scale;
 };
 
-/**
+/*
  * @brief Vowpal Wabbit slim predictor. Supports: regression, multi-class classification and contextual bandits.
  */
 template <typename W>
@@ -152,7 +153,7 @@ public:
     }
 
     // TODO: take --cb_type dr into account
-    uint64_t num_weights = 0;
+    uint64_t feature_scale = 0;
 
     if (_command_line_arguments.find("--cb_explore_adf") != std::string::npos)
     {
@@ -164,7 +165,7 @@ public:
         _bag_size = static_cast<size_t>(bag_size);
 
         _exploration = vw_predict_exploration::bag;
-        num_weights = _bag_size;
+        feature_scale = _bag_size;
 
         // check for additional minimum epsilon greedy
         _minimum_epsilon = 0.f;
@@ -212,10 +213,10 @@ public:
     RETURN_ON_FAIL(mp.read("resume", gd_resume));
     if (gd_resume) { return E_VW_PREDICT_ERR_GD_RESUME_NOT_SUPPORTED; }
 
-    // read sparse weights into dense
-    _stride_shift = (uint32_t)ceil_log_2(num_weights);
+    _feature_scale_bits = (uint32_t)ceil_log_2(feature_scale);
 
-    RETURN_ON_FAIL(mp.read_weights<W>(_weights, _num_bits, _stride_shift));
+    // stride shift always 0 bits
+    RETURN_ON_FAIL(mp.read_weights<W>(_weights, _num_bits, 0));
 
     // TODO: check that permutations is not enabled (or parse it)
 
@@ -261,7 +262,7 @@ public:
       // add constant feature
       ns_copy_guard =
           std::unique_ptr<namespace_copy_guard>(new namespace_copy_guard(ex, VW::details::CONSTANT_NAMESPACE));
-      ns_copy_guard->feature_push_back(1.f, (VW::details::CONSTANT << _stride_shift) + ex.ft_offset);
+      ns_copy_guard->feature_push_back(1.f, (VW::details::CONSTANT << _feature_scale_bits) + ex.ft_offset);
     }
 
     if (_contains_wildcard)
@@ -291,9 +292,9 @@ public:
 
     out_scores.resize(num_actions);
 
-    VW::example_predict* action = actions;
-    for (size_t i = 0; i < num_actions; i++, action++)
+    for (size_t i = 0; i < num_actions; i++)
     {
+      VW::example_predict* action = &actions[i];
       std::vector<std::unique_ptr<namespace_copy_guard>> ns_copy_guards;
 
       // shared feature copying
@@ -358,19 +359,21 @@ public:
       {
         std::vector<uint32_t> top_actions(num_actions);
 
-        // apply stride shifts
-        std::vector<std::unique_ptr<stride_shift_guard>> stride_shift_guards;
-        stride_shift_guards.push_back(
-            std::unique_ptr<stride_shift_guard>(new stride_shift_guard(shared, _stride_shift)));
+        // apply feature scale
+        uint64_t feature_scale = static_cast<uint64_t>(1) << _feature_scale_bits;
+        std::vector<std::unique_ptr<feature_scale_guard>> feature_scale_guards;
+        feature_scale_guards.push_back(
+            std::unique_ptr<feature_scale_guard>(new feature_scale_guard(shared, feature_scale)));
         VW::example_predict* actions_end = actions + num_actions;
         for (VW::example_predict* action = actions; action != actions_end; ++action)
         {
-          stride_shift_guards.push_back(
-              std::unique_ptr<stride_shift_guard>(new stride_shift_guard(*action, _stride_shift)));
+          feature_scale_guards.push_back(
+              std::unique_ptr<feature_scale_guard>(new feature_scale_guard(*action, feature_scale)));
         }
 
         for (size_t i = 0; i < _bag_size; i++)
         {
+          // apply feature offset
           std::vector<std::unique_ptr<feature_offset_guard>> feature_offset_guards;
           for (VW::example_predict* action = actions; action != actions_end; ++action)
           {
@@ -487,7 +490,8 @@ private:
   size_t _bag_size;
   uint32_t _num_bits;
 
-  uint32_t _stride_shift;
+  // log2 of feature scale, rounded upwards to next integer
+  uint32_t _feature_scale_bits;
   bool _model_loaded;
 };
 }  // namespace vw_slim
