@@ -49,6 +49,7 @@ jobs:
           -DWARNINGS=On
           -DWARNING_AS_ERROR=On
           -DVW_CXX_STANDARD=17
+          -DSTD_INV_SQRT=ON
       - name: Build
         run: cmake --build build
       - name: Unit tests
