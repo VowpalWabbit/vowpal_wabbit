@@ -440,6 +440,10 @@ if (MSVC_IDE)
   target_sources(vw_core PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/vw_types.natvis> )
 endif()
 
+if(STD_INV_SQRT)
+  target_compile_definitions(vw_core PUBLIC STD_INV_SQRT)
+endif()
+
 # Clang-cl on Windows has issues with our usage of SIMD types. Turn it off explicitly for Windows + clang-cl to mitigate.
 # See issue #
 if(WIN32 AND CMAKE_CXX_COMPILER_ID MATCHES "Clang")
