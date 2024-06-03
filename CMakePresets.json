@@ -212,6 +212,10 @@
         "VCPKG_TARGET_TRIPLET": {
           "type": "STRING",
           "value": "wasm32-emscripten"
+        },
+        "STD_INV_SQRT": {
+          "type": "BOOL",
+          "value": "On"
         }
       }
     }
