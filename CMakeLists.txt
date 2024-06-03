@@ -178,7 +178,6 @@ option(VW_BUILD_VW_C_WRAPPER "Enable building the c_wrapper project" ON)
 option(vw_BUILD_NET_CORE "Build .NET Core targets" OFF)
 option(vw_BUILD_NET_FRAMEWORK "Build .NET Framework targets" OFF)
 option(VW_BUILD_WASM "Add WASM target" OFF)
-option(SSE2_OPT "Add SSE2 optimization" OFF)
 
 if(VW_INSTALL AND NOT VW_ZLIB_SYS_DEP)
   message(WARNING "Installing with a vendored version of zlib is not recommended. Use VW_ZLIB_SYS_DEP to use a system dependency or specify VW_INSTALL=OFF to silence this warning.")
