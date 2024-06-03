@@ -153,7 +153,6 @@ VW_WARNING_STATE_POP
 
 static inline float inv_sqrt(float x)
 {
-  return 1.f / std::sqrt(x);
 #if defined(STD_INV_SQRT)
   return 1.f / std::sqrt(x);
 #endif
