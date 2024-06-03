@@ -120,6 +120,7 @@ jobs:
           -DVW_ZLIB_SYS_DEP=Off
           -DVW_BOOST_MATH_SYS_DEP=Off
           -DVW_INSTALL=Off
+          -DSTD_INV_SQRT=ON
       - name: Build
         run: cmake --build build
       - name: Unit tests
