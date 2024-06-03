@@ -54,7 +54,6 @@ jobs:
       - uses: lukka/run-cmake@v10
         env:
           VCPKG_ROOT: ${{github.workspace}}/ext_libs/vcpkg
-          CMAKE_ARGS: "-DSTD_INV_SQRT=ON"
         with:
           cmakeListsTxtPath: "${{ github.workspace }}/CMakeLists.txt"
           configurePreset: "${{ matrix.preset }}"
