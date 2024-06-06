@@ -153,6 +153,7 @@ VW_WARNING_STATE_POP
 
 static inline float inv_sqrt(float x)
 {
+// Standard library used in CI because SSE2 path has floating point differences in github machines
 #if defined(STD_INV_SQRT)
   return 1.f / std::sqrt(x);
 #endif
