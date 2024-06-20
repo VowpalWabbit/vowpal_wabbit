@@ -128,6 +128,8 @@
 
 #if nssv_CONFIG_CONVERSION_STD_STRING_FREE_FUNCTIONS
 
+#include <string>
+
 namespace nonstd {
 
 template< class CharT, class Traits, class Allocator = std::allocator<CharT> >
