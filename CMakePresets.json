@@ -218,6 +218,53 @@
           "value": "On"
         }
       }
+    },
+    {
+      "name": "vs2022-vcpkg-no-sys-deps",
+      "generator": "Visual Studio 17 2022",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": {
+          "type": "FILEPATH",
+          "value": "${sourceDir}/ext_libs/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        },
+        "BUILD_TESTING": {
+          "type": "BOOL",
+          "value": "ON"
+        },
+        "RAPIDJSON_SYS_DEP": {
+          "type": "BOOL",
+          "value": "OFF"
+        },
+        "FMT_SYS_DEP": {
+          "type": "BOOL",
+          "value": "OFF"
+        },
+        "SPDLOG_SYS_DEP": {
+          "type": "BOOL",
+          "value": "OFF"
+        },
+        "VW_BOOST_MATH_SYS_DEP": {
+          "type": "BOOL",
+          "value": "OFF"
+        },
+        "VW_ZLIB_SYS_DEP": {
+          "type": "BOOL",
+          "value": "OFF"
+        },
+        "VW_GTEST_SYS_DEP": {
+          "type": "BOOL",
+          "value": "OFF"
+        },
+        "VW_EIGEN_SYS_DEP": {
+          "type": "BOOL",
+          "value": "OFF"
+        },
+        "VW_STRING_VIEW_LITE_SYS_DEP": {
+          "type": "BOOL",
+          "value": "OFF"
+        }
+      }
     }
   ],
   "buildPresets": [
