@@ -222,7 +222,7 @@ jobs:
             deactivate'
   macos-python-build:
     name: macos.amd64.py${{ matrix.config.version }}.build
-    runs-on: macos-13
+    runs-on: macos-11
     strategy:
       matrix:
         config:
@@ -254,7 +254,7 @@ jobs:
   macos-python-test:
     name: macos.amd64.py${{ matrix.version }}.test
     needs: macos-python-build
-    runs-on: macos-13
+    runs-on: macos-11
     strategy:
       matrix:
         version: [3.6, 3.7, 3.8, 3.9, "3.10"]
