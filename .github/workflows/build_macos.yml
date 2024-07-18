@@ -18,7 +18,7 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        os: [macos-11]
+        os: [macos-12]
         build_type: [Debug, Release]
     steps:
       - uses: actions/checkout@v3
