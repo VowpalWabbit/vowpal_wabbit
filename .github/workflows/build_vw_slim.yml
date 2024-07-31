@@ -63,4 +63,4 @@ jobs:
       - name: Test VW Slim again
         shell: bash
         working-directory: build
-        run: ctest --output-on-failure --no-tests=error --tests-regex "VowpalWabbitSlim|ExploreSlim|CommandLineOptionsSlim" --parallel 2
+        run: ctest --output-on-failure --no-tests=error --tests-regex "VowpalWabbitSlim|ExploreSlim|CommandLineOptionsSlim"
