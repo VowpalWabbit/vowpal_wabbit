@@ -343,11 +343,11 @@ TEST_P(invalid_model_test, Run)
 }
 
 invalid_model_param invalid_model_param[] = {
-    {"regression_data_1", regression_data_1_model, regression_data_1_model_len, {54, 62},
+    {"regression_data_1", regression_data_1_model, regression_data_1_model_len, {55, 63},
         predict_param_weight_type::SPARSE},  // 2 weights
-    {"regression_data_1", regression_data_1_model, regression_data_1_model_len, {54, 62},
+    {"regression_data_1", regression_data_1_model, regression_data_1_model_len, {55, 63},
         predict_param_weight_type::DENSE},  // 2 weights
-    {"regression_data_6", regression_data_6_model, regression_data_6_model_len, {69, 81, 93, 105},
+    {"regression_data_6", regression_data_6_model, regression_data_6_model_len, {70, 82, 94, 106},
         predict_param_weight_type::SPARSE}  // 4 weights
 };
 
