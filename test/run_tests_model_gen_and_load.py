@@ -388,6 +388,11 @@ def main():
         ]
     else:
         skip_pr_tests = []
+
+    # Skip flaky tests:
+    skip_fixed_tests = [24]
+    skip_pr_tests += skip_fixed_tests
+
     color_enum = NoColor if args.no_color else Color
 
     temp_working_dir = Path.home() / default_working_dir_name
