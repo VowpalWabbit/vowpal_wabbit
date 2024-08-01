@@ -390,8 +390,8 @@ def main():
         skip_pr_tests = []
 
     # Skip flaky tests:
-    skip_tests = [24]
-    skip_pr_list += skip_tests
+    skip_fixed_tests = [24]
+    skip_pr_tests += skip_fixed_tests
 
     color_enum = NoColor if args.no_color else Color
 
