@@ -12,7 +12,7 @@ Javascript bindings for [VowpalWabbit](https://vowpalwabbit.org/)
 | 0.0.8   | 9.10.0   | wasm_v0.0.8 |
 
 ## Documentation
- 
+
 [API documentation](https://github.com/VowpalWabbit/vowpal_wabbit/blob/wasm_v0.0.6/wasm/documentation.md)
 
 ## Examples and How-To
