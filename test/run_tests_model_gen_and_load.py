@@ -296,7 +296,7 @@ def generate_all(
             color_enum,
             skip_missing_args,
         )
-
+ 
     print(f"stored models in: {output_working_dir}")
 
 
