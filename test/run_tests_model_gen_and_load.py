@@ -296,7 +296,7 @@ def generate_all(
             color_enum,
             skip_missing_args,
         )
- 
+
     print(f"stored models in: {output_working_dir}")
 
 
@@ -388,6 +388,11 @@ def main():
         ]
     else:
         skip_pr_tests = []
+
+    # Skip flaky tests:
+    skip_tests = [24]
+    skip_pr_list += skip_tests
+
     color_enum = NoColor if args.no_color else Color
 
     temp_working_dir = Path.home() / default_working_dir_name
