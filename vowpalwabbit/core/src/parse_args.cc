@@ -44,6 +44,8 @@
 #include "vw/io/owning_stream.h"
 #include "vw/text_parser/parse_example_text.h"
 
+#include <fmt/ranges.h>
+
 #include <sys/stat.h>
 #include <sys/types.h>
 
