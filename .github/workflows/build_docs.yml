@@ -87,11 +87,11 @@ jobs:
         if: ${{ github.event_name == 'push' }}
         run: echo "VW_SPHINX_VERSION_OVERRIDE=latest" >> $GITHUB_ENV
       - name: Download Wheel
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v4
         with:
           name: python_wheel
       - name: Download vw-dump-options
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v4
         with:
           name: vw-dump-options
       - name: Change permissions to rvw-dump-options
@@ -137,11 +137,11 @@ jobs:
         if: ${{ github.event_name == 'release' || github.event_name == 'workflow_dispatch' }}
         run: echo "FOLDER_NAME=$(echo ${GITHUB_REF:10})" >> $GITHUB_ENV
       - name: Download c++ Docs
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v4
         with:
           name: cxx_docs
       - name: Download Python Docs
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v4
         with:
           name: python_docs
       - name: Print contents of directory

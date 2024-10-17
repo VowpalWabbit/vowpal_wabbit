@@ -167,19 +167,19 @@ jobs:
       # Download the previously built Nuget packages
       - name: Clear nuget cache
         run: dotnet nuget locals all --clear
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.win-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.linux-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.osx-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
@@ -226,19 +226,19 @@ jobs:
       # Download the previously built Nuget packages
       - name: Clear nuget cache
         run: dotnet nuget locals all --clear
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.win-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.linux-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.osx-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
@@ -291,19 +291,19 @@ jobs:
       # Download the previously built Nuget packages
       - name: Clear nuget cache
         run: dotnet nuget locals all --clear
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.win-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.linux-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.osx-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets

@@ -43,7 +43,7 @@ jobs:
         shell: bash
         run: rm -rf test/benchmarks
       - name: Download master's benchmark module
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: benchmark-module
           path: test/benchmarks/
@@ -87,18 +87,18 @@ jobs:
           submodules: recursive
           ref: ${{ github.event.inputs.compare_ref }}
       - name: Download ${{ github.event.inputs.base_ref }} benchmark results
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: base-benchmarks
       - name: Download benchmark compare
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: benchmark-compare
       - name: Remove existing benchmark module (in favour of master)
         shell: bash
         run: rm -rf test/benchmarks
       - name: Download master's benchmark module
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: benchmark-module
           path: test/benchmarks/
