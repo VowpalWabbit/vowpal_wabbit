@@ -81,7 +81,7 @@ template <>
 class formatter<VW::slates::example_type> : public formatter<std::string>
 {
 public:
-  auto format(VW::slates::example_type c, format_context& ctx) -> decltype(ctx.out())
+  auto format(VW::slates::example_type c, format_context& ctx) const -> decltype(ctx.out())
   {
     return formatter<std::string>::format(std::string{VW::to_string(c)}, ctx);
   }
