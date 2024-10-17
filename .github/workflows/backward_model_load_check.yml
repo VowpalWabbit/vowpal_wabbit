@@ -36,7 +36,7 @@ jobs:
           cd ..
           auditwheel repair vowpal_wabbit/wheel_last_commit/*whl -w audit_last_commit/
       - name: Upload built wheel
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: test_manylinux_amd64_3.10
           path: audit_last_commit/

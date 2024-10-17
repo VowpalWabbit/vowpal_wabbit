@@ -33,7 +33,7 @@ jobs:
           /opt/python/cp310-cp310/bin/pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='/opt/python/cp310-cp310/include/python3.10/'" --verbose
           auditwheel repair wheel_output/*whl -w audit_output/
       - name: Upload built wheel
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: test_manylinux_amd64_3.10
           path: audit_output/

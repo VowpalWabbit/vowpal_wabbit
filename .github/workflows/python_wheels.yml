@@ -46,7 +46,7 @@ jobs:
           ${{ matrix.config.base_path }}bin/pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='${{ matrix.config.base_path }}include/${{ matrix.config.include_dir_name }}'" --verbose
           auditwheel repair wheel_output/*whl -w audit_output/
       - name: Upload built wheel
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: manylinux_amd64_${{ matrix.config.version }}
           path: audit_output/
@@ -169,7 +169,7 @@ jobs:
             bash -exc '${{ matrix.config.base_path }}bin/pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='${{ matrix.config.base_path }}include/${{ matrix.config.include_dir_name }}'" --verbose && \
             auditwheel repair wheel_output/*whl -w audit_output/'
     - name: Upload built wheel
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v4
       with:
         name: manylinux_aarch64_${{ matrix.config.version }}
         path: audit_output/
@@ -247,7 +247,7 @@ jobs:
           conda install python=${{ matrix.config.version }} wheel zlib boost py-boost flatbuffers
           pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR=\"$CONDA_PREFIX/include/${{ matrix.config.include_dir_name }}\"" --verbose
       - name: Upload built wheel
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: macos_amd64_${{ matrix.config.version }}
           path: wheel_output/
@@ -332,7 +332,7 @@ jobs:
           pip install wheel
           pip wheel . -w ${{github.workspace}}\\wheel_output --global-option --vcpkg-root="${{ env.VCPKG_ROOT }}" --global-option --cmake-generator="Visual Studio 16 2019" --global-option --cmake-options="-DVCPKG_OVERLAY_PORTS=${{github.workspace}}\\vowpal_wabbit\\${{ matrix.config.overlay_ports }}"  --verbose
       - name: Upload built wheel
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: windows_amd64_${{ matrix.config.version }}
           path: wheel_output
