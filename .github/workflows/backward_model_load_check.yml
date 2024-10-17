@@ -60,7 +60,7 @@ jobs:
           pip install built_wheel/*.whl
           python ./test/run_tests_model_gen_and_load.py --generate_models --skip_missing_args --skip_pr_tests "${{ github.event.pull_request.title }}"
       - name: Upload generated file
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: vw_generated_models
           path: ~/.vw_runtests_model_gen_working_dir/*

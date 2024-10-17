@@ -103,7 +103,7 @@ jobs:
         shell: bash
         run: python setup.py sdist
       - name: Upload built wheel
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: python_source_distribution
           path: dist/*.tar.gz
