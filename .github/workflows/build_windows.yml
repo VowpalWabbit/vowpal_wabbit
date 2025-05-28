@@ -1,0 +1,81 @@
+name: Build e Teste VW Windows
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      VCPKG_ROOT: ${{ github.workspace }}/vcpkg
+
+    steps:
+      - name: 🔽 Checkout repositório com submódulos
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: 🧰 Instalar CMake manualmente
+        run: |
+          curl -L -o cmake.zip https://github.com/Kitware/CMake/releases/download/v3.29.3/cmake-3.29.3-windows-x86_64.zip
+          7z x cmake.zip -ocmake-dir > $null
+          echo "$pwd\\cmake-dir\\cmake-3.29.3-windows-x86_64\\bin" | Out-File -Append -Encoding ASCII $Env:GITHUB_PATH
+
+      - name: ⚡ Instalar Ninja (opcional)
+        run: |
+          curl -L -o ninja.zip https://github.com/ninja-build/ninja/releases/download/v1.11.1/ninja-win.zip
+          7z x ninja.zip -oninja-dir > $null
+          echo "$pwd\\ninja-dir" | Out-File -Append -Encoding ASCII $Env:GITHUB_PATH
+
+      - name: 📦 Clonar e preparar vcpkg
+        run: |
+          git clone https://github.com/microsoft/vcpkg.git
+          ./vcpkg/bootstrap-vcpkg.bat
+
+      - name: 🚨 Instalar dependências via vcpkg (modo manifest)
+        run: ./vcpkg/vcpkg install --triplet x64-windows
+
+      - name: 🧱 Build com CMake + vcpkg
+        run: |
+          mkdir build
+          cd build
+          cmake .. `
+            -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake `
+            -DVW_BUILD_VW_C_WRAPPER=OFF `
+            -DVW_BUILD_VW_C_LIB=OFF `
+            -DVW_BUILD_TESTS=ON `
+            -DCMAKE_BUILD_TYPE=Release `
+            -A x64
+          cmake --build . --config Release
+
+      - name: 🧪 Rodar testes do VW
+        run: |
+          cd build
+          ctest --output-on-failure
+
+      - name: 🔎 Verificar se vw.exe foi gerado
+        run: |
+          $vwPath = Get-ChildItem -Path $Env:GITHUB_WORKSPACE -Recurse -Filter vw.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($vwPath) {
+            Write-Output "✅ vw.exe encontrado em: $($vwPath.FullName)"
+          } else {
+            Write-Warning "⚠️ vw.exe NÃO encontrado."
+          }
+
+      - name: 📁 Criar pasta final e copiar binários
+        run: |
+          mkdir pacote_final
+          $bin = Get-ChildItem -Path $Env:GITHUB_WORKSPACE -Recurse -Include vw.exe,*.dll,*.pdb -ErrorAction SilentlyContinue
+          foreach ($file in $bin) {
+            Copy-Item $file.FullName -Destination "pacote_final" -Force
+          }
+
+      - name: 📦 Compactar pacote
+        run: powershell Compress-Archive -Path pacote_final\* -DestinationPath vw_completo.zip
+
+      - name: 📤 Upload do pacote completo
+        uses: actions/upload-artifact@v4
+        with:
+          name: vw-bin-completo
+          path: vw_completo.zip
+          if-no-files-found: error
