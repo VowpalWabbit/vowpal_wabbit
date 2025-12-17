@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-""" Vowpal Wabbit python setup module """
+"""Vowpal Wabbit python setup module"""
 
 import distutils.dir_util
 import os
@@ -147,6 +147,10 @@ class BuildPyLibVWBindingsModule(_build_ext):
             cmake_args += [
                 "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=" + str(lib_output_dir),
             ]
+
+            if cmake_generator is None:
+                cmake_generator = "Ninja"
+
             build_args += [
                 "--",
                 "-j{}".format(multiprocessing.cpu_count()),

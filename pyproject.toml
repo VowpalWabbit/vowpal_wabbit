@@ -1,0 +1,23 @@
+[build-system]
+requires = [
+    "setuptools",
+    "wheel",
+    "cmake",
+    "ninja",
+]
+build-backend = "setuptools.build_meta"
+
+[tool.cibuildwheel.linux]
+before-all = [
+    # Install boost and zlib development packages
+    # cibuildwheel runs in Red Hat based Linux container environment
+    "dnf install -y boost-devel boost-python3-devel zlib-devel",
+]
+before-build = [
+    # Container uses an old version of Boost Python incompatible with Python 3.11+ C API
+    # Depending on Python version, apply patch to make_instance.hpp
+    "dnf reinstall -y boost-devel",
+    "if [ $(python -c 'import sys; print(sys.version_info.minor)') -ge 11 ]; then patch /usr/include/boost/python/object/make_instance.hpp /project/python/boost_python_make_instance.patch; fi",
+    # Python 3.13+ uses PyObject_CallFunction instead of PyEval_CallFunction etc.
+    "if [ $(python -c 'import sys; print(sys.version_info.minor)') -ge 13 ]; then sed -i 's/PyEval_/PyObject_/g' /usr/include/boost/python/*.hpp; fi",
+]
