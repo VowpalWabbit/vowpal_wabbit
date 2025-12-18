@@ -38,7 +38,7 @@ Extracts and cleans text from a Wikipedia database dump and stores output in a
 number of files of similar size in a given directory.
 Each file will contain several documents in the format:
 
-	<doc id="" url="" title="">
+        <doc id="" url="" title="">
         ...
         </doc>
 

@@ -25,7 +25,7 @@ jobs:
         - { cc: "clang", cxx: "clang++"}
     runs-on: ${{matrix.os}}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
         with:
           submodules: 'recursive'
       - name: Install requirements
@@ -68,7 +68,7 @@ jobs:
       CMAKE_BUILD_DIR: ${{ github.workspace }}/vw/build
       SOURCE_DIR: ${{ github.workspace }}/vw
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
         with:
           path: 'vw'
           submodules: 'recursive'
@@ -102,7 +102,7 @@ jobs:
         os: [macos-12]
         build_type: [Debug, Release]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
         with:
           submodules: 'recursive'
       - name: Install dependencies

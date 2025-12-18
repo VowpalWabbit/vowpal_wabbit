@@ -21,7 +21,7 @@ jobs:
         os: [macos-12]
         build_type: [Debug, Release]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
       - name: Install dependencies

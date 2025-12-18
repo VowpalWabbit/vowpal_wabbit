@@ -21,6 +21,10 @@ test-command = [
     "python {project}/python/tests/run_doctest.py",
 ]
 test-sources = "test/"
+test-skip = [
+    "*-*linux_{aarch64,armv7l}",
+    "*win_arm64",
+]
 
 [tool.cibuildwheel.linux]
 before-all = [

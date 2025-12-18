@@ -24,12 +24,12 @@ jobs:
   cpp:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - uses: cachix/install-nix-action@v18
       - name: Build docs
         run: nix build --print-build-logs .#vw-cpp-docs
       - name: Upload built docs
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: cxx_docs
           path: result/html/
@@ -49,7 +49,7 @@ jobs:
       - name: Build dump options
         run: cmake --build build -t vw-dump-options
       - name: Upload vw-dump-options
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: vw-dump-options
           path: build/utl/dump_options/vw-dump-options
@@ -68,7 +68,7 @@ jobs:
           pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='/opt/python/cp310-cp310/include/python3.10/'" --verbose
           auditwheel repair wheel_output/*whl -w audit_output/
       - name: Upload built wheel
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: python_wheel
           path: audit_output/
@@ -87,11 +87,11 @@ jobs:
         if: ${{ github.event_name == 'push' }}
         run: echo "VW_SPHINX_VERSION_OVERRIDE=latest" >> $GITHUB_ENV
       - name: Download Wheel
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v4
         with:
           name: python_wheel
       - name: Download vw-dump-options
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v4
         with:
           name: vw-dump-options
       - name: Change permissions to rvw-dump-options
@@ -120,7 +120,7 @@ jobs:
           cd python/docs
           make html
       - name: Upload built docs
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: python_docs
           path: python/docs/build/
@@ -137,11 +137,11 @@ jobs:
         if: ${{ github.event_name == 'release' || github.event_name == 'workflow_dispatch' }}
         run: echo "FOLDER_NAME=$(echo ${GITHUB_REF:10})" >> $GITHUB_ENV
       - name: Download c++ Docs
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v4
         with:
           name: cxx_docs
       - name: Download Python Docs
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v4
         with:
           name: python_docs
       - name: Print contents of directory

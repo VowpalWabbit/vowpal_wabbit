@@ -22,7 +22,7 @@ jobs:
       contents: write
       deployments: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
       - uses: lukka/get-cmake@latest
