@@ -33,6 +33,15 @@ jobs:
       - uses: actions/checkout@v6
         with:
           submodules: recursive
+      - name: Setup vcpkg
+        if: ${{ startsWith(matrix.os, 'windows') }}
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgDirectory: '${{ github.workspace }}/ext_libs/vcpkg'
+          runVcpkgInstall: true
+      - name: Skip doctests on some builds due to float precision differences
+        if: ${{ ! startsWith(matrix.os, 'ubuntu') }}
+        run: echo "NO_VW_PYTHON_DOCTEST=1" >> $GITHUB_ENV
       - name: Build wheels
         uses: pypa/cibuildwheel@v3.3.0
       - uses: actions/upload-artifact@v4

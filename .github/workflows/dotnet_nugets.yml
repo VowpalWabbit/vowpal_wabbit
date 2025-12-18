@@ -37,6 +37,8 @@ jobs:
         uses: seanmiddleditch/gha-setup-ninja@master
       - name: Install dotnet t4
         run: dotnet tool install --global dotnet-t4
+      - name: Setup Nuget
+        uses: nuget/setup-nuget@v2
 
       # Get version number
       - name: Update git tags

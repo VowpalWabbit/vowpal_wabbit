@@ -18,13 +18,9 @@ test-requires = ["pytest", "pyclean", "vw-executor"]
 test-command = [
     "pyclean {project}/python/tests",
     "pytest {project}/python/tests",
-    "python {project}/python/tests/run_doctest.py",
+    "if [ -z \"$NO_VW_PYTHON_DOCTEST\" ]; then python {project}/python/tests/run_doctest.py; fi",
 ]
 test-sources = "test/"
-test-skip = [
-    "*-*linux_{aarch64,armv7l}",
-    "*win_arm64",
-]
 
 [tool.cibuildwheel.linux]
 before-all = [
@@ -40,4 +36,10 @@ before-build = [
     "if [ $(python -c 'import sys; print(sys.version_info.minor)') -ge 11 ]; then patch /usr/include/boost/python/object/make_instance.hpp /project/python/boost_python_make_instance.patch; fi",
     # Python 3.13+ uses PyObject_CallFunction instead of PyEval_CallFunction etc.
     "if [ $(python -c 'import sys; print(sys.version_info.minor)') -ge 13 ]; then sed -i 's/PyEval_Call/PyObject_Call/g' /usr/include/boost/python/*.hpp; fi",
+]
+
+[tool.cibuildwheel.macos]
+before-build = [
+    # Install boost via brew
+    "brew install boost boost-python3 flatbuffers ninja cmake",
 ]
