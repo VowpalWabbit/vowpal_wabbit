@@ -39,6 +39,7 @@ if(RAPIDJSON_SYS_DEP)
   find_package(RapidJSON 1.1.0 CONFIG REQUIRED)
   target_include_directories(RapidJSON INTERFACE ${RapidJSON_INCLUDE_DIRS} ${RAPIDJSON_INCLUDE_DIRS})
 else()
+  add_library(RapidJSON INTERFACE)
   target_include_directories(RapidJSON SYSTEM INTERFACE "${CMAKE_CURRENT_LIST_DIR}/rapidjson/include")
 endif()
 

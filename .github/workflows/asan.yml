@@ -38,19 +38,15 @@ jobs:
       - uses: actions/checkout@v6
         with:
           submodules: recursive
+          fetch-depth: 0
       - name: Setup MSVC Developer Command Prompt
         if: ${{ startsWith(matrix.os, 'windows') }}
         uses: ilammy/msvc-dev-cmd@v1
       - uses: lukka/get-cmake@latest
-      - run: echo 'VCPKG_COMMIT=$(git rev-parse :ext_libs/vcpkg)' >> $GITHUB_ENV
-        shell: bash
-      - run: mkdir -p ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
-      - uses: actions/cache@v3
-        env:
-          cache-name: vcpkg-cache
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
         with:
-          path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}/*
-          key: ${{ matrix.os }}-build-${{ env.cache-name }}-${{ hashFiles('vcpkg.json') }}-${{ env.VCPKG_COMMIT }}
+          vcpkgDirectory: '${{ github.workspace }}/ext_libs/vcpkg'
       - uses: lukka/run-cmake@v10
         env:
           VCPKG_ROOT: ${{github.workspace}}/ext_libs/vcpkg
@@ -82,16 +78,12 @@ jobs:
       - uses: actions/checkout@v6
         with:
           submodules: recursive
+          fetch-depth: 0
       - uses: lukka/get-cmake@latest
-      - run: echo "VCPKG_COMMIT=$(git rev-parse :ext_libs/vcpkg)" >> $GITHUB_ENV
-        shell: bash
-      - run: mkdir -p ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
-      - uses: actions/cache@v3
-        env:
-          cache-name: vcpkg-cache
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
         with:
-          path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}/*
-          key: ${{ matrix.os }}-build-${{ env.cache-name }}-${{ hashFiles('vcpkg.json') }}-${{ env.VCPKG_COMMIT }}
+          vcpkgDirectory: '${{ github.workspace }}/ext_libs/vcpkg'
       - uses: lukka/run-cmake@v10
         env:
           VCPKG_ROOT: ${{github.workspace}}/ext_libs/vcpkg
