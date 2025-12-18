@@ -131,7 +131,7 @@ class BuildPyLibVWBindingsModule(_build_ext):
             ]
 
             if cmake_generator is None:
-                cmake_generator = "Visual Studio 15 2017 Win64"
+                cmake_generator = "Visual Studio 17 2022"
 
             build_args += ["--target", "pylibvw"]
 
