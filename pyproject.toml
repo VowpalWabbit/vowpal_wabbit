@@ -12,6 +12,7 @@ build-backend = "setuptools.build_meta"
 [tool.cibuildwheel]
 skip = [
     "cp314*",  # Boost Python library segfaults on Python 3.14
+    "cp39-*linux*aarch64",  # Illegal instruction error on ARM64 Linux
     "*musllinux*",  # Only build manylinux wheels
 ]
 test-requires = ["pytest", "pyclean", "vw-executor"]
