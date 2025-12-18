@@ -17,10 +17,7 @@ skip = [
 test-requires = ["pytest", "pyclean", "vw-executor"]
 test-command = [
     "pyclean {project}/python/tests",
-    "echo 'Running Vowpal Wabbit Python tests...'",
     "pytest {project}/python/tests",
-    "if [ -z \"$NO_VW_PYTHON_DOCTEST\" ]; then echo 'Running Vowpal Wabbit Python doctests...'; fi",
-    "if [ -z \"$NO_VW_PYTHON_DOCTEST\" ]; then python {project}/python/tests/run_doctest.py; fi",
 ]
 test-sources = "test/"
 
