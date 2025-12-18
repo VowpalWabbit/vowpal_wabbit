@@ -33,10 +33,6 @@
     "benchmarks": {
       "description": "Build Benchmarks",
       "dependencies": ["benchmark"]
-    },
-    "python": {
-      "description": "Build Python bindings",
-      "dependencies": ["boost-python"]
     }
   }
 }

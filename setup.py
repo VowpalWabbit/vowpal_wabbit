@@ -19,7 +19,6 @@ system = platform.system()
 version_info = sys.version_info
 here = os.path.abspath(os.path.dirname(__file__))
 pkg_path = os.path.join(here, "python")
-vcpkg_path = os.path.join(here, "ext_libs", "vcpkg")
 
 
 class Distribution(_distribution):
@@ -37,7 +36,7 @@ class Distribution(_distribution):
     ]
 
     def __init__(self, attrs=None):
-        self.vcpkg_root = vcpkg_path
+        self.vcpkg_root = None
         self.enable_boost_cmake = None
         self.cmake_options = None
         self.cmake_generator = None
@@ -120,20 +119,13 @@ class BuildPyLibVWBindingsModule(_build_ext):
 
         cmake_generator = self.distribution.cmake_generator
 
-        if os.environ.get("VW_PYTHON_USE_VCPKG", False):
-            if self.distribution.vcpkg_root is not None and os.path.isdir(
-                self.distribution.vcpkg_root
-            ):
-                # add the vcpkg toolchain if its provided
-                abs_vcpkg_path = os.path.abspath(self.distribution.vcpkg_root)
-                vcpkg_toolchain = os.path.join(
-                    abs_vcpkg_path, "scripts", "buildsystems", "vcpkg.cmake"
-                )
-                cmake_args += ["-DCMAKE_TOOLCHAIN_FILE=" + vcpkg_toolchain]
-            else:
-                raise RuntimeError(
-                    "VW_PYTHON_USE_VCPKG is set but vcpkg root is not provided."
-                )
+        if self.distribution.vcpkg_root is not None:
+            # add the vcpkg toolchain if its provided
+            abs_vcpkg_path = os.path.abspath(self.distribution.vcpkg_root)
+            vcpkg_toolchain = os.path.join(
+                abs_vcpkg_path, "scripts", "buildsystems", "vcpkg.cmake"
+            )
+            cmake_args += ["-DCMAKE_TOOLCHAIN_FILE=" + vcpkg_toolchain]
 
         if system == "Windows":
             cmake_args += [

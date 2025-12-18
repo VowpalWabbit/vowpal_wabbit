@@ -35,6 +35,10 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
       - name: Install Ninja
         uses: seanmiddleditch/gha-setup-ninja@master
+      - name: Install dotnet SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '8.0.x'
       - name: Install dotnet t4
         run: dotnet tool install --global dotnet-t4
       - name: Setup Nuget
@@ -153,6 +157,12 @@ jobs:
           submodules: 'recursive'
       - if: ${{ startsWith(matrix.config.os, 'windows') }}
         uses: ilammy/msvc-dev-cmd@v1
+      - name: Install dotnet SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '8.0.x'
+      - name: Setup Nuget
+        uses: nuget/setup-nuget@v2
 
       # Get version number
       - name: Update git tags
@@ -212,6 +222,12 @@ jobs:
         with:
           submodules: 'recursive'
       - uses: ilammy/msvc-dev-cmd@v1
+      - name: Install dotnet SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '8.0.x'
+      - name: Setup Nuget
+        uses: nuget/setup-nuget@v2
 
       # Get version number
       - name: Update git tags
@@ -275,6 +291,12 @@ jobs:
         with:
           submodules: 'recursive'
       - uses: ilammy/msvc-dev-cmd@v1
+      - name: Install dotnet SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '8.0.x'
+      - name: Setup Nuget
+        uses: nuget/setup-nuget@v2
       # Needed for generating benchmark plots
       - uses: r-lib/actions/setup-r@v2
 
