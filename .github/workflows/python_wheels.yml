@@ -21,6 +21,24 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  cibuildwheel-build:
+    name: cibuildwheel.${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        # macos-15-intel is an Intel runner, macos-14 is Apple silicon
+        os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, windows-11-arm, macos-15-intel, macos-14]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v3.3.0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cibw-wheels-${{ matrix.os }}
+          path: ./wheelhouse/*.whl
+
   linux-python-build:
     name: manylinux.amd64.py${{ matrix.config.version}}.build
     container:
@@ -50,6 +68,7 @@ jobs:
         with:
           name: manylinux_amd64_${{ matrix.config.version }}
           path: audit_output/
+
   linux-python-test:
     name: manylinux.amd64.py${{ matrix.version }}.test
     needs: linux-python-build
@@ -88,6 +107,7 @@ jobs:
         run: |
           cd test
           python run_tests.py -E 0.001 -f --skip_spanning_tree_tests --vw_bin_path "python3 -m vowpalwabbit" --skip_test 60 61 92 96 149 152 177 193 194 195 220 275 276 324 325 326 349 350 356 357 358 385 389 390 391 392 393 400 399 401 403 431 440
+
   linux-python-sdist-bundle:
     name: ubuntu-latest.amd64.py3.8.sdist-bundle
     runs-on: ubuntu-latest
@@ -108,6 +128,7 @@ jobs:
           name: python_source_distribution
           path: dist/*.tar.gz
           if-no-files-found: error
+
   linux-python-sdist-build-test:
     name: ubuntu-latest.amd64.py3.8.sdist-build-test
     needs: linux-python-sdist-bundle
@@ -140,6 +161,7 @@ jobs:
         shell: bash
         run: |
           python -m pytest ./python/tests/
+
   linux-python-build-aarch64:
     name: manylinux.aarch64.py${{ matrix.config.version }}.build
     # Aarch builds are slow and are only run on push and not PR
@@ -173,6 +195,7 @@ jobs:
       with:
         name: manylinux_aarch64_${{ matrix.config.version }}
         path: audit_output/
+
   linux-python-test-aarch64:
     name: manylinux.aarch64.py${{ matrix.config.version }}.test
     needs: linux-python-build-aarch64
@@ -220,6 +243,7 @@ jobs:
             python --version && \
             python -m pytest ./python/tests/ && \
             deactivate'
+
   macos-python-build:
     name: macos.amd64.py${{ matrix.config.version }}.build
     runs-on: macos-12
@@ -251,6 +275,7 @@ jobs:
         with:
           name: macos_amd64_${{ matrix.config.version }}
           path: wheel_output/
+
   macos-python-test:
     name: macos.amd64.py${{ matrix.version }}.test
     needs: macos-python-build
@@ -279,6 +304,7 @@ jobs:
           twine check built_wheel/*.whl
           python -m pytest ./python/tests/
           python ./python/tests/run_doctest.py
+
   windows-python-build:
     name: windows-2019.amd64.py${{ matrix.config.version }}.build
     runs-on: windows-2019
@@ -336,6 +362,7 @@ jobs:
         with:
           name: windows_amd64_${{ matrix.config.version }}
           path: wheel_output
+
   windows-python-test:
     name: ${{ matrix.os }}.amd64.py${{ matrix.version }}.test
     needs: windows-python-build
