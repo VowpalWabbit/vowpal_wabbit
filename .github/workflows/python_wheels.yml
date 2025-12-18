@@ -40,7 +40,7 @@ jobs:
           vcpkgDirectory: '${{ github.workspace }}/ext_libs/vcpkg'
           runVcpkgInstall: true
       - name: Skip doctests on some builds due to float precision differences
-        if: ${{ ! startsWith(matrix.os, 'ubuntu') }}
+        if: ${{ !startsWith(matrix.os, 'ubuntu') || endsWith(matrix.os, '-arm') }}
         run: echo "NO_VW_PYTHON_DOCTEST=1" >> $GITHUB_ENV
       - name: Build wheels
         uses: pypa/cibuildwheel@v3.3.0
