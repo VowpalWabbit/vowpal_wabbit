@@ -151,12 +151,12 @@ class BuildPyLibVWBindingsModule(_build_ext):
             if cmake_generator is None:
                 cmake_generator = "Ninja"
 
-            build_args += [
-                "--",
-                "-j{}".format(multiprocessing.cpu_count()),
-                # Build the pylibvw target
-                "pylibvw",
-            ]
+            build_args.append("--")
+            if cmake_generator != "Ninja":
+                build_args.append("-j{}".format(multiprocessing.cpu_count()))
+
+            # Build the pylibvw target
+            build_args.append("pylibvw")
 
         if cmake_generator is not None:
             cmake_args += ["-G", cmake_generator]
@@ -234,4 +234,10 @@ setup(
         "sdist": Sdist,
         "install_lib": InstallLib,
     },
+    install_requires=[
+        "numpy",
+        "scipy",
+        "scikit-learn",
+        "pandas",
+    ],
 )

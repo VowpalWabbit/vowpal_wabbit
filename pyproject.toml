@@ -1,3 +1,5 @@
+# pyproject.toml file for building Vowpal Wabbit python wheels
+
 [build-system]
 requires = [
     "setuptools",
@@ -7,11 +9,22 @@ requires = [
 ]
 build-backend = "setuptools.build_meta"
 
+[tool.cibuildwheel]
+skip = "*musllinux*"
+test-requires = ["pytest", "pyclean", "vw-executor"]
+test-command = [
+    "pyclean {project}/python/tests",
+    "pytest {project}/python/tests",
+    "python {project}/python/tests/run_doctest.py",
+]
+test-sources = "test/"
+
 [tool.cibuildwheel.linux]
 before-all = [
     # Install boost and zlib development packages
     # cibuildwheel runs in Red Hat based Linux container environment
     "dnf install -y boost-devel boost-python3-devel zlib-devel",
+    #"dnf install -y boost-devel boost-python3-devel boost-static zlib-devel zlib-static",
 ]
 before-build = [
     # Container uses an old version of Boost Python incompatible with Python 3.11+ C API
