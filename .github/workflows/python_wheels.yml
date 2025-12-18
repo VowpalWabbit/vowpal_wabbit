@@ -21,26 +21,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  cibuildwheel-build:
+  cibuildwheel-build-linux:
     name: cibuildwheel.${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        # macos-15-intel is an Intel runner, macos-14 is Apple silicon
-        os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, macos-15-intel, macos-14]
+        os: [ubuntu-latest, ubuntu-24.04-arm]
       fail-fast: false
     steps:
       - uses: actions/checkout@v6
         with:
           submodules: true
           fetch-depth: 0
-      - name: Setup vcpkg
-        if: ${{ startsWith(matrix.os, 'windows') }}
-        uses: lukka/run-vcpkg@v11
-        with:
-          vcpkgDirectory: '${{ github.workspace }}/ext_libs/vcpkg'
-          runVcpkgInstall: true
-          vcpkgJsonGlob: 'vcpkg.json'
       - name: Build wheels
         uses: pypa/cibuildwheel@v3.3.0
       - uses: actions/upload-artifact@v4
@@ -48,74 +40,31 @@ jobs:
           name: cibw-wheels-${{ matrix.os }}
           path: ./wheelhouse/*.whl
 
-  linux-python-build:
-    name: manylinux.amd64.py${{ matrix.config.version}}.build
-    container:
-      image: vowpalwabbit/manylinux2010-build:latest
-    runs-on: ubuntu-latest
+  cibuildwheel-build-windows-mac:
+    name: cibuildwheel.${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    env:
+      VW_PYTHON_USE_VCPKG: "1"
     strategy:
       matrix:
-        config:
-        - { version: "3.6", base_path: /opt/python/cp36-cp36m/, include_dir_name: python3.6m/ }
-        - { version: "3.7", base_path: /opt/python/cp37-cp37m/, include_dir_name: python3.7m/ }
-        - { version: "3.8", base_path: /opt/python/cp38-cp38/, include_dir_name: python3.8/ }
-        - { version: "3.9", base_path: /opt/python/cp39-cp39/, include_dir_name: python3.9/ }
-        - { version: "3.10", base_path: /opt/python/cp310-cp310/, include_dir_name: python3.10/ }
+        # macos-15-intel is an Intel runner, macos-14 is Apple silicon
+        os: [windows-latest, macos-15-intel, macos-14]
       fail-fast: false
     steps:
-      # v1 must be used because newer versions require a node.js version that will not run on this old image.
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v6
         with:
-          submodules: recursive
-      - name: Build wheel
-        shell: bash
-        run: |
-          ${{ matrix.config.base_path }}bin/pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='${{ matrix.config.base_path }}include/${{ matrix.config.include_dir_name }}'" --verbose
-          auditwheel repair wheel_output/*whl -w audit_output/
-      - name: Upload built wheel
-        uses: actions/upload-artifact@v4
+          submodules: true
+          fetch-depth: 0
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
         with:
-          name: manylinux_amd64_${{ matrix.config.version }}
-          path: audit_output/
-
-  linux-python-test:
-    name: manylinux.amd64.py${{ matrix.version }}.test
-    needs: linux-python-build
-    container:
-      image: python:${{ matrix.version }}
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        version: ["3.6", "3.7", "3.8", "3.9", "3.10"]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v1
+          vcpkgDirectory: '${{ github.workspace }}/ext_libs/vcpkg'
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v3.3.0
+      - uses: actions/upload-artifact@v4
         with:
-          submodules: recursive
-      - uses: actions/download-artifact@v4
-        with:
-          name: manylinux_amd64_${{ matrix.version }}
-          path: built_wheel
-      - name: Test wheel
-        shell: bash
-        run: |
-          pip install -r requirements.txt
-          pip install pytest vw-executor twine
-          pip install --force-reinstall built_wheel/*.whl
-          twine check built_wheel/*.whl
-          python -m pytest ./python/tests/
-          python ./python/tests/run_doctest.py
-      - name: Run vw tests as Python module
-        shell: bash
-        # Onethread is not supported in the Python wrapper so those tests must be skipped
-        # Stdin is not supported
-        # Help output tests assume --onthread is in the output
-        # Fail tests are not included because the python stack trace causes the output to differ
-        # Daemon tests are skipped
-        # Tests without datafiles are skipped
-        run: |
-          cd test
-          python run_tests.py -E 0.001 -f --skip_spanning_tree_tests --vw_bin_path "python3 -m vowpalwabbit" --skip_test 60 61 92 96 149 152 177 193 194 195 220 275 276 324 325 326 349 350 356 357 358 385 389 390 391 392 393 400 399 401 403 431 440
+          name: cibw-wheels-${{ matrix.os }}
+          path: ./wheelhouse/*.whl
 
   linux-python-sdist-bundle:
     name: ubuntu-latest.amd64.py3.8.sdist-bundle
@@ -172,155 +121,3 @@ jobs:
         run: |
           python -m pyclean ./python/tests/
           python -m pytest ./python/tests/
-
-  macos-python-build:
-    name: macos.amd64.py${{ matrix.config.version }}.build
-    runs-on: macos-12
-    strategy:
-      matrix:
-        config:
-        - { version: 3.6, include_dir_name: python3.6m/}
-        - { version: 3.7, include_dir_name: python3.7m/}
-        - { version: 3.8, include_dir_name: python3.8/}
-        - { version: 3.9, include_dir_name: python3.9/}
-        - { version: "3.10", include_dir_name: python3.10/}
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          submodules: recursive
-      - uses: conda-incubator/setup-miniconda@v2
-        with:
-          auto-update-conda: true
-          python-version: ${{ matrix.config.version }}
-      - name: Build wheel
-        shell: bash -l {0}
-        run: |
-          conda info
-          conda install python=${{ matrix.config.version }} wheel zlib boost py-boost flatbuffers
-          pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR=\"$CONDA_PREFIX/include/${{ matrix.config.include_dir_name }}\"" --verbose
-      - name: Upload built wheel
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos_amd64_${{ matrix.config.version }}
-          path: wheel_output/
-
-  macos-python-test:
-    name: macos.amd64.py${{ matrix.version }}.test
-    needs: macos-python-build
-    runs-on: macos-12
-    strategy:
-      matrix:
-        version: [3.6, 3.7, 3.8, 3.9, "3.10"]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          submodules: recursive
-      - uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.version }}
-      - uses: actions/download-artifact@v4
-        with:
-          name: macos_amd64_${{ matrix.version }}
-          path: built_wheel
-      - name: Test wheel
-        shell: bash
-        run: |
-          pip install -r requirements.txt
-          pip install pytest vw-executor twine
-          pip install --force-reinstall built_wheel/*.whl
-          twine check built_wheel/*.whl
-          python -m pytest ./python/tests/
-          python ./python/tests/run_doctest.py
-
-  windows-python-build:
-    name: windows-2019.amd64.py${{ matrix.config.version }}.build
-    runs-on: windows-2019
-    env:
-      VCPKG_ROOT: ${{ github.workspace }}\\vcpkg
-      VCPKG_REF: 53bef8994c541b6561884a8395ea35715ece75db
-      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}\vcpkg_binary_cache
-    strategy:
-      matrix:
-        config:
-        - { version: "3.6", vcpkg_manifest: "python\\vcpkg_default.json", overlay_ports: "python\\vcpkg_python_override_ports\\python36\\"}
-        - { version: "3.7", vcpkg_manifest: "python\\vcpkg_default.json", overlay_ports: "python\\vcpkg_python_override_ports\\python37\\"}
-        - { version: "3.8", vcpkg_manifest: "python\\vcpkg_default.json", overlay_ports: "python\\vcpkg_python_override_ports\\python38\\" }
-        - { version: "3.9", vcpkg_manifest: "python\\vcpkg_default.json", overlay_ports: "python\\vcpkg_python_override_ports\\python39\\" }
-        - { version: "3.10", vcpkg_manifest: "python\\vcpkg_python310.json", overlay_ports: "" }
-      fail-fast: false
-    steps:
-      - uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.config.version }}
-      - uses: actions/checkout@v6
-        with:
-          submodules: recursive
-          path: ${{github.workspace}}\vowpal_wabbit
-      - uses: actions/checkout@v6
-        with:
-          path: ${{ env.VCPKG_ROOT }}
-          repository: 'microsoft/vcpkg'
-          ref: ${{ env.VCPKG_REF }}
-          # We need a deep clone so that we can go back in history for version selection.
-          fetch-depth: '0'
-      - name: Restore vcpkg and build artifacts
-        uses: actions/cache@v3
-        with:
-          path: |
-            ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
-          key: |
-            ${{ env.VCPKG_REF }}-${{ matrix.config.version }}-python-win-cache-invalidate-5
-      - run: ${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.bat
-      - name: Build wheel
-        shell: powershell
-        run: |
-          if (![System.IO.Directory]::Exists("${{ env.VCPKG_DEFAULT_BINARY_CACHE }}"))
-          {
-              New-Item -ItemType Directory -Force -Path "${{ env.VCPKG_DEFAULT_BINARY_CACHE }}"
-          }
-          ls ${{ github.workspace }}
-          ls ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
-          cd ${{github.workspace}}\\vowpal_wabbit
-          cp ${{ matrix.config.vcpkg_manifest }} vcpkg.json
-          pip install wheel
-          pip wheel . -w ${{github.workspace}}\\wheel_output --global-option --vcpkg-root="${{ env.VCPKG_ROOT }}" --global-option --cmake-generator="Visual Studio 16 2019" --global-option --cmake-options="-DVCPKG_OVERLAY_PORTS=${{github.workspace}}\\vowpal_wabbit\\${{ matrix.config.overlay_ports }}"  --verbose
-      - name: Upload built wheel
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows_amd64_${{ matrix.config.version }}
-          path: wheel_output
-
-  windows-python-test:
-    name: ${{ matrix.os }}.amd64.py${{ matrix.version }}.test
-    needs: windows-python-build
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        version: ["3.6", "3.7", "3.8", "3.9", "3.10"]
-        os: ["windows-2019"]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          submodules: recursive
-      - uses: actions/setup-python@v2
-        with:
-          python-version: ${{ matrix.version }}
-      - uses: actions/download-artifact@v4
-        with:
-          name: windows_amd64_${{ matrix.version }}
-          path: built_wheel
-      - name: Install deps and test wheel
-        shell: bash
-        run: |
-          export wheel_files=(built_wheel/*)
-          export wheel_file="${wheel_files[0]}"
-          echo Installing ${wheel_file}...
-          pip install -r requirements.txt
-          pip install pytest vw-executor twine
-          pip install --force-reinstall ${wheel_file}
-          twine check ${wheel_file}
-          python -m pytest .\\python\\tests\\
-          python .\\python\\tests\\run_doctest.py
