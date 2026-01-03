@@ -31,12 +31,17 @@ jobs:
         with:
             node-version: 16
       - name: Configure
-        run: emcmake cmake --preset wasm -G Ninja -DCMAKE_BUILD_TYPE=MinSizeRel -DCMAKE_TOOLCHAIN_FILE=$(pwd)/ext_libs/vcpkg/scripts/buildsystems/vcpkg.cmake -DSPDLOG_FMT_EXTERNAL=OFF
-      - name: Patch spdlog to disable FMT_COMPILE_STRING for Emscripten
+        run: emcmake cmake --preset wasm -G Ninja -DCMAKE_BUILD_TYPE=MinSizeRel -DCMAKE_TOOLCHAIN_FILE=$(pwd)/ext_libs/vcpkg/scripts/buildsystems/vcpkg.cmake -DSPDLOG_FMT_EXTERNAL=ON
+      - name: Patch spdlog to remove compile-time format checking for Emscripten
         shell: bash
         run: |
-          # Replace SPDLOG_FMT_STRING with regular string literals in spdlog headers
-          find build/vcpkg_installed/wasm32-emscripten/include/spdlog -type f -name "*.h" -exec sed -i 's/SPDLOG_FMT_STRING(\([^)]*\))/\1/g' {} +
+          # Disable FMT_COMPILE_STRING and SPDLOG_FMT_STRING macros
+          find build/vcpkg_installed/wasm32-emscripten/include/spdlog -type f \( -name "*.h" -o -name "*.hpp" \) -exec sed -i \
+            -e 's/SPDLOG_FMT_STRING(\([^)]*\))/\1/g' \
+            -e 's/FMT_COMPILE_STRING(\([^)]*\))/\1/g' \
+            {} +
+          # Also define SPDLOG_USE_STD_FORMAT=0 to avoid std::format usage
+          echo "Patched spdlog headers for Emscripten compatibility"
       - name: Build
         run: cmake --build build --target vw-wasm
       - uses: actions/upload-artifact@v4
