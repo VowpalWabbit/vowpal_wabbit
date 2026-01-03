@@ -69,7 +69,10 @@ struct example_ptr
     return _example;
   }
 
-  example_ptr(VW::example* ex, const std::shared_ptr<VW::workspace>& vw_ptr) : _example(ex), weak_vw_ptr(vw_ptr), _released(false) {}
+  example_ptr(VW::example* ex, const std::shared_ptr<VW::workspace>& vw_ptr)
+      : _example(ex), weak_vw_ptr(vw_ptr), _released(false)
+  {
+  }
   ~example_ptr()
   {
     if (!_released)
