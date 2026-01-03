@@ -55,6 +55,10 @@
 #include <sstream>
 #include <tuple>
 #include <utility>
+
+#include <fmt/format.h>
+#include <fmt/ranges.h>
+
 #ifdef VW_FEAT_CSV_ENABLED
 #  include "vw/csv_parser/parse_example_csv.h"
 #endif

@@ -25,6 +25,9 @@
 
 #include <iostream>
 
+#include <fmt/format.h>
+#include <fmt/ranges.h>
+
 namespace
 {
 

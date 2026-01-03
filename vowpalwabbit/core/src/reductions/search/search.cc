@@ -35,6 +35,7 @@
 #include <cstring>
 #include <memory>
 // needed for printing ranges of objects (eg: all elements of a vector)
+#include <fmt/format.h>
 #include <fmt/ranges.h>
 
 using namespace VW::LEARNER;
