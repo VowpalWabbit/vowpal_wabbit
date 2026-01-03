@@ -44,6 +44,8 @@
 #include "vw/io/owning_stream.h"
 #include "vw/text_parser/parse_example_text.h"
 
+#include <fmt/format.h>
+#include <fmt/ranges.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -55,9 +57,6 @@
 #include <sstream>
 #include <tuple>
 #include <utility>
-
-#include <fmt/format.h>
-#include <fmt/ranges.h>
 
 #ifdef VW_FEAT_CSV_ENABLED
 #  include "vw/csv_parser/parse_example_csv.h"

@@ -23,10 +23,10 @@
 #include "vw/core/unique_sort.h"
 #include "vw/text_parser/parse_example_text.h"
 
-#include <iostream>
-
 #include <fmt/format.h>
 #include <fmt/ranges.h>
+
+#include <iostream>
 
 namespace
 {
