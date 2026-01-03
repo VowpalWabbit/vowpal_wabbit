@@ -32,6 +32,12 @@ jobs:
             node-version: 16
       - name: Configure
         run: emcmake cmake --preset wasm -G Ninja -DCMAKE_BUILD_TYPE=MinSizeRel -DCMAKE_TOOLCHAIN_FILE=$(pwd)/ext_libs/vcpkg/scripts/buildsystems/vcpkg.cmake -DSPDLOG_FMT_EXTERNAL=OFF
+      - name: Patch spdlog headers to remove SPDLOG_FMT_STRING for Emscripten
+        shell: bash
+        run: |
+          echo "Patching spdlog bundled headers to remove SPDLOG_FMT_STRING..."
+          find build/vcpkg_installed/wasm32-emscripten/include/spdlog -type f -name "*.h" -exec sed -i 's/SPDLOG_FMT_STRING(\([^)]*\))/\1/g' {} +
+          echo "Patching complete"
       - name: Build
         run: cmake --build build --target vw-wasm
       - uses: actions/upload-artifact@v4
