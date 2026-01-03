@@ -65,7 +65,7 @@ jobs:
       - name: Build wheel
         shell: bash
         run: |
-          pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='/opt/python/cp310-cp310/include/python3.10/'" --verbose
+          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DPython_INCLUDE_DIR='/opt/python/cp310-cp310/include/python3.10/'" pip wheel . -w wheel_output/ --verbose
           auditwheel repair wheel_output/*whl -w audit_output/
       - name: Upload built wheel
         uses: actions/upload-artifact@v4

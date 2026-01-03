@@ -32,7 +32,7 @@ jobs:
         run: |
           git clone --recursive https://github.com/VowpalWabbit/vowpal_wabbit.git
           cd vowpal_wabbit
-          /opt/python/cp310-cp310/bin/pip wheel . -w wheel_last_commit/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='/opt/python/cp310-cp310/include/python3.10/'" --verbose
+          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DPython_INCLUDE_DIR='/opt/python/cp310-cp310/include/python3.10/'" /opt/python/cp310-cp310/bin/pip wheel . -w wheel_last_commit/ --verbose
           cd ..
           auditwheel repair vowpal_wabbit/wheel_last_commit/*whl -w audit_last_commit/
       - name: Upload built wheel
@@ -83,7 +83,7 @@ jobs:
         shell: bash
         run: |
           mv .vw_runtests_model_gen_working_dir ~
-          /opt/python/cp310-cp310/bin/pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='/opt/python/cp310-cp310/include/python3.10/'" --verbose
+          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DPython_INCLUDE_DIR='/opt/python/cp310-cp310/include/python3.10/'" /opt/python/cp310-cp310/bin/pip wheel . -w wheel_output/ --verbose
           auditwheel repair wheel_output/*whl -w audit_output/
           /opt/python/cp310-cp310/bin/python3.10 -m pip install wheel_output/*.whl
           /opt/python/cp310-cp310/bin/python3.10 ./test/run_tests_model_gen_and_load.py --load_models --skip_pr_tests "${{ github.event.pull_request.title }}"
