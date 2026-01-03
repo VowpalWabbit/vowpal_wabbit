@@ -7,6 +7,11 @@
 #include "vw/common/vw_exception.h"
 #include "vw/common/vw_throw.h"
 
+// For Wasm builds, override SPDLOG_FMT_STRING to avoid consteval issues with Emscripten
+#ifdef __EMSCRIPTEN__
+#  define SPDLOG_FMT_STRING(s) s
+#endif
+
 #include <spdlog/logger.h>
 #include <spdlog/sinks/base_sink.h>
 #include <spdlog/sinks/null_sink.h>
