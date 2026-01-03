@@ -14,7 +14,11 @@
   "overrides": [
     {
       "name": "fmt",
-      "version": "9.1.0"
+      "version": "11.0.2"
+    },
+    {
+      "name": "spdlog",
+      "version": "1.14.1"
     }
   ],
   "features": {
