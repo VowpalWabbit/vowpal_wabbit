@@ -32,12 +32,16 @@ jobs:
             node-version: 16
       - name: Configure
         run: emcmake cmake --preset wasm -G Ninja -DCMAKE_BUILD_TYPE=MinSizeRel -DCMAKE_TOOLCHAIN_FILE=$(pwd)/ext_libs/vcpkg/scripts/buildsystems/vcpkg.cmake -DSPDLOG_FMT_EXTERNAL=OFF
-      - name: Patch spdlog headers to remove SPDLOG_FMT_STRING for Emscripten
+      - name: Patch spdlog to disable FMT_COMPILE_STRING macro
         shell: bash
         run: |
-          echo "Patching spdlog bundled headers to remove SPDLOG_FMT_STRING..."
-          find build/vcpkg_installed/wasm32-emscripten/include/spdlog -type f -name "*.h" -exec sed -i 's/SPDLOG_FMT_STRING(\([^)]*\))/\1/g' {} +
-          echo "Patching complete"
+          # Find and patch the SPDLOG_FMT_STRING macro definition in spdlog headers
+          # Change it from using FMT_STRING/FMT_COMPILE_STRING to just passthrough
+          find build/vcpkg_installed/wasm32-emscripten/include/spdlog -name "*.h" -exec sed -i \
+            -e 's/#define SPDLOG_FMT_STRING(s) FMT_STRING(s)/#define SPDLOG_FMT_STRING(s) s/g' \
+            -e 's/#define SPDLOG_FMT_STRING(s) FMT_COMPILE_STRING(s)/#define SPDLOG_FMT_STRING(s) s/g' \
+            {} +
+          echo "Patched SPDLOG_FMT_STRING macro definition"
       - name: Build
         run: cmake --build build --target vw-wasm
       - uses: actions/upload-artifact@v4
