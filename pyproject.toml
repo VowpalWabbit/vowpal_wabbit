@@ -41,4 +41,6 @@ before-build = [
 before-all = [
     # Install boost via brew
     "brew install boost boost-python3 flatbuffers ninja cmake",
+    # Apply zlib fdopen patch for macOS compatibility
+    "patch {project}/ext_libs/zlib/zutil.h {project}/ext_libs/zlib_fdopen_macos.patch",
 ]

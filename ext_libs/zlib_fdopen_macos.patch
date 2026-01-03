@@ -1,0 +1,17 @@
+diff --git a/zutil.h b/zutil.h
+index 0bc7f4e..a09474e 100644
+--- a/zutil.h
++++ b/zutil.h
+@@ -144,7 +144,11 @@ extern z_const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
+ #      include <unix.h> /* for fdopen */
+ #    else
+ #      ifndef fdopen
+-#        define fdopen(fd,mode) NULL /* No fdopen() */
++#        if defined(__APPLE__)
++           /* On macOS, fdopen always exists; do not redefine */
++#        else
++#          define fdopen(fd,mode) NULL /* No fdopen() */
++#        endif
+ #      endif
+ #    endif
+ #  endif

@@ -30,6 +30,10 @@ jobs:
         with:
           submodules: true
           fetch-depth: 0
+      - name: Apply zlib fdopen patch
+        if: ${{ startsWith(matrix.os, 'macos') }}
+        shell: bash
+        run: patch ext_libs/zlib/zutil.h ext_libs/zlib_fdopen_macos.patch
       - uses: ilammy/msvc-dev-cmd@v1
       - uses: lukka/get-cmake@latest
       - name: Setup vcpkg

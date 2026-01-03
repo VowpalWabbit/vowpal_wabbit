@@ -44,6 +44,12 @@ jobs:
       - name: Setup Nuget
         uses: nuget/setup-nuget@v2
 
+      # Apply zlib patch for macOS
+      - name: Apply zlib fdopen patch
+        if: ${{ startsWith(matrix.config.os, 'macos') }}
+        shell: bash
+        run: patch ext_libs/zlib/zutil.h ext_libs/zlib_fdopen_macos.patch
+
       # Get version number
       - name: Update git tags
         # Needed because actions/checkout performs a shallow checkout without tags
