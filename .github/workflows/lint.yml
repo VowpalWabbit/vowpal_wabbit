@@ -57,6 +57,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: wheel_${{ matrix.config.version }}
+          path: downloaded_wheel
       - name: Install dependencies
         shell: bash
         run: |
@@ -67,10 +68,7 @@ jobs:
       - name: Install wheel
         shell: bash
         run: |
-          export wheel_files=(wheel_${{ matrix.config.version }}/*)
-          export wheel_file="${wheel_files[0]}"
-          echo Installing ${wheel_file}...
-          pip install ${wheel_file}
+          pip install downloaded_wheel/*.whl
       - name: Run pytype
         shell: bash
         run: |
