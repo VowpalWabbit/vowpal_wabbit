@@ -36,7 +36,7 @@ before-build = [
     # Python 3.13+ uses PyObject_CallFunction instead of PyEval_CallFunction etc.
     "if [ $(python -c 'import sys; print(sys.version_info.minor)') -ge 13 ]; then sed -i 's/PyEval_Call/PyObject_Call/g' /usr/include/boost/python/*.hpp; fi",
 ]
-environment = { CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=ON -DBOOST_PY_VERSION_SUFFIX=3" }
+environment = { CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=ON -DBOOST_PY_VERSION_SUFFIX:STRING=3" }
 
 [tool.cibuildwheel.macos]
 before-all = [
@@ -45,4 +45,4 @@ before-all = [
     # Apply zlib fdopen patch for macOS compatibility
     "patch {project}/ext_libs/zlib/zutil.h {project}/ext_libs/zlib_fdopen_macos.patch",
 ]
-environment = { CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=ON -DBOOST_PY_VERSION_SUFFIX=3" }
+environment = { CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=ON -DBOOST_PY_VERSION_SUFFIX:STRING=3" }
