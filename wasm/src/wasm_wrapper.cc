@@ -1,5 +1,6 @@
 #include "vw/common/text_utils.h"
 #include "vw/config/options.h"
+#include "vw/config/options_cli.h"
 #include "vw/core/example.h"
 #include "vw/core/learner.h"
 #include "vw/core/parse_example.h"
