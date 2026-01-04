@@ -49,5 +49,10 @@ before-all = [
 ]
 # Homebrew's boost-python3 is built against system Python 3.14 and provides python314 component
 # Force this suffix regardless of which Python version cibuildwheel is building for
-# Set MACOSX_DEPLOYMENT_TARGET=14.0 to match boost-python3's minimum deployment target
+# ARM64 (macos-14) uses deployment target 11.0, Intel (macos-15-intel) uses 14.0
+environment = { BOOST_PY_VERSION_SUFFIX="314", CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=ON", MACOSX_DEPLOYMENT_TARGET="11.0" }
+
+# Override deployment target for Intel builds to match boost-python3's higher requirement
+[[tool.cibuildwheel.overrides]]
+select = "*-macosx_*_x86_64"
 environment = { BOOST_PY_VERSION_SUFFIX="314", CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=ON", MACOSX_DEPLOYMENT_TARGET="14.0" }
