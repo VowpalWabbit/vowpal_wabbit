@@ -46,10 +46,11 @@ jobs:
     env:
       VW_PYTHON_USE_VCPKG: "1"
       CIBW_ENVIRONMENT_WINDOWS: >
-        CMAKE_ARGS="-DCMAKE_TOOLCHAIN_FILE={project}/ext_libs/vcpkg/scripts/buildsystems/vcpkg.cmake -DVW_ZLIB_SYS_DEP=OFF -DCMAKE_POLICY_VERSION_MINIMUM=3.5"
+        CMAKE_ARGS="-DCMAKE_TOOLCHAIN_FILE={project}/ext_libs/vcpkg/scripts/buildsystems/vcpkg.cmake -DVW_ZLIB_SYS_DEP=OFF"
       CIBW_BEFORE_BUILD_WINDOWS: >
         pip install delvewheel &&
-        cmd /c "cd /d {project}\\ext_libs\\vcpkg && (if not exist vcpkg.exe bootstrap-vcpkg.bat) && vcpkg.exe install"
+        cmd /c "cd /d {project}\\ext_libs\\vcpkg && (if not exist vcpkg.exe bootstrap-vcpkg.bat) && vcpkg.exe install" &&
+        powershell -Command "(Get-Content {project}\\ext_libs\\zlib\\CMakeLists.txt) -replace 'cmake_minimum_required\(VERSION 2\.4\.4\)', 'cmake_minimum_required(VERSION 3.5)' | Set-Content {project}\\ext_libs\\zlib\\CMakeLists.txt"
     strategy:
       matrix:
         # macos-15-intel is an Intel runner, macos-14 is Apple silicon
