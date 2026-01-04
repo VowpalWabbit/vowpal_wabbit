@@ -9,7 +9,10 @@
     },
     "eigen3",
     "fmt",
-    "rapidjson",
+    {
+      "name": "rapidjson",
+      "platform": "!emscripten"
+    },
     "spdlog",
     "string-view-lite",
     "zlib"
