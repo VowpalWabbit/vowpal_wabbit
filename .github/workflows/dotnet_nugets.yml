@@ -41,6 +41,15 @@ jobs:
           dotnet-version: '8.0.x'
       - name: Install dotnet t4
         run: dotnet tool install --global dotnet-t4
+      - name: Install Mono (for nuget.exe on non-Windows)
+        if: ${{ !startsWith(matrix.config.os, 'windows') }}
+        run: |
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            sudo apt-get update || true
+            sudo apt-get install -y mono-complete
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            brew install mono
+          fi
       - name: Setup Nuget
         uses: nuget/setup-nuget@v2
 
