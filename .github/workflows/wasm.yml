@@ -21,6 +21,18 @@ jobs:
         with:
           submodules: true
       - uses: lukka/get-cmake@latest
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update || true
+          sudo apt-get install -y ninja-build autoconf automake autoconf-archive
+      - name: Update vcpkg
+        run: |
+          cd ${{ github.workspace }}
+          git submodule update --init --remote ext_libs/vcpkg
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgDirectory: '${{ github.workspace }}/ext_libs/vcpkg'
       - uses: mymindstorm/setup-emsdk@v11
       - uses: actions/setup-node@v3
         with:
