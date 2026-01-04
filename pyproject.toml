@@ -45,6 +45,5 @@ before-all = [
     # Apply zlib fdopen patch for macOS compatibility
     "patch {project}/ext_libs/zlib/zutil.h {project}/ext_libs/zlib_fdopen_macos.patch",
 ]
-# Don't set BOOST_PY_VERSION_SUFFIX for macOS - let it auto-detect
-# Brew's boost-python3 appears to use versioned components
-environment = { CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=ON" }
+# Brew's boost-python3 only provides the generic "python3" component, not versioned ones
+environment = { BOOST_PY_VERSION_SUFFIX="3", CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=ON" }
