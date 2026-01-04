@@ -19,27 +19,22 @@ echo "  Executable: $PYTHON_EXEC"
 echo "  Include: $PYTHON_INCLUDE"
 echo "  Libdir: $PYTHON_LIBDIR"
 
-# Create project-config.jam
-cat > project-config.jam << EOF
+# Append Python configuration to project-config.jam (created by bootstrap.sh)
+cat >> project-config.jam << EOF
+
+# Python configuration for current version
 import python ;
-
-if ! [ python.configured ]
-{
-    using python
-        : $PYTHON_VERSION
-        : $PYTHON_EXEC
-        : $PYTHON_INCLUDE
-        : $PYTHON_LIBDIR
-        ;
-}
-
-# Only build boost.python library
-libraries = python ;
+using python
+    : $PYTHON_VERSION
+    : $PYTHON_EXEC
+    : $PYTHON_INCLUDE
+    : $PYTHON_LIBDIR
+    ;
 EOF
 
-echo "project-config.jam created:"
+echo "project-config.jam contents:"
 cat project-config.jam
 
 # Build and install only boost.python
 echo "Building boost.python..."
-./b2 --debug-configuration --with-python install -j$(sysctl -n hw.ncpu)
+./b2 --with-python install -j$(sysctl -n hw.ncpu) 2>&1 | tail -100
