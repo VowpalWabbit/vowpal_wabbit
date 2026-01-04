@@ -11,7 +11,7 @@ if(STATIC_LINK_VW_JAVA)
 endif()
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
-find_package(Boost CONFIG REQUIRED)
+find_package(Boost REQUIRED)
 
 # In boost version 1.67 Python version suffixes were instroduced for major and minor versions.
 # Allow BOOST_PY_VERSION_SUFFIX to be overridden (e.g., for generic python3 on manylinux/macOS)
@@ -28,7 +28,7 @@ if(NOT DEFINED BOOST_PY_VERSION_SUFFIX)
   endif(Boost_MINOR_VERSION GREATER 66)
 endif()
 
-find_package(Boost CONFIG REQUIRED COMPONENTS python${BOOST_PY_VERSION_SUFFIX})
+find_package(Boost REQUIRED COMPONENTS python${BOOST_PY_VERSION_SUFFIX})
 
 # Using find_package(Python...) allows us to only require the Python headers to be found.
 if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
