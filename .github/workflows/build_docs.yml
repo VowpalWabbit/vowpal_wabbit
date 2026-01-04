@@ -108,11 +108,11 @@ jobs:
         shell: bash
         run: |
           ls -la python_wheel/
-          wheel_file=$(ls python_wheel/*.whl | head -1)
+          wheel_file=$(ls python_wheel/vowpalwabbit-*.whl)
           echo "Installing ${wheel_file}..."
           pip install ${wheel_file}
           echo "Verifying installation..."
-          python -c "import vowpalwabbit; print(f'vowpalwabbit version: {vowpalwabbit.__version__}')"
+          python -c "import vowpalwabbit; print('vowpalwabbit imported successfully')"
       - name: Generate CLI docs
         run: |
           cd python/docs/cmd_options_template
