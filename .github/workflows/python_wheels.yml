@@ -47,10 +47,9 @@ jobs:
       VW_PYTHON_USE_VCPKG: "1"
       CIBW_ENVIRONMENT_WINDOWS: >
         CMAKE_ARGS="-DCMAKE_TOOLCHAIN_FILE={project}/ext_libs/vcpkg/scripts/buildsystems/vcpkg.cmake -DVW_ZLIB_SYS_DEP=OFF"
-        VCPKG_ROOT="{project}/ext_libs/vcpkg"
       CIBW_BEFORE_BUILD_WINDOWS: >
         pip install delvewheel &&
-        cmd /c "cd /d {project}\\ext_libs\\vcpkg && (if not exist vcpkg.exe bootstrap-vcpkg.bat) && vcpkg.exe install zlib:x64-windows"
+        cmd /c "cd /d {project}\\ext_libs\\vcpkg && (if not exist vcpkg.exe bootstrap-vcpkg.bat) && vcpkg.exe install"
     strategy:
       matrix:
         # macos-15-intel is an Intel runner, macos-14 is Apple silicon
