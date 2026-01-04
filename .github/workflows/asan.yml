@@ -44,7 +44,6 @@ jobs:
       - name: Clear vcpkg cache and update
         shell: bash
         run: |
-          cd ${{ github.workspace }}
           rm -rf ext_libs/vcpkg/downloads
           rm -rf ext_libs/vcpkg/buildtrees
           git submodule update --init --remote ext_libs/vcpkg
@@ -98,7 +97,6 @@ jobs:
       - name: Clear vcpkg cache and update
         shell: bash
         run: |
-          cd ${{ github.workspace }}
           rm -rf ext_libs/vcpkg/downloads
           rm -rf ext_libs/vcpkg/buildtrees
           git submodule update --init --remote ext_libs/vcpkg
