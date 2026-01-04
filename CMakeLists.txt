@@ -180,6 +180,11 @@ option(vw_BUILD_NET_FRAMEWORK "Build .NET Framework targets" OFF)
 option(VW_BUILD_WASM "Add WASM target" OFF)
 option(STD_INV_SQRT "Use standard library inverse square root" OFF)
 
+# Force VW_ZLIB_SYS_DEP to OFF for Windows Python builds to use vcpkg zlib
+if(WIN32 AND BUILD_PYTHON)
+  set(VW_ZLIB_SYS_DEP OFF CACHE BOOL "" FORCE)
+endif()
+
 if(VW_INSTALL AND NOT VW_ZLIB_SYS_DEP)
   message(WARNING "Installing with a vendored version of zlib is not recommended. Use VW_ZLIB_SYS_DEP to use a system dependency or specify VW_INSTALL=OFF to silence this warning.")
 endif()
