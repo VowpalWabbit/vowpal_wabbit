@@ -88,6 +88,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: python_wheel
+          path: python_wheel
       - name: Download vw-dump-options
         uses: actions/download-artifact@v4
         with:

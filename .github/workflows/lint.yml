@@ -68,6 +68,8 @@ jobs:
           pip install pytype
           # required for test and utl directory typecheck
           pip install hyperopt matplotlib seaborn
+          # required for pytype to analyze vowpalwabbit package
+          pip install importlib_metadata
       - name: Install wheel
         shell: bash
         run: |
