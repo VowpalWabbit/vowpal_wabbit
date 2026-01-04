@@ -57,7 +57,8 @@ before-build = [
 ]
 environment = { CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=ON -DBOOST_ROOT=/tmp/boost_install", MACOSX_DEPLOYMENT_TARGET="11.0" }
 
-# Override for ARM64 Linux builds to use conservative architecture flags
+# Override for ARM64 Linux builds to use conservative architecture flags and debug mode
+# Debug mode provides better error info for illegal instruction failures
 [[tool.cibuildwheel.overrides]]
 select = "*-manylinux_*_aarch64"
-environment = { BOOST_PY_VERSION_SUFFIX="3", CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=ON -DVW_ZLIB_SYS_DEP=OFF -DVW_FEAT_LAS_SIMD=OFF -DCMAKE_CXX_FLAGS='-march=armv8-a -mtune=generic' -DCMAKE_C_FLAGS='-march=armv8-a -mtune=generic'" }
+environment = { BOOST_PY_VERSION_SUFFIX="3", CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=ON -DVW_ZLIB_SYS_DEP=OFF -DVW_FEAT_LAS_SIMD=OFF -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS='-march=armv8-a -mtune=generic' -DCMAKE_C_FLAGS='-march=armv8-a -mtune=generic'" }
