@@ -37,7 +37,7 @@ jobs:
           mkdir -p vcpkg_binary_cache
           rm -rf ext_libs/vcpkg/downloads
           rm -rf ext_libs/vcpkg/buildtrees
-          git submodule update --init --remote ext_libs/vcpkg
+          git submodule update --init ext_libs/vcpkg
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11
         with:
