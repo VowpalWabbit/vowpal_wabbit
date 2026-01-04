@@ -34,7 +34,7 @@ jobs:
         run: |
           git clone --recursive https://github.com/VowpalWabbit/vowpal_wabbit.git
           cd vowpal_wabbit
-          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release" python3 -m pip wheel . -w wheel_last_commit/ --verbose
+          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -DBoost_NO_BOOST_CMAKE=ON" BOOST_PY_VERSION_SUFFIX="3" python3 -m pip wheel . -w wheel_last_commit/ --verbose
           cd ..
       - name: Upload built wheel
         uses: actions/upload-artifact@v4
@@ -87,6 +87,6 @@ jobs:
         shell: bash
         run: |
           mv .vw_runtests_model_gen_working_dir ~
-          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release" python3 -m pip wheel . -w wheel_output/ --verbose
+          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -DBoost_NO_BOOST_CMAKE=ON" BOOST_PY_VERSION_SUFFIX="3" python3 -m pip wheel . -w wheel_output/ --verbose
           python3 -m pip install wheel_output/*.whl
           python3 ./test/run_tests_model_gen_and_load.py --load_models --skip_pr_tests "${{ github.event.pull_request.title }}"
