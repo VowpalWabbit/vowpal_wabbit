@@ -41,6 +41,11 @@ jobs:
         run: |
           sudo apt-get update || true
           sudo apt-get install -y ninja-build autoconf automake autoconf-archive
+      - name: Update vcpkg
+        run: |
+          cd ${{ github.workspace }}/ext_libs/vcpkg
+          git fetch --unshallow || git fetch
+          git pull
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11
         with:
@@ -88,6 +93,11 @@ jobs:
         run: |
           sudo apt-get update || true
           sudo apt-get install -y ninja-build autoconf automake autoconf-archive
+      - name: Update vcpkg
+        run: |
+          cd ${{ github.workspace }}/ext_libs/vcpkg
+          git fetch --unshallow || git fetch
+          git pull
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11
         with:
