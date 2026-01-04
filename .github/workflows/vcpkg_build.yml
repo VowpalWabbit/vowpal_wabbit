@@ -45,9 +45,11 @@ jobs:
         if: ${{ startsWith(matrix.os, 'macos') }}
         run: |
           brew install ninja autoconf automake autoconf-archive
-      - name: Update vcpkg
+      - name: Clear vcpkg cache and update
         run: |
           cd ${{ github.workspace }}
+          rm -rf ext_libs/vcpkg/downloads
+          rm -rf ext_libs/vcpkg/buildtrees
           git submodule update --init --remote ext_libs/vcpkg
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11

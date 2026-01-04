@@ -31,13 +31,13 @@ jobs:
         run: |
           sudo apt-get update || true
           sudo apt-get install -y ninja-build autoconf automake autoconf-archive
-      - name: Clear vcpkg cache
+      - name: Clear vcpkg cache and update
         run: |
           rm -rf ${{github.workspace}}/vcpkg_binary_cache
           mkdir -p ${{github.workspace}}/vcpkg_binary_cache
-      - name: Update vcpkg
-        run: |
           cd ${{ github.workspace }}
+          rm -rf ext_libs/vcpkg/downloads
+          rm -rf ext_libs/vcpkg/buildtrees
           git submodule update --init --remote ext_libs/vcpkg
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11
