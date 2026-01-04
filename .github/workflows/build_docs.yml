@@ -107,10 +107,12 @@ jobs:
       - name: Install wheel
         shell: bash
         run: |
-          wheel_files=(python_wheel/*)
-          wheel_file="${wheel_files[0]}"
-          echo Installing ${wheel_file}...
+          ls -la python_wheel/
+          wheel_file=$(ls python_wheel/*.whl | head -1)
+          echo "Installing ${wheel_file}..."
           pip install ${wheel_file}
+          echo "Verifying installation..."
+          python -c "import vowpalwabbit; print(f'vowpalwabbit version: {vowpalwabbit.__version__}')"
       - name: Generate CLI docs
         run: |
           cd python/docs/cmd_options_template
