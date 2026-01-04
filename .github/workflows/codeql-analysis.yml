@@ -40,13 +40,13 @@ jobs:
     - uses: ilammy/msvc-dev-cmd@v1
       if: ${{ startsWith(matrix.config.os, 'windows') }}
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v2
+      uses: github/codeql-action/init@v3
       with:
         languages: ${{ matrix.config.language }}
         config-file: ./.github/codeql/codeql-config.yml
     - name: Autobuild Python
       if: matrix.config.language == 'python'
-      uses: github/codeql-action/autobuild@v2
+      uses: github/codeql-action/autobuild@v3
     - name: Build C++
       if: matrix.config.language == 'cpp'
       run: |
@@ -75,4 +75,4 @@ jobs:
         cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -Dvw_BUILD_NET_FRAMEWORK=On -DVW_FEAT_FLATBUFFERS=Off -DRAPIDJSON_SYS_DEP=Off -DFMT_SYS_DEP=Off -DSPDLOG_SYS_DEP=Off -DVW_ZLIB_SYS_DEP=Off -DVW_BOOST_MATH_SYS_DEP=Off -DVW_BUILD_VW_C_WRAPPER=Off -DBUILD_TESTING=Off -DBUILD_SHARED_LIBS=Off
         cmake --build build --config Debug -- /p:UseSharedCompilation=false
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v2
+      uses: github/codeql-action/analyze@v3
