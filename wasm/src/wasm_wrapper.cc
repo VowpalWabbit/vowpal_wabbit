@@ -172,9 +172,9 @@ struct vw_model_basic
   {
     args = "--quiet --no_stdin " + args_;
     char* bytes = (char*)bytes_;
-    VW::io_buf io;
-    io.add_file(VW::io::create_buffer_view(bytes, size));
-    vw_ptr = VW::initialize(VW::make_unique<VW::config::options_cli>(VW::split_command_line(args)), &io);
+    auto model_reader = VW::io::create_buffer_view(bytes, size);
+    vw_ptr =
+        VW::initialize(VW::make_unique<VW::config::options_cli>(VW::split_command_line(args)), std::move(model_reader));
     validate_options(*vw_ptr->options);
   }
 
@@ -183,9 +183,9 @@ struct vw_model_basic
   void load_model_from_buffer(size_t _bytes, int size)
   {
     char* bytes = (char*)_bytes;
-    VW::io_buf io;
-    io.add_file(VW::io::create_buffer_view(bytes, size));
-    vw_ptr = VW::initialize(VW::make_unique<VW::config::options_cli>(VW::split_command_line(args)), &io);
+    auto model_reader = VW::io::create_buffer_view(bytes, size);
+    vw_ptr =
+        VW::initialize(VW::make_unique<VW::config::options_cli>(VW::split_command_line(args)), std::move(model_reader));
     validate_options(*vw_ptr->options);
   }
 
