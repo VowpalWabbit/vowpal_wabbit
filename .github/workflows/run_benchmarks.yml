@@ -27,6 +27,14 @@ jobs:
           submodules: recursive
           fetch-depth: 0
       - uses: lukka/get-cmake@latest
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update || true
+          sudo apt-get install -y ninja-build autoconf automake autoconf-archive
+      - name: Update vcpkg
+        run: |
+          cd ${{ github.workspace }}
+          git submodule update --init --remote ext_libs/vcpkg
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11
         with:
