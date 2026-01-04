@@ -11,7 +11,7 @@
     "string-view-lite",
     "zlib"
   ],
-  "builtin-baseline": "84bab45d415d22042bd0b9081aea57f362da3f35",
+  "builtin-baseline": "01f602195983451bc83e72f4214af2cbc495aa94",
   "overrides": [
     {
       "name": "fmt",
