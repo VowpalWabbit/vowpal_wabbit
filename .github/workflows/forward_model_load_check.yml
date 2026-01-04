@@ -68,6 +68,10 @@ jobs:
         with:
           name: test_manylinux_amd64_3.12
           path: built_wheel
+      - name: Install Boost Python library
+        run: |
+          sudo apt-get update || true
+          sudo apt-get install -y libboost-python-dev
       - name: Build recent-models
         shell: bash
         run: |
