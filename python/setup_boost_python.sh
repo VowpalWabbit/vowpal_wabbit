@@ -37,6 +37,6 @@ EOF
 echo "project-config.jam created:"
 cat project-config.jam
 
-# Build and install
+# Build and install only boost.python
 echo "Building boost.python..."
-./b2 --debug-configuration install -j$(sysctl -n hw.ncpu)
+./b2 --debug-configuration --with-python install -j$(sysctl -n hw.ncpu)
