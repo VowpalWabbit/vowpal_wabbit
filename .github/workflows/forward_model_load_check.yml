@@ -30,7 +30,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libboost-dev libboost-python-dev zlib1g-dev ninja-build
+          sudo apt-get install -y libboost-dev libboost-python-dev libboost-python1.83-dev python3-dev zlib1g-dev ninja-build
           pip install build wheel
       - name: Build wheel
         shell: bash
@@ -81,7 +81,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libboost-dev libboost-python-dev zlib1g-dev ninja-build
+          sudo apt-get install -y libboost-dev libboost-python-dev libboost-python1.83-dev python3-dev zlib1g-dev ninja-build
           pip install build wheel
       - name: Test loading model with current master
         shell: bash
