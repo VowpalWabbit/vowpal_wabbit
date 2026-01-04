@@ -43,10 +43,9 @@ environment = { BOOST_PY_VERSION_SUFFIX="3", CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=
 before-all = [
     # Install boost via brew
     "brew install boost boost-python3 flatbuffers ninja cmake",
-    # Debug: Check what boost-python3 actually installed
-    "echo '=== Boost Python libraries installed by homebrew ===' && ls -la $(brew --prefix)/lib/libboost_python* || echo 'No boost_python libraries found'",
     # Apply zlib fdopen patch for macOS compatibility
     "patch {project}/ext_libs/zlib/zutil.h {project}/ext_libs/zlib_fdopen_macos.patch",
 ]
-# Let auto-detection work - we'll see from debug output what's actually available
-environment = {}
+# Homebrew's boost-python3 is built against system Python 3.14 and provides python314 component
+# Force this suffix regardless of which Python version cibuildwheel is building for
+environment = { BOOST_PY_VERSION_SUFFIX="314", CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=ON" }
