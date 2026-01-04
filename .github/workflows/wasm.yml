@@ -31,7 +31,7 @@ jobs:
         with:
             node-version: 16
       - name: Configure
-        run: emcmake cmake --preset wasm -G Ninja -DCMAKE_BUILD_TYPE=MinSizeRel -DCMAKE_TOOLCHAIN_FILE=$(pwd)/ext_libs/vcpkg/scripts/buildsystems/vcpkg.cmake -DSPDLOG_FMT_EXTERNAL=OFF
+        run: emcmake cmake --preset wasm -G Ninja -DCMAKE_BUILD_TYPE=MinSizeRel -DCMAKE_TOOLCHAIN_FILE=$(pwd)/ext_libs/vcpkg/scripts/buildsystems/vcpkg.cmake -DSPDLOG_FMT_EXTERNAL=OFF -DRAPIDJSON_SYS_DEP=OFF
       - name: Patch spdlog headers to remove SPDLOG_FMT_STRING for Emscripten
         shell: bash
         run: |
