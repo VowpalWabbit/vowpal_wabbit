@@ -36,7 +36,8 @@ before-build = [
     # Python 3.13+ uses PyObject_CallFunction instead of PyEval_CallFunction etc.
     "if [ $(python -c 'import sys; print(sys.version_info.minor)') -ge 13 ]; then sed -i 's/PyEval_Call/PyObject_Call/g' /usr/include/boost/python/*.hpp; fi",
 ]
-environment = { BOOST_PY_VERSION_SUFFIX="3", CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=ON" }
+# Use vendored zlib (VW_ZLIB_SYS_DEP=OFF) for self-contained wheels that auditwheel can properly tag
+environment = { BOOST_PY_VERSION_SUFFIX="3", CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=ON -DVW_ZLIB_SYS_DEP=OFF" }
 
 [tool.cibuildwheel.macos]
 before-all = [
