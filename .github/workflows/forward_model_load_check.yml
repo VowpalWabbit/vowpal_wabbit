@@ -71,6 +71,7 @@ jobs:
       - name: Build recent-models
         shell: bash
         run: |
+          pip install setuptools wheel
           pip install built_wheel/*.whl
           python ./test/run_tests_model_gen_and_load.py --generate_models --skip_pr_tests "${{ github.event.pull_request.title }}"
       - name: Upload generated file
