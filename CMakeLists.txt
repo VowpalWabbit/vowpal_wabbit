@@ -262,12 +262,10 @@ endif()
 if(BUILD_PYTHON)
   # Override BOOST_PY_VERSION_SUFFIX for different platforms:
   # - Windows (vcpkg): "" -> generic "python" component
-  # - macOS (homebrew): "3" -> generic "python3" component
   # - Linux (manylinux): "3" -> generic "python3" component (set via environment)
+  # - macOS (homebrew): Let CMake auto-detect versioned components (python38, python39, etc.)
   if(WIN32)
     set(BOOST_PY_VERSION_SUFFIX "" CACHE STRING "Boost Python component version suffix" FORCE)
-  elseif(APPLE)
-    set(BOOST_PY_VERSION_SUFFIX "3" CACHE STRING "Boost Python component version suffix" FORCE)
   endif()
   add_subdirectory(python)
 endif()
