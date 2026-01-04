@@ -3,7 +3,7 @@
   "name": "vowpal-wabbit",
   "version": "9.10.0",
   "dependencies": [
-    "boost-python3",
+    "boost-python",
     "eigen3",
     "fmt",
     "rapidjson",
