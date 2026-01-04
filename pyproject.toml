@@ -41,8 +41,8 @@ before-build = [
 environment = { BOOST_PY_VERSION_SUFFIX="3", CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=ON -DVW_ZLIB_SYS_DEP=OFF -DVW_FEAT_LAS_SIMD=OFF" }
 
 [tool.cibuildwheel.macos]
-# Skip Python 3.8-3.11 on macOS - Homebrew's boost-python3 (built against 3.14) is incompatible
-skip = "cp38-* cp39-* cp310-* cp311-*"
+# Skip Python 3.8-3.12 on macOS - Homebrew's boost-python3 (built against 3.14) is incompatible
+skip = "cp38-* cp39-* cp310-* cp311-* cp312-*"
 before-all = [
     # Install boost via brew
     "brew install boost boost-python3 flatbuffers ninja cmake",
