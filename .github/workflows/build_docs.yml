@@ -107,8 +107,8 @@ jobs:
       - name: Install wheel
         shell: bash
         run: |
-          export wheel_files=(python_wheel/*)
-          export wheel_file="${wheel_files[0]}"
+          wheel_files=(python_wheel/*)
+          wheel_file="${wheel_files[0]}"
           echo Installing ${wheel_file}...
           pip install ${wheel_file}
       - name: Generate CLI docs
