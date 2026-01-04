@@ -72,12 +72,16 @@ jobs:
           python ./test/run_tests_model_gen_and_load.py --generate_models --skip_missing_args --skip_pr_tests "${{ github.event.pull_request.title }}" || (echo "Model generation failed with exit code $?" && exit 1)
           echo "=== Checking generated files ==="
           ls -la ~/.vw_runtests_model_gen_working_dir/ || echo "Working directory not found"
+      - name: Copy generated files to workspace
+        run: |
+          cp -r ~/.vw_runtests_model_gen_working_dir ./vw_generated_models_upload
+          ls -la ./vw_generated_models_upload/
       - name: Upload generated file
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: vw_generated_models
-          path: /home/runner/.vw_runtests_model_gen_working_dir/*
+          path: vw_generated_models_upload/*
           if-no-files-found: error
   test-latest-model:
     name: Test previous master model with newest wheel
