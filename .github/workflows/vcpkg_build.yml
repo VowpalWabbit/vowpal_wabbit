@@ -41,6 +41,10 @@ jobs:
         run: |
           sudo apt-get update || true
           sudo apt-get install -y ninja-build autoconf automake autoconf-archive
+      - name: Install build dependencies (macOS)
+        if: ${{ startsWith(matrix.os, 'macos') }}
+        run: |
+          brew install ninja autoconf automake autoconf-archive
       - name: Update vcpkg
         run: |
           cd ${{ github.workspace }}
