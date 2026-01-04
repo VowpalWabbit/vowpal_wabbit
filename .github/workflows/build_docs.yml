@@ -97,6 +97,10 @@ jobs:
       - name: Change permissions to rvw-dump-options
         shell: bash
         run: chmod +x ./vw-dump-options/vw-dump-options
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update || true
+          sudo apt-get install -y libboost-python-dev
       - name: Install dependencies
         shell: bash
         run: |
