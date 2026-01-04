@@ -32,6 +32,9 @@ if ! [ python.configured ]
         : $PYTHON_LIBDIR
         ;
 }
+
+# Only build boost.python library
+libraries = python ;
 EOF
 
 echo "project-config.jam created:"
