@@ -42,6 +42,7 @@ jobs:
           sudo apt-get update || true
           sudo apt-get install -y ninja-build autoconf automake autoconf-archive
       - name: Clear vcpkg cache and update
+        shell: bash
         run: |
           cd ${{ github.workspace }}
           rm -rf ext_libs/vcpkg/downloads
@@ -95,6 +96,7 @@ jobs:
           sudo apt-get update || true
           sudo apt-get install -y ninja-build autoconf automake autoconf-archive
       - name: Clear vcpkg cache and update
+        shell: bash
         run: |
           cd ${{ github.workspace }}
           rm -rf ext_libs/vcpkg/downloads
