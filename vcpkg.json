@@ -22,6 +22,10 @@
     {
       "name": "fmt",
       "version": "9.1.0"
+    },
+    {
+      "name": "eigen3",
+      "version": "3.4.0"
     }
   ],
   "features": {
