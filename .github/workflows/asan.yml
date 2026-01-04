@@ -43,9 +43,8 @@ jobs:
           sudo apt-get install -y ninja-build autoconf automake autoconf-archive
       - name: Update vcpkg
         run: |
-          cd ${{ github.workspace }}/ext_libs/vcpkg
-          git fetch --unshallow || git fetch
-          git pull
+          cd ${{ github.workspace }}
+          git submodule update --init --remote ext_libs/vcpkg
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11
         with:
@@ -95,9 +94,8 @@ jobs:
           sudo apt-get install -y ninja-build autoconf automake autoconf-archive
       - name: Update vcpkg
         run: |
-          cd ${{ github.workspace }}/ext_libs/vcpkg
-          git fetch --unshallow || git fetch
-          git pull
+          cd ${{ github.workspace }}
+          git submodule update --init --remote ext_libs/vcpkg
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11
         with:
