@@ -195,6 +195,7 @@ struct vw_model_basic
     auto buffer = std::make_shared<std::vector<char>>();
     io_temp.add_file(VW::io::create_vector_writer(buffer));
     VW::details::dump_regressor(*vw_ptr, io_temp, false);
+    io_temp.flush();
     auto vec = *buffer.get();
     buffer.reset();
     return vec;
