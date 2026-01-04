@@ -37,10 +37,10 @@ jobs:
         if: ${{ startsWith(matrix.os, 'windows') }}
         uses: ilammy/msvc-dev-cmd@v1
       - uses: lukka/get-cmake@latest
-      - name: Install Ninja
+      - name: Install build dependencies
         run: |
           sudo apt-get update || true
-          sudo apt-get install -y ninja-build
+          sudo apt-get install -y ninja-build autoconf automake autoconf-archive
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11
         with:
@@ -84,10 +84,10 @@ jobs:
           submodules: recursive
           fetch-depth: 0
       - uses: lukka/get-cmake@latest
-      - name: Install Ninja
+      - name: Install build dependencies
         run: |
           sudo apt-get update || true
-          sudo apt-get install -y ninja-build
+          sudo apt-get install -y ninja-build autoconf automake autoconf-archive
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11
         with:
