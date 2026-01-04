@@ -41,23 +41,21 @@ before-build = [
 environment = { BOOST_PY_VERSION_SUFFIX="3", CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=ON -DVW_ZLIB_SYS_DEP=OFF -DVW_FEAT_LAS_SIMD=OFF" }
 
 [tool.cibuildwheel.macos]
-# Skip Python 3.8-3.12 on macOS - Homebrew's boost-python3 (built against 3.14) is incompatible
-skip = "cp38-* cp39-* cp310-* cp311-* cp312-*"
 before-all = [
-    # Install boost via brew
-    "brew install boost boost-python3 flatbuffers ninja cmake",
+    # Install build dependencies
+    "brew install ninja cmake flatbuffers",
+    # Download boost 1.85.0 source once
+    "curl -L -o /tmp/boost_1_85_0.tar.gz https://archives.boost.io/release/1.85.0/source/boost_1_85_0.tar.gz",
     # Apply zlib fdopen patch for macOS compatibility
     "patch {project}/ext_libs/zlib/zutil.h {project}/ext_libs/zlib_fdopen_macos.patch",
 ]
-# Homebrew's boost-python3 is built against system Python 3.14 and provides python314 component
-# Force this suffix regardless of which Python version cibuildwheel is building for
-# Default to deployment target 14.0 (required by boost-python3 on Intel)
-environment = { BOOST_PY_VERSION_SUFFIX="314", CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=ON", MACOSX_DEPLOYMENT_TARGET="14.0" }
-
-# Override deployment target for ARM64 builds to use lower minimum (11.0 works on Apple Silicon)
-[[tool.cibuildwheel.overrides]]
-select = "*-macosx_*_arm64"
-environment = { BOOST_PY_VERSION_SUFFIX="314", CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=ON", MACOSX_DEPLOYMENT_TARGET="11.0" }
+before-build = [
+    # Extract fresh boost source and build for current Python version
+    "rm -rf /tmp/boost_build && mkdir -p /tmp/boost_build && tar -xzf /tmp/boost_1_85_0.tar.gz -C /tmp/boost_build",
+    "cd /tmp/boost_build/boost_1_85_0 && ./bootstrap.sh --with-python=$(which python) --with-libraries=python --prefix=/tmp/boost_install",
+    "cd /tmp/boost_build/boost_1_85_0 && ./b2 install -j$(sysctl -n hw.ncpu)",
+]
+environment = { CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=ON -DBOOST_ROOT=/tmp/boost_install", MACOSX_DEPLOYMENT_TARGET="11.0" }
 
 # Override for ARM64 Linux builds to use conservative architecture flags
 [[tool.cibuildwheel.overrides]]
