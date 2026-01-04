@@ -48,6 +48,8 @@ jobs:
       - name: Clear vcpkg cache and update
         shell: bash
         run: |
+          rm -rf vcpkg_binary_cache
+          mkdir -p vcpkg_binary_cache
           rm -rf ext_libs/vcpkg/downloads
           rm -rf ext_libs/vcpkg/buildtrees
           git submodule update --init ext_libs/vcpkg
