@@ -228,7 +228,7 @@ setup(
         "install_lib": InstallLib,
     },
     install_requires=[
-        "numpy",
+        "numpy<2.0",  # numpy 2.x requires manylinux_2_28, pin to 1.x for broader compatibility
         "scipy",
         "scikit-learn",
         "pandas",
