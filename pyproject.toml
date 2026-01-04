@@ -46,6 +46,7 @@ before-all = [
     # Apply zlib fdopen patch for macOS compatibility
     "patch {project}/ext_libs/zlib/zutil.h {project}/ext_libs/zlib_fdopen_macos.patch",
 ]
-# Homebrew's boost-python3 provides generic "python3" component (not versioned)
-# setup.py reads BOOST_PY_VERSION_SUFFIX from environment and passes to CMake
-environment = { BOOST_PY_VERSION_SUFFIX="3", CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=ON" }
+# Use Boost's own CMake config (BoostConfig.cmake) instead of FindBoost module
+# Don't disable it with Boost_NO_BOOST_CMAKE
+# Let auto-detection work for BOOST_PY_VERSION_SUFFIX
+environment = { CMAKE_ARGS="-DCMAKE_PREFIX_PATH=$(brew --prefix)" }
