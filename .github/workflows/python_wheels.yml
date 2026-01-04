@@ -45,6 +45,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       VW_PYTHON_USE_VCPKG: "1"
+      CIBW_ENVIRONMENT_WINDOWS: >
+        CMAKE_ARGS="-DCMAKE_TOOLCHAIN_FILE={project}/ext_libs/vcpkg/scripts/buildsystems/vcpkg.cmake -DVW_ZLIB_SYS_DEP=OFF"
+      CIBW_BEFORE_BUILD_WINDOWS: "{project}/ext_libs/vcpkg/vcpkg.exe install zlib:x64-windows"
     strategy:
       matrix:
         # macos-15-intel is an Intel runner, macos-14 is Apple silicon
