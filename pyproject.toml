@@ -58,3 +58,8 @@ environment = { BOOST_PY_VERSION_SUFFIX="314", CMAKE_ARGS="-DBoost_NO_BOOST_CMAK
 [[tool.cibuildwheel.overrides]]
 select = "*-macosx_*_arm64"
 environment = { BOOST_PY_VERSION_SUFFIX="314", CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=ON", MACOSX_DEPLOYMENT_TARGET="11.0" }
+
+# Override for ARM64 Linux builds to use conservative architecture flags
+[[tool.cibuildwheel.overrides]]
+select = "*-manylinux_*_aarch64"
+environment = { BOOST_PY_VERSION_SUFFIX="3", CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=ON -DVW_ZLIB_SYS_DEP=OFF -DVW_FEAT_LAS_SIMD=OFF -DCMAKE_CXX_FLAGS='-march=armv8-a -mtune=generic' -DCMAKE_C_FLAGS='-march=armv8-a -mtune=generic'" }
