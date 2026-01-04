@@ -260,10 +260,14 @@ if(BUILD_JAVA)
 endif()
 
 if(BUILD_PYTHON)
-  # Force BOOST_PY_VERSION_SUFFIX to empty string for Windows vcpkg builds
-  # vcpkg's boost-python provides generic "python" component, not versioned ones
+  # Override BOOST_PY_VERSION_SUFFIX for different platforms:
+  # - Windows (vcpkg): "" -> generic "python" component
+  # - macOS (homebrew): "3" -> generic "python3" component
+  # - Linux (manylinux): "3" -> generic "python3" component (set via environment)
   if(WIN32)
     set(BOOST_PY_VERSION_SUFFIX "" CACHE STRING "Boost Python component version suffix" FORCE)
+  elseif(APPLE)
+    set(BOOST_PY_VERSION_SUFFIX "3" CACHE STRING "Boost Python component version suffix" FORCE)
   endif()
   add_subdirectory(python)
 endif()
