@@ -19,27 +19,28 @@ concurrency:
 jobs:
   python-build:
     name: Build previous master python wheel
-    container:
-      image: vowpalwabbit/manylinux2010-build:latest
     runs-on: ubuntu-latest
     steps:
-      # v1 must be used because newer versions require a node.js version that will not run on this old image.
-      - uses: actions/checkout@v1
+      - uses: actions/setup-python@v5
         with:
-          submodules: recursive
+          python-version: '3.10'
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libboost-dev libboost-python-dev zlib1g-dev ninja-build
+          pip install build wheel
       - name: Build wheel
         shell: bash
         run: |
           git clone --recursive https://github.com/VowpalWabbit/vowpal_wabbit.git
           cd vowpal_wabbit
-          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DPython_INCLUDE_DIR='/opt/python/cp310-cp310/include/python3.10/'" /opt/python/cp310-cp310/bin/pip wheel . -w wheel_last_commit/ --verbose
+          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release" pip wheel . -w wheel_last_commit/ --verbose
           cd ..
-          auditwheel repair vowpal_wabbit/wheel_last_commit/*whl -w audit_last_commit/
       - name: Upload built wheel
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: test_manylinux_amd64_3.10
-          path: audit_last_commit/
+          path: vowpal_wabbit/wheel_last_commit/
   generate-latest-model:
     name: Generate model using previous python wheel
     needs: python-build
@@ -50,7 +51,7 @@ jobs:
         with:
           python-version: '3.10' 
       - name: Download artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: test_manylinux_amd64_3.10
           path: built_wheel
@@ -67,23 +68,28 @@ jobs:
           if-no-files-found: error
   test-latest-model:
     name: Test previous master model with newest wheel
-    container:
-      image: vowpalwabbit/manylinux2010-build:latest
     needs: generate-latest-model
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
-      - uses: actions/download-artifact@v3
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - uses: actions/download-artifact@v4
         with:
           name: vw_generated_models
           path: .vw_runtests_model_gen_working_dir
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libboost-dev libboost-python-dev zlib1g-dev ninja-build
+          pip install build wheel
       - name: Test loading model with current master
         shell: bash
         run: |
           mv .vw_runtests_model_gen_working_dir ~
-          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DPython_INCLUDE_DIR='/opt/python/cp310-cp310/include/python3.10/'" /opt/python/cp310-cp310/bin/pip wheel . -w wheel_output/ --verbose
-          auditwheel repair wheel_output/*whl -w audit_output/
-          /opt/python/cp310-cp310/bin/python3.10 -m pip install wheel_output/*.whl
-          /opt/python/cp310-cp310/bin/python3.10 ./test/run_tests_model_gen_and_load.py --load_models --skip_pr_tests "${{ github.event.pull_request.title }}"
+          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release" pip wheel . -w wheel_output/ --verbose
+          pip install wheel_output/*.whl
+          python ./test/run_tests_model_gen_and_load.py --load_models --skip_pr_tests "${{ github.event.pull_request.title }}"
