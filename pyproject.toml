@@ -52,8 +52,11 @@ before-all = [
 before-build = [
     # Extract fresh boost source and build for current Python version
     "rm -rf /tmp/boost_build && mkdir -p /tmp/boost_build && tar -xzf /tmp/boost_1_85_0.tar.gz -C /tmp/boost_build",
-    "cd /tmp/boost_build/boost_1_85_0 && ./bootstrap.sh --with-python=$(which python) --with-libraries=python --prefix=/tmp/boost_install",
-    "cd /tmp/boost_build/boost_1_85_0 && ./b2 install -j$(sysctl -n hw.ncpu)",
+    # Configure boost with explicit Python paths
+    "cd /tmp/boost_build/boost_1_85_0 && ./bootstrap.sh --with-libraries=python --prefix=/tmp/boost_install",
+    # Create user-config.jam with Python configuration
+    "echo \"using python : $(python -c 'import sys; print(f\\\"{sys.version_info.major}.{sys.version_info.minor}\\\")') : $(which python) : $(python -c 'import sysconfig; print(sysconfig.get_path(\\\"include\\\"))') : $(python -c 'import sysconfig; print(sysconfig.get_config_var(\\\"LIBDIR\\\"))') ;\" > /tmp/boost_build/boost_1_85_0/user-config.jam",
+    "cd /tmp/boost_build/boost_1_85_0 && ./b2 --user-config=user-config.jam install -j$(sysctl -n hw.ncpu)",
 ]
 environment = { CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=ON -DBOOST_ROOT=/tmp/boost_install", MACOSX_DEPLOYMENT_TARGET="11.0" }
 
