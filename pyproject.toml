@@ -52,8 +52,8 @@ before-all = [
 before-build = [
     # Extract fresh boost source
     "rm -rf /tmp/boost_build && mkdir -p /tmp/boost_build && tar -xzf /tmp/boost_1_85_0.tar.gz -C /tmp/boost_build",
-    # Save project path, run bootstrap and build boost.python
-    "PROJECT_DIR={project} && cd /tmp/boost_build/boost_1_85_0 && ./bootstrap.sh --with-libraries=python --prefix=/tmp/boost_install && bash $PROJECT_DIR/python/setup_boost_python.sh",
+    # Save absolute project path, run bootstrap and build boost.python
+    "PROJECT_DIR=$(pwd) && cd /tmp/boost_build/boost_1_85_0 && ./bootstrap.sh --with-libraries=python --prefix=/tmp/boost_install && bash $PROJECT_DIR/python/setup_boost_python.sh",
 ]
 environment = { CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=ON -DBOOST_ROOT=/tmp/boost_install", MACOSX_DEPLOYMENT_TARGET="11.0" }
 
