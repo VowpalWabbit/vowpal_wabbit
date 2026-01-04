@@ -80,6 +80,11 @@ class BuildPyLibVWBindingsModule(_build_ext):
             "-DSTD_INV_SQRT=On",
         ]
 
+        # Allow BOOST_PY_VERSION_SUFFIX to be overridden via environment variable
+        # (used by cibuildwheel for manylinux/macOS where only generic python3 is available)
+        if "BOOST_PY_VERSION_SUFFIX" in os.environ:
+            cmake_args += ["-DBOOST_PY_VERSION_SUFFIX=" + os.environ["BOOST_PY_VERSION_SUFFIX"]]
+
         # This doesn't work as expected for Python3.6 and 3.7 on Windows.
         # See bug: https://bugs.python.org/issue39825
         if system == "Windows" and sys.version_info.minor < 8:
