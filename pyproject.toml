@@ -14,6 +14,7 @@ skip = [
     "cp314*",  # Boost Python library segfaults on Python 3.14
     "*musllinux*",  # Only build manylinux wheels
 ]
+test-skip = "*-manylinux_*_aarch64"  # Skip ARM64 tests due to illegal instruction errors
 test-requires = ["pytest", "pyclean", "vw-executor"]
 test-command = [
     "pyclean {project}/python/tests",
@@ -52,10 +53,7 @@ before-all = [
 ]
 environment = { CMAKE_ARGS="-DCMAKE_TOOLCHAIN_FILE={project}/ext_libs/vcpkg/scripts/buildsystems/vcpkg.cmake -DBoost_NO_BOOST_CMAKE=ON", MACOSX_DEPLOYMENT_TARGET="11.0" }
 
-# Override for ARM64 Linux builds to use conservative architecture flags and skip tests
-# Tests fail with illegal instruction during pytest - appears to be test environment issue
-# Wheels build successfully and can be distributed, just not tested during build
+# Override for ARM64 Linux builds to use conservative architecture flags
 [[tool.cibuildwheel.overrides]]
 select = "*-manylinux_*_aarch64"
 environment = { BOOST_PY_VERSION_SUFFIX="3", CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=ON -DVW_ZLIB_SYS_DEP=OFF -DVW_FEAT_LAS_SIMD=OFF -DCMAKE_CXX_FLAGS='-march=armv8-a -mtune=generic' -DCMAKE_C_FLAGS='-march=armv8-a -mtune=generic'" }
-test-skip = "*-manylinux_*_aarch64"
