@@ -45,11 +45,10 @@ environment = { BOOST_PY_VERSION_SUFFIX="3", CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=
 before-all = [
     # Install build dependencies
     "brew install cmake ninja autoconf automake autoconf-archive libtool pkg-config",
-    # Apply zlib patch and setup vcpkg
+    # Apply zlib patch and setup vcpkg (setup.py will auto-detect and use it)
     "patch {project}/ext_libs/zlib/zutil.h {project}/ext_libs/zlib_fdopen_macos.patch",
     "cd {project}/ext_libs/vcpkg && ./bootstrap-vcpkg.sh && ./vcpkg install",
 ]
-config-settings = { "cmake.args"="-DCMAKE_TOOLCHAIN_FILE={project}/ext_libs/vcpkg/scripts/buildsystems/vcpkg.cmake;-DBoost_NO_BOOST_CMAKE=ON" }
 environment = { MACOSX_DEPLOYMENT_TARGET="11.0" }
 
 # Override for ARM64 Linux builds to use conservative architecture flags

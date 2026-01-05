@@ -126,13 +126,21 @@ class BuildPyLibVWBindingsModule(_build_ext):
 
         cmake_generator = self.distribution.cmake_generator
 
-        if self.distribution.vcpkg_root is not None:
+        # Auto-detect vcpkg in ext_libs/vcpkg if it exists
+        vcpkg_root = self.distribution.vcpkg_root
+        if vcpkg_root is None:
+            potential_vcpkg = os.path.join(here, "ext_libs", "vcpkg")
+            if os.path.exists(potential_vcpkg):
+                vcpkg_root = potential_vcpkg
+
+        if vcpkg_root is not None:
             # add the vcpkg toolchain if its provided
-            abs_vcpkg_path = os.path.abspath(self.distribution.vcpkg_root)
+            abs_vcpkg_path = os.path.abspath(vcpkg_root)
             vcpkg_toolchain = os.path.join(
                 abs_vcpkg_path, "scripts", "buildsystems", "vcpkg.cmake"
             )
-            cmake_args += ["-DCMAKE_TOOLCHAIN_FILE=" + vcpkg_toolchain]
+            if os.path.exists(vcpkg_toolchain):
+                cmake_args += ["-DCMAKE_TOOLCHAIN_FILE=" + vcpkg_toolchain]
 
         if system == "Windows":
             cmake_args += [
