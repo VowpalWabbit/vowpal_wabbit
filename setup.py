@@ -126,11 +126,13 @@ class BuildPyLibVWBindingsModule(_build_ext):
 
         cmake_generator = self.distribution.cmake_generator
 
-        # Auto-detect vcpkg in ext_libs/vcpkg if it exists
+        # Auto-detect vcpkg in ext_libs/vcpkg if it exists and is bootstrapped
         vcpkg_root = self.distribution.vcpkg_root
         if vcpkg_root is None:
             potential_vcpkg = os.path.join(here, "ext_libs", "vcpkg")
-            if os.path.exists(potential_vcpkg):
+            vcpkg_exe = os.path.join(potential_vcpkg, "vcpkg.exe" if system == "Windows" else "vcpkg")
+            # Only use vcpkg if it's been bootstrapped (vcpkg executable exists)
+            if os.path.exists(vcpkg_exe):
                 vcpkg_root = potential_vcpkg
 
         if vcpkg_root is not None:
