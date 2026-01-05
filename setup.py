@@ -130,7 +130,9 @@ class BuildPyLibVWBindingsModule(_build_ext):
         vcpkg_root = self.distribution.vcpkg_root
         if vcpkg_root is None:
             potential_vcpkg = os.path.join(here, "ext_libs", "vcpkg")
-            vcpkg_exe = os.path.join(potential_vcpkg, "vcpkg.exe" if system == "Windows" else "vcpkg")
+            vcpkg_exe = os.path.join(
+                potential_vcpkg, "vcpkg.exe" if system == "Windows" else "vcpkg"
+            )
             # Only use vcpkg if it's been bootstrapped (vcpkg executable exists)
             if os.path.exists(vcpkg_exe):
                 vcpkg_root = potential_vcpkg
@@ -143,6 +145,16 @@ class BuildPyLibVWBindingsModule(_build_ext):
             )
             if os.path.exists(vcpkg_toolchain):
                 cmake_args += ["-DCMAKE_TOOLCHAIN_FILE=" + vcpkg_toolchain]
+                # When using vcpkg, explicitly set Python paths to avoid vcpkg's Python
+                # interfering with the build environment's Python (especially on Windows)
+                cmake_args += ["-DPython_EXECUTABLE=" + sys.executable]
+                if system == "Windows":
+                    # On Windows, also set Python_ROOT_DIR to ensure CMake finds the right Python
+                    import sysconfig
+
+                    python_root = sysconfig.get_config_var("prefix")
+                    if python_root:
+                        cmake_args += ["-DPython_ROOT_DIR=" + python_root]
 
         if system == "Windows":
             cmake_args += [
