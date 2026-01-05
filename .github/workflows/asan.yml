@@ -60,7 +60,7 @@ jobs:
           cmakeListsTxtPath: "${{ github.workspace }}/CMakeLists.txt"
           configurePreset: "${{ matrix.preset }}"
       - name: Build
-        run: cmake --build build --target vw_cli_bin vw_spanning_tree_bin
+        run: cmake --build build
       - name: Verify binaries exist
         run: |
           ls -la build/vowpalwabbit/cli/
