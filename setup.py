@@ -147,14 +147,15 @@ class BuildPyLibVWBindingsModule(_build_ext):
                 cmake_args += ["-DCMAKE_TOOLCHAIN_FILE=" + vcpkg_toolchain]
                 # When using vcpkg, explicitly set Python paths to avoid vcpkg's Python
                 # interfering with the build environment's Python (especially on Windows)
-                cmake_args += ["-DPython_EXECUTABLE=" + sys.executable]
-                if system == "Windows":
-                    # On Windows, also set Python_ROOT_DIR to ensure CMake finds the right Python
-                    import sysconfig
+                import sysconfig
 
-                    python_root = sysconfig.get_config_var("prefix")
-                    if python_root:
-                        cmake_args += ["-DPython_ROOT_DIR=" + python_root]
+                cmake_args += [
+                    "-DPython_EXECUTABLE=" + sys.executable,
+                    "-DPython_FIND_STRATEGY=LOCATION",  # Prefer Python_EXECUTABLE over registry/environment
+                ]
+                python_root = sysconfig.get_config_var("prefix")
+                if python_root:
+                    cmake_args += ["-DPython_ROOT_DIR=" + python_root]
 
         if system == "Windows":
             cmake_args += [

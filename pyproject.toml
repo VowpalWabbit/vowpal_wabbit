@@ -43,18 +43,21 @@ environment = { BOOST_PY_VERSION_SUFFIX="3", CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=
 
 [tool.cibuildwheel.macos]
 before-all = [
-    # Install build dependencies
-    "brew install cmake ninja autoconf automake autoconf-archive libtool pkg-config",
-    # Apply zlib patch and setup vcpkg (setup.py will auto-detect and use it)
+    # Install build tools via Homebrew
+    "brew install cmake ninja autoconf automake autoconf-archive libtool",
+    # Apply zlib fdopen patch for macOS compatibility
     "patch {project}/ext_libs/zlib/zutil.h {project}/ext_libs/zlib_fdopen_macos.patch",
-    "cd {project}/ext_libs/vcpkg && ./bootstrap-vcpkg.sh && ./vcpkg install",
+    # Install only boost-python via vcpkg (avoid full manifest which has cross-build issues)
+    "cd {project}/ext_libs/vcpkg && ./bootstrap-vcpkg.sh",
+    "cd {project}/ext_libs/vcpkg && ./vcpkg install boost-python --no-print-usage",
 ]
 environment = { MACOSX_DEPLOYMENT_TARGET="11.0" }
 
 [tool.cibuildwheel.windows]
 before-all = [
-    # Setup vcpkg (setup.py will auto-detect and use it)
-    "cd {project}\\ext_libs\\vcpkg && .\\bootstrap-vcpkg.bat && .\\vcpkg install",
+    # Install only boost-python via vcpkg (avoid installing python3 port which conflicts)
+    "cd {project}\\ext_libs\\vcpkg && .\\bootstrap-vcpkg.bat",
+    "cd {project}\\ext_libs\\vcpkg && .\\vcpkg install boost-python:x64-windows zlib:x64-windows --no-print-usage",
 ]
 
 # Override for ARM64 Linux builds to use conservative architecture flags
