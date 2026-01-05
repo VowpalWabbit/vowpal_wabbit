@@ -14,7 +14,7 @@ skip = [
     "cp314*",  # Boost Python library segfaults on Python 3.14
     "*musllinux*",  # Only build manylinux wheels
 ]
-test-skip = "*-manylinux_*_aarch64"  # Skip ARM64 tests due to illegal instruction errors
+test-skip = "*-manylinux*_aarch64"  # Skip ARM64 tests due to illegal instruction errors
 test-requires = ["pytest", "pyclean", "vw-executor"]
 test-command = [
     "pyclean {project}/python/tests",
