@@ -43,8 +43,8 @@ environment = { BOOST_PY_VERSION_SUFFIX="3", CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=
 
 [tool.cibuildwheel.macos]
 before-all = [
-    # Install build dependencies
-    "brew install cmake ninja autoconf automake autoconf-archive",
+    # Install build dependencies (libtool provides libtoolize required by vcpkg)
+    "brew install cmake ninja autoconf automake autoconf-archive libtool",
     # Apply zlib fdopen patch for macOS compatibility and setup vcpkg
     "PROJECT_DIR=$(pwd) && patch $PROJECT_DIR/ext_libs/zlib/zutil.h $PROJECT_DIR/ext_libs/zlib_fdopen_macos.patch && cd $PROJECT_DIR/ext_libs/vcpkg && ./bootstrap-vcpkg.sh && ./vcpkg install",
 ]
