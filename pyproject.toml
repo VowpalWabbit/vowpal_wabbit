@@ -45,21 +45,23 @@ environment = { BOOST_PY_VERSION_SUFFIX="3", CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=
 before-all = [
     # Install build tools via Homebrew
     "brew install cmake ninja autoconf automake autoconf-archive libtool",
-    # Initialize vcpkg submodule
+    # Initialize vcpkg submodule and update to get latest ports
     "git submodule update --init --recursive ext_libs/vcpkg",
+    "cd ext_libs/vcpkg && git pull origin master",
     # Apply zlib fdopen patch for macOS compatibility
     "patch ext_libs/zlib/zutil.h ext_libs/zlib_fdopen_macos.patch",
-    # Install boost-python3 with x64-osx triplet
-    "cd ext_libs/vcpkg && ./bootstrap-vcpkg.sh && ./vcpkg install boost-python3:x64-osx --classic --no-print-usage",
+    # Install boost-python with x64-osx triplet
+    "cd ext_libs/vcpkg && ./bootstrap-vcpkg.sh && ./vcpkg install boost-python:x64-osx --classic --no-print-usage",
 ]
 environment = { MACOSX_DEPLOYMENT_TARGET="11.0", BOOST_PY_VERSION_SUFFIX="3" }
 
 [tool.cibuildwheel.windows]
 before-all = [
-    # Initialize vcpkg submodule
+    # Initialize vcpkg submodule and update to get latest ports
     "git submodule update --init --recursive ext_libs\\vcpkg",
-    # Install boost-python3 with x64-windows triplet
-    "cd ext_libs\\vcpkg && .\\bootstrap-vcpkg.bat && .\\vcpkg install boost-python3:x64-windows zlib:x64-windows --classic --no-print-usage",
+    "cd ext_libs\\vcpkg && git pull origin master",
+    # Install boost-python with x64-windows triplet
+    "cd ext_libs\\vcpkg && .\\bootstrap-vcpkg.bat && .\\vcpkg install boost-python:x64-windows zlib:x64-windows --classic --no-print-usage",
 ]
 environment = { BOOST_PY_VERSION_SUFFIX="3" }
 
