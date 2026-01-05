@@ -127,8 +127,9 @@ class BuildPyLibVWBindingsModule(_build_ext):
         cmake_generator = self.distribution.cmake_generator
 
         # Auto-detect vcpkg in ext_libs/vcpkg if it exists and is bootstrapped
+        # Can be disabled by setting DISABLE_VCPKG=1 environment variable
         vcpkg_root = self.distribution.vcpkg_root
-        if vcpkg_root is None:
+        if vcpkg_root is None and os.environ.get("DISABLE_VCPKG") != "1":
             potential_vcpkg = os.path.join(here, "ext_libs", "vcpkg")
             vcpkg_exe = os.path.join(
                 potential_vcpkg, "vcpkg.exe" if system == "Windows" else "vcpkg"
