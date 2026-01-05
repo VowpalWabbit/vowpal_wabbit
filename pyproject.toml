@@ -49,18 +49,19 @@ before-all = [
     "git submodule update --init --recursive ext_libs/vcpkg",
     # Apply zlib fdopen patch for macOS compatibility
     "patch ext_libs/zlib/zutil.h ext_libs/zlib_fdopen_macos.patch",
-    # Install only boost-python via vcpkg in classic mode (avoid manifest mode)
-    "cd ext_libs/vcpkg && ./bootstrap-vcpkg.sh && ./vcpkg install boost-python --classic --no-print-usage",
+    # Install boost-python3 with x64-osx triplet
+    "cd ext_libs/vcpkg && ./bootstrap-vcpkg.sh && ./vcpkg install boost-python3:x64-osx --classic --no-print-usage",
 ]
-environment = { MACOSX_DEPLOYMENT_TARGET="11.0" }
+environment = { MACOSX_DEPLOYMENT_TARGET="11.0", BOOST_PY_VERSION_SUFFIX="3" }
 
 [tool.cibuildwheel.windows]
 before-all = [
     # Initialize vcpkg submodule
     "git submodule update --init --recursive ext_libs\\vcpkg",
-    # Install only boost-python via vcpkg in classic mode (avoid manifest mode)
-    "cd ext_libs\\vcpkg && .\\bootstrap-vcpkg.bat && .\\vcpkg install boost-python:x64-windows zlib:x64-windows --classic --no-print-usage",
+    # Install boost-python3 with x64-windows triplet
+    "cd ext_libs\\vcpkg && .\\bootstrap-vcpkg.bat && .\\vcpkg install boost-python3:x64-windows zlib:x64-windows --classic --no-print-usage",
 ]
+environment = { BOOST_PY_VERSION_SUFFIX="3" }
 
 # Override for ARM64 Linux builds to use conservative architecture flags
 [[tool.cibuildwheel.overrides]]
