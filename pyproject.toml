@@ -43,19 +43,14 @@ environment = { BOOST_PY_VERSION_SUFFIX="3", CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=
 [tool.cibuildwheel.macos]
 before-all = [
     # Install build dependencies
-    "brew install ninja cmake flatbuffers",
-    # Download boost 1.85.0 source once
-    "curl -L -o /tmp/boost_1_85_0.tar.gz https://archives.boost.io/release/1.85.0/source/boost_1_85_0.tar.gz",
+    "brew install cmake ninja autoconf automake autoconf-archive",
     # Apply zlib fdopen patch for macOS compatibility
     "patch {project}/ext_libs/zlib/zutil.h {project}/ext_libs/zlib_fdopen_macos.patch",
+    # Bootstrap vcpkg and install boost-python
+    "cd {project}/ext_libs/vcpkg && ./bootstrap-vcpkg.sh",
+    "cd {project}/ext_libs/vcpkg && ./vcpkg install boost-python",
 ]
-before-build = [
-    # Extract fresh boost source
-    "rm -rf /tmp/boost_build && mkdir -p /tmp/boost_build && tar -xzf /tmp/boost_1_85_0.tar.gz -C /tmp/boost_build",
-    # Save absolute project path, run bootstrap and build boost.python
-    "PROJECT_DIR=$(pwd) && cd /tmp/boost_build/boost_1_85_0 && ./bootstrap.sh --with-libraries=python --prefix=/tmp/boost_install && bash $PROJECT_DIR/python/setup_boost_python.sh",
-]
-environment = { CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=ON -DBOOST_ROOT=/tmp/boost_install -DBoost_INCLUDE_DIR=/tmp/boost_install/include -DBoost_LIBRARY_DIRS=/tmp/boost_install/lib", MACOSX_DEPLOYMENT_TARGET="11.0" }
+environment = { CMAKE_ARGS="-DCMAKE_TOOLCHAIN_FILE={project}/ext_libs/vcpkg/scripts/buildsystems/vcpkg.cmake -DBoost_NO_BOOST_CMAKE=ON", MACOSX_DEPLOYMENT_TARGET="11.0" }
 
 # Override for ARM64 Linux builds to use conservative architecture flags and skip tests
 # Tests fail with illegal instruction during pytest - appears to be test environment issue
