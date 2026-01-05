@@ -51,6 +51,12 @@ before-all = [
 ]
 environment = { MACOSX_DEPLOYMENT_TARGET="11.0" }
 
+[tool.cibuildwheel.windows]
+before-all = [
+    # Setup vcpkg (setup.py will auto-detect and use it)
+    "cd {project}\\ext_libs\\vcpkg && .\\bootstrap-vcpkg.bat && .\\vcpkg install",
+]
+
 # Override for ARM64 Linux builds to use conservative architecture flags
 [[tool.cibuildwheel.overrides]]
 select = "*-manylinux_*_aarch64"
