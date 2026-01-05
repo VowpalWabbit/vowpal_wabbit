@@ -43,13 +43,14 @@ environment = { BOOST_PY_VERSION_SUFFIX="3", CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=
 
 [tool.cibuildwheel.macos]
 before-all = [
-    # Install build dependencies (libtool provides libtoolize required by vcpkg)
-    "brew install cmake ninja autoconf automake autoconf-archive libtool",
-    # Apply zlib fdopen patch for macOS compatibility and setup vcpkg
+    # Install build dependencies
+    "brew install cmake ninja autoconf automake autoconf-archive libtool pkg-config",
+    # Apply zlib patch and setup vcpkg
     "patch {project}/ext_libs/zlib/zutil.h {project}/ext_libs/zlib_fdopen_macos.patch",
     "cd {project}/ext_libs/vcpkg && ./bootstrap-vcpkg.sh && ./vcpkg install",
 ]
-environment = { CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=ON -DCMAKE_TOOLCHAIN_FILE={project}/ext_libs/vcpkg/scripts/buildsystems/vcpkg.cmake", MACOSX_DEPLOYMENT_TARGET="11.0" }
+config-settings = { "cmake.args"="-DCMAKE_TOOLCHAIN_FILE={project}/ext_libs/vcpkg/scripts/buildsystems/vcpkg.cmake;-DBoost_NO_BOOST_CMAKE=ON" }
+environment = { MACOSX_DEPLOYMENT_TARGET="11.0" }
 
 # Override for ARM64 Linux builds to use conservative architecture flags
 [[tool.cibuildwheel.overrides]]
