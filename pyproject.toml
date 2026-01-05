@@ -49,7 +49,7 @@ before-all = [
     "patch {project}/ext_libs/zlib/zutil.h {project}/ext_libs/zlib_fdopen_macos.patch",
     "cd {project}/ext_libs/vcpkg && ./bootstrap-vcpkg.sh && ./vcpkg install",
 ]
-environment = { CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=ON", CMAKE_TOOLCHAIN_FILE="{project}/ext_libs/vcpkg/scripts/buildsystems/vcpkg.cmake", MACOSX_DEPLOYMENT_TARGET="11.0" }
+environment = { CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=ON -DCMAKE_TOOLCHAIN_FILE={project}/ext_libs/vcpkg/scripts/buildsystems/vcpkg.cmake", MACOSX_DEPLOYMENT_TARGET="11.0" }
 
 # Override for ARM64 Linux builds to use conservative architecture flags
 [[tool.cibuildwheel.overrides]]
