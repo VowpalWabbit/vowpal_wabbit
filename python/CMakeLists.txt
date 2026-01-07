@@ -58,19 +58,6 @@ endif()
 add_library(pylibvw SHARED pylibvw.cc)
 set_target_properties(pylibvw PROPERTIES PREFIX "")
 
-# On macOS, use weak linking to Python framework to avoid symbol resolution issues
-# while still allowing the extension to load
-if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  message(STATUS ">>> MACOS DETECTED: Configuring weak Python linkage for pylibvw")
-  # Find the Python framework path
-  execute_process(
-    COMMAND python -c "import sysconfig; print(sysconfig.get_config_var('PYTHONFRAMEWORKPREFIX'))"
-    OUTPUT_VARIABLE PYTHON_FRAMEWORK_PREFIX
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
-  set_target_properties(pylibvw PROPERTIES LINK_FLAGS "-Wl,-weak_framework,Python -F${PYTHON_FRAMEWORK_PREFIX}")
-  message(STATUS ">>> Using weak_framework Python from: ${PYTHON_FRAMEWORK_PREFIX}")
-endif()
 
 # The python setup.py script should communicate what suffix it wants.
 if(VW_PYTHON_SHARED_LIB_SUFFIX)
@@ -92,26 +79,12 @@ if (NOT WIN32)
 endif()
 
 if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
+  target_link_libraries(pylibvw PUBLIC ${PYTHON_LIBRARIES} Boost::python${BOOST_PY_VERSION_SUFFIX})
   target_include_directories(pylibvw PRIVATE ${PYTHON_INCLUDE_PATH})
-  if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    target_link_libraries(pylibvw PUBLIC ${PYTHON_LIBRARIES})
-  endif()
-  target_link_libraries(pylibvw PUBLIC Boost::python${BOOST_PY_VERSION_SUFFIX})
 elseif(${CMAKE_VERSION} VERSION_LESS "3.15.7")
-  if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    target_link_libraries(pylibvw PUBLIC Python::Python)
-  else()
-    target_include_directories(pylibvw PRIVATE ${Python_INCLUDE_DIRS})
-  endif()
-  target_link_libraries(pylibvw PUBLIC Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
+  target_link_libraries(pylibvw PUBLIC Python::Python Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
 else()
-  if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    target_link_libraries(pylibvw PUBLIC Python::Module)
-  else()
-    # On macOS, only use includes; weak linking is configured via LINK_FLAGS above
-    target_include_directories(pylibvw PRIVATE ${Python_INCLUDE_DIRS})
-  endif()
-  target_link_libraries(pylibvw PUBLIC Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
+  target_link_libraries(pylibvw PUBLIC Python::Module Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
 endif()
 target_link_libraries(pylibvw PUBLIC vw_core)
 target_compile_options(pylibvw PRIVATE ${EXPORT_DYNAMIC})

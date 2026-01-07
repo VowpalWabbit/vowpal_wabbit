@@ -43,11 +43,8 @@ environment = { BOOST_PY_VERSION_SUFFIX="3", CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=
 
 [tool.cibuildwheel.macos]
 before-all = [
-    # Install build tools via Homebrew
-    "brew install cmake ninja",
-    # Initialize vcpkg and install boost-python (will be built from source with correct flags)
-    "git submodule update --init --recursive ext_libs/vcpkg",
-    "cd ext_libs/vcpkg && ./bootstrap-vcpkg.sh && ./vcpkg install boost-python:arm64-osx",
+    # Install build tools and boost-python via Homebrew
+    "brew install cmake ninja boost-python3",
 ]
 before-test = [
     # Diagnostic: Find and inspect the INSTALLED extension (after delocate-wheel)
@@ -61,8 +58,8 @@ before-test = [
     # Diagnostic: Try manual import with verbose dlopen
     "python -c 'import sys; sys.setdlopenflags(0x2 | 0x8); import vowpalwabbit; print(\"SUCCESS: Manual import worked\")' || echo 'FAILED: Manual import failed'",
 ]
-# Use vcpkg for boost-python to ensure it's built with compatible linking flags
-environment = { MACOSX_DEPLOYMENT_TARGET="11.0", BOOST_PY_VERSION_SUFFIX="3", CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=OFF -DCMAKE_POLICY_DEFAULT_CMP0167=NEW" }
+# Homebrew's Boost requires macOS 14.0+
+environment = { MACOSX_DEPLOYMENT_TARGET="14.0", BOOST_PY_VERSION_SUFFIX="3", CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=OFF -DCMAKE_POLICY_DEFAULT_CMP0167=NEW -DCMAKE_PREFIX_PATH=/opt/homebrew;/usr/local" }
 repair-wheel-command = "delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel} --ignore-missing-dependencies"
 
 [tool.cibuildwheel.windows]
