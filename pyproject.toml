@@ -10,8 +10,8 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [tool.cibuildwheel]
+build = ["cp310-*", "cp311-*", "cp312-*", "cp313-*"]  # Python 3.10-3.13 only
 skip = [
-    "cp314*",  # Boost Python library segfaults on Python 3.14
     "*musllinux*",  # Only build manylinux wheels
 ]
 test-skip = "*-manylinux*_aarch64"  # Skip ARM64 tests due to illegal instruction errors
@@ -46,7 +46,7 @@ before-all = [
     # Install build tools and boost-python via Homebrew (avoid vcpkg cross-build issues)
     "brew install cmake ninja boost-python3",
 ]
-environment = { MACOSX_DEPLOYMENT_TARGET="11.0", DISABLE_VCPKG="1" }
+environment = { MACOSX_DEPLOYMENT_TARGET="11.0", DISABLE_VCPKG="1", BOOST_PY_VERSION_SUFFIX="3" }
 
 [tool.cibuildwheel.windows]
 before-all = [
