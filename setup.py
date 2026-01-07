@@ -114,6 +114,11 @@ class BuildPyLibVWBindingsModule(_build_ext):
             argslist = self.distribution.cmake_options.split(";")
             cmake_args += argslist
 
+        # Allow CMAKE_ARGS environment variable to override defaults
+        # (used by cibuildwheel to pass platform-specific configuration)
+        if "CMAKE_ARGS" in os.environ:
+            cmake_args += os.environ["CMAKE_ARGS"].split()
+
         # If we are being installed in a conda environment then use the dependencies from there.
         if "CONDA_PREFIX" in os.environ:
             cmake_args.append(
