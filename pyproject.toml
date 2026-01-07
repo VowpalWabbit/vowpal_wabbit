@@ -47,8 +47,12 @@ before-all = [
     "brew install cmake ninja boost-python3",
 ]
 before-test = [
-    # Diagnostic: Find and inspect the built extension
-    "find {package} -name '*.so' -exec echo 'Found: {}' \\; -exec otool -L {} \\; -exec nm -u {} \\; | head -50 || true",
+    # Diagnostic: Find and inspect the INSTALLED extension (after delocate-wheel)
+    "echo '=== Inspecting installed extension ===' && find {package} -name '*.so' -exec echo 'Found: {}' \\; -exec otool -L {} \\; -exec echo '--- Undefined symbols (first 20) ---' \\; -exec nm -u {} \\; | head -50 || true",
+    # Diagnostic: Check the Mach-O header flags
+    "echo '=== Checking Mach-O flags ===' && find {package} -name '*.so' -exec otool -hv {} \\; || true",
+    # Diagnostic: Try manual import with verbose dlopen
+    "python -c 'import sys; sys.setdlopenflags(0x2 | 0x8); import vowpalwabbit; print(\"SUCCESS: Manual import worked\")' || echo 'FAILED: Manual import failed'",
 ]
 # Homebrew's Boost is built for macOS 14.0+, so we must match that deployment target
 # to avoid delocate-wheel errors about library compatibility
