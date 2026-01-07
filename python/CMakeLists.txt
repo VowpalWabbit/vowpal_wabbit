@@ -58,12 +58,12 @@ endif()
 add_library(pylibvw SHARED pylibvw.cc)
 set_target_properties(pylibvw PROPERTIES PREFIX "")
 
-# On macOS, Python extensions need -undefined dynamic_lookup to allow
-# Python API symbols to be resolved at runtime by the interpreter
+# On macOS, Python extensions need -flat_namespace -undefined dynamic_lookup
+# to allow Python API symbols to be resolved at runtime by the interpreter
 # Set this EARLY before any linking to ensure it's not overridden
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  message(STATUS ">>> MACOS DETECTED: Setting -undefined,dynamic_lookup for pylibvw")
-  set_target_properties(pylibvw PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
+  message(STATUS ">>> MACOS DETECTED: Setting -flat_namespace,-undefined,dynamic_lookup for pylibvw")
+  set_target_properties(pylibvw PROPERTIES LINK_FLAGS "-Wl,-flat_namespace,-undefined,dynamic_lookup")
   get_target_property(LINK_FLAGS_CHECK pylibvw LINK_FLAGS)
   message(STATUS ">>> LINK_FLAGS after set: ${LINK_FLAGS_CHECK}")
 endif()
