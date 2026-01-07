@@ -46,6 +46,12 @@ before-all = [
     # Install build tools and boost-python via Homebrew (avoid vcpkg cross-build issues)
     "brew install cmake ninja boost-python3",
 ]
+before-test = [
+    # Diagnostic: Check what libraries the extension is linked against
+    "otool -L {package}/vowpalwabbit/*.so || true",
+    # Diagnostic: Check for undefined symbols (should have many with dynamic_lookup)
+    "nm -u {package}/vowpalwabbit/*.so | head -20 || true",
+]
 # Homebrew's Boost is built for macOS 14.0+, so we must match that deployment target
 # to avoid delocate-wheel errors about library compatibility
 environment = { MACOSX_DEPLOYMENT_TARGET="14.0", DISABLE_VCPKG="1", BOOST_PY_VERSION_SUFFIX="3", CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=OFF -DCMAKE_POLICY_DEFAULT_CMP0167=NEW -DCMAKE_PREFIX_PATH=/opt/homebrew;/usr/local" }
