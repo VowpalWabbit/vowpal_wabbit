@@ -51,6 +51,12 @@ if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin" AND NOT WIN32)
   set(EXPORT_DYNAMIC -Wl,--export-dynamic)
 endif()
 
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  # On macOS, Python extensions need -undefined dynamic_lookup to allow
+  # Python API symbols to be resolved at runtime by the interpreter
+  set(MACOS_PYTHON_LINK_FLAGS -Wl,-undefined,dynamic_lookup)
+endif()
+
 # Note: Python bindings previously built under c++0x
 
 # create the lib
@@ -86,3 +92,7 @@ else()
 endif()
 target_link_libraries(pylibvw PUBLIC vw_core)
 target_compile_options(pylibvw PRIVATE ${EXPORT_DYNAMIC})
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  target_link_options(pylibvw PRIVATE ${MACOS_PYTHON_LINK_FLAGS})
+endif()
