@@ -46,7 +46,7 @@ before-all = [
     # Install build tools and boost-python via Homebrew (avoid vcpkg cross-build issues)
     "brew install cmake ninja boost-python3",
 ]
-environment = { MACOSX_DEPLOYMENT_TARGET="11.0", DISABLE_VCPKG="1", BOOST_PY_VERSION_SUFFIX="3", CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=ON -DCMAKE_PREFIX_PATH=/opt/homebrew;/usr/local" }
+environment = { MACOSX_DEPLOYMENT_TARGET="11.0", DISABLE_VCPKG="1", BOOST_PY_VERSION_SUFFIX="3", CMAKE_ARGS="-DCMAKE_POLICY_DEFAULT_CMP0167=NEW -DCMAKE_PREFIX_PATH=/opt/homebrew;/usr/local" }
 
 [tool.cibuildwheel.windows]
 before-all = [
