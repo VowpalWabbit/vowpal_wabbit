@@ -3,10 +3,23 @@
 
 from __future__ import division
 from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, Type, Union
-import pylibvw
 import warnings
 import inspect
 from pathlib import Path
+import sys
+import platform
+
+# On macOS, import pylibvw with RTLD_GLOBAL to allow Python symbols to be resolved
+# This works around linker limitations with Python extensions on macOS
+if platform.system() == "Darwin":
+    import os
+    _old_flags = sys.getdlopenflags()
+    # RTLD_NOW | RTLD_GLOBAL
+    sys.setdlopenflags(os.RTLD_NOW | os.RTLD_GLOBAL)
+    import pylibvw
+    sys.setdlopenflags(_old_flags)
+else:
+    import pylibvw
 
 from enum import IntEnum
 
