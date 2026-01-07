@@ -51,6 +51,10 @@ before-test = [
     "echo '=== Inspecting installed extension ===' && find {package} -name '*.so' -exec echo 'Found: {}' \\; -exec otool -L {} \\; -exec echo '--- Undefined symbols (first 20) ---' \\; -exec nm -u {} \\; | head -50 || true",
     # Diagnostic: Check the Mach-O header flags
     "echo '=== Checking Mach-O flags ===' && find {package} -name '*.so' -exec otool -hv {} \\; || true",
+    # Diagnostic: Check weak symbols specifically
+    "echo '=== Checking weak symbols ===' && find {package} -name '*.so' -exec nm -m {} \\; | grep '(weak' | head -20 || echo 'No weak symbols found'",
+    # Diagnostic: Check if Python framework is linked (and if it's weak)
+    "echo '=== Python framework linkage ===' && find {package} -name '*.so' -exec otool -L {} \\; | grep -i python || echo 'No Python framework linked'",
     # Diagnostic: Try manual import with verbose dlopen
     "python -c 'import sys; sys.setdlopenflags(0x2 | 0x8); import vowpalwabbit; print(\"SUCCESS: Manual import worked\")' || echo 'FAILED: Manual import failed'",
 ]
