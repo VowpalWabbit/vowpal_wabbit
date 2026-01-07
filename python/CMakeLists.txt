@@ -58,6 +58,13 @@ endif()
 add_library(pylibvw SHARED pylibvw.cc)
 set_target_properties(pylibvw PROPERTIES PREFIX "")
 
+# On macOS, Python extensions need -undefined dynamic_lookup to allow
+# Python API symbols to be resolved at runtime by the interpreter
+# Set this EARLY before any linking to ensure it's not overridden
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  set_target_properties(pylibvw PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
+endif()
+
 # The python setup.py script should communicate what suffix it wants.
 if(VW_PYTHON_SHARED_LIB_SUFFIX)
   set_target_properties(pylibvw PROPERTIES SUFFIX ${VW_PYTHON_SHARED_LIB_SUFFIX})
@@ -78,18 +85,21 @@ if (NOT WIN32)
 endif()
 
 if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
-  target_link_libraries(pylibvw PUBLIC ${PYTHON_LIBRARIES} Boost::python${BOOST_PY_VERSION_SUFFIX})
   target_include_directories(pylibvw PRIVATE ${PYTHON_INCLUDE_PATH})
+  if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    target_link_libraries(pylibvw PUBLIC ${PYTHON_LIBRARIES})
+  endif()
+  target_link_libraries(pylibvw PUBLIC Boost::python${BOOST_PY_VERSION_SUFFIX})
 elseif(${CMAKE_VERSION} VERSION_LESS "3.15.7")
-  target_link_libraries(pylibvw PUBLIC Python::Python Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
+  if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    target_link_libraries(pylibvw PUBLIC Python::Python)
+  endif()
+  target_link_libraries(pylibvw PUBLIC Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
 else()
-  target_link_libraries(pylibvw PUBLIC Python::Module Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
+  if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    target_link_libraries(pylibvw PUBLIC Python::Module)
+  endif()
+  target_link_libraries(pylibvw PUBLIC Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
 endif()
 target_link_libraries(pylibvw PUBLIC vw_core)
 target_compile_options(pylibvw PRIVATE ${EXPORT_DYNAMIC})
-
-# On macOS, Python extensions need -undefined dynamic_lookup to allow
-# Python API symbols to be resolved at runtime by the interpreter
-if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  set_target_properties(pylibvw PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
-endif()
