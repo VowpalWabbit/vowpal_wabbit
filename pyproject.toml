@@ -47,16 +47,12 @@ before-all = [
     "brew install cmake ninja boost-python3",
 ]
 before-test = [
-    # Diagnostic: Find and inspect the INSTALLED extension (after delocate-wheel)
-    "echo '=== Inspecting installed extension ===' && find {package} -name '*.so' -exec echo 'Found: {}' \\; -exec otool -L {} \\; -exec echo '--- Undefined symbols (first 20) ---' \\; -exec nm -u {} \\; | head -50 || true",
-    # Diagnostic: Check the Mach-O header flags
-    "echo '=== Checking Mach-O flags ===' && find {package} -name '*.so' -exec otool -hv {} \\; || true",
-    # Diagnostic: Check weak symbols specifically
-    "echo '=== Checking weak symbols ===' && find {package} -name '*.so' -exec nm -m {} \\; | grep '(weak' | head -20 || echo 'No weak symbols found'",
-    # Diagnostic: Check if Python framework is linked (and if it's weak)
-    "echo '=== Python framework linkage ===' && find {package} -name '*.so' -exec otool -L {} \\; | grep -i python || echo 'No Python framework linked'",
-    # Diagnostic: Try manual import with verbose dlopen
-    "python -c 'import sys; sys.setdlopenflags(0x2 | 0x8); import vowpalwabbit; print(\"SUCCESS: Manual import worked\")' || echo 'FAILED: Manual import failed'",
+    # Diagnostic: Find and inspect the INSTALLED extension in site-packages
+    "python -c 'import sys, os, glob, subprocess; sp = __import__(\"sysconfig\").get_path(\"purelib\"); print(f\"=== site-packages: {sp} ===\"); pattern = os.path.join(sp, \"pylibvw*.so\"); matches = glob.glob(pattern); so = matches[0] if matches else None; print(f\"Found .so: {so}\"); subprocess.run([\"otool\", \"-L\", so]) if so else None; subprocess.run([\"otool\", \"-hv\", so]) if so else None; subprocess.run([\"sh\", \"-c\", f\"nm -u {so} | head -30\"]) if so else None' || true",
+    # Diagnostic: Try importing vowpalwabbit normally (this will likely fail)
+    "echo '=== Test normal import ===' && python -c 'import vowpalwabbit; print(\"SUCCESS\")' || echo 'FAILED'",
+    # Diagnostic: Try manual import with RTLD_GLOBAL
+    "echo '=== Test RTLD_GLOBAL import ===' && python -c 'import sys, os; sys.setdlopenflags(os.RTLD_NOW | os.RTLD_GLOBAL); import vowpalwabbit; print(\"SUCCESS\")' || echo 'FAILED'",
 ]
 # Homebrew's Boost requires macOS 14.0+
 environment = { MACOSX_DEPLOYMENT_TARGET="14.0", DISABLE_VCPKG="1", BOOST_PY_VERSION_SUFFIX="3", CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=OFF -DCMAKE_POLICY_DEFAULT_CMP0167=NEW -DCMAKE_PREFIX_PATH=/opt/homebrew;/usr/local" }

@@ -58,12 +58,14 @@ endif()
 add_library(pylibvw SHARED pylibvw.cc)
 set_target_properties(pylibvw PROPERTIES PREFIX "")
 
-# On macOS, allow undefined Python symbols (resolved at runtime from Python interpreter)
+# On macOS, use flat namespace to allow Python symbols to be resolved at runtime
+# This is required because delocate-wheel changes library paths in a way that breaks
+# two-level namespace symbol resolution
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   set_target_properties(pylibvw PROPERTIES
-    LINK_FLAGS "-Wl,-undefined,dynamic_lookup"
+    LINK_FLAGS "-Wl,-flat_namespace,-undefined,dynamic_lookup"
   )
-  message(STATUS ">>> macOS: Using dynamic_lookup for Python symbol resolution")
+  message(STATUS ">>> macOS: Using flat_namespace + dynamic_lookup for Python symbol resolution")
 endif()
 
 
