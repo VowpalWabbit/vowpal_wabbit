@@ -62,7 +62,10 @@ set_target_properties(pylibvw PROPERTIES PREFIX "")
 # Python API symbols to be resolved at runtime by the interpreter
 # Set this EARLY before any linking to ensure it's not overridden
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  message(STATUS ">>> MACOS DETECTED: Setting -undefined,dynamic_lookup for pylibvw")
   set_target_properties(pylibvw PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
+  get_target_property(LINK_FLAGS_CHECK pylibvw LINK_FLAGS)
+  message(STATUS ">>> LINK_FLAGS after set: ${LINK_FLAGS_CHECK}")
 endif()
 
 # The python setup.py script should communicate what suffix it wants.
@@ -93,6 +96,7 @@ if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
 elseif(${CMAKE_VERSION} VERSION_LESS "3.15.7")
   if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     # On macOS with dynamic_lookup, need includes but not linking
+    message(STATUS ">>> MACOS: Adding Python includes, skipping library linkage (CMake < 3.15.7)")
     target_include_directories(pylibvw PRIVATE ${Python_INCLUDE_DIRS})
   else()
     target_link_libraries(pylibvw PUBLIC Python::Python)
@@ -101,6 +105,8 @@ elseif(${CMAKE_VERSION} VERSION_LESS "3.15.7")
 else()
   if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     # On macOS with dynamic_lookup, need includes but not linking
+    message(STATUS ">>> MACOS: Adding Python includes, skipping library linkage (CMake >= 3.15.7)")
+    message(STATUS ">>> Python_INCLUDE_DIRS: ${Python_INCLUDE_DIRS}")
     target_include_directories(pylibvw PRIVATE ${Python_INCLUDE_DIRS})
   else()
     target_link_libraries(pylibvw PUBLIC Python::Module)
