@@ -85,11 +85,25 @@ if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
 elseif(${CMAKE_VERSION} VERSION_LESS "3.15.7")
   target_link_libraries(pylibvw PRIVATE Python::Python Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
 else()
-  target_link_libraries(pylibvw PRIVATE Python::Module Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
+  # On macOS, Python::Module provides headers only (Python_LIBRARIES is empty)
+  # Don't link Python - use -undefined dynamic_lookup instead
+  if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    target_include_directories(pylibvw PRIVATE ${Python_INCLUDE_DIRS})
+    target_link_libraries(pylibvw PRIVATE Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
+  else()
+    target_link_libraries(pylibvw PRIVATE Python::Module Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
+  endif()
 endif()
 # MODULE libraries are final consumers and should use PRIVATE linkage
 target_link_libraries(pylibvw PRIVATE vw_core)
 target_compile_options(pylibvw PRIVATE ${EXPORT_DYNAMIC})
+
+# On macOS, explicitly set linker flags to prevent NOUNDEFS
+# Must come AFTER all target_link_libraries calls to have final say
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  # Use set_property instead of target_link_options to append, not replace
+  set_property(TARGET pylibvw APPEND_STRING PROPERTY LINK_FLAGS " -undefined dynamic_lookup")
+endif()
 
 # On macOS, add diagnostic to verify linkage
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -108,7 +122,5 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     COMMAND otool -hv $<TARGET_FILE:pylibvw>
     COMMAND ${CMAKE_COMMAND} -E echo "Linked libraries:"
     COMMAND otool -L $<TARGET_FILE:pylibvw>
-    COMMAND ${CMAKE_COMMAND} -E echo "\\n=== Checking if Python framework/library is linked ==="
-    COMMAND sh -c "otool -L $<TARGET_FILE:pylibvw> | /usr/bin/grep -i python || echo 'ERROR: No Python library/framework linked!'"
   )
 endif()
