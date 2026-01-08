@@ -98,15 +98,16 @@ endif()
 target_link_libraries(pylibvw PRIVATE vw_core)
 target_compile_options(pylibvw PRIVATE ${EXPORT_DYNAMIC})
 
-# On macOS, link against Python framework to provide symbols
+# On macOS, link against Python framework
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  # Find Python framework path from include dirs
-  # Python_INCLUDE_DIRS looks like: /Library/Frameworks/Python.framework/Versions/3.10/include/python3.10
-  string(REGEX REPLACE "/include/python[^/]*$" "" Python_FRAMEWORK_PREFIX "${Python_INCLUDE_DIRS}")
-  message(STATUS "Python framework prefix: ${Python_FRAMEWORK_PREFIX}")
+  # Python_INCLUDE_DIRS: /Library/Frameworks/Python.framework/Versions/3.10/include/python3.10
+  # Extract: /Library/Frameworks
+  string(REGEX REPLACE "(/[^/]+\\.framework).*" "" FRAMEWORKS_DIR "${Python_INCLUDE_DIRS}")
+  message(STATUS "Python framework directory: ${FRAMEWORKS_DIR}")
+  message(STATUS "Full Python include path: ${Python_INCLUDE_DIRS}")
 
   # Link against Python framework
-  target_link_libraries(pylibvw PRIVATE "-F${Python_FRAMEWORK_PREFIX}/.. -framework Python")
+  target_link_libraries(pylibvw PRIVATE "-F${FRAMEWORKS_DIR} -framework Python")
 endif()
 
 # On macOS, add diagnostic to verify linkage
