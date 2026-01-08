@@ -48,7 +48,7 @@ before-all = [
 ]
 test-command = [
     # Diagnostic: Find and inspect pylibvw.so WITHOUT importing it
-    "python -c 'import subprocess, glob, sysconfig; sp = sysconfig.get_path(\"platlib\"); pattern = sp + \"/pylibvw*.so\"; files = glob.glob(pattern); so = files[0] if files else None; print(f\"=== Found: {so} ===\"); subprocess.run([\"otool\", \"-L\", so]) if so else None; print(\"\\n=== Mach-O header ===\"); subprocess.run([\"otool\", \"-hv\", so]) if so else None; print(\"\\n=== Undefined symbols (first 30) ===\"); subprocess.run([\"sh\", \"-c\", f\"nm -u {so} | head -30\"]) if so else None' || true",
+    "python -c 'import subprocess, glob, sysconfig, sys; sp = sysconfig.get_path(\"platlib\"); pattern = sp + \"/pylibvw*.so\"; files = glob.glob(pattern); so = files[0] if files else None; print(f\"=== Found: {so} ===\"); subprocess.run([\"otool\", \"-L\", so], check=True) if so else None; print(\"\\n=== Mach-O header ===\"); subprocess.run([\"otool\", \"-hv\", so], check=True) if so else None; print(\"\\n=== Undefined symbols (first 30) ===\"); subprocess.run([\"sh\", \"-c\", f\"nm -u {so} | head -30\"], check=True) if so else None; print(\"\\n=== Python executable info ===\"); subprocess.run([\"otool\", \"-hv\", sys.executable], check=True); print(\"\\n=== Trying to import pylibvw ===\"); exec(\"import pylibvw; print(\\\"SUCCESS: pylibvw imported!\\\")\")' || true",
     # Run actual tests
     "pyclean {project}/python/tests",
     "pytest {project}/python/tests",

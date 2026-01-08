@@ -102,10 +102,16 @@ target_compile_options(pylibvw PRIVATE ${EXPORT_DYNAMIC})
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   target_link_options(pylibvw PRIVATE "LINKER:-flat_namespace,-undefined,dynamic_lookup")
 
-  # Post-build diagnostic
+  # Post-build diagnostics
   add_custom_command(TARGET pylibvw POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E echo "=== POST-BUILD: Inspecting pylibvw flags ==="
+    COMMAND ${CMAKE_COMMAND} -E echo "=== POST-BUILD: Inspecting pylibvw ==="
+    COMMAND ${CMAKE_COMMAND} -E echo "Mach-O header:"
     COMMAND otool -hv $<TARGET_FILE:pylibvw>
-    COMMAND ${CMAKE_COMMAND} -E echo "=== If NOUNDEFS appears above, MODULE type did NOT work ==="
+    COMMAND ${CMAKE_COMMAND} -E echo "\\nLinked libraries:"
+    COMMAND otool -L $<TARGET_FILE:pylibvw>
+    COMMAND ${CMAKE_COMMAND} -E echo "\\nBoost.Python library location:"
+    COMMAND ${CMAKE_COMMAND} -E echo "$<TARGET_FILE:Boost::python${BOOST_PY_VERSION_SUFFIX}>"
+    COMMAND ${CMAKE_COMMAND} -E echo "\\nBoost.Python links against:"
+    COMMAND otool -L $<TARGET_FILE:Boost::python${BOOST_PY_VERSION_SUFFIX}>
   )
 endif()
