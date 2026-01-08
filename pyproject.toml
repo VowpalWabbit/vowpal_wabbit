@@ -47,10 +47,8 @@ before-all = [
     "brew install cmake ninja boost-python3",
 ]
 before-test = [
-    # Diagnostic: Find the .so using Python's import mechanism (most reliable)
-    "python -c 'import subprocess, importlib.util; spec = importlib.util.find_spec(\"pylibvw\"); print(f\"=== pylibvw location: {spec.origin if spec else None} ===\"); so = spec.origin if spec else None; subprocess.run([\"otool\", \"-L\", so]) if so else print(\"No file\"); subprocess.run([\"otool\", \"-hv\", so]) if so else None; subprocess.run([\"sh\", \"-c\", f\"nm -u {so} | head -30\"]) if so else None' || true",
-    # Diagnostic: Check if it's using flat_namespace
-    "python -c 'import subprocess, importlib.util; spec = importlib.util.find_spec(\"pylibvw\"); subprocess.run([\"otool\", \"-hv\", spec.origin]) if spec else None' 2>&1 | grep -i \"flags\" || true",
+    # Diagnostic: Import vowpalwabbit (works) then find where pylibvw lives
+    "python -c 'import subprocess, sys; import vowpalwabbit.pyvw; import pylibvw; print(f\"=== pylibvw: {pylibvw.__file__} ===\"); print(f\"=== pylibvw module: {pylibvw} ===\"); subprocess.run([\"otool\", \"-L\", pylibvw.__file__]); print(\"=== Mach-O flags ===\"); subprocess.run([\"otool\", \"-hv\", pylibvw.__file__]); print(\"=== Undefined symbols (first 30) ===\"); subprocess.run([\"sh\", \"-c\", f\"nm -u {pylibvw.__file__} | head -30\"])' || true",
 ]
 # Homebrew's Boost requires macOS 14.0+
 environment = { MACOSX_DEPLOYMENT_TARGET="14.0", DISABLE_VCPKG="1", BOOST_PY_VERSION_SUFFIX="3", CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=OFF -DCMAKE_POLICY_DEFAULT_CMP0167=NEW -DCMAKE_PREFIX_PATH=/opt/homebrew;/usr/local" }
