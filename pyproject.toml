@@ -47,6 +47,8 @@ before-all = [
     "brew install cmake ninja boost-python3",
     # Test if simple extension can avoid NOUNDEFS
     "cd test_extension && ./test_build.sh && cd ..",
+    # Test if delocate-wheel breaks working extensions
+    "cd test_extension && ./test_wheel.sh && cd ..",
 ]
 test-command = [
     # Diagnostic: Find and inspect pylibvw.so WITHOUT importing it
