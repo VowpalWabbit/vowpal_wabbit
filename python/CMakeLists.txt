@@ -58,18 +58,6 @@ endif()
 add_library(pylibvw SHARED pylibvw.cc)
 set_target_properties(pylibvw PROPERTIES PREFIX "")
 
-# On macOS, use -undefined dynamic_lookup to defer Python symbol resolution to runtime
-# This is the standard approach for Python extensions on macOS
-if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  target_link_options(pylibvw PRIVATE "-undefined" "dynamic_lookup")
-
-  # Add post-build diagnostic to verify flags are applied
-  add_custom_command(TARGET pylibvw POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E echo "=== POST-BUILD: Inspecting pylibvw flags ==="
-    COMMAND otool -hv $<TARGET_FILE:pylibvw>
-    COMMAND ${CMAKE_COMMAND} -E echo "=== If NOUNDEFS appears above, -undefined dynamic_lookup did NOT work ==="
-  )
-endif()
 
 
 # The python setup.py script should communicate what suffix it wants.
@@ -101,3 +89,15 @@ else()
 endif()
 target_link_libraries(pylibvw PUBLIC vw_core)
 target_compile_options(pylibvw PRIVATE ${EXPORT_DYNAMIC})
+
+# On macOS, add -undefined dynamic_lookup AFTER all linking to override any NOUNDEFS from dependencies
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  set_property(TARGET pylibvw APPEND_STRING PROPERTY LINK_FLAGS " -undefined dynamic_lookup")
+
+  # Post-build diagnostic
+  add_custom_command(TARGET pylibvw POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E echo "=== POST-BUILD: Inspecting pylibvw flags ==="
+    COMMAND otool -hv $<TARGET_FILE:pylibvw>
+    COMMAND ${CMAKE_COMMAND} -E echo "=== If NOUNDEFS appears above, flags did NOT work ==="
+  )
+endif()
