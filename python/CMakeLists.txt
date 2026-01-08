@@ -38,13 +38,8 @@ elseif(${CMAKE_VERSION} VERSION_LESS "3.18.0")
   # Prior to 3.18 only the Development component is exposed
   find_package(Python ${PY_VERSION} EXACT COMPONENTS Development REQUIRED)
 else()
-  # On macOS, use full Development component to get Python::Python target for linking
-  # On other platforms, Development.Module is sufficient (doesn't link to Python)
-  if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    find_package(Python ${PY_VERSION} EXACT COMPONENTS Development REQUIRED)
-  else()
-    find_package(Python ${PY_VERSION} EXACT COMPONENTS Development.Module REQUIRED)
-  endif()
+  # This was fixed in 3.18 to allow for just the Development.Module component to be used
+  find_package(Python ${PY_VERSION} EXACT COMPONENTS Development.Module REQUIRED)
 endif()
 
 if (NOT WIN32)
@@ -63,6 +58,13 @@ endif()
 add_library(pylibvw SHARED pylibvw.cc)
 set_target_properties(pylibvw PROPERTIES PREFIX "")
 
+# On macOS, use -undefined,dynamic_lookup to defer Python symbol resolution to runtime
+# This is the standard approach for Python extensions on macOS
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  set_target_properties(pylibvw PROPERTIES
+    LINK_FLAGS "-Wl,-undefined,dynamic_lookup"
+  )
+endif()
 
 
 # The python setup.py script should communicate what suffix it wants.
@@ -90,13 +92,7 @@ if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
 elseif(${CMAKE_VERSION} VERSION_LESS "3.15.7")
   target_link_libraries(pylibvw PUBLIC Python::Python Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
 else()
-  # On macOS, use Python::Python to get actual linking to Python framework
-  # Python::Module doesn't link to Python which causes symbol resolution issues
-  if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    target_link_libraries(pylibvw PUBLIC Python::Python Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
-  else()
-    target_link_libraries(pylibvw PUBLIC Python::Module Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
-  endif()
+  target_link_libraries(pylibvw PUBLIC Python::Module Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
 endif()
 target_link_libraries(pylibvw PUBLIC vw_core)
 target_compile_options(pylibvw PRIVATE ${EXPORT_DYNAMIC})
