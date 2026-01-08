@@ -62,6 +62,13 @@ set_target_properties(pylibvw PROPERTIES PREFIX "")
 # This is the standard approach for Python extensions on macOS
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   target_link_options(pylibvw PRIVATE "-undefined" "dynamic_lookup")
+
+  # Add post-build diagnostic to verify flags are applied
+  add_custom_command(TARGET pylibvw POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E echo "=== POST-BUILD: Inspecting pylibvw flags ==="
+    COMMAND otool -hv $<TARGET_FILE:pylibvw>
+    COMMAND ${CMAKE_COMMAND} -E echo "=== If NOUNDEFS appears above, -undefined dynamic_lookup did NOT work ==="
+  )
 endif()
 
 
