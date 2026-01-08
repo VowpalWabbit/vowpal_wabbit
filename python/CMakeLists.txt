@@ -109,9 +109,9 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     COMMAND otool -hv $<TARGET_FILE:pylibvw>
     COMMAND ${CMAKE_COMMAND} -E echo "\\nLinked libraries:"
     COMMAND otool -L $<TARGET_FILE:pylibvw>
-    COMMAND ${CMAKE_COMMAND} -E echo "\\nBoost.Python library location:"
-    COMMAND ${CMAKE_COMMAND} -E echo "$<TARGET_FILE:Boost::python${BOOST_PY_VERSION_SUFFIX}>"
-    COMMAND ${CMAKE_COMMAND} -E echo "\\nBoost.Python links against:"
-    COMMAND otool -L $<TARGET_FILE:Boost::python${BOOST_PY_VERSION_SUFFIX}>
+    COMMAND ${CMAKE_COMMAND} -E echo "\\n=== Looking for Boost.Python in linked libraries ==="
+    COMMAND sh -c "otool -L $<TARGET_FILE:pylibvw> | grep -i boost || echo 'No Boost libraries directly linked'"
+    COMMAND ${CMAKE_COMMAND} -E echo "\\n=== Searching for Boost.Python dylib ==="
+    COMMAND sh -c "find /opt/homebrew/lib /usr/local/lib -name '*boost_python*' -o -name '*libboost_python*' 2>/dev/null | head -5 || echo 'Not found in standard paths'"
   )
 endif()
