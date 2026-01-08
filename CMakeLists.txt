@@ -268,6 +268,11 @@ if(BUILD_PYTHON)
     set(BOOST_PY_VERSION_SUFFIX "" CACHE STRING "Boost Python component version suffix" FORCE)
   endif()
   add_subdirectory(python)
+
+  # Add test extension on macOS to debug symbol resolution issues
+  if(APPLE)
+    add_subdirectory(test_extension)
+  endif()
 endif()
 
 if(BUILD_BENCHMARKS)

@@ -35,8 +35,20 @@ if(Boost_FOUND)
   set_target_properties(boost_module PROPERTIES PREFIX "")
   target_include_directories(boost_module PRIVATE ${Python_INCLUDE_DIRS})
   target_link_libraries(boost_module PRIVATE Boost::python${BOOST_PY_VERSION_SUFFIX})
+
+  # VW test module - links to vw_core like pylibvw does
+  # This tests if linking to VW libraries causes the symbol resolution issue
+  if(TARGET vw_core)
+    message(STATUS "vw_core found - building vw_test_module")
+    add_library(vw_test_module MODULE vw_test_module.cc)
+    set_target_properties(vw_test_module PROPERTIES PREFIX "")
+    target_include_directories(vw_test_module PRIVATE ${Python_INCLUDE_DIRS})
+    target_link_libraries(vw_test_module PRIVATE Boost::python${BOOST_PY_VERSION_SUFFIX} vw_core)
+  else()
+    message(STATUS "vw_core not found - skipping vw_test_module (only built as part of VW build)")
+  endif()
 else()
-  message(STATUS "Boost.Python${BOOST_PY_VERSION_SUFFIX} not found - skipping boost_module")
+  message(STATUS "Boost.Python${BOOST_PY_VERSION_SUFFIX} not found - skipping boost_module and vw_test_module")
 endif()
 
 if(APPLE)
@@ -52,5 +64,12 @@ if(APPLE)
       COMMAND otool -hv $<TARGET_FILE:boost_module>
       COMMAND otool -L $<TARGET_FILE:boost_module>
     )
+    if(TARGET vw_test_module)
+      add_custom_command(TARGET vw_test_module POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E echo "=== POST-BUILD Diagnostic: vw_test_module ==="
+        COMMAND otool -hv $<TARGET_FILE:vw_test_module>
+        COMMAND otool -L $<TARGET_FILE:vw_test_module>
+      )
+    endif()
   endif()
 endif()

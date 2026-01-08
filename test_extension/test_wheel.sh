@@ -18,7 +18,9 @@ cd build
 
 # Create package structure
 mkdir -p wheeltest/test_extensions
-cp simple_module.so boost_module.so wheeltest/test_extensions/ 2>/dev/null || cp simple_module.*.so boost_module.*.so wheeltest/test_extensions/
+cp simple_module.so wheeltest/test_extensions/ 2>/dev/null || cp simple_module.*.so wheeltest/test_extensions/
+cp boost_module.so wheeltest/test_extensions/ 2>/dev/null || cp boost_module.*.so wheeltest/test_extensions/ 2>/dev/null || true
+cp vw_test_module.so wheeltest/test_extensions/ 2>/dev/null || cp vw_test_module.*.so wheeltest/test_extensions/ 2>/dev/null || true
 cd wheeltest
 
 # Create __init__.py
@@ -63,6 +65,12 @@ if ls test_extensions/boost_module*.so >/dev/null 2>&1; then
     echo ""
     echo "=== Testing boost_module import after delocate ==="
     python3 -c "import sys; sys.path.insert(0, '.'); from test_extensions import boost_module; print('Loaded boost_module')" || { echo "boost_module import FAILED"; exit 1; }
+fi
+
+if ls test_extensions/vw_test_module*.so >/dev/null 2>&1; then
+    echo ""
+    echo "=== Testing vw_test_module (links to vw_core) import after delocate ==="
+    python3 -c "import sys; sys.path.insert(0, '.'); from test_extensions import vw_test_module; print('Loaded vw_test_module'); print(vw_test_module.test_vw())" || { echo "vw_test_module import FAILED - THIS IS THE KEY TEST!"; exit 1; }
 fi
 
 echo ""
