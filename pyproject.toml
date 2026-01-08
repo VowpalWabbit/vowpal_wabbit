@@ -46,9 +46,12 @@ before-all = [
     # Install build tools and boost-python via Homebrew
     "brew install cmake ninja boost-python3",
 ]
-before-test = [
-    # Diagnostic: Import vowpalwabbit then find where pylibvw lives
-    "python -c 'import subprocess, sys; import vowpalwabbit; import pylibvw; print(f\"=== pylibvw location: {pylibvw.__file__} ===\"); subprocess.run([\"otool\", \"-L\", pylibvw.__file__]); print(\"\\n=== Mach-O flags ===\"); subprocess.run([\"otool\", \"-hv\", pylibvw.__file__]); print(\"\\n=== Undefined symbols (first 30) ===\"); subprocess.run([\"sh\", \"-c\", f\"nm -u {pylibvw.__file__} | head -30\"])' || true",
+test-command = [
+    # Diagnostic: Inspect the installed pylibvw.so
+    "python -c 'import subprocess; import pylibvw; print(f\"=== pylibvw: {pylibvw.__file__} ===\"); subprocess.run([\"otool\", \"-L\", pylibvw.__file__]); subprocess.run([\"otool\", \"-hv\", pylibvw.__file__]); subprocess.run([\"sh\", \"-c\", f\"nm -u {pylibvw.__file__} | head -30\"])' || true",
+    # Run actual tests
+    "pyclean {project}/python/tests",
+    "pytest {project}/python/tests",
 ]
 # Homebrew's Boost requires macOS 14.0+
 environment = { MACOSX_DEPLOYMENT_TARGET="14.0", DISABLE_VCPKG="1", BOOST_PY_VERSION_SUFFIX="3", CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=OFF -DCMAKE_POLICY_DEFAULT_CMP0167=NEW -DCMAKE_PREFIX_PATH=/opt/homebrew;/usr/local" }
