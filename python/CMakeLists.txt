@@ -85,14 +85,21 @@ if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
 elseif(${CMAKE_VERSION} VERSION_LESS "3.15.7")
   target_link_libraries(pylibvw PRIVATE Python::Python Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
 else()
-  target_link_libraries(pylibvw PRIVATE Python::Module Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
+  # On macOS, don't link Python::Module - it adds flags that bring back NOUNDEFS
+  # We need -undefined dynamic_lookup without Python's link-time symbol requirements
+  if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    target_include_directories(pylibvw PRIVATE ${Python_INCLUDE_DIRS})
+    target_link_libraries(pylibvw PRIVATE Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
+  else()
+    target_link_libraries(pylibvw PRIVATE Python::Module Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
+  endif()
 endif()
 # MODULE libraries are final consumers and should use PRIVATE linkage
 target_link_libraries(pylibvw PRIVATE vw_core)
 target_compile_options(pylibvw PRIVATE ${EXPORT_DYNAMIC})
 
-# On macOS, use -undefined dynamic_lookup without -flat_namespace
-# Modern Python uses two-level namespace; flat_namespace causes symbol resolution to fail
+# On macOS, use -undefined dynamic_lookup for MODULE library (two-level namespace)
+# Don't use -flat_namespace: Python uses TWOLEVEL and namespace mismatch prevents symbol resolution
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   target_link_options(pylibvw PRIVATE "LINKER:-undefined,dynamic_lookup")
 
