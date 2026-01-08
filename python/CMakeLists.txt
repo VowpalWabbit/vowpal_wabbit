@@ -85,22 +85,16 @@ if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
 elseif(${CMAKE_VERSION} VERSION_LESS "3.15.7")
   target_link_libraries(pylibvw PRIVATE Python::Python Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
 else()
-  # On macOS, MODULE libraries should not link against Python - symbols resolved at runtime
-  if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    target_include_directories(pylibvw PRIVATE ${Python_INCLUDE_DIRS})
-    target_link_libraries(pylibvw PRIVATE Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
-  else()
-    target_link_libraries(pylibvw PRIVATE Python::Module Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
-  endif()
+  target_link_libraries(pylibvw PRIVATE Python::Module Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
 endif()
 # MODULE libraries are final consumers and should use PRIVATE linkage
 target_link_libraries(pylibvw PRIVATE vw_core)
 target_compile_options(pylibvw PRIVATE ${EXPORT_DYNAMIC})
 
-# On macOS, explicitly add -flat_namespace -undefined dynamic_lookup for MODULE library
-# Both flags are required: flat_namespace allows runtime symbol resolution
+# On macOS, use -undefined dynamic_lookup without -flat_namespace
+# Modern Python uses two-level namespace; flat_namespace causes symbol resolution to fail
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  target_link_options(pylibvw PRIVATE "LINKER:-flat_namespace,-undefined,dynamic_lookup")
+  target_link_options(pylibvw PRIVATE "LINKER:-undefined,dynamic_lookup")
 
   # Post-build diagnostics
   add_custom_command(TARGET pylibvw POST_BUILD
