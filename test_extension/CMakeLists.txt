@@ -44,6 +44,19 @@ if(Boost_FOUND)
     set_target_properties(vw_test_module PROPERTIES PREFIX "")
     target_include_directories(vw_test_module PRIVATE ${Python_INCLUDE_DIRS})
     target_link_libraries(vw_test_module PRIVATE Boost::python${BOOST_PY_VERSION_SUFFIX} vw_core)
+
+    # TEST IMMEDIATELY AFTER BUILD - This is the critical test!
+    add_custom_command(TARGET vw_test_module POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E echo "========================================="
+      COMMAND ${CMAKE_COMMAND} -E echo "CRITICAL TEST: vw_test_module (links to vw_core)"
+      COMMAND ${CMAKE_COMMAND} -E echo "========================================="
+      COMMAND ${Python_EXECUTABLE} -c "import sys; sys.path.insert(0, '${CMAKE_CURRENT_BINARY_DIR}'); import vw_test_module; print('SUCCESS: vw_test_module imported!'); print(vw_test_module.test_vw())"
+      COMMAND ${CMAKE_COMMAND} -E echo "========================================="
+      COMMAND ${CMAKE_COMMAND} -E echo "vw_test_module works - VW library linking is OK!"
+      COMMAND ${CMAKE_COMMAND} -E echo "========================================="
+      COMMENT "Testing vw_test_module import (links to vw_core)"
+      VERBATIM
+    )
   else()
     message(STATUS "vw_core not found - skipping vw_test_module (only built as part of VW build)")
   endif()

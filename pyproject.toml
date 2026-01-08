@@ -51,9 +51,7 @@ before-all = [
     "cd test_extension && ./test_wheel.sh && cd ..",
 ]
 test-command = [
-    # Test vw_test_module (built with vw_core during wheel build) - THE KEY TEST
-    "python -c 'import subprocess, glob; files = glob.glob(\"{project}/test_extension/build/vw_test_module*.so\"); print(f\"=== vw_test_module files: {files} ===\"); so = files[0] if files else None; print(f\"=== Found vw_test_module: {so} ===\") if so else print(\"vw_test_module NOT FOUND\"); subprocess.run([\"otool\", \"-hv\", so], check=True) if so else None; subprocess.run([\"otool\", \"-L\", so], check=True) if so else None' || true",
-    "python -c 'import sys; sys.path.insert(0, \"{project}/test_extension/build\"); import vw_test_module; print(\"=== vw_test_module loaded successfully! ===\"); print(vw_test_module.test_vw())' || echo \"vw_test_module import FAILED - VW library linking causes the issue!\"",
+    # vw_test_module is now tested immediately after build in CMakeLists.txt
     # Diagnostic: Find and inspect pylibvw.so WITHOUT importing it
     "python -c 'import subprocess, glob, sysconfig, sys; sp = sysconfig.get_path(\"platlib\"); pattern = sp + \"/pylibvw*.so\"; files = glob.glob(pattern); so = files[0] if files else None; print(f\"=== Found: {so} ===\"); subprocess.run([\"otool\", \"-L\", so], check=True) if so else None; print(\"\\n=== Mach-O header ===\"); subprocess.run([\"otool\", \"-hv\", so], check=True) if so else None; print(\"\\n=== Undefined symbols (first 30) ===\"); subprocess.run([\"sh\", \"-c\", f\"nm -u {so} | head -30\"], check=True) if so else None; print(\"\\n=== Python executable info ===\"); subprocess.run([\"otool\", \"-hv\", sys.executable], check=True); print(\"\\n=== Trying to import pylibvw ===\"); exec(\"import pylibvw; print(\\\"SUCCESS: pylibvw imported!\\\")\")' || true",
     # Run actual tests
