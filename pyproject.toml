@@ -45,6 +45,8 @@ environment = { BOOST_PY_VERSION_SUFFIX="3", CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=
 before-all = [
     # Install build tools and boost-python via Homebrew
     "brew install cmake ninja boost-python3",
+    # Test if simple extension can avoid NOUNDEFS
+    "cd test_extension && ./test_build.sh && cd ..",
 ]
 test-command = [
     # Diagnostic: Find and inspect pylibvw.so WITHOUT importing it
