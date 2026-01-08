@@ -7,7 +7,7 @@ if(APPLE)
   message(STATUS "CMAKE_MODULE_LINKER_FLAGS: ${CMAKE_MODULE_LINKER_FLAGS}")
 endif()
 
-find_package(Python 3.10 EXACT COMPONENTS Development.Module REQUIRED)
+find_package(Python 3 COMPONENTS Development.Module REQUIRED)
 message(STATUS "Python_INCLUDE_DIRS: ${Python_INCLUDE_DIRS}")
 message(STATUS "Python_LIBRARIES: ${Python_LIBRARIES}")
 
