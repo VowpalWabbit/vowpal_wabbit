@@ -55,7 +55,7 @@ endif()
 # Note: Python bindings previously built under c++0x
 
 # create the lib
-add_library(pylibvw SHARED pylibvw.cc)
+add_library(pylibvw MODULE pylibvw.cc)
 set_target_properties(pylibvw PROPERTIES PREFIX "")
 
 
