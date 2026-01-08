@@ -93,6 +93,14 @@ target_compile_options(pylibvw PRIVATE ${EXPORT_DYNAMIC})
 
 # On macOS, add diagnostic to verify linkage
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  # Diagnose Python linking at configure time
+  message(STATUS "Python_FOUND: ${Python_FOUND}")
+  message(STATUS "Python_VERSION: ${Python_VERSION}")
+  message(STATUS "Python_INCLUDE_DIRS: ${Python_INCLUDE_DIRS}")
+  message(STATUS "Python_LIBRARIES: ${Python_LIBRARIES}")
+  message(STATUS "Python_LIBRARY_DIRS: ${Python_LIBRARY_DIRS}")
+  message(STATUS "Python_RUNTIME_LIBRARY_DIRS: ${Python_RUNTIME_LIBRARY_DIRS}")
+
   # Post-build diagnostics
   add_custom_command(TARGET pylibvw POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E echo "=== POST-BUILD: Inspecting pylibvw ==="
@@ -100,5 +108,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     COMMAND otool -hv $<TARGET_FILE:pylibvw>
     COMMAND ${CMAKE_COMMAND} -E echo "Linked libraries:"
     COMMAND otool -L $<TARGET_FILE:pylibvw>
+    COMMAND ${CMAKE_COMMAND} -E echo "\\n=== Checking if Python framework/library is linked ==="
+    COMMAND sh -c "otool -L $<TARGET_FILE:pylibvw> | /usr/bin/grep -i python || echo 'ERROR: No Python library/framework linked!'"
   )
 endif()
