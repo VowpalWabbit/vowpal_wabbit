@@ -58,15 +58,6 @@ endif()
 add_library(pylibvw SHARED pylibvw.cc)
 set_target_properties(pylibvw PROPERTIES PREFIX "")
 
-# On macOS, use flat namespace to allow Python symbols to be resolved at runtime
-# This is required because delocate-wheel changes library paths in a way that breaks
-# two-level namespace symbol resolution
-if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  set_target_properties(pylibvw PROPERTIES
-    LINK_FLAGS "-Wl,-flat_namespace,-undefined,dynamic_lookup"
-  )
-  message(STATUS ">>> macOS: Using flat_namespace + dynamic_lookup for Python symbol resolution")
-endif()
 
 
 # The python setup.py script should communicate what suffix it wants.
@@ -94,7 +85,13 @@ if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
 elseif(${CMAKE_VERSION} VERSION_LESS "3.15.7")
   target_link_libraries(pylibvw PUBLIC Python::Python Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
 else()
-  target_link_libraries(pylibvw PUBLIC Python::Module Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
+  # On macOS, use Python::Python to get actual linking to Python framework
+  # Python::Module doesn't link to Python which causes symbol resolution issues
+  if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    target_link_libraries(pylibvw PUBLIC Python::Python Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
+  else()
+    target_link_libraries(pylibvw PUBLIC Python::Module Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
+  endif()
 endif()
 target_link_libraries(pylibvw PUBLIC vw_core)
 target_compile_options(pylibvw PRIVATE ${EXPORT_DYNAMIC})
