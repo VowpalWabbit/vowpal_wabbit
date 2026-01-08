@@ -6,7 +6,7 @@ python3 --version
 
 echo ""
 echo "=== Building wheel ==="
-python3 -m pip install build delocate -q
+python3 -m pip install build delocate -q --break-system-packages
 python3 -m build --wheel
 
 echo ""
@@ -23,7 +23,7 @@ ls -la repaired_wheels/*.whl
 
 echo ""
 echo "=== Installing repaired wheel ==="
-python3 -m pip install repaired_wheels/*.whl --force-reinstall -q
+python3 -m pip install repaired_wheels/*.whl --force-reinstall -q --break-system-packages
 
 echo ""
 echo "=== Testing simple_module import after delocate-wheel ==="
