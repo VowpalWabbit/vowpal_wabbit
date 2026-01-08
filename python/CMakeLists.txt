@@ -80,20 +80,21 @@ if (NOT WIN32)
 endif()
 
 if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
-  target_link_libraries(pylibvw PUBLIC ${PYTHON_LIBRARIES} Boost::python${BOOST_PY_VERSION_SUFFIX})
+  target_link_libraries(pylibvw PRIVATE ${PYTHON_LIBRARIES} Boost::python${BOOST_PY_VERSION_SUFFIX})
   target_include_directories(pylibvw PRIVATE ${PYTHON_INCLUDE_PATH})
 elseif(${CMAKE_VERSION} VERSION_LESS "3.15.7")
-  target_link_libraries(pylibvw PUBLIC Python::Python Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
+  target_link_libraries(pylibvw PRIVATE Python::Python Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
 else()
   # On macOS, MODULE libraries should not link against Python - symbols resolved at runtime
   if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     target_include_directories(pylibvw PRIVATE ${Python_INCLUDE_DIRS})
-    target_link_libraries(pylibvw PUBLIC Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
+    target_link_libraries(pylibvw PRIVATE Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
   else()
-    target_link_libraries(pylibvw PUBLIC Python::Module Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
+    target_link_libraries(pylibvw PRIVATE Python::Module Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
   endif()
 endif()
-target_link_libraries(pylibvw PUBLIC vw_core)
+# MODULE libraries are final consumers and should use PRIVATE linkage
+target_link_libraries(pylibvw PRIVATE vw_core)
 target_compile_options(pylibvw PRIVATE ${EXPORT_DYNAMIC})
 
 # On macOS, MODULE libraries should automatically use -undefined dynamic_lookup
