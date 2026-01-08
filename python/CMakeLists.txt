@@ -38,8 +38,13 @@ elseif(${CMAKE_VERSION} VERSION_LESS "3.18.0")
   # Prior to 3.18 only the Development component is exposed
   find_package(Python ${PY_VERSION} EXACT COMPONENTS Development REQUIRED)
 else()
-  # This was fixed in 3.18 to allow for just the Development.Module component to be used
-  find_package(Python ${PY_VERSION} EXACT COMPONENTS Development.Module REQUIRED)
+  # On macOS, use full Development component to get Python::Python target for linking
+  # On other platforms, Development.Module is sufficient (doesn't link to Python)
+  if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    find_package(Python ${PY_VERSION} EXACT COMPONENTS Development REQUIRED)
+  else()
+    find_package(Python ${PY_VERSION} EXACT COMPONENTS Development.Module REQUIRED)
+  endif()
 endif()
 
 if (NOT WIN32)
