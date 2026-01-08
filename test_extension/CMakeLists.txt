@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.15)
 project(SimpleExtension)
 
+# Use C++14 for Boost.Python compatibility (Boost uses auto return types)
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 # On macOS, try to set -undefined dynamic_lookup
 if(APPLE)
   set(CMAKE_MODULE_LINKER_FLAGS "-Wl,-undefined,dynamic_lookup" CACHE STRING "Linker flags" FORCE)
