@@ -58,12 +58,10 @@ endif()
 add_library(pylibvw SHARED pylibvw.cc)
 set_target_properties(pylibvw PROPERTIES PREFIX "")
 
-# On macOS, use -undefined,dynamic_lookup to defer Python symbol resolution to runtime
+# On macOS, use -undefined dynamic_lookup to defer Python symbol resolution to runtime
 # This is the standard approach for Python extensions on macOS
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  set_target_properties(pylibvw PROPERTIES
-    LINK_FLAGS "-Wl,-undefined,dynamic_lookup"
-  )
+  target_link_options(pylibvw PRIVATE "-undefined" "dynamic_lookup")
 endif()
 
 
