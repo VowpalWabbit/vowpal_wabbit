@@ -1,3 +1,10 @@
+# On macOS, set -undefined dynamic_lookup FIRST before any find_package
+# This must be set early to prevent Boost or other dependencies from overriding it
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  set(CMAKE_MODULE_LINKER_FLAGS "-undefined dynamic_lookup" CACHE STRING "Linker flags for MODULE libraries" FORCE)
+  message(STATUS "Set CMAKE_MODULE_LINKER_FLAGS to: ${CMAKE_MODULE_LINKER_FLAGS}")
+endif()
+
 if(NOT DEFINED PY_VERSION)
   set(PY_VERSION 2.7)
   message(WARNING "No PY_VERSION specified, Python ${PY_VERSION} will be used for VowpalWabbit Python bindings")
@@ -98,17 +105,8 @@ endif()
 target_link_libraries(pylibvw PRIVATE vw_core)
 target_compile_options(pylibvw PRIVATE ${EXPORT_DYNAMIC})
 
-# On macOS, link against Python framework
-if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  # Python_INCLUDE_DIRS: /Library/Frameworks/Python.framework/Versions/3.10/include/python3.10
-  # Extract: /Library/Frameworks
-  string(REGEX REPLACE "(/[^/]+\\.framework).*" "" FRAMEWORKS_DIR "${Python_INCLUDE_DIRS}")
-  message(STATUS "Python framework directory: ${FRAMEWORKS_DIR}")
-  message(STATUS "Full Python include path: ${Python_INCLUDE_DIRS}")
-
-  # Link against Python framework
-  target_link_libraries(pylibvw PRIVATE "-F${FRAMEWORKS_DIR} -framework Python")
-endif()
+# On macOS, don't link Python - symbols resolved at runtime via -undefined dynamic_lookup
+# CMAKE_MODULE_LINKER_FLAGS was set at the top of this file
 
 # On macOS, add diagnostic to verify linkage
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
