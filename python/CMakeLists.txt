@@ -97,9 +97,10 @@ endif()
 target_link_libraries(pylibvw PRIVATE vw_core)
 target_compile_options(pylibvw PRIVATE ${EXPORT_DYNAMIC})
 
-# On macOS, MODULE libraries should automatically use -undefined dynamic_lookup
-# Add diagnostic to verify
+# On macOS, explicitly add -undefined dynamic_lookup for MODULE library
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  target_link_options(pylibvw PRIVATE "-undefined" "dynamic_lookup")
+
   # Post-build diagnostic
   add_custom_command(TARGET pylibvw POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E echo "=== POST-BUILD: Inspecting pylibvw flags ==="
