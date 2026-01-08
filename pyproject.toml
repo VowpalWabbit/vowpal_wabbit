@@ -47,12 +47,10 @@ before-all = [
     "brew install cmake ninja boost-python3",
 ]
 before-test = [
-    # Diagnostic: Find and inspect the INSTALLED extension in site-packages
-    "python -c 'import sys, os, glob, subprocess; sp = __import__(\"sysconfig\").get_path(\"purelib\"); print(f\"=== site-packages: {sp} ===\"); pattern = os.path.join(sp, \"pylibvw*.so\"); matches = glob.glob(pattern); so = matches[0] if matches else None; print(f\"Found .so: {so}\"); subprocess.run([\"otool\", \"-L\", so]) if so else None; subprocess.run([\"otool\", \"-hv\", so]) if so else None; subprocess.run([\"sh\", \"-c\", f\"nm -u {so} | head -30\"]) if so else None' || true",
-    # Diagnostic: Try importing vowpalwabbit normally (this will likely fail)
-    "echo '=== Test normal import ===' && python -c 'import vowpalwabbit; print(\"SUCCESS\")' || echo 'FAILED'",
-    # Diagnostic: Try manual import with RTLD_GLOBAL
-    "echo '=== Test RTLD_GLOBAL import ===' && python -c 'import sys, os; sys.setdlopenflags(os.RTLD_NOW | os.RTLD_GLOBAL); import vowpalwabbit; print(\"SUCCESS\")' || echo 'FAILED'",
+    # Diagnostic: Find the .so using Python's import mechanism (most reliable)
+    "python -c 'import subprocess, importlib.util; spec = importlib.util.find_spec(\"pylibvw\"); print(f\"=== pylibvw location: {spec.origin if spec else None} ===\"); so = spec.origin if spec else None; subprocess.run([\"otool\", \"-L\", so]) if so else print(\"No file\"); subprocess.run([\"otool\", \"-hv\", so]) if so else None; subprocess.run([\"sh\", \"-c\", f\"nm -u {so} | head -30\"]) if so else None' || true",
+    # Diagnostic: Check if it's using flat_namespace
+    "python -c 'import subprocess, importlib.util; spec = importlib.util.find_spec(\"pylibvw\"); subprocess.run([\"otool\", \"-hv\", spec.origin]) if spec else None' 2>&1 | grep -i \"flags\" || true",
 ]
 # Homebrew's Boost requires macOS 14.0+
 environment = { MACOSX_DEPLOYMENT_TARGET="14.0", DISABLE_VCPKG="1", BOOST_PY_VERSION_SUFFIX="3", CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=OFF -DCMAKE_POLICY_DEFAULT_CMP0167=NEW -DCMAKE_PREFIX_PATH=/opt/homebrew;/usr/local" }
