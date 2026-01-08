@@ -90,18 +90,13 @@ endif()
 target_link_libraries(pylibvw PUBLIC vw_core)
 target_compile_options(pylibvw PRIVATE ${EXPORT_DYNAMIC})
 
-# On macOS, add -undefined dynamic_lookup AFTER all linking to override any NOUNDEFS from dependencies
+# On macOS, MODULE libraries should automatically use -undefined dynamic_lookup
+# Add diagnostic to verify
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  set_property(TARGET pylibvw APPEND_STRING PROPERTY LINK_FLAGS " -undefined dynamic_lookup")
-
-  # Diagnostic: print what CMake thinks the LINK_FLAGS are
-  get_target_property(PYLIBVW_LINK_FLAGS pylibvw LINK_FLAGS)
-  message(STATUS "=== pylibvw LINK_FLAGS property: ${PYLIBVW_LINK_FLAGS}")
-
   # Post-build diagnostic
   add_custom_command(TARGET pylibvw POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E echo "=== POST-BUILD: Inspecting pylibvw flags ==="
     COMMAND otool -hv $<TARGET_FILE:pylibvw>
-    COMMAND ${CMAKE_COMMAND} -E echo "=== If NOUNDEFS appears above, flags did NOT work ==="
+    COMMAND ${CMAKE_COMMAND} -E echo "=== If NOUNDEFS appears above, MODULE type did NOT work ==="
   )
 endif()
