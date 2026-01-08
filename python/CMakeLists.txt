@@ -1,7 +1,8 @@
-# On macOS, set -undefined dynamic_lookup FIRST before any find_package
-# This must be set early to prevent Boost or other dependencies from overriding it
+# On macOS, accept that NOUNDEFS may be unavoidable with modern Xcode
+# The real solution: make Python linkage use @rpath so it finds the right Python
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  set(CMAKE_MODULE_LINKER_FLAGS "-undefined dynamic_lookup" CACHE STRING "Linker flags for MODULE libraries" FORCE)
+  # Link weakly against Python framework using rpath
+  set(CMAKE_MODULE_LINKER_FLAGS "-Wl,-undefined,dynamic_lookup" CACHE STRING "Linker flags for MODULE libraries" FORCE)
   message(STATUS "Set CMAKE_MODULE_LINKER_FLAGS to: ${CMAKE_MODULE_LINKER_FLAGS}")
 endif()
 
