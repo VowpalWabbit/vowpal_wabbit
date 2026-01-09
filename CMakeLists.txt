@@ -271,7 +271,11 @@ if(BUILD_PYTHON)
 
   # Add test extension on macOS to debug symbol resolution issues
   if(APPLE)
+    message(STATUS "=== BUILDING TEST EXTENSION ON MACOS ===")
     add_subdirectory(test_extension)
+    message(STATUS "=== FINISHED ADDING TEST EXTENSION SUBDIRECTORY ===")
+  else()
+    message(STATUS "Skipping test_extension (not on macOS)")
   endif()
 endif()
 

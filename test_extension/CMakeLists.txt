@@ -14,9 +14,16 @@ if(APPLE)
   message(STATUS "test_extension: CMAKE_MODULE_LINKER_FLAGS: ${CMAKE_MODULE_LINKER_FLAGS}")
 endif()
 
-find_package(Python 3 COMPONENTS Development.Module REQUIRED)
-message(STATUS "Python_INCLUDE_DIRS: ${Python_INCLUDE_DIRS}")
-message(STATUS "Python_LIBRARIES: ${Python_LIBRARIES}")
+message(STATUS "test_extension: Configuring test extension subdirectory")
+
+# Python should already be found by parent project, but find it again if needed
+if(NOT Python_FOUND)
+  find_package(Python 3 COMPONENTS Development.Module REQUIRED)
+endif()
+message(STATUS "test_extension: Python_FOUND=${Python_FOUND}")
+message(STATUS "test_extension: Python_INCLUDE_DIRS=${Python_INCLUDE_DIRS}")
+message(STATUS "test_extension: Python_LIBRARIES=${Python_LIBRARIES}")
+message(STATUS "test_extension: Python_EXECUTABLE=${Python_EXECUTABLE}")
 
 # Simple extension (pure Python C API)
 add_library(simple_module MODULE simple_module.c)
@@ -41,8 +48,9 @@ if(Boost_FOUND)
 
   # VW test module - links to vw_core like pylibvw does
   # This tests if linking to VW libraries causes the symbol resolution issue
+  message(STATUS "test_extension: Checking for vw_core target...")
   if(TARGET vw_core)
-    message(STATUS "vw_core found - building vw_test_module")
+    message(STATUS "test_extension: ✓ vw_core TARGET FOUND - building vw_test_module")
     add_library(vw_test_module MODULE vw_test_module.cc)
     set_target_properties(vw_test_module PROPERTIES PREFIX "")
     target_include_directories(vw_test_module PRIVATE ${Python_INCLUDE_DIRS})
