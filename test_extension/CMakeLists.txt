@@ -63,14 +63,21 @@ if(Boost_FOUND)
     endif()
 
     # TEST IMMEDIATELY AFTER BUILD - This is the critical test!
+    # Create a test script to avoid shell escaping issues
+    set(TEST_SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/test_vw_module.sh")
+    file(WRITE "${TEST_SCRIPT}" "#!/bin/bash\n")
+    file(APPEND "${TEST_SCRIPT}" "echo '========================================='\n")
+    file(APPEND "${TEST_SCRIPT}" "echo 'CRITICAL TEST: vw_test_module (links to vw_core)'\n")
+    file(APPEND "${TEST_SCRIPT}" "echo '========================================='\n")
+    file(APPEND "${TEST_SCRIPT}" "cd ${CMAKE_CURRENT_BINARY_DIR}\n")
+    file(APPEND "${TEST_SCRIPT}" "${Python_EXECUTABLE} -c \"import sys; sys.path.insert(0, '.'); import vw_test_module; print('SUCCESS: vw_test_module imported!'); print(vw_test_module.test_vw())\"\n")
+    file(APPEND "${TEST_SCRIPT}" "echo '========================================='\n")
+    file(APPEND "${TEST_SCRIPT}" "echo 'vw_test_module works - VW library linking is OK!'\n")
+    file(APPEND "${TEST_SCRIPT}" "echo '========================================='\n")
+
     add_custom_command(TARGET vw_test_module POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E echo "========================================="
-      COMMAND ${CMAKE_COMMAND} -E echo "CRITICAL TEST: vw_test_module (links to vw_core)"
-      COMMAND ${CMAKE_COMMAND} -E echo "========================================="
-      COMMAND ${Python_EXECUTABLE} -c "import sys; sys.path.insert(0, '${CMAKE_CURRENT_BINARY_DIR}'); import vw_test_module; print('SUCCESS: vw_test_module imported!'); print(vw_test_module.test_vw())"
-      COMMAND ${CMAKE_COMMAND} -E echo "========================================="
-      COMMAND ${CMAKE_COMMAND} -E echo "vw_test_module works - VW library linking is OK!"
-      COMMAND ${CMAKE_COMMAND} -E echo "========================================="
+      COMMAND chmod +x "${TEST_SCRIPT}"
+      COMMAND "${TEST_SCRIPT}"
       COMMENT "Testing vw_test_module import (links to vw_core)"
       VERBATIM
     )
