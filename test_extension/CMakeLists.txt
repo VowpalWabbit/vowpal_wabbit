@@ -64,9 +64,10 @@ if(Boost_FOUND)
 
     # TEST IMMEDIATELY AFTER BUILD - This is the critical test!
     # Use a CMake script to avoid shell escaping issues
+    # Use $<TARGET_FILE_DIR:vw_test_module> to get the actual output directory
     add_custom_command(TARGET vw_test_module POST_BUILD
       COMMAND ${CMAKE_COMMAND}
-        -DTEST_DIR=${CMAKE_CURRENT_BINARY_DIR}
+        -DTEST_DIR=$<TARGET_FILE_DIR:vw_test_module>
         -P ${CMAKE_CURRENT_SOURCE_DIR}/test_vw_module.cmake
       COMMENT "Testing vw_test_module import (links to vw_core)"
       VERBATIM
