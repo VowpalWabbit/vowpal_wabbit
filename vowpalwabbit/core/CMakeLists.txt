@@ -384,18 +384,9 @@ if(VW_FEAT_NETWORKING)
   )
 endif()
 
-# On macOS with Python bindings, build as SHARED to avoid symbol resolution issues
-# with -undefined dynamic_lookup (static library code incorporated into MODULE breaks it)
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin" AND BUILD_PYTHON)
-  set(VW_CORE_LIB_TYPE "SHARED_ONLY")
-  message(STATUS "Building vw_core as SHARED on macOS for Python compatibility")
-else()
-  set(VW_CORE_LIB_TYPE "STATIC_ONLY")
-endif()
-
 vw_add_library(
     NAME "core"
-    TYPE ${VW_CORE_LIB_TYPE}
+    TYPE "STATIC_ONLY"
     SOURCES ${vw_core_headers} ${vw_core_sources}
     PUBLIC_DEPS vw_common vw_explore vw_allreduce vw_config fmt::fmt vw_cache_parser vw_text_parser vw_json_parser
     PRIVATE_DEPS
