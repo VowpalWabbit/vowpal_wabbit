@@ -66,6 +66,12 @@ endif()
 add_library(pylibvw MODULE pylibvw.cc)
 set_target_properties(pylibvw PROPERTIES PREFIX "")
 
+# On macOS, explicitly set linker flags for dynamic symbol lookup
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  set_target_properties(pylibvw PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
+  message(STATUS "Set pylibvw LINK_FLAGS to: -Wl,-undefined,dynamic_lookup")
+endif()
+
 
 
 # The python setup.py script should communicate what suffix it wants.

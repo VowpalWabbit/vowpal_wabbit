@@ -8,9 +8,11 @@ endif()
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# On macOS, try to set -undefined dynamic_lookup
+# On macOS, use -undefined dynamic_lookup for MODULE libraries
+# Set it globally for this subdirectory
 if(APPLE)
-  set(CMAKE_MODULE_LINKER_FLAGS "-Wl,-undefined,dynamic_lookup" CACHE STRING "Linker flags" FORCE)
+  # Don't use CACHE - set it directly for this scope
+  set(CMAKE_MODULE_LINKER_FLAGS "-Wl,-undefined,dynamic_lookup")
   message(STATUS "test_extension: CMAKE_MODULE_LINKER_FLAGS: ${CMAKE_MODULE_LINKER_FLAGS}")
 endif()
 
@@ -29,6 +31,10 @@ message(STATUS "test_extension: Python_EXECUTABLE=${Python_EXECUTABLE}")
 add_library(simple_module MODULE simple_module.c)
 set_target_properties(simple_module PROPERTIES PREFIX "")
 target_include_directories(simple_module PRIVATE ${Python_INCLUDE_DIRS})
+# Explicitly set linker flags for this target on macOS
+if(APPLE)
+  set_target_properties(simple_module PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
+endif()
 
 # Boost.Python extension (optional - to test if Boost.Python is the issue)
 # Use same logic as VW: BOOST_PY_VERSION_SUFFIX defaults to "3" for Python 3
@@ -45,6 +51,10 @@ if(Boost_FOUND)
   set_target_properties(boost_module PROPERTIES PREFIX "")
   target_include_directories(boost_module PRIVATE ${Python_INCLUDE_DIRS})
   target_link_libraries(boost_module PRIVATE Boost::python${BOOST_PY_VERSION_SUFFIX})
+  # Explicitly set linker flags for this target on macOS
+  if(APPLE)
+    set_target_properties(boost_module PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
+  endif()
 
   # VW test module - links to vw_core like pylibvw does
   # This tests if linking to VW libraries causes the symbol resolution issue
@@ -55,6 +65,10 @@ if(Boost_FOUND)
     set_target_properties(vw_test_module PROPERTIES PREFIX "")
     target_include_directories(vw_test_module PRIVATE ${Python_INCLUDE_DIRS})
     target_link_libraries(vw_test_module PRIVATE Boost::python${BOOST_PY_VERSION_SUFFIX} vw_core)
+    # Explicitly set linker flags for this target on macOS
+    if(APPLE)
+      set_target_properties(vw_test_module PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
+    endif()
 
     # Make pylibvw depend on vw_test_module so it gets built during wheel build
     if(TARGET pylibvw)
