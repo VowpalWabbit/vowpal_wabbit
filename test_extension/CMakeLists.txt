@@ -63,16 +63,13 @@ if(Boost_FOUND)
     endif()
 
     # TEST IMMEDIATELY AFTER BUILD - This is the critical test!
-    # Use python3 directly since Python_EXECUTABLE may not be set in subdirectory context
+    # Use a CMake script to avoid shell escaping issues
     add_custom_command(TARGET vw_test_module POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E echo "========================================="
-      COMMAND ${CMAKE_COMMAND} -E echo "CRITICAL TEST: vw_test_module (links to vw_core)"
-      COMMAND ${CMAKE_COMMAND} -E echo "========================================="
-      COMMAND python3 -c "import sys; sys.path.insert(0, '${CMAKE_CURRENT_BINARY_DIR}'); import vw_test_module; print('SUCCESS: vw_test_module imported!'); print(vw_test_module.test_vw())"
-      COMMAND ${CMAKE_COMMAND} -E echo "========================================="
-      COMMAND ${CMAKE_COMMAND} -E echo "vw_test_module works - VW library linking is OK!"
-      COMMAND ${CMAKE_COMMAND} -E echo "========================================="
+      COMMAND ${CMAKE_COMMAND}
+        -DTEST_DIR=${CMAKE_CURRENT_BINARY_DIR}
+        -P ${CMAKE_CURRENT_SOURCE_DIR}/test_vw_module.cmake
       COMMENT "Testing vw_test_module import (links to vw_core)"
+      VERBATIM
     )
   else()
     message(STATUS "vw_core not found - skipping vw_test_module (only built as part of VW build)")
