@@ -84,7 +84,13 @@ endif()
 
 if (NOT WIN32)
   # Windows links dynamically
-  target_compile_definitions(pylibvw PUBLIC BOOST_PYTHON_STATIC_LIB)
+  # On macOS, use Boost.Python as SHARED to avoid symbol resolution issues with -undefined dynamic_lookup
+  # When Boost.Python is static, its Python API references get incorporated into pylibvw.so and can't resolve
+  if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    target_compile_definitions(pylibvw PUBLIC BOOST_PYTHON_STATIC_LIB)
+  else()
+    message(STATUS "Using Boost.Python as SHARED on macOS for -undefined dynamic_lookup compatibility")
+  endif()
 endif()
 
 if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
