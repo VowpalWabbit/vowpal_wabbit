@@ -66,12 +66,6 @@ endif()
 add_library(pylibvw MODULE pylibvw.cc)
 set_target_properties(pylibvw PROPERTIES PREFIX "")
 
-# On macOS, explicitly set linker flags for dynamic symbol lookup
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  set_target_properties(pylibvw PROPERTIES LINK_FLAGS "-Wl,-undefined,dynamic_lookup")
-  message(STATUS "Set pylibvw LINK_FLAGS to: -Wl,-undefined,dynamic_lookup")
-endif()
-
 
 
 # The python setup.py script should communicate what suffix it wants.
@@ -118,8 +112,11 @@ endif()
 target_link_libraries(pylibvw PRIVATE vw_core)
 target_compile_options(pylibvw PRIVATE ${EXPORT_DYNAMIC})
 
-# On macOS, don't link Python - symbols resolved at runtime via -undefined dynamic_lookup
-# CMAKE_MODULE_LINKER_FLAGS was set at the top of this file
+# On macOS, use target_link_options to set -undefined dynamic_lookup
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  target_link_options(pylibvw PRIVATE "LINKER:-undefined,dynamic_lookup")
+  message(STATUS "Set pylibvw link options: -undefined,dynamic_lookup")
+endif()
 
 # On macOS, add diagnostic to verify linkage
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
