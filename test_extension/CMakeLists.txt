@@ -56,6 +56,12 @@ if(Boost_FOUND)
     target_include_directories(vw_test_module PRIVATE ${Python_INCLUDE_DIRS})
     target_link_libraries(vw_test_module PRIVATE Boost::python${BOOST_PY_VERSION_SUFFIX} vw_core)
 
+    # Make pylibvw depend on vw_test_module so it gets built during wheel build
+    if(TARGET pylibvw)
+      add_dependencies(pylibvw vw_test_module)
+      message(STATUS "test_extension: Added vw_test_module as dependency of pylibvw")
+    endif()
+
     # TEST IMMEDIATELY AFTER BUILD - This is the critical test!
     add_custom_command(TARGET vw_test_module POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E echo "========================================="
