@@ -370,14 +370,13 @@ jobs:
           echo "VCPKG_ROOT: ${{ env.VCPKG_ROOT }}"
           echo "Toolchain file exists: $(Test-Path $vcpkgToolchain.Replace('/', '\'))"
 
-          echo "=== Diagnostic: Manually install vcpkg dependencies ==="
-          cd ${{ env.VCPKG_ROOT }}
-          .\vcpkg.exe install zlib:x64-windows boost-python:x64-windows python3:x64-windows flatbuffers:x64-windows --overlay-triplets=${{github.workspace}}\vowpal_wabbit\cmake\vcpkg-triplets
+          echo "=== Setting VCPKG environment variables ==="
+          $env:VCPKG_DEFAULT_TRIPLET = "x64-windows"
+          $env:VCPKG_FEATURE_FLAGS = "manifests,versions"
+          $env:VCPKG_INSTALLED_DIR = "${{github.workspace}}\vowpal_wabbit\vcpkg_installed"
+          echo "VCPKG_DEFAULT_TRIPLET: $env:VCPKG_DEFAULT_TRIPLET"
+          echo "VCPKG_FEATURE_FLAGS: $env:VCPKG_FEATURE_FLAGS"
 
-          echo "=== Diagnostic: Check installed packages ==="
-          .\vcpkg.exe list
-
-          cd ${{github.workspace}}\\vowpal_wabbit
           python -m pip wheel . -w ${{github.workspace}}\\wheel_output\\ --verbose
       - name: Upload built wheel
         uses: actions/upload-artifact@v4
