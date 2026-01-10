@@ -115,7 +115,7 @@ jobs:
           echo "NugetFileName=$NugetFileName" >> $GITHUB_OUTPUT
       - name: Upload Combined
         if: ${{ startsWith(matrix.config.os, 'windows') }}
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: VowpalWabbit.${{steps.get_version.outputs.version}}.nupkg
           path: nuget_staging/${{ steps.generate-nuget.outputs.NugetFileName }}
@@ -130,7 +130,7 @@ jobs:
           NugetFileName=(*runtime*.nupkg)
           echo "NugetFileName=${NugetFileName[0]}" >> $GITHUB_OUTPUT
       - name: Upload .NET Core Runtime
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: VowpalWabbit.runtime.${{matrix.config.runtime_id}}.${{steps.get_version.outputs.version}}.nupkg
           path: nuget_staging/${{ steps.generate-runtime-nuget.outputs.NugetFileName }}
@@ -167,19 +167,19 @@ jobs:
       # Download the previously built Nuget packages
       - name: Clear nuget cache
         run: dotnet nuget locals all --clear
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.win-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.linux-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.osx-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
@@ -226,19 +226,19 @@ jobs:
       # Download the previously built Nuget packages
       - name: Clear nuget cache
         run: dotnet nuget locals all --clear
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.win-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.linux-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.osx-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
@@ -291,19 +291,19 @@ jobs:
       # Download the previously built Nuget packages
       - name: Clear nuget cache
         run: dotnet nuget locals all --clear
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.win-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.linux-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.osx-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
@@ -341,7 +341,7 @@ jobs:
           echo "## .NET Benchmark Results" >> $GITHUB_STEP_SUMMARY
           cat BenchmarkRun-joined-*.md | sed 's/\*\*//g' >> $GITHUB_STEP_SUMMARY
       - name: Upload benchmark artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: benchmark_results
           path: test/benchmarks/dotnet/BenchmarkDotNet.Artifacts/results/

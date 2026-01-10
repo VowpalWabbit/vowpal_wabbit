@@ -81,7 +81,7 @@ jobs:
           $NugetFileName = Get-ChildItem *.nupkg -name
           echo "NugetFileName=$NugetFileName" >> $GITHUB_OUTPUT
       - name: Upload
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: VowpalWabbitNative-${{matrix.toolset}}-x64.${{ steps.get_version.outputs.version }}.nupkg
           path: nuget_staging/${{ steps.generate-nuget.outputs.NugetFileName }}
@@ -115,7 +115,7 @@ jobs:
           echo "version=$version" >> $GITHUB_OUTPUT
 
       # Download and install nuget
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbitNative-${{matrix.toolset}}-x64.${{ steps.get_version.outputs.version }}.nupkg
           path: downloaded_nugets
