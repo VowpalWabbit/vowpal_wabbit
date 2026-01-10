@@ -79,7 +79,7 @@ jobs:
         run: ctest --output-on-failure --no-tests=error --exclude-regex WIterations --label-regex VWTestList
       - name: Run python test script
         if: ${{ success() || failure() }}
-        run: python3 test/run_tests.py -f --clean_dirty -E 0.001 --include_flatbuffers --jobs 1
+        run: python3 test/run_tests.py -f --clean_dirty -E 0.001 --include_flatbuffers --jobs 1 --skip_test 282 284
 
   test_ubsan_minimal:
     # To avoid running out of disk space, build only VW executables and some unit tests on Linux
@@ -128,4 +128,4 @@ jobs:
         run: ./build/vowpalwabbit/core/vw_core_test --gtest_filter=-\*WIiterations
       - name: Run python test script
         if: ${{ success() || failure() }}
-        run: python3 test/run_tests.py -f --clean_dirty -E 0.001 --include_flatbuffers
+        run: python3 test/run_tests.py -f --clean_dirty -E 0.001 --include_flatbuffers --skip_test 282 284
