@@ -114,21 +114,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-          architecture: 'x64'
       - uses: actions/download-artifact@v4
         with:
           name: python_source_distribution
-          path: python_source_distribution
+          path: dist/
       - name: Install dependencies
         shell: bash
         run: |
           sudo apt update
-          sudo apt install libboost-test-dev libboost-python-dev zlib1g-dev cmake g++
+          sudo apt install libboost-test-dev libboost-python-dev zlib1g-dev cmake ninja-build g++
       - name: Install source dist
         shell: bash
-        run: pip install python_source_distribution/*.tar.gz
+        run: pip install dist/*.tar.gz
       - uses: actions/checkout@v3
         with:
           submodules: recursive
