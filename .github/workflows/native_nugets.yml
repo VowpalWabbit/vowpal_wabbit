@@ -59,6 +59,7 @@ jobs:
           -DVW_BOOST_MATH_SYS_DEP=Off
           -DVW_BUILD_VW_C_WRAPPER=Off
           -DVW_INSTALL=On
+          -DCMAKE_POLICY_VERSION_MINIMUM=3.5
       - name: Build and install
         run: |
           cmake --build build --config Debug -t vw_io vw_core vw_cli_bin vw_allreduce vw_spanning_tree_bin vw_c_wrapper vw_cache_parser vw_text_parser vw_json_parser

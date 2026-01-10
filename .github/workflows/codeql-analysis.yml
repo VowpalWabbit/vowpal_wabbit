@@ -67,12 +67,12 @@ jobs:
         sudo apt update
         sudo apt install -y ninja-build
         dotnet tool install --global dotnet-t4
-        cmake -S . -B build -G Ninja -Dvw_BUILD_NET_CORE=On -Dvw_DOTNET_USE_MSPROJECT=Off -DVW_FEAT_FLATBUFFERS=Off -DRAPIDJSON_SYS_DEP=Off -DFMT_SYS_DEP=Off -DSPDLOG_SYS_DEP=Off -DVW_ZLIB_SYS_DEP=Off -DVW_BOOST_MATH_SYS_DEP=Off -DVW_BUILD_VW_C_WRAPPER=Off -DBUILD_TESTING=Off -DBUILD_SHARED_LIBS=Off
+        cmake -S . -B build -G Ninja -Dvw_BUILD_NET_CORE=On -Dvw_DOTNET_USE_MSPROJECT=Off -DVW_FEAT_FLATBUFFERS=Off -DRAPIDJSON_SYS_DEP=Off -DFMT_SYS_DEP=Off -DSPDLOG_SYS_DEP=Off -DVW_ZLIB_SYS_DEP=Off -DVW_BOOST_MATH_SYS_DEP=Off -DVW_BUILD_VW_C_WRAPPER=Off -DBUILD_TESTING=Off -DBUILD_SHARED_LIBS=Off -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         cmake --build build --config Debug
     - name: Build CSharp .NET Framework
       if: ${{ matrix.config.language == 'csharp' && startsWith(matrix.config.os, 'windows') }}
       run: |
-        cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -Dvw_BUILD_NET_FRAMEWORK=On -DVW_FEAT_FLATBUFFERS=Off -DRAPIDJSON_SYS_DEP=Off -DFMT_SYS_DEP=Off -DSPDLOG_SYS_DEP=Off -DVW_ZLIB_SYS_DEP=Off -DVW_BOOST_MATH_SYS_DEP=Off -DVW_BUILD_VW_C_WRAPPER=Off -DBUILD_TESTING=Off -DBUILD_SHARED_LIBS=Off
+        cmake -S . -B build -G "Visual Studio 17 2022" -A x64 -Dvw_BUILD_NET_FRAMEWORK=On -DVW_FEAT_FLATBUFFERS=Off -DRAPIDJSON_SYS_DEP=Off -DFMT_SYS_DEP=Off -DSPDLOG_SYS_DEP=Off -DVW_ZLIB_SYS_DEP=Off -DVW_BOOST_MATH_SYS_DEP=Off -DVW_BUILD_VW_C_WRAPPER=Off -DBUILD_TESTING=Off -DBUILD_SHARED_LIBS=Off -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         cmake --build build --config Debug -- /p:UseSharedCompilation=false
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3

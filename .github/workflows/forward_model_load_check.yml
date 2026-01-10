@@ -19,18 +19,23 @@ concurrency:
 jobs:
   python-build:
     name: Build latest python wheel
-    container:
-      image: vowpalwabbit/manylinux2010-build:latest
     runs-on: ubuntu-latest
     steps:
-      # v1 must be used because newer versions require a node.js version that will not run on this old image.
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build libboost-test-dev libboost-python-dev zlib1g-dev
       - name: Build wheel
         shell: bash
         run: |
-          /opt/python/cp310-cp310/bin/pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='/opt/python/cp310-cp310/include/python3.10/'" --verbose
+          pip install wheel auditwheel
+          pip wheel . -w wheel_output/ --verbose
           auditwheel repair wheel_output/*whl -w audit_output/
       - name: Upload built wheel
         uses: actions/upload-artifact@v4
@@ -64,26 +69,32 @@ jobs:
           if-no-files-found: error
   test-latest-model:
     name: Test latest model with current master
-    container:
-      image: vowpalwabbit/manylinux2010-build:latest
     needs: generate-latest-model
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
       - uses: actions/download-artifact@v4
         with:
           name: vw_generated_models
           path: .vw_runtests_model_gen_working_dir
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build libboost-test-dev libboost-python-dev zlib1g-dev
       - name: Test loading model with current master
         shell: bash
         run: |
           mv .vw_runtests_model_gen_working_dir ~
           git clone --recursive https://github.com/VowpalWabbit/vowpal_wabbit.git
           cd vowpal_wabbit
-          /opt/python/cp310-cp310/bin/pip wheel . -w wheel_last_commit/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='/opt/python/cp310-cp310/include/python3.10/'" --verbose
+          pip install wheel auditwheel
+          pip wheel . -w wheel_last_commit/ --verbose
           auditwheel repair wheel_last_commit/*whl -w audit_last_commit/
-          /opt/python/cp310-cp310/bin/python3.10 -m pip install wheel_last_commit/*.whl
+          pip install wheel_last_commit/*.whl
           cd ..
-          /opt/python/cp310-cp310/bin/python3.10 ./test/run_tests_model_gen_and_load.py --load_models --skip_missing_args --skip_pr_tests "${{ github.event.pull_request.title }}"
+          python ./test/run_tests_model_gen_and_load.py --load_models --skip_missing_args --skip_pr_tests "${{ github.event.pull_request.title }}"

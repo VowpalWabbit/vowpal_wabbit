@@ -34,17 +34,15 @@ jobs:
           name: cxx_docs
           path: result/html/
   dump-options-build:
-    container:
-      image: vowpalwabbit/ubuntu1804-build:latest
     runs-on: ubuntu-latest
     steps:
-      # v1 must be used because newer versions require a node.js version that will not run on this old image.
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
-      - run: |
+      - name: Install build dependencies
+        run: |
           sudo apt update
-          sudo apt install -y ninja-build
+          sudo apt install -y ninja-build cmake
       - name: Configure
         run: cmake -S . -B build -G Ninja -DBUILD_TESTING=OFF
       - name: Build dump options
@@ -55,18 +53,23 @@ jobs:
           name: vw-dump-options
           path: build/utl/dump_options/vw-dump-options
   python-build:
-    container:
-      image: vowpalwabbit/manylinux2010-build:latest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
-      - run: echo "/opt/python/cp310-cp310/bin" >> $GITHUB_PATH
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build libboost-test-dev libboost-python-dev zlib1g-dev
       - name: Build wheel
         shell: bash
         run: |
-          pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='/opt/python/cp310-cp310/include/python3.10/'" --verbose
+          pip install wheel auditwheel
+          pip wheel . -w wheel_output/ --verbose
           auditwheel repair wheel_output/*whl -w audit_output/
       - name: Upload built wheel
         uses: actions/upload-artifact@v4
