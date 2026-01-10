@@ -17,6 +17,8 @@
 #include "vw/io/io_adapter.h"
 
 #include <algorithm>
+// needed for fmt::join
+#include <fmt/ranges.h>
 #include <limits>
 
 namespace

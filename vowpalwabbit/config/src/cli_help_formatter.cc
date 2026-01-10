@@ -8,6 +8,8 @@
 #include "vw/config/options.h"
 
 #include <fmt/format.h>
+// needed for fmt::join
+#include <fmt/ranges.h>
 
 #include <sstream>
 #include <string>

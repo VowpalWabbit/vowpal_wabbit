@@ -36,6 +36,14 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
       - name: Install Ninja
         uses: seanmiddleditch/gha-setup-ninja@master
+      - name: Install NuGet (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nuget
+      - name: Install NuGet (macOS)
+        if: runner.os == 'macOS'
+        run: brew install nuget
       - name: Install dotnet t4
         run: dotnet tool install --global dotnet-t4
 
