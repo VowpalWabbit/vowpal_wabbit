@@ -38,7 +38,7 @@ jobs:
       image: vowpalwabbit/ubuntu1804-build:latest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
       - run: |
@@ -58,7 +58,7 @@ jobs:
       image: vowpalwabbit/manylinux2010-build:latest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
       - run: echo "/opt/python/cp310-cp310/bin" >> $GITHUB_PATH
@@ -76,7 +76,7 @@ jobs:
     needs: [python-build, dump-options-build]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
       - uses: actions/setup-node@v3
@@ -150,7 +150,7 @@ jobs:
           pwd
           ls
           echo $GITHUB_WORKSPACE
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
           repository: VowpalWabbit/docs

@@ -25,7 +25,7 @@ jobs:
         - { version: "3.9", base_path: /opt/python/cp39-cp39/, include_dir_name: python3.9/ }
     steps:
       # v1 must be used because newer versions require a node.js version that will not run on this old image.
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
       - name: Build wheel
@@ -49,7 +49,7 @@ jobs:
         config:
         - { version: "3.9" }
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
       - name: Download Wheel
@@ -84,7 +84,7 @@ jobs:
         with:
           submodules: recursive
       - name: Setup python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.9
       - run: pip install black black[jupyter]

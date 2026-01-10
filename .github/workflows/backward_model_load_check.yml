@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # v1 must be used because newer versions require a node.js version that will not run on this old image.
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
       - name: Build wheel
@@ -72,7 +72,7 @@ jobs:
     needs: generate-latest-model
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
       - uses: actions/download-artifact@v4
