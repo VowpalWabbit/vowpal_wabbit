@@ -71,6 +71,7 @@ jobs:
           -DVW_BUILD_VW_C_WRAPPER=Off
           -DBUILD_TESTING=Off
           -DBUILD_SHARED_LIBS=Off
+          -DCMAKE_POLICY_VERSION_MINIMUM=3.5
       - name: Build .NET Core
         run: cmake --build build --config Release
       - name: Install .NET Core
@@ -97,6 +98,7 @@ jobs:
           -DVW_BUILD_VW_C_WRAPPER=Off
           -DBUILD_TESTING=Off
           -DBUILD_SHARED_LIBS=Off
+          -DCMAKE_POLICY_VERSION_MINIMUM=3.5
       - name: Build .NET Framework
         if: ${{ startsWith(matrix.config.os, 'windows') }}
         run: cmake --build build --config Release
