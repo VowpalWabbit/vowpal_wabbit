@@ -131,7 +131,10 @@ class BuildPyLibVWBindingsModule(_build_ext):
             ]
 
             if cmake_generator is None:
-                cmake_generator = "Visual Studio 15 2017 Win64"
+                # Check CMAKE_GENERATOR environment variable first
+                cmake_generator = os.environ.get("CMAKE_GENERATOR")
+                if cmake_generator is None:
+                    cmake_generator = "Visual Studio 15 2017 Win64"
 
             build_args += ["--target", "pylibvw"]
 
