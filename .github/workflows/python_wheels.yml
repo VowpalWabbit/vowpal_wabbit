@@ -351,11 +351,13 @@ jobs:
           cp ${{ matrix.config.vcpkg_manifest }} vcpkg.json
           pip install wheel setuptools
           $env:CMAKE_GENERATOR = "Visual Studio 16 2019"
+          $vcpkgToolchain = "${{ env.VCPKG_ROOT }}\\scripts\\buildsystems\\vcpkg.cmake" -replace '\\', '/'
           $overlayPorts = "${{ matrix.config.overlay_ports }}"
           if ($overlayPorts) {
-            $env:CMAKE_ARGS = "-DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}\\scripts\\buildsystems\\vcpkg.cmake -DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -DVCPKG_OVERLAY_PORTS=${{github.workspace}}\\vowpal_wabbit\\${{ matrix.config.overlay_ports }}"
+            $overlayPortsPath = "${{github.workspace}}\\vowpal_wabbit\\${{ matrix.config.overlay_ports }}" -replace '\\', '/'
+            $env:CMAKE_ARGS = "-DCMAKE_TOOLCHAIN_FILE=$vcpkgToolchain -DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -DVCPKG_OVERLAY_PORTS=$overlayPortsPath"
           } else {
-            $env:CMAKE_ARGS = "-DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}\\scripts\\buildsystems\\vcpkg.cmake -DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release"
+            $env:CMAKE_ARGS = "-DCMAKE_TOOLCHAIN_FILE=$vcpkgToolchain -DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release"
           }
           python -m pip wheel . -w ${{github.workspace}}\\wheel_output\\ --verbose
       - name: Upload built wheel
