@@ -356,12 +356,13 @@ jobs:
           pip install wheel setuptools
           $env:CMAKE_GENERATOR = "Visual Studio 16 2019"
           $vcpkgToolchain = "${{ env.VCPKG_ROOT }}\\scripts\\buildsystems\\vcpkg.cmake" -replace '\\', '/'
+          $vcpkgInstalled = "${{github.workspace}}\\vowpal_wabbit\\vcpkg_installed" -replace '\\', '/'
           $overlayPorts = "${{ matrix.config.overlay_ports }}"
           if ($overlayPorts) {
             $overlayPortsPath = "${{github.workspace}}\\vowpal_wabbit\\${{ matrix.config.overlay_ports }}" -replace '\\', '/'
-            $env:CMAKE_ARGS = "-DCMAKE_TOOLCHAIN_FILE=$vcpkgToolchain -DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -DVCPKG_OVERLAY_PORTS=$overlayPortsPath"
+            $env:CMAKE_ARGS = "-DCMAKE_TOOLCHAIN_FILE=$vcpkgToolchain -DVCPKG_TARGET_TRIPLET=x64-windows -DVCPKG_INSTALLED_DIR=$vcpkgInstalled -DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -DVCPKG_OVERLAY_PORTS=$overlayPortsPath"
           } else {
-            $env:CMAKE_ARGS = "-DCMAKE_TOOLCHAIN_FILE=$vcpkgToolchain -DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release"
+            $env:CMAKE_ARGS = "-DCMAKE_TOOLCHAIN_FILE=$vcpkgToolchain -DVCPKG_TARGET_TRIPLET=x64-windows -DVCPKG_INSTALLED_DIR=$vcpkgInstalled -DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release"
           }
 
           echo "=== Diagnostic: Environment variables ==="
@@ -369,13 +370,6 @@ jobs:
           echo "CMAKE_ARGS: $env:CMAKE_ARGS"
           echo "VCPKG_ROOT: ${{ env.VCPKG_ROOT }}"
           echo "Toolchain file exists: $(Test-Path $vcpkgToolchain.Replace('/', '\'))"
-
-          echo "=== Setting VCPKG environment variables ==="
-          $env:VCPKG_DEFAULT_TRIPLET = "x64-windows"
-          $env:VCPKG_FEATURE_FLAGS = "manifests,versions"
-          $env:VCPKG_INSTALLED_DIR = "${{github.workspace}}\vowpal_wabbit\vcpkg_installed"
-          echo "VCPKG_DEFAULT_TRIPLET: $env:VCPKG_DEFAULT_TRIPLET"
-          echo "VCPKG_FEATURE_FLAGS: $env:VCPKG_FEATURE_FLAGS"
 
           python -m pip wheel . -w ${{github.workspace}}\\wheel_output\\ --verbose
       - name: Upload built wheel
