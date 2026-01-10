@@ -31,9 +31,9 @@ message(STATUS "test_extension: Python_EXECUTABLE=${Python_EXECUTABLE}")
 add_library(simple_module MODULE simple_module.c)
 set_target_properties(simple_module PROPERTIES PREFIX "")
 target_include_directories(simple_module PRIVATE ${Python_INCLUDE_DIRS})
-# Use target_link_options for modern CMake
+# Use target_link_options with raw flag
 if(APPLE)
-  target_link_options(simple_module PRIVATE "LINKER:-undefined,dynamic_lookup")
+  target_link_options(simple_module PRIVATE "-Wl,-undefined,dynamic_lookup")
 endif()
 
 # Boost.Python extension (optional - to test if Boost.Python is the issue)
@@ -51,9 +51,9 @@ if(Boost_FOUND)
   set_target_properties(boost_module PROPERTIES PREFIX "")
   target_include_directories(boost_module PRIVATE ${Python_INCLUDE_DIRS})
   target_link_libraries(boost_module PRIVATE Boost::python${BOOST_PY_VERSION_SUFFIX})
-  # Use target_link_options for modern CMake
+  # Use target_link_options with raw flag
   if(APPLE)
-    target_link_options(boost_module PRIVATE "LINKER:-undefined,dynamic_lookup")
+    target_link_options(boost_module PRIVATE "-Wl,-undefined,dynamic_lookup")
   endif()
 
   # VW test module - links to vw_core like pylibvw does
@@ -65,9 +65,9 @@ if(Boost_FOUND)
     set_target_properties(vw_test_module PROPERTIES PREFIX "")
     target_include_directories(vw_test_module PRIVATE ${Python_INCLUDE_DIRS})
     target_link_libraries(vw_test_module PRIVATE Boost::python${BOOST_PY_VERSION_SUFFIX} vw_core)
-    # Use target_link_options for modern CMake
+    # Use target_link_options with raw flag
     if(APPLE)
-      target_link_options(vw_test_module PRIVATE "LINKER:-undefined,dynamic_lookup")
+      target_link_options(vw_test_module PRIVATE "-Wl,-undefined,dynamic_lookup")
     endif()
 
     # Make pylibvw depend on vw_test_module so it gets built during wheel build

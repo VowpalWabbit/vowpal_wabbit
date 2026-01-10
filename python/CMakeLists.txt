@@ -113,9 +113,10 @@ target_link_libraries(pylibvw PRIVATE vw_core)
 target_compile_options(pylibvw PRIVATE ${EXPORT_DYNAMIC})
 
 # On macOS, use target_link_options to set -undefined dynamic_lookup
+# Use the raw linker flag without LINKER: prefix since it's not working
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  target_link_options(pylibvw PRIVATE "LINKER:-undefined,dynamic_lookup")
-  message(STATUS "Set pylibvw link options: -undefined,dynamic_lookup")
+  target_link_options(pylibvw PRIVATE "-Wl,-undefined,dynamic_lookup")
+  message(STATUS "Set pylibvw link options: -Wl,-undefined,dynamic_lookup")
 endif()
 
 # On macOS, add diagnostic to verify linkage
