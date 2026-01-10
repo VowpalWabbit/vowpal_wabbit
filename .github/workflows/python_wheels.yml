@@ -27,11 +27,9 @@ jobs:
     strategy:
       matrix:
         config:
-        - { version: "3.6", os: "ubuntu-22.04", boost_suffix: "36" }
-        - { version: "3.7", os: "ubuntu-22.04", boost_suffix: "37" }
-        - { version: "3.8", os: "ubuntu-latest", boost_suffix: "38" }
-        - { version: "3.9", os: "ubuntu-latest", boost_suffix: "39" }
-        - { version: "3.10", os: "ubuntu-latest", boost_suffix: "310" }
+        - { version: "3.8", os: "ubuntu-22.04", boost_suffix: "38" }
+        - { version: "3.9", os: "ubuntu-22.04", boost_suffix: "39" }
+        - { version: "3.10", os: "ubuntu-22.04", boost_suffix: "310" }
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -63,7 +61,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        version: ["3.6", "3.7", "3.8", "3.9", "3.10"]
+        version: ["3.8", "3.9", "3.10"]
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -150,7 +148,6 @@ jobs:
     strategy:
       matrix:
         config:
-        - { version: "3.7", base_path: /opt/python/cp37-cp37m/, include_dir_name: python3.7m/ }
         - { version: "3.8", base_path: /opt/python/cp38-cp38/, include_dir_name: python3.8/ }
         - { version: "3.9", base_path: /opt/python/cp39-cp39/, include_dir_name: python3.9/ }
         - { version: "3.10", base_path: /opt/python/cp310-cp310/, include_dir_name: python3.10/ }
@@ -184,7 +181,6 @@ jobs:
     strategy:
       matrix:
         config:
-        - { version: "3.7" }
         - { version: "3.8" }
         - { version: "3.9" }
         - { version: "3.10" }
@@ -229,8 +225,6 @@ jobs:
     strategy:
       matrix:
         config:
-        - { version: 3.6, include_dir_name: python3.6m/}
-        - { version: 3.7, include_dir_name: python3.7m/}
         - { version: 3.8, include_dir_name: python3.8/}
         - { version: 3.9, include_dir_name: python3.9/}
         - { version: "3.10", include_dir_name: python3.10/}
@@ -261,7 +255,7 @@ jobs:
     runs-on: macos-15-intel
     strategy:
       matrix:
-        version: [3.6, 3.7, 3.8, 3.9, "3.10"]
+        version: [3.8, 3.9, "3.10"]
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -293,8 +287,6 @@ jobs:
     strategy:
       matrix:
         config:
-        - { version: "3.6", vcpkg_manifest: "python\\vcpkg_default.json", overlay_ports: "python\\vcpkg_python_override_ports\\python36\\"}
-        - { version: "3.7", vcpkg_manifest: "python\\vcpkg_default.json", overlay_ports: "python\\vcpkg_python_override_ports\\python37\\"}
         - { version: "3.8", vcpkg_manifest: "python\\vcpkg_default.json", overlay_ports: "python\\vcpkg_python_override_ports\\python38\\" }
         - { version: "3.9", vcpkg_manifest: "python\\vcpkg_default.json", overlay_ports: "python\\vcpkg_python_override_ports\\python39\\" }
         - { version: "3.10", vcpkg_manifest: "python\\vcpkg_python310.json", overlay_ports: "" }
@@ -346,7 +338,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        version: ["3.6", "3.7", "3.8", "3.9", "3.10"]
+        version: ["3.8", "3.9", "3.10"]
         os: ["windows-2019"]
       fail-fast: false
     steps:

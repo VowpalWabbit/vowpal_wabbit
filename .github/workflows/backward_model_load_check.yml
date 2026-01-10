@@ -19,7 +19,7 @@ concurrency:
 jobs:
   python-build:
     name: Build previous master python wheel
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/setup-python@v4
         with:
@@ -87,7 +87,7 @@ jobs:
   test-latest-model:
     name: Test previous master model with newest wheel
     needs: generate-latest-model
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v6
         with:

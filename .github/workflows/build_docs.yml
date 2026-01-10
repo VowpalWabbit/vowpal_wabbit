@@ -51,7 +51,7 @@ jobs:
           name: vw-dump-options
           path: build/utl/dump_options/vw-dump-options
   python-build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v6
         with:
