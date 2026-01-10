@@ -338,13 +338,24 @@ jobs:
           {
               New-Item -ItemType Directory -Force -Path "${{ env.VCPKG_DEFAULT_BINARY_CACHE }}"
           }
+          if (![System.IO.Directory]::Exists("${{github.workspace}}\\wheel_output"))
+          {
+              New-Item -ItemType Directory -Force -Path "${{github.workspace}}\\wheel_output"
+          }
           ls ${{ github.workspace }}
           ls ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
           cd ${{github.workspace}}\\vowpal_wabbit
           cp ${{ matrix.config.vcpkg_manifest }} vcpkg.json
           pip install wheel setuptools
-          python setup.py bdist_wheel --vcpkg-root="${{ env.VCPKG_ROOT }}" --cmake-generator="Visual Studio 16 2019" --cmake-options="-DVCPKG_OVERLAY_PORTS=${{github.workspace}}\\vowpal_wabbit\\${{ matrix.config.overlay_ports }}"
-          move dist\\*.whl ${{github.workspace}}\\wheel_output\\
+          $env:CMAKE_TOOLCHAIN_FILE = "${{ env.VCPKG_ROOT }}\\scripts\\buildsystems\\vcpkg.cmake"
+          $env:CMAKE_GENERATOR = "Visual Studio 16 2019"
+          $overlayPorts = "${{ matrix.config.overlay_ports }}"
+          if ($overlayPorts) {
+            $env:CMAKE_ARGS = "-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -DVCPKG_OVERLAY_PORTS=${{github.workspace}}\\vowpal_wabbit\\${{ matrix.config.overlay_ports }}"
+          } else {
+            $env:CMAKE_ARGS = "-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release"
+          }
+          python -m pip wheel . -w ${{github.workspace}}\\wheel_output\\ --verbose
       - name: Upload built wheel
         uses: actions/upload-artifact@v4
         with:

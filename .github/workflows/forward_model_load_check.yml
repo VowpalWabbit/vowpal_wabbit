@@ -57,13 +57,26 @@ jobs:
       - name: Build recent-models
         shell: bash
         run: |
+          set -x  # Enable command tracing
+          python3 -m pip install setuptools wheel
+          echo "=== Installing wheel ==="
           python3 -m pip install built_wheel/*.whl
-          python3 ./test/run_tests_model_gen_and_load.py --generate_models --skip_pr_tests "${{ github.event.pull_request.title }}"
+          echo "=== Verifying vowpalwabbit import ==="
+          python3 -c "import vowpalwabbit; print('vowpalwabbit imported successfully')"
+          echo "=== Running model generation script ==="
+          python3 ./test/run_tests_model_gen_and_load.py --generate_models --skip_pr_tests "${{ github.event.pull_request.title }}" || (echo "Model generation failed with exit code $?" && exit 1)
+          echo "=== Checking generated files ==="
+          ls -la ~/.vw_runtests_model_gen_working_dir/ || echo "Working directory not found"
+      - name: Copy generated files to workspace
+        run: |
+          cp -r ~/.vw_runtests_model_gen_working_dir ./vw_generated_models_upload
+          ls -la ./vw_generated_models_upload/
       - name: Upload generated file
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: vw_generated_models
-          path: ~/.vw_runtests_model_gen_working_dir/*
+          path: vw_generated_models_upload/*
           if-no-files-found: error
   test-latest-model:
     name: Test latest model with current master
