@@ -385,16 +385,16 @@ jobs:
           cd ${{github.workspace}}\\vowpal_wabbit
           pip install wheel setuptools
           $env:CMAKE_GENERATOR = "Visual Studio 16 2019"
-          $vcpkgToolchain = "${{ env.VCPKG_ROOT }}\\scripts\\buildsystems\\vcpkg.cmake" -replace '\\', '/'
-          $env:CMAKE_ARGS = "-DCMAKE_TOOLCHAIN_FILE=$vcpkgToolchain -DVCPKG_TARGET_TRIPLET=x64-windows -DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release"
 
-          echo "=== Diagnostic: Environment variables ==="
+          echo "=== Building wheel with setup.py vcpkg support ==="
           echo "CMAKE_GENERATOR: $env:CMAKE_GENERATOR"
-          echo "CMAKE_ARGS: $env:CMAKE_ARGS"
           echo "VCPKG_ROOT: ${{ env.VCPKG_ROOT }}"
-          echo "Toolchain file exists: $(Test-Path $vcpkgToolchain.Replace('/', '\'))"
 
-          python -m pip wheel . -w ${{github.workspace}}\\wheel_output\\ --verbose
+          python setup.py bdist_wheel `
+            --vcpkg-root="${{ env.VCPKG_ROOT }}" `
+            --cmake-generator="Visual Studio 16 2019" `
+            --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DCMAKE_BUILD_TYPE=Release" `
+            --dist-dir="${{github.workspace}}\\wheel_output\\"
       - name: Upload built wheel
         uses: actions/upload-artifact@v4
         with:
