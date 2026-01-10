@@ -37,7 +37,7 @@ jobs:
       fail-fast: false
     steps:
       # v1 must be used because newer versions require a node.js version that will not run on this old image.
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v1
         with:
           submodules: recursive
       - name: Build wheel
