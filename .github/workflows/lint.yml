@@ -38,7 +38,7 @@ jobs:
       - name: Upload built wheel
         uses: actions/upload-artifact@v4
         with:
-          name: wheel_${{ matrix.config.version }}
+          name: wheel_${{ replace(matrix.config.version, '.', '_') }}
           path: audit_output/
   typecheck-check:
     name: lint.python.typecheck-check
@@ -57,7 +57,7 @@ jobs:
       - name: Download Wheel
         uses: actions/download-artifact@v4
         with:
-          name: wheel_${{ matrix.config.version }}
+          name: wheel_${{ replace(matrix.config.version, '.', '_') }}
       - name: Install dependencies
         shell: bash
         run: |
@@ -68,7 +68,7 @@ jobs:
       - name: Install wheel
         shell: bash
         run: |
-          export wheel_files=(wheel_${{ matrix.config.version }}/*)
+          export wheel_files=(wheel_${{ replace(matrix.config.version, '.', '_') }}/*)
           export wheel_file="${wheel_files[0]}"
           echo Installing ${wheel_file}...
           pip install ${wheel_file}
