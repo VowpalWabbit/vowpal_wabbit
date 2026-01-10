@@ -23,15 +23,15 @@ concurrency:
 jobs:
   linux-python-build:
     name: manylinux.amd64.py${{ matrix.config.version}}.build
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.config.os }}
     strategy:
       matrix:
         config:
-        - { version: "3.6" }
-        - { version: "3.7" }
-        - { version: "3.8" }
-        - { version: "3.9" }
-        - { version: "3.10" }
+        - { version: "3.6", os: "ubuntu-22.04", boost_suffix: "36" }
+        - { version: "3.7", os: "ubuntu-22.04", boost_suffix: "37" }
+        - { version: "3.8", os: "ubuntu-latest", boost_suffix: "38" }
+        - { version: "3.9", os: "ubuntu-latest", boost_suffix: "39" }
+        - { version: "3.10", os: "ubuntu-latest", boost_suffix: "310" }
       fail-fast: false
     steps:
       - uses: actions/checkout@v3
@@ -43,12 +43,12 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake ninja-build libboost-test-dev libboost-python-dev zlib1g-dev
+          sudo apt-get install -y cmake ninja-build libboost-dev libboost-python-dev zlib1g-dev
       - name: Build wheel
         shell: bash
         run: |
           pip install wheel auditwheel
-          pip wheel . -w wheel_output/ --verbose
+          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -DBoost_NO_BOOST_CMAKE=ON" BOOST_PY_VERSION_SUFFIX="${{ matrix.config.boost_suffix }}" pip wheel . -w wheel_output/ --verbose
           auditwheel repair wheel_output/*whl -w audit_output/
       - name: Upload built wheel
         uses: actions/upload-artifact@v4
