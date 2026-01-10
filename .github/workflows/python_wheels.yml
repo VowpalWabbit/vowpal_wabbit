@@ -354,9 +354,33 @@ jobs:
           echo "=== List installed packages ==="
           .\vcpkg.exe list
 
-          echo "=== Verify package installation ==="
-          ls "${{ env.VCPKG_ROOT }}\\installed\\x64-windows\\lib\\zlib*.lib"
-          ls "${{ env.VCPKG_ROOT }}\\installed\\x64-windows\\include\\zlib.h"
+          echo "=== Verify vcpkg installation directories ==="
+          echo "Checking: ${{ env.VCPKG_ROOT }}\\installed"
+          if (Test-Path "${{ env.VCPKG_ROOT }}\\installed") {
+              echo "installed/ directory exists"
+              Get-ChildItem "${{ env.VCPKG_ROOT }}\\installed" | Select-Object Name
+          } else {
+              echo "WARNING: installed/ directory does NOT exist"
+          }
+
+          echo "`nChecking: ${{ env.VCPKG_ROOT }}\\installed\\x64-windows"
+          if (Test-Path "${{ env.VCPKG_ROOT }}\\installed\\x64-windows") {
+              echo "x64-windows/ directory exists"
+              Get-ChildItem "${{ env.VCPKG_ROOT }}\\installed\\x64-windows" | Select-Object Name
+          } else {
+              echo "WARNING: x64-windows/ directory does NOT exist"
+          }
+
+          echo "`nLooking for zlib files:"
+          Get-ChildItem -Path "${{ env.VCPKG_ROOT }}\\installed" -Recurse -Filter "*zlib*" -ErrorAction SilentlyContinue | Select-Object FullName | Format-Table -AutoSize
+
+          echo "`nChecking for vcpkg_installed/ (manifest mode):"
+          if (Test-Path "${{github.workspace}}\\vowpal_wabbit\\vcpkg_installed") {
+              echo "WARNING: vcpkg_installed/ exists - manifest mode may be active"
+              Get-ChildItem "${{github.workspace}}\\vowpal_wabbit\\vcpkg_installed" -Recurse -Depth 2 | Select-Object FullName
+          } else {
+              echo "OK: vcpkg_installed/ does not exist (not in manifest mode)"
+          }
 
           cd ${{github.workspace}}\\vowpal_wabbit
           pip install wheel setuptools
