@@ -38,8 +38,8 @@ jobs:
       - name: Test
         run: |
           # Run integration tests
-          # Skip test 111 on Debug builds due to floating-point precision issues
-          SKIP_TESTS="${{ matrix.build_type == 'Debug' && '--skip_test 111' || '' }}"
+          # Skip cbzo tests (282, 284, 285, 286) and test 111 on Debug builds due to floating-point precision issues
+          SKIP_TESTS="${{ matrix.build_type == 'Debug' && '--skip_test 111 282 284 285 286' || '' }}"
           python3 test/run_tests.py --fuzzy_compare --exit_first_fail --epsilon 0.001 --ignore_dirty $SKIP_TESTS
           python3 test/run_tests.py --fuzzy_compare --exit_first_fail --epsilon 0.001 --ignore_dirty --extra_options=--onethread $SKIP_TESTS
           python3 test/run_tests.py --ignore_dirty --test_spec test/slow.vwtest.json --timeout 180

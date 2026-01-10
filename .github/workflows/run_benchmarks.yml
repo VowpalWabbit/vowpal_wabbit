@@ -45,7 +45,7 @@ jobs:
         with:
           vcpkgDirectory: '${{ github.workspace }}/ext_libs/vcpkg'
       - name: Configure
-        run: cmake --preset vcpkg-release -DBUILD_BENCHMARKS=On
+        run: cmake --preset vcpkg-release -DBUILD_BENCHMARKS=On -DUSE_LATEST_STD=ON
       - name: Compile
         run: cmake --build build --target vw-benchmarks.out
       - name: Run benchmarks
