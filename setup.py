@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-""" Vowpal Wabbit python setup module """
+"""Vowpal Wabbit python setup module"""
 
 import distutils.dir_util
 import os
