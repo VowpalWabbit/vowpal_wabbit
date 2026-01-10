@@ -35,8 +35,9 @@ jobs:
           /opt/python/cp310-cp310/bin/pip wheel . -w wheel_last_commit/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='/opt/python/cp310-cp310/include/python3.10/'" --verbose
           cd ..
           auditwheel repair vowpal_wabbit/wheel_last_commit/*whl -w audit_last_commit/
+      # v3 must be used because newer versions require a node.js version that will not run on this old image.
       - name: Upload built wheel
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v3
         with:
           name: test_manylinux_amd64_3.10
           path: audit_last_commit/
@@ -75,7 +76,8 @@ jobs:
       - uses: actions/checkout@v1
         with:
           submodules: recursive
-      - uses: actions/download-artifact@v4
+      # v3 must be used because newer versions require a node.js version that will not run on this old image.
+      - uses: actions/download-artifact@v3
         with:
           name: vw_generated_models
           path: .vw_runtests_model_gen_working_dir

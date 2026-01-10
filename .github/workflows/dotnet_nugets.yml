@@ -40,7 +40,12 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y nuget
+          sudo apt-get install -y mono-complete
+          wget https://dist.nuget.org/win-x86-commandline/latest/nuget.exe
+          sudo install -m 755 nuget.exe /usr/local/bin/nuget.exe
+          echo '#!/bin/bash' | sudo tee /usr/local/bin/nuget
+          echo 'exec mono /usr/local/bin/nuget.exe "$@"' | sudo tee -a /usr/local/bin/nuget
+          sudo chmod +x /usr/local/bin/nuget
       - name: Install NuGet (macOS)
         if: runner.os == 'macOS'
         run: brew install nuget
