@@ -390,7 +390,7 @@ jobs:
           echo "CMAKE_GENERATOR: $env:CMAKE_GENERATOR"
           echo "VCPKG_ROOT: ${{ env.VCPKG_ROOT }}"
 
-          $boostDir = "${{ env.VCPKG_ROOT }}\installed\x64-windows\share\boost"
+          $boostDir = "${{ env.VCPKG_ROOT }}\installed\x64-windows\share\boost" -replace '\\', '/'
           echo "Boost_DIR: $boostDir"
 
           python setup.py `
