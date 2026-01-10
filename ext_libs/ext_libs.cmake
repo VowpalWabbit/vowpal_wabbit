@@ -37,7 +37,7 @@ endif()
 if(RAPIDJSON_SYS_DEP)
   # Since EXACT is not specified, any version compatible with 1.1.0 is accepted (>= 1.1.0)
   find_package(RapidJSON 1.1.0 CONFIG REQUIRED)
-  add_library(RapidJSON INTERFACE)
+  # Don't call add_library - find_package creates an imported target
   target_include_directories(RapidJSON INTERFACE ${RapidJSON_INCLUDE_DIRS} ${RAPIDJSON_INCLUDE_DIRS})
 else()
   add_library(RapidJSON INTERFACE)
