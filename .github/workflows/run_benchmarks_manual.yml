@@ -21,7 +21,8 @@ jobs:
       image: vowpalwabbit/ubuntu1804-build:latest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      # v1 must be used because newer versions require a node.js version that will not run on this old image.
+      - uses: actions/checkout@v1
         with:
           submodules: recursive
           ref: ${{ github.event.inputs.benchmarks_ref }}
@@ -35,7 +36,8 @@ jobs:
           path: test/benchmarks/
           if-no-files-found: error
 # checkout first ref
-      - uses: actions/checkout@v3
+      # v1 must be used because newer versions require a node.js version that will not run on this old image.
+      - uses: actions/checkout@v1
         with:
           submodules: recursive
           ref: ${{ github.event.inputs.base_ref }}
@@ -82,7 +84,8 @@ jobs:
           python3 -m pip install pandas
       - run: rm -rf benchmark build vowpalwabbit/parser/flatbuffer/generated/ test/benchmarks/ # generated or downloaded files
 # checkout second ref
-      - uses: actions/checkout@v3
+      # v1 must be used because newer versions require a node.js version that will not run on this old image.
+      - uses: actions/checkout@v1
         with:
           submodules: recursive
           ref: ${{ github.event.inputs.compare_ref }}
