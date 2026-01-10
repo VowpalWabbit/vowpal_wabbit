@@ -120,6 +120,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: python_source_distribution
+          path: python_source_distribution
       - name: Install dependencies
         shell: bash
         run: |
