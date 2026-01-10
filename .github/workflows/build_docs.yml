@@ -24,7 +24,7 @@ jobs:
   cpp:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - uses: cachix/install-nix-action@v18
       - name: Build docs
         run: nix build --print-build-logs .#vw-cpp-docs
@@ -36,13 +36,11 @@ jobs:
   dump-options-build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
-      - name: Install build dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y ninja-build cmake
+      - name: Install Ninja
+        uses: seanmiddleditch/gha-setup-ninja@master
       - name: Configure
         run: cmake -S . -B build -G Ninja -DBUILD_TESTING=OFF
       - name: Build dump options
@@ -55,21 +53,18 @@ jobs:
   python-build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-      - name: Install build dependencies
+      - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake ninja-build libboost-test-dev libboost-python-dev zlib1g-dev
+          sudo apt-get update || true
+          sudo apt-get install -y libboost-dev libboost-python-dev python3-dev python3-pip zlib1g-dev ninja-build
+          python3 -m pip install build wheel setuptools auditwheel
       - name: Build wheel
         shell: bash
         run: |
-          pip install wheel auditwheel
-          pip wheel . -w wheel_output/ --verbose
+          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -DBoost_NO_BOOST_CMAKE=ON" BOOST_PY_VERSION_SUFFIX="312" python3 -m pip wheel . -w wheel_output/ --verbose
           auditwheel repair wheel_output/*whl -w audit_output/
       - name: Upload built wheel
         uses: actions/upload-artifact@v4
@@ -80,13 +75,13 @@ jobs:
     needs: [python-build, dump-options-build]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v1
         with:
           submodules: recursive
       - uses: actions/setup-node@v3
       - uses: actions/setup-python@v3
         with:
-          python-version: '3.10'
+          python-version: '3.12'
       - name: If this is a push build then set version to latest
         if: ${{ github.event_name == 'push' }}
         run: echo "VW_SPHINX_VERSION_OVERRIDE=latest" >> $GITHUB_ENV
@@ -94,6 +89,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: python_wheel
+          path: python_wheel
       - name: Download vw-dump-options
         uses: actions/download-artifact@v4
         with:
@@ -102,6 +98,10 @@ jobs:
       - name: Change permissions to rvw-dump-options
         shell: bash
         run: chmod +x ./vw-dump-options/vw-dump-options
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update || true
+          sudo apt-get install -y libboost-python-dev
       - name: Install dependencies
         shell: bash
         run: |
@@ -112,10 +112,12 @@ jobs:
       - name: Install wheel
         shell: bash
         run: |
-          export wheel_files=(python_wheel/*)
-          export wheel_file="${wheel_files[0]}"
-          echo Installing ${wheel_file}...
+          ls -la python_wheel/
+          wheel_file=$(ls python_wheel/vowpalwabbit-*.whl)
+          echo "Installing ${wheel_file}..."
           pip install ${wheel_file}
+          echo "Verifying installation..."
+          python -c "import vowpalwabbit; print('vowpalwabbit imported successfully')"
       - name: Generate CLI docs
         run: |
           cd python/docs/cmd_options_template
@@ -155,7 +157,7 @@ jobs:
           pwd
           ls
           echo $GITHUB_WORKSPACE
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v1
         with:
           submodules: recursive
           repository: VowpalWabbit/docs

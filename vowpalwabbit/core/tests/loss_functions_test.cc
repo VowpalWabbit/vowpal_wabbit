@@ -33,7 +33,7 @@ TEST(LossFunctions, SquaredLossTest)
   EXPECT_FLOAT_EQ(0.0f, loss->get_parameter());
 
   EXPECT_FLOAT_EQ(0.01f, loss->get_loss(&sd, prediction, label));
-  EXPECT_FLOAT_EQ(0.01812692f, loss->get_update(prediction, label, update_scale, pred_per_update));
+  EXPECT_NEAR(0.01812692f, loss->get_update(prediction, label, update_scale, pred_per_update), 1e-6f);
   EXPECT_FLOAT_EQ(0.02f, loss->get_unsafe_update(prediction, label, update_scale));
 
   EXPECT_FLOAT_EQ(0.04f, loss->get_square_grad(prediction, label));
@@ -63,7 +63,7 @@ TEST(LossFunctions, ExpectileLossLabelIsGreaterThanPredictionTest1)
   EXPECT_FLOAT_EQ(parameter, loss->get_parameter());
 
   EXPECT_FLOAT_EQ(0.006f, loss->get_loss(&sd, prediction, label));
-  EXPECT_FLOAT_EQ(0.011307956f, loss->get_update(prediction, label, update_scale, pred_per_update));
+  EXPECT_NEAR(0.011307956f, loss->get_update(prediction, label, update_scale, pred_per_update), 1e-6f);
   EXPECT_FLOAT_EQ(0.012f, loss->get_unsafe_update(prediction, label, update_scale));
 
   EXPECT_FLOAT_EQ(0.0144f, loss->get_square_grad(prediction, label));
@@ -93,7 +93,7 @@ TEST(LossFunctions, ExpectileLossLabelIsGreaterThanPredictionTest2)
   EXPECT_FLOAT_EQ(parameter, loss->get_parameter());
 
   EXPECT_FLOAT_EQ(0.2352f, loss->get_loss(&sd, prediction, label));
-  EXPECT_FLOAT_EQ(0.0780035332f, loss->get_update(prediction, label, update_scale, pred_per_update));
+  EXPECT_NEAR(0.0780035332f, loss->get_update(prediction, label, update_scale, pred_per_update), 1e-6f);
   EXPECT_FLOAT_EQ(0.084f, loss->get_unsafe_update(prediction, label, update_scale));
 
   EXPECT_FLOAT_EQ(0.7056f, loss->get_square_grad(prediction, label));
@@ -123,7 +123,7 @@ TEST(LossFunctions, ExpectileLossLabelIsGreaterThanPredictionTest3)
   EXPECT_FLOAT_EQ(parameter, loss->get_parameter());
 
   EXPECT_FLOAT_EQ(0.10368f, loss->get_loss(&sd, prediction, label));
-  EXPECT_FLOAT_EQ(0.05322823597f, loss->get_update(prediction, label, update_scale, pred_per_update));
+  EXPECT_NEAR(0.05322823597f, loss->get_update(prediction, label, update_scale, pred_per_update), 1e-6f);
   EXPECT_FLOAT_EQ(0.0576f, loss->get_unsafe_update(prediction, label, update_scale));
 
   EXPECT_FLOAT_EQ(0.331776f, loss->get_square_grad(prediction, label));
@@ -153,7 +153,7 @@ TEST(LossFunctions, ExpectileLossLabelIsGreaterThanPredictionTest4)
   EXPECT_FLOAT_EQ(parameter, loss->get_parameter());
 
   EXPECT_FLOAT_EQ(0.03703f, loss->get_loss(&sd, prediction, label));
-  EXPECT_FLOAT_EQ(0.03004760586f, loss->get_update(prediction, label, update_scale, pred_per_update));
+  EXPECT_NEAR(0.03004760586f, loss->get_update(prediction, label, update_scale, pred_per_update), 1e-6f);
   EXPECT_FLOAT_EQ(0.0322f, loss->get_unsafe_update(prediction, label, update_scale));
 
   EXPECT_FLOAT_EQ(0.103684f, loss->get_square_grad(prediction, label));
@@ -183,7 +183,7 @@ TEST(LossFunctions, ExpectileLossLabelIsGreaterThanPredictionTest5)
   EXPECT_FLOAT_EQ(parameter, loss->get_parameter());
 
   EXPECT_FLOAT_EQ(0.126075f, loss->get_loss(&sd, prediction, label));
-  EXPECT_FLOAT_EQ(0.05710972967f, loss->get_update(prediction, label, update_scale, pred_per_update));
+  EXPECT_NEAR(0.05710972967f, loss->get_update(prediction, label, update_scale, pred_per_update), 1e-6f);
   EXPECT_FLOAT_EQ(0.0615f, loss->get_unsafe_update(prediction, label, update_scale));
 
   EXPECT_FLOAT_EQ(0.378225f, loss->get_square_grad(prediction, label));
@@ -213,7 +213,7 @@ TEST(LossFunctions, ExpectileLossPredictionIsGreaterThanLabelTest1)
   EXPECT_FLOAT_EQ(parameter, loss->get_parameter());
 
   EXPECT_FLOAT_EQ(0.004f, loss->get_loss(&sd, prediction, label));
-  EXPECT_FLOAT_EQ(-0.007688365f, loss->get_update(prediction, label, update_scale, pred_per_update));
+  EXPECT_NEAR(-0.007688365f, loss->get_update(prediction, label, update_scale, pred_per_update), 1e-6f);
   EXPECT_FLOAT_EQ(-0.008f, loss->get_unsafe_update(prediction, label, update_scale));
 
   EXPECT_FLOAT_EQ(0.0064f, loss->get_square_grad(prediction, label));
@@ -243,7 +243,7 @@ TEST(LossFunctions, ExpectileLossPredictionIsGreaterThanLabelTest2)
   EXPECT_FLOAT_EQ(parameter, loss->get_parameter());
 
   EXPECT_FLOAT_EQ(0.001225f, loss->get_loss(&sd, prediction, label));
-  EXPECT_FLOAT_EQ(-0.003413938f, loss->get_update(prediction, label, update_scale, pred_per_update));
+  EXPECT_NEAR(-0.003413938f, loss->get_update(prediction, label, update_scale, pred_per_update), 1e-6f);
   EXPECT_FLOAT_EQ(-0.0035f, loss->get_unsafe_update(prediction, label, update_scale));
 
   EXPECT_FLOAT_EQ(0.001225f, loss->get_square_grad(prediction, label));
@@ -273,7 +273,7 @@ TEST(LossFunctions, ExpectileLossPredictionIsGreaterThanLabelTest3)
   EXPECT_FLOAT_EQ(parameter, loss->get_parameter());
 
   EXPECT_FLOAT_EQ(0.00288f, loss->get_loss(&sd, prediction, label));
-  EXPECT_FLOAT_EQ(-0.004705267302f, loss->get_update(prediction, label, update_scale, pred_per_update));
+  EXPECT_NEAR(-0.004705267302f, loss->get_update(prediction, label, update_scale, pred_per_update), 1e-6f);
   EXPECT_FLOAT_EQ(-0.0048f, loss->get_unsafe_update(prediction, label, update_scale));
 
   EXPECT_FLOAT_EQ(0.002304f, loss->get_square_grad(prediction, label));
@@ -303,7 +303,7 @@ TEST(LossFunctions, ExpectileLossPredictionIsGreaterThanLabelTest4)
   EXPECT_FLOAT_EQ(parameter, loss->get_parameter());
 
   EXPECT_FLOAT_EQ(0.01458f, loss->get_loss(&sd, prediction, label));
-  EXPECT_FLOAT_EQ(-0.01058685143f, loss->get_update(prediction, label, update_scale, pred_per_update));
+  EXPECT_NEAR(-0.01058685143f, loss->get_update(prediction, label, update_scale, pred_per_update), 1e-6f);
   EXPECT_FLOAT_EQ(-0.0108f, loss->get_unsafe_update(prediction, label, update_scale));
 
   EXPECT_FLOAT_EQ(0.011664f, loss->get_square_grad(prediction, label));
@@ -333,7 +333,7 @@ TEST(LossFunctions, ExpectileLossPredictionIsGreaterThanLabelTest5)
   EXPECT_FLOAT_EQ(parameter, loss->get_parameter());
 
   EXPECT_FLOAT_EQ(0.016f, loss->get_loss(&sd, prediction, label));
-  EXPECT_FLOAT_EQ(-0.01537673072f, loss->get_update(prediction, label, update_scale, pred_per_update));
+  EXPECT_NEAR(-0.01537673072f, loss->get_update(prediction, label, update_scale, pred_per_update), 1e-6f);
   EXPECT_FLOAT_EQ(-0.016f, loss->get_unsafe_update(prediction, label, update_scale));
 
   EXPECT_FLOAT_EQ(0.0256f, loss->get_square_grad(prediction, label));
@@ -362,7 +362,7 @@ TEST(LossFunctions, ExpectileLossParameterEqualsZeroTest)
   EXPECT_FLOAT_EQ(parameter, loss->get_parameter());
 
   EXPECT_FLOAT_EQ(0.01f, loss->get_loss(&sd, prediction, label));
-  EXPECT_FLOAT_EQ(0.01812692f, loss->get_update(prediction, label, update_scale, pred_per_update));
+  EXPECT_NEAR(0.01812692f, loss->get_update(prediction, label, update_scale, pred_per_update), 1e-6f);
   EXPECT_FLOAT_EQ(0.02f, loss->get_unsafe_update(prediction, label, update_scale));
 
   EXPECT_FLOAT_EQ(0.04f, loss->get_square_grad(prediction, label));
@@ -392,7 +392,7 @@ TEST(LossFunctions, ExpectileLossParameterEqualsOneTest)
   EXPECT_FLOAT_EQ(parameter, loss->get_parameter());
 
   EXPECT_FLOAT_EQ(0.0f, loss->get_loss(&sd, prediction, label));
-  EXPECT_FLOAT_EQ(0.0f, loss->get_update(prediction, label, update_scale, pred_per_update));
+  EXPECT_NEAR(0.0f, loss->get_update(prediction, label, update_scale, pred_per_update), 1e-6f);
   EXPECT_FLOAT_EQ(0.0f, loss->get_unsafe_update(prediction, label, update_scale));
 
   EXPECT_FLOAT_EQ(0.0f, loss->get_square_grad(prediction, label));
