@@ -23,7 +23,8 @@ jobs:
         config:
           - { os: "windows-latest", runtime_id: "win-x64" }
           - { os: "ubuntu-latest", runtime_id: "linux-x64" }
-          - { os: "macos-13", runtime_id: "osx-x64" }
+          - { os: "macos-14", runtime_id: "osx-x64" }
+          - { os: "macos-15-intel", runtime_id: "osx-x64" }
     runs-on: ${{matrix.config.os}}
     steps:
       # Setup for build
@@ -143,7 +144,8 @@ jobs:
         config:
           - { os: "windows-latest", runtime_id: "win-x64" }
           - { os: "ubuntu-latest", runtime_id: "linux-x64" }
-          - { os: "macos-13", runtime_id: "osx-x64" }
+          - { os: "macos-14", runtime_id: "osx-x64" }
+          - { os: "macos-15-intel", runtime_id: "osx-x64" }
     runs-on: ${{matrix.config.os}}
     steps:
       - uses: actions/checkout@v3
