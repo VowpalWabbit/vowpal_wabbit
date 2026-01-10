@@ -347,9 +347,6 @@ jobs:
           }
           ls ${{ github.workspace }}
           ls ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
-          cd ${{github.workspace}}\\vowpal_wabbit
-          cp ${{ matrix.config.vcpkg_manifest }} vcpkg.json
-
           echo "=== Manually install vcpkg dependencies first ==="
           cd ${{ env.VCPKG_ROOT }}
           .\vcpkg.exe install --triplet x64-windows zlib boost-python python3 flatbuffers
@@ -357,11 +354,15 @@ jobs:
           echo "=== List installed packages ==="
           .\vcpkg.exe list
 
+          echo "=== Verify package installation ==="
+          ls "${{ env.VCPKG_ROOT }}\\installed\\x64-windows\\lib\\zlib*.lib"
+          ls "${{ env.VCPKG_ROOT }}\\installed\\x64-windows\\include\\zlib.h"
+
           cd ${{github.workspace}}\\vowpal_wabbit
           pip install wheel setuptools
           $env:CMAKE_GENERATOR = "Visual Studio 16 2019"
           $vcpkgToolchain = "${{ env.VCPKG_ROOT }}\\scripts\\buildsystems\\vcpkg.cmake" -replace '\\', '/'
-          $env:CMAKE_ARGS = "-DCMAKE_TOOLCHAIN_FILE=$vcpkgToolchain -DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release"
+          $env:CMAKE_ARGS = "-DCMAKE_TOOLCHAIN_FILE=$vcpkgToolchain -DVCPKG_TARGET_TRIPLET=x64-windows -DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release"
 
           echo "=== Diagnostic: Environment variables ==="
           echo "CMAKE_GENERATOR: $env:CMAKE_GENERATOR"
