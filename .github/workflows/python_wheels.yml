@@ -349,6 +349,10 @@ jobs:
           ls ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
           cd ${{github.workspace}}\\vowpal_wabbit
           cp ${{ matrix.config.vcpkg_manifest }} vcpkg.json
+
+          echo "=== Diagnostic: vcpkg.json content ==="
+          cat vcpkg.json
+
           pip install wheel setuptools
           $env:CMAKE_GENERATOR = "Visual Studio 16 2019"
           $vcpkgToolchain = "${{ env.VCPKG_ROOT }}\\scripts\\buildsystems\\vcpkg.cmake" -replace '\\', '/'
@@ -359,6 +363,21 @@ jobs:
           } else {
             $env:CMAKE_ARGS = "-DCMAKE_TOOLCHAIN_FILE=$vcpkgToolchain -DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release"
           }
+
+          echo "=== Diagnostic: Environment variables ==="
+          echo "CMAKE_GENERATOR: $env:CMAKE_GENERATOR"
+          echo "CMAKE_ARGS: $env:CMAKE_ARGS"
+          echo "VCPKG_ROOT: ${{ env.VCPKG_ROOT }}"
+          echo "Toolchain file exists: $(Test-Path $vcpkgToolchain.Replace('/', '\'))"
+
+          echo "=== Diagnostic: Manually install vcpkg dependencies ==="
+          cd ${{ env.VCPKG_ROOT }}
+          .\vcpkg.exe install zlib:x64-windows boost-python:x64-windows python3:x64-windows flatbuffers:x64-windows --overlay-triplets=${{github.workspace}}\vowpal_wabbit\cmake\vcpkg-triplets
+
+          echo "=== Diagnostic: Check installed packages ==="
+          .\vcpkg.exe list
+
+          cd ${{github.workspace}}\\vowpal_wabbit
           python -m pip wheel . -w ${{github.workspace}}\\wheel_output\\ --verbose
       - name: Upload built wheel
         uses: actions/upload-artifact@v4
