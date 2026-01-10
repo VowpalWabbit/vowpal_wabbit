@@ -30,7 +30,7 @@ jobs:
       VCPKG_REF: 53bef8994c541b6561884a8395ea35715ece75db
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
         with:
           path: 'vw'
           submodules: recursive

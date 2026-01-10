@@ -67,8 +67,8 @@ export default new Promise((resolve) => {
                 if (model_file !== undefined) {
                     let modelBuffer = readSync(model_file);
                     let ptr = moduleInstance._malloc(modelBuffer.byteLength);
-                    let heapBytes = new Uint8Array(moduleInstance.HEAPU8.buffer, ptr, modelBuffer.byteLength);
-                    heapBytes.set(new Uint8Array(modelBuffer));
+                    // Write model data to Wasm memory
+                    moduleInstance.HEAPU8.set(new Uint8Array(modelBuffer), ptr);
 
                     this._instance = new vwModelConstructor(this._args_str, ptr, modelBuffer.byteLength);
 
@@ -150,8 +150,8 @@ export default new Promise((resolve) => {
             loadModelFromFile(model_file: string) {
                 let modelBuffer = this._readSync(model_file);
                 let ptr = moduleInstance._malloc(modelBuffer.byteLength);
-                let heapBytes = new Uint8Array(moduleInstance.HEAPU8.buffer, ptr, modelBuffer.byteLength);
-                heapBytes.set(new Uint8Array(modelBuffer));
+                // Write model data to Wasm memory
+                moduleInstance.HEAPU8.set(new Uint8Array(modelBuffer), ptr);
                 this._instance.loadModelFromBuffer(ptr, modelBuffer.byteLength);
                 moduleInstance._free(ptr);
             }

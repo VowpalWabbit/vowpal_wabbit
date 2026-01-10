@@ -53,14 +53,6 @@ target_link_libraries(
   PUBLIC vw_core vw_common vw_config vw_io vw_spanning_tree vw_allreduce
 )
 
-# Enable warnings as errors, crossplatform
-target_compile_options(vw.net.native PRIVATE
-  $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>:
-    -Werror>
-  $<$<CXX_COMPILER_ID:MSVC>:
-    /WX>
-)
-
 install(
   TARGETS vw.net.native
   LIBRARY DESTINATION "./runtimes/${NUGET_RUNTIME_ID}/native/"

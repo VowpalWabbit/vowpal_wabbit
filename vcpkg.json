@@ -3,12 +3,30 @@
   "name": "vowpal-wabbit",
   "version": "9.10.0",
   "dependencies": [
+    {
+      "name": "boost-python",
+      "platform": "!emscripten"
+    },
     "eigen3",
     "fmt",
-    "rapidjson",
+    {
+      "name": "rapidjson",
+      "platform": "!emscripten"
+    },
     "spdlog",
     "string-view-lite",
     "zlib"
+  ],
+  "builtin-baseline": "af752f21c9d79ba3df9cb0250ce2233933f58486",
+  "overrides": [
+    {
+      "name": "fmt",
+      "version": "9.1.0"
+    },
+    {
+      "name": "eigen3",
+      "version": "3.4.0"
+    }
   ],
   "features": {
     "tests": {

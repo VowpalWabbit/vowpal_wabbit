@@ -24,3 +24,4 @@ For the most up to date instructions for getting started on Windows, MacOS or Li
 - [Installing with a package manager](https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Getting-started)
 - [Building](https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Building)
 - [Tutorial](https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Tutorial)
+

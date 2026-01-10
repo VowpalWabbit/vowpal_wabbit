@@ -1,0 +1,4 @@
+50c50
+<             Py_SIZE(instance) = offsetof(instance_t, storage);
+---
+>             Py_SET_SIZE(instance, offsetof(instance_t, storage));

@@ -16,6 +16,9 @@
 #include "vw/core/vw_math.h"
 #include "vw/io/io_adapter.h"
 
+#include <fmt/format.h>
+#include <fmt/ranges.h>
+
 #include <algorithm>
 #include <limits>
 

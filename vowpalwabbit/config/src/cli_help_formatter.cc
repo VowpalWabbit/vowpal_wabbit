@@ -8,6 +8,7 @@
 #include "vw/config/options.h"
 
 #include <fmt/format.h>
+#include <fmt/ranges.h>
 
 #include <sstream>
 #include <string>

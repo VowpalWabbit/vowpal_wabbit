@@ -49,17 +49,25 @@ class VWExampleLogger {
     }
 
     /**
-     * Closes the logging stream. Logs a warning to the console if there is no logging stream active, but does not throw
+     * Closes the logging stream. Logs a warning to the console if there is no logging stream active, but does not throw.
+     * Returns a Promise that resolves when the stream is fully closed and flushed.
+     * @returns {Promise<void>} A promise that resolves when the stream is closed
      */
-    endLogStream() {
-        if (this._outputLogStream !== null) {
-            this._outputLogStream.end();
-            this._outputLogStream = null;
-            this._log_file = null;
-        }
-        else {
-            console.warn("Can not close log, log file is not specified");
-        }
+    endLogStream(): Promise<void> {
+        return new Promise((resolve) => {
+            if (this._outputLogStream !== null) {
+                const stream = this._outputLogStream;
+                stream.end(() => {
+                    resolve();
+                });
+                this._outputLogStream = null;
+                this._log_file = null;
+            }
+            else {
+                console.warn("Can not close log, log file is not specified");
+                resolve();
+            }
+        });
     }
 
     /**

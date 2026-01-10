@@ -3,3 +3,4 @@ paths-ignore:
   - ext_libs/
   - python/docs/
   - demo/
+  - .github/

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-""" Vowpal Wabbit python setup module """
+"""Vowpal Wabbit python setup module"""
 
 import distutils.dir_util
 import os
@@ -34,11 +34,6 @@ class Distribution(_distribution):
         ("cmake-generator=", None, "CMake generator to use"),
         ("debug", None, "Debug build"),
     ]
-
-    if system == "Windows":
-        global_options += [
-            ("vcpkg-root=", None, "Path to vcpkg root. For Windows only"),
-        ]
 
     def __init__(self, attrs=None):
         self.vcpkg_root = None
@@ -85,6 +80,13 @@ class BuildPyLibVWBindingsModule(_build_ext):
             "-DSTD_INV_SQRT=On",
         ]
 
+        # Allow BOOST_PY_VERSION_SUFFIX to be overridden via environment variable
+        # (used by cibuildwheel for manylinux/macOS where only generic python3 is available)
+        if "BOOST_PY_VERSION_SUFFIX" in os.environ:
+            cmake_args += [
+                "-DBOOST_PY_VERSION_SUFFIX=" + os.environ["BOOST_PY_VERSION_SUFFIX"]
+            ]
+
         # This doesn't work as expected for Python3.6 and 3.7 on Windows.
         # See bug: https://bugs.python.org/issue39825
         if system == "Windows" and sys.version_info.minor < 8:
@@ -112,6 +114,11 @@ class BuildPyLibVWBindingsModule(_build_ext):
             argslist = self.distribution.cmake_options.split(";")
             cmake_args += argslist
 
+        # Allow CMAKE_ARGS environment variable to override defaults
+        # (used by cibuildwheel to pass platform-specific configuration)
+        if "CMAKE_ARGS" in os.environ:
+            cmake_args += os.environ["CMAKE_ARGS"].split()
+
         # If we are being installed in a conda environment then use the dependencies from there.
         if "CONDA_PREFIX" in os.environ:
             cmake_args.append(
@@ -124,42 +131,61 @@ class BuildPyLibVWBindingsModule(_build_ext):
 
         cmake_generator = self.distribution.cmake_generator
 
+        # Auto-detect vcpkg in ext_libs/vcpkg if it exists and is bootstrapped
+        # Can be disabled by setting DISABLE_VCPKG=1 environment variable
+        vcpkg_root = self.distribution.vcpkg_root
+        if vcpkg_root is None and os.environ.get("DISABLE_VCPKG") != "1":
+            potential_vcpkg = os.path.join(here, "ext_libs", "vcpkg")
+            vcpkg_exe = os.path.join(
+                potential_vcpkg, "vcpkg.exe" if system == "Windows" else "vcpkg"
+            )
+            # Only use vcpkg if it's been bootstrapped (vcpkg executable exists)
+            if os.path.exists(vcpkg_exe):
+                vcpkg_root = potential_vcpkg
+
+        if vcpkg_root is not None:
+            # add the vcpkg toolchain if its provided
+            abs_vcpkg_path = os.path.abspath(vcpkg_root)
+            vcpkg_toolchain = os.path.join(
+                abs_vcpkg_path, "scripts", "buildsystems", "vcpkg.cmake"
+            )
+            if os.path.exists(vcpkg_toolchain):
+                cmake_args += ["-DCMAKE_TOOLCHAIN_FILE=" + vcpkg_toolchain]
+                # When using vcpkg, explicitly set Python paths to avoid vcpkg's Python
+                # interfering with the build environment's Python (especially on Windows)
+                import sysconfig
+
+                cmake_args += [
+                    "-DPython_EXECUTABLE=" + sys.executable,
+                    "-DPython_FIND_STRATEGY=LOCATION",  # Prefer Python_EXECUTABLE over registry/environment
+                ]
+                python_root = sysconfig.get_config_var("prefix")
+                if python_root:
+                    cmake_args += ["-DPython_ROOT_DIR=" + python_root]
+
         if system == "Windows":
             cmake_args += [
                 "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG=" + str(lib_output_dir),
                 "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE=" + str(lib_output_dir),
             ]
-
             if cmake_generator is None:
-                cmake_generator = "Visual Studio 15 2017 Win64"
-
-            build_args += ["--target", "pylibvw"]
-
-            if self.distribution.vcpkg_root is not None:
-                # add the vcpkg toolchain if its provided
-                abs_vcpkg_path = os.path.abspath(self.distribution.vcpkg_root)
-                vcpkg_toolchain = os.path.join(
-                    abs_vcpkg_path, "scripts", "buildsystems", "vcpkg.cmake"
-                )
-                cmake_args += ["-DCMAKE_TOOLCHAIN_FILE=" + vcpkg_toolchain]
+                cmake_generator = "Visual Studio 17 2022"
 
         else:
             cmake_args += [
                 "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=" + str(lib_output_dir),
             ]
-            build_args += [
-                "--",
-                "-j{}".format(multiprocessing.cpu_count()),
-                # Build the pylibvw target
-                "pylibvw",
-            ]
+            if cmake_generator is None:
+                cmake_generator = "Ninja"
 
         if cmake_generator is not None:
             cmake_args += ["-G", cmake_generator]
-
             if cmake_generator == "Visual Studio 16 2019":
                 # The VS2019 generator now uses the -A option to select the toolchain's architecture
                 cmake_args += ["-Ax64"]
+
+        # Build the pylibvw target
+        build_args += ["--target", "pylibvw"]
 
         os.chdir(str(self.build_temp))
         self.spawn(["cmake"] + cmake_args + [str(here)])
@@ -230,4 +256,10 @@ setup(
         "sdist": Sdist,
         "install_lib": InstallLib,
     },
+    install_requires=[
+        "numpy",
+        "scipy",
+        "scikit-learn",
+        "pandas",
+    ],
 )

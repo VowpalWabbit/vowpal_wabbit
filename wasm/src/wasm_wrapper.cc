@@ -1,5 +1,6 @@
 #include "vw/common/text_utils.h"
 #include "vw/config/options.h"
+#include "vw/config/options_cli.h"
 #include "vw/core/example.h"
 #include "vw/core/learner.h"
 #include "vw/core/parse_example.h"
@@ -51,7 +52,7 @@ struct vw_model;
 
 struct example_ptr
 {
-  static std::shared_ptr<example_ptr> wrap_pooled_example(example* ex, const std::shared_ptr<vw>& vw_ptr)
+  static std::shared_ptr<example_ptr> wrap_pooled_example(VW::example* ex, const std::shared_ptr<VW::workspace>& vw_ptr)
   {
     assert(VW::is_ring_example(*vw_ptr, ex));
     return std::make_shared<example_ptr>(ex, vw_ptr);
@@ -60,16 +61,19 @@ struct example_ptr
 
   std::string to_string() const { return "Example"; }
 
-  example* inner_ptr() { return _example; }
-  const example* inner_ptr() const { return _example; }
+  VW::example* inner_ptr() { return _example; }
+  const VW::example* inner_ptr() const { return _example; }
 
-  example* release()
+  VW::example* release()
   {
     _released = true;
     return _example;
   }
 
-  example_ptr(example* ex, const std::shared_ptr<vw>& vw_ptr) : _example(ex), weak_vw_ptr(vw_ptr), _released(false) {}
+  example_ptr(VW::example* ex, const std::shared_ptr<VW::workspace>& vw_ptr)
+      : _example(ex), weak_vw_ptr(vw_ptr), _released(false)
+  {
+  }
   ~example_ptr()
   {
     if (!_released)
@@ -84,8 +88,8 @@ struct example_ptr
   example_ptr& operator=(example_ptr&& other) noexcept = delete;
 
 private:
-  example* _example;
-  std::weak_ptr<vw> weak_vw_ptr;
+  VW::example* _example;
+  std::weak_ptr<VW::workspace> weak_vw_ptr;
   bool _released;
 };
 
@@ -110,7 +114,7 @@ emscripten::val to_js_type(const VW::decision_scores_t& decision_scores_array)
   return array;
 }
 
-emscripten::val prediction_to_val(const polyprediction& pred, prediction_type_t pred_type)
+emscripten::val prediction_to_val(const VW::polyprediction& pred, VW::prediction_type_t pred_type)
 {
   switch (pred_type)
   {
@@ -160,7 +164,7 @@ struct vw_model_basic
   vw_model_basic(const std::string& args_)
   {
     args = "--quiet --no_stdin " + args_;
-    vw_ptr.reset(VW::initialize(args));
+    vw_ptr = VW::initialize(VW::make_unique<VW::config::options_cli>(VW::split_command_line(args)));
     validate_options(*vw_ptr->options);
   }
 
@@ -168,9 +172,9 @@ struct vw_model_basic
   {
     args = "--quiet --no_stdin " + args_;
     char* bytes = (char*)bytes_;
-    io_buf io;
-    io.add_file(VW::io::create_buffer_view(bytes, size));
-    vw_ptr.reset(VW::initialize(args, &io));
+    auto model_reader = VW::io::create_buffer_view(bytes, size);
+    vw_ptr =
+        VW::initialize(VW::make_unique<VW::config::options_cli>(VW::split_command_line(args)), std::move(model_reader));
     validate_options(*vw_ptr->options);
   }
 
@@ -179,9 +183,9 @@ struct vw_model_basic
   void load_model_from_buffer(size_t _bytes, int size)
   {
     char* bytes = (char*)_bytes;
-    io_buf io;
-    io.add_file(VW::io::create_buffer_view(bytes, size));
-    vw_ptr.reset(VW::initialize(args, &io));
+    auto model_reader = VW::io::create_buffer_view(bytes, size);
+    vw_ptr =
+        VW::initialize(VW::make_unique<VW::config::options_cli>(VW::split_command_line(args)), std::move(model_reader));
     validate_options(*vw_ptr->options);
   }
 
@@ -191,6 +195,7 @@ struct vw_model_basic
     auto buffer = std::make_shared<std::vector<char>>();
     io_temp.add_file(VW::io::create_vector_writer(buffer));
     VW::details::dump_regressor(*vw_ptr, io_temp, false);
+    io_temp.flush();
     auto vec = *buffer.get();
     buffer.reset();
     return vec;
@@ -199,7 +204,7 @@ struct vw_model_basic
   float sum_loss() const { return vw_ptr->sd->sum_loss; }
   float weighted_labeled_examples() const { return vw_ptr->sd->weighted_labeled_examples; }
 
-  prediction_type_t get_prediction_type() const { return vw_ptr->l->get_output_prediction_type(); }
+  VW::prediction_type_t get_prediction_type() const { return vw_ptr->l->get_output_prediction_type(); }
 
   std::vector<std::shared_ptr<example_ptr>> create_example_from_dense_features(
       const emscripten::val& features, const std::string& label)
@@ -243,7 +248,7 @@ struct vw_model_basic
     return {example_ptr::wrap_pooled_example(ex, this->vw_ptr)};
   }
 
-  std::shared_ptr<vw> vw_ptr;
+  std::shared_ptr<VW::workspace> vw_ptr;
   std::string args;
 };
 
@@ -258,7 +263,7 @@ struct vw_model : MixIn
   {
     std::vector<std::shared_ptr<example_ptr>> example_collection;
     VW::string_view trimmed_ex_str = VW::trim_whitespace(VW::string_view(ex_str));
-    std::vector<example*> examples;
+    std::vector<VW::example*> examples;
 
     this->vw_ptr->parser_runtime.example_parser->text_reader(this->vw_ptr.get(), trimmed_ex_str, examples);
 
@@ -285,7 +290,7 @@ struct vw_model : MixIn
     }
     else
     {
-      std::vector<example*> raw_examples;
+      std::vector<VW::example*> raw_examples;
       std::vector<bool> prev_test_only_value;
       raw_examples.reserve(example_list.size());
       for (auto& ex : example_list)
@@ -309,7 +314,7 @@ struct vw_model : MixIn
     }
     else
     {
-      std::vector<example*> raw_examples;
+      std::vector<VW::example*> raw_examples;
       raw_examples.reserve(example_list.size());
       for (auto& ex : example_list) { raw_examples.push_back(ex->inner_ptr()); }
       this->vw_ptr->learn(raw_examples);
@@ -326,7 +331,7 @@ struct vw_model : MixIn
     }
     else
     {
-      std::vector<example*> raw_examples;
+      std::vector<VW::example*> raw_examples;
       raw_examples.reserve(example_list.size());
       for (auto& ex : example_list) { raw_examples.push_back(ex->inner_ptr()); }
       this->vw_ptr->finish_example(raw_examples);
@@ -471,21 +476,21 @@ struct cb_vw_model : MixIn
   }
 
 private:
-  std::vector<example*> parse(const emscripten::val& example_input)
+  std::vector<VW::example*> parse(const emscripten::val& example_input)
   {
     std::string context;
     if (example_input.hasOwnProperty("text_context")) { context = example_input["text_context"].as<std::string>(); }
     // TODO else if json_context else if embeddings vector of some kind, else throw
 
     VW::string_view trimmed_ex_str = VW::trim_whitespace(VW::string_view(context));
-    std::vector<example*> examples;
+    std::vector<VW::example*> examples;
 
     this->vw_ptr->parser_runtime.example_parser->text_reader(this->vw_ptr.get(), trimmed_ex_str, examples);
     assert(!examples.empty());
     return examples;
   }
 
-  void finish_example(std::vector<example*>& example_list)
+  void finish_example(std::vector<VW::example*>& example_list)
   {
     assert(!example_list.empty());
     this->vw_ptr->finish_example(example_list);
@@ -505,28 +510,28 @@ EMSCRIPTEN_BINDINGS(vwwasm)
 {
   emscripten::function("getExceptionMessage", &get_exception_message);
 
-  emscripten::value_object<ACTION_SCORE::action_score>("ActionScore")
-      .field("action", &ACTION_SCORE::action_score::action)
-      .field("score", &ACTION_SCORE::action_score::score);
+  emscripten::value_object<VW::action_score>("ActionScore")
+      .field("action", &VW::action_score::action)
+      .field("score", &VW::action_score::score);
 
   emscripten::class_<example_ptr>("Example")
       .function("clone", &example_ptr::clone)
       .function("toString", &example_ptr::to_string)
       .smart_ptr<std::shared_ptr<example_ptr>>("example_ptr");
 
-  emscripten::enum_<prediction_type_t>("PredictionType")
-      .value("scalar", prediction_type_t::scalar)
-      .value("scalars", prediction_type_t::scalars)
-      .value("action_scores", prediction_type_t::action_scores)
-      .value("pdf", prediction_type_t::pdf)
-      .value("action_probs", prediction_type_t::action_probs)
-      .value("multiclass", prediction_type_t::multiclass)
-      .value("multilabels", prediction_type_t::multilabels)
-      .value("prob", prediction_type_t::prob)
-      .value("multiclassprobs", prediction_type_t::multiclassprobs)
-      .value("decision_probs", prediction_type_t::decision_probs)
-      .value("actionPDFValue", prediction_type_t::action_pdf_value)
-      .value("activeMulticlass", prediction_type_t::active_multiclass);
+  emscripten::enum_<VW::prediction_type_t>("PredictionType")
+      .value("scalar", VW::prediction_type_t::SCALAR)
+      .value("scalars", VW::prediction_type_t::SCALARS)
+      .value("action_scores", VW::prediction_type_t::ACTION_SCORES)
+      .value("pdf", VW::prediction_type_t::PDF)
+      .value("action_probs", VW::prediction_type_t::ACTION_PROBS)
+      .value("multiclass", VW::prediction_type_t::MULTICLASS)
+      .value("multilabels", VW::prediction_type_t::MULTILABELS)
+      .value("prob", VW::prediction_type_t::PROB)
+      .value("multiclassprobs", VW::prediction_type_t::MULTICLASS_PROBS)
+      .value("decision_probs", VW::prediction_type_t::DECISION_PROBS)
+      .value("actionPDFValue", VW::prediction_type_t::ACTION_PDF_VALUE)
+      .value("activeMulticlass", VW::prediction_type_t::ACTIVE_MULTICLASS);
 
   emscripten::class_<vw_model_basic>("Basic")
       .constructor<std::string>()

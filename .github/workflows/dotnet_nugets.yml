@@ -23,11 +23,11 @@ jobs:
         config:
           - { os: "windows-latest", runtime_id: "win-x64" }
           - { os: "ubuntu-latest", runtime_id: "linux-x64" }
-          - { os: "macos-13", runtime_id: "osx-x64" }
+          - { os: "macos-15-intel", runtime_id: "osx-x64" }
     runs-on: ${{matrix.config.os}}
     steps:
       # Setup for build
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
         with:
           submodules: 'recursive'
       - name: Setup MSVC Developer Command Prompt
@@ -35,8 +35,29 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
       - name: Install Ninja
         uses: seanmiddleditch/gha-setup-ninja@master
+      - name: Install dotnet SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '8.0.x'
       - name: Install dotnet t4
         run: dotnet tool install --global dotnet-t4
+      - name: Install Mono (for nuget.exe on non-Windows)
+        if: ${{ !startsWith(matrix.config.os, 'windows') }}
+        run: |
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            sudo apt-get update || true
+            sudo apt-get install -y mono-complete
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            brew install mono
+          fi
+      - name: Setup Nuget
+        uses: nuget/setup-nuget@v2
+
+      # Apply zlib patch for macOS
+      - name: Apply zlib fdopen patch
+        if: ${{ startsWith(matrix.config.os, 'macos') }}
+        shell: bash
+        run: patch ext_libs/zlib/zutil.h ext_libs/zlib_fdopen_macos.patch
 
       # Get version number
       - name: Update git tags
@@ -70,6 +91,7 @@ jobs:
           -DVW_BUILD_VW_C_WRAPPER=Off
           -DBUILD_TESTING=Off
           -DBUILD_SHARED_LIBS=Off
+          -DCMAKE_POLICY_VERSION_MINIMUM=3.5
       - name: Build .NET Core
         run: cmake --build build --config Release
       - name: Install .NET Core
@@ -96,6 +118,7 @@ jobs:
           -DVW_BUILD_VW_C_WRAPPER=Off
           -DBUILD_TESTING=Off
           -DBUILD_SHARED_LIBS=Off
+          -DCMAKE_POLICY_VERSION_MINIMUM=3.5
       - name: Build .NET Framework
         if: ${{ startsWith(matrix.config.os, 'windows') }}
         run: cmake --build build --config Release
@@ -115,7 +138,7 @@ jobs:
           echo "NugetFileName=$NugetFileName" >> $GITHUB_OUTPUT
       - name: Upload Combined
         if: ${{ startsWith(matrix.config.os, 'windows') }}
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: VowpalWabbit.${{steps.get_version.outputs.version}}.nupkg
           path: nuget_staging/${{ steps.generate-nuget.outputs.NugetFileName }}
@@ -130,7 +153,7 @@ jobs:
           NugetFileName=(*runtime*.nupkg)
           echo "NugetFileName=${NugetFileName[0]}" >> $GITHUB_OUTPUT
       - name: Upload .NET Core Runtime
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: VowpalWabbit.runtime.${{matrix.config.runtime_id}}.${{steps.get_version.outputs.version}}.nupkg
           path: nuget_staging/${{ steps.generate-runtime-nuget.outputs.NugetFileName }}
@@ -143,14 +166,20 @@ jobs:
         config:
           - { os: "windows-latest", runtime_id: "win-x64" }
           - { os: "ubuntu-latest", runtime_id: "linux-x64" }
-          - { os: "macos-13", runtime_id: "osx-x64" }
+          - { os: "macos-15-intel", runtime_id: "osx-x64" }
     runs-on: ${{matrix.config.os}}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
         with:
           submodules: 'recursive'
       - if: ${{ startsWith(matrix.config.os, 'windows') }}
         uses: ilammy/msvc-dev-cmd@v1
+      - name: Install dotnet SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '8.0.x'
+      - name: Setup Nuget
+        uses: nuget/setup-nuget@v2
 
       # Get version number
       - name: Update git tags
@@ -167,19 +196,19 @@ jobs:
       # Download the previously built Nuget packages
       - name: Clear nuget cache
         run: dotnet nuget locals all --clear
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.win-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.linux-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.osx-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
@@ -206,10 +235,16 @@ jobs:
     needs: [build_nuget_dotnet]
     runs-on: "windows-latest"
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
         with:
           submodules: 'recursive'
       - uses: ilammy/msvc-dev-cmd@v1
+      - name: Install dotnet SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '8.0.x'
+      - name: Setup Nuget
+        uses: nuget/setup-nuget@v2
 
       # Get version number
       - name: Update git tags
@@ -226,19 +261,19 @@ jobs:
       # Download the previously built Nuget packages
       - name: Clear nuget cache
         run: dotnet nuget locals all --clear
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.win-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.linux-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.osx-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
@@ -269,10 +304,16 @@ jobs:
       deployments: write
     if: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
         with:
           submodules: 'recursive'
       - uses: ilammy/msvc-dev-cmd@v1
+      - name: Install dotnet SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '8.0.x'
+      - name: Setup Nuget
+        uses: nuget/setup-nuget@v2
       # Needed for generating benchmark plots
       - uses: r-lib/actions/setup-r@v2
 
@@ -291,19 +332,19 @@ jobs:
       # Download the previously built Nuget packages
       - name: Clear nuget cache
         run: dotnet nuget locals all --clear
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.win-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.linux-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.osx-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
@@ -341,7 +382,7 @@ jobs:
           echo "## .NET Benchmark Results" >> $GITHUB_STEP_SUMMARY
           cat BenchmarkRun-joined-*.md | sed 's/\*\*//g' >> $GITHUB_STEP_SUMMARY
       - name: Upload benchmark artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: benchmark_results
           path: test/benchmarks/dotnet/BenchmarkDotNet.Artifacts/results/

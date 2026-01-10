@@ -13,7 +13,15 @@ from scipy.sparse import csr_matrix
 from scipy.special import logit
 from sklearn.exceptions import NotFittedError
 from sklearn.base import BaseEstimator, RegressorMixin
-from sklearn.utils.extmath import log_logistic
+
+try:
+    from sklearn.utils.extmath import log_logistic
+except ImportError:
+    # log_logistic was deprecated in newer sklearn versions
+    def log_logistic(x):
+        return -np.logaddexp(0, -x)
+
+
 from sklearn.linear_model import LogisticRegression
 from sklearn.datasets import dump_svmlight_file
 from sklearn.utils import check_array, check_X_y, shuffle

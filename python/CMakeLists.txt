@@ -1,3 +1,11 @@
+# On macOS, accept that NOUNDEFS may be unavoidable with modern Xcode
+# The real solution: make Python linkage use @rpath so it finds the right Python
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  # Link weakly against Python framework using rpath
+  set(CMAKE_MODULE_LINKER_FLAGS "-Wl,-undefined,dynamic_lookup" CACHE STRING "Linker flags for MODULE libraries" FORCE)
+  message(STATUS "Set CMAKE_MODULE_LINKER_FLAGS to: ${CMAKE_MODULE_LINKER_FLAGS}")
+endif()
+
 if(NOT DEFINED PY_VERSION)
   set(PY_VERSION 2.7)
   message(WARNING "No PY_VERSION specified, Python ${PY_VERSION} will be used for VowpalWabbit Python bindings")
@@ -14,16 +22,19 @@ set(Boost_USE_STATIC_RUNTIME OFF)
 find_package(Boost REQUIRED)
 
 # In boost version 1.67 Python version suffixes were instroduced for major and minor versions.
-if(Boost_MINOR_VERSION GREATER 66)
-  set(BOOST_PY_VERSION_SUFFIX ${PY_VERSION_STRIPPED})
-else(Boost_MINOR_VERSION GREATER 66)
-  string(SUBSTRING ${PY_VERSION_STRIPPED} 0 1 PY_VERSION_STRIPPED_FIRST_CHAR)
-  if(PY_VERSION_STRIPPED_FIRST_CHAR STREQUAL "2")
-    set(BOOST_PY_VERSION_SUFFIX "")
-  elseif(PY_VERSION_STRIPPED_FIRST_CHAR STREQUAL "3")
-    set(BOOST_PY_VERSION_SUFFIX "3")
-  endif(PY_VERSION_STRIPPED_FIRST_CHAR STREQUAL "2")
-endif(Boost_MINOR_VERSION GREATER 66)
+# Allow BOOST_PY_VERSION_SUFFIX to be overridden (e.g., for generic python3 on manylinux/macOS)
+if(NOT DEFINED BOOST_PY_VERSION_SUFFIX)
+  if(Boost_MINOR_VERSION GREATER 66)
+    set(BOOST_PY_VERSION_SUFFIX ${PY_VERSION_STRIPPED})
+  else(Boost_MINOR_VERSION GREATER 66)
+    string(SUBSTRING ${PY_VERSION_STRIPPED} 0 1 PY_VERSION_STRIPPED_FIRST_CHAR)
+    if(PY_VERSION_STRIPPED_FIRST_CHAR STREQUAL "2")
+      set(BOOST_PY_VERSION_SUFFIX "")
+    elseif(PY_VERSION_STRIPPED_FIRST_CHAR STREQUAL "3")
+      set(BOOST_PY_VERSION_SUFFIX "3")
+    endif(PY_VERSION_STRIPPED_FIRST_CHAR STREQUAL "2")
+  endif(Boost_MINOR_VERSION GREATER 66)
+endif()
 
 find_package(Boost REQUIRED COMPONENTS python${BOOST_PY_VERSION_SUFFIX})
 
@@ -48,11 +59,14 @@ if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin" AND NOT WIN32)
   set(EXPORT_DYNAMIC -Wl,--export-dynamic)
 endif()
 
+
 # Note: Python bindings previously built under c++0x
 
 # create the lib
-add_library(pylibvw SHARED pylibvw.cc)
+add_library(pylibvw MODULE pylibvw.cc)
 set_target_properties(pylibvw PROPERTIES PREFIX "")
+
+
 
 # The python setup.py script should communicate what suffix it wants.
 if(VW_PYTHON_SHARED_LIB_SUFFIX)
@@ -70,16 +84,57 @@ endif()
 
 if (NOT WIN32)
   # Windows links dynamically
-  target_compile_definitions(pylibvw PUBLIC BOOST_PYTHON_STATIC_LIB)
+  # On macOS, use Boost.Python as SHARED to avoid symbol resolution issues with -undefined dynamic_lookup
+  # When Boost.Python is static, its Python API references get incorporated into pylibvw.so and can't resolve
+  if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    target_compile_definitions(pylibvw PUBLIC BOOST_PYTHON_STATIC_LIB)
+  else()
+    message(STATUS "Using Boost.Python as SHARED on macOS for -undefined dynamic_lookup compatibility")
+  endif()
 endif()
 
 if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
-  target_link_libraries(pylibvw PUBLIC ${PYTHON_LIBRARIES} Boost::python${BOOST_PY_VERSION_SUFFIX})
+  target_link_libraries(pylibvw PRIVATE ${PYTHON_LIBRARIES} Boost::python${BOOST_PY_VERSION_SUFFIX})
   target_include_directories(pylibvw PRIVATE ${PYTHON_INCLUDE_PATH})
 elseif(${CMAKE_VERSION} VERSION_LESS "3.15.7")
-  target_link_libraries(pylibvw PUBLIC Python::Python Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
+  target_link_libraries(pylibvw PRIVATE Python::Python Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
 else()
-  target_link_libraries(pylibvw PUBLIC Python::Module Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
+  # On macOS, Python::Module provides headers only (Python_LIBRARIES is empty)
+  # Don't link Python - use -undefined dynamic_lookup instead
+  if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    target_include_directories(pylibvw PRIVATE ${Python_INCLUDE_DIRS})
+    target_link_libraries(pylibvw PRIVATE Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
+  else()
+    target_link_libraries(pylibvw PRIVATE Python::Module Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
+  endif()
 endif()
-target_link_libraries(pylibvw PUBLIC vw_core)
+# MODULE libraries are final consumers and should use PRIVATE linkage
+target_link_libraries(pylibvw PRIVATE vw_core)
 target_compile_options(pylibvw PRIVATE ${EXPORT_DYNAMIC})
+
+# On macOS, use target_link_options to set -undefined dynamic_lookup
+# Use the raw linker flag without LINKER: prefix since it's not working
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  target_link_options(pylibvw PRIVATE "-Wl,-undefined,dynamic_lookup")
+  message(STATUS "Set pylibvw link options: -Wl,-undefined,dynamic_lookup")
+endif()
+
+# On macOS, add diagnostic to verify linkage
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  # Diagnose Python linking at configure time
+  message(STATUS "Python_FOUND: ${Python_FOUND}")
+  message(STATUS "Python_VERSION: ${Python_VERSION}")
+  message(STATUS "Python_INCLUDE_DIRS: ${Python_INCLUDE_DIRS}")
+  message(STATUS "Python_LIBRARIES: ${Python_LIBRARIES}")
+  message(STATUS "Python_LIBRARY_DIRS: ${Python_LIBRARY_DIRS}")
+  message(STATUS "Python_RUNTIME_LIBRARY_DIRS: ${Python_RUNTIME_LIBRARY_DIRS}")
+
+  # Post-build diagnostics
+  add_custom_command(TARGET pylibvw POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E echo "=== POST-BUILD: Inspecting pylibvw ==="
+    COMMAND ${CMAKE_COMMAND} -E echo "Mach-O header:"
+    COMMAND otool -hv $<TARGET_FILE:pylibvw>
+    COMMAND ${CMAKE_COMMAND} -E echo "Linked libraries:"
+    COMMAND otool -L $<TARGET_FILE:pylibvw>
+  )
+endif()

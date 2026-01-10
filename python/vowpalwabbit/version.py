@@ -1,5 +1,8 @@
 # Provides the present version of VowpalWabbit
 
-import pkg_resources
+try:
+    from importlib import metadata as importlib_metadata
+except ImportError:
+    import importlib_metadata
 
-__version__ = pkg_resources.require("vowpalwabbit")[0].version
+__version__ = importlib_metadata.version("vowpalwabbit")
