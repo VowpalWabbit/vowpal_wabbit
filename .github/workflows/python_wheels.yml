@@ -393,7 +393,7 @@ jobs:
           python setup.py `
             --vcpkg-root="${{ env.VCPKG_ROOT }}" `
             --cmake-generator="Visual Studio 16 2019" `
-            --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DCMAKE_BUILD_TYPE=Release;-DBoost_NO_BOOST_CMAKE=ON" `
+            --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DCMAKE_BUILD_TYPE=Release;-DBoost_NO_BOOST_CMAKE=ON;-DCMAKE_POLICY_DEFAULT_CMP0167=OLD" `
             bdist_wheel --dist-dir="${{github.workspace}}\\wheel_output\\"
       - name: Upload built wheel
         uses: actions/upload-artifact@v4
