@@ -95,6 +95,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: vw-dump-options
+          path: vw-dump-options
       - name: Change permissions to rvw-dump-options
         shell: bash
         run: chmod +x ./vw-dump-options/vw-dump-options
