@@ -33,15 +33,18 @@ jobs:
       - uses: actions/checkout@v3
         with:
           submodules: recursive
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.config.version }}
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake ninja-build libboost-dev libboost-python-dev python${{ matrix.config.version }}-dev zlib1g-dev
+          sudo apt-get install -y cmake ninja-build libboost-dev libboost-python-dev python3-dev zlib1g-dev
       - name: Build wheel
         shell: bash
         run: |
-          python${{ matrix.config.version }} -m pip install wheel auditwheel
-          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -DBoost_NO_BOOST_CMAKE=ON" BOOST_PY_VERSION_SUFFIX="${{ matrix.config.boost_suffix }}" python${{ matrix.config.version }} -m pip wheel . -w wheel_output/ --verbose
+          python3 -m pip install wheel setuptools auditwheel
+          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -DBoost_NO_BOOST_CMAKE=ON" python3 -m pip wheel . -w wheel_output/ --verbose
           auditwheel repair wheel_output/*whl -w audit_output/
       - name: Upload built wheel
         uses: actions/upload-artifact@v4

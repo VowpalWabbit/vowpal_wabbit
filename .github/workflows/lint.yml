@@ -20,7 +20,7 @@ jobs:
     strategy:
       matrix:
         config:
-        - { version: "3.9" }
+        - { version: "3.10" }
     steps:
       - uses: actions/checkout@v3
         with:
@@ -31,12 +31,12 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake ninja-build libboost-test-dev libboost-python-dev zlib1g-dev
+          sudo apt-get install -y cmake ninja-build libboost-test-dev libboost-python-dev python3-dev zlib1g-dev
       - name: Build wheel
         shell: bash
         run: |
-          pip install wheel auditwheel
-          pip wheel . -w wheel_output/ --verbose
+          python3 -m pip install wheel setuptools auditwheel
+          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -DBoost_NO_BOOST_CMAKE=ON" python3 -m pip wheel . -w wheel_output/ --verbose
           auditwheel repair wheel_output/*whl -w audit_output/
       - name: Upload built wheel
         uses: actions/upload-artifact@v4
@@ -52,7 +52,7 @@ jobs:
     strategy:
       matrix:
         config:
-        - { version: "3.9" }
+        - { version: "3.10" }
     steps:
       - uses: actions/checkout@v3
         with:
@@ -91,7 +91,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.9
+          python-version: "3.10"
       - run: pip install black black[jupyter]
       - shell: bash
         run: |

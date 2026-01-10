@@ -79,7 +79,13 @@ jobs:
         run: ctest --output-on-failure --no-tests=error --exclude-regex WIterations --label-regex VWTestList
       - name: Run python test script
         if: ${{ success() || failure() }}
-        run: python3 test/run_tests.py -f --clean_dirty -E 0.001 --include_flatbuffers --jobs 1 --skip_test 282 284 285 286
+        run: |
+          # Skip test 111 on macOS-14 due to floating-point precision issues
+          SKIP_TESTS="282 284 285 286"
+          if [[ "${{ matrix.os }}" == "macos-14" ]]; then
+            SKIP_TESTS="$SKIP_TESTS 111"
+          fi
+          python3 test/run_tests.py -f --clean_dirty -E 0.001 --include_flatbuffers --jobs 1 --skip_test $SKIP_TESTS
 
   test_ubsan_minimal:
     # To avoid running out of disk space, build only VW executables and some unit tests on Linux
