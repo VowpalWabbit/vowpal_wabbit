@@ -390,11 +390,11 @@ jobs:
           echo "CMAKE_GENERATOR: $env:CMAKE_GENERATOR"
           echo "VCPKG_ROOT: ${{ env.VCPKG_ROOT }}"
 
-          python setup.py bdist_wheel `
+          python setup.py `
             --vcpkg-root="${{ env.VCPKG_ROOT }}" `
             --cmake-generator="Visual Studio 16 2019" `
             --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DCMAKE_BUILD_TYPE=Release" `
-            --dist-dir="${{github.workspace}}\\wheel_output\\"
+            bdist_wheel --dist-dir="${{github.workspace}}\\wheel_output\\"
       - name: Upload built wheel
         uses: actions/upload-artifact@v4
         with:
