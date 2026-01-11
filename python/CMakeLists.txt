@@ -28,7 +28,21 @@ if(NOT DEFINED BOOST_PY_VERSION_SUFFIX)
   endif(Boost_MINOR_VERSION GREATER 66)
 endif()
 
-find_package(Boost REQUIRED COMPONENTS python${BOOST_PY_VERSION_SUFFIX})
+# If Boost_PYTHON<suffix>_LIBRARY is explicitly set (e.g., by conda build),
+# skip the component find and manually create the target
+if(DEFINED Boost_PYTHON${BOOST_PY_VERSION_SUFFIX}_LIBRARY)
+  message(STATUS "Using explicitly provided Boost Python library: ${Boost_PYTHON${BOOST_PY_VERSION_SUFFIX}_LIBRARY}")
+  # Create imported target manually
+  if(NOT TARGET Boost::python${BOOST_PY_VERSION_SUFFIX})
+    add_library(Boost::python${BOOST_PY_VERSION_SUFFIX} UNKNOWN IMPORTED)
+    set_target_properties(Boost::python${BOOST_PY_VERSION_SUFFIX} PROPERTIES
+      IMPORTED_LOCATION "${Boost_PYTHON${BOOST_PY_VERSION_SUFFIX}_LIBRARY}"
+      INTERFACE_INCLUDE_DIRECTORIES "${Boost_INCLUDE_DIR}"
+    )
+  endif()
+else()
+  find_package(Boost REQUIRED COMPONENTS python${BOOST_PY_VERSION_SUFFIX})
+endif()
 
 # Using find_package(Python...) allows us to only require the Python headers to be found.
 if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
