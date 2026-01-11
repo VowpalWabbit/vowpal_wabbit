@@ -309,22 +309,22 @@ jobs:
     strategy:
       matrix:
         config:
-        - { version: "3.10", vcpkg_manifest: "python\\vcpkg_python310.json", overlay_ports: "" }
+        - { version: "3.10" }
       fail-fast: false
     steps:
-      - uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.config.version }}
       - uses: actions/checkout@v3
         with:
           submodules: recursive
-          path: ${{github.workspace}}\vowpal_wabbit
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-update-conda: true
+          python-version: ${{ matrix.config.version }}
+          miniconda-version: "latest"
       - uses: actions/checkout@v3
         with:
           path: ${{ env.VCPKG_ROOT }}
           repository: 'microsoft/vcpkg'
           ref: ${{ env.VCPKG_REF }}
-          # We need a deep clone so that we can go back in history for version selection.
           fetch-depth: '0'
       - name: Restore vcpkg and build artifacts
         uses: actions/cache@v3
@@ -332,105 +332,31 @@ jobs:
           path: |
             ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
           key: |
-            ${{ env.VCPKG_REF }}-${{ matrix.config.version }}-python-win-cache-invalidate-6
+            ${{ env.VCPKG_REF }}-${{ matrix.config.version }}-python-win-conda-cache-1
       - run: ${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.bat
+        shell: cmd
       - name: Build wheel
-        shell: powershell
+        shell: cmd /C call {0}
         run: |
-          if (![System.IO.Directory]::Exists("${{ env.VCPKG_DEFAULT_BINARY_CACHE }}"))
-          {
-              New-Item -ItemType Directory -Force -Path "${{ env.VCPKG_DEFAULT_BINARY_CACHE }}"
-          }
-          if (![System.IO.Directory]::Exists("${{github.workspace}}\\wheel_output"))
-          {
-              New-Item -ItemType Directory -Force -Path "${{github.workspace}}\\wheel_output"
-          }
-          ls ${{ github.workspace }}
-          ls ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
-          echo "=== Manually install vcpkg dependencies first ==="
+          call conda activate base
+          if not exist "${{ env.VCPKG_DEFAULT_BINARY_CACHE }}" mkdir "${{ env.VCPKG_DEFAULT_BINARY_CACHE }}"
+
+          echo === Install vcpkg dependencies (zlib, flatbuffers only) ===
           cd ${{ env.VCPKG_ROOT }}
-          .\vcpkg.exe install --triplet x64-windows zlib boost-python python3 flatbuffers
+          vcpkg.exe install --triplet x64-windows zlib flatbuffers
 
-          echo "=== List installed packages ==="
-          .\vcpkg.exe list
+          echo === Install conda dependencies (boost, boost-python matching Python ${{ matrix.config.version }}) ===
+          conda info
+          conda install -y python=${{ matrix.config.version }} wheel setuptools pip zlib boost py-boost flatbuffers
 
-          echo "`n=== Checking installed Boost.Python libraries ==="
-          echo "Boost libraries in lib directory:"
-          Get-ChildItem "${{ env.VCPKG_ROOT }}\installed\x64-windows\lib" -Filter "*boost*python*.lib" -ErrorAction SilentlyContinue | Select-Object Name
+          echo === Build wheel using conda boost + vcpkg zlib ===
+          cd ${{ github.workspace }}
+          set VCPKG_ROOT_NORM=${{ env.VCPKG_ROOT }}
+          set VCPKG_ROOT_NORM=%VCPKG_ROOT_NORM:\=/%
+          echo CONDA_PREFIX: %CONDA_PREFIX%
+          echo VCPKG_ROOT: %VCPKG_ROOT_NORM%
 
-          echo "`nBoost.Python CMake modules:"
-          Get-ChildItem "${{ env.VCPKG_ROOT }}\installed\x64-windows\share\boost" -Recurse -Filter "*python*.cmake" -ErrorAction SilentlyContinue | Select-Object Name
-
-          echo "=== Verify vcpkg installation directories ==="
-          echo "Checking: ${{ env.VCPKG_ROOT }}\\installed"
-          if (Test-Path "${{ env.VCPKG_ROOT }}\\installed") {
-              echo "installed/ directory exists"
-              Get-ChildItem "${{ env.VCPKG_ROOT }}\\installed" | Select-Object Name
-          } else {
-              echo "WARNING: installed/ directory does NOT exist"
-          }
-
-          echo "`nChecking: ${{ env.VCPKG_ROOT }}\\installed\\x64-windows"
-          if (Test-Path "${{ env.VCPKG_ROOT }}\\installed\\x64-windows") {
-              echo "x64-windows/ directory exists"
-              Get-ChildItem "${{ env.VCPKG_ROOT }}\\installed\\x64-windows" | Select-Object Name
-          } else {
-              echo "WARNING: x64-windows/ directory does NOT exist"
-          }
-
-          echo "`nLooking for zlib files:"
-          Get-ChildItem -Path "${{ env.VCPKG_ROOT }}\\installed" -Recurse -Filter "*zlib*" -ErrorAction SilentlyContinue | Select-Object FullName | Format-Table -AutoSize
-
-          echo "`nChecking for vcpkg_installed/ (manifest mode):"
-          if (Test-Path "${{github.workspace}}\\vowpal_wabbit\\vcpkg_installed") {
-              echo "WARNING: vcpkg_installed/ exists - manifest mode may be active"
-              Get-ChildItem "${{github.workspace}}\\vowpal_wabbit\\vcpkg_installed" -Recurse -Depth 2 | Select-Object FullName
-          } else {
-              echo "OK: vcpkg_installed/ does not exist (not in manifest mode)"
-          }
-
-          cd ${{github.workspace}}\\vowpal_wabbit
-          pip install wheel setuptools
-          $env:CMAKE_GENERATOR = "Visual Studio 16 2019"
-
-          echo "=== Building wheel with setup.py vcpkg support ==="
-          echo "CMAKE_GENERATOR: $env:CMAKE_GENERATOR"
-          echo "VCPKG_ROOT: ${{ env.VCPKG_ROOT }}"
-
-          $vcpkgRoot = "${{ env.VCPKG_ROOT }}" -replace '\\+', '/'
-          $vcpkgInstalled = "$vcpkgRoot/installed/x64-windows"
-          $boostRoot = $vcpkgInstalled
-          $boostIncludeDir = "$vcpkgInstalled/include"
-
-          echo "VCPKG_ROOT (normalized): $vcpkgRoot"
-          echo "vcpkg installed dir: $vcpkgInstalled"
-          echo "BOOST_ROOT: $boostRoot"
-          echo "Boost_INCLUDE_DIR: $boostIncludeDir"
-
-          echo "`n=== DETAILED BOOST DIAGNOSTICS ==="
-          echo "All boost library files:"
-          Get-ChildItem "${{ env.VCPKG_ROOT }}\installed\x64-windows\lib" -Filter "boost_*.lib" | ForEach-Object { $_.Name }
-
-          echo "`nAll boost DLL files:"
-          Get-ChildItem "${{ env.VCPKG_ROOT }}\installed\x64-windows\bin" -Filter "boost_*.dll" -ErrorAction SilentlyContinue | ForEach-Object { $_.Name }
-
-          echo "`nBoost cmake config directories:"
-          Get-ChildItem "${{ env.VCPKG_ROOT }}\installed\x64-windows\share" -Directory -Filter "boost*" | ForEach-Object { $_.Name }
-
-          echo "`nContents of share/boost-python (if exists):"
-          if (Test-Path "${{ env.VCPKG_ROOT }}\installed\x64-windows\share\boost-python") {
-            Get-ChildItem "${{ env.VCPKG_ROOT }}\installed\x64-windows\share\boost-python" | ForEach-Object { $_.Name }
-          } else {
-            echo "  (directory doesn't exist)"
-          }
-
-          echo "`n=== END DIAGNOSTICS ===`n"
-
-          python setup.py `
-            --vcpkg-root="${{ env.VCPKG_ROOT }}" `
-            --cmake-generator="Visual Studio 16 2019" `
-            --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DCMAKE_BUILD_TYPE=Release;-DBOOST_ROOT=$boostRoot;-DBoost_INCLUDE_DIR=$boostIncludeDir;-DBoost_NO_SYSTEM_PATHS=ON;-DBOOST_PY_VERSION_SUFFIX=310" `
-            bdist_wheel --dist-dir="${{github.workspace}}\\wheel_output\\"
+          python -m pip wheel . -w wheel_output/ --global-option --cmake-generator="Visual Studio 16 2019" --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DCMAKE_BUILD_TYPE=Release;-DCMAKE_PREFIX_PATH=%CONDA_PREFIX%;-DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT_NORM%/scripts/buildsystems/vcpkg.cmake;-DVW_ZLIB_SYS_DEP=Off" --verbose
       - name: Upload built wheel
         uses: actions/upload-artifact@v4
         with:
