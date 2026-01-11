@@ -349,7 +349,7 @@ jobs:
           ls ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
           echo "=== Manually install vcpkg dependencies first ==="
           cd ${{ env.VCPKG_ROOT }}
-          .\vcpkg.exe install --triplet x64-windows zlib boost-python boost-python3 python3 flatbuffers
+          .\vcpkg.exe install --triplet x64-windows zlib boost-python python3 flatbuffers
 
           echo "=== List installed packages ==="
           .\vcpkg.exe list
@@ -397,10 +397,13 @@ jobs:
           echo "CMAKE_GENERATOR: $env:CMAKE_GENERATOR"
           echo "VCPKG_ROOT: ${{ env.VCPKG_ROOT }}"
 
-          $vcpkgInstalled = "${{ env.VCPKG_ROOT }}\installed\x64-windows" -replace '\\', '/'
+          $vcpkgRoot = "${{ env.VCPKG_ROOT }}" -replace '\\', '/'
+          $vcpkgInstalled = "$vcpkgRoot/installed/x64-windows"
           $boostRoot = $vcpkgInstalled
           $boostIncludeDir = "$vcpkgInstalled/include"
 
+          echo "VCPKG_ROOT (normalized): $vcpkgRoot"
+          echo "vcpkg installed dir: $vcpkgInstalled"
           echo "BOOST_ROOT: $boostRoot"
           echo "Boost_INCLUDE_DIR: $boostIncludeDir"
 
