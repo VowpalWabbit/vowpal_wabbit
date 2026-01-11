@@ -170,6 +170,21 @@ class BuildPyLibVWBindingsModule(_build_ext):
             self.spawn(["cmake", "--build", "."] + build_args)
         os.chdir(str(here))
 
+        # On Windows, copy boost_python DLL to package directory so wheel is self-contained
+        if system == "Windows" and "CONDA_PREFIX" in os.environ:
+            import glob
+            import shutil
+            conda_bin = os.path.join(os.environ["CONDA_PREFIX"], "Library", "bin")
+            boost_dll_pattern = os.path.join(conda_bin, "boost_python*.dll")
+            boost_dlls = glob.glob(boost_dll_pattern)
+            if boost_dlls:
+                for dll in boost_dlls:
+                    dest = os.path.join(lib_output_dir, os.path.basename(dll))
+                    print(f"Copying {dll} to {dest}")
+                    shutil.copy2(dll, dest)
+            else:
+                print(f"Warning: No boost_python DLL found in {conda_bin}")
+
 
 class Clean(_clean):
     """Clean up after building python package directories"""
