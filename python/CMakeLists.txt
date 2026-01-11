@@ -39,6 +39,12 @@ if(DEFINED Boost_PYTHON${BOOST_PY_VERSION_SUFFIX}_LIBRARY)
       IMPORTED_LOCATION "${Boost_PYTHON${BOOST_PY_VERSION_SUFFIX}_LIBRARY}"
       INTERFACE_INCLUDE_DIRECTORIES "${Boost_INCLUDE_DIR}"
     )
+    # Link to Boost::boost to get the header includes
+    if(TARGET Boost::boost)
+      set_property(TARGET Boost::python${BOOST_PY_VERSION_SUFFIX} APPEND PROPERTY
+        INTERFACE_LINK_LIBRARIES Boost::boost
+      )
+    endif()
   endif()
 else()
   find_package(Boost REQUIRED COMPONENTS python${BOOST_PY_VERSION_SUFFIX})
