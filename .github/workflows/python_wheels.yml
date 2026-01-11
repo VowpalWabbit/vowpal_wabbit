@@ -336,27 +336,30 @@ jobs:
       - run: ${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.bat
         shell: cmd
       - name: Build wheel
-        shell: cmd /C call {0}
+        shell: bash -l {0}
         run: |
-          call conda activate base
-          if not exist "${{ env.VCPKG_DEFAULT_BINARY_CACHE }}" mkdir "${{ env.VCPKG_DEFAULT_BINARY_CACHE }}"
+          if [ ! -d "${{ env.VCPKG_DEFAULT_BINARY_CACHE }}" ]; then
+            mkdir -p "${{ env.VCPKG_DEFAULT_BINARY_CACHE }}"
+          fi
 
-          echo === Install vcpkg dependencies (zlib, flatbuffers only) ===
-          cd ${{ env.VCPKG_ROOT }}
-          vcpkg.exe install --triplet x64-windows zlib flatbuffers
+          echo "=== Skip vcpkg (using conda for all deps) ==="
 
-          echo === Install conda dependencies (boost, boost-python matching Python ${{ matrix.config.version }}) ===
+          echo "=== Install conda dependencies matching Python ${{ matrix.config.version }} ==="
           conda info
-          conda install -y python=${{ matrix.config.version }} wheel setuptools pip zlib boost py-boost flatbuffers
+          conda install -y python=${{ matrix.config.version }} wheel setuptools pip boost py-boost zlib flatbuffers
 
-          echo === Build wheel using conda boost + vcpkg zlib ===
+          echo "=== Verify Python version ==="
+          python --version
+          which python
+
+          echo "=== Build wheel using conda dependencies ==="
           cd ${{ github.workspace }}
-          set VCPKG_ROOT_NORM=${{ env.VCPKG_ROOT }}
-          set VCPKG_ROOT_NORM=%VCPKG_ROOT_NORM:\=/%
-          echo CONDA_PREFIX: %CONDA_PREFIX%
-          echo VCPKG_ROOT: %VCPKG_ROOT_NORM%
+          echo "CONDA_PREFIX: $CONDA_PREFIX"
 
-          python -m pip wheel . -w wheel_output/ --global-option --cmake-generator="Visual Studio 16 2019" --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DCMAKE_BUILD_TYPE=Release;-DCMAKE_PREFIX_PATH=%CONDA_PREFIX%;-DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT_NORM%/scripts/buildsystems/vcpkg.cmake;-DVW_ZLIB_SYS_DEP=Off" --verbose
+          python -m pip wheel . -w wheel_output/ \
+            --global-option --cmake-generator="Visual Studio 16 2019" \
+            --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DCMAKE_BUILD_TYPE=Release;-DCMAKE_PREFIX_PATH=$CONDA_PREFIX" \
+            --verbose
       - name: Upload built wheel
         uses: actions/upload-artifact@v4
         with:
