@@ -390,26 +390,17 @@ jobs:
           echo "CMAKE_GENERATOR: $env:CMAKE_GENERATOR"
           echo "VCPKG_ROOT: ${{ env.VCPKG_ROOT }}"
 
-          $boostDir = "${{ env.VCPKG_ROOT }}\installed\x64-windows\share\boost" -replace '\\', '/'
-          echo "Boost_DIR: $boostDir"
+          $vcpkgInstalled = "${{ env.VCPKG_ROOT }}\installed\x64-windows" -replace '\\', '/'
+          $boostRoot = $vcpkgInstalled
+          $boostIncludeDir = "$vcpkgInstalled/include"
 
-          echo "`n=== Checking Boost installation ==="
-          echo "Does Boost_DIR exist?"
-          Test-Path "${{ env.VCPKG_ROOT }}\installed\x64-windows\share\boost"
-
-          echo "`nContents of Boost share directory:"
-          Get-ChildItem "${{ env.VCPKG_ROOT }}\installed\x64-windows\share\boost" -ErrorAction SilentlyContinue | Select-Object Name
-
-          echo "`nLooking for BoostConfig.cmake or boost-config.cmake:"
-          Get-ChildItem "${{ env.VCPKG_ROOT }}\installed\x64-windows\share" -Recurse -Filter "*oost*onfig.cmake" -ErrorAction SilentlyContinue | Select-Object FullName
-
-          echo "`nChecking include directory:"
-          Get-ChildItem "${{ env.VCPKG_ROOT }}\installed\x64-windows\include" -Directory -Filter "*boost*" -ErrorAction SilentlyContinue | Select-Object Name
+          echo "BOOST_ROOT: $boostRoot"
+          echo "Boost_INCLUDE_DIR: $boostIncludeDir"
 
           python setup.py `
             --vcpkg-root="${{ env.VCPKG_ROOT }}" `
             --cmake-generator="Visual Studio 16 2019" `
-            --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DCMAKE_BUILD_TYPE=Release;-DBoost_DIR=$boostDir;-DBoost_DEBUG=ON" `
+            --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DCMAKE_BUILD_TYPE=Release;-DBOOST_ROOT=$boostRoot;-DBoost_INCLUDE_DIR=$boostIncludeDir;-DBoost_NO_SYSTEM_PATHS=ON" `
             bdist_wheel --dist-dir="${{github.workspace}}\\wheel_output\\"
       - name: Upload built wheel
         uses: actions/upload-artifact@v4
