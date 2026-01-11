@@ -353,6 +353,9 @@ jobs:
           python --version
           which python
 
+          echo -e "\n=== Verify installed conda packages ==="
+          conda list | grep -E "(boost|python)" || echo "No boost/python packages found"
+
           echo "=== Build wheel using conda dependencies ==="
           echo "CONDA_PREFIX: $CONDA_PREFIX"
           echo "Working directory: $(pwd)"
@@ -388,6 +391,16 @@ jobs:
 
           echo -e "\nChecking include directory structure:"
           ls -la "$CONDA_PREFIX/Library/include" 2>/dev/null | head -10 || echo "No include directory"
+
+          echo -e "\nChecking what's INSIDE the boost directory:"
+          if [ -d "$CONDA_PREFIX/Library/include/boost" ]; then
+            echo "boost directory exists, listing contents:"
+            ls -la "$CONDA_PREFIX/Library/include/boost" | head -30
+            echo -e "\nSearching for python* files in boost:"
+            find "$CONDA_PREFIX/Library/include/boost" -name "*python*" 2>/dev/null | head -20 || echo "No python-related files found"
+          else
+            echo "boost directory does NOT exist"
+          fi
 
           echo -e "\n=== Using conda for ALL dependencies (boost + zlib) ==="
           echo "Converting CONDA_PREFIX to CMake-friendly format:"
