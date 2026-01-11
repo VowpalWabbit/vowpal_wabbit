@@ -349,10 +349,17 @@ jobs:
           ls ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
           echo "=== Manually install vcpkg dependencies first ==="
           cd ${{ env.VCPKG_ROOT }}
-          .\vcpkg.exe install --triplet x64-windows zlib boost-python python3 flatbuffers
+          .\vcpkg.exe install --triplet x64-windows zlib boost-python boost-python3 python3 flatbuffers
 
           echo "=== List installed packages ==="
           .\vcpkg.exe list
+
+          echo "`n=== Checking installed Boost.Python libraries ==="
+          echo "Boost libraries in lib directory:"
+          Get-ChildItem "${{ env.VCPKG_ROOT }}\installed\x64-windows\lib" -Filter "*boost*python*.lib" -ErrorAction SilentlyContinue | Select-Object Name
+
+          echo "`nBoost.Python CMake modules:"
+          Get-ChildItem "${{ env.VCPKG_ROOT }}\installed\x64-windows\share\boost" -Recurse -Filter "*python*.cmake" -ErrorAction SilentlyContinue | Select-Object Name
 
           echo "=== Verify vcpkg installation directories ==="
           echo "Checking: ${{ env.VCPKG_ROOT }}\\installed"
