@@ -357,10 +357,10 @@ jobs:
           echo "Working directory: $(pwd)"
           ls -la
 
-          python -m pip wheel . -w wheel_output/ \
-            --global-option --cmake-generator="Visual Studio 16 2019" \
-            --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DCMAKE_BUILD_TYPE=Release;-DCMAKE_PREFIX_PATH=$CONDA_PREFIX" \
-            --verbose
+          export CMAKE_GENERATOR="Visual Studio 16 2019"
+          export CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=$CONDA_PREFIX"
+
+          python -m pip wheel . -w wheel_output/ --verbose
       - name: Upload built wheel
         uses: actions/upload-artifact@v4
         with:
