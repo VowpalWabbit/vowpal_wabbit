@@ -424,30 +424,6 @@ jobs:
             echo "  (directory doesn't exist)"
           }
 
-          echo "`nTest CMake find_package with different suffixes:"
-          $testCmake = @"
-cmake_minimum_required(VERSION 3.10)
-project(test)
-set(BOOST_ROOT `"$boostRoot`")
-set(Boost_INCLUDE_DIR `"$boostIncludeDir`")
-set(Boost_NO_SYSTEM_PATHS ON)
-find_package(Boost 1.70)
-message(STATUS "Boost_FOUND: `${Boost_FOUND}")
-message(STATUS "Boost_VERSION: `${Boost_VERSION}")
-message(STATUS "Boost_INCLUDE_DIRS: `${Boost_INCLUDE_DIRS}")
-message(STATUS "Boost_LIBRARY_DIRS: `${Boost_LIBRARY_DIRS}")
-foreach(suffix "" "3" "39" "310" "python" "python3" "python39" "python310")
-  find_package(Boost 1.70 QUIET COMPONENTS python`${suffix})
-  if(Boost_FOUND)
-    message(STATUS "✓ FOUND: python`${suffix}")
-  else()
-    message(STATUS "✗ NOT FOUND: python`${suffix}")
-  endif()
-endforeach()
-"@
-          $testCmake | Out-File -FilePath "${{github.workspace}}\test_boost.cmake" -Encoding ASCII
-          cmake -P "${{github.workspace}}\test_boost.cmake" 2>&1 | Select-String -Pattern "(FOUND|Boost_)"
-
           echo "`n=== END DIAGNOSTICS ===`n"
 
           python setup.py `
