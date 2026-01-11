@@ -342,13 +342,13 @@ jobs:
             mkdir -p "${{ env.VCPKG_DEFAULT_BINARY_CACHE }}"
           fi
 
-          echo "=== Install Boost from conda-forge for headers ==="
-          conda install -y -c conda-forge libboost-python-devel
+          echo "=== Install Boost from vcpkg for headers ==="
+          vcpkg install boost-python:x64-windows
 
           echo "=== Install conda dependencies for Python-matched library ==="
           conda info
           # Install py-boost for boost_python310.lib that matches Python 3.10
-          conda install -y python=${{ matrix.config.version }} wheel setuptools pip py-boost zlib flatbuffers
+          conda install -y --quiet python=${{ matrix.config.version }} wheel setuptools pip py-boost zlib flatbuffers
 
           echo "=== Verify Python version ==="
           python --version
@@ -361,20 +361,14 @@ jobs:
           echo "CONDA_PREFIX: $CONDA_PREFIX"
           echo "Working directory: $(pwd)"
 
-          echo -e "\n=== Check if boost/python.hpp exists after conda-forge install ==="
-          if [ -f "$CONDA_PREFIX/Library/include/boost/python.hpp" ]; then
-            echo "SUCCESS: boost/python.hpp file exists!"
-            ls -la "$CONDA_PREFIX/Library/include/boost/python.hpp"
-          else
-            echo "FAILED: boost/python.hpp still missing"
-          fi
-
-          echo -e "\n=== Using conda/conda-forge for all dependencies ==="
+          echo -e "\n=== Using vcpkg for Boost headers, conda for libraries ==="
           echo "Converting paths to CMake-friendly format:"
           CONDA_PREFIX_CMAKE=$(cygpath -w "$CONDA_PREFIX" | sed 's/\\/\//g')
+          VCPKG_INSTALLED=$(cygpath -w "${{ env.VCPKG_ROOT }}/installed/x64-windows" | sed 's/\\/\//g')
           echo "CONDA_PREFIX_CMAKE: $CONDA_PREFIX_CMAKE"
+          echo "VCPKG_INSTALLED: $VCPKG_INSTALLED"
 
-          CMAKE_OPTIONS="-DSTATIC_LINK_VW_JAVA=On;-DCMAKE_BUILD_TYPE=Release;-DCMAKE_PREFIX_PATH=$CONDA_PREFIX_CMAKE/Library;-DZLIB_ROOT=$CONDA_PREFIX_CMAKE/Library;-DZLIB_INCLUDE_DIR=$CONDA_PREFIX_CMAKE/Library/include;-DZLIB_LIBRARY=$CONDA_PREFIX_CMAKE/Library/lib/zlib.lib;-DBoost_ROOT=$CONDA_PREFIX_CMAKE/Library;-DBoost_INCLUDE_DIR=$CONDA_PREFIX_CMAKE/Library/include;-DBoost_LIBRARY_DIR=$CONDA_PREFIX_CMAKE/Library/lib;-DBoost_PYTHON310_LIBRARY=$CONDA_PREFIX_CMAKE/Library/lib/boost_python310.lib;-DBoost_DIR=NOTFOUND;-DBoost_NO_BOOST_CMAKE=ON;-DBOOST_PY_VERSION_SUFFIX=310"
+          CMAKE_OPTIONS="-DSTATIC_LINK_VW_JAVA=On;-DCMAKE_BUILD_TYPE=Release;-DCMAKE_PREFIX_PATH=$VCPKG_INSTALLED;-DZLIB_ROOT=$CONDA_PREFIX_CMAKE/Library;-DZLIB_INCLUDE_DIR=$CONDA_PREFIX_CMAKE/Library/include;-DZLIB_LIBRARY=$CONDA_PREFIX_CMAKE/Library/lib/zlib.lib;-DBoost_ROOT=$VCPKG_INSTALLED;-DBoost_INCLUDE_DIR=$VCPKG_INSTALLED/include;-DBoost_LIBRARY_DIR=$CONDA_PREFIX_CMAKE/Library/lib;-DBoost_PYTHON310_LIBRARY=$CONDA_PREFIX_CMAKE/Library/lib/boost_python310.lib;-DBoost_DIR=NOTFOUND;-DBoost_NO_BOOST_CMAKE=ON;-DBOOST_PY_VERSION_SUFFIX=310"
 
           echo -e "\n=== Building wheel with setup.py (supports --cmake-options) ==="
           echo "CMAKE_OPTIONS: $CMAKE_OPTIONS"
