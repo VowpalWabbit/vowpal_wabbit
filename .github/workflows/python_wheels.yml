@@ -398,6 +398,25 @@ jobs:
             --cmake-generator="Visual Studio 16 2019" \
             --cmake-options="$CMAKE_OPTIONS" \
             bdist_wheel --dist-dir=wheel_output
+
+          echo -e "\n=== Inspecting built wheel ==="
+          WHEEL_FILE=$(ls wheel_output/*.whl | head -1)
+          echo "Wheel file: $WHEEL_FILE"
+
+          echo -e "\n=== Extracting wheel to inspect contents ==="
+          mkdir -p wheel_inspect
+          cd wheel_inspect
+          unzip -q "../$WHEEL_FILE"
+
+          echo -e "\n=== Wheel contents (top level) ==="
+          ls -la
+
+          echo -e "\n=== Looking for DLL files in vowpalwabbit directory ==="
+          find vowpalwabbit -name "*.dll" -o -name "*.pyd" | while read f; do
+            echo "$f ($(stat -c%s "$f" 2>/dev/null || stat -f%z "$f" 2>/dev/null || echo "?" ) bytes)"
+          done
+
+          cd ..
       - name: Upload built wheel
         uses: actions/upload-artifact@v4
         with:
