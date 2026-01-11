@@ -342,12 +342,13 @@ jobs:
             mkdir -p "${{ env.VCPKG_DEFAULT_BINARY_CACHE }}"
           fi
 
-          echo "=== Skip vcpkg (using conda for all deps) ==="
+          echo "=== Install Boost from conda-forge for headers ==="
+          conda install -y -c conda-forge libboost-python-devel
 
-          echo "=== Install conda dependencies matching Python ${{ matrix.config.version }} ==="
+          echo "=== Install conda dependencies for Python-matched library ==="
           conda info
-          # Install boost-cpp instead of boost to get headers
-          conda install -y python=${{ matrix.config.version }} wheel setuptools pip boost-cpp py-boost zlib flatbuffers
+          # Install py-boost for boost_python310.lib that matches Python 3.10
+          conda install -y python=${{ matrix.config.version }} wheel setuptools pip py-boost zlib flatbuffers
 
           echo "=== Verify Python version ==="
           python --version
@@ -356,66 +357,20 @@ jobs:
           echo -e "\n=== Verify installed conda packages ==="
           conda list | grep -E "(boost|python)" || echo "No boost/python packages found"
 
-          echo "=== Build wheel using conda dependencies ==="
+          echo "=== Verify setup ==="
           echo "CONDA_PREFIX: $CONDA_PREFIX"
           echo "Working directory: $(pwd)"
 
-          echo "=== Comprehensive conda environment check ==="
-          echo "Checking CONDA_PREFIX structure:"
-          ls -la "$CONDA_PREFIX" || echo "CONDA_PREFIX doesn't exist"
-
-          echo -e "\nChecking Library directory:"
-          ls -la "$CONDA_PREFIX/Library" 2>/dev/null || echo "No Library directory"
-
-          echo -e "\nLooking for zlib in various locations:"
-          find "$CONDA_PREFIX" -name "*zlib*.h" 2>/dev/null || echo "No zlib headers found"
-          find "$CONDA_PREFIX" -name "zlib*.lib" 2>/dev/null || echo "No zlib.lib found"
-          find "$CONDA_PREFIX" -name "z.lib" 2>/dev/null || echo "No z.lib found"
-
-          echo -e "\nChecking boost location:"
-          find "$CONDA_PREFIX" -name "*boost*.lib" 2>/dev/null | head -5 || echo "No boost libs found"
-
-          echo -e "\nChecking for boost_python libraries specifically:"
-          find "$CONDA_PREFIX" -name "*boost*python*.lib" 2>/dev/null || echo "No boost_python libs found"
-
-          echo -e "\nListing ALL files in Library/lib (boost related):"
-          ls -la "$CONDA_PREFIX/Library/lib" | grep -i boost | head -20 || echo "No boost files in lib"
-
-          echo -e "\nChecking for Boost CMake files:"
-          find "$CONDA_PREFIX" -name "BoostConfig.cmake" 2>/dev/null || echo "No BoostConfig.cmake"
-          find "$CONDA_PREFIX" -name "FindBoost.cmake" 2>/dev/null || echo "No FindBoost.cmake"
-          find "$CONDA_PREFIX" -name "*boost*python*.cmake" 2>/dev/null || echo "No boost_python cmake files"
-
-          echo -e "\nChecking for boost/python.hpp header:"
-          find "$CONDA_PREFIX" -path "*/boost/python.hpp" 2>/dev/null || echo "No boost/python.hpp found"
-
-          echo -e "\nChecking if python.hpp exists as a FILE (not directory):"
+          echo -e "\n=== Check if boost/python.hpp exists after conda-forge install ==="
           if [ -f "$CONDA_PREFIX/Library/include/boost/python.hpp" ]; then
-            echo "YES - boost/python.hpp file exists"
+            echo "SUCCESS: boost/python.hpp file exists!"
             ls -la "$CONDA_PREFIX/Library/include/boost/python.hpp"
           else
-            echo "NO - boost/python.hpp file does NOT exist"
-            echo "Checking if it's a directory instead:"
-            if [ -d "$CONDA_PREFIX/Library/include/boost/python" ]; then
-              echo "boost/python is a DIRECTORY"
-            fi
+            echo "FAILED: boost/python.hpp still missing"
           fi
 
-          echo -e "\nChecking include directory structure:"
-          ls -la "$CONDA_PREFIX/Library/include" 2>/dev/null | head -10 || echo "No include directory"
-
-          echo -e "\nChecking what's INSIDE the boost directory:"
-          if [ -d "$CONDA_PREFIX/Library/include/boost" ]; then
-            echo "boost directory exists, listing contents:"
-            ls -la "$CONDA_PREFIX/Library/include/boost" | head -30
-            echo -e "\nSearching for python* files in boost:"
-            find "$CONDA_PREFIX/Library/include/boost" -name "*python*" 2>/dev/null | head -20 || echo "No python-related files found"
-          else
-            echo "boost directory does NOT exist"
-          fi
-
-          echo -e "\n=== Using conda for ALL dependencies (boost + zlib) ==="
-          echo "Converting CONDA_PREFIX to CMake-friendly format:"
+          echo -e "\n=== Using conda/conda-forge for all dependencies ==="
+          echo "Converting paths to CMake-friendly format:"
           CONDA_PREFIX_CMAKE=$(cygpath -w "$CONDA_PREFIX" | sed 's/\\/\//g')
           echo "CONDA_PREFIX_CMAKE: $CONDA_PREFIX_CMAKE"
 
