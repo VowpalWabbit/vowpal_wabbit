@@ -371,22 +371,16 @@ jobs:
           echo -e "\nChecking boost location:"
           find "$CONDA_PREFIX" -name "*boost*.lib" 2>/dev/null | head -5 || echo "No boost libs found"
 
-          echo -e "\n=== Using vcpkg for zlib instead ==="
-          cd ${{ env.VCPKG_ROOT }}
-          ./vcpkg.exe install --triplet x64-windows zlib
+          echo -e "\n=== Using conda for ALL dependencies (boost + zlib) ==="
+          echo "Converting CONDA_PREFIX to CMake-friendly format:"
+          CONDA_PREFIX_CMAKE=$(cygpath -w "$CONDA_PREFIX" | sed 's/\\/\//g')
+          echo "CONDA_PREFIX_CMAKE: $CONDA_PREFIX_CMAKE"
 
-          VCPKG_ROOT_UNIX=$(echo "${{ env.VCPKG_ROOT }}" | sed 's/\\/\//g' | sed 's/://')
-          VCPKG_ROOT_UNIX="/$VCPKG_ROOT_UNIX"
-
-          echo "VCPKG_ROOT converted to Unix path: $VCPKG_ROOT_UNIX"
-          echo "Checking vcpkg zlib:"
-          ls -la "$VCPKG_ROOT_UNIX/installed/x64-windows/lib" | grep zlib || echo "vcpkg zlib not found"
-
-          cd ${{ github.workspace }}
           export CMAKE_GENERATOR="Visual Studio 16 2019"
-          export CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=$CONDA_PREFIX -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT_UNIX/scripts/buildsystems/vcpkg.cmake -DVW_ZLIB_SYS_DEP=Off"
+          export CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=$CONDA_PREFIX_CMAKE/Library;$CONDA_PREFIX_CMAKE -DZLIB_ROOT=$CONDA_PREFIX_CMAKE/Library -DZLIB_INCLUDE_DIR=$CONDA_PREFIX_CMAKE/Library/include -DZLIB_LIBRARY=$CONDA_PREFIX_CMAKE/Library/lib/zlib.lib"
 
-          echo -e "\n=== Building wheel with conda boost + vcpkg zlib ==="
+          echo -e "\n=== Building wheel with conda dependencies ==="
+          echo "CMAKE_ARGS: $CMAKE_ARGS"
           python -m pip wheel . -w wheel_output/ --verbose
       - name: Upload built wheel
         uses: actions/upload-artifact@v4
