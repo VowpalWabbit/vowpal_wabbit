@@ -346,7 +346,8 @@ jobs:
 
           echo "=== Install conda dependencies matching Python ${{ matrix.config.version }} ==="
           conda info
-          conda install -y python=${{ matrix.config.version }} wheel setuptools pip boost py-boost zlib flatbuffers
+          # Install boost-cpp instead of boost to get headers
+          conda install -y python=${{ matrix.config.version }} wheel setuptools pip boost-cpp py-boost zlib flatbuffers
 
           echo "=== Verify Python version ==="
           python --version
