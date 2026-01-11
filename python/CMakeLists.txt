@@ -77,6 +77,11 @@ endif()
 add_library(pylibvw SHARED pylibvw.cc)
 set_target_properties(pylibvw PROPERTIES PREFIX "")
 
+# If we manually created Boost::python target, explicitly add Boost include directories
+if(DEFINED Boost_PYTHON${BOOST_PY_VERSION_SUFFIX}_LIBRARY AND DEFINED Boost_INCLUDE_DIR)
+  target_include_directories(pylibvw PRIVATE ${Boost_INCLUDE_DIR})
+endif()
+
 # The python setup.py script should communicate what suffix it wants.
 if(VW_PYTHON_SHARED_LIB_SUFFIX)
   set_target_properties(pylibvw PROPERTIES SUFFIX ${VW_PYTHON_SHARED_LIB_SUFFIX})
