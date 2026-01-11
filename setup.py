@@ -180,19 +180,23 @@ class BuildPyLibVWBindingsModule(_build_ext):
             print(f"Pattern: {boost_dll_pattern}")
             boost_dlls = glob.glob(boost_dll_pattern)
             print(f"Found DLLs: {boost_dlls}")
-            print(f"Target directory: {lib_output_dir}")
+
+            # DLL must go in the vowpalwabbit package directory, not the root
+            package_dir = os.path.join(lib_output_dir, "vowpalwabbit")
+            print(f"Target package directory: {package_dir}")
+
             if boost_dlls:
                 for dll in boost_dlls:
-                    dest = os.path.join(lib_output_dir, os.path.basename(dll))
+                    dest = os.path.join(package_dir, os.path.basename(dll))
                     print(f"Copying {dll} to {dest}")
                     shutil.copy2(dll, dest)
                     if os.path.exists(dest):
                         print(f"Successfully copied, file size: {os.path.getsize(dest)}")
                     else:
                         print(f"ERROR: Copy failed!")
-                # List all files in target directory
-                print(f"Files in {lib_output_dir}:")
-                for f in os.listdir(lib_output_dir):
+                # List all files in package directory
+                print(f"Files in {package_dir}:")
+                for f in os.listdir(package_dir):
                     print(f"  {f}")
             else:
                 print(f"Warning: No boost_python DLL found in {conda_bin}")

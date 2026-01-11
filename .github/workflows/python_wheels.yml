@@ -411,8 +411,8 @@ jobs:
           echo -e "\n=== Wheel contents (top level) ==="
           ls -la
 
-          echo -e "\n=== Looking for DLL files in vowpalwabbit directory ==="
-          find vowpalwabbit -name "*.dll" -o -name "*.pyd" | while read f; do
+          echo -e "\n=== Looking for DLL and PYD files ==="
+          find . -name "*.dll" -o -name "*.pyd" | while read f; do
             echo "$f ($(stat -c%s "$f" 2>/dev/null || stat -f%z "$f" 2>/dev/null || echo "?" ) bytes)"
           done
 
