@@ -353,8 +353,9 @@ jobs:
           which python
 
           echo "=== Build wheel using conda dependencies ==="
-          cd ${{ github.workspace }}
           echo "CONDA_PREFIX: $CONDA_PREFIX"
+          echo "Working directory: $(pwd)"
+          ls -la
 
           python -m pip wheel . -w wheel_output/ \
             --global-option --cmake-generator="Visual Studio 16 2019" \
