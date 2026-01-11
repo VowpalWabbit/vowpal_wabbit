@@ -381,10 +381,10 @@ jobs:
           echo -e "\n=== Building wheel with setup.py (supports --cmake-options) ==="
           echo "CMAKE_OPTIONS: $CMAKE_OPTIONS"
 
-          python setup.py bdist_wheel \
+          python setup.py \
             --cmake-generator="Visual Studio 16 2019" \
             --cmake-options="$CMAKE_OPTIONS" \
-            --dist-dir=wheel_output
+            bdist_wheel --dist-dir=wheel_output
       - name: Upload built wheel
         uses: actions/upload-artifact@v4
         with:
