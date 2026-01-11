@@ -343,7 +343,8 @@ jobs:
           fi
 
           echo "=== Install Boost from vcpkg for headers ==="
-          ${{ env.VCPKG_ROOT }}/vcpkg.exe install --x-feature=python
+          VCPKG_ROOT_BASH=$(cygpath "${{ env.VCPKG_ROOT }}")
+          "$VCPKG_ROOT_BASH/vcpkg.exe" install --x-feature=python
 
           echo "=== Install conda dependencies for Python-matched library ==="
           conda info
