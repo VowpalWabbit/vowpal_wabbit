@@ -112,6 +112,9 @@ endif()
 if (NOT WIN32)
   # Windows links dynamically
   target_compile_definitions(pylibvw PUBLIC BOOST_PYTHON_STATIC_LIB)
+else()
+  # Disable Boost auto-linking on Windows (we specify library explicitly)
+  target_compile_definitions(pylibvw PUBLIC BOOST_ALL_NO_LIB)
 endif()
 
 if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
