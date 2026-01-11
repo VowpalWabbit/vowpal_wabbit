@@ -374,6 +374,9 @@ jobs:
           echo -e "\nChecking for boost_python libraries specifically:"
           find "$CONDA_PREFIX" -name "*boost*python*.lib" 2>/dev/null || echo "No boost_python libs found"
 
+          echo -e "\nListing ALL files in Library/lib (boost related):"
+          ls -la "$CONDA_PREFIX/Library/lib" | grep -i boost | head -20 || echo "No boost files in lib"
+
           echo -e "\nChecking for Boost CMake files:"
           find "$CONDA_PREFIX" -name "BoostConfig.cmake" 2>/dev/null || echo "No BoostConfig.cmake"
           find "$CONDA_PREFIX" -name "FindBoost.cmake" 2>/dev/null || echo "No FindBoost.cmake"
@@ -384,7 +387,7 @@ jobs:
           CONDA_PREFIX_CMAKE=$(cygpath -w "$CONDA_PREFIX" | sed 's/\\/\//g')
           echo "CONDA_PREFIX_CMAKE: $CONDA_PREFIX_CMAKE"
 
-          CMAKE_OPTIONS="-DSTATIC_LINK_VW_JAVA=On;-DCMAKE_BUILD_TYPE=Release;-DCMAKE_PREFIX_PATH=$CONDA_PREFIX_CMAKE/Library;$CONDA_PREFIX_CMAKE;-DZLIB_ROOT=$CONDA_PREFIX_CMAKE/Library;-DZLIB_INCLUDE_DIR=$CONDA_PREFIX_CMAKE/Library/include;-DZLIB_LIBRARY=$CONDA_PREFIX_CMAKE/Library/lib/zlib.lib;-DBoost_ROOT=$CONDA_PREFIX_CMAKE/Library;-DBoost_INCLUDE_DIR=$CONDA_PREFIX_CMAKE/Library/include;-DBoost_LIBRARY_DIR=$CONDA_PREFIX_CMAKE/Library/lib;-DBoost_DIR=NOTFOUND;-DBoost_NO_BOOST_CMAKE=ON;-DBOOST_PY_VERSION_SUFFIX=310"
+          CMAKE_OPTIONS="-DSTATIC_LINK_VW_JAVA=On;-DCMAKE_BUILD_TYPE=Release;-DCMAKE_PREFIX_PATH=$CONDA_PREFIX_CMAKE/Library;$CONDA_PREFIX_CMAKE;-DZLIB_ROOT=$CONDA_PREFIX_CMAKE/Library;-DZLIB_INCLUDE_DIR=$CONDA_PREFIX_CMAKE/Library/include;-DZLIB_LIBRARY=$CONDA_PREFIX_CMAKE/Library/lib/zlib.lib;-DBoost_ROOT=$CONDA_PREFIX_CMAKE/Library;-DBoost_INCLUDE_DIR=$CONDA_PREFIX_CMAKE/Library/include;-DBoost_LIBRARY_DIR=$CONDA_PREFIX_CMAKE/Library/lib;-DBoost_PYTHON310_LIBRARY=$CONDA_PREFIX_CMAKE/Library/lib/boost_python310.lib;-DBoost_DIR=NOTFOUND;-DBoost_NO_BOOST_CMAKE=ON;-DBOOST_PY_VERSION_SUFFIX=310"
 
           echo -e "\n=== Building wheel with setup.py (supports --cmake-options) ==="
           echo "CMAKE_OPTIONS: $CMAKE_OPTIONS"
