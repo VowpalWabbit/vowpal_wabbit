@@ -11,12 +11,7 @@ if(STATIC_LINK_VW_JAVA)
 endif()
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
-# Use CONFIG mode for vcpkg compatibility (avoids FindBoost module issues with Boost 1.90+)
-if(DEFINED VCPKG_TARGET_TRIPLET OR DEFINED ENV{VCPKG_ROOT})
-  find_package(Boost REQUIRED CONFIG)
-else()
-  find_package(Boost REQUIRED)
-endif()
+find_package(Boost REQUIRED)
 
 # In boost version 1.67 Python version suffixes were instroduced for major and minor versions.
 # Allow BOOST_PY_VERSION_SUFFIX to be overridden (e.g., for vcpkg which uses empty suffix)
@@ -33,12 +28,7 @@ if(NOT DEFINED BOOST_PY_VERSION_SUFFIX)
   endif(Boost_MINOR_VERSION GREATER 66)
 endif()
 
-# Use CONFIG mode for vcpkg compatibility
-if(DEFINED VCPKG_TARGET_TRIPLET OR DEFINED ENV{VCPKG_ROOT})
-  find_package(Boost REQUIRED CONFIG COMPONENTS python${BOOST_PY_VERSION_SUFFIX})
-else()
-  find_package(Boost REQUIRED COMPONENTS python${BOOST_PY_VERSION_SUFFIX})
-endif()
+find_package(Boost REQUIRED COMPONENTS python${BOOST_PY_VERSION_SUFFIX})
 
 # Using find_package(Python...) allows us to only require the Python headers to be found.
 if(${CMAKE_VERSION} VERSION_LESS "3.12.0")

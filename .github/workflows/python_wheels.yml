@@ -371,12 +371,20 @@ jobs:
           echo -e "\nChecking boost location:"
           find "$CONDA_PREFIX" -name "*boost*.lib" 2>/dev/null | head -5 || echo "No boost libs found"
 
+          echo -e "\nChecking for boost_python libraries specifically:"
+          find "$CONDA_PREFIX" -name "*boost*python*.lib" 2>/dev/null || echo "No boost_python libs found"
+
+          echo -e "\nChecking for Boost CMake files:"
+          find "$CONDA_PREFIX" -name "BoostConfig.cmake" 2>/dev/null || echo "No BoostConfig.cmake"
+          find "$CONDA_PREFIX" -name "FindBoost.cmake" 2>/dev/null || echo "No FindBoost.cmake"
+          find "$CONDA_PREFIX" -name "*boost*python*.cmake" 2>/dev/null || echo "No boost_python cmake files"
+
           echo -e "\n=== Using conda for ALL dependencies (boost + zlib) ==="
           echo "Converting CONDA_PREFIX to CMake-friendly format:"
           CONDA_PREFIX_CMAKE=$(cygpath -w "$CONDA_PREFIX" | sed 's/\\/\//g')
           echo "CONDA_PREFIX_CMAKE: $CONDA_PREFIX_CMAKE"
 
-          CMAKE_OPTIONS="-DSTATIC_LINK_VW_JAVA=On;-DCMAKE_BUILD_TYPE=Release;-DCMAKE_PREFIX_PATH=$CONDA_PREFIX_CMAKE/Library;$CONDA_PREFIX_CMAKE;-DZLIB_ROOT=$CONDA_PREFIX_CMAKE/Library;-DZLIB_INCLUDE_DIR=$CONDA_PREFIX_CMAKE/Library/include;-DZLIB_LIBRARY=$CONDA_PREFIX_CMAKE/Library/lib/zlib.lib"
+          CMAKE_OPTIONS="-DSTATIC_LINK_VW_JAVA=On;-DCMAKE_BUILD_TYPE=Release;-DCMAKE_PREFIX_PATH=$CONDA_PREFIX_CMAKE/Library;$CONDA_PREFIX_CMAKE;-DZLIB_ROOT=$CONDA_PREFIX_CMAKE/Library;-DZLIB_INCLUDE_DIR=$CONDA_PREFIX_CMAKE/Library/include;-DZLIB_LIBRARY=$CONDA_PREFIX_CMAKE/Library/lib/zlib.lib;-DBoost_DIR=NOTFOUND;-DBoost_NO_BOOST_CMAKE=ON"
 
           echo -e "\n=== Building wheel with setup.py (supports --cmake-options) ==="
           echo "CMAKE_OPTIONS: $CMAKE_OPTIONS"
