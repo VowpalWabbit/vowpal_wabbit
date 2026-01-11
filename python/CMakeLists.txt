@@ -14,7 +14,15 @@ set(Boost_USE_STATIC_RUNTIME OFF)
 find_package(Boost REQUIRED)
 
 # In boost version 1.67 Python version suffixes were instroduced for major and minor versions.
-if(Boost_MINOR_VERSION GREATER 66)
+# vcpkg on Windows only provides python3 component, not version-specific ones like python310
+if(WIN32 AND DEFINED VCPKG_TARGET_TRIPLET)
+  string(SUBSTRING ${PY_VERSION_STRIPPED} 0 1 PY_VERSION_STRIPPED_FIRST_CHAR)
+  if(PY_VERSION_STRIPPED_FIRST_CHAR STREQUAL "3")
+    set(BOOST_PY_VERSION_SUFFIX "3")
+  else()
+    set(BOOST_PY_VERSION_SUFFIX "")
+  endif()
+elseif(Boost_MINOR_VERSION GREATER 66)
   set(BOOST_PY_VERSION_SUFFIX ${PY_VERSION_STRIPPED})
 else(Boost_MINOR_VERSION GREATER 66)
   string(SUBSTRING ${PY_VERSION_STRIPPED} 0 1 PY_VERSION_STRIPPED_FIRST_CHAR)
