@@ -382,6 +382,12 @@ jobs:
           find "$CONDA_PREFIX" -name "FindBoost.cmake" 2>/dev/null || echo "No FindBoost.cmake"
           find "$CONDA_PREFIX" -name "*boost*python*.cmake" 2>/dev/null || echo "No boost_python cmake files"
 
+          echo -e "\nChecking for boost/python.hpp header:"
+          find "$CONDA_PREFIX" -path "*/boost/python.hpp" 2>/dev/null || echo "No boost/python.hpp found"
+
+          echo -e "\nChecking include directory structure:"
+          ls -la "$CONDA_PREFIX/Library/include" 2>/dev/null | head -10 || echo "No include directory"
+
           echo -e "\n=== Using conda for ALL dependencies (boost + zlib) ==="
           echo "Converting CONDA_PREFIX to CMake-friendly format:"
           CONDA_PREFIX_CMAKE=$(cygpath -w "$CONDA_PREFIX" | sed 's/\\/\//g')

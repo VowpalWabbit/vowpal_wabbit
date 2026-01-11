@@ -32,6 +32,13 @@ endif()
 # skip the component find and manually create the target
 if(DEFINED Boost_PYTHON${BOOST_PY_VERSION_SUFFIX}_LIBRARY)
   message(STATUS "Using explicitly provided Boost Python library: ${Boost_PYTHON${BOOST_PY_VERSION_SUFFIX}_LIBRARY}")
+  message(STATUS "Boost_INCLUDE_DIR is set to: ${Boost_INCLUDE_DIR}")
+  message(STATUS "Boost_ROOT is set to: ${Boost_ROOT}")
+  message(STATUS "Checking if Boost::boost target exists: ${TARGET Boost::boost}")
+  if(TARGET Boost::boost)
+    get_target_property(BOOST_INTERFACE_INCLUDES Boost::boost INTERFACE_INCLUDE_DIRECTORIES)
+    message(STATUS "Boost::boost INTERFACE_INCLUDE_DIRECTORIES: ${BOOST_INTERFACE_INCLUDES}")
+  endif()
   # Create imported target manually
   if(NOT TARGET Boost::python${BOOST_PY_VERSION_SUFFIX})
     add_library(Boost::python${BOOST_PY_VERSION_SUFFIX} UNKNOWN IMPORTED)
@@ -79,7 +86,11 @@ set_target_properties(pylibvw PROPERTIES PREFIX "")
 
 # If we manually created Boost::python target, explicitly add Boost include directories
 if(DEFINED Boost_PYTHON${BOOST_PY_VERSION_SUFFIX}_LIBRARY AND DEFINED Boost_INCLUDE_DIR)
+  message(STATUS "Adding Boost_INCLUDE_DIR to pylibvw: ${Boost_INCLUDE_DIR}")
   target_include_directories(pylibvw PRIVATE ${Boost_INCLUDE_DIR})
+  # Verify what include directories pylibvw has
+  get_target_property(PYLIBVW_INCLUDES pylibvw INCLUDE_DIRECTORIES)
+  message(STATUS "pylibvw INCLUDE_DIRECTORIES after adding Boost: ${PYLIBVW_INCLUDES}")
 endif()
 
 # The python setup.py script should communicate what suffix it wants.
