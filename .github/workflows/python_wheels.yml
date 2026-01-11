@@ -355,10 +355,13 @@ jobs:
           echo "=== Build wheel using conda dependencies ==="
           echo "CONDA_PREFIX: $CONDA_PREFIX"
           echo "Working directory: $(pwd)"
-          ls -la
+
+          echo "=== Check for zlib in conda ==="
+          ls -la "$CONDA_PREFIX/Library/include" | grep -i zlib || echo "No zlib headers found"
+          ls -la "$CONDA_PREFIX/Library/lib" | grep -i zlib || echo "No zlib libs found"
 
           export CMAKE_GENERATOR="Visual Studio 16 2019"
-          export CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=$CONDA_PREFIX"
+          export CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=$CONDA_PREFIX -DZLIB_ROOT=$CONDA_PREFIX/Library -DZLIB_INCLUDE_DIR=$CONDA_PREFIX/Library/include -DZLIB_LIBRARY=$CONDA_PREFIX/Library/lib/zlib.lib"
 
           python -m pip wheel . -w wheel_output/ --verbose
       - name: Upload built wheel
