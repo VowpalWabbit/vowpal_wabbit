@@ -376,12 +376,15 @@ jobs:
           CONDA_PREFIX_CMAKE=$(cygpath -w "$CONDA_PREFIX" | sed 's/\\/\//g')
           echo "CONDA_PREFIX_CMAKE: $CONDA_PREFIX_CMAKE"
 
-          export CMAKE_GENERATOR="Visual Studio 16 2019"
-          export CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=$CONDA_PREFIX_CMAKE/Library;$CONDA_PREFIX_CMAKE -DZLIB_ROOT=$CONDA_PREFIX_CMAKE/Library -DZLIB_INCLUDE_DIR=$CONDA_PREFIX_CMAKE/Library/include -DZLIB_LIBRARY=$CONDA_PREFIX_CMAKE/Library/lib/zlib.lib"
+          CMAKE_OPTIONS="-DSTATIC_LINK_VW_JAVA=On;-DCMAKE_BUILD_TYPE=Release;-DCMAKE_PREFIX_PATH=$CONDA_PREFIX_CMAKE/Library;$CONDA_PREFIX_CMAKE;-DZLIB_ROOT=$CONDA_PREFIX_CMAKE/Library;-DZLIB_INCLUDE_DIR=$CONDA_PREFIX_CMAKE/Library/include;-DZLIB_LIBRARY=$CONDA_PREFIX_CMAKE/Library/lib/zlib.lib"
 
-          echo -e "\n=== Building wheel with conda dependencies ==="
-          echo "CMAKE_ARGS: $CMAKE_ARGS"
-          python -m pip wheel . -w wheel_output/ --verbose
+          echo -e "\n=== Building wheel with setup.py (supports --cmake-options) ==="
+          echo "CMAKE_OPTIONS: $CMAKE_OPTIONS"
+
+          python setup.py bdist_wheel \
+            --cmake-generator="Visual Studio 16 2019" \
+            --cmake-options="$CMAKE_OPTIONS" \
+            --dist-dir=wheel_output
       - name: Upload built wheel
         uses: actions/upload-artifact@v4
         with:
