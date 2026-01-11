@@ -389,6 +389,18 @@ jobs:
           echo -e "\nChecking for boost/python.hpp header:"
           find "$CONDA_PREFIX" -path "*/boost/python.hpp" 2>/dev/null || echo "No boost/python.hpp found"
 
+          echo -e "\nChecking if python.hpp exists as a FILE (not directory):"
+          if [ -f "$CONDA_PREFIX/Library/include/boost/python.hpp" ]; then
+            echo "YES - boost/python.hpp file exists"
+            ls -la "$CONDA_PREFIX/Library/include/boost/python.hpp"
+          else
+            echo "NO - boost/python.hpp file does NOT exist"
+            echo "Checking if it's a directory instead:"
+            if [ -d "$CONDA_PREFIX/Library/include/boost/python" ]; then
+              echo "boost/python is a DIRECTORY"
+            fi
+          fi
+
           echo -e "\nChecking include directory structure:"
           ls -la "$CONDA_PREFIX/Library/include" 2>/dev/null | head -10 || echo "No include directory"
 
