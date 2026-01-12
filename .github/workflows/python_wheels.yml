@@ -457,23 +457,23 @@ jobs:
           echo "Site-packages: $PYTHON_SITE"
 
           echo -e "\n=== Looking for installed files ==="
-          python -c "
-import os, sysconfig
-site = sysconfig.get_path('purelib')
-print('Files in site-packages root:')
-for f in os.listdir(site):
-    if 'pylibvw' in f or 'boost_python' in f:
-        print(f'  {f}')
+          python -c '
+          import os, sysconfig
+          site = sysconfig.get_path("purelib")
+          print("Files in site-packages root:")
+          for f in os.listdir(site):
+              if "pylibvw" in f or "boost_python" in f:
+                  print(f"  {f}")
 
-vw_dir = os.path.join(site, 'vowpalwabbit')
-if os.path.exists(vw_dir):
-    print('\nFiles in vowpalwabbit directory:')
-    for f in os.listdir(vw_dir):
-        if f.endswith(('.pyd', '.dll', '.py')):
-            print(f'  {f}')
-else:
-    print('\nvowpalwabbit directory not found!')
-"
+          vw_dir = os.path.join(site, "vowpalwabbit")
+          if os.path.exists(vw_dir):
+              print("\nFiles in vowpalwabbit directory:")
+              for f in os.listdir(vw_dir):
+                  if f.endswith((".pyd", ".dll", ".py")):
+                      print(f"  {f}")
+          else:
+              print("\nvowpalwabbit directory not found!")
+          '
 
           twine check ${wheel_file}
           python -m pytest .\\python\\tests\\
