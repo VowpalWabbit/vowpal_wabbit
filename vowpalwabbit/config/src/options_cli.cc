@@ -10,6 +10,8 @@
 #include "vw/config/option.h"
 
 #include <fmt/format.h>
+// needed for fmt::join
+#include <fmt/ranges.h>
 
 #include <algorithm>
 #include <cassert>

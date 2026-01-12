@@ -13,7 +13,6 @@ from scipy.sparse import csr_matrix
 from scipy.special import logit
 from sklearn.exceptions import NotFittedError
 from sklearn.base import BaseEstimator, RegressorMixin
-from sklearn.utils.extmath import log_logistic
 from sklearn.linear_model import LogisticRegression
 from sklearn.datasets import dump_svmlight_file
 from sklearn.utils import check_array, check_X_y, shuffle
@@ -22,6 +21,34 @@ from vowpalwabbit import Workspace
 DEFAULT_NS = ""
 CONSTANT_HASH = 116060
 INVALID_CHARS = re.compile(r"[\|: \n]+")
+
+
+def log_logistic(X):
+    """Compute log(1 / (1 + exp(-X))) in a numerically stable way.
+
+    This function was previously available in sklearn.utils.extmath but was
+    removed in newer versions. We implement it locally for compatibility.
+
+    Args:
+        X: array-like
+
+    Returns:
+        array-like: log(1 / (1 + exp(-X)))
+    """
+    # log(1 / (1 + exp(-X))) = -log(1 + exp(-X))
+    # For numerical stability, use different formulas for positive and negative X
+    X = np.asarray(X)
+    out = np.zeros_like(X, dtype=float)
+
+    # For X >= 0: -log(1 + exp(-X))
+    idx_pos = X >= 0
+    out[idx_pos] = -np.log1p(np.exp(-X[idx_pos]))
+
+    # For X < 0: X - log(1 + exp(X)) = log(exp(X)) - log(1 + exp(X)) = log(exp(X)/(1+exp(X)))
+    idx_neg = ~idx_pos
+    out[idx_neg] = X[idx_neg] - np.log1p(np.exp(X[idx_neg]))
+
+    return out
 
 
 class VW(BaseEstimator):

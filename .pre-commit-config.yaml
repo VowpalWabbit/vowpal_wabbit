@@ -1,0 +1,37 @@
+# Pre-commit hooks configuration
+# Install: pip install pre-commit
+# Setup: pre-commit install
+# Run manually: pre-commit run --all-files
+
+repos:
+  # Python formatting with black
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
+      - id: black
+        language_version: python3
+        exclude: ^ext_libs/
+      - id: black-jupyter
+        language_version: python3
+        exclude: ^ext_libs/
+
+  # C++ formatting with clang-format
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v19.1.6
+    hooks:
+      - id: clang-format
+        types_or: [c++, c]
+        exclude: ^ext_libs/
+
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: ^(ext_libs/|test/train-sets/)
+      - id: end-of-file-fixer
+        exclude: ^(ext_libs/|test/train-sets/)
+      - id: check-yaml
+        exclude: ^ext_libs/
+      - id: check-added-large-files
+        args: ['--maxkb=1000']

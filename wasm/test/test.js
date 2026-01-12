@@ -364,7 +364,7 @@ describe('Call WASM VWModule', () => {
         });
     });
 
-    it('Check logging to a file and learning form it', () => {
+    it('Check logging to a file and learning form it', async () => {
         try {
             let model = new vw.CbWorkspace({ args_str: "--cb_explore_adf" });
             let vwLogger = new vw.VWExampleLogger();
@@ -390,7 +390,7 @@ describe('Call WASM VWModule', () => {
 
             assert(model.sumLoss() === 0);
 
-            vwLogger.endLogStream();
+            await vwLogger.endLogStream();
 
             const fileStream = fs.createReadStream(filePath);
             const rl = readline.createInterface({
@@ -423,7 +423,7 @@ describe('Call WASM VWModule', () => {
     });
 
 
-    it('Check logging errors', () => {
+    it('Check logging errors', async () => {
 
         let model = new vw.CbWorkspace({ args_str: "--cb_explore_adf" });
         let vwLogger = new vw.VWExampleLogger();
@@ -458,7 +458,7 @@ describe('Call WASM VWModule', () => {
         assert(stats2.size > 0);
 
         // call close and then log sync is ok
-        vwLogger.endLogStream();
+        await vwLogger.endLogStream();
 
         vwLogger.logCBExampleSync(filePath, example);
         let stats3 = fs.statSync(filePath);

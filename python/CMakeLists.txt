@@ -14,18 +14,50 @@ set(Boost_USE_STATIC_RUNTIME OFF)
 find_package(Boost REQUIRED)
 
 # In boost version 1.67 Python version suffixes were instroduced for major and minor versions.
-if(Boost_MINOR_VERSION GREATER 66)
-  set(BOOST_PY_VERSION_SUFFIX ${PY_VERSION_STRIPPED})
-else(Boost_MINOR_VERSION GREATER 66)
-  string(SUBSTRING ${PY_VERSION_STRIPPED} 0 1 PY_VERSION_STRIPPED_FIRST_CHAR)
-  if(PY_VERSION_STRIPPED_FIRST_CHAR STREQUAL "2")
-    set(BOOST_PY_VERSION_SUFFIX "")
-  elseif(PY_VERSION_STRIPPED_FIRST_CHAR STREQUAL "3")
-    set(BOOST_PY_VERSION_SUFFIX "3")
-  endif(PY_VERSION_STRIPPED_FIRST_CHAR STREQUAL "2")
-endif(Boost_MINOR_VERSION GREATER 66)
+# Allow BOOST_PY_VERSION_SUFFIX to be overridden (e.g., for vcpkg which uses empty suffix)
+if(NOT DEFINED BOOST_PY_VERSION_SUFFIX)
+  if(Boost_MINOR_VERSION GREATER 66)
+    set(BOOST_PY_VERSION_SUFFIX ${PY_VERSION_STRIPPED})
+  else(Boost_MINOR_VERSION GREATER 66)
+    string(SUBSTRING ${PY_VERSION_STRIPPED} 0 1 PY_VERSION_STRIPPED_FIRST_CHAR)
+    if(PY_VERSION_STRIPPED_FIRST_CHAR STREQUAL "2")
+      set(BOOST_PY_VERSION_SUFFIX "")
+    elseif(PY_VERSION_STRIPPED_FIRST_CHAR STREQUAL "3")
+      set(BOOST_PY_VERSION_SUFFIX "3")
+    endif(PY_VERSION_STRIPPED_FIRST_CHAR STREQUAL "2")
+  endif(Boost_MINOR_VERSION GREATER 66)
+endif()
 
-find_package(Boost REQUIRED COMPONENTS python${BOOST_PY_VERSION_SUFFIX})
+# If Boost_PYTHON<suffix>_LIBRARY is explicitly set (e.g., by conda build),
+# skip the component find and manually create the target
+if(DEFINED Boost_PYTHON${BOOST_PY_VERSION_SUFFIX}_LIBRARY)
+  message(STATUS "Using explicitly provided Boost Python library: ${Boost_PYTHON${BOOST_PY_VERSION_SUFFIX}_LIBRARY}")
+  message(STATUS "Boost_INCLUDE_DIR is set to: ${Boost_INCLUDE_DIR}")
+  message(STATUS "Boost_ROOT is set to: ${Boost_ROOT}")
+  if(TARGET Boost::boost)
+    message(STATUS "Boost::boost target EXISTS")
+    get_target_property(BOOST_INTERFACE_INCLUDES Boost::boost INTERFACE_INCLUDE_DIRECTORIES)
+    message(STATUS "Boost::boost INTERFACE_INCLUDE_DIRECTORIES: ${BOOST_INTERFACE_INCLUDES}")
+  else()
+    message(STATUS "Boost::boost target DOES NOT EXIST")
+  endif()
+  # Create imported target manually
+  if(NOT TARGET Boost::python${BOOST_PY_VERSION_SUFFIX})
+    add_library(Boost::python${BOOST_PY_VERSION_SUFFIX} UNKNOWN IMPORTED)
+    set_target_properties(Boost::python${BOOST_PY_VERSION_SUFFIX} PROPERTIES
+      IMPORTED_LOCATION "${Boost_PYTHON${BOOST_PY_VERSION_SUFFIX}_LIBRARY}"
+      INTERFACE_INCLUDE_DIRECTORIES "${Boost_INCLUDE_DIR}"
+    )
+    # Link to Boost::boost to get the header includes
+    if(TARGET Boost::boost)
+      set_property(TARGET Boost::python${BOOST_PY_VERSION_SUFFIX} APPEND PROPERTY
+        INTERFACE_LINK_LIBRARIES Boost::boost
+      )
+    endif()
+  endif()
+else()
+  find_package(Boost REQUIRED COMPONENTS python${BOOST_PY_VERSION_SUFFIX})
+endif()
 
 # Using find_package(Python...) allows us to only require the Python headers to be found.
 if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
@@ -54,6 +86,15 @@ endif()
 add_library(pylibvw SHARED pylibvw.cc)
 set_target_properties(pylibvw PROPERTIES PREFIX "")
 
+# If we manually created Boost::python target, explicitly add Boost include directories
+if(DEFINED Boost_PYTHON${BOOST_PY_VERSION_SUFFIX}_LIBRARY AND DEFINED Boost_INCLUDE_DIR)
+  message(STATUS "Adding Boost_INCLUDE_DIR to pylibvw: ${Boost_INCLUDE_DIR}")
+  target_include_directories(pylibvw PRIVATE ${Boost_INCLUDE_DIR})
+  # Verify what include directories pylibvw has
+  get_target_property(PYLIBVW_INCLUDES pylibvw INCLUDE_DIRECTORIES)
+  message(STATUS "pylibvw INCLUDE_DIRECTORIES after adding Boost: ${PYLIBVW_INCLUDES}")
+endif()
+
 # The python setup.py script should communicate what suffix it wants.
 if(VW_PYTHON_SHARED_LIB_SUFFIX)
   set_target_properties(pylibvw PROPERTIES SUFFIX ${VW_PYTHON_SHARED_LIB_SUFFIX})
@@ -71,6 +112,9 @@ endif()
 if (NOT WIN32)
   # Windows links dynamically
   target_compile_definitions(pylibvw PUBLIC BOOST_PYTHON_STATIC_LIB)
+else()
+  # Disable Boost auto-linking on Windows (we specify library explicitly)
+  target_compile_definitions(pylibvw PUBLIC BOOST_ALL_NO_LIB)
 endif()
 
 if(${CMAKE_VERSION} VERSION_LESS "3.12.0")

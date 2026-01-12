@@ -23,7 +23,8 @@ jobs:
         config:
           - { os: "windows-latest", runtime_id: "win-x64" }
           - { os: "ubuntu-latest", runtime_id: "linux-x64" }
-          - { os: "macos-13", runtime_id: "osx-x64" }
+          - { os: "macos-14", runtime_id: "osx-x64" }
+          - { os: "macos-15-intel", runtime_id: "osx-x64" }
     runs-on: ${{matrix.config.os}}
     steps:
       # Setup for build
@@ -35,6 +36,19 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
       - name: Install Ninja
         uses: seanmiddleditch/gha-setup-ninja@master
+      - name: Install NuGet (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mono-complete
+          wget https://dist.nuget.org/win-x86-commandline/latest/nuget.exe
+          sudo install -m 755 nuget.exe /usr/local/bin/nuget.exe
+          echo '#!/bin/bash' | sudo tee /usr/local/bin/nuget
+          echo 'exec mono /usr/local/bin/nuget.exe "$@"' | sudo tee -a /usr/local/bin/nuget
+          sudo chmod +x /usr/local/bin/nuget
+      - name: Install NuGet (macOS)
+        if: runner.os == 'macOS'
+        run: brew install nuget
       - name: Install dotnet t4
         run: dotnet tool install --global dotnet-t4
 
@@ -65,11 +79,12 @@ jobs:
           -DRAPIDJSON_SYS_DEP=Off
           -DFMT_SYS_DEP=Off
           -DSPDLOG_SYS_DEP=Off
-          -DVW_ZLIB_SYS_DEP=Off
+          -DVW_ZLIB_SYS_DEP=${{ runner.os == 'macOS' && 'On' || 'Off' }}
           -DVW_BOOST_MATH_SYS_DEP=Off
           -DVW_BUILD_VW_C_WRAPPER=Off
           -DBUILD_TESTING=Off
           -DBUILD_SHARED_LIBS=Off
+          ${{ runner.os != 'macOS' && '-DCMAKE_POLICY_VERSION_MINIMUM=3.5' || '' }}
       - name: Build .NET Core
         run: cmake --build build --config Release
       - name: Install .NET Core
@@ -96,6 +111,7 @@ jobs:
           -DVW_BUILD_VW_C_WRAPPER=Off
           -DBUILD_TESTING=Off
           -DBUILD_SHARED_LIBS=Off
+          -DCMAKE_POLICY_VERSION_MINIMUM=3.5
       - name: Build .NET Framework
         if: ${{ startsWith(matrix.config.os, 'windows') }}
         run: cmake --build build --config Release
@@ -115,10 +131,11 @@ jobs:
           echo "NugetFileName=$NugetFileName" >> $GITHUB_OUTPUT
       - name: Upload Combined
         if: ${{ startsWith(matrix.config.os, 'windows') }}
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: VowpalWabbit.${{steps.get_version.outputs.version}}.nupkg
           path: nuget_staging/${{ steps.generate-nuget.outputs.NugetFileName }}
+          overwrite: true
 
       # Create the .NET Core runtime package, all platforms
       - name: Package .NET Core Runtime
@@ -130,10 +147,11 @@ jobs:
           NugetFileName=(*runtime*.nupkg)
           echo "NugetFileName=${NugetFileName[0]}" >> $GITHUB_OUTPUT
       - name: Upload .NET Core Runtime
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: VowpalWabbit.runtime.${{matrix.config.runtime_id}}.${{steps.get_version.outputs.version}}.nupkg
           path: nuget_staging/${{ steps.generate-runtime-nuget.outputs.NugetFileName }}
+          overwrite: true
 
   test_nuget_dotnetcore:
     needs: [build_nuget_dotnet]
@@ -143,7 +161,8 @@ jobs:
         config:
           - { os: "windows-latest", runtime_id: "win-x64" }
           - { os: "ubuntu-latest", runtime_id: "linux-x64" }
-          - { os: "macos-13", runtime_id: "osx-x64" }
+          - { os: "macos-14", runtime_id: "osx-x64" }
+          - { os: "macos-15-intel", runtime_id: "osx-x64" }
     runs-on: ${{matrix.config.os}}
     steps:
       - uses: actions/checkout@v3
@@ -167,19 +186,19 @@ jobs:
       # Download the previously built Nuget packages
       - name: Clear nuget cache
         run: dotnet nuget locals all --clear
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.win-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.linux-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.osx-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
@@ -226,19 +245,19 @@ jobs:
       # Download the previously built Nuget packages
       - name: Clear nuget cache
         run: dotnet nuget locals all --clear
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.win-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.linux-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.osx-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
@@ -291,19 +310,19 @@ jobs:
       # Download the previously built Nuget packages
       - name: Clear nuget cache
         run: dotnet nuget locals all --clear
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.win-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.linux-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.osx-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
@@ -341,7 +360,7 @@ jobs:
           echo "## .NET Benchmark Results" >> $GITHUB_STEP_SUMMARY
           cat BenchmarkRun-joined-*.md | sed 's/\*\*//g' >> $GITHUB_STEP_SUMMARY
       - name: Upload benchmark artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: benchmark_results
           path: test/benchmarks/dotnet/BenchmarkDotNet.Artifacts/results/

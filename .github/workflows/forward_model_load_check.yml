@@ -19,71 +19,94 @@ concurrency:
 jobs:
   python-build:
     name: Build latest python wheel
-    container:
-      image: vowpalwabbit/manylinux2010-build:latest
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
-      # v1 must be used because newer versions require a node.js version that will not run on this old image.
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build libboost-test-dev libboost-python-dev python3-dev python3-pip zlib1g-dev
       - name: Build wheel
         shell: bash
         run: |
-          /opt/python/cp310-cp310/bin/pip wheel . -w wheel_output/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='/opt/python/cp310-cp310/include/python3.10/'" --verbose
+          python3 -m pip install wheel auditwheel
+          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -DBoost_NO_BOOST_CMAKE=ON" python3 -m pip wheel . -w wheel_output/ --verbose
           auditwheel repair wheel_output/*whl -w audit_output/
       - name: Upload built wheel
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: test_manylinux_amd64_3.10
           path: audit_output/
   generate-latest-model:
     name: Generate model using latest artifact
     needs: python-build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
-        with:
-          python-version: '3.10' 
+      - name: Install python
+        run: |
+          sudo apt-get update || true
+          sudo apt-get install -y python3-pip
       - name: Download artifact
-        uses: actions/download-artifact@v1
+        uses: actions/download-artifact@v4
         with:
           name: test_manylinux_amd64_3.10
           path: built_wheel
       - name: Build recent-models
         shell: bash
         run: |
-          pip install built_wheel/*.whl
-          python ./test/run_tests_model_gen_and_load.py --generate_models --skip_pr_tests "${{ github.event.pull_request.title }}"
+          set -x  # Enable command tracing
+          python3 -m pip install setuptools wheel
+          echo "=== Installing wheel ==="
+          python3 -m pip install built_wheel/*.whl
+          echo "=== Verifying vowpalwabbit import ==="
+          python3 -c "import vowpalwabbit; print('vowpalwabbit imported successfully')"
+          echo "=== Running model generation script ==="
+          python3 ./test/run_tests_model_gen_and_load.py --generate_models --skip_pr_tests "${{ github.event.pull_request.title }}" || (echo "Model generation failed with exit code $?" && exit 1)
+          echo "=== Checking generated files ==="
+          ls -la ~/.vw_runtests_model_gen_working_dir/ || echo "Working directory not found"
+      - name: Copy generated files to workspace
+        run: |
+          cp -r ~/.vw_runtests_model_gen_working_dir ./vw_generated_models_upload
+          ls -la ./vw_generated_models_upload/
       - name: Upload generated file
-        uses: actions/upload-artifact@v2
+        if: success()
+        uses: actions/upload-artifact@v4
         with:
           name: vw_generated_models
-          path: ~/.vw_runtests_model_gen_working_dir/*
+          path: vw_generated_models_upload/*
           if-no-files-found: error
   test-latest-model:
     name: Test latest model with current master
-    container:
-      image: vowpalwabbit/manylinux2010-build:latest
     needs: generate-latest-model
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
-      - uses: actions/download-artifact@v1
+      - name: Install python
+        run: |
+          sudo apt-get update || true
+          sudo apt-get install -y python3-pip
+      - uses: actions/download-artifact@v4
         with:
           name: vw_generated_models
           path: .vw_runtests_model_gen_working_dir
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build libboost-test-dev libboost-python-dev python3-dev python3-pip zlib1g-dev
       - name: Test loading model with current master
         shell: bash
         run: |
           mv .vw_runtests_model_gen_working_dir ~
           git clone --recursive https://github.com/VowpalWabbit/vowpal_wabbit.git
           cd vowpal_wabbit
-          /opt/python/cp310-cp310/bin/pip wheel . -w wheel_last_commit/ --global-option --cmake-options="-DSTATIC_LINK_VW_JAVA=On;-DPython_INCLUDE_DIR='/opt/python/cp310-cp310/include/python3.10/'" --verbose
+          python3 -m pip install wheel auditwheel
+          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -DBoost_NO_BOOST_CMAKE=ON" python3 -m pip wheel . -w wheel_last_commit/ --verbose
           auditwheel repair wheel_last_commit/*whl -w audit_last_commit/
-          /opt/python/cp310-cp310/bin/python3.10 -m pip install wheel_last_commit/*.whl
+          python3 -m pip install audit_last_commit/*.whl
           cd ..
-          /opt/python/cp310-cp310/bin/python3.10 ./test/run_tests_model_gen_and_load.py --load_models --skip_missing_args --skip_pr_tests "${{ github.event.pull_request.title }}"
+          python3 ./test/run_tests_model_gen_and_load.py --load_models --skip_missing_args --skip_pr_tests "${{ github.event.pull_request.title }}"

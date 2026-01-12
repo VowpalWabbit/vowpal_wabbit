@@ -25,19 +25,27 @@ jobs:
       - uses: actions/checkout@v3
         with:
           submodules: recursive
+          fetch-depth: 0
       - uses: lukka/get-cmake@latest
-      - run: echo "VCPKG_COMMIT=$(git rev-parse :ext_libs/vcpkg)" >> $GITHUB_ENV
+      - name: Install build dependencies (Linux only)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update || true
+          sudo apt-get install -y ninja-build autoconf automake autoconf-archive
+      - name: Clear vcpkg cache and update
         shell: bash
-      - run: mkdir -p ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
-      # This cache will probably be missing the benchmark dep, but that will be quick to fetch
-      - uses: actions/cache@v3
-        env:
-          cache-name: vcpkg-cache
+        run: |
+          rm -rf vcpkg_binary_cache
+          mkdir -p vcpkg_binary_cache
+          rm -rf ext_libs/vcpkg/downloads
+          rm -rf ext_libs/vcpkg/buildtrees
+          git submodule update --init ext_libs/vcpkg
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
         with:
-          path: ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}/*
-          key: ${{ matrix.os }}-build-${{ env.cache-name }}-${{ hashFiles('vcpkg.json') }}-${{ env.VCPKG_COMMIT }}"
+          vcpkgDirectory: '${{ github.workspace }}/ext_libs/vcpkg'
       - name: Configure
-        run: cmake --preset vcpkg-release -DBUILD_BENCHMARKS=On
+        run: cmake --preset vcpkg-release -DBUILD_BENCHMARKS=On -DUSE_LATEST_STD=ON
       - name: Compile
         run: cmake --build build --target vw-benchmarks.out
       - name: Run benchmarks

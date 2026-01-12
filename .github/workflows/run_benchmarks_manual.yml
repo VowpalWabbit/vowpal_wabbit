@@ -17,11 +17,9 @@ on:
 
 jobs:
   benchmark:
-    container:
-      image: vowpalwabbit/ubuntu1804-build:latest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
           ref: ${{ github.event.inputs.benchmarks_ref }}
@@ -29,13 +27,13 @@ jobs:
         shell: bash
         run: cp ./.scripts/linux/*benchmarks.sh test/benchmarks/
       - name: Upload benchmark module
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: benchmark-module
           path: test/benchmarks/
           if-no-files-found: error
 # checkout first ref
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
           ref: ${{ github.event.inputs.base_ref }}
@@ -43,7 +41,7 @@ jobs:
         shell: bash
         run: rm -rf test/benchmarks
       - name: Download master's benchmark module
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: benchmark-module
           path: test/benchmarks/
@@ -63,13 +61,13 @@ jobs:
         shell: bash
         run: ./.scripts/linux/run-benchmarks.sh base-benchmarks.json
       - name: Upload ${{ github.event.inputs.base_ref }} benchmark results
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: base-benchmarks
           path: base-benchmarks.json
           if-no-files-found: error
       - name: Upload benchmark compare
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: benchmark-compare
           path: benchmark/tools/
@@ -82,23 +80,23 @@ jobs:
           python3 -m pip install pandas
       - run: rm -rf benchmark build vowpalwabbit/parser/flatbuffer/generated/ test/benchmarks/ # generated or downloaded files
 # checkout second ref
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
           ref: ${{ github.event.inputs.compare_ref }}
       - name: Download ${{ github.event.inputs.base_ref }} benchmark results
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: base-benchmarks
       - name: Download benchmark compare
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: benchmark-compare
       - name: Remove existing benchmark module (in favour of master)
         shell: bash
         run: rm -rf test/benchmarks
       - name: Download master's benchmark module
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: benchmark-module
           path: test/benchmarks/

@@ -59,6 +59,7 @@ jobs:
           -DVW_BOOST_MATH_SYS_DEP=Off
           -DVW_BUILD_VW_C_WRAPPER=Off
           -DVW_INSTALL=On
+          -DCMAKE_POLICY_VERSION_MINIMUM=3.5
       - name: Build and install
         run: |
           cmake --build build --config Debug -t vw_io vw_core vw_cli_bin vw_allreduce vw_spanning_tree_bin vw_c_wrapper vw_cache_parser vw_text_parser vw_json_parser
@@ -81,7 +82,7 @@ jobs:
           $NugetFileName = Get-ChildItem *.nupkg -name
           echo "NugetFileName=$NugetFileName" >> $GITHUB_OUTPUT
       - name: Upload
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
           name: VowpalWabbitNative-${{matrix.toolset}}-x64.${{ steps.get_version.outputs.version }}.nupkg
           path: nuget_staging/${{ steps.generate-nuget.outputs.NugetFileName }}
@@ -115,7 +116,7 @@ jobs:
           echo "version=$version" >> $GITHUB_OUTPUT
 
       # Download and install nuget
-      - uses: actions/download-artifact@v1
+      - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbitNative-${{matrix.toolset}}-x64.${{ steps.get_version.outputs.version }}.nupkg
           path: downloaded_nugets

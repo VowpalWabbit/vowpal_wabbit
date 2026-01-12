@@ -11,6 +11,9 @@
 #include "vw/core/vw.h"
 #include "vw/io/logger.h"
 
+// needed for fmt::join
+#include <fmt/ranges.h>
+
 namespace
 {
 void parse_no_label(const std::vector<VW::string_view>& words, VW::io::logger& logger)

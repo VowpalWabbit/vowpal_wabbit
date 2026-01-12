@@ -16,7 +16,7 @@ jobs:
       image: vowpalwabbit/ubuntu2004-build:latest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
       - name: Build C++ VW binary
@@ -24,19 +24,19 @@ jobs:
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_EXPERIMENTAL_BINDING=On -DVW_FEAT_FLATBUFFERS=On -DVW_FEAT_CSV=On -DVW_FEAT_CB_GRAPH_FEEDBACK=On -DSTD_INV_SQRT=ON
           cmake --build build
       - name: Upload vw binary
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: vw
           path: build/vowpalwabbit/cli/vw
           if-no-files-found: error
       - name: Upload spanning_tree binary
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: spanning_tree
           path: build/vowpalwabbit/spanning_tree_bin/spanning_tree
           if-no-files-found: error
       - name: Upload to_flatbuff binary
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: to_flatbuff
           path: build/utl/flatbuffer/to_flatbuff
@@ -59,16 +59,16 @@ jobs:
       image: vowpalwabbit/ubuntu2004-build:latest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v4
         with:
           name: vw
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v4
         with:
           name: spanning_tree
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v4
         with:
           name: to_flatbuff
       - name: run tests

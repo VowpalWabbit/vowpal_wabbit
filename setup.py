@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-""" Vowpal Wabbit python setup module """
+"""Vowpal Wabbit python setup module"""
 
 import distutils.dir_util
 import os
@@ -131,7 +131,10 @@ class BuildPyLibVWBindingsModule(_build_ext):
             ]
 
             if cmake_generator is None:
-                cmake_generator = "Visual Studio 15 2017 Win64"
+                # Check CMAKE_GENERATOR environment variable first
+                cmake_generator = os.environ.get("CMAKE_GENERATOR")
+                if cmake_generator is None:
+                    cmake_generator = "Visual Studio 15 2017 Win64"
 
             build_args += ["--target", "pylibvw"]
 
@@ -166,6 +169,91 @@ class BuildPyLibVWBindingsModule(_build_ext):
         if not self.dry_run:
             self.spawn(["cmake", "--build", "."] + build_args)
         os.chdir(str(here))
+
+        # On Windows, copy DLL next to the .pyd file (at root level)
+        if system == "Windows" and "CONDA_PREFIX" in os.environ:
+            import glob
+            import shutil
+
+            conda_bin = os.path.join(os.environ["CONDA_PREFIX"], "Library", "bin")
+            print(f"Looking for runtime DLLs in: {conda_bin}")
+
+            # Copy all DLLs that pylibvw might depend on (boost, zlib, etc.)
+            # Include boost_python, zlib, and any other dependencies
+            dll_patterns_to_copy = [
+                "boost_python*.dll",
+                "zlib*.dll",
+                "libzlib*.dll"
+            ]
+
+            conda_dlls = []
+            for pattern in dll_patterns_to_copy:
+                dll_pattern = os.path.join(conda_bin, pattern)
+                conda_dlls.extend(glob.glob(dll_pattern))
+
+            print(f"Found conda DLLs: {[os.path.basename(d) for d in conda_dlls]}")
+
+            if conda_dlls:
+                # Copy DLLs to root (where .pyd is) for import to work
+                for dll in conda_dlls:
+                    dest = os.path.join(lib_output_dir, os.path.basename(dll))
+                    print(f"Copying {dll} to {dest} (root level)")
+                    shutil.copy2(dll, dest)
+
+                # Also copy to vowpalwabbit directory for package_data
+                vowpalwabbit_dir = os.path.join(lib_output_dir, "vowpalwabbit")
+                if os.path.exists(vowpalwabbit_dir):
+                    for dll in conda_dlls:
+                        dest = os.path.join(vowpalwabbit_dir, os.path.basename(dll))
+                        print(f"Copying {dll} to {dest} (package directory)")
+                        shutil.copy2(dll, dest)
+            else:
+                print(f"Warning: No conda DLLs found in {conda_bin}")
+
+            # Also copy all DLLs from build directory (VW core + any vcpkg dependencies)
+            print(f"\nLooking for all DLLs in build directory...")
+            config = "Debug" if self.distribution.debug else "Release"
+            dll_patterns = [
+                os.path.join(self.build_temp, config, "**", "*.dll"),
+                os.path.join(self.build_temp, "**", "*.dll"),
+            ]
+            build_dlls = []
+            for pattern in dll_patterns:
+                found = glob.glob(pattern, recursive=True)
+                build_dlls.extend(found)
+
+            # Remove duplicates and filter out python DLLs
+            seen = set()
+            vw_dlls = []
+            for dll in build_dlls:
+                basename = os.path.basename(dll)
+                # Skip python DLLs and duplicates
+                if basename not in seen and not basename.startswith('python'):
+                    seen.add(basename)
+                    vw_dlls.append(dll)
+
+            print(f"Found DLLs in build: {[os.path.basename(d) for d in vw_dlls]}")
+
+            if vw_dlls:
+                for dll in vw_dlls:
+                    # Copy to root (where .pyd is)
+                    dest = os.path.join(lib_output_dir, os.path.basename(dll))
+                    print(f"Copying {dll} to {dest} (root level)")
+                    shutil.copy2(dll, dest)
+
+                    # Also copy to vowpalwabbit directory
+                    vowpalwabbit_dir = os.path.join(lib_output_dir, "vowpalwabbit")
+                    if os.path.exists(vowpalwabbit_dir):
+                        dest = os.path.join(vowpalwabbit_dir, os.path.basename(dll))
+                        print(f"Copying {dll} to {dest} (package directory)")
+                        shutil.copy2(dll, dest)
+            else:
+                print(f"Warning: No VW DLLs found in build directory")
+
+            print(f"\nDLL files at root:")
+            for f in os.listdir(lib_output_dir):
+                if f.endswith('.dll'):
+                    print(f"  {f}")
 
 
 class Clean(_clean):
@@ -219,6 +307,7 @@ setup(
     keywords="fast machine learning online classification regression",
     package_dir={"": os.path.relpath(pkg_path)},
     packages=find_packages(where=pkg_path),
+    package_data={"": ["*.dll"], "vowpalwabbit": ["*.dll"]},  # Include DLL files
     platforms="any",
     zip_safe=False,
     include_package_data=True,

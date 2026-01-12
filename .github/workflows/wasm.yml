@@ -20,16 +20,40 @@ jobs:
       - uses: actions/checkout@v3
         with:
           submodules: true
+          fetch-depth: 0
       - uses: lukka/get-cmake@latest
+      - name: Install build dependencies (Linux only)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update || true
+          sudo apt-get install -y ninja-build autoconf automake autoconf-archive
+      - name: Clear vcpkg cache and update
+        shell: bash
+        run: |
+          rm -rf ext_libs/vcpkg/downloads
+          rm -rf ext_libs/vcpkg/buildtrees
+          git submodule update --init ext_libs/vcpkg
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgDirectory: '${{ github.workspace }}/ext_libs/vcpkg'
       - uses: mymindstorm/setup-emsdk@v11
       - uses: actions/setup-node@v3
         with:
             node-version: 16
       - name: Configure
-        run: emcmake cmake --preset wasm -G Ninja -DCMAKE_BUILD_TYPE=MinSizeRel -DCMAKE_TOOLCHAIN_FILE=$(pwd)/ext_libs/vcpkg/scripts/buildsystems/vcpkg.cmake
+        run: emcmake cmake --preset wasm -G Ninja -DCMAKE_BUILD_TYPE=MinSizeRel -DCMAKE_TOOLCHAIN_FILE=$(pwd)/ext_libs/vcpkg/scripts/buildsystems/vcpkg.cmake -DSPDLOG_FMT_EXTERNAL=OFF -DRAPIDJSON_SYS_DEP=OFF
+      - name: Patch spdlog headers to remove SPDLOG_FMT_STRING for Emscripten
+        shell: bash
+        run: |
+          # Remove SPDLOG_FMT_STRING() wrapper from spdlog headers as it causes consteval issues with Emscripten
+          # This converts SPDLOG_FMT_STRING("format") to just "format"
+          find build/vcpkg_installed/wasm32-emscripten/include/spdlog -type f -name "*.h" -exec sed -i \
+            's/SPDLOG_FMT_STRING(\("[^"]*"\))/\1/g' {} +
+          echo "Patched spdlog headers to remove SPDLOG_FMT_STRING wrapper"
       - name: Build
         run: cmake --build build --target vw-wasm
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           path: wasm
       - name: Test

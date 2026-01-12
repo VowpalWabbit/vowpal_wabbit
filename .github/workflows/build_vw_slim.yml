@@ -19,6 +19,7 @@ jobs:
       image: vowpalwabbit/ubuntu1804-build:latest
     runs-on: ubuntu-latest
     steps:
+      # v1 must be used because newer versions require a node.js version that will not run on this old image.
       - uses: actions/checkout@v1
         with:
           submodules: recursive
@@ -40,7 +41,8 @@ jobs:
               -DFMT_SYS_DEP=Off \
               -DSPDLOG_SYS_DEP=Off \
               -DVW_ZLIB_SYS_DEP=Off \
-              -DVW_BOOST_MATH_SYS_DEP=Off
+              -DVW_BOOST_MATH_SYS_DEP=Off \
+              -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 
       - name: Build VW and VW Slim
         shell: bash

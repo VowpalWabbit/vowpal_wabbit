@@ -27,7 +27,7 @@ jobs:
       CMAKE_BUILD_DIR: ${{ github.workspace }}/vw/build
       SOURCE_DIR: ${{ github.workspace }}/vw
       VCPKG_ROOT: ${{ github.workspace }}/vw/ext_libs/vcpkg
-      VCPKG_REF: 53bef8994c541b6561884a8395ea35715ece75db
+      VCPKG_REF: 25b458671af03578e6a34edd8f0d1ac85e084df4
 
     steps:
       - uses: actions/checkout@v3
@@ -44,7 +44,7 @@ jobs:
             !${{ env.VCPKG_ROOT }}/packages
             !${{ env.VCPKG_ROOT }}/downloads
           key: |
-            ${{ env.VCPKG_REF }}-${{ matrix.os }}-vcpkg-cache-invalidate-0
+            ${{ env.VCPKG_REF }}-${{ matrix.os }}-vcpkg-cache-invalidate-1
       - uses: ilammy/msvc-dev-cmd@v1
       - name: Vcpkg install
         run: |
