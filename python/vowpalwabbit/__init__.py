@@ -3,6 +3,18 @@
 
 import importlib as _importlib
 import warnings as _warnings
+import sys as _sys
+import os as _os
+
+# On Windows with Python 3.8+, add DLL directory for boost_python DLL
+# Python 3.8+ no longer searches current directory for DLLs by default
+if _sys.platform == 'win32' and _sys.version_info >= (3, 8):
+    # Add both the package directory and site-packages root to DLL search path
+    # so pylibvw.pyd can find boost_python310.dll
+    pkg_dir = _os.path.dirname(__file__)
+    _os.add_dll_directory(pkg_dir)
+    # Also add parent directory (site-packages root) where pylibvw.pyd and the DLL are
+    _os.add_dll_directory(_os.path.dirname(pkg_dir))
 
 __all__ = [
     "AbstractLabel",
