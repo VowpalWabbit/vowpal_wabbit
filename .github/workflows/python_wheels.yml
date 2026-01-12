@@ -539,6 +539,9 @@ jobs:
               traceback.print_exc()
           '
 
+          echo -e "\n=== Test 4: Fresh subprocess test with debug output ==="
+          VW_DEBUG_DLL_LOAD=1 python -c "import vowpalwabbit; print('SUCCESS: vowpalwabbit imported in fresh subprocess!')"
+
           twine check ${wheel_file}
           python -m pytest .\\python\\tests\\
           python .\\python\\tests\\run_doctest.py

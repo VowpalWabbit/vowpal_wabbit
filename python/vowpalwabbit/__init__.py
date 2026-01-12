@@ -17,15 +17,23 @@ if _sys.platform == 'win32' and _sys.version_info >= (3, 8):
     parent_dir = _os.path.dirname(pkg_dir)
 
     # Try to find and preload boost_python DLL from both locations
+    _dll_loaded = False
     for search_dir in [pkg_dir, parent_dir]:
         boost_dlls = _glob.glob(_os.path.join(search_dir, 'boost_python*.dll'))
         for dll_path in boost_dlls:
             try:
                 # Preload the DLL into the process so pylibvw.pyd can find it
                 _ctypes.CDLL(dll_path)
+                if _os.environ.get('VW_DEBUG_DLL_LOAD'):
+                    print(f"vowpalwabbit: Successfully preloaded {dll_path}")
+                _dll_loaded = True
                 break
-            except (OSError, FileNotFoundError):
+            except (OSError, FileNotFoundError) as e:
+                if _os.environ.get('VW_DEBUG_DLL_LOAD'):
+                    print(f"vowpalwabbit: Failed to preload {dll_path}: {e}")
                 continue
+        if _dll_loaded:
+            break
 
 __all__ = [
     "AbstractLabel",
