@@ -451,6 +451,26 @@ jobs:
           pip install -r requirements.txt
           pip install pytest vw-executor twine
           pip install --force-reinstall ${wheel_file}
+
+          echo -e "\n=== Checking where files were installed ==="
+          PYTHON_SITE=$(python -c "import site; print(site.getsitepackages()[0])")
+          echo "Site-packages: $PYTHON_SITE"
+
+          echo -e "\n=== Looking for pylibvw.pyd ==="
+          find "$PYTHON_SITE" -name "pylibvw*.pyd" -o -name "boost_python*.dll" | while read f; do
+            echo "Found: $f"
+          done
+
+          echo -e "\n=== Files in site-packages root ==="
+          ls "$PYTHON_SITE" | grep -E "(pylibvw|boost_python)" || echo "No pylibvw or boost_python files at root"
+
+          echo -e "\n=== Files in vowpalwabbit package ==="
+          if [ -d "$PYTHON_SITE/vowpalwabbit" ]; then
+            ls "$PYTHON_SITE/vowpalwabbit" | grep -E "(\.pyd|\.dll)" || echo "No .pyd or .dll files"
+          else
+            echo "vowpalwabbit directory not found"
+          fi
+
           twine check ${wheel_file}
           python -m pytest .\\python\\tests\\
           python .\\python\\tests\\run_doctest.py
