@@ -475,6 +475,40 @@ jobs:
               print("\nvowpalwabbit directory not found!")
           '
 
+          echo -e "\n=== Checking DLL dependencies ==="
+          dumpbin //dependents "$PYTHON_SITE/pylibvw.cp310-win_amd64.pyd" || echo "dumpbin not available"
+
+          echo -e "\n=== Attempting to load DLL manually for better error ==="
+          python -c '
+          import sys, os, ctypes, sysconfig
+          site = sysconfig.get_path("purelib")
+          pyd_path = os.path.join(site, "pylibvw.cp310-win_amd64.pyd")
+          print(f"Trying to load: {pyd_path}")
+          print(f"File exists: {os.path.exists(pyd_path)}")
+
+          # Try to load with ctypes for better error
+          try:
+              lib = ctypes.CDLL(pyd_path)
+              print("Successfully loaded with ctypes!")
+          except Exception as e:
+              print(f"ctypes load failed: {e}")
+
+          # Check sys.path
+          print(f"\nsys.path:")
+          for p in sys.path[:5]:
+              print(f"  {p}")
+
+          # Try the actual import
+          print(f"\nAttempting import pylibvw...")
+          try:
+              import pylibvw
+              print("Import succeeded!")
+          except ImportError as e:
+              print(f"Import failed: {e}")
+              import traceback
+              traceback.print_exc()
+          '
+
           twine check ${wheel_file}
           python -m pytest .\\python\\tests\\
           python .\\python\\tests\\run_doctest.py
