@@ -453,23 +453,27 @@ jobs:
           pip install --force-reinstall ${wheel_file}
 
           echo -e "\n=== Checking where files were installed ==="
-          PYTHON_SITE=$(python -c "import site; print(site.getsitepackages()[0])")
+          PYTHON_SITE=$(python -c "import sysconfig; print(sysconfig.get_path('purelib'))")
           echo "Site-packages: $PYTHON_SITE"
 
-          echo -e "\n=== Looking for pylibvw.pyd ==="
-          find "$PYTHON_SITE" -name "pylibvw*.pyd" -o -name "boost_python*.dll" | while read f; do
-            echo "Found: $f"
-          done
+          echo -e "\n=== Looking for installed files ==="
+          python -c "
+import os, sysconfig
+site = sysconfig.get_path('purelib')
+print('Files in site-packages root:')
+for f in os.listdir(site):
+    if 'pylibvw' in f or 'boost_python' in f:
+        print(f'  {f}')
 
-          echo -e "\n=== Files in site-packages root ==="
-          ls "$PYTHON_SITE" | grep -E "(pylibvw|boost_python)" || echo "No pylibvw or boost_python files at root"
-
-          echo -e "\n=== Files in vowpalwabbit package ==="
-          if [ -d "$PYTHON_SITE/vowpalwabbit" ]; then
-            ls "$PYTHON_SITE/vowpalwabbit" | grep -E "(\.pyd|\.dll)" || echo "No .pyd or .dll files"
-          else
-            echo "vowpalwabbit directory not found"
-          fi
+vw_dir = os.path.join(site, 'vowpalwabbit')
+if os.path.exists(vw_dir):
+    print('\nFiles in vowpalwabbit directory:')
+    for f in os.listdir(vw_dir):
+        if f.endswith(('.pyd', '.dll', '.py')):
+            print(f'  {f}')
+else:
+    print('\nvowpalwabbit directory not found!')
+"
 
           twine check ${wheel_file}
           python -m pytest .\\python\\tests\\
