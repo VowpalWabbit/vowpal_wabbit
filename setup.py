@@ -198,7 +198,47 @@ class BuildPyLibVWBindingsModule(_build_ext):
             else:
                 print(f"Warning: No boost_python DLL found in {conda_bin}")
 
-            print(f"DLL files at root:")
+            # Also copy all DLLs from build directory (VW core + any vcpkg dependencies)
+            print(f"\nLooking for all DLLs in build directory...")
+            config = "Debug" if self.distribution.debug else "Release"
+            dll_patterns = [
+                os.path.join(self.build_temp, config, "**", "*.dll"),
+                os.path.join(self.build_temp, "**", "*.dll"),
+            ]
+            build_dlls = []
+            for pattern in dll_patterns:
+                found = glob.glob(pattern, recursive=True)
+                build_dlls.extend(found)
+
+            # Remove duplicates and filter out python DLLs
+            seen = set()
+            vw_dlls = []
+            for dll in build_dlls:
+                basename = os.path.basename(dll)
+                # Skip python DLLs and duplicates
+                if basename not in seen and not basename.startswith('python'):
+                    seen.add(basename)
+                    vw_dlls.append(dll)
+
+            print(f"Found DLLs in build: {[os.path.basename(d) for d in vw_dlls]}")
+
+            if vw_dlls:
+                for dll in vw_dlls:
+                    # Copy to root (where .pyd is)
+                    dest = os.path.join(lib_output_dir, os.path.basename(dll))
+                    print(f"Copying {dll} to {dest} (root level)")
+                    shutil.copy2(dll, dest)
+
+                    # Also copy to vowpalwabbit directory
+                    vowpalwabbit_dir = os.path.join(lib_output_dir, "vowpalwabbit")
+                    if os.path.exists(vowpalwabbit_dir):
+                        dest = os.path.join(vowpalwabbit_dir, os.path.basename(dll))
+                        print(f"Copying {dll} to {dest} (package directory)")
+                        shutil.copy2(dll, dest)
+            else:
+                print(f"Warning: No VW DLLs found in build directory")
+
+            print(f"\nDLL files at root:")
             for f in os.listdir(lib_output_dir):
                 if f.endswith('.dll'):
                     print(f"  {f}")

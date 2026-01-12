@@ -399,6 +399,9 @@ jobs:
             --cmake-options="$CMAKE_OPTIONS" \
             bdist_wheel --dist-dir=wheel_output
 
+          echo -e "\n=== Checking for VW DLLs in build directory ==="
+          find build -name "*.dll" -type f | head -20
+
           echo -e "\n=== Inspecting built wheel ==="
           WHEEL_FILE=$(ls wheel_output/*.whl | head -1)
           echo "Wheel file: $WHEEL_FILE"
