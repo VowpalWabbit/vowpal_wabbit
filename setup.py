@@ -170,46 +170,33 @@ class BuildPyLibVWBindingsModule(_build_ext):
             self.spawn(["cmake", "--build", "."] + build_args)
         os.chdir(str(here))
 
-        # On Windows, move .pyd and copy DLL to vowpalwabbit package directory
-        if system == "Windows":
+        # On Windows, copy boost_python DLL next to the .pyd file so wheel is self-contained
+        # With extension name "pylibvw", both will be at the root of the build lib directory
+        if system == "Windows" and "CONDA_PREFIX" in os.environ:
             import glob
             import shutil
 
-            # Move the .pyd file from root to vowpalwabbit subdirectory
-            package_dir = os.path.join(lib_output_dir, "vowpalwabbit")
-            distutils.dir_util.mkpath(package_dir)
+            conda_bin = os.path.join(os.environ["CONDA_PREFIX"], "Library", "bin")
+            boost_dll_pattern = os.path.join(conda_bin, "boost_python*.dll")
+            print(f"Looking for Boost DLL in: {conda_bin}")
+            boost_dlls = glob.glob(boost_dll_pattern)
+            print(f"Found DLLs: {boost_dlls}")
+            print(f"Copying to: {lib_output_dir}")
 
-            pyd_pattern = os.path.join(lib_output_dir, "pylibvw*.pyd")
-            pyd_files = glob.glob(pyd_pattern)
-            print(f"Looking for .pyd file: {pyd_pattern}")
-            print(f"Found .pyd files: {pyd_files}")
+            if boost_dlls:
+                for dll in boost_dlls:
+                    dest = os.path.join(lib_output_dir, os.path.basename(dll))
+                    print(f"Copying {dll} to {dest}")
+                    shutil.copy2(dll, dest)
+                    print(f"DLL copied, checking: {os.path.exists(dest)}")
+            else:
+                print(f"Warning: No boost_python DLL found in {conda_bin}")
 
-            if pyd_files:
-                for pyd in pyd_files:
-                    dest = os.path.join(package_dir, os.path.basename(pyd))
-                    print(f"Moving {pyd} to {dest}")
-                    shutil.move(pyd, dest)
-
-            # Copy boost_python DLL if using conda
-            if "CONDA_PREFIX" in os.environ:
-                conda_bin = os.path.join(os.environ["CONDA_PREFIX"], "Library", "bin")
-                boost_dll_pattern = os.path.join(conda_bin, "boost_python*.dll")
-                print(f"Looking for Boost DLL: {boost_dll_pattern}")
-                boost_dlls = glob.glob(boost_dll_pattern)
-                print(f"Found DLLs: {boost_dlls}")
-
-                if boost_dlls:
-                    for dll in boost_dlls:
-                        dest = os.path.join(package_dir, os.path.basename(dll))
-                        print(f"Copying {dll} to {dest}")
-                        shutil.copy2(dll, dest)
-                else:
-                    print(f"Warning: No boost_python DLL found in {conda_bin}")
-
-            # List all files in package directory
-            print(f"Files in {package_dir}:")
-            for f in os.listdir(package_dir):
-                print(f"  {f}")
+            # List files in lib_output_dir to verify
+            print(f"Files in {lib_output_dir}:")
+            for f in os.listdir(lib_output_dir):
+                if f.endswith(('.pyd', '.dll')):
+                    print(f"  {f}")
 
 
 class Clean(_clean):
