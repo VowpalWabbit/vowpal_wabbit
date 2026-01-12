@@ -176,14 +176,26 @@ class BuildPyLibVWBindingsModule(_build_ext):
             import shutil
 
             conda_bin = os.path.join(os.environ["CONDA_PREFIX"], "Library", "bin")
-            boost_dll_pattern = os.path.join(conda_bin, "boost_python*.dll")
-            print(f"Looking for Boost DLL in: {conda_bin}")
-            boost_dlls = glob.glob(boost_dll_pattern)
-            print(f"Found DLLs: {boost_dlls}")
+            print(f"Looking for runtime DLLs in: {conda_bin}")
 
-            if boost_dlls:
-                # Copy DLL to root (where .pyd is) for import to work
-                for dll in boost_dlls:
+            # Copy all DLLs that pylibvw might depend on (boost, zlib, etc.)
+            # Include boost_python, zlib, and any other dependencies
+            dll_patterns_to_copy = [
+                "boost_python*.dll",
+                "zlib*.dll",
+                "libzlib*.dll"
+            ]
+
+            conda_dlls = []
+            for pattern in dll_patterns_to_copy:
+                dll_pattern = os.path.join(conda_bin, pattern)
+                conda_dlls.extend(glob.glob(dll_pattern))
+
+            print(f"Found conda DLLs: {[os.path.basename(d) for d in conda_dlls]}")
+
+            if conda_dlls:
+                # Copy DLLs to root (where .pyd is) for import to work
+                for dll in conda_dlls:
                     dest = os.path.join(lib_output_dir, os.path.basename(dll))
                     print(f"Copying {dll} to {dest} (root level)")
                     shutil.copy2(dll, dest)
@@ -191,12 +203,12 @@ class BuildPyLibVWBindingsModule(_build_ext):
                 # Also copy to vowpalwabbit directory for package_data
                 vowpalwabbit_dir = os.path.join(lib_output_dir, "vowpalwabbit")
                 if os.path.exists(vowpalwabbit_dir):
-                    for dll in boost_dlls:
+                    for dll in conda_dlls:
                         dest = os.path.join(vowpalwabbit_dir, os.path.basename(dll))
                         print(f"Copying {dll} to {dest} (package directory)")
                         shutil.copy2(dll, dest)
             else:
-                print(f"Warning: No boost_python DLL found in {conda_bin}")
+                print(f"Warning: No conda DLLs found in {conda_bin}")
 
             # Also copy all DLLs from build directory (VW core + any vcpkg dependencies)
             print(f"\nLooking for all DLLs in build directory...")

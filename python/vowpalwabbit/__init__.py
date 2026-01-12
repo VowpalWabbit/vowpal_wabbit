@@ -6,9 +6,8 @@ import warnings as _warnings
 import sys as _sys
 import os as _os
 
-# On Windows with Python 3.8+, explicitly load boost_python DLL
-# Python 3.8+ changed DLL loading - we need to preload the boost DLL
-# so that pylibvw.pyd can find it
+# On Windows with Python 3.8+, explicitly load DLLs and add to search path
+# Python 3.8+ changed DLL loading - need both add_dll_directory and preload
 if _sys.platform == 'win32' and _sys.version_info >= (3, 8):
     import ctypes as _ctypes
     import glob as _glob
@@ -16,8 +15,14 @@ if _sys.platform == 'win32' and _sys.version_info >= (3, 8):
     pkg_dir = _os.path.dirname(__file__)
     parent_dir = _os.path.dirname(pkg_dir)
 
-    # Try to find and preload all DLL dependencies from both locations
-    # Need to preload boost_python, VW core, and any vcpkg/conda dependencies
+    # Add directories to DLL search path
+    _os.add_dll_directory(parent_dir)
+    _os.add_dll_directory(pkg_dir)
+    if _os.environ.get('VW_DEBUG_DLL_LOAD'):
+        print(f"vowpalwabbit: Added DLL directories: {parent_dir}, {pkg_dir}")
+
+    # Also preload all DLL dependencies from both locations
+    # Need to preload boost_python, zlib, and any other dependencies
     for search_dir in [parent_dir, pkg_dir]:  # Check parent first (where .pyd is)
         # Find all DLLs (*.dll) but skip python DLLs
         all_dlls = _glob.glob(_os.path.join(search_dir, '*.dll'))
