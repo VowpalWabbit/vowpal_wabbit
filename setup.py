@@ -170,35 +170,46 @@ class BuildPyLibVWBindingsModule(_build_ext):
             self.spawn(["cmake", "--build", "."] + build_args)
         os.chdir(str(here))
 
-        # On Windows, copy boost_python DLL to package directory so wheel is self-contained
-        if system == "Windows" and "CONDA_PREFIX" in os.environ:
+        # On Windows, move .pyd and copy DLL to vowpalwabbit package directory
+        if system == "Windows":
             import glob
             import shutil
-            conda_bin = os.path.join(os.environ["CONDA_PREFIX"], "Library", "bin")
-            boost_dll_pattern = os.path.join(conda_bin, "boost_python*.dll")
-            print(f"Looking for Boost DLL in: {conda_bin}")
-            print(f"Pattern: {boost_dll_pattern}")
-            boost_dlls = glob.glob(boost_dll_pattern)
-            print(f"Found DLLs: {boost_dlls}")
 
-            # lib_output_dir now already points to vowpalwabbit directory since ext name is "vowpalwabbit.pylibvw"
-            print(f"Target directory (lib_output_dir): {lib_output_dir}")
+            # Move the .pyd file from root to vowpalwabbit subdirectory
+            package_dir = os.path.join(lib_output_dir, "vowpalwabbit")
+            distutils.dir_util.mkpath(package_dir)
 
-            if boost_dlls:
-                for dll in boost_dlls:
-                    dest = os.path.join(lib_output_dir, os.path.basename(dll))
-                    print(f"Copying {dll} to {dest}")
-                    shutil.copy2(dll, dest)
-                    if os.path.exists(dest):
-                        print(f"Successfully copied, file size: {os.path.getsize(dest)}")
-                    else:
-                        print(f"ERROR: Copy failed!")
-                # List all files in package directory
-                print(f"Files in {lib_output_dir}:")
-                for f in os.listdir(lib_output_dir):
-                    print(f"  {f}")
-            else:
-                print(f"Warning: No boost_python DLL found in {conda_bin}")
+            pyd_pattern = os.path.join(lib_output_dir, "pylibvw*.pyd")
+            pyd_files = glob.glob(pyd_pattern)
+            print(f"Looking for .pyd file: {pyd_pattern}")
+            print(f"Found .pyd files: {pyd_files}")
+
+            if pyd_files:
+                for pyd in pyd_files:
+                    dest = os.path.join(package_dir, os.path.basename(pyd))
+                    print(f"Moving {pyd} to {dest}")
+                    shutil.move(pyd, dest)
+
+            # Copy boost_python DLL if using conda
+            if "CONDA_PREFIX" in os.environ:
+                conda_bin = os.path.join(os.environ["CONDA_PREFIX"], "Library", "bin")
+                boost_dll_pattern = os.path.join(conda_bin, "boost_python*.dll")
+                print(f"Looking for Boost DLL: {boost_dll_pattern}")
+                boost_dlls = glob.glob(boost_dll_pattern)
+                print(f"Found DLLs: {boost_dlls}")
+
+                if boost_dlls:
+                    for dll in boost_dlls:
+                        dest = os.path.join(package_dir, os.path.basename(dll))
+                        print(f"Copying {dll} to {dest}")
+                        shutil.copy2(dll, dest)
+                else:
+                    print(f"Warning: No boost_python DLL found in {conda_bin}")
+
+            # List all files in package directory
+            print(f"Files in {package_dir}:")
+            for f in os.listdir(package_dir):
+                print(f"  {f}")
 
 
 class Clean(_clean):
@@ -255,7 +266,7 @@ setup(
     platforms="any",
     zip_safe=False,
     include_package_data=True,
-    ext_modules=[CMakeExtension("vowpalwabbit.pylibvw")],
+    ext_modules=[CMakeExtension("pylibvw")],
     distclass=Distribution,
     cmdclass={
         "build_ext": BuildPyLibVWBindingsModule,
