@@ -85,6 +85,9 @@ endif()
 # create the lib
 add_library(pylibvw SHARED pylibvw.cc)
 set_target_properties(pylibvw PROPERTIES PREFIX "")
+# Suppress Boost.Bind global placeholders deprecation warning
+# TODO: Migrate to using boost::placeholders namespace
+target_compile_definitions(pylibvw PRIVATE BOOST_BIND_GLOBAL_PLACEHOLDERS)
 
 # If we manually created Boost::python target, explicitly add Boost include directories
 if(DEFINED Boost_PYTHON${BOOST_PY_VERSION_SUFFIX}_LIBRARY AND DEFINED Boost_INCLUDE_DIR)
