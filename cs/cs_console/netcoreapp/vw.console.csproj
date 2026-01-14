@@ -6,7 +6,6 @@
     <OutputPath>$(BinaryOutputBase.Trim())\$(Platform)\$(Configuration)</OutputPath>
     <OutputType>Exe</OutputType>
     <Platforms>AnyCPU;x64</Platforms>
-    <PlatformTarget>x64</PlatformTarget>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AssemblyName>vw_json</AssemblyName>
     <RootNamespace>VW</RootNamespace>
