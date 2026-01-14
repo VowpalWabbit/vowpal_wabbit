@@ -12,6 +12,9 @@
 
 using namespace ::testing;
 
+// Forward declaration of internal function for testing
+std::string utf16_to_utf8(const std::u16string& utf16_string);
+
 template <class T>
 void check_weights_equal(T& first, T& second)
 {
@@ -115,3 +118,66 @@ TEST(Vwdll, ParseEscaped)
   VW_Finish(handle1);
 }
 #endif
+
+TEST(Vwdll, Utf16ToUtf8Conversion)
+{
+  // Test 1: ASCII characters (1-byte UTF-8)
+  {
+    std::u16string input = u"Hello World";
+    std::string expected = "Hello World";
+    std::string result = utf16_to_utf8(input);
+    EXPECT_EQ(result, expected);
+  }
+
+  // Test 2: 2-byte UTF-8 characters (Latin-1 supplement)
+  {
+    std::u16string input = u"Café";  // é is U+00E9
+    std::string expected = "Café";
+    std::string result = utf16_to_utf8(input);
+    EXPECT_EQ(result, expected);
+  }
+
+  // Test 3: 3-byte UTF-8 characters (CJK)
+  {
+    std::u16string input = u"日本語";  // Japanese characters
+    std::string expected = "日本語";
+    std::string result = utf16_to_utf8(input);
+    EXPECT_EQ(result, expected);
+  }
+
+  // Test 4: 4-byte UTF-8 characters (emoji with surrogate pairs)
+  {
+    // U+1F600 (😀) is represented as surrogate pair: D83D DE00
+    std::u16string input;
+    input.push_back(0xD83D);  // High surrogate
+    input.push_back(0xDE00);  // Low surrogate
+    std::string result = utf16_to_utf8(input);
+    // U+1F600 in UTF-8: F0 9F 98 80
+    std::string expected = "\xF0\x9F\x98\x80";
+    EXPECT_EQ(result, expected);
+  }
+
+  // Test 5: Mixed content
+  {
+    std::u16string input = u"Test-テスト-123";
+    std::string expected = "Test-テスト-123";
+    std::string result = utf16_to_utf8(input);
+    EXPECT_EQ(result, expected);
+  }
+
+  // Test 6: Empty string
+  {
+    std::u16string input = u"";
+    std::string expected = "";
+    std::string result = utf16_to_utf8(input);
+    EXPECT_EQ(result, expected);
+  }
+
+  // Test 7: Special characters with accents
+  {
+    std::u16string input = u"Zürich";  // ü is U+00FC
+    std::string expected = "Zürich";
+    std::string result = utf16_to_utf8(input);
+    EXPECT_EQ(result, expected);
+  }
+}
