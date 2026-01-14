@@ -342,7 +342,7 @@ flatbuffers::Offset<VW::parsers::flatbuffer::Namespace> to_flat::create_namespac
 
 // Create namespace when audit is false
 flatbuffers::Offset<VW::parsers::flatbuffer::Namespace> to_flat::create_namespace(
-    features::const_iterator begin, features::const_iterator end, VW::namespace_index index, uint64_t hash)
+    VW::features::const_iterator begin, VW::features::const_iterator end, VW::namespace_index index, uint64_t hash)
 {
   std::stringstream ss;
   ss << index;
