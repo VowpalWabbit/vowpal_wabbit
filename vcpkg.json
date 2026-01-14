@@ -11,12 +11,6 @@
     "string-view-lite",
     "zlib"
   ],
-  "overrides": [
-    {
-      "name": "eigen3",
-      "version": "3.4.0"
-    }
-  ],
   "features": {
     "tests": {
       "description": "Build Tests",
