@@ -30,7 +30,7 @@ jobs:
         - { version: "3.10", os: "ubuntu-22.04", boost_suffix: "310" }
       fail-fast: false
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - name: Install build dependencies
@@ -89,7 +89,7 @@ jobs:
         version: ["3.10"]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - uses: actions/download-artifact@v4
@@ -120,7 +120,7 @@ jobs:
     name: ubuntu-latest.amd64.py3.10.sdist-bundle
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - uses: actions/setup-python@v4
@@ -154,7 +154,7 @@ jobs:
       - name: Install source dist
         shell: bash
         run: pip install dist/*.tar.gz
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - name: Install dependencies
@@ -177,7 +177,7 @@ jobs:
       fail-fast: false
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: recursive
     - name: Set up QEMU
@@ -210,7 +210,7 @@ jobs:
       py: python${{ matrix.config.version }}
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: recursive
     - name: Set up QEMU
@@ -249,7 +249,7 @@ jobs:
         - { version: "3.10", include_dir_name: python3.10/}
       fail-fast: false
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - uses: conda-incubator/setup-miniconda@v3
@@ -277,7 +277,7 @@ jobs:
         version: ["3.10"]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - uses: conda-incubator/setup-miniconda@v3
@@ -312,7 +312,7 @@ jobs:
         - { version: "3.10" }
       fail-fast: false
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - uses: conda-incubator/setup-miniconda@v3
@@ -320,7 +320,7 @@ jobs:
           auto-update-conda: true
           python-version: ${{ matrix.config.version }}
           miniconda-version: "latest"
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           path: ${{ env.VCPKG_ROOT }}
           repository: 'microsoft/vcpkg'
@@ -432,7 +432,7 @@ jobs:
         os: ["windows-2019"]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - uses: actions/setup-python@v4

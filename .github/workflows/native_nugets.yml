@@ -25,7 +25,7 @@ jobs:
         - { arch: x64, generator_arch: x64}
     steps:
       # Get repository and setup dependencies
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: 'recursive'
       - uses: ilammy/msvc-dev-cmd@v1
@@ -96,7 +96,7 @@ jobs:
         os: ["windows-2019"]
         toolset: ["v141", "v142"]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: 'recursive'
       - uses: ilammy/msvc-dev-cmd@v1
