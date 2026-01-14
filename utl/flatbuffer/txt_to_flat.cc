@@ -24,9 +24,9 @@
 
 using namespace VW::config;
 
-VW::workspace* setup(std::unique_ptr<options_i, VW::options_deleter_type> options)
+std::unique_ptr<VW::workspace> setup(std::unique_ptr<options_i, VW::options_deleter_type> options)
 {
-  VW::workspace* all = nullptr;
+  std::unique_ptr<VW::workspace> all = nullptr;
   try
   {
     all = VW::initialize(std::move(options));
@@ -60,7 +60,7 @@ int main(int argc, char* argv[])
   driver_config.add(make_option("fb_out", converter.output_flatbuffer_name));
   driver_config.add(make_option("collection_size", converter.collection_size));
 
-  std::vector<VW::workspace*> alls;
+  std::vector<std::unique_ptr<VW::workspace>> alls;
 
   std::vector<std::string> opts(argv + 1, argv + argc);
   opts.emplace_back("--quiet");
