@@ -164,11 +164,12 @@ void one_pass_svd_impl::run(const multi_ex& examples, const std::vector<float>& 
     Eigen::VectorXf& S, Eigen::MatrixXf& _V)
 {
   generate_AOmega(examples, shrink_factors);
-  _svd.compute(AOmega, Eigen::ComputeThinU | Eigen::ComputeThinV);
-  U = _svd.matrixU().leftCols(_d);
-  S = _svd.singularValues();
+  // Construct SVD with matrix and options to avoid deprecated compute() call with options
+  Eigen::JacobiSVD<Eigen::MatrixXf> svd(AOmega, Eigen::ComputeThinU | Eigen::ComputeThinV);
+  U = svd.matrixU().leftCols(_d);
+  S = svd.singularValues();
 
-  if (_set_testing_components) { _V = _svd.matrixV(); }
+  if (_set_testing_components) { _V = svd.matrixV(); }
 }
 
 one_pass_svd_impl::one_pass_svd_impl(VW::workspace* all, uint64_t d, uint64_t seed, size_t, size_t thread_pool_size,
