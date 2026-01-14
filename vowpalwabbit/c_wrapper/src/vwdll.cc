@@ -15,8 +15,6 @@
 #include "vw/core/vw.h"
 #include "vw/io/io_adapter.h"
 
-#include <codecvt>
-#include <locale>
 #include <memory>
 #include <string>
 
@@ -31,23 +29,54 @@
 // wide string directly (and live with the different hash values) or incorporate the UTF-16 to UTF-8 conversion
 // in the hashing to avoid allocating an intermediate string.
 
-#if _MSC_VER >= 1900
-// VS 2015 Bug:
-// https://social.msdn.microsoft.com/Forums/en-US/8f40dcd8-c67f-4eba-9134-a19b9178e481/vs-2015-rc-linker-stdcodecvt-error?forum=vcgeneral
-std::string utf16_to_utf8(std::u16string utf16_string)
-{
-  std::wstring_convert<std::codecvt_utf8_utf16<int16_t>, int16_t> convert;
-  auto p = reinterpret_cast<const int16_t*>(utf16_string.data());
-  return convert.to_bytes(p, p + utf16_string.size());
-}
-
-#else
+// Manual UTF-16 to UTF-8 conversion (avoids deprecated std::codecvt)
 std::string utf16_to_utf8(const std::u16string& utf16_string)
 {
-  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
-  return convert.to_bytes(utf16_string);
+  std::string utf8_string;
+  utf8_string.reserve(utf16_string.size() * 3);  // Reserve space for worst case
+
+  for (size_t i = 0; i < utf16_string.size(); ++i)
+  {
+    uint32_t codepoint = utf16_string[i];
+
+    // Handle surrogate pairs
+    if (codepoint >= 0xD800 && codepoint <= 0xDBFF && i + 1 < utf16_string.size())
+    {
+      uint32_t low = utf16_string[i + 1];
+      if (low >= 0xDC00 && low <= 0xDFFF)
+      {
+        codepoint = ((codepoint - 0xD800) << 10) + (low - 0xDC00) + 0x10000;
+        ++i;
+      }
+    }
+
+    // Encode as UTF-8
+    if (codepoint < 0x80)
+    {
+      utf8_string.push_back(static_cast<char>(codepoint));
+    }
+    else if (codepoint < 0x800)
+    {
+      utf8_string.push_back(static_cast<char>(0xC0 | (codepoint >> 6)));
+      utf8_string.push_back(static_cast<char>(0x80 | (codepoint & 0x3F)));
+    }
+    else if (codepoint < 0x10000)
+    {
+      utf8_string.push_back(static_cast<char>(0xE0 | (codepoint >> 12)));
+      utf8_string.push_back(static_cast<char>(0x80 | ((codepoint >> 6) & 0x3F)));
+      utf8_string.push_back(static_cast<char>(0x80 | (codepoint & 0x3F)));
+    }
+    else if (codepoint < 0x110000)
+    {
+      utf8_string.push_back(static_cast<char>(0xF0 | (codepoint >> 18)));
+      utf8_string.push_back(static_cast<char>(0x80 | ((codepoint >> 12) & 0x3F)));
+      utf8_string.push_back(static_cast<char>(0x80 | ((codepoint >> 6) & 0x3F)));
+      utf8_string.push_back(static_cast<char>(0x80 | (codepoint & 0x3F)));
+    }
+  }
+
+  return utf8_string;
 }
-#endif
 
 extern "C"
 {
