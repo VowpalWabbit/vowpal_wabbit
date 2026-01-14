@@ -49,6 +49,10 @@ jobs:
       - name: Install NuGet (macOS)
         if: runner.os == 'macOS'
         run: brew install nuget
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
       - name: Install dotnet t4
         run: dotnet tool install --global dotnet-t4
 
