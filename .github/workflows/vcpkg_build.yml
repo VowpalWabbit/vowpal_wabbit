@@ -57,3 +57,21 @@ jobs:
           configurePreset: "${{ matrix.preset }}"
           buildPreset: "${{ matrix.preset }}"
           testPreset: "${{ matrix.preset }}"
+      - name: Package Windows binaries
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          mkdir -p artifact
+          cp build/vowpalwabbit/cli/vw_cli_bin.exe artifact/vw.exe
+          # Copy required DLLs from vcpkg
+          if [ -d "build/vcpkg_installed/x64-windows/bin" ]; then
+            cp build/vcpkg_installed/x64-windows/bin/*.dll artifact/ || true
+          fi
+          # List what we packaged
+          ls -lh artifact/
+      - uses: actions/upload-artifact@v4
+        if: runner.os == 'Windows'
+        with:
+          name: vw-${{ matrix.os }}-${{ matrix.preset }}-${{ github.sha }}
+          path: artifact/
+          retention-days: ${{ github.event_name == 'pull_request' && 7 || 90 }}
