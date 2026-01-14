@@ -69,6 +69,9 @@ jobs:
           fi
           # List what we packaged
           ls -lh artifact/
+      - name: Test packaged artifact
+        if: runner.os == 'Windows' && matrix.preset == 'vcpkg-release'
+        run: python3 test/run_tests.py -f --clean_dirty -E 0.01 --skip_spanning_tree_tests --vw_bin_path ${{ github.workspace }}/artifact/vw.exe
       - uses: actions/upload-artifact@v4
         if: runner.os == 'Windows' && matrix.preset == 'vcpkg-release'
         with:
