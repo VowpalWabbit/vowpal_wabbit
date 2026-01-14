@@ -438,6 +438,7 @@ void automl<CMType>::offset_learn(LEARNER::learner& base, multi_ex& ec, VW::cb_c
   }
 }
 
+// Explicit template instantiations for automl
 template class automl<
     interaction_config_manager<config_oracle<oracle_rand_impl>, VW::estimators::confidence_sequence_robust>>;
 template class automl<
