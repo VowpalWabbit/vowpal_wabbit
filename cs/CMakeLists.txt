@@ -1,3 +1,8 @@
+# install(CODE/SCRIPT) uses generator expressions
+if(POLICY CMP0087)
+  cmake_policy(SET CMP0087 NEW)
+endif()
+
 IF(vw_BUILD_NET_CORE AND vw_BUILD_NET_FRAMEWORK)
   MESSAGE(FATAL_ERROR "Cannot build VW bindings for .NET Core and .NET Framework at the same time.")
 ENDIF()

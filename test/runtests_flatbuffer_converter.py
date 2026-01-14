@@ -45,7 +45,7 @@ class FlatbufferTest:
             if flags:
                 command = re.sub(tag, "", command)
             else:
-                command = re.sub("{} [:a-zA-Z0-9_.\-/]*".format(tag), "", command)
+                command = re.sub(r"{} [:a-zA-Z0-9_.\-/]*".format(tag), "", command)
         return command
 
     def get_flatbuffer_file_names(self):
@@ -130,7 +130,7 @@ class FlatbufferTest:
         for i, from_file, to_file in self.files_to_be_converted:
             # replace depends_on filename with our filename, will do nothing if no depends_on
             to_flatbuff_command = re.sub(
-                "{} [:a-zA-Z0-9_.\-/]*".format("-d"),
+                r"{} [:a-zA-Z0-9_.\-/]*".format("-d"),
                 "",
                 to_flatbuff_command,
             )

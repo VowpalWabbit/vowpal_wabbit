@@ -11,6 +11,14 @@ endif()
 if(POLICY CMP0074)
   cmake_policy(SET CMP0074 NEW)
 endif()
+# FindBoost uses CONFIG mode with Boost 1.70+
+if(POLICY CMP0167)
+  cmake_policy(SET CMP0167 NEW)
+endif()
+# FetchContent uses timestamps from archives
+if(POLICY CMP0169)
+  cmake_policy(SET CMP0169 NEW)
+endif()
 
 # Allow vcpkg to use versions feature if it is enabled with a manifest.
 # Right now this is done for the Python CIs.
