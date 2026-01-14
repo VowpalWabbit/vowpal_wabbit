@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "vw/c_wrapper/vwdll.h"
+#include "vwdll_internal.h"
 
 #include "vw/common/text_utils.h"
 #include "vw/config/options_cli.h"
@@ -15,8 +16,6 @@
 #include "vw/core/vw.h"
 #include "vw/io/io_adapter.h"
 
-#include <codecvt>
-#include <locale>
 #include <memory>
 #include <string>
 
@@ -30,24 +29,6 @@
 // a future optimization would be to write an inner version of hash feature which either hashed the
 // wide string directly (and live with the different hash values) or incorporate the UTF-16 to UTF-8 conversion
 // in the hashing to avoid allocating an intermediate string.
-
-#if _MSC_VER >= 1900
-// VS 2015 Bug:
-// https://social.msdn.microsoft.com/Forums/en-US/8f40dcd8-c67f-4eba-9134-a19b9178e481/vs-2015-rc-linker-stdcodecvt-error?forum=vcgeneral
-std::string utf16_to_utf8(std::u16string utf16_string)
-{
-  std::wstring_convert<std::codecvt_utf8_utf16<int16_t>, int16_t> convert;
-  auto p = reinterpret_cast<const int16_t*>(utf16_string.data());
-  return convert.to_bytes(p, p + utf16_string.size());
-}
-
-#else
-std::string utf16_to_utf8(const std::u16string& utf16_string)
-{
-  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
-  return convert.to_bytes(utf16_string);
-}
-#endif
 
 extern "C"
 {
