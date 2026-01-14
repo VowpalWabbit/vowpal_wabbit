@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "vw/c_wrapper/vwdll.h"
+#include "vwdll_internal.h"
 
 #include "vw/common/text_utils.h"
 #include "vw/config/options_cli.h"

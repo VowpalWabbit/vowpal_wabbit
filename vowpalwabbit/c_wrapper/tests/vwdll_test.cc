@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "vw/c_wrapper/vwdll.h"
+#include "../src/vwdll_internal.h"
 
 #include "vw/common/string_view.h"
 #include "vw/core/vw.h"
@@ -11,9 +12,6 @@
 #include <gtest/gtest.h>
 
 using namespace ::testing;
-
-// Forward declaration of internal function for testing
-std::string utf16_to_utf8(const std::u16string& utf16_string);
 
 template <class T>
 void check_weights_equal(T& first, T& second)
