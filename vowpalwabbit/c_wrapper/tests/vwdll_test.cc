@@ -121,24 +121,49 @@ TEST(Vwdll, Utf16ToUtf8Conversion)
 {
   // Test 1: ASCII characters (1-byte UTF-8)
   {
-    std::u16string input = u"Hello World";
-    std::string expected = "Hello World";
+    std::u16string input;
+    input.push_back(u'H');
+    input.push_back(u'e');
+    input.push_back(u'l');
+    input.push_back(u'l');
+    input.push_back(u'o');
+    std::string expected = "Hello";
     std::string result = utf16_to_utf8(input);
     EXPECT_EQ(result, expected);
   }
 
   // Test 2: 2-byte UTF-8 characters (Latin-1 supplement)
   {
-    std::u16string input = u"Café";  // é is U+00E9
-    std::string expected = "Café";
+    // "Café" - é is U+00E9, which in UTF-8 is C3 A9
+    std::u16string input;
+    input.push_back(0x0043);  // C
+    input.push_back(0x0061);  // a
+    input.push_back(0x0066);  // f
+    input.push_back(0x00E9);  // é
+    std::string expected;
+    expected.push_back(0x43);      // C
+    expected.push_back(0x61);      // a
+    expected.push_back(0x66);      // f
+    expected.push_back('\xC3');    // é (UTF-8 byte 1)
+    expected.push_back('\xA9');    // é (UTF-8 byte 2)
     std::string result = utf16_to_utf8(input);
     EXPECT_EQ(result, expected);
   }
 
   // Test 3: 3-byte UTF-8 characters (CJK)
   {
-    std::u16string input = u"日本語";  // Japanese characters
-    std::string expected = "日本語";
+    // "日本語" - Each character is 3 bytes in UTF-8
+    // 日 = U+65E5 -> E6 97 A5
+    // 本 = U+672C -> E6 9C AC
+    // 語 = U+8A9E -> E8 AA 9E
+    std::u16string input;
+    input.push_back(0x65E5);  // 日
+    input.push_back(0x672C);  // 本
+    input.push_back(0x8A9E);  // 語
+    std::string expected;
+    expected.push_back('\xE6'); expected.push_back('\x97'); expected.push_back('\xA5');  // 日
+    expected.push_back('\xE6'); expected.push_back('\x9C'); expected.push_back('\xAC');  // 本
+    expected.push_back('\xE8'); expected.push_back('\xAA'); expected.push_back('\x9E');  // 語
     std::string result = utf16_to_utf8(input);
     EXPECT_EQ(result, expected);
   }
@@ -155,10 +180,30 @@ TEST(Vwdll, Utf16ToUtf8Conversion)
     EXPECT_EQ(result, expected);
   }
 
-  // Test 5: Mixed content
+  // Test 5: Mixed content "Test-テスト-123"
   {
-    std::u16string input = u"Test-テスト-123";
-    std::string expected = "Test-テスト-123";
+    // テ = U+30C6 -> E3 83 86
+    // ス = U+30B9 -> E3 82 B9
+    // ト = U+30C8 -> E3 83 88
+    std::u16string input;
+    input.push_back(0x0054);  // T
+    input.push_back(0x0065);  // e
+    input.push_back(0x0073);  // s
+    input.push_back(0x0074);  // t
+    input.push_back(0x002D);  // -
+    input.push_back(0x30C6);  // テ
+    input.push_back(0x30B9);  // ス
+    input.push_back(0x30C8);  // ト
+    input.push_back(0x002D);  // -
+    input.push_back(0x0031);  // 1
+    input.push_back(0x0032);  // 2
+    input.push_back(0x0033);  // 3
+    std::string expected;
+    expected += "Test-";
+    expected.push_back('\xE3'); expected.push_back('\x83'); expected.push_back('\x86');  // テ
+    expected.push_back('\xE3'); expected.push_back('\x82'); expected.push_back('\xB9');  // ス
+    expected.push_back('\xE3'); expected.push_back('\x83'); expected.push_back('\x88');  // ト
+    expected += "-123";
     std::string result = utf16_to_utf8(input);
     EXPECT_EQ(result, expected);
   }
@@ -171,10 +216,21 @@ TEST(Vwdll, Utf16ToUtf8Conversion)
     EXPECT_EQ(result, expected);
   }
 
-  // Test 7: Special characters with accents
+  // Test 7: Special characters with accents "Zürich"
   {
-    std::u16string input = u"Zürich";  // ü is U+00FC
-    std::string expected = "Zürich";
+    // ü = U+00FC -> C3 BC in UTF-8
+    std::u16string input;
+    input.push_back(0x005A);  // Z
+    input.push_back(0x00FC);  // ü
+    input.push_back(0x0072);  // r
+    input.push_back(0x0069);  // i
+    input.push_back(0x0063);  // c
+    input.push_back(0x0068);  // h
+    std::string expected;
+    expected.push_back(0x5A);      // Z
+    expected.push_back('\xC3');    // ü (UTF-8 byte 1)
+    expected.push_back('\xBC');    // ü (UTF-8 byte 2)
+    expected += "rich";
     std::string result = utf16_to_utf8(input);
     EXPECT_EQ(result, expected);
   }
