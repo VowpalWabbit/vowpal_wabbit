@@ -24,6 +24,7 @@
         <dependency id="VowpalWabbit.runtime.linux-x64" version="@VW_NUGET_PACKAGE_VERSION_TRIMMED@" />
         <dependency id="VowpalWabbit.runtime.win-x64" version="@VW_NUGET_PACKAGE_VERSION_TRIMMED@" />
         <dependency id="VowpalWabbit.runtime.osx-x64" version="@VW_NUGET_PACKAGE_VERSION_TRIMMED@" />
+        <dependency id="VowpalWabbit.runtime.osx-arm64" version="@VW_NUGET_PACKAGE_VERSION_TRIMMED@" />
       </group>
     </dependencies>
   </metadata>

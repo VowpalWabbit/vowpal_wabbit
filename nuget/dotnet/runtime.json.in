@@ -14,6 +14,11 @@
       "@VW_NUGET_PACKAGE_NAME@": {
         "@VW_NUGET_PACKAGE_NAME@.runtime.osx-x64": "@VW_NUGET_PACKAGE_VERSION@"
       }
+    },
+    "osx-arm64": {
+      "@VW_NUGET_PACKAGE_NAME@": {
+        "@VW_NUGET_PACKAGE_NAME@.runtime.osx-arm64": "@VW_NUGET_PACKAGE_VERSION@"
+      }
     }
   }
 }
