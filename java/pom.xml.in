@@ -32,7 +32,7 @@
 
     <licenses>
         <license>
-            <name>Vowpal Wabbit License</name>
+            <name>BSD-3-Clause</name>
             <url>https://github.com/VowpalWabbit/vowpal_wabbit/blob/master/LICENSE</url>
         </license>
     </licenses>
