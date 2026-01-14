@@ -23,7 +23,7 @@ jobs:
         config:
           - { os: "windows-latest", runtime_id: "win-x64" }
           - { os: "ubuntu-latest", runtime_id: "linux-x64" }
-          - { os: "macos-14", runtime_id: "osx-x64" }
+          - { os: "macos-14", runtime_id: "osx-arm64" }
           - { os: "macos-15-intel", runtime_id: "osx-x64" }
     runs-on: ${{matrix.config.os}}
     steps:
@@ -49,6 +49,10 @@ jobs:
       - name: Install NuGet (macOS)
         if: runner.os == 'macOS'
         run: brew install nuget
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
       - name: Install dotnet t4
         run: dotnet tool install --global dotnet-t4
 
@@ -161,7 +165,7 @@ jobs:
         config:
           - { os: "windows-latest", runtime_id: "win-x64" }
           - { os: "ubuntu-latest", runtime_id: "linux-x64" }
-          - { os: "macos-14", runtime_id: "osx-x64" }
+          - { os: "macos-14", runtime_id: "osx-arm64" }
           - { os: "macos-15-intel", runtime_id: "osx-x64" }
     runs-on: ${{matrix.config.os}}
     steps:
@@ -201,6 +205,10 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.osx-x64.${{steps.get_version.outputs.version}}.nupkg
+          path: downloaded_nugets
+      - uses: actions/download-artifact@v4
+        with:
+          name: VowpalWabbit.runtime.osx-arm64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
       - name: List downloaded packages
         run: ls downloaded_nugets
@@ -260,6 +268,10 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.osx-x64.${{steps.get_version.outputs.version}}.nupkg
+          path: downloaded_nugets
+      - uses: actions/download-artifact@v4
+        with:
+          name: VowpalWabbit.runtime.osx-arm64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
       - name: List downloaded packages
         run: ls downloaded_nugets
@@ -325,6 +337,10 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.osx-x64.${{steps.get_version.outputs.version}}.nupkg
+          path: downloaded_nugets
+      - uses: actions/download-artifact@v4
+        with:
+          name: VowpalWabbit.runtime.osx-arm64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
       - name: List downloaded packages
         run: ls downloaded_nugets
