@@ -145,6 +145,14 @@ size_t cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::num
 }
 
 template <typename randomized_svd_impl, typename spanner_impl>
+void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::save_load(
+    io_buf&, bool, bool)
+{
+  // No state to save/load for large action space reduction currently
+  // This method is provided to satisfy explicit template instantiation requirements
+}
+
+template <typename randomized_svd_impl, typename spanner_impl>
 void cb_explore_adf_large_action_space<randomized_svd_impl, spanner_impl>::update_example_prediction(
     VW::multi_ex& examples)
 {
