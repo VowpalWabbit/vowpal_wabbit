@@ -65,7 +65,7 @@ int main(int argc, char* argv[])
   std::vector<std::string> opts(argv + 1, argv + argc);
   opts.emplace_back("--quiet");
 
-  auto ptr = std::make_unique<options_cli>(opts);
+  std::unique_ptr<options_cli> ptr(new options_cli(opts));
   ptr->add_and_parse(driver_config);
   alls.push_back(setup(std::move(ptr)));
   if (converter.collection_size > 0) { converter.collection = true; }
