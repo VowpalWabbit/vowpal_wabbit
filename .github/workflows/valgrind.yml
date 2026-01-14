@@ -76,4 +76,4 @@ jobs:
           chmod +x vw
           chmod +x spanning_tree
           chmod +x to_flatbuff
-          python3 test/run_tests.py -f --epsilon 1e-3 --include_flatbuffers --valgrind -t "${{ matrix.test-segment }}" --vw_bin_path=./vw --spanning_tree_bin_path=./spanning_tree --to_flatbuff_path=./to_flatbuff
+          python3 test/run_tests.py -f --epsilon 1e-3 --include_flatbuffers --valgrind -t "${{ matrix.test-segment }}" --vw_bin_path=./vw --spanning_tree_bin_path=./spanning_tree --to_flatbuff_path=./to_flatbuff --timeout 150
