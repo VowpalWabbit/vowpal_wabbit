@@ -23,7 +23,7 @@ jobs:
         config:
           - { os: "windows-latest", runtime_id: "win-x64" }
           - { os: "ubuntu-latest", runtime_id: "linux-x64" }
-          - { os: "macos-14", runtime_id: "osx-x64" }
+          - { os: "macos-14", runtime_id: "osx-arm64" }
           - { os: "macos-15-intel", runtime_id: "osx-x64" }
     runs-on: ${{matrix.config.os}}
     steps:
@@ -161,7 +161,7 @@ jobs:
         config:
           - { os: "windows-latest", runtime_id: "win-x64" }
           - { os: "ubuntu-latest", runtime_id: "linux-x64" }
-          - { os: "macos-14", runtime_id: "osx-x64" }
+          - { os: "macos-14", runtime_id: "osx-arm64" }
           - { os: "macos-15-intel", runtime_id: "osx-x64" }
     runs-on: ${{matrix.config.os}}
     steps:
@@ -201,6 +201,10 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.osx-x64.${{steps.get_version.outputs.version}}.nupkg
+          path: downloaded_nugets
+      - uses: actions/download-artifact@v4
+        with:
+          name: VowpalWabbit.runtime.osx-arm64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
       - name: List downloaded packages
         run: ls downloaded_nugets
@@ -260,6 +264,10 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.osx-x64.${{steps.get_version.outputs.version}}.nupkg
+          path: downloaded_nugets
+      - uses: actions/download-artifact@v4
+        with:
+          name: VowpalWabbit.runtime.osx-arm64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
       - name: List downloaded packages
         run: ls downloaded_nugets
@@ -325,6 +333,10 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: VowpalWabbit.runtime.osx-x64.${{steps.get_version.outputs.version}}.nupkg
+          path: downloaded_nugets
+      - uses: actions/download-artifact@v4
+        with:
+          name: VowpalWabbit.runtime.osx-arm64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
       - name: List downloaded packages
         run: ls downloaded_nugets
