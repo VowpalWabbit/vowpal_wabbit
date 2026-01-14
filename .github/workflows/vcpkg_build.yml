@@ -10,7 +10,7 @@ on:
       - '*'
 
 env:
-  VCPKG_DEFAULT_BINARY_CACHE: ${{github.workspace}}/vcpkg_binary_cache
+  VCPKG_BINARY_SOURCES: 'clear;files,${{github.workspace}}/vcpkg_binary_cache,readwrite'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
