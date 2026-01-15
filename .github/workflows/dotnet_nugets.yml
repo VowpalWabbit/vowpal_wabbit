@@ -28,7 +28,7 @@ jobs:
     runs-on: ${{matrix.config.os}}
     steps:
       # Setup for build
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: 'recursive'
       - name: Setup MSVC Developer Command Prompt
@@ -169,7 +169,7 @@ jobs:
           - { os: "macos-15-intel", runtime_id: "osx-x64" }
     runs-on: ${{matrix.config.os}}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: 'recursive'
       - if: ${{ startsWith(matrix.config.os, 'windows') }}
@@ -233,7 +233,7 @@ jobs:
     needs: [build_nuget_dotnet]
     runs-on: "windows-latest"
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: 'recursive'
       - uses: ilammy/msvc-dev-cmd@v1
@@ -300,7 +300,7 @@ jobs:
       deployments: write
     if: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: 'recursive'
       - uses: ilammy/msvc-dev-cmd@v1

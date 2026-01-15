@@ -22,7 +22,7 @@ jobs:
         config:
         - { version: "3.10" }
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - name: Install build dependencies
@@ -51,7 +51,7 @@ jobs:
         config:
         - { version: "3.10" }
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - name: Download Wheel
@@ -82,7 +82,7 @@ jobs:
     name: lint.python.formatting
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
       - name: Install python dependencies
@@ -97,7 +97,7 @@ jobs:
     name: lint.c++.formatting
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Install clang-format
@@ -142,7 +142,7 @@ jobs:
     name: lint.c++.clang-tidy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: cachix/install-nix-action@v18
       - name: Run clang-tidy
         run: |

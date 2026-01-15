@@ -19,7 +19,7 @@ jobs:
   benchmark:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
           ref: ${{ github.event.inputs.benchmarks_ref }}
@@ -33,7 +33,7 @@ jobs:
           path: test/benchmarks/
           if-no-files-found: error
 # checkout first ref
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
           ref: ${{ github.event.inputs.base_ref }}
@@ -80,7 +80,7 @@ jobs:
           python3 -m pip install pandas
       - run: rm -rf benchmark build vowpalwabbit/parser/flatbuffer/generated/ test/benchmarks/ # generated or downloaded files
 # checkout second ref
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: recursive
           ref: ${{ github.event.inputs.compare_ref }}
