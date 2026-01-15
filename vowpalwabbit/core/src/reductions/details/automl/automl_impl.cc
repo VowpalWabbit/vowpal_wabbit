@@ -363,12 +363,23 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::process_exa
   }
 }
 
+// MSVC C4661: Template methods are split across automl_impl.cc and automl_iomodel.cc.
+// The warning is cosmetic - all methods are defined, they're just in different translation units.
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4661)
+#endif
+
 template class interaction_config_manager<config_oracle<oracle_rand_impl>, VW::estimators::confidence_sequence_robust>;
 template class interaction_config_manager<config_oracle<one_diff_impl>, VW::estimators::confidence_sequence_robust>;
 template class interaction_config_manager<config_oracle<champdupe_impl>, VW::estimators::confidence_sequence_robust>;
 template class interaction_config_manager<config_oracle<one_diff_inclusion_impl>,
     VW::estimators::confidence_sequence_robust>;
 template class interaction_config_manager<config_oracle<qbase_cubic>, VW::estimators::confidence_sequence_robust>;
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 template <typename CMType>
 void automl<CMType>::one_step(LEARNER::learner& base, multi_ex& ec, VW::cb_class& logged, uint64_t labelled_action)
