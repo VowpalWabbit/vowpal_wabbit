@@ -44,7 +44,7 @@ static void bench_cache_io_buf(benchmark::State& state, ExtraArgs&&... extra_arg
 
   auto cache_buffer = get_cache_buffer(example_string);
   auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(std::vector<std::string>{"--cb", "2", "--quiet"}));
-  io_buf io_buffer;
+  VW::io_buf io_buffer;
   io_buffer.add_file(VW::io::create_buffer_view(cache_buffer->data(), cache_buffer->size()));
   VW::multi_ex examples;
   examples.push_back(&VW::get_unused_example(vw.get()));
@@ -66,7 +66,7 @@ static void bench_text_io_buf(benchmark::State& state, ExtraArgs&&... extra_args
 
   auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(std::vector<std::string>{"--cb", "2", "--quiet"}));
   VW::multi_ex examples;
-  io_buf buffer;
+  VW::io_buf buffer;
   buffer.add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
   examples.push_back(&VW::get_unused_example(vw.get()));
 
@@ -86,7 +86,7 @@ static void benchmark_example_reuse(benchmark::State& state)
       "NumberOfLegs:4.0 HasStripes";
 
   auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(std::vector<std::string>{"--quiet"}));
-  io_buf buffer;
+  VW::io_buf buffer;
   buffer.add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
   VW::multi_ex examples;
 
