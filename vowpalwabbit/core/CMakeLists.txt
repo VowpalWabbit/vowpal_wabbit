@@ -440,6 +440,15 @@ if (MSVC_IDE)
   target_sources(vw_core PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/vw_types.natvis> )
 endif()
 
+# Suppress MSVC warnings
+if(MSVC)
+  # C4661: Template methods split across translation units (automl_impl.cc and automl_iomodel.cc)
+  # This is intentional and all methods are properly defined
+  # C4117/C5308: Modifying reserved macro '_M_CEE' in object_pool.h for managed C++ compatibility
+  # (C4117 in older MSVC, C5308 in newer MSVC like VS2022)
+  target_compile_options(vw_core PRIVATE /wd4661 /wd4117 /wd5308)
+endif()
+
 if(STD_INV_SQRT)
   target_compile_definitions(vw_core PUBLIC STD_INV_SQRT)
 endif()
