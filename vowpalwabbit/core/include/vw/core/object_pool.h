@@ -14,12 +14,20 @@
 // Mutex and CV cannot be used in managed C++, tell the compiler that this is unmanaged even if included in a managed
 // project.
 #ifdef _M_CEE
+// Suppress warning about modifying reserved macro - this is intentional to work around managed C++ limitations
+#  ifdef _MSC_VER
+#    pragma warning(push)
+#    pragma warning(disable : 4117)
+#  endif
 #  pragma managed(push, off)
 #  undef _M_CEE
 #  include <condition_variable>
 #  include <mutex>
 #  define _M_CEE 001
 #  pragma managed(pop)
+#  ifdef _MSC_VER
+#    pragma warning(pop)
+#  endif
 #else
 #  include <condition_variable>
 #  include <mutex>

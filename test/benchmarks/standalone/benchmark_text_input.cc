@@ -52,7 +52,7 @@ static void benchmark_cb_adf_learn(benchmark::State& state, int feature_count)
 {
   auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(
       std::vector<std::string>{"--cb_explore_adf", "--epsilon", "0.1", "--quiet", "-q", "::"}));
-  multi_ex examples;
+  VW::multi_ex examples;
   examples.push_back(VW::read_example(*vw, std::string("shared tag1| s_1 s_2")));
   examples.push_back(VW::read_example(*vw, get_x_string_fts(feature_count)));
   examples.push_back(VW::read_example(*vw, get_x_string_fts_no_label(feature_count)));
@@ -71,7 +71,7 @@ static void benchmark_ccb_adf_learn(benchmark::State& state, std::string feature
   auto args = VW::split_command_line("--ccb_explore_adf --quiet" + cmd);
   auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
 
-  multi_ex examples;
+  VW::multi_ex examples;
   examples.push_back(VW::read_example(*vw, std::string("ccb shared |User " + feature_string)));
   examples.push_back(VW::read_example(*vw, std::string("ccb action |Action1 " + feature_string)));
   examples.push_back(VW::read_example(*vw, std::string("ccb action |Action2 " + feature_string)));
@@ -90,10 +90,10 @@ static void benchmark_ccb_adf_learn(benchmark::State& state, std::string feature
   vw->finish_example(examples);
 }
 
-static std::vector<std::vector<std::string>> gen_cb_examples(size_t num_examples,  // Total number of multi_ex examples
+static std::vector<std::vector<std::string>> gen_cb_examples(size_t num_examples,  // Total number of VW::multi_ex examples
     size_t shared_feats_size,                                                      // Number of possible shared features
-    size_t shared_feats_count,    // Number of shared features per multi_ex
-    size_t actions_per_example,   // Number of actions in each multi_ex
+    size_t shared_feats_count,    // Number of shared features per VW::multi_ex
+    size_t actions_per_example,   // Number of actions in each VW::multi_ex
     size_t feature_groups_size,   // Number of possible feature groups
     size_t feature_groups_count,  // Number of features groups per action
     size_t action_feats_size,     // Number of possible per-action features
@@ -135,10 +135,10 @@ static std::vector<std::vector<std::string>> gen_cb_examples(size_t num_examples
   return examples_vec;
 }
 
-static std::vector<std::vector<std::string>> gen_ccb_examples(size_t num_examples,  // Total number of multi_ex examples
+static std::vector<std::vector<std::string>> gen_ccb_examples(size_t num_examples,  // Total number of VW::multi_ex examples
     size_t shared_feats_size,     // Number of possible shared features
-    size_t shared_feats_count,    // Number of shared features per multi_ex
-    size_t actions_per_example,   // Number of actions in each multi_ex
+    size_t shared_feats_count,    // Number of shared features per VW::multi_ex
+    size_t actions_per_example,   // Number of actions in each VW::multi_ex
     size_t feature_groups_size,   // Number of possible feature groups
     size_t feature_groups_count,  // Number of features groups per action or slot
     size_t action_feats_size,     // Number of possible per-action/slot features
@@ -196,12 +196,12 @@ static std::vector<std::vector<std::string>> gen_ccb_examples(size_t num_example
   return examples_vec;
 }
 
-static std::vector<multi_ex> load_examples(VW::workspace* vw, const std::vector<std::vector<std::string>>& ex_strs)
+static std::vector<VW::multi_ex> load_examples(VW::workspace* vw, const std::vector<std::vector<std::string>>& ex_strs)
 {
-  std::vector<multi_ex> examples_vec;
+  std::vector<VW::multi_ex> examples_vec;
   for (const auto& ex_str : ex_strs)
   {
-    multi_ex mxs;
+    VW::multi_ex mxs;
     for (const auto& example : ex_str) { mxs.push_back(VW::read_example(*vw, example)); }
     examples_vec.push_back(mxs);
   }
@@ -213,14 +213,14 @@ static void benchmark_multi(
 {
   auto args = VW::split_command_line(cmd);
   auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
-  std::vector<multi_ex> examples_vec = load_examples(vw.get(), examples_str);
+  std::vector<VW::multi_ex> examples_vec = load_examples(vw.get(), examples_str);
 
   for (auto _ : state)
   {
-    for (multi_ex examples : examples_vec) { vw->learn(examples); }
+    for (VW::multi_ex examples : examples_vec) { vw->learn(examples); }
     benchmark::ClobberMemory();
   }
-  for (multi_ex examples : examples_vec) { vw->finish_example(examples); }
+  for (VW::multi_ex examples : examples_vec) { vw->finish_example(examples); }
 }
 
 static void benchmark_multi_predict(
@@ -228,16 +228,16 @@ static void benchmark_multi_predict(
 {
   auto args = VW::split_command_line(cmd);
   auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(args));
-  std::vector<multi_ex> examples_vec = load_examples(vw.get(), examples_str);
+  std::vector<VW::multi_ex> examples_vec = load_examples(vw.get(), examples_str);
 
-  for (multi_ex examples : examples_vec) { vw->learn(examples); }
+  for (VW::multi_ex examples : examples_vec) { vw->learn(examples); }
 
   for (auto _ : state)
   {
-    for (multi_ex examples : examples_vec) { vw->predict(examples); }
+    for (VW::multi_ex examples : examples_vec) { vw->predict(examples); }
     benchmark::ClobberMemory();
   }
-  for (multi_ex examples : examples_vec) { vw->finish_example(examples); }
+  for (VW::multi_ex examples : examples_vec) { vw->finish_example(examples); }
 }
 
 BENCHMARK_CAPTURE(bench_text, 120_string_fts, get_x_string_fts(120));

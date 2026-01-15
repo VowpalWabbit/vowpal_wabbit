@@ -17,11 +17,11 @@ static void benchmark_sum_ft_squared_char(benchmark::State& state)
       VW::make_unique<VW::config::options_cli>(std::vector<std::string>{"--quiet", "-q", "MS", "--cubic", "MOS"}));
 
   VW::multi_ex examples;
-  io_buf buffer;
+  VW::io_buf buffer;
   buffer.add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
   examples.push_back(&VW::get_unused_example(vw.get()));
   vw->parser_runtime.example_parser->reader(vw.get(), buffer, examples);
-  example* ex = examples[0];
+  VW::example* ex = examples[0];
   VW::setup_example(*vw, ex);
   for (auto _ : state)
   {
@@ -43,11 +43,11 @@ static void benchmark_sum_ft_squared_extent(benchmark::State& state)
           "--experimental_full_name_interactions", "MetricFeatures|OtherFeatures|Says"}));
 
   VW::multi_ex examples;
-  io_buf buffer;
+  VW::io_buf buffer;
   buffer.add_file(VW::io::create_buffer_view(example_string.data(), example_string.size()));
   examples.push_back(&VW::get_unused_example(vw.get()));
   vw->parser_runtime.example_parser->reader(vw.get(), buffer, examples);
-  example* ex = examples[0];
+  VW::example* ex = examples[0];
   VW::setup_example(*vw, ex);
   for (auto _ : state)
   {

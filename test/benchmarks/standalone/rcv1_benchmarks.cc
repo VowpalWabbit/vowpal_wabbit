@@ -13,7 +13,7 @@
 static void benchmark_rcv1_dataset(benchmark::State& state, const std::string& command_line)
 {
   auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(VW::split_command_line(command_line)));
-  std::vector<example*> examples;
+  std::vector<VW::example*> examples;
   examples.push_back(VW::read_example(*vw,
       std::string(
           "-1 |f 5:3.4770757e-02 21:5.2058056e-02 22:1.0131893e-01 66:9.8602206e-02 126:7.3677950e-02 "
