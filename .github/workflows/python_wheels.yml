@@ -182,7 +182,7 @@ jobs:
         submodules: recursive
     - name: Set up QEMU
       id: qemu
-      uses: docker/setup-qemu-action@v1
+      uses: docker/setup-qemu-action@v3
     - name: Pull image
       run: docker pull vowpalwabbit/manylinux2014_aarch64-build
     - name: Build Wheel
@@ -215,7 +215,7 @@ jobs:
         submodules: recursive
     - name: Set up QEMU
       id: qemu
-      uses: docker/setup-qemu-action@v1
+      uses: docker/setup-qemu-action@v3
     - uses: actions/download-artifact@v4
       with:
         name: manylinux_aarch64_${{ matrix.config.version }}
