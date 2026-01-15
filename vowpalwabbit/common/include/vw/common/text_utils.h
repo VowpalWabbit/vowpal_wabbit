@@ -36,8 +36,9 @@ void tokenize(char delim, VW::string_view s, ContainerT& ret, bool allow_empty =
  */
 inline bool ends_with(VW::string_view full_string, VW::string_view ending)
 {
-  return full_string.size() >= ending.size() &&
-      0 == full_string.compare(full_string.size() - ending.size(), ending.size(), ending);
+  if (full_string.size() < ending.size()) { return false; }
+  const size_t start_pos = full_string.size() - ending.size();
+  return 0 == full_string.compare(start_pos, ending.size(), ending);
 }
 
 /**
