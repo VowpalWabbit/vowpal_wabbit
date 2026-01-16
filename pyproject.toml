@@ -38,7 +38,7 @@ before-build = [
 ]
 # Use vendored zlib (VW_ZLIB_SYS_DEP=OFF) for self-contained wheels that auditwheel can properly tag
 # Disable SIMD optimizations (VW_FEAT_LAS_SIMD=OFF) for portable wheels that work on all CPUs
-environment = { BOOST_PY_VERSION_SUFFIX="3", CMAKE_ARGS="-DCMAKE_POLICY_DEFAULT_CMP0167=OLD -DBoost_NO_BOOST_CMAKE=ON -DVW_ZLIB_SYS_DEP=OFF -DVW_FEAT_LAS_SIMD=OFF" }
+environment = { BOOST_PY_VERSION_SUFFIX="3", CMAKE_ARGS="-DBoost_DIR=NOTFOUND -DBoost_NO_BOOST_CMAKE=ON -DVW_ZLIB_SYS_DEP=OFF -DVW_FEAT_LAS_SIMD=OFF" }
 
 [tool.cibuildwheel.macos]
 before-all = [
@@ -73,4 +73,4 @@ environment = { BOOST_PY_VERSION_SUFFIX="3" }
 # Override for ARM64 Linux builds to use conservative architecture flags
 [[tool.cibuildwheel.overrides]]
 select = "*-manylinux_*_aarch64"
-environment = { BOOST_PY_VERSION_SUFFIX="3", CMAKE_ARGS="-DCMAKE_POLICY_DEFAULT_CMP0167=OLD -DBoost_NO_BOOST_CMAKE=ON -DVW_ZLIB_SYS_DEP=OFF -DVW_FEAT_LAS_SIMD=OFF -DCMAKE_CXX_FLAGS='-march=armv8-a -mtune=generic' -DCMAKE_C_FLAGS='-march=armv8-a -mtune=generic'" }
+environment = { BOOST_PY_VERSION_SUFFIX="3", CMAKE_ARGS="-DBoost_DIR=NOTFOUND -DBoost_NO_BOOST_CMAKE=ON -DVW_ZLIB_SYS_DEP=OFF -DVW_FEAT_LAS_SIMD=OFF -DCMAKE_CXX_FLAGS='-march=armv8-a -mtune=generic' -DCMAKE_C_FLAGS='-march=armv8-a -mtune=generic'" }
