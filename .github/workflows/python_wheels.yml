@@ -295,7 +295,7 @@ jobs:
         shell: bash -l {0}
         run: |
           pip install -r requirements.txt
-          pip install pytest vw-executor twine
+          pip install pytest vw-executor twine setuptools
           pip install --force-reinstall built_wheel/*.whl
           twine check built_wheel/*.whl
           python -m pytest ./python/tests/
@@ -360,7 +360,8 @@ jobs:
           echo "VCPKG_ROOT_CMAKE: $VCPKG_ROOT_CMAKE"
 
           # vcpkg installs boost-python as boost_python3.lib (generic name for all Python 3.x)
-          CMAKE_OPTIONS="-DSTATIC_LINK_VW_JAVA=On;-DCMAKE_BUILD_TYPE=Release;-DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT_CMAKE/scripts/buildsystems/vcpkg.cmake;-DVW_ZLIB_SYS_DEP=OFF;-DBoost_NO_BOOST_CMAKE=ON;-DBOOST_PY_VERSION_SUFFIX=3"
+          # vcpkg provides Boost via CONFIG mode, so don't disable it with Boost_NO_BOOST_CMAKE
+          CMAKE_OPTIONS="-DSTATIC_LINK_VW_JAVA=On;-DCMAKE_BUILD_TYPE=Release;-DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT_CMAKE/scripts/buildsystems/vcpkg.cmake;-DVW_ZLIB_SYS_DEP=OFF;-DBOOST_PY_VERSION_SUFFIX=3"
 
           echo -e "\n=== Building wheel with setup.py ==="
           echo "CMAKE_OPTIONS: $CMAKE_OPTIONS"
