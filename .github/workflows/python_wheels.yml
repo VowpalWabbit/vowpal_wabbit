@@ -313,6 +313,8 @@ jobs:
         - { version: "3.10", boost_py_lib: "boost_python310" }
         - { version: "3.11", boost_py_lib: "boost_python311" }
         - { version: "3.12", boost_py_lib: "boost_python312" }
+        - { version: "3.13", boost_py_lib: "boost_python313" }
+        - { version: "3.14", boost_py_lib: "boost_python314" }
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -398,7 +400,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        version: ["3.10", "3.11", "3.12"]
+        version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
         os: ["windows-2019"]
       fail-fast: false
     steps:
