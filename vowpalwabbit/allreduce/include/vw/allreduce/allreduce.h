@@ -58,7 +58,8 @@ using socket_t = int;
 // Suppress warning about modifying reserved macro - this is intentional to work around managed C++ limitations
 #  ifdef _MSC_VER
 #    pragma warning(push)
-#    pragma warning(disable : 4117)
+#    pragma warning(disable : 4117)  // C4117 in older MSVC
+#    pragma warning(disable : 5308)  // C5308 in VS2022+
 #  endif
 #  pragma managed(push, off)
 #  undef _M_CEE
