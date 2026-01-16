@@ -346,7 +346,7 @@ jobs:
         shell: cmd
         run: |
           cd %VCPKG_ROOT%
-          vcpkg install boost:x64-windows boost-python:x64-windows zlib:x64-windows --classic --no-print-usage
+          vcpkg install boost-python:x64-windows zlib:x64-windows --classic --no-print-usage
       - name: Build wheel
         shell: bash
         run: |
@@ -360,8 +360,9 @@ jobs:
           echo "VCPKG_ROOT_CMAKE: $VCPKG_ROOT_CMAKE"
 
           # vcpkg installs boost-python as boost_python3.lib (generic name for all Python 3.x)
-          # vcpkg provides Boost via CONFIG mode, so don't disable it with Boost_NO_BOOST_CMAKE
-          CMAKE_OPTIONS="-DSTATIC_LINK_VW_JAVA=On;-DCMAKE_BUILD_TYPE=Release;-DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT_CMAKE/scripts/buildsystems/vcpkg.cmake;-DVW_ZLIB_SYS_DEP=OFF;-DBOOST_PY_VERSION_SUFFIX=3"
+          # Use Boost_NO_BOOST_CMAKE to force MODULE mode (FindBoost.cmake) instead of CONFIG mode
+          # since boost-python alone doesn't provide BoostConfig.cmake files
+          CMAKE_OPTIONS="-DSTATIC_LINK_VW_JAVA=On;-DCMAKE_BUILD_TYPE=Release;-DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT_CMAKE/scripts/buildsystems/vcpkg.cmake;-DVW_ZLIB_SYS_DEP=OFF;-DBoost_NO_BOOST_CMAKE=ON;-DBOOST_PY_VERSION_SUFFIX=3"
 
           echo -e "\n=== Building wheel with setup.py ==="
           echo "CMAKE_OPTIONS: $CMAKE_OPTIONS"
