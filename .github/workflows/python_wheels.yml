@@ -21,111 +21,67 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  linux-python-build:
-    name: manylinux.amd64.py${{ matrix.config.version}}.build
-    runs-on: ${{ matrix.config.os }}
+  cibuildwheel-build-linux:
+    name: cibuildwheel.${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        config:
-        - { version: "3.10", os: "ubuntu-22.04", boost_suffix: "310" }
+        os: [ubuntu-latest, ubuntu-24.04-arm]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
-          submodules: recursive
-      - name: Install build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake ninja-build libboost-dev libboost-python-dev python3-dev python3-pip zlib1g-dev
-      - name: Diagnostic - Check Python and Boost configuration
-        shell: bash
-        run: |
-          echo "=== Python Information ==="
-          which python3
-          python3 --version
-          python3 -c "import sys; print(f'Python path: {sys.executable}')"
-          python3 -c "import sysconfig; print(f'Include dir: {sysconfig.get_path(\"include\")}')"
-
-          echo -e "\n=== Boost Python Libraries ==="
-          dpkg -L libboost-python-dev | grep -E '\.so' || echo "No .so files found"
-          find /usr/lib -name '*boost_python*' 2>/dev/null || echo "No boost_python libs in /usr/lib"
-
-          echo -e "\n=== Boost Version ==="
-          dpkg -l | grep libboost-python
-
-          echo -e "\n=== CMake Python Detection Test ==="
-          cat > /tmp/test_cmake.txt << 'TESTEOF'
-          cmake_minimum_required(VERSION 3.10)
-          project(test)
-          find_package(Python3 COMPONENTS Interpreter Development)
-          find_package(Boost COMPONENTS python3)
-          message(STATUS "Python3_FOUND: ${Python3_FOUND}")
-          message(STATUS "Python3_VERSION: ${Python3_VERSION}")
-          message(STATUS "Python3_EXECUTABLE: ${Python3_EXECUTABLE}")
-          message(STATUS "Python3_INCLUDE_DIRS: ${Python3_INCLUDE_DIRS}")
-          message(STATUS "Boost_FOUND: ${Boost_FOUND}")
-          message(STATUS "Boost_VERSION: ${Boost_VERSION}")
-          TESTEOF
-          cmake -P /tmp/test_cmake.txt 2>&1 || true
-      - name: Build wheel
-        shell: bash
-        run: |
-          python3 -m pip install wheel setuptools auditwheel
-          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -DBoost_NO_BOOST_CMAKE=ON" python3 -m pip wheel . -w wheel_output/ --verbose
-          auditwheel repair wheel_output/*whl -w audit_output/
-      - name: Upload built wheel
-        uses: actions/upload-artifact@v4
+          submodules: true
+          fetch-depth: 0
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v3.3.0
+      - uses: actions/upload-artifact@v4
         with:
-          name: manylinux_amd64_${{ matrix.config.version }}
-          path: audit_output/
-  linux-python-test:
-    name: manylinux.amd64.py${{ matrix.version }}.test
-    needs: linux-python-build
-    container:
-      image: python:${{ matrix.version }}
-    runs-on: ubuntu-latest
+          name: cibw-wheels-${{ matrix.os }}
+          path: ./wheelhouse/*.whl
+
+  cibuildwheel-build-windows-mac:
+    name: cibuildwheel.${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    env:
+      VW_PYTHON_USE_VCPKG: "1"
+      CIBW_ENVIRONMENT_WINDOWS: >
+        CMAKE_ARGS="-DCMAKE_TOOLCHAIN_FILE={project}/ext_libs/vcpkg/scripts/buildsystems/vcpkg.cmake -DVW_ZLIB_SYS_DEP=OFF"
+      CIBW_BEFORE_BUILD_WINDOWS: >
+        pip install delvewheel &&
+        cmd /c "cd /d {project}\\ext_libs\\vcpkg && (if not exist vcpkg.exe bootstrap-vcpkg.bat) && vcpkg.exe install" &&
+        powershell -Command "(Get-Content {project}\\ext_libs\\zlib\\CMakeLists.txt) -replace 'cmake_minimum_required\(VERSION 2\.4\.4\)', 'cmake_minimum_required(VERSION 3.5)' | Set-Content {project}\\ext_libs\\zlib\\CMakeLists.txt"
     strategy:
       matrix:
-        version: ["3.10"]
+        # macos-15-intel is an Intel runner, macos-14 is Apple silicon
+        os: [windows-latest, macos-15-intel, macos-14]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
-          submodules: recursive
-      - uses: actions/download-artifact@v4
+          submodules: true
+          fetch-depth: 0
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
         with:
-          name: manylinux_amd64_${{ matrix.version }}
-          path: built_wheel
-      - name: Test wheel
-        shell: bash
-        run: |
-          pip install -r requirements.txt
-          pip install pytest vw-executor twine
-          pip install --force-reinstall built_wheel/*.whl
-          twine check built_wheel/*.whl
-          python -m pytest ./python/tests/
-          python ./python/tests/run_doctest.py
-      - name: Run vw tests as Python module
-        shell: bash
-        # Onethread is not supported in the Python wrapper so those tests must be skipped
-        # Stdin is not supported
-        # Help output tests assume --onthread is in the output
-        # Fail tests are not included because the python stack trace causes the output to differ
-        # Daemon tests are skipped
-        # Tests without datafiles are skipped
-        run: |
-          cd test
-          python run_tests.py -E 0.001 -f --skip_spanning_tree_tests --vw_bin_path "python3 -m vowpalwabbit" --skip_test 60 61 92 96 149 152 177 193 194 195 220 275 276 324 325 326 349 350 356 357 358 385 389 390 391 392 393 400 399 401 403 431 440
+          vcpkgDirectory: '${{ github.workspace }}/ext_libs/vcpkg'
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v3.3.0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cibw-wheels-${{ matrix.os }}
+          path: ./wheelhouse/*.whl
+
   linux-python-sdist-bundle:
-    name: ubuntu-latest.amd64.py3.10.sdist-bundle
+    name: ubuntu-latest.amd64.py3.8.sdist-bundle
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v2
         with:
-          python-version: '3.10'
+          python-version: '3.8'
           architecture: 'x64'
       - name: Install dependencies
         shell: bash
@@ -136,12 +92,13 @@ jobs:
           name: python_source_distribution
           path: dist/*.tar.gz
           if-no-files-found: error
+
   linux-python-sdist-build-test:
-    name: ubuntu-latest.amd64.py3.10.sdist-build-test
+    name: ubuntu-latest.amd64.py3.8.sdist-build-test
     needs: linux-python-sdist-bundle
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v6
       - uses: actions/download-artifact@v4
         with:
           name: python_source_distribution
@@ -153,308 +110,20 @@ jobs:
           sudo apt install libboost-test-dev libboost-python-dev zlib1g-dev cmake ninja-build g++
       - name: Install source dist
         shell: bash
-        run: pip install dist/*.tar.gz
-      - uses: actions/checkout@v4
+        run: |
+          ls -l
+          ls -l dist/
+          pip install dist/*.tar.gz
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
       - name: Install dependencies
         shell: bash
         run: |
           pip install -r requirements.txt
-          pip install pytest vw-executor
+          pip install pytest pyclean vw-executor
       - name: Run unit tests
         shell: bash
         run: |
+          python -m pyclean ./python/tests/
           python -m pytest ./python/tests/
-  linux-python-build-aarch64:
-    name: manylinux.aarch64.py${{ matrix.config.version }}.build
-    # Aarch builds are slow and are only run on push and not PR
-    if: ${{ github.event_name == 'push' }}
-    strategy:
-      matrix:
-        config:
-        - { version: "3.10", base_path: /opt/python/cp310-cp310/, include_dir_name: python3.10/ }
-      fail-fast: false
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: recursive
-    - name: Set up QEMU
-      id: qemu
-      uses: docker/setup-qemu-action@v3
-    - name: Pull image
-      run: docker pull vowpalwabbit/manylinux2014_aarch64-build
-    - name: Build Wheel
-      run: |
-            docker run --rm -v ${{ github.workspace }}:/ws:rw --workdir=/ws \
-            vowpalwabbit/manylinux2014_aarch64-build \
-            bash -exc 'CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DPython_INCLUDE_DIR='${{ matrix.config.base_path }}include/${{ matrix.config.include_dir_name }}'" ${{ matrix.config.base_path }}bin/pip wheel . -w wheel_output/ --verbose && \
-            auditwheel repair wheel_output/*whl -w audit_output/'
-    - name: Upload built wheel
-      uses: actions/upload-artifact@v4
-      with:
-        name: manylinux_aarch64_${{ matrix.config.version }}
-        path: audit_output/
-  linux-python-test-aarch64:
-    name: manylinux.aarch64.py${{ matrix.config.version }}.test
-    needs: linux-python-build-aarch64
-    # Aarch builds are slow and are only run on push and not PR
-    if: ${{ github.event_name == 'push' }}
-    strategy:
-      matrix:
-        config:
-        - { version: "3.10" }
-      fail-fast: false
-    env:
-      py: python${{ matrix.config.version }}
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: recursive
-    - name: Set up QEMU
-      id: qemu
-      uses: docker/setup-qemu-action@v3
-    - uses: actions/download-artifact@v4
-      with:
-        name: manylinux_aarch64_${{ matrix.config.version }}
-        path: built_wheel
-    - name: Test Wheel
-      run: |
-            docker run --rm -v ${{ github.workspace }}:/io:rw --workdir=/io \
-            arm64v8/ubuntu \
-            bash -exc 'apt-get update && \
-            apt install software-properties-common -y && \
-            add-apt-repository ppa:deadsnakes/ppa -y && \
-            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends tzdata && \
-            apt install -y ${{ env.py }} && \
-            apt install -y ${{ env.py }}-venv && \
-            ${{ env.py }} -m venv .env && \
-            source .env/bin/activate && \
-            pip install --upgrade pip && \
-            pip install -r requirements.txt && \
-            pip install pytest vw-executor twine && \
-            pip install --force-reinstall built_wheel/*.whl && \
-            twine check built_wheel/*.whl && \
-            python --version && \
-            python -m pytest ./python/tests/ && \
-            deactivate'
-  macos-python-build:
-    name: macos.amd64.py${{ matrix.config.version }}.build
-    runs-on: macos-15-intel
-    strategy:
-      matrix:
-        config:
-        - { version: "3.10", include_dir_name: python3.10/}
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - uses: conda-incubator/setup-miniconda@v3
-        with:
-          auto-update-conda: true
-          python-version: ${{ matrix.config.version }}
-          miniconda-version: "latest"
-      - name: Build wheel
-        shell: bash -l {0}
-        run: |
-          conda info
-          conda install python=${{ matrix.config.version }} wheel zlib boost py-boost flatbuffers
-          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DPython_INCLUDE_DIR=\"$CONDA_PREFIX/include/${{ matrix.config.include_dir_name }}\"" pip wheel . -w wheel_output/ --verbose
-      - name: Upload built wheel
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos_amd64_${{ matrix.config.version }}
-          path: wheel_output/
-  macos-python-test:
-    name: macos.amd64.py${{ matrix.version }}.test
-    needs: macos-python-build
-    runs-on: macos-15-intel
-    strategy:
-      matrix:
-        version: ["3.10"]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - uses: conda-incubator/setup-miniconda@v3
-        with:
-          auto-update-conda: true
-          python-version: ${{ matrix.version }}
-          miniconda-version: "latest"
-      - uses: actions/download-artifact@v4
-        with:
-          name: macos_amd64_${{ matrix.version }}
-          path: built_wheel
-      - name: Test wheel
-        shell: bash -l {0}
-        run: |
-          conda install python=${{ matrix.version }} boost py-boost
-          pip install -r requirements.txt
-          pip install pytest vw-executor twine
-          pip install --force-reinstall built_wheel/*.whl
-          twine check built_wheel/*.whl
-          python -m pytest ./python/tests/
-          python ./python/tests/run_doctest.py
-  windows-python-build:
-    name: windows-2019.amd64.py${{ matrix.config.version }}.build
-    runs-on: windows-2019
-    env:
-      VCPKG_ROOT: ${{ github.workspace }}\\vcpkg
-      VCPKG_REF: 25b458671af03578e6a34edd8f0d1ac85e084df4
-      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}\vcpkg_binary_cache
-    strategy:
-      matrix:
-        config:
-        - { version: "3.10" }
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - uses: conda-incubator/setup-miniconda@v3
-        with:
-          auto-update-conda: true
-          python-version: ${{ matrix.config.version }}
-          miniconda-version: "latest"
-      - uses: actions/checkout@v4
-        with:
-          path: ${{ env.VCPKG_ROOT }}
-          repository: 'microsoft/vcpkg'
-          ref: ${{ env.VCPKG_REF }}
-          fetch-depth: '0'
-      - name: Restore vcpkg and build artifacts
-        uses: actions/cache@v3
-        with:
-          path: |
-            ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
-          key: |
-            ${{ env.VCPKG_REF }}-${{ matrix.config.version }}-python-win-conda-cache-1
-      - run: ${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.bat
-        shell: cmd
-      - name: Build wheel
-        shell: bash -l {0}
-        run: |
-          if [ ! -d "${{ env.VCPKG_DEFAULT_BINARY_CACHE }}" ]; then
-            mkdir -p "${{ env.VCPKG_DEFAULT_BINARY_CACHE }}"
-          fi
-
-          echo "=== Download Boost headers directly ==="
-          BOOST_VERSION=1.82.0
-          BOOST_VERSION_UNDERSCORE=${BOOST_VERSION//./_}
-          BOOST_URL="https://archives.boost.io/release/${BOOST_VERSION}/source/boost_${BOOST_VERSION_UNDERSCORE}.tar.gz"
-          BOOST_DIR_WIN="${{ github.workspace }}\boost"
-          BOOST_DIR=$(cygpath "$BOOST_DIR_WIN")
-
-          echo "Downloading Boost from: $BOOST_URL"
-          curl -L "$BOOST_URL" -o boost.tar.gz
-          echo "Downloaded file info:"
-          file boost.tar.gz
-          ls -lh boost.tar.gz
-
-          echo "Creating Boost directory: $BOOST_DIR"
-          mkdir -p "$BOOST_DIR"
-          ls -ld "$BOOST_DIR"
-
-          echo "Extracting Boost..."
-          tar -xzf boost.tar.gz -C "$BOOST_DIR" --strip-components=1
-          rm boost.tar.gz
-
-          echo "Boost extraction complete. Checking boost/python.hpp:"
-          ls -la "$BOOST_DIR/boost/python.hpp" || echo "boost/python.hpp not found!"
-
-          echo "=== Install conda dependencies for Python-matched library ==="
-          conda info
-          # Install py-boost for boost_python310.lib that matches Python 3.10
-          conda install -y --quiet python=${{ matrix.config.version }} wheel setuptools pip py-boost zlib flatbuffers
-
-          echo "=== Verify Python version ==="
-          python --version
-          which python
-
-          echo -e "\n=== Verify installed conda packages ==="
-          conda list | grep -E "(boost|python)" || echo "No boost/python packages found"
-
-          echo "=== Verify setup ==="
-          echo "CONDA_PREFIX: $CONDA_PREFIX"
-          echo "Working directory: $(pwd)"
-
-          echo -e "\n=== Using downloaded Boost headers, conda for libraries ==="
-          echo "Converting paths to CMake-friendly format:"
-          CONDA_PREFIX_CMAKE=$(cygpath -w "$CONDA_PREFIX" | sed 's/\\/\//g')
-          BOOST_DIR_CMAKE=$(cygpath -w "$BOOST_DIR" | sed 's/\\/\//g')
-          echo "CONDA_PREFIX_CMAKE: $CONDA_PREFIX_CMAKE"
-          echo "BOOST_DIR_CMAKE: $BOOST_DIR_CMAKE"
-
-          CMAKE_OPTIONS="-DSTATIC_LINK_VW_JAVA=On;-DCMAKE_BUILD_TYPE=Release;-DZLIB_ROOT=$CONDA_PREFIX_CMAKE/Library;-DZLIB_INCLUDE_DIR=$CONDA_PREFIX_CMAKE/Library/include;-DZLIB_LIBRARY=$CONDA_PREFIX_CMAKE/Library/lib/zlib.lib;-DBoost_ROOT=$BOOST_DIR_CMAKE;-DBoost_INCLUDE_DIR=$BOOST_DIR_CMAKE;-DBoost_LIBRARY_DIR=$CONDA_PREFIX_CMAKE/Library/lib;-DBoost_PYTHON310_LIBRARY=$CONDA_PREFIX_CMAKE/Library/lib/boost_python310.lib;-DBoost_DIR=NOTFOUND;-DBoost_NO_BOOST_CMAKE=ON;-DBOOST_PY_VERSION_SUFFIX=310"
-
-          echo -e "\n=== Building wheel with setup.py (supports --cmake-options) ==="
-          echo "CMAKE_OPTIONS: $CMAKE_OPTIONS"
-
-          python setup.py \
-            --cmake-generator="Visual Studio 16 2019" \
-            --cmake-options="$CMAKE_OPTIONS" \
-            bdist_wheel --dist-dir=wheel_output
-
-          echo -e "\n=== Inspecting built wheel ==="
-          WHEEL_FILE=$(ls wheel_output/*.whl | head -1)
-          echo "Wheel file: $WHEEL_FILE"
-
-          echo -e "\n=== Extracting wheel to inspect contents ==="
-          mkdir -p wheel_inspect
-          cd wheel_inspect
-          unzip -q "../$WHEEL_FILE"
-
-          echo -e "\n=== Wheel contents (top level) ==="
-          ls -la
-
-          echo -e "\n=== Looking for DLL and PYD files ==="
-          find . -name "*.dll" -o -name "*.pyd" | while read f; do
-            echo "$f ($(stat -c%s "$f" 2>/dev/null || stat -f%z "$f" 2>/dev/null || echo "?" ) bytes)"
-          done
-
-          cd ..
-      - name: Upload built wheel
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows_amd64_${{ matrix.config.version }}
-          path: wheel_output
-  windows-python-test:
-    name: ${{ matrix.os }}.amd64.py${{ matrix.version }}.test
-    needs: windows-python-build
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        version: ["3.10"]
-        os: ["windows-2019"]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.version }}
-      - uses: actions/download-artifact@v4
-        with:
-          name: windows_amd64_${{ matrix.version }}
-          path: built_wheel
-      - name: Install deps and test wheel
-        shell: bash
-        run: |
-          export wheel_files=(built_wheel/*)
-          export wheel_file="${wheel_files[0]}"
-          echo Installing ${wheel_file}...
-          pip install -r requirements.txt
-          pip install pytest vw-executor twine
-          pip install --force-reinstall ${wheel_file}
-
-          echo -e "\n=== Quick import test ==="
-          python -c "import vowpalwabbit; print('SUCCESS: vowpalwabbit imported successfully!')"
-
-          twine check ${wheel_file}
-          python -m pytest .\\python\\tests\\
-          python .\\python\\tests\\run_doctest.py
