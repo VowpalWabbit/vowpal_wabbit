@@ -424,7 +424,17 @@ inline void generate_interactions(const std::vector<std::vector<VW::namespace_in
         dat, begin, end, ec.ft_offset, weights, value, index);
   };
 
+  // MSVC warns about using constant 0 as function expression (C4353) when audit_func is nullptr
+  // This is a nonstandard extension but is safe here since audit_func is always a valid function
+  // pointer (either an actual audit function or dummy_func) when this lambda is called
+#ifdef _MSC_VER
+#  pragma warning(push)
+#  pragma warning(disable : 4353)
+#endif
   const auto depth_audit_func = [&](const VW::audit_strings* audit_str) { audit_func(dat, audit_str); };
+#ifdef _MSC_VER
+#  pragma warning(pop)
+#endif
 
   // current list of namespaces to interact.
   for (const auto& ns : interactions)
