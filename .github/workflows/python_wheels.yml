@@ -15,107 +15,50 @@ on:
     branches:
       - '*'
       - rlos2023/test
-      
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
 jobs:
-  linux-python-build:
-    name: manylinux.amd64.py${{ matrix.config.version}}.build
-    runs-on: ${{ matrix.config.os }}
+  # Linux x64 and aarch64 builds using cibuildwheel (Python 3.10-3.13)
+  cibuildwheel-build-linux:
+    name: cibuildwheel.${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        config:
-        - { version: "3.10", os: "ubuntu-22.04", boost_suffix: "310" }
+        os: [ubuntu-latest]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
-          submodules: recursive
-      - name: Install build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y cmake ninja-build libboost-dev libboost-python-dev python3-dev python3-pip zlib1g-dev
-      - name: Diagnostic - Check Python and Boost configuration
-        shell: bash
-        run: |
-          echo "=== Python Information ==="
-          which python3
-          python3 --version
-          python3 -c "import sys; print(f'Python path: {sys.executable}')"
-          python3 -c "import sysconfig; print(f'Include dir: {sysconfig.get_path(\"include\")}')"
-
-          echo -e "\n=== Boost Python Libraries ==="
-          dpkg -L libboost-python-dev | grep -E '\.so' || echo "No .so files found"
-          find /usr/lib -name '*boost_python*' 2>/dev/null || echo "No boost_python libs in /usr/lib"
-
-          echo -e "\n=== Boost Version ==="
-          dpkg -l | grep libboost-python
-
-          echo -e "\n=== CMake Python Detection Test ==="
-          cat > /tmp/test_cmake.txt << 'TESTEOF'
-          cmake_minimum_required(VERSION 3.10)
-          project(test)
-          find_package(Python3 COMPONENTS Interpreter Development)
-          find_package(Boost COMPONENTS python3)
-          message(STATUS "Python3_FOUND: ${Python3_FOUND}")
-          message(STATUS "Python3_VERSION: ${Python3_VERSION}")
-          message(STATUS "Python3_EXECUTABLE: ${Python3_EXECUTABLE}")
-          message(STATUS "Python3_INCLUDE_DIRS: ${Python3_INCLUDE_DIRS}")
-          message(STATUS "Boost_FOUND: ${Boost_FOUND}")
-          message(STATUS "Boost_VERSION: ${Boost_VERSION}")
-          TESTEOF
-          cmake -P /tmp/test_cmake.txt 2>&1 || true
-      - name: Build wheel
-        shell: bash
-        run: |
-          python3 -m pip install wheel setuptools auditwheel
-          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -DBoost_NO_BOOST_CMAKE=ON" python3 -m pip wheel . -w wheel_output/ --verbose
-          auditwheel repair wheel_output/*whl -w audit_output/
-      - name: Upload built wheel
-        uses: actions/upload-artifact@v4
+          submodules: true
+          fetch-depth: 0
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v3.3.0
+      - uses: actions/upload-artifact@v4
         with:
-          name: manylinux_amd64_${{ matrix.config.version }}
-          path: audit_output/
-  linux-python-test:
-    name: manylinux.amd64.py${{ matrix.version }}.test
-    needs: linux-python-build
-    container:
-      image: python:${{ matrix.version }}
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        version: ["3.10"]
-      fail-fast: false
+          name: cibw-wheels-${{ matrix.os }}
+          path: ./wheelhouse/*.whl
+
+  # Linux aarch64 builds using cibuildwheel (Python 3.10-3.13, push-only)
+  cibuildwheel-build-linux-aarch64:
+    name: cibuildwheel.ubuntu-24.04-arm
+    runs-on: ubuntu-24.04-arm
+    # Aarch builds are slow and are only run on push and not PR
+    if: ${{ github.event_name == 'push' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
-          submodules: recursive
-      - uses: actions/download-artifact@v4
+          submodules: true
+          fetch-depth: 0
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v3.3.0
+      - uses: actions/upload-artifact@v4
         with:
-          name: manylinux_amd64_${{ matrix.version }}
-          path: built_wheel
-      - name: Test wheel
-        shell: bash
-        run: |
-          pip install -r requirements.txt
-          pip install pytest vw-executor twine
-          pip install --force-reinstall built_wheel/*.whl
-          twine check built_wheel/*.whl
-          python -m pytest ./python/tests/
-          python ./python/tests/run_doctest.py
-      - name: Run vw tests as Python module
-        shell: bash
-        # Onethread is not supported in the Python wrapper so those tests must be skipped
-        # Stdin is not supported
-        # Help output tests assume --onthread is in the output
-        # Fail tests are not included because the python stack trace causes the output to differ
-        # Daemon tests are skipped
-        # Tests without datafiles are skipped
-        run: |
-          cd test
-          python run_tests.py -E 0.001 -f --skip_spanning_tree_tests --vw_bin_path "python3 -m vowpalwabbit" --skip_test 60 61 92 96 149 152 177 193 194 195 220 275 276 324 325 326 349 350 356 357 358 385 389 390 391 392 393 400 399 401 403 431 440
+          name: cibw-wheels-ubuntu-24.04-arm
+          path: ./wheelhouse/*.whl
+
   linux-python-sdist-bundle:
     name: ubuntu-latest.amd64.py3.10.sdist-bundle
     runs-on: ubuntu-latest
@@ -136,6 +79,7 @@ jobs:
           name: python_source_distribution
           path: dist/*.tar.gz
           if-no-files-found: error
+
   linux-python-sdist-build-test:
     name: ubuntu-latest.amd64.py3.10.sdist-build-test
     needs: linux-python-sdist-bundle
@@ -166,80 +110,7 @@ jobs:
         shell: bash
         run: |
           python -m pytest ./python/tests/
-  linux-python-build-aarch64:
-    name: manylinux.aarch64.py${{ matrix.config.version }}.build
-    # Aarch builds are slow and are only run on push and not PR
-    if: ${{ github.event_name == 'push' }}
-    strategy:
-      matrix:
-        config:
-        - { version: "3.10", base_path: /opt/python/cp310-cp310/, include_dir_name: python3.10/ }
-      fail-fast: false
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: recursive
-    - name: Set up QEMU
-      id: qemu
-      uses: docker/setup-qemu-action@v3
-    - name: Pull image
-      run: docker pull vowpalwabbit/manylinux2014_aarch64-build
-    - name: Build Wheel
-      run: |
-            docker run --rm -v ${{ github.workspace }}:/ws:rw --workdir=/ws \
-            vowpalwabbit/manylinux2014_aarch64-build \
-            bash -exc 'CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DPython_INCLUDE_DIR='${{ matrix.config.base_path }}include/${{ matrix.config.include_dir_name }}'" ${{ matrix.config.base_path }}bin/pip wheel . -w wheel_output/ --verbose && \
-            auditwheel repair wheel_output/*whl -w audit_output/'
-    - name: Upload built wheel
-      uses: actions/upload-artifact@v4
-      with:
-        name: manylinux_aarch64_${{ matrix.config.version }}
-        path: audit_output/
-  linux-python-test-aarch64:
-    name: manylinux.aarch64.py${{ matrix.config.version }}.test
-    needs: linux-python-build-aarch64
-    # Aarch builds are slow and are only run on push and not PR
-    if: ${{ github.event_name == 'push' }}
-    strategy:
-      matrix:
-        config:
-        - { version: "3.10" }
-      fail-fast: false
-    env:
-      py: python${{ matrix.config.version }}
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: recursive
-    - name: Set up QEMU
-      id: qemu
-      uses: docker/setup-qemu-action@v3
-    - uses: actions/download-artifact@v4
-      with:
-        name: manylinux_aarch64_${{ matrix.config.version }}
-        path: built_wheel
-    - name: Test Wheel
-      run: |
-            docker run --rm -v ${{ github.workspace }}:/io:rw --workdir=/io \
-            arm64v8/ubuntu \
-            bash -exc 'apt-get update && \
-            apt install software-properties-common -y && \
-            add-apt-repository ppa:deadsnakes/ppa -y && \
-            DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends tzdata && \
-            apt install -y ${{ env.py }} && \
-            apt install -y ${{ env.py }}-venv && \
-            ${{ env.py }} -m venv .env && \
-            source .env/bin/activate && \
-            pip install --upgrade pip && \
-            pip install -r requirements.txt && \
-            pip install pytest vw-executor twine && \
-            pip install --force-reinstall built_wheel/*.whl && \
-            twine check built_wheel/*.whl && \
-            python --version && \
-            python -m pytest ./python/tests/ && \
-            deactivate'
+
   macos-python-build:
     name: macos.amd64.py${{ matrix.config.version }}.build
     runs-on: macos-15-intel
@@ -270,6 +141,7 @@ jobs:
         with:
           name: macos_amd64_${{ matrix.config.version }}
           path: wheel_output/
+
   macos-python-test:
     name: macos.amd64.py${{ matrix.version }}.test
     needs: macos-python-build
@@ -301,6 +173,7 @@ jobs:
           twine check built_wheel/*.whl
           python -m pytest ./python/tests/
           python ./python/tests/run_doctest.py
+
   windows-python-build:
     name: windows-2019.amd64.py${{ matrix.config.version }}.build
     runs-on: windows-2019
@@ -427,6 +300,7 @@ jobs:
         with:
           name: windows_amd64_${{ matrix.config.version }}
           path: wheel_output
+
   windows-python-test:
     name: ${{ matrix.os }}.amd64.py${{ matrix.version }}.test
     needs: windows-python-build
