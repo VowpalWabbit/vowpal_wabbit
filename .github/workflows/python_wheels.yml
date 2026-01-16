@@ -346,7 +346,7 @@ jobs:
         shell: cmd
         run: |
           cd %VCPKG_ROOT%
-          vcpkg install boost-python:x64-windows zlib:x64-windows --classic --no-print-usage
+          vcpkg install boost:x64-windows boost-python:x64-windows zlib:x64-windows --classic --no-print-usage
       - name: Build wheel
         shell: bash
         run: |
