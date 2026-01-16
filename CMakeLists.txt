@@ -138,6 +138,13 @@ include(VowpalWabbitUtils)
 if(MSVC)
   # Use C++ standard exception handling instead of MSVC default
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
+
+  # Silence STL4043 deprecation warnings in MSVC 2022+ (VS 17.0+)
+  # These warnings are about stdext::checked_array_iterator being deprecated in favor of std::span (C++20)
+  # Since VW uses C++11 by default, we silence these warnings from the STL headers
+  if(MSVC_VERSION GREATER_EQUAL 1930)
+    add_compile_definitions(_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING)
+  endif()
 else()
   # We want RelWithDebInfo and Release to be similar. But default RelWithDebInfo
   # is O2 and Release is O3, override that here:

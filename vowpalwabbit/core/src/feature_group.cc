@@ -142,7 +142,7 @@ std::vector<std::size_t> sort_permutation(const IndexVec& index_vec, const ValVe
 {
   assert(index_vec.size() == value_vec.size());
   std::vector<std::size_t> dest_index_vec(index_vec.size());
-  std::iota(dest_index_vec.begin(), dest_index_vec.end(), 0);
+  std::iota(dest_index_vec.begin(), dest_index_vec.end(), size_t{0});
   std::sort(dest_index_vec.begin(), dest_index_vec.end(),
       [&](std::size_t i, std::size_t j) { return compare(index_vec[i], index_vec[j], value_vec[i], value_vec[j]); });
   return dest_index_vec;
