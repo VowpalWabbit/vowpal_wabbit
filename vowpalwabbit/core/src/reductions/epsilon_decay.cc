@@ -56,7 +56,7 @@ epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
 {
   _weight_indices.resize(model_count);
   conf_seq_estimators.reserve(model_count);
-  std::iota(_weight_indices.begin(), _weight_indices.end(), 0);
+  std::iota(_weight_indices.begin(), _weight_indices.end(), uint64_t{0});
   for (uint64_t i = 0; i < model_count; ++i)
   {
     conf_seq_estimators.emplace_back();
