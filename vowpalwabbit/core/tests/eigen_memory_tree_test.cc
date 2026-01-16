@@ -218,17 +218,17 @@ TEST(EigenMemoryTree, Inner)
 
   EXPECT_EQ(emt_inner(v1, v2), 0);
 
-  v1.push_back(std::make_pair(1, 2));
-  v2.push_back(std::make_pair(2, 2));
+  v1.push_back(std::make_pair(uint64_t{1}, 2.0f));
+  v2.push_back(std::make_pair(uint64_t{2}, 2.0f));
 
   EXPECT_EQ(emt_inner(v1, v2), 0);
 
-  v1.push_back(std::make_pair(2, 3));
+  v1.push_back(std::make_pair(uint64_t{2}, 3.0f));
 
   EXPECT_EQ(emt_inner(v1, v2), 6);
 
-  v1.push_back(std::make_pair(3, 2));
-  v2.push_back(std::make_pair(3, 5));
+  v1.push_back(std::make_pair(uint64_t{3}, 2.0f));
+  v2.push_back(std::make_pair(uint64_t{3}, 5.0f));
 
   EXPECT_EQ(emt_inner(v1, v2), 16);
 }
@@ -241,56 +241,56 @@ TEST(EigenMemoryTree, ScaleAdd)
 
   EXPECT_EQ(emt_scale_add(1, v1, 1, v2), v3);
 
-  v1.push_back(std::make_pair(1, 2));
-  v3.push_back(std::make_pair(1, 2));
+  v1.push_back(std::make_pair(uint64_t{1}, 2.0f));
+  v3.push_back(std::make_pair(uint64_t{1}, 2.0f));
 
   EXPECT_EQ(emt_scale_add(1, v1, 1, v2), v3);
 
   v3.clear();
-  v3.push_back(std::make_pair(1, -1));
+  v3.push_back(std::make_pair(uint64_t{1}, -1.0f));
 
   EXPECT_EQ(emt_scale_add(-.5, v1, 1, v2), v3);
 
   v1.clear();
   v2.clear();
   v3.clear();
-  v1.push_back(std::make_pair(1, 2));
-  v2.push_back(std::make_pair(1, 2.5));
-  v3.push_back(std::make_pair(1, -.5));
+  v1.push_back(std::make_pair(uint64_t{1}, 2.0f));
+  v2.push_back(std::make_pair(uint64_t{1}, 2.5f));
+  v3.push_back(std::make_pair(uint64_t{1}, -.5f));
 
   EXPECT_EQ(emt_scale_add(1, v1, -1, v2), v3);
 
   v1.clear();
   v2.clear();
   v3.clear();
-  v1.push_back(std::make_pair(1, 2));
-  v2.push_back(std::make_pair(1, 2.5));
-  v2.push_back(std::make_pair(5, 1));
-  v3.push_back(std::make_pair(1, -4.5));
-  v3.push_back(std::make_pair(5, -1));
+  v1.push_back(std::make_pair(uint64_t{1}, 2.0f));
+  v2.push_back(std::make_pair(uint64_t{1}, 2.5f));
+  v2.push_back(std::make_pair(uint64_t{5}, 1.0f));
+  v3.push_back(std::make_pair(uint64_t{1}, -4.5f));
+  v3.push_back(std::make_pair(uint64_t{5}, -1.0f));
 
   EXPECT_EQ(emt_scale_add(-1, v1, -1, v2), v3);
 
   v1.clear();
   v2.clear();
   v3.clear();
-  v1.push_back(std::make_pair(1, 2));
-  v1.push_back(std::make_pair(5, 1));
-  v2.push_back(std::make_pair(1, 2.5));
-  v3.push_back(std::make_pair(1, -4.5));
-  v3.push_back(std::make_pair(5, -1));
+  v1.push_back(std::make_pair(uint64_t{1}, 2.0f));
+  v1.push_back(std::make_pair(uint64_t{5}, 1.0f));
+  v2.push_back(std::make_pair(uint64_t{1}, 2.5f));
+  v3.push_back(std::make_pair(uint64_t{1}, -4.5f));
+  v3.push_back(std::make_pair(uint64_t{5}, -1.0f));
 
   EXPECT_EQ(emt_scale_add(-1, v1, -1, v2), v3);
 
   v1.clear();
   v2.clear();
   v3.clear();
-  v1.push_back(std::make_pair(1, 2));
-  v1.push_back(std::make_pair(5, 1));
-  v2.push_back(std::make_pair(1, 2.5));
-  v2.push_back(std::make_pair(5, -1));
-  v3.push_back(std::make_pair(1, -4.5));
-  v3.push_back(std::make_pair(5, 0));
+  v1.push_back(std::make_pair(uint64_t{1}, 2.0f));
+  v1.push_back(std::make_pair(uint64_t{5}, 1.0f));
+  v2.push_back(std::make_pair(uint64_t{1}, 2.5f));
+  v2.push_back(std::make_pair(uint64_t{5}, -1.0f));
+  v3.push_back(std::make_pair(uint64_t{1}, -4.5f));
+  v3.push_back(std::make_pair(uint64_t{5}, 0.0f));
 
   EXPECT_EQ(emt_scale_add(-1, v1, -1, v2), v3);
 }
@@ -303,11 +303,11 @@ TEST(EigenMemoryTree, Normalize)
   emt_normalize(v1);
   EXPECT_EQ(v1, v2);
 
-  v1.push_back(std::make_pair(1, -3));
-  v1.push_back(std::make_pair(5, 4));
+  v1.push_back(std::make_pair(uint64_t{1}, -3.0f));
+  v1.push_back(std::make_pair(uint64_t{5}, 4.0f));
 
-  v2.push_back(std::make_pair(1, -.6));
-  v2.push_back(std::make_pair(5, .8));
+  v2.push_back(std::make_pair(uint64_t{1}, -.6f));
+  v2.push_back(std::make_pair(uint64_t{5}, .8f));
 
   emt_normalize(v1);
   EXPECT_EQ(v1, v2);
@@ -340,14 +340,14 @@ TEST(EigenMemoryTree, RouterEigen)
   emt_feats v2;
   emt_feats v3;
 
-  v1.push_back(std::make_pair(1, 2));
-  v1.push_back(std::make_pair(3, 3));
-  v1.push_back(std::make_pair(5, 2));
+  v1.push_back(std::make_pair(uint64_t{1}, 2.0f));
+  v1.push_back(std::make_pair(uint64_t{3}, 3.0f));
+  v1.push_back(std::make_pair(uint64_t{5}, 2.0f));
 
-  v2.push_back(std::make_pair(2, 5));
+  v2.push_back(std::make_pair(uint64_t{2}, 5.0f));
 
-  v3.push_back(std::make_pair(1, 4));
-  v3.push_back(std::make_pair(2, 10));
+  v3.push_back(std::make_pair(uint64_t{1}, 4.0f));
+  v3.push_back(std::make_pair(uint64_t{2}, 10.0f));
 
   std::vector<emt_feats> f;
 
@@ -384,11 +384,11 @@ TEST(EigenMemoryTree, ScorerInitial)
   emt_normalize(v1);
   EXPECT_EQ(v1, v2);
 
-  v1.push_back(std::make_pair(1, -2));
-  v1.push_back(std::make_pair(5, 3));
+  v1.push_back(std::make_pair(uint64_t{1}, -2.0f));
+  v1.push_back(std::make_pair(uint64_t{5}, 3.0f));
 
-  v2.push_back(std::make_pair(1, 1));
-  v2.push_back(std::make_pair(5, -1));
+  v2.push_back(std::make_pair(uint64_t{1}, 1.0f));
+  v2.push_back(std::make_pair(uint64_t{5}, -1.0f));
 
   EXPECT_EQ(emt_initial(emt_initial_type::NONE, v1, v2), 0);
   EXPECT_EQ(emt_initial(emt_initial_type::EUCLIDEAN, v1, v2), 5);

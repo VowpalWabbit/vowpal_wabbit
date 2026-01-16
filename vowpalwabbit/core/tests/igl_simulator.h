@@ -12,11 +12,11 @@ class igl_sim : public simulator::cb_sim
 
   // assume two users communicate their satisfaction in the same way
   const std::map<std::string, float> enjoy_prob = {
-      {"dislike", 0}, {"skip", 0}, {"click", 0.5}, {"like", 0.5}, {"none", 0}};
+      {"dislike", 0.0f}, {"skip", 0.0f}, {"click", 0.5f}, {"like", 0.5f}, {"none", 0.0f}};
   const std::map<std::string, float> hate_prob = {
-      {"dislike", 0.1}, {"skip", 0.9}, {"click", 0}, {"like", 0}, {"none", 0}};
+      {"dislike", 0.1f}, {"skip", 0.9f}, {"click", 0.0f}, {"like", 0.0f}, {"none", 0.0f}};
   const std::map<std::string, float> neutral_prob = {
-      {"dislike", 0}, {"skip", 0}, {"click", 0}, {"like", 0}, {"none", 1}};
+      {"dislike", 0.0f}, {"skip", 0.0f}, {"click", 0.0f}, {"like", 0.0f}, {"none", 1.0f}};
 
 public:
   igl_sim(uint64_t seed = 0);
