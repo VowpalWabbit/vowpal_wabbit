@@ -340,6 +340,10 @@ jobs:
             ${{ env.VCPKG_REF }}-${{ matrix.config.version }}-python-win-vcpkg-cache-1
       - run: ${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.bat
         shell: cmd
+      - name: Create vcpkg binary cache directory
+        shell: bash
+        run: |
+          mkdir -p "${{ env.VCPKG_DEFAULT_BINARY_CACHE }}"
       - name: Build Boost.Python and dependencies via vcpkg
         shell: cmd
         run: |
@@ -348,10 +352,6 @@ jobs:
       - name: Build wheel
         shell: bash
         run: |
-          if [ ! -d "${{ env.VCPKG_DEFAULT_BINARY_CACHE }}" ]; then
-            mkdir -p "${{ env.VCPKG_DEFAULT_BINARY_CACHE }}"
-          fi
-
           echo "=== Verify Python version ==="
           python --version
           which python
