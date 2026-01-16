@@ -338,7 +338,7 @@ inline void set_weight(VW::workspace& all, uint32_t index, uint32_t offset, floa
 
 inline uint32_t num_weights(VW::workspace& all) { return static_cast<uint32_t>(all.length()); }
 
-inline uint32_t get_stride(VW::workspace& all) { return all.weights.stride(); }
+inline uint32_t get_stride(VW::workspace& all) { return static_cast<uint32_t>(all.weights.stride()); }
 
 inline void init_features(primitive_feature_space& fs, size_t features_count)
 {
