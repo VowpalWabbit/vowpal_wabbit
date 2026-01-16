@@ -249,7 +249,6 @@ jobs:
         - { version: "3.10", include_dir_name: python3.10/}
         - { version: "3.11", include_dir_name: python3.11/}
         - { version: "3.12", include_dir_name: python3.12/}
-        - { version: "3.13", include_dir_name: python3.13/}
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -277,7 +276,7 @@ jobs:
     runs-on: macos-15-intel
     strategy:
       matrix:
-        version: ["3.10", "3.11", "3.12", "3.13"]
+        version: ["3.10", "3.11", "3.12"]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -314,7 +313,6 @@ jobs:
         - { version: "3.10", boost_py_lib: "boost_python310" }
         - { version: "3.11", boost_py_lib: "boost_python311" }
         - { version: "3.12", boost_py_lib: "boost_python312" }
-        - { version: "3.13", boost_py_lib: "boost_python313" }
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -400,7 +398,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        version: ["3.10", "3.11", "3.12", "3.13"]
+        version: ["3.10", "3.11", "3.12"]
         os: ["windows-2019"]
       fail-fast: false
     steps:
