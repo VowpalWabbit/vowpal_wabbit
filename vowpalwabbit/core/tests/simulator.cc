@@ -198,7 +198,7 @@ std::pair<int, float> cb_sim::sample_custom_pmf(std::vector<float>& pmf)
   for (size_t index = 0; index < pmf.size(); ++index)
   {
     sum_prob += pmf[index];
-    if (sum_prob > draw) { return std::make_pair(index, pmf[index]); }
+    if (sum_prob > draw) { return std::make_pair(static_cast<int>(index), pmf[index]); }
   }
   THROW("Error: No prob selected");
 }
