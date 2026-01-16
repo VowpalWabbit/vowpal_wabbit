@@ -246,30 +246,26 @@ jobs:
     strategy:
       matrix:
         config:
-        - { version: "3.10" }
-        - { version: "3.11" }
-        - { version: "3.12" }
-        - { version: "3.13" }
+        - { version: "3.10", include_dir_name: python3.10/}
+        - { version: "3.11", include_dir_name: python3.11/}
+        - { version: "3.12", include_dir_name: python3.12/}
+        - { version: "3.13", include_dir_name: python3.13/}
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - uses: actions/setup-python@v5
+      - uses: conda-incubator/setup-miniconda@v3
         with:
+          auto-update-conda: true
           python-version: ${{ matrix.config.version }}
-      - name: Install dependencies via Homebrew
-        run: |
-          brew install cmake ninja boost-python3 zlib
+          miniconda-version: "latest"
       - name: Build wheel
-        shell: bash
+        shell: bash -l {0}
         run: |
-          python --version
-          which python
-
-          # Homebrew boost-python3 supports all Python versions
-          # Use CMAKE_PREFIX_PATH to find Homebrew packages
-          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/opt/homebrew;/usr/local -DBoost_NO_BOOST_CMAKE=ON -DBOOST_PY_VERSION_SUFFIX=3" pip wheel . -w wheel_output/ --verbose
+          conda info
+          conda install python=${{ matrix.config.version }} wheel zlib boost py-boost flatbuffers
+          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DPython_INCLUDE_DIR=\"$CONDA_PREFIX/include/${{ matrix.config.include_dir_name }}\"" pip wheel . -w wheel_output/ --verbose
       - name: Upload built wheel
         uses: actions/upload-artifact@v4
         with:
@@ -287,15 +283,17 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - uses: actions/setup-python@v5
+      - uses: conda-incubator/setup-miniconda@v3
         with:
+          auto-update-conda: true
           python-version: ${{ matrix.version }}
+          miniconda-version: "latest"
       - uses: actions/download-artifact@v4
         with:
           name: macos_amd64_${{ matrix.version }}
           path: built_wheel
       - name: Test wheel
-        shell: bash
+        shell: bash -l {0}
         run: |
           pip install -r requirements.txt
           pip install pytest vw-executor twine
