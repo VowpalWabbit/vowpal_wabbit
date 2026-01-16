@@ -24,10 +24,9 @@ test-sources = "test/"
 
 [tool.cibuildwheel.linux]
 before-all = [
-    # Install boost and zlib development packages
+    # Install build tools and boost development packages
     # cibuildwheel runs in Red Hat based Linux container environment
-    "dnf install -y boost-devel boost-python3-devel zlib-devel",
-    #"dnf install -y boost-devel boost-python3-devel boost-static zlib-devel zlib-static",
+    "dnf install -y cmake ninja-build boost-devel boost-python3-devel boost-static zlib-devel",
 ]
 before-build = [
     # Container uses an old version of Boost Python incompatible with Python 3.11+ C API
