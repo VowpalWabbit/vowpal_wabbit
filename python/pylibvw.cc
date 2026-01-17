@@ -699,6 +699,34 @@ void my_set_test_only(example_ptr ec, bool test_only)
   ec->test_only = test_only;
 }
 
+
+// Multi-example type (VW expects raw pointers)
+typedef std::vector<VW::example*> multi_ex;
+
+// Additional workspace functions
+void my_setup_example(vw_ptr vw, example_ptr ec) 
+{ 
+  VW::setup_example(*vw, ec.get()); 
+}
+
+void unsetup_example(vw_ptr vwP, example_ptr ae)
+{
+  if (vwP->output_config.audit || vwP->output_config.hash_inv)
+  {
+    VW::details::truncate_example_namespaces_from_example(*ae, *ae);
+  }
+  ae->indices.clear();
+}
+
+
+void ex_set_label_string(example_ptr ec, vw_ptr vw, std::string label, size_t labelType)
+{
+  VW::label_parser& old_lp = vw->parser_runtime.example_parser->lbl_parser;
+  vw->parser_runtime.example_parser->lbl_parser = *get_label_parser(&*vw, labelType);
+  VW::parse_example_label(*vw, *ec, label);
+  vw->parser_runtime.example_parser->lbl_parser = old_lp;
+}
+
 // Simple label accessors
 float ex_get_simplelabel_label(example_ptr ec)
 {
@@ -1074,32 +1102,6 @@ float ex_get_topic_prediction(VW::workspace& all, example_ptr ec, size_t i)
   return VW::get_topic_prediction(ec.get(), i);
 }
 
-// Multi-example type (VW expects raw pointers)
-typedef std::vector<VW::example*> multi_ex;
-
-// Additional workspace functions
-void my_setup_example(vw_ptr vw, example_ptr ec) 
-{ 
-  VW::setup_example(*vw, ec.get()); 
-}
-
-void unsetup_example(vw_ptr vwP, example_ptr ae)
-{
-  if (vwP->output_config.audit || vwP->output_config.hash_inv)
-  {
-    VW::details::truncate_example_namespaces_from_example(*ae, *ae);
-  }
-  ae->indices.clear();
-}
-
-
-void ex_set_label_string(example_ptr ec, vw_ptr vw, std::string label, size_t labelType)
-{
-  VW::label_parser& old_lp = vw->parser_runtime.example_parser->lbl_parser;
-  vw->parser_runtime.example_parser->lbl_parser = *get_label_parser(&*vw, labelType);
-  VW::parse_example_label(*vw, *ec, label);
-  vw->parser_runtime.example_parser->lbl_parser = old_lp;
-}
 
 size_t get_example_counter(example_ptr ec) 
 { 
