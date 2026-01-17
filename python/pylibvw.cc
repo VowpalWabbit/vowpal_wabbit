@@ -40,6 +40,10 @@ typedef std::shared_ptr<Search::search> search_ptr;
 typedef std::shared_ptr<Search::predictor> predictor_ptr;
 typedef std::shared_ptr<py_log_wrapper> py_log_wrapper_ptr;
 
+// Search type aliases
+using action = uint32_t;
+using ptag = uint32_t;
+
 // Label type constants
 const size_t lDEFAULT = 0;
 const size_t lBINARY = 1;
@@ -1167,6 +1171,206 @@ search_ptr get_search_ptr(vw_ptr all)
   return std::shared_ptr<Search::search>(search_data, [](Search::search*){});
 }
 
+// Search helper functions
+void verify_search_set_properly(search_ptr _sch)
+{
+  if (!_sch) { THROW("search object not initialized properly"); }
+}
+
+uint32_t search_get_num_actions(search_ptr _sch)
+{
+  verify_search_set_properly(_sch);
+  HookTask::task_data* d = _sch->get_task_data<HookTask::task_data>();
+  return (uint32_t)d->num_actions;
+}
+
+void search_run_fn(Search::search& _sch)
+{
+  try
+  {
+    HookTask::task_data* d = _sch.get_task_data<HookTask::task_data>();
+    py::object run = *static_cast<py::object*>(d->run_object.get());
+    run.attr("__call__")();
+  }
+  catch (const py::error_already_set&)
+  {
+    throw;
+  }
+  catch (...)
+  {
+    THROW("Exception in 'search_run_fn'");
+  }
+}
+
+void search_setup_fn(Search::search& _sch)
+{
+  try
+  {
+    HookTask::task_data* d = _sch.get_task_data<HookTask::task_data>();
+    py::object run = *static_cast<py::object*>(d->setup_object.get());
+    run.attr("__call__")();
+  }
+  catch (const py::error_already_set&)
+  {
+    throw;
+  }
+  catch (...)
+  {
+    THROW("Exception in 'search_setup_fn'");
+  }
+}
+
+void search_takedown_fn(Search::search& _sch)
+{
+  try
+  {
+    HookTask::task_data* d = _sch.get_task_data<HookTask::task_data>();
+    py::object run = *static_cast<py::object*>(d->takedown_object.get());
+    run.attr("__call__")();
+  }
+  catch (const py::error_already_set&)
+  {
+    throw;
+  }
+  catch (...)
+  {
+    THROW("Exception in 'search_takedown_fn'");
+  }
+}
+
+void set_force_oracle(search_ptr _sch, bool useOracle)
+{
+  verify_search_set_properly(_sch);
+  _sch->set_force_oracle(useOracle);
+}
+
+void set_structured_predict_hook(
+    search_ptr _sch, py::object run_object, py::object setup_object, py::object takedown_object)
+{
+  verify_search_set_properly(_sch);
+  HookTask::task_data* d = _sch->get_task_data<HookTask::task_data>();
+  d->run_object = nullptr;
+  d->setup_object = nullptr;
+  d->takedown_object = nullptr;
+  _sch->set_force_oracle(false);
+
+  d->run_f = &search_run_fn;
+  d->run_object = std::make_shared<py::object>(run_object);
+  if (!setup_object.is_none())
+  {
+    d->setup_object = std::make_shared<py::object>(setup_object);
+    d->run_setup_f = &search_setup_fn;
+  }
+  if (!takedown_object.is_none())
+  {
+    d->takedown_object = std::make_shared<py::object>(takedown_object);
+    d->run_takedown_f = &search_takedown_fn;
+  }
+}
+
+bool po_exists(search_ptr _sch, std::string arg)
+{
+  HookTask::task_data* d = _sch->get_task_data<HookTask::task_data>();
+  return d->arg->was_supplied(arg);
+}
+
+std::string po_get_string(search_ptr _sch, std::string arg)
+{
+  HookTask::task_data* d = _sch->get_task_data<HookTask::task_data>();
+  return d->arg->get_typed_option<std::string>(arg).value();
+}
+
+int32_t po_get_int(search_ptr _sch, std::string arg)
+{
+  HookTask::task_data* d = _sch->get_task_data<HookTask::task_data>();
+  try { return d->arg->get_typed_option<int32_t>(arg).value(); }
+  catch (...) {}
+  try { return static_cast<int32_t>(d->arg->get_typed_option<int64_t>(arg).value()); }
+  catch (...) {}
+  try { return (int32_t)d->arg->get_typed_option<uint32_t>(arg).value(); }
+  catch (...) {}
+  try { return (int32_t)d->arg->get_typed_option<uint64_t>(arg).value(); }
+  catch (...) {}
+  return d->arg->get_typed_option<int32_t>(arg).value();
+}
+
+py::object po_get(search_ptr _sch, std::string arg)
+{
+  try { return py::cast(po_get_string(_sch, arg)); }
+  catch (...) {}
+  try { return py::cast(po_get_int(_sch, arg)); }
+  catch (...) {}
+  return py::none();
+}
+
+bool search_should_output(search_ptr _sch)
+{
+  return _sch->output().good();
+}
+
+void search_output(search_ptr _sch, std::string s)
+{
+  _sch->output() << s;
+}
+
+predictor_ptr get_predictor(search_ptr _sch, ptag my_tag)
+{
+  HookTask::task_data* d = _sch->get_task_data<HookTask::task_data>();
+  Search::predictor* P = new Search::predictor(*_sch, my_tag);
+  return std::shared_ptr<Search::predictor>(P);
+}
+
+// Predictor helper functions
+void my_set_input(predictor_ptr P, example_ptr ec) { P->set_input(*ec); }
+void my_set_input_at(predictor_ptr P, size_t posn, example_ptr ec) { P->set_input_at(posn, *ec); }
+
+void my_add_oracle(predictor_ptr P, action a) { P->add_oracle(a); }
+void my_add_oracles(predictor_ptr P, py::list& a)
+{
+  for (auto item : a) { P->add_oracle(item.cast<action>()); }
+}
+
+void my_add_allowed(predictor_ptr P, action a) { P->add_allowed(a); }
+void my_add_alloweds(predictor_ptr P, py::list& a)
+{
+  for (auto item : a) { P->add_allowed(item.cast<action>()); }
+}
+
+void my_add_condition(predictor_ptr P, ptag t, char c) { P->add_condition(t, c); }
+void my_add_condition_range(predictor_ptr P, ptag hi, ptag count, char name0)
+{
+  P->add_condition_range(hi, count, name0);
+}
+
+void my_set_oracle(predictor_ptr P, action a) { P->set_oracle(a); }
+void my_set_oracles(predictor_ptr P, py::list& a)
+{
+  if (py::len(a) > 0)
+    P->set_oracle(a[0].cast<action>());
+  else
+    P->erase_oracles();
+  for (size_t i = 1; i < py::len(a); i++) P->add_oracle(a[i].cast<action>());
+}
+
+void my_set_allowed(predictor_ptr P, action a) { P->set_allowed(a); }
+void my_set_alloweds(predictor_ptr P, py::list& a)
+{
+  if (py::len(a) > 0)
+    P->set_allowed(a[0].cast<action>());
+  else
+    P->erase_alloweds();
+  for (size_t i = 1; i < py::len(a); i++) P->add_allowed(a[i].cast<action>());
+}
+
+void my_set_condition(predictor_ptr P, ptag t, char c) { P->set_condition(t, c); }
+void my_set_condition_range(predictor_ptr P, ptag hi, ptag count, char name0)
+{
+  P->set_condition_range(hi, count, name0);
+}
+
+void my_set_learner_id(predictor_ptr P, size_t id) { P->set_learner_id(id); }
+void my_set_tag(predictor_ptr P, ptag t) { P->set_tag(t); }
+
 PYBIND11_MODULE(pylibvw, m)
 {
   m.doc() = "Vowpal Wabbit Python bindings (pybind11 version)";
@@ -1410,4 +1614,66 @@ PYBIND11_MODULE(pylibvw, m)
           "Returns the partial prediction associated with this example")
       .def("get_loss", &get_loss, "Returns the loss associated with this example")
       .def("get_total_sum_feat_sq", &get_total_sum_feat_sq, "The total sum of feature-value squared for this example");
+
+  // Search::predictor class
+  py::class_<Search::predictor, predictor_ptr>(m, "predictor")
+      .def("set_input", &my_set_input, "set the input (an example) for this predictor (non-LDF mode only)")
+      .def("set_input_length", &Search::predictor::set_input_length, "declare the length of an LDF-sequence of examples")
+      .def("set_input_at", &my_set_input_at,
+          "put a given example at position in the LDF sequence (call after set_input_length)")
+      .def("add_oracle", &my_add_oracle, "add an action to the current list of oracle actions")
+      .def("add_oracles", &my_add_oracles, "add a list of actions to the current list of oracle actions")
+      .def("add_allowed", &my_add_allowed, "add an action to the current list of allowed actions")
+      .def("add_alloweds", &my_add_alloweds, "add a list of actions to the current list of allowed actions")
+      .def("add_condition", &my_add_condition, "add a (tag,char) pair to the list of variables on which to condition")
+      .def("add_condition_range", &my_add_condition_range,
+          "given (tag,len,char), add (tag,char), (tag-1,char+1), ..., (tag-len,char+len) to the list of conditionings")
+      .def("set_oracle", &my_set_oracle, "set an action as the current list of oracle actions")
+      .def("set_oracles", &my_set_oracles, "set a list of actions as the current list of oracle actions")
+      .def("set_allowed", &my_set_allowed, "set an action as the current list of allowed actions")
+      .def("set_alloweds", &my_set_alloweds, "set a list of actions as the current list of allowed actions")
+      .def("set_condition", &my_set_condition, "set a (tag,char) pair as the list of variables on which to condition")
+      .def("set_condition_range", &my_set_condition_range,
+          "given (tag,len,char), set (tag,char), (tag-1,char+1), ..., (tag-len,char+len) as the list of conditionings")
+      .def("set_learner_id", &my_set_learner_id, "select the learner with which to make this prediction")
+      .def("set_tag", &my_set_tag, "change the tag of this prediction")
+      .def("predict", &Search::predictor::predict, "make a prediction");
+
+  // Search::search class
+  py::class_<Search::search, search_ptr>(m, "search")
+      .def("set_options", &Search::search::set_options, "Set global search options (auto conditioning, etc.)")
+      .def("get_history_length", &Search::search::get_history_length,
+          "Get the value specified by --search_history_length")
+      .def("loss", &Search::search::loss, "Declare a (possibly incremental) loss")
+      .def("should_output", &search_should_output,
+          "Check whether search wants us to output (only happens if you have -p running)")
+      .def("predict_needs_example", &Search::search::predictNeedsExample,
+          "Check whether a subsequent call to predict is actually going to use the example you pass---i.e., can you "
+          "skip feature computation?")
+      .def("output", &search_output, "Add a string to the coutput (should only do if should_output returns True)")
+      .def("get_num_actions", &search_get_num_actions, "Return the total number of actions search was initialized with")
+      .def("set_structured_predict_hook", &set_structured_predict_hook,
+          "Set the hook (function pointer) that search should use for structured prediction (This is rarely called by "
+          "the end user. It is used internally.)")
+      .def("set_force_oracle", &set_force_oracle, "For oracle decoding when .predict is run")
+      .def("is_ldf", &Search::search::is_ldf, "check whether this search task is running in LDF mode")
+      .def("po_exists", &po_exists,
+          "For program (cmd line) options, check to see if a given option was specified; eg _sch.po_exists(\"search\") "
+          "should be True")
+      .def("po_get", &po_get,
+          "For program (cmd line) options, if an option was specified, get its value; eg _sch.po_get(\"search\") "
+          "should "
+          "return the # of actions (returns either int or string)")
+      .def("po_get_str", &po_get_string, "Same as po_get, but specialized for string return values.")
+      .def("po_get_int", &po_get_int, "Same as po_get, but specialized for integer return values.")
+      .def("get_predictor", &get_predictor,
+          "Get a predictor object that can be used for making predictions; requires a tag argument to tag the "
+          "prediction.")
+      .def_readonly_static("AUTO_CONDITION_FEATURES", &Search::AUTO_CONDITION_FEATURES,
+          "Tell search to automatically add features based on conditioned-on variables")
+      .def_readonly_static("AUTO_HAMMING_LOSS", &Search::AUTO_HAMMING_LOSS,
+          "Tell search to automatically compute hamming loss over predictions")
+      .def_readonly_static("EXAMPLES_DONT_CHANGE", &Search::EXAMPLES_DONT_CHANGE,
+          "Tell search that on a single structured 'run', you don't change the examples you pass to predict")
+      .def_readonly_static("IS_LDF", &Search::IS_LDF, "Tell search that this is an LDF task");
 }
