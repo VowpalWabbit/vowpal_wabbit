@@ -240,6 +240,39 @@ jobs:
             python --version && \
             python -m pytest ./python/tests/ && \
             deactivate'
+
+  # macOS x86_64 builds using cibuildwheel (Python 3.10-3.13)
+  cibuildwheel-build-macos-intel:
+    name: cibuildwheel.macos-15-intel
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+          fetch-depth: 0
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v3.3.0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cibw-wheels-macos-15-intel
+          path: ./wheelhouse/*.whl
+
+  # macOS ARM64 builds using cibuildwheel (Python 3.10-3.13)
+  cibuildwheel-build-macos-arm:
+    name: cibuildwheel.macos-14
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+          fetch-depth: 0
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v3.3.0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cibw-wheels-macos-14
+          path: ./wheelhouse/*.whl
+
   macos-python-build:
     name: macos.amd64.py${{ matrix.config.version }}.build
     runs-on: macos-15-intel
