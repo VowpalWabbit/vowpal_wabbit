@@ -12,8 +12,14 @@ if(POLICY CMP0074)
   cmake_policy(SET CMP0074 NEW)
 endif()
 # FindBoost uses CONFIG mode with Boost 1.70+
+# For Windows Python builds with vcpkg boost-python, use MODULE mode instead
+# since boost-python alone doesn't provide BoostConfig.cmake files
 if(POLICY CMP0167)
-  cmake_policy(SET CMP0167 NEW)
+  if(DEFINED ENV{VW_USE_FINDBOOST_MODULE_MODE})
+    cmake_policy(SET CMP0167 OLD)
+  else()
+    cmake_policy(SET CMP0167 NEW)
+  endif()
 endif()
 # FetchContent uses timestamps from archives
 if(POLICY CMP0169)
