@@ -1308,6 +1308,21 @@ VW::label_parser* get_label_parser(VW::workspace* all, size_t labelType)
   }
 }
 
+size_t my_get_label_type(VW::workspace* all)
+{
+  VW::label_parser* lp = &all->parser_runtime.example_parser->lbl_parser;
+  if (lp->parse_label == VW::simple_label_parser_global.parse_label) { return lSIMPLE; }
+  else if (lp->parse_label == VW::multiclass_label_parser_global.parse_label) { return lMULTICLASS; }
+  else if (lp->parse_label == VW::cs_label_parser_global.parse_label) { return lCOST_SENSITIVE; }
+  else if (lp->parse_label == VW::cb_label_parser_global.parse_label) { return lCONTEXTUAL_BANDIT; }
+  else if (lp->parse_label == VW::cb_eval_label_parser_global.parse_label) { return lCONTEXTUAL_BANDIT_EVAL; }
+  else if (lp->parse_label == VW::ccb_label_parser_global.parse_label) { return lCONDITIONAL_CONTEXTUAL_BANDIT; }
+  else if (lp->parse_label == VW::slates::slates_label_parser.parse_label) { return lSLATES; }
+  else if (lp->parse_label == VW::cb_continuous::the_label_parser.parse_label) { return lCONTINUOUS; }
+  else if (lp->parse_label == VW::multilabel_label_parser_global.parse_label) { return lMULTILABEL; }
+  else { THROW("unsupported label parser used"); }
+}
+
 size_t my_get_prediction_type(vw_ptr all)
 {
   VW::prediction_type_t pred_type = all->l->get_output_prediction_type();
@@ -1410,21 +1425,23 @@ PYBIND11_MODULE(pylibvw, m)
       .def(py::init<py::object>());
 
   // VW::workspace class (bound as "vw")
-  py::class_<VW::workspace, vw_ptr>(m, "vw", 
+  py::class_<VW::workspace, vw_ptr>(m, "vw",
       "the basic VW object that holds weight vector, parser, etc.")
       .def(py::init(&my_initialize))
       .def(py::init(&my_initialize_with_log))
+      .def("run_parser", &my_run_parser, "parse external data file")
+      .def("get_learner_metrics", &get_learner_metrics,
+          "get current learner stack metrics. returns empty dict if --extra_metrics was not supplied.")
       .def("finish", &my_finish, "stop VW by calling finish (and, eg, write weights to disk)")
       .def("save", &my_save, "save model to filename")
-      .def("run_parser", &my_run_parser, "parse external data file")
       .def("learn", &my_learn, "given a pyvw example, learn (and predict) on that example")
+      .def("json_weights", &my_json_weights, "get json string of current weights")
       .def("predict", &my_predict, "given a pyvw example, predict on that example")
-      .def("learn_multi", &my_learn_multi_ex, "given a list pyvw examples, learn (and predict) on those examples")
-      .def("predict_multi", &my_predict_multi_ex, "given a list of pyvw examples, predict on that example")
+      .def("hash_space", &VW::hash_space, "given a namespace (as a string), compute the hash of that namespace")
+      .def("hash_feature", &VW::hash_feature,
+          "given a feature string (arg2) and a hashed namespace (arg3), hash that feature")
       .def("_finish_example", &my_finish_example, "tell VW that you're done with a given example")
       .def("_finish_example_multi_ex", &my_finish_multi_ex, "tell VW that you're done with the given examples")
-      .def("_parse", &my_parse, "Parse a string into a collection of VW examples")
-      .def("_is_multiline", &my_is_multiline, "true if the base reduction is multiline")
       .def("setup_example", &my_setup_example,
           "given an example that you've created by hand, prepare it for learning (eg, compute quadratic feature)")
       .def("unsetup_example", &unsetup_example,
@@ -1433,25 +1450,23 @@ PYBIND11_MODULE(pylibvw, m)
       .def("get_weight", &VW::get_weight, "get the weight for a particular index")
       .def("set_weight", &VW::set_weight, "set the weight for a particular index")
       .def("get_stride", &VW::get_stride, "return the internal stride")
+      .def("_get_label_type", &my_get_label_type, "return parse label type")
+      .def("_get_prediction_type", &my_get_prediction_type, "return prediction type")
       .def("get_sum_loss", &get_sum_loss, "return the total cumulative loss suffered so far")
       .def("get_holdout_sum_loss", &get_holdout_sum_loss, "return the total cumulative holdout loss suffered so far")
       .def("get_weighted_examples", &get_weighted_examples, "return the total weight of examples so far")
-      .def("get_learner_metrics", &get_learner_metrics,
-          "return a dictionary of learner-specific metrics (loss per example, etc.)")
       .def("get_search_ptr", &get_search_ptr, "return a pointer to the search data structure")
-      .def("hash_space", &VW::hash_space, "given a namespace (as a string), compute the hash of that namespace")
-      .def("hash_feature", &VW::hash_feature,
-          "given a feature string (arg2) and a hashed namespace (arg3), hash that feature")
-      .def("_get_prediction_type", &my_get_prediction_type, "return prediction type")
-      .def("get_arguments", &get_arguments, "return the arguments after resolving all dependencies")
-      .def("get_enabled_learners", &get_enabled_learners, "return the list of names of the enabled learners")
-      .def("get_enabled_reductions", &get_enabled_learners, "return the list of names of the enabled learners")
       .def("get_options", &get_options, "get available vw options")
       .def("audit_example", &my_audit_example, "print example audit information")
       .def("get_id", &get_model_id, "return the model id")
-      .def("json_weights", &my_json_weights, "get json string of current weights")
-      
-      // Label type constants
+      .def("get_arguments", &get_arguments, "return the arguments after resolving all dependencies")
+      .def("get_enabled_learners", &get_enabled_learners, "return the list of names of the enabled learners")
+      .def("get_enabled_reductions", &get_enabled_learners, "return the list of names of the enabled learners")
+      .def("learn_multi", &my_learn_multi_ex, "given a list pyvw examples, learn (and predict) on those examples")
+      .def("predict_multi", &my_predict_multi_ex, "given a list of pyvw examples, predict on that example")
+      .def("_parse", &my_parse, "Parse a string into a collection of VW examples")
+      .def("_is_multiline", &my_is_multiline, "true if the base reduction is multiline")
+
       .def_readonly_static("lDefault", &lDEFAULT)
       .def_readonly_static("lBinary", &lBINARY)
       .def_readonly_static("lSimple", &lSIMPLE)
@@ -1464,8 +1479,7 @@ PYBIND11_MODULE(pylibvw, m)
       .def_readonly_static("lContinuous", &lCONTINUOUS)
       .def_readonly_static("lContextualBanditEval", &lCONTEXTUAL_BANDIT_EVAL)
       .def_readonly_static("lMultilabel", &lMULTILABEL)
-      
-      // Prediction type constants
+
       .def_readonly_static("pSCALAR", &pSCALAR)
       .def_readonly_static("pSCALARS", &pSCALARS)
       .def_readonly_static("pACTION_SCORES", &pACTION_SCORES)
@@ -1479,8 +1493,7 @@ PYBIND11_MODULE(pylibvw, m)
       .def_readonly_static("pPDF", &pPDF)
       .def_readonly_static("pACTIVE_MULTICLASS", &pACTIVE_MULTICLASS)
       .def_readonly_static("pNOPRED", &pNOPRED)
-      
-      // Type constants
+
       .def_readonly_static("tUNSET", &tUNSET)
       .def_readonly_static("tSHARED", &tSHARED)
       .def_readonly_static("tACTION", &tACTION)
