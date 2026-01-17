@@ -24,15 +24,14 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake ninja-build libboost-test-dev python3-dev python3-pip zlib1g-dev
-          python3 -m pip install build wheel setuptools auditwheel pybind11
+          sudo apt-get install -y libboost-dev libboost-python-dev python3-dev python3-pip zlib1g-dev ninja-build
+          python3 -m pip install build wheel setuptools auditwheel
       - name: Build wheel
         shell: bash
         run: |
           git clone --recursive https://github.com/VowpalWabbit/vowpal_wabbit.git
           cd vowpal_wabbit
-          export PYBIND11_DIR=$(python3 -m pybind11 --cmakedir)
-          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -Dpybind11_DIR=${PYBIND11_DIR}" python3 -m pip wheel . -w wheel_last_commit/ --verbose
+          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -DBoost_NO_BOOST_CMAKE=ON" BOOST_PY_VERSION_SUFFIX="310" python3 -m pip wheel . -w wheel_last_commit/ --verbose
           cd ..
           auditwheel repair vowpal_wabbit/wheel_last_commit/*whl -w audit_last_commit/
       - name: Upload built wheel
