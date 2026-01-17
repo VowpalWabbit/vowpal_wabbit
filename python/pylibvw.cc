@@ -670,43 +670,6 @@ void ex_push_feature(example_ptr ec, unsigned char ns, uint64_t fid, float v)
   ec->feature_space[ns].sum_feat_sq += v * v;
 }
 
-void ex_push_namespace(example_ptr ec, unsigned char ns) 
-{ 
-  ec->indices.push_back(ns); 
-}
-
-void ex_ensure_namespace_exists(example_ptr ec, unsigned char ns)
-{
-  for (auto n : ec->indices)
-  {
-    if (n == ns) return;
-  }
-  ex_push_namespace(ec, ns);
-}
-
-bool ex_pop_namespace(example_ptr ec)
-{
-  if (ec->indices.empty()) return false;
-  ec->indices.pop_back();
-  return true;
-}
-
-void ex_erase_namespace(example_ptr ec, unsigned char ns)
-{
-  ec->feature_space[ns].clear();
-  ec->feature_space[ns].sum_feat_sq = 0;
-}
-
-bool ex_pop_feature(example_ptr ec, unsigned char ns)
-{
-  auto& fs = ec->feature_space[ns];
-  if (fs.empty()) return false;
-  float val = fs.values.back();
-  fs.sum_feat_sq -= val * val;
-  fs.indices.pop_back();
-  fs.values.pop_back();
-  return true;
-}
 
 void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list& a)
 {
@@ -740,6 +703,23 @@ void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list&
     }
   }
 }
+
+
+void ex_push_namespace(example_ptr ec, unsigned char ns) 
+{ 
+  ec->indices.push_back(ns); 
+}
+
+
+void ex_ensure_namespace_exists(example_ptr ec, unsigned char ns)
+{
+  for (auto n : ec->indices)
+  {
+    if (n == ns) return;
+  }
+  ex_push_namespace(ec, ns);
+}
+
 
 void ex_push_dictionary(example_ptr ec, vw_ptr vw, py::dict dict)
 {
@@ -777,6 +757,33 @@ void ex_push_dictionary(example_ptr ec, vw_ptr vw, py::dict dict)
       THROW("namespace value must be a list of (feature, value) tuples");
     }
   }
+}
+
+
+bool ex_pop_feature(example_ptr ec, unsigned char ns)
+{
+  auto& fs = ec->feature_space[ns];
+  if (fs.empty()) return false;
+  float val = fs.values.back();
+  fs.sum_feat_sq -= val * val;
+  fs.indices.pop_back();
+  fs.values.pop_back();
+  return true;
+}
+
+
+void ex_erase_namespace(example_ptr ec, unsigned char ns)
+{
+  ec->feature_space[ns].clear();
+  ec->feature_space[ns].sum_feat_sq = 0;
+}
+
+
+bool ex_pop_namespace(example_ptr ec)
+{
+  if (ec->indices.empty()) return false;
+  ec->indices.pop_back();
+  return true;
 }
 
 // Multi-example type (VW expects raw pointers)
