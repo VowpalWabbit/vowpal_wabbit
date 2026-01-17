@@ -16,7 +16,7 @@ skip = [
     "*-macosx*",  # Skip macOS - use manual conda approach instead (see python_wheels.yml)
 ]
 test-skip = "*-manylinux*_aarch64"  # Skip ARM64 tests due to illegal instruction errors
-test-requires = ["pytest", "pyclean", "vw-executor", "setuptools"]
+test-requires = ["pytest", "pyclean", "vw-executor", "setuptools", "scipy", "scikit-learn"]
 test-command = [
     "pyclean {project}/python/tests",
     "pytest {project}/python/tests",
@@ -53,7 +53,8 @@ before-all = [
 ]
 # setup.py checks CMAKE_GENERATOR environment variable to select CMake generator
 # Use VS 2022 which is available on windows-latest runners
-environment = { BOOST_PY_VERSION_SUFFIX="3", CMAKE_GENERATOR="Visual Studio 17 2022" }
+# Set CMAKE_POLICY_DEFAULT_CMP0167=OLD to force FindBoost MODULE mode before vcpkg toolchain loads
+environment = { BOOST_PY_VERSION_SUFFIX="3", CMAKE_GENERATOR="Visual Studio 17 2022", CMAKE_ARGS="-DCMAKE_POLICY_DEFAULT_CMP0167=OLD -DBoost_NO_BOOST_CMAKE=ON" }
 
 # Override for ARM64 Linux builds to use conservative architecture flags
 [[tool.cibuildwheel.overrides]]
