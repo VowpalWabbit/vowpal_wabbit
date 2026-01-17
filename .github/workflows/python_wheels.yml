@@ -440,21 +440,25 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - uses: actions/setup-python@v4
+      - uses: conda-incubator/setup-miniconda@v3
         with:
+          auto-update-conda: true
           python-version: ${{ matrix.version }}
+          miniconda-version: "latest"
+          use-mamba: false
       - uses: actions/download-artifact@v4
         with:
           name: windows_amd64_${{ matrix.version }}
           path: built_wheel
       - name: Install deps and test wheel
-        shell: bash
+        shell: bash -l {0}
         run: |
           export wheel_files=(built_wheel/*)
           export wheel_file="${wheel_files[0]}"
           echo Installing ${wheel_file}...
+          conda install -y --quiet py-boost
           pip install -r requirements.txt
-          pip install pytest vw-executor twine
+          pip install pytest vw-executor twine setuptools scipy scikit-learn
           pip install --force-reinstall ${wheel_file}
 
           echo -e "\n=== Quick import test ==="
