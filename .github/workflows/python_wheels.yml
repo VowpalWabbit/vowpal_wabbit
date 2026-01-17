@@ -295,9 +295,9 @@ jobs:
         shell: bash -l {0}
         run: |
           conda install py-boost
+          pip install --force-reinstall built_wheel/*.whl
           pip install -r requirements.txt
           pip install pytest vw-executor twine setuptools scipy scikit-learn
-          pip install --force-reinstall built_wheel/*.whl
           twine check built_wheel/*.whl
           python -m pytest ./python/tests/
           python ./python/tests/run_doctest.py
@@ -457,9 +457,9 @@ jobs:
           export wheel_file="${wheel_files[0]}"
           echo Installing ${wheel_file}...
           conda install -y --quiet py-boost
+          pip install --force-reinstall ${wheel_file}
           pip install -r requirements.txt
           pip install pytest vw-executor twine setuptools scipy scikit-learn
-          pip install --force-reinstall ${wheel_file}
 
           echo -e "\n=== Quick import test ==="
           python -c "import vowpalwabbit; print('SUCCESS: vowpalwabbit imported successfully!')"
