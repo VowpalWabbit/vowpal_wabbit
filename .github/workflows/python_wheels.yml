@@ -247,6 +247,8 @@ jobs:
       matrix:
         config:
         - { version: "3.10", include_dir_name: python3.10/}
+        - { version: "3.11", include_dir_name: python3.11/}
+        - { version: "3.12", include_dir_name: python3.12/}
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -274,7 +276,7 @@ jobs:
     runs-on: macos-15-intel
     strategy:
       matrix:
-        version: ["3.10"]
+        version: ["3.10", "3.11", "3.12"]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -293,9 +295,9 @@ jobs:
         shell: bash -l {0}
         run: |
           conda install python=${{ matrix.version }} boost py-boost
+          pip install --force-reinstall built_wheel/*.whl
           pip install -r requirements.txt
           pip install pytest vw-executor twine
-          pip install --force-reinstall built_wheel/*.whl
           twine check built_wheel/*.whl
           python -m pytest ./python/tests/
           python ./python/tests/run_doctest.py
@@ -309,7 +311,9 @@ jobs:
     strategy:
       matrix:
         config:
-        - { version: "3.10" }
+        - { version: "3.10", boost_py_suffix: "310" }
+        - { version: "3.11", boost_py_suffix: "311" }
+        - { version: "3.12", boost_py_suffix: "312" }
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -320,6 +324,7 @@ jobs:
           auto-update-conda: true
           python-version: ${{ matrix.config.version }}
           miniconda-version: "latest"
+          use-mamba: false
       - uses: actions/checkout@v4
         with:
           path: ${{ env.VCPKG_ROOT }}
@@ -368,7 +373,7 @@ jobs:
 
           echo "=== Install conda dependencies for Python-matched library ==="
           conda info
-          # Install py-boost for boost_python310.lib that matches Python 3.10
+          # Install py-boost for boost_python${{ matrix.config.boost_py_suffix }}.lib that matches Python ${{ matrix.config.version }}
           conda install -y --quiet python=${{ matrix.config.version }} wheel setuptools pip py-boost zlib flatbuffers
 
           echo "=== Verify Python version ==="
@@ -389,7 +394,7 @@ jobs:
           echo "CONDA_PREFIX_CMAKE: $CONDA_PREFIX_CMAKE"
           echo "BOOST_DIR_CMAKE: $BOOST_DIR_CMAKE"
 
-          CMAKE_OPTIONS="-DSTATIC_LINK_VW_JAVA=On;-DCMAKE_BUILD_TYPE=Release;-DZLIB_ROOT=$CONDA_PREFIX_CMAKE/Library;-DZLIB_INCLUDE_DIR=$CONDA_PREFIX_CMAKE/Library/include;-DZLIB_LIBRARY=$CONDA_PREFIX_CMAKE/Library/lib/zlib.lib;-DBoost_ROOT=$BOOST_DIR_CMAKE;-DBoost_INCLUDE_DIR=$BOOST_DIR_CMAKE;-DBoost_LIBRARY_DIR=$CONDA_PREFIX_CMAKE/Library/lib;-DBoost_PYTHON310_LIBRARY=$CONDA_PREFIX_CMAKE/Library/lib/boost_python310.lib;-DBoost_DIR=NOTFOUND;-DBoost_NO_BOOST_CMAKE=ON;-DBOOST_PY_VERSION_SUFFIX=310"
+          CMAKE_OPTIONS="-DSTATIC_LINK_VW_JAVA=On;-DCMAKE_BUILD_TYPE=Release;-DZLIB_ROOT=$CONDA_PREFIX_CMAKE/Library;-DZLIB_INCLUDE_DIR=$CONDA_PREFIX_CMAKE/Library/include;-DZLIB_LIBRARY=$CONDA_PREFIX_CMAKE/Library/lib/zlib.lib;-DBoost_ROOT=$BOOST_DIR_CMAKE;-DBoost_INCLUDE_DIR=$BOOST_DIR_CMAKE;-DBoost_LIBRARY_DIR=$CONDA_PREFIX_CMAKE/Library/lib;-DBoost_PYTHON${{ matrix.config.boost_py_suffix }}_LIBRARY=$CONDA_PREFIX_CMAKE/Library/lib/boost_python${{ matrix.config.boost_py_suffix }}.lib;-DBoost_DIR=NOTFOUND;-DBoost_NO_BOOST_CMAKE=ON;-DBOOST_PY_VERSION_SUFFIX=${{ matrix.config.boost_py_suffix }}"
 
           echo -e "\n=== Building wheel with setup.py (supports --cmake-options) ==="
           echo "CMAKE_OPTIONS: $CMAKE_OPTIONS"
@@ -428,7 +433,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        version: ["3.10"]
+        version: ["3.10", "3.11", "3.12"]
         os: ["windows-2019"]
       fail-fast: false
     steps:
@@ -448,9 +453,9 @@ jobs:
           export wheel_files=(built_wheel/*)
           export wheel_file="${wheel_files[0]}"
           echo Installing ${wheel_file}...
+          pip install --force-reinstall ${wheel_file}
           pip install -r requirements.txt
           pip install pytest vw-executor twine
-          pip install --force-reinstall ${wheel_file}
 
           echo -e "\n=== Quick import test ==="
           python -c "import vowpalwabbit; print('SUCCESS: vowpalwabbit imported successfully!')"
