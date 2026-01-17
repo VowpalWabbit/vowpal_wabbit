@@ -10,7 +10,7 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [tool.cibuildwheel]
-build = ["cp310-*", "cp311-*", "cp312-*", "cp313-*", "cp314-*"]  # Python 3.10-3.14 only
+build = ["cp310-*", "cp311-*", "cp312-*", "cp313-*"]  # Python 3.10-3.13 (3.14 skipped due to Boost.Python incompatibility)
 skip = [
     "*musllinux*",  # Only build manylinux wheels
 ]
