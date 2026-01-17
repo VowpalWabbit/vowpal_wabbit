@@ -1677,6 +1677,20 @@ PYBIND11_MODULE(pylibvw, m)
       .def("get_cb_eval_partial_prediction", &ex_get_cb_eval_partial_prediction,
           "Assuming a cb_eval label type, return the ith partial prediction")
 
+      // CCB label accessors
+      .def("get_ccb_type", &ex_get_ccb_type, "Assuming a CCB label type, return the example type")
+      .def("get_ccb_has_outcome", &ex_get_ccb_has_outcome, "Assuming a CCB label type, check if has outcome")
+      .def("get_ccb_cost", &ex_get_ccb_cost, "Assuming a CCB label type, get the cost")
+      .def("get_ccb_num_probabilities", &ex_get_ccb_num_probabilities,
+          "Assuming a CCB label type, return the number of probabilities")
+      .def("get_ccb_num_explicitly_included_actions", &ex_get_ccb_num_explicitly_included_actions,
+          "Assuming a CCB label type, return the number of explicitly included actions")
+      .def("get_ccb_action", &ex_get_ccb_action, "Assuming a CCB label type, return the ith action")
+      .def("get_ccb_probability", &ex_get_ccb_probability, "Assuming a CCB label type, return the ith probability")
+      .def("get_ccb_weight", &ex_get_ccb_weight, "Assuming a CCB label type, get the weight")
+      .def("get_ccb_explicitly_included_actions", &ex_get_ccb_explicitly_included_actions,
+          "Assuming a CCB label type, return the list of explicitly included actions")
+
       // CB continuous label accessors
       .def("get_cb_continuous_num_costs", &ex_get_cb_continuous_num_costs,
           "Assuming a cb_continuous label type, return the number of costs")
@@ -1698,21 +1712,7 @@ PYBIND11_MODULE(pylibvw, m)
       .def("get_slates_action", &ex_get_slates_action,
           "Assuming a slates label type, return the ith action")
       .def("get_slates_probability", &ex_get_slates_probability,
-          "Assuming a slates label type, return the ith probability")
-
-      // CCB label accessors
-      .def("get_ccb_type", &ex_get_ccb_type, "Assuming a CCB label type, return the example type")
-      .def("get_ccb_has_outcome", &ex_get_ccb_has_outcome, "Assuming a CCB label type, check if has outcome")
-      .def("get_ccb_cost", &ex_get_ccb_cost, "Assuming a CCB label type, get the cost")
-      .def("get_ccb_weight", &ex_get_ccb_weight, "Assuming a CCB label type, get the weight")
-      .def("get_ccb_num_probabilities", &ex_get_ccb_num_probabilities,
-          "Assuming a CCB label type, return the number of probabilities")
-      .def("get_ccb_num_explicitly_included_actions", &ex_get_ccb_num_explicitly_included_actions,
-          "Assuming a CCB label type, return the number of explicitly included actions")
-      .def("get_ccb_action", &ex_get_ccb_action, "Assuming a CCB label type, return the ith action")
-      .def("get_ccb_probability", &ex_get_ccb_probability, "Assuming a CCB label type, return the ith probability")
-      .def("get_ccb_explicitly_included_actions", &ex_get_ccb_explicitly_included_actions,
-          "Assuming a CCB label type, return the list of explicitly included actions");
+          "Assuming a slates label type, return the ith probability");
 
   // Search::predictor class
   py::class_<Search::predictor, predictor_ptr>(m, "predictor")
