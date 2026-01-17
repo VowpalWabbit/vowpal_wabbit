@@ -294,10 +294,10 @@ jobs:
       - name: Test wheel
         shell: bash -l {0}
         run: |
-          conda install py-boost
+          conda install python=${{ matrix.version }} boost py-boost
           pip install --force-reinstall built_wheel/*.whl
           pip install -r requirements.txt
-          pip install pytest vw-executor twine setuptools scipy scikit-learn
+          pip install pytest vw-executor twine
           twine check built_wheel/*.whl
           python -m pytest ./python/tests/
           python ./python/tests/run_doctest.py
@@ -440,26 +440,22 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - uses: conda-incubator/setup-miniconda@v3
+      - uses: actions/setup-python@v4
         with:
-          auto-update-conda: true
           python-version: ${{ matrix.version }}
-          miniconda-version: "latest"
-          use-mamba: false
       - uses: actions/download-artifact@v4
         with:
           name: windows_amd64_${{ matrix.version }}
           path: built_wheel
       - name: Install deps and test wheel
-        shell: bash -l {0}
+        shell: bash
         run: |
           export wheel_files=(built_wheel/*)
           export wheel_file="${wheel_files[0]}"
           echo Installing ${wheel_file}...
-          conda install -y --quiet py-boost
           pip install --force-reinstall ${wheel_file}
           pip install -r requirements.txt
-          pip install pytest vw-executor twine setuptools scipy scikit-learn
+          pip install pytest vw-executor twine
 
           echo -e "\n=== Quick import test ==="
           python -c "import vowpalwabbit; print('SUCCESS: vowpalwabbit imported successfully!')"
