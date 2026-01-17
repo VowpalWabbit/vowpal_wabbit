@@ -1419,11 +1419,6 @@ PYBIND11_MODULE(pylibvw, m)
 {
   m.doc() = "Vowpal Wabbit Python bindings (pybind11 version)";
 
-  // py_log_wrapper class
-  py::class_<py_log_wrapper, py_log_wrapper_ptr>(m, "vw_log",
-      "do not use, see pyvw.Workspace.init(enable_logging..)")
-      .def(py::init<py::object>());
-
   // VW::workspace class (bound as "vw")
   py::class_<VW::workspace, vw_ptr>(m, "vw",
       "the basic VW object that holds weight vector, parser, etc.")
@@ -1508,8 +1503,23 @@ PYBIND11_MODULE(pylibvw, m)
       .def(py::init(&my_existing_example),
           "Create a new example object pointing to an existing object")
       .def("set_test_only", &my_set_test_only, "Change the test-only bit on an example")
+
       .def("get_tag", &my_get_tag, "Returns the tag associated with this example")
-      
+      .def("get_topic_prediction", &ex_get_topic_prediction,
+          "For LDA models, returns the topic prediction for the topic id given")
+      .def("get_feature_number", &ex_get_feature_number, "Returns the total number of features for this example")
+
+      .def("get_example_counter", &get_example_counter,
+          "Returns the counter of total number of examples seen up to and including this one")
+      .def("get_ft_offset", &get_ft_offset,
+          "Returns the feature offset for this example (used, eg, by multiclass classification to bulk offset all features)")
+      .def("get_partial_prediction", &get_partial_prediction,
+          "Returns the partial prediction associated with this example")
+      .def("get_updated_prediction", &ex_get_updated_prediction,
+          "Returns the partial prediction as if we had updated it after learning")
+      .def("get_loss", &get_loss, "Returns the loss associated with this example")
+      .def("get_total_sum_feat_sq", &get_total_sum_feat_sq, "The total sum of feature-value squared for this example")
+
       // Namespace and feature methods
       .def("num_namespaces", &ex_num_namespaces, "The total number of namespaces associated with this example")
       .def("namespace", &ex_namespace,
@@ -1638,24 +1648,7 @@ PYBIND11_MODULE(pylibvw, m)
       .def("get_ccb_action", &ex_get_ccb_action, "Assuming a CCB label type, return the ith action")
       .def("get_ccb_probability", &ex_get_ccb_probability, "Assuming a CCB label type, return the ith probability")
       .def("get_ccb_explicitly_included_actions", &ex_get_ccb_explicitly_included_actions,
-          "Assuming a CCB label type, return the list of explicitly included actions")
-
-      // Additional example properties
-      .def("get_updated_prediction", &ex_get_updated_prediction,
-          "Returns the updated prediction associated with this example")
-      .def("get_feature_number", &ex_get_feature_number, "Returns the total number of features for this example")
-      .def("get_topic_prediction", &ex_get_topic_prediction,
-          "For LDA-style models, return the topic prediction for the ith topic")
-
-      // General example properties
-      .def("get_example_counter", &get_example_counter,
-          "Returns the counter of total number of examples seen up to and including this one")
-      .def("get_ft_offset", &get_ft_offset,
-          "Returns the feature offset for this example")
-      .def("get_partial_prediction", &get_partial_prediction,
-          "Returns the partial prediction associated with this example")
-      .def("get_loss", &get_loss, "Returns the loss associated with this example")
-      .def("get_total_sum_feat_sq", &get_total_sum_feat_sq, "The total sum of feature-value squared for this example");
+          "Assuming a CCB label type, return the list of explicitly included actions");
 
   // Search::predictor class
   py::class_<Search::predictor, predictor_ptr>(m, "predictor")
@@ -1680,6 +1673,11 @@ PYBIND11_MODULE(pylibvw, m)
       .def("set_learner_id", &my_set_learner_id, "select the learner with which to make this prediction")
       .def("set_tag", &my_set_tag, "change the tag of this prediction")
       .def("predict", &Search::predictor::predict, "make a prediction");
+
+  // py_log_wrapper class
+  py::class_<py_log_wrapper, py_log_wrapper_ptr>(m, "vw_log",
+      "do not use, see pyvw.Workspace.init(enable_logging..)")
+      .def(py::init<py::object>());
 
   // Search::search class
   py::class_<Search::search, search_ptr>(m, "search")
