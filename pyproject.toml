@@ -17,7 +17,9 @@ skip = [
 test-requires = ["pytest", "pyclean", "vw-executor", "setuptools", "scipy", "scikit-learn"]
 test-command = [
     # Print CPU and platform info for diagnostics
-    "python -c 'import platform, os; print(f\"Platform: {platform.machine()}, {platform.processor()}\"); print(f\"CPU info:\"); os.system(\"cat /proc/cpuinfo | grep -E \\\"model name|flags\\\" | head -5\" if os.path.exists(\"/proc/cpuinfo\") else \"echo CPU info not available\")'",
+    "python -c 'import platform, os; print(f\"Platform: {platform.machine()}, {platform.processor()}\"); print(f\"CPU info:\"); os.system(\"cat /proc/cpuinfo | grep -E \\\"CPU|Features\\\" | head -10\" if os.path.exists(\"/proc/cpuinfo\") else \"echo CPU info not available\")'",
+    # Check for LSE atomics support and other ARM features
+    "bash -c 'if [ $(uname -m) = \"aarch64\" ]; then echo \"ARM64 CPU Features:\"; grep -E \"Features\" /proc/cpuinfo | head -1; echo \"Checking for LSE atomics...\"; grep -q \" atomics\" /proc/cpuinfo && echo \"LSE atomics: SUPPORTED\" || echo \"LSE atomics: NOT SUPPORTED\"; fi'",
     # Test basic import first to isolate illegal instruction errors
     "python -c 'print(\"Testing basic import...\"); import vowpalwabbit; print(f\"SUCCESS: vowpalwabbit {vowpalwabbit.__version__} imported\")' || (echo \"ERROR: Basic import failed - likely illegal instruction\"; exit 1)",
     # Run full test suite
@@ -78,6 +80,9 @@ before-all = [
 environment = { BOOST_PY_VERSION_SUFFIX="3" }
 
 # Override for ARM64 Linux builds to use conservative architecture flags
+# -mno-outline-atomics: Prevents GCC from using LSE atomic instructions (ARMv8.1+) which cause illegal instruction on older CPUs
+# -march=armv8-a: Baseline ARMv8.0 instruction set only (NEON is part of baseline and safe to use)
+# -mtune=generic: Don't optimize for specific CPU variant
 [[tool.cibuildwheel.overrides]]
 select = "*-manylinux_*_aarch64"
-environment = { BOOST_PY_VERSION_SUFFIX="3", CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=ON -DVW_ZLIB_SYS_DEP=OFF -DVW_FEAT_LAS_SIMD=OFF -DCMAKE_CXX_FLAGS='-march=armv8-a -mtune=generic' -DCMAKE_C_FLAGS='-march=armv8-a -mtune=generic'" }
+environment = { BOOST_PY_VERSION_SUFFIX="3", CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=ON -DVW_ZLIB_SYS_DEP=OFF -DVW_FEAT_LAS_SIMD=OFF -DCMAKE_CXX_FLAGS='-march=armv8-a -mtune=generic -mno-outline-atomics' -DCMAKE_C_FLAGS='-march=armv8-a -mtune=generic -mno-outline-atomics'" }
