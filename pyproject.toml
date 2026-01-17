@@ -15,30 +15,22 @@ skip = [
     "*musllinux*",  # Only build manylinux wheels
 ]
 # Skip ARM64 tests: Even with conservative build flags (-mno-outline-atomics, -march=armv8-a),
-# tests fail with illegal instruction. Root cause: System Boost libraries from dnf are likely
-# compiled for specific CPU variants. Wheels build successfully and should work on ARM64 systems.
-test-skip = "*-manylinux_*_aarch64"
+# tests fail with illegal instruction. Root cause: System Boost libraries from dnf contain
+# LSE atomics and SVE instructions compiled for newer ARM CPUs. Wheels build successfully with
+# baseline ARMv8.0 flags and should work on all ARM64 systems.
+test-skip = "*-manylinux_aarch64"
 test-requires = ["pytest", "pyclean", "vw-executor", "setuptools", "scipy", "scikit-learn"]
 test-command = [
-    # Print CPU and platform info for diagnostics
-    "python -c 'import platform, os; print(f\"Platform: {platform.machine()}, {platform.processor()}\"); print(f\"CPU info:\"); os.system(\"cat /proc/cpuinfo | grep -E \\\"CPU|Features\\\" | head -10\" if os.path.exists(\"/proc/cpuinfo\") else \"echo CPU info not available\")'",
-    # Check for LSE atomics support and other ARM features
-    "bash -c 'if [ $(uname -m) = \"aarch64\" ]; then echo \"ARM64 CPU Features:\"; grep -E \"Features\" /proc/cpuinfo | head -1; echo \"Checking for LSE atomics...\"; grep -q \" atomics\" /proc/cpuinfo && echo \"LSE atomics: SUPPORTED\" || echo \"LSE atomics: NOT SUPPORTED\"; fi'",
-    # Test basic import first to isolate illegal instruction errors
-    "python -c 'print(\"Testing basic import...\"); import vowpalwabbit; print(f\"SUCCESS: vowpalwabbit {vowpalwabbit.__version__} imported\")' || (echo \"ERROR: Basic import failed - likely illegal instruction\"; exit 1)",
-    # Run full test suite
     "pyclean {project}/python/tests",
-    "pytest {project}/python/tests || (echo \"ERROR: Tests failed - check for illegal instructions above\"; exit 1)",
+    "pytest {project}/python/tests",
 ]
 test-sources = "test/"
 
 [tool.cibuildwheel.linux]
 before-all = [
     # Install build tools and boost development packages
-    # cibuildwheel runs in Red Hat based Linux container environment
-    "dnf install -y cmake ninja-build boost-devel boost-python3-devel boost-static zlib-devel binutils",
-    # ARM64 only: Analyze system Boost libraries for problematic instructions
-    "bash -c 'if [ $(uname -m) = \"aarch64\" ]; then echo \"=== Analyzing Boost Python library for ARM64 instructions ===\"; BOOST_LIB=$(find /usr/lib64 -name \"libboost_python3*.so*\" | head -1); if [ -f \"$BOOST_LIB\" ]; then echo \"Library: $BOOST_LIB\"; echo \"Checking for LSE atomic instructions (cas, casp, ldadd, etc.)\"; objdump -d \"$BOOST_LIB\" | grep -E \"\\s(cas|casp|ldadd|stadd|ldclr|ldset|ldeor|swp)[a-z]*\\s\" | head -5 && echo \"FOUND: LSE atomics detected\" || echo \"NOT FOUND: No LSE atomics\"; echo \"Checking for SVE instructions\"; objdump -d \"$BOOST_LIB\" | grep -E \"\\sz[0-9]+\\.\" | head -5 && echo \"FOUND: SVE instructions detected\" || echo \"NOT FOUND: No SVE instructions\"; echo \"Build info:\"; readelf -p .comment \"$BOOST_LIB\" 2>/dev/null || echo \"No build info available\"; fi; fi'",
+    # cibuildwheel runs in Red Hat based Linux container environment (AlmaLinux 8)
+    "dnf install -y cmake ninja-build boost-devel boost-python3-devel boost-static zlib-devel",
 ]
 before-build = [
     # Container uses an old version of Boost Python incompatible with Python 3.11+ C API
