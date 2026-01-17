@@ -21,7 +21,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Linux x64 and aarch64 builds using cibuildwheel (Python 3.10-3.14)
+  # Linux x64 and aarch64 builds using cibuildwheel (Python 3.10-3.13)
   cibuildwheel-build-linux:
     name: cibuildwheel.${{ matrix.os }}
     runs-on: ${{ matrix.os }}
@@ -41,7 +41,7 @@ jobs:
           name: cibw-wheels-${{ matrix.os }}
           path: ./wheelhouse/*.whl
 
-  # Linux aarch64 builds using cibuildwheel (Python 3.10-3.14)
+  # Linux aarch64 builds using cibuildwheel (Python 3.10-3.13)
   cibuildwheel-build-linux-aarch64:
     name: cibuildwheel.ubuntu-24.04-arm
     runs-on: ubuntu-24.04-arm
@@ -120,7 +120,6 @@ jobs:
         - { version: "3.11", include_dir_name: python3.11/}
         - { version: "3.12", include_dir_name: python3.12/}
         - { version: "3.13", include_dir_name: python3.13/}
-        - { version: "3.14", include_dir_name: python3.14/}
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -151,7 +150,7 @@ jobs:
     runs-on: macos-15-intel
     strategy:
       matrix:
-        version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        version: ["3.10", "3.11", "3.12", "3.13"]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -191,7 +190,6 @@ jobs:
         - { version: "3.11", boost_py_suffix: "311" }
         - { version: "3.12", boost_py_suffix: "312" }
         - { version: "3.13", boost_py_suffix: "313" }
-        - { version: "3.14", boost_py_suffix: "314" }
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -286,7 +284,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        version: ["3.10", "3.11", "3.12", "3.13"]
         os: ["windows-2019"]
       fail-fast: false
     steps:
