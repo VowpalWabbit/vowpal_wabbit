@@ -7,16 +7,16 @@ else()
   message(STATUS "Python ${PY_VERSION} will be used for VowpalWabbit Python bindings")
 endif()
 
-# Find Python
+# Find Python - pybind11 requires both Interpreter and Development
 if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
   find_package(PythonInterp ${PY_VERSION} REQUIRED)
   find_package(PythonLibs ${PY_VERSION} REQUIRED)
 elseif(${CMAKE_VERSION} VERSION_LESS "3.18.0")
   # Prior to 3.18 only the Development component is exposed
-  find_package(Python ${PY_VERSION} EXACT COMPONENTS Development REQUIRED)
+  find_package(Python ${PY_VERSION} EXACT COMPONENTS Interpreter Development REQUIRED)
 else()
   # This was fixed in 3.18 to allow for just the Development.Module component to be used
-  find_package(Python ${PY_VERSION} EXACT COMPONENTS Development.Module REQUIRED)
+  find_package(Python ${PY_VERSION} EXACT COMPONENTS Interpreter Development.Module REQUIRED)
 endif()
 
 # Find pybind11
