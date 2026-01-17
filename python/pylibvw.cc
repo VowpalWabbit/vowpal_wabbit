@@ -1224,11 +1224,6 @@ py::list ex_get_multilabel_labels(example_ptr ec)
 }
 
 // Additional example property accessors
-float ex_get_updated_prediction(example_ptr ec)
-{
-  return ec->updated_prediction;
-}
-
 size_t ex_get_feature_number(example_ptr ec)
 {
   return ec->get_num_features();
@@ -1250,9 +1245,14 @@ uint32_t get_ft_offset(example_ptr ec)
   return ec->ft_offset; 
 }
 
-float get_partial_prediction(example_ptr ec) 
-{ 
-  return ec->partial_prediction; 
+float get_partial_prediction(example_ptr ec)
+{
+  return ec->partial_prediction;
+}
+
+float ex_get_updated_prediction(example_ptr ec)
+{
+  return ec->updated_prediction;
 }
 
 float get_loss(example_ptr ec) 
@@ -1279,6 +1279,16 @@ double get_holdout_sum_loss(vw_ptr vw)
 double get_weighted_examples(vw_ptr vw)
 {
   return vw->sd->weighted_examples();
+}
+
+bool search_should_output(search_ptr _sch)
+{
+  return _sch->output().good();
+}
+
+void search_output(search_ptr _sch, std::string s)
+{
+  _sch->output() << s;
 }
 
 // Search helper functions
@@ -1416,16 +1426,6 @@ py::object po_get(search_ptr _sch, std::string arg)
   try { return py::cast(po_get_int(_sch, arg)); }
   catch (...) {}
   return py::none();
-}
-
-bool search_should_output(search_ptr _sch)
-{
-  return _sch->output().good();
-}
-
-void search_output(search_ptr _sch, std::string s)
-{
-  _sch->output() << s;
 }
 
 // Predictor helper functions
