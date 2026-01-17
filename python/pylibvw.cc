@@ -79,6 +79,8 @@ const size_t tACTION = 1;
 const size_t tSLOT = 2;
 const size_t tUNSET = 3;
 
+void dont_delete_me(void* arg) {}
+
 // OptionManager class for get_options support (backward compatibility)
 class OptionManager : VW::config::typed_option_visitor
 {
@@ -242,60 +244,6 @@ public:
   };
 };
 
-void dont_delete_me(void* arg) {}
-
-void my_delete_example(void* voidec)
-{
-  VW::example* ec = (VW::example*)voidec;
-  delete ec;
-}
-
-VW::label_parser* get_label_parser(VW::workspace* all, size_t labelType)
-{
-  switch (labelType)
-  {
-    case lDEFAULT:
-      return all ? &all->parser_runtime.example_parser->lbl_parser : NULL;
-    case lBINARY:  // or #lSIMPLE
-      return &VW::simple_label_parser_global;
-    case lMULTICLASS:
-      return &VW::multiclass_label_parser_global;
-    case lCOST_SENSITIVE:
-      return &VW::cs_label_parser_global;
-    case lCONTEXTUAL_BANDIT:
-      return &VW::cb_label_parser_global;
-    case lCONDITIONAL_CONTEXTUAL_BANDIT:
-      return &VW::ccb_label_parser_global;
-    case lSLATES:
-      return &VW::slates::slates_label_parser;
-    case lCONTINUOUS:
-      return &VW::cb_continuous::the_label_parser;
-    case lCONTEXTUAL_BANDIT_EVAL:
-      return &VW::cb_eval_label_parser_global;
-    case lMULTILABEL:
-      return &VW::multilabel_label_parser_global;
-    default:
-      THROW("get_label_parser called on invalid label type");
-  }
-}
-
-VW::example* my_empty_example0(vw_ptr vw, size_t labelType)
-{
-  VW::label_parser* lp = get_label_parser(&*vw, labelType);
-  VW::example* ec = new VW::example;
-  lp->default_label(ec->l);
-  ec->interactions = &vw->feature_tweaks_config.interactions;
-  ec->extent_interactions = &vw->feature_tweaks_config.extent_interactions;
-  return ec;
-}
-
-void my_run_parser(vw_ptr all)
-{
-  VW::start_parser(*all);
-  VW::LEARNER::generic_driver(*all);
-  VW::end_parser(*all);
-}
-
 // Minimal py_log_wrapper class
 class py_log_wrapper
 {
@@ -367,9 +315,16 @@ vw_ptr my_initialize_with_log(py::list args, py_log_wrapper_ptr py_log)
 }
 
 // Initialization function without logging
-vw_ptr my_initialize(py::list args) 
-{ 
-  return my_initialize_with_log(args, nullptr); 
+vw_ptr my_initialize(py::list args)
+{
+  return my_initialize_with_log(args, nullptr);
+}
+
+void my_run_parser(vw_ptr all)
+{
+  VW::start_parser(*all);
+  VW::LEARNER::generic_driver(*all);
+  VW::end_parser(*all);
 }
 
 // Basic workspace functions
@@ -389,12 +344,6 @@ example_ptr my_read_example(vw_ptr all, size_t labelType, std::string str)
   VW::example* ec = my_empty_example0(all, labelType);
   VW::parsers::text::read_line(*all, ec, (char*)str.c_str());
   VW::setup_example(*all, ec);
-  return std::shared_ptr<VW::example>(ec, my_delete_example);
-}
-
-example_ptr my_empty_example(vw_ptr all, size_t label_type)
-{
-  VW::example* ec = my_empty_example0(all, label_type);
   return std::shared_ptr<VW::example>(ec, my_delete_example);
 }
 
@@ -829,25 +778,6 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
     VW::details::truncate_example_namespaces_from_example(*ae, *ae);
   }
   ae->indices.clear();
-}
-
-size_t my_get_prediction_type(vw_ptr all)
-{
-  VW::prediction_type_t pred_type = all->l->get_output_prediction_type();
-  if (pred_type == VW::prediction_type_t::SCALAR) return pSCALAR;
-  else if (pred_type == VW::prediction_type_t::SCALARS) return pSCALARS;
-  else if (pred_type == VW::prediction_type_t::ACTION_SCORES) return pACTION_SCORES;
-  else if (pred_type == VW::prediction_type_t::ACTION_PROBS) return pACTION_PROBS;
-  else if (pred_type == VW::prediction_type_t::MULTICLASS) return pMULTICLASS;
-  else if (pred_type == VW::prediction_type_t::MULTILABELS) return pMULTILABELS;
-  else if (pred_type == VW::prediction_type_t::PROB) return pPROB;
-  else if (pred_type == VW::prediction_type_t::MULTICLASS_PROBS) return pMULTICLASSPROBS;
-  else if (pred_type == VW::prediction_type_t::DECISION_PROBS) return pDECISION_SCORES;
-  else if (pred_type == VW::prediction_type_t::ACTION_PDF_VALUE) return pACTION_PDF_VALUE;
-  else if (pred_type == VW::prediction_type_t::PDF) return pPDF;
-  else if (pred_type == VW::prediction_type_t::ACTIVE_MULTICLASS) return pACTIVE_MULTICLASS;
-  else if (pred_type == VW::prediction_type_t::NOPRED) return pNOPRED;
-  else THROW("Unknown prediction type");
 }
 
 bool my_is_multiline(vw_ptr all)
@@ -1347,6 +1277,76 @@ predictor_ptr get_predictor(search_ptr _sch, ptag my_tag)
   HookTask::task_data* d = _sch->get_task_data<HookTask::task_data>();
   Search::predictor* P = new Search::predictor(*_sch, my_tag);
   return std::shared_ptr<Search::predictor>(P);
+}
+
+VW::label_parser* get_label_parser(VW::workspace* all, size_t labelType)
+{
+  switch (labelType)
+  {
+    case lDEFAULT:
+      return all ? &all->parser_runtime.example_parser->lbl_parser : NULL;
+    case lBINARY:  // or #lSIMPLE
+      return &VW::simple_label_parser_global;
+    case lMULTICLASS:
+      return &VW::multiclass_label_parser_global;
+    case lCOST_SENSITIVE:
+      return &VW::cs_label_parser_global;
+    case lCONTEXTUAL_BANDIT:
+      return &VW::cb_label_parser_global;
+    case lCONDITIONAL_CONTEXTUAL_BANDIT:
+      return &VW::ccb_label_parser_global;
+    case lSLATES:
+      return &VW::slates::slates_label_parser;
+    case lCONTINUOUS:
+      return &VW::cb_continuous::the_label_parser;
+    case lCONTEXTUAL_BANDIT_EVAL:
+      return &VW::cb_eval_label_parser_global;
+    case lMULTILABEL:
+      return &VW::multilabel_label_parser_global;
+    default:
+      THROW("get_label_parser called on invalid label type");
+  }
+}
+
+size_t my_get_prediction_type(vw_ptr all)
+{
+  VW::prediction_type_t pred_type = all->l->get_output_prediction_type();
+  if (pred_type == VW::prediction_type_t::SCALAR) return pSCALAR;
+  else if (pred_type == VW::prediction_type_t::SCALARS) return pSCALARS;
+  else if (pred_type == VW::prediction_type_t::ACTION_SCORES) return pACTION_SCORES;
+  else if (pred_type == VW::prediction_type_t::ACTION_PROBS) return pACTION_PROBS;
+  else if (pred_type == VW::prediction_type_t::MULTICLASS) return pMULTICLASS;
+  else if (pred_type == VW::prediction_type_t::MULTILABELS) return pMULTILABELS;
+  else if (pred_type == VW::prediction_type_t::PROB) return pPROB;
+  else if (pred_type == VW::prediction_type_t::MULTICLASS_PROBS) return pMULTICLASSPROBS;
+  else if (pred_type == VW::prediction_type_t::DECISION_PROBS) return pDECISION_SCORES;
+  else if (pred_type == VW::prediction_type_t::ACTION_PDF_VALUE) return pACTION_PDF_VALUE;
+  else if (pred_type == VW::prediction_type_t::PDF) return pPDF;
+  else if (pred_type == VW::prediction_type_t::ACTIVE_MULTICLASS) return pACTIVE_MULTICLASS;
+  else if (pred_type == VW::prediction_type_t::NOPRED) return pNOPRED;
+  else THROW("Unknown prediction type");
+}
+
+void my_delete_example(void* voidec)
+{
+  VW::example* ec = (VW::example*)voidec;
+  delete ec;
+}
+
+VW::example* my_empty_example0(vw_ptr vw, size_t labelType)
+{
+  VW::label_parser* lp = get_label_parser(&*vw, labelType);
+  VW::example* ec = new VW::example;
+  lp->default_label(ec->l);
+  ec->interactions = &vw->feature_tweaks_config.interactions;
+  ec->extent_interactions = &vw->feature_tweaks_config.extent_interactions;
+  return ec;
+}
+
+example_ptr my_empty_example(vw_ptr all, size_t label_type)
+{
+  VW::example* ec = my_empty_example0(all, label_type);
+  return std::shared_ptr<VW::example>(ec, my_delete_example);
 }
 
 // Predictor helper functions
