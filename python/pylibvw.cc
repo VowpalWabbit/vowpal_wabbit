@@ -449,6 +449,21 @@ float ex_get_prob(example_ptr ec)
   return ec->pred.prob;
 }
 
+uint32_t ex_get_multiclass_label(example_ptr ec)
+{
+  return ec->l.multi.label;
+}
+
+float ex_get_multiclass_weight(example_ptr ec)
+{
+  return ec->l.multi.weight;
+}
+
+uint32_t ex_get_multiclass_prediction(example_ptr ec)
+{
+  return ec->pred.multiclass;
+}
+
 py::list ex_get_scalars(example_ptr ec)
 {
   py::list values;
@@ -1095,22 +1110,6 @@ void ex_set_label_string(example_ptr ec, vw_ptr vw, std::string label, size_t la
   vw->parser_runtime.example_parser->lbl_parser = *get_label_parser(&*vw, labelType);
   VW::parse_example_label(*vw, *ec, label);
   vw->parser_runtime.example_parser->lbl_parser = old_lp;
-}
-
-// Additional label getters
-uint32_t ex_get_multiclass_label(example_ptr ec) 
-{ 
-  return ec->l.multi.label; 
-}
-
-float ex_get_multiclass_weight(example_ptr ec) 
-{ 
-  return ec->l.multi.weight; 
-}
-
-uint32_t ex_get_multiclass_prediction(example_ptr ec) 
-{ 
-  return ec->pred.multiclass; 
 }
 
 size_t get_example_counter(example_ptr ec) 
