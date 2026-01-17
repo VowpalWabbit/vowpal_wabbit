@@ -33,7 +33,8 @@ jobs:
         shell: bash
         run: |
           python3 -m pip install wheel auditwheel
-          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -Dpybind11_DIR=$(python3 -m pybind11 --cmakedir)" python3 -m pip wheel . -w wheel_output/ --verbose
+          export PYBIND11_DIR=$(python3 -m pybind11 --cmakedir)
+          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -Dpybind11_DIR=${PYBIND11_DIR}" python3 -m pip wheel . -w wheel_output/ --verbose
           auditwheel repair wheel_output/*whl -w audit_output/
       - name: Upload built wheel
         uses: actions/upload-artifact@v4
@@ -106,8 +107,9 @@ jobs:
           mv .vw_runtests_model_gen_working_dir ~
           git clone --recursive https://github.com/VowpalWabbit/vowpal_wabbit.git
           cd vowpal_wabbit
-          python3 -m pip install wheel auditwheel
-          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -DBoost_NO_BOOST_CMAKE=ON" python3 -m pip wheel . -w wheel_last_commit/ --verbose
+          python3 -m pip install wheel auditwheel pybind11
+          export PYBIND11_DIR=$(python3 -m pybind11 --cmakedir)
+          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -Dpybind11_DIR=${PYBIND11_DIR}" python3 -m pip wheel . -w wheel_last_commit/ --verbose
           auditwheel repair wheel_last_commit/*whl -w audit_last_commit/
           python3 -m pip install audit_last_commit/*.whl
           cd ..
