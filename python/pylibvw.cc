@@ -624,6 +624,13 @@ void my_predict_multi_ex(vw_ptr& all, py::list& ec_list)
   predict_or_learn<false>(all, ec_list);
 }
 
+std::string varray_char_to_string(VW::v_array<char>& a)
+{
+  std::string ret = "";
+  for (auto c : a) ret += c;
+  return ret;
+}
+
 // Helper to convert v_array to py::list
 template <class T>
 py::list varray_to_pylist(const VW::v_array<T>& a)
@@ -636,7 +643,7 @@ py::list varray_to_pylist(const VW::v_array<T>& a)
 // Minimal example accessor functions
 std::string my_get_tag(example_ptr ec)
 {
-  return std::string(ec->tag.begin(), ec->tag.end());
+  return varray_char_to_string(ec->tag);
 }
 
 // Example namespace and feature methods
