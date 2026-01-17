@@ -327,6 +327,40 @@ void my_run_parser(vw_ptr all)
   VW::end_parser(*all);
 }
 
+struct python_dict_writer : VW::metric_sink_visitor
+{
+  python_dict_writer(py::dict& dest_dict) : _dest_dict(dest_dict) {}
+  void int_metric(const std::string& key, uint64_t value) override { _dest_dict[key.c_str()] = value; }
+  void float_metric(const std::string& key, float value) override { _dest_dict[key.c_str()] = value; }
+  void string_metric(const std::string& key, const std::string& value) override { _dest_dict[key.c_str()] = value; }
+  void bool_metric(const std::string& key, bool value) override { _dest_dict[key.c_str()] = value; }
+  void sink_metric(const std::string& key, const VW::metric_sink& value) override
+  {
+    py::dict nested;
+    auto nested_py = python_dict_writer(nested);
+    value.visit(nested_py);
+    _dest_dict[key.c_str()] = nested;
+  }
+
+private:
+  py::dict& _dest_dict;
+};
+
+py::dict get_learner_metrics(vw_ptr all)
+{
+  py::dict dictionary;
+
+  if (all->output_runtime.global_metrics.are_metrics_enabled())
+  {
+    auto metrics = all->output_runtime.global_metrics.collect_metrics(all->l.get());
+
+    python_dict_writer writer(dictionary);
+    metrics.visit(writer);
+  }
+
+  return dictionary;
+}
+
 // Basic workspace functions
 void my_finish(vw_ptr all)
 {
@@ -1088,40 +1122,6 @@ double get_holdout_sum_loss(vw_ptr vw)
 double get_weighted_examples(vw_ptr vw)
 {
   return vw->sd->weighted_examples();
-}
-
-struct python_dict_writer : VW::metric_sink_visitor
-{
-  python_dict_writer(py::dict& dest_dict) : _dest_dict(dest_dict) {}
-  void int_metric(const std::string& key, uint64_t value) override { _dest_dict[key.c_str()] = value; }
-  void float_metric(const std::string& key, float value) override { _dest_dict[key.c_str()] = value; }
-  void string_metric(const std::string& key, const std::string& value) override { _dest_dict[key.c_str()] = value; }
-  void bool_metric(const std::string& key, bool value) override { _dest_dict[key.c_str()] = value; }
-  void sink_metric(const std::string& key, const VW::metric_sink& value) override
-  {
-    py::dict nested;
-    auto nested_py = python_dict_writer(nested);
-    value.visit(nested_py);
-    _dest_dict[key.c_str()] = nested;
-  }
-
-private:
-  py::dict& _dest_dict;
-};
-
-py::dict get_learner_metrics(vw_ptr all)
-{
-  py::dict dictionary;
-
-  if (all->output_runtime.global_metrics.are_metrics_enabled())
-  {
-    auto metrics = all->output_runtime.global_metrics.collect_metrics(all->l.get());
-
-    python_dict_writer writer(dictionary);
-    metrics.visit(writer);
-  }
-
-  return dictionary;
 }
 
 search_ptr get_search_ptr(vw_ptr all)
