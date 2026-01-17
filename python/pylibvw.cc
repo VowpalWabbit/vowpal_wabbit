@@ -429,6 +429,364 @@ float ex_get_simplelabel_weight(example_ptr ec)
   return ec->weight;
 }
 
+float ex_get_simplelabel_initial(example_ptr ec)
+{
+  return ec->ex_reduction_features.template get<VW::simple_label_reduction_features>().initial;
+}
+
+float ex_get_simplelabel_prediction(example_ptr ec)
+{
+  return ec->pred.scalar;
+}
+
+// Prediction type accessors
+float ex_get_prob(example_ptr ec)
+{
+  return ec->pred.prob;
+}
+
+py::list ex_get_scalars(example_ptr ec)
+{
+  py::list values;
+  const auto& scalars = ec->pred.scalars;
+  for (float s : scalars) { values.append(s); }
+  return values;
+}
+
+py::list ex_get_action_scores(example_ptr ec)
+{
+  py::list values;
+  auto const& scores = ec->pred.a_s;
+  std::vector<float> ordered_scores(scores.size());
+  for (auto const& action_score : scores) { ordered_scores[action_score.action] = action_score.score; }
+  for (auto action_score : ordered_scores) { values.append(action_score); }
+  return values;
+}
+
+py::list ex_get_decision_scores(example_ptr ec)
+{
+  py::list values;
+  for (auto const& scores : ec->pred.decision_scores)
+  {
+    py::list inner_list;
+    for (auto action_score : scores) { inner_list.append(py::make_tuple(action_score.action, action_score.score)); }
+    values.append(inner_list);
+  }
+  return values;
+}
+
+py::tuple ex_get_action_pdf_value(example_ptr ec)
+{
+  return py::make_tuple(ec->pred.pdf_value.action, ec->pred.pdf_value.pdf_value);
+}
+
+py::list ex_get_pdf(example_ptr ec)
+{
+  py::list values;
+  for (auto const& segment : ec->pred.pdf)
+  {
+    values.append(py::make_tuple(segment.left, segment.right, segment.pdf_value));
+  }
+  return values;
+}
+
+py::tuple ex_get_active_multiclass(example_ptr ec)
+{
+  py::list values;
+  for (auto const& query_needed_class : ec->pred.active_multiclass.more_info_required_for_classes)
+  {
+    values.append(query_needed_class);
+  }
+  return py::make_tuple(ec->pred.active_multiclass.predicted_class, values);
+}
+
+py::list ex_get_multilabel_predictions(example_ptr ec)
+{
+  py::list values;
+  const auto& labels = ec->pred.multilabels;
+  for (uint32_t l : labels.label_v) { values.append(l); }
+  return values;
+}
+
+// Cost-sensitive label accessors
+uint32_t ex_get_costsensitive_prediction(example_ptr ec)
+{
+  return ec->pred.multiclass;
+}
+
+uint32_t ex_get_costsensitive_num_costs(example_ptr ec)
+{
+  return (uint32_t)ec->l.cs.costs.size();
+}
+
+float ex_get_costsensitive_cost(example_ptr ec, uint32_t i)
+{
+  return ec->l.cs.costs[i].x;
+}
+
+uint32_t ex_get_costsensitive_class(example_ptr ec, uint32_t i)
+{
+  return ec->l.cs.costs[i].class_index;
+}
+
+float ex_get_costsensitive_partial_prediction(example_ptr ec, uint32_t i)
+{
+  return ec->l.cs.costs[i].partial_prediction;
+}
+
+float ex_get_costsensitive_wap_value(example_ptr ec, uint32_t i)
+{
+  return ec->l.cs.costs[i].wap_value;
+}
+
+// Contextual bandits label accessors
+uint32_t ex_get_cbandits_prediction(example_ptr ec)
+{
+  return ec->pred.multiclass;
+}
+
+uint32_t ex_get_cbandits_weight(example_ptr ec)
+{
+  return ec->l.cb.weight;
+}
+
+uint32_t ex_get_cbandits_num_costs(example_ptr ec)
+{
+  return (uint32_t)ec->l.cb.costs.size();
+}
+
+float ex_get_cbandits_cost(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_cbandits_num_costs(ec)) { THROW("Cost index out of bounds"); }
+  return ec->l.cb.costs[i].cost;
+}
+
+uint32_t ex_get_cbandits_class(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_cbandits_num_costs(ec)) { THROW("Class index out of bounds"); }
+  return ec->l.cb.costs[i].action;
+}
+
+float ex_get_cbandits_probability(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_cbandits_num_costs(ec)) { THROW("Probability index out of bounds"); }
+  return ec->l.cb.costs[i].probability;
+}
+
+float ex_get_cbandits_partial_prediction(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_cbandits_num_costs(ec)) { THROW("Partial prediction index out of bounds"); }
+  return ec->l.cb.costs[i].partial_prediction;
+}
+
+// CB eval label accessors
+uint32_t ex_get_cb_eval_action(example_ptr ec)
+{
+  return ec->l.cb_eval.action;
+}
+
+uint32_t ex_get_cb_eval_weight(example_ptr ec)
+{
+  return ec->l.cb_eval.event.weight;
+}
+
+uint32_t ex_get_cb_eval_num_costs(example_ptr ec)
+{
+  return (uint32_t)ec->l.cb_eval.event.costs.size();
+}
+
+float ex_get_cb_eval_cost(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_cb_eval_num_costs(ec)) { THROW("Cost index out of bounds"); }
+  return ec->l.cb_eval.event.costs[i].cost;
+}
+
+uint32_t ex_get_cb_eval_class(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_cb_eval_num_costs(ec)) { THROW("Class index out of bounds"); }
+  return ec->l.cb_eval.event.costs[i].action;
+}
+
+float ex_get_cb_eval_probability(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_cb_eval_num_costs(ec)) { THROW("Probability index out of bounds"); }
+  return ec->l.cb_eval.event.costs[i].probability;
+}
+
+float ex_get_cb_eval_partial_prediction(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_cb_eval_num_costs(ec)) { THROW("Partial prediction index out of bounds"); }
+  return ec->l.cb_eval.event.costs[i].partial_prediction;
+}
+
+// CB continuous label accessors
+uint32_t ex_get_cb_continuous_num_costs(example_ptr ec)
+{
+  return (uint32_t)ec->l.cb_cont.costs.size();
+}
+
+float ex_get_cb_continuous_cost(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_cb_continuous_num_costs(ec)) { THROW("Cost index out of bounds"); }
+  return ec->l.cb_cont.costs[i].cost;
+}
+
+uint32_t ex_get_cb_continuous_class(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_cb_continuous_num_costs(ec)) { THROW("Class index out of bounds"); }
+  return ec->l.cb_cont.costs[i].action;
+}
+
+float ex_get_cb_continuous_pdf_value(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_cb_continuous_num_costs(ec)) { THROW("Pdf_value index out of bounds"); }
+  return ec->l.cb_cont.costs[i].pdf_value;
+}
+
+// Slates label accessors
+size_t ex_get_slates_type(example_ptr ec)
+{
+  switch (ec->l.slates.type)
+  {
+    case VW::slates::example_type::SHARED:
+      return tSHARED;
+    case VW::slates::example_type::ACTION:
+      return tACTION;
+    case VW::slates::example_type::SLOT:
+      return tSLOT;
+    default:
+      return tUNSET;
+  }
+}
+
+float ex_get_slates_weight(example_ptr ec)
+{
+  return ec->l.slates.weight;
+}
+
+bool ex_get_slates_labeled(example_ptr ec)
+{
+  return ec->l.slates.labeled;
+}
+
+float ex_get_slates_cost(example_ptr ec)
+{
+  return ec->l.slates.cost;
+}
+
+uint32_t ex_get_slates_slot_id(example_ptr ec)
+{
+  return ec->l.slates.slot_id;
+}
+
+size_t ex_get_slates_num_probabilities(example_ptr ec)
+{
+  return ec->l.slates.probabilities.size();
+}
+
+uint32_t ex_get_slates_action(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_slates_num_probabilities(ec)) { THROW("Action index out of bounds"); }
+  return ec->l.slates.probabilities[i].action;
+}
+
+float ex_get_slates_probability(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_slates_num_probabilities(ec)) { THROW("Probability index out of bounds"); }
+  return ec->l.slates.probabilities[i].score;
+}
+
+// CCB label accessors
+size_t ex_get_ccb_type(example_ptr ec)
+{
+  switch (ec->l.conditional_contextual_bandit.type)
+  {
+    case VW::ccb_example_type::SHARED:
+      return tSHARED;
+    case VW::ccb_example_type::ACTION:
+      return tACTION;
+    case VW::ccb_example_type::SLOT:
+      return tSLOT;
+    default:
+      return tUNSET;
+  }
+}
+
+bool ex_get_ccb_has_outcome(example_ptr ec)
+{
+  return ec->l.conditional_contextual_bandit.outcome != nullptr;
+}
+
+float ex_get_ccb_cost(example_ptr ec)
+{
+  if (!ex_get_ccb_has_outcome(ec)) { THROW("This label has no outcome"); }
+  return ec->l.conditional_contextual_bandit.outcome->cost;
+}
+
+size_t ex_get_ccb_num_probabilities(example_ptr ec)
+{
+  if (!ex_get_ccb_has_outcome(ec)) { THROW("This label has no outcome"); }
+  return ec->l.conditional_contextual_bandit.outcome->probabilities.size();
+}
+
+size_t ex_get_ccb_num_explicitly_included_actions(example_ptr ec)
+{
+  const auto& label = ec->l.conditional_contextual_bandit;
+  return label.explicit_included_actions.size();
+}
+
+uint32_t ex_get_ccb_action(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_ccb_num_probabilities(ec)) { THROW("Action index out of bounds"); }
+  if (!ex_get_ccb_has_outcome(ec)) { THROW("This label has no outcome"); }
+  const auto* outcome_ptr = ec->l.conditional_contextual_bandit.outcome;
+  return outcome_ptr->probabilities[i].action;
+}
+
+float ex_get_ccb_probability(example_ptr ec, uint32_t i)
+{
+  if (i >= ex_get_ccb_num_probabilities(ec)) { THROW("Probability index out of bounds"); }
+  if (!ex_get_ccb_has_outcome(ec)) { THROW("This label has no outcome"); }
+  const auto* outcome_ptr = ec->l.conditional_contextual_bandit.outcome;
+  return outcome_ptr->probabilities[i].score;
+}
+
+float ex_get_ccb_weight(example_ptr ec)
+{
+  return ec->l.conditional_contextual_bandit.weight;
+}
+
+// Helper to convert v_array to py::list
+template <class T>
+py::list varray_to_pylist(const VW::v_array<T>& a)
+{
+  py::list list;
+  for (const auto& elem : a) { list.append(elem); }
+  return list;
+}
+
+py::list ex_get_ccb_explicitly_included_actions(example_ptr ec)
+{
+  const auto& label = ec->l.conditional_contextual_bandit;
+  return varray_to_pylist(label.explicit_included_actions);
+}
+
+// Additional example property accessors
+float ex_get_updated_prediction(example_ptr ec)
+{
+  return ec->updated_prediction;
+}
+
+size_t ex_get_feature_number(example_ptr ec)
+{
+  return ec->get_num_features();
+}
+
+float ex_get_topic_prediction(VW::workspace& all, example_ptr ec, size_t i)
+{
+  return VW::get_topic_prediction(ec.get(), i);
+}
+
 // Multi-example type (VW expects raw pointers)
 typedef std::vector<VW::example*> multi_ex;
 
@@ -771,10 +1129,44 @@ float get_loss(example_ptr ec)
   return ec->loss; 
 }
 
-float get_total_sum_feat_sq(example_ptr ec) 
-{ 
-  return ec->total_sum_feat_sq; 
+float get_total_sum_feat_sq(example_ptr ec)
+{
+  return ec->total_sum_feat_sq;
 }
+
+// Workspace accessor functions
+double get_sum_loss(vw_ptr vw)
+{
+  return vw->sd->sum_loss;
+}
+
+double get_holdout_sum_loss(vw_ptr vw)
+{
+  return vw->sd->holdout_sum_loss;
+}
+
+double get_weighted_examples(vw_ptr vw)
+{
+  return vw->sd->weighted_examples();
+}
+
+py::dict get_learner_metrics(vw_ptr all)
+{
+  py::dict metrics_dict;
+  const auto& metrics = all->l->get_learner_metrics();
+  for (const auto& metric : metrics)
+  {
+    metrics_dict[metric.first.c_str()] = metric.second;
+  }
+  return metrics_dict;
+}
+
+search_ptr get_search_ptr(vw_ptr all)
+{
+  auto* search_data = (Search::search*)all->l->get_internal_type_erased_data_pointer_test_use_only();
+  return std::shared_ptr<Search::search>(search_data, [](Search::search*){});
+}
+
 PYBIND11_MODULE(pylibvw, m)
 {
   m.doc() = "Vowpal Wabbit Python bindings (pybind11 version)";
@@ -809,6 +1201,11 @@ PYBIND11_MODULE(pylibvw, m)
       .def("set_weight", &VW::set_weight, "set the weight for a particular index")
       .def("get_stride", &VW::get_stride, "return the internal stride")
       .def("get_sum_loss", &get_sum_loss, "return the total cumulative loss suffered so far")
+      .def("get_holdout_sum_loss", &get_holdout_sum_loss, "return the total cumulative holdout loss suffered so far")
+      .def("get_weighted_examples", &get_weighted_examples, "return the total weight of examples so far")
+      .def("get_learner_metrics", &get_learner_metrics,
+          "return a dictionary of learner-specific metrics (loss per example, etc.)")
+      .def("get_search_ptr", &get_search_ptr, "return a pointer to the search data structure")
       .def("hash_space", &VW::hash_space, "given a namespace (as a string), compute the hash of that namespace")
       .def("hash_feature", &VW::hash_feature,
           "given a feature string (arg2) and a hashed namespace (arg3), hash that feature")
@@ -892,7 +1289,11 @@ PYBIND11_MODULE(pylibvw, m)
           "Assuming a simple_label label type, return the corresponding label")
       .def("get_simplelabel_weight", &ex_get_simplelabel_weight,
           "Assuming a simple_label label type, return the importance weight")
-          
+      .def("get_simplelabel_initial", &ex_get_simplelabel_initial,
+          "Assuming a simple_label label type, return the initial value")
+      .def("get_simplelabel_prediction", &ex_get_simplelabel_prediction,
+          "Assuming a simple_label label type, return the prediction")
+
       // Multiclass label accessors
       .def("get_multiclass_label", &ex_get_multiclass_label,
           "Assuming a multiclass label type, return the corresponding label")
@@ -900,7 +1301,106 @@ PYBIND11_MODULE(pylibvw, m)
           "Assuming a multiclass label type, return the importance weight")
       .def("get_multiclass_prediction", &ex_get_multiclass_prediction,
           "Assuming a multiclass label type, return the prediction")
-          
+
+      // Prediction type accessors
+      .def("get_prob", &ex_get_prob, "Get probability from example prediction")
+      .def("get_scalars", &ex_get_scalars, "Get scalar values from example prediction")
+      .def("get_action_scores", &ex_get_action_scores, "Get action scores from example prediction")
+      .def("get_decision_scores", &ex_get_decision_scores, "Get decision scores from example prediction")
+      .def("get_action_pdf_value", &ex_get_action_pdf_value, "Get action and pdf value from example prediction")
+      .def("get_pdf", &ex_get_pdf, "Get pdf from example prediction")
+      .def("get_active_multiclass", &ex_get_active_multiclass, "Get active multiclass from example prediction")
+      .def("get_multilabel_predictions", &ex_get_multilabel_predictions,
+          "Get multilabel predictions from example prediction")
+
+      // Cost-sensitive label accessors
+      .def("get_costsensitive_prediction", &ex_get_costsensitive_prediction,
+          "Assuming a cost_sensitive label type, return the prediction")
+      .def("get_costsensitive_num_costs", &ex_get_costsensitive_num_costs,
+          "Assuming a cost_sensitive label type, return the number of costs")
+      .def("get_costsensitive_cost", &ex_get_costsensitive_cost,
+          "Assuming a cost_sensitive label type, return the cost for the ith class")
+      .def("get_costsensitive_class", &ex_get_costsensitive_class,
+          "Assuming a cost_sensitive label type, return the ith class")
+      .def("get_costsensitive_partial_prediction", &ex_get_costsensitive_partial_prediction,
+          "Assuming a cost_sensitive label type, return the ith partial prediction")
+      .def("get_costsensitive_wap_value", &ex_get_costsensitive_wap_value,
+          "Assuming a cost_sensitive label type, return the ith wap value")
+
+      // Contextual bandits label accessors
+      .def("get_cbandits_prediction", &ex_get_cbandits_prediction,
+          "Assuming a contextual_bandits label type, return the prediction")
+      .def("get_cbandits_weight", &ex_get_cbandits_weight,
+          "Assuming a contextual_bandits label type, get the weight")
+      .def("get_cbandits_num_costs", &ex_get_cbandits_num_costs,
+          "Assuming a contextual_bandits label type, return the number of costs")
+      .def("get_cbandits_cost", &ex_get_cbandits_cost,
+          "Assuming a contextual_bandits label type, return the cost for the ith action")
+      .def("get_cbandits_class", &ex_get_cbandits_class,
+          "Assuming a contextual_bandits label type, return the ith class")
+      .def("get_cbandits_probability", &ex_get_cbandits_probability,
+          "Assuming a contextual_bandits label type, return the ith probability")
+      .def("get_cbandits_partial_prediction", &ex_get_cbandits_partial_prediction,
+          "Assuming a contextual_bandits label type, return the ith partial prediction")
+
+      // CB eval label accessors
+      .def("get_cb_eval_action", &ex_get_cb_eval_action, "Assuming a cb_eval label type, get action")
+      .def("get_cb_eval_weight", &ex_get_cb_eval_weight, "Assuming a cb_eval label type, get weight")
+      .def("get_cb_eval_num_costs", &ex_get_cb_eval_num_costs,
+          "Assuming a cb_eval label type, return the number of costs")
+      .def("get_cb_eval_cost", &ex_get_cb_eval_cost,
+          "Assuming a cb_eval label type, return the cost for the ith action")
+      .def("get_cb_eval_class", &ex_get_cb_eval_class,
+          "Assuming a cb_eval label type, return the ith class")
+      .def("get_cb_eval_probability", &ex_get_cb_eval_probability,
+          "Assuming a cb_eval label type, return the ith probability")
+      .def("get_cb_eval_partial_prediction", &ex_get_cb_eval_partial_prediction,
+          "Assuming a cb_eval label type, return the ith partial prediction")
+
+      // CB continuous label accessors
+      .def("get_cb_continuous_num_costs", &ex_get_cb_continuous_num_costs,
+          "Assuming a cb_continuous label type, return the number of costs")
+      .def("get_cb_continuous_cost", &ex_get_cb_continuous_cost,
+          "Assuming a cb_continuous label type, return the cost for the ith action")
+      .def("get_cb_continuous_class", &ex_get_cb_continuous_class,
+          "Assuming a cb_continuous label type, return the ith class")
+      .def("get_cb_continuous_pdf_value", &ex_get_cb_continuous_pdf_value,
+          "Assuming a cb_continuous label type, return the ith pdf_value")
+
+      // Slates label accessors
+      .def("get_slates_type", &ex_get_slates_type, "Assuming a slates label type, return the example type")
+      .def("get_slates_weight", &ex_get_slates_weight, "Assuming a slates label type, get the weight")
+      .def("get_slates_labeled", &ex_get_slates_labeled, "Assuming a slates label type, check if labeled")
+      .def("get_slates_cost", &ex_get_slates_cost, "Assuming a slates label type, get the cost")
+      .def("get_slates_slot_id", &ex_get_slates_slot_id, "Assuming a slates label type, get the slot id")
+      .def("get_slates_num_probabilities", &ex_get_slates_num_probabilities,
+          "Assuming a slates label type, return the number of probabilities")
+      .def("get_slates_action", &ex_get_slates_action,
+          "Assuming a slates label type, return the ith action")
+      .def("get_slates_probability", &ex_get_slates_probability,
+          "Assuming a slates label type, return the ith probability")
+
+      // CCB label accessors
+      .def("get_ccb_type", &ex_get_ccb_type, "Assuming a CCB label type, return the example type")
+      .def("get_ccb_has_outcome", &ex_get_ccb_has_outcome, "Assuming a CCB label type, check if has outcome")
+      .def("get_ccb_cost", &ex_get_ccb_cost, "Assuming a CCB label type, get the cost")
+      .def("get_ccb_weight", &ex_get_ccb_weight, "Assuming a CCB label type, get the weight")
+      .def("get_ccb_num_probabilities", &ex_get_ccb_num_probabilities,
+          "Assuming a CCB label type, return the number of probabilities")
+      .def("get_ccb_num_explicitly_included_actions", &ex_get_ccb_num_explicitly_included_actions,
+          "Assuming a CCB label type, return the number of explicitly included actions")
+      .def("get_ccb_action", &ex_get_ccb_action, "Assuming a CCB label type, return the ith action")
+      .def("get_ccb_probability", &ex_get_ccb_probability, "Assuming a CCB label type, return the ith probability")
+      .def("get_ccb_explicitly_included_actions", &ex_get_ccb_explicitly_included_actions,
+          "Assuming a CCB label type, return the list of explicitly included actions")
+
+      // Additional example properties
+      .def("get_updated_prediction", &ex_get_updated_prediction,
+          "Returns the updated prediction associated with this example")
+      .def("get_feature_number", &ex_get_feature_number, "Returns the total number of features for this example")
+      .def("get_topic_prediction", &ex_get_topic_prediction,
+          "For LDA-style models, return the topic prediction for the ith topic")
+
       // General example properties
       .def("get_example_counter", &get_example_counter,
           "Returns the counter of total number of examples seen up to and including this one")
