@@ -14,11 +14,15 @@ build = ["cp310-*", "cp311-*", "cp312-*", "cp313-*"]  # Python 3.10-3.13 (3.14 s
 skip = [
     "*musllinux*",  # Only build manylinux wheels
 ]
-test-skip = "*-manylinux*_aarch64"  # Skip ARM64 tests due to illegal instruction errors
 test-requires = ["pytest", "pyclean", "vw-executor", "setuptools", "scipy", "scikit-learn"]
 test-command = [
+    # Print CPU and platform info for diagnostics
+    "python -c 'import platform, os; print(f\"Platform: {platform.machine()}, {platform.processor()}\"); print(f\"CPU info:\"); os.system(\"cat /proc/cpuinfo | grep -E \\\"model name|flags\\\" | head -5\" if os.path.exists(\"/proc/cpuinfo\") else \"echo CPU info not available\")'",
+    # Test basic import first to isolate illegal instruction errors
+    "python -c 'print(\"Testing basic import...\"); import vowpalwabbit; print(f\"SUCCESS: vowpalwabbit {vowpalwabbit.__version__} imported\")' || (echo \"ERROR: Basic import failed - likely illegal instruction\"; exit 1)",
+    # Run full test suite
     "pyclean {project}/python/tests",
-    "pytest {project}/python/tests",
+    "pytest {project}/python/tests || (echo \"ERROR: Tests failed - check for illegal instructions above\"; exit 1)",
 ]
 test-sources = "test/"
 
@@ -40,8 +44,8 @@ before-build = [
     "sed -i 's/cmake_policy(SET CMP0167 NEW)/cmake_policy(SET CMP0167 OLD)/' /project/CMakeLists.txt",
 ]
 # Use vendored zlib (VW_ZLIB_SYS_DEP=OFF) for self-contained wheels that auditwheel can properly tag
-# Disable SIMD optimizations (VW_FEAT_LAS_SIMD=OFF) for portable wheels that work on all CPUs
-environment = { BOOST_PY_VERSION_SUFFIX="3", CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=ON -DVW_ZLIB_SYS_DEP=OFF -DVW_FEAT_LAS_SIMD=OFF" }
+# Enable SIMD optimizations (VW_FEAT_LAS_SIMD=ON) for x64 builds - disabled for ARM64 in override below
+environment = { BOOST_PY_VERSION_SUFFIX="3", CMAKE_ARGS="-DBoost_NO_BOOST_CMAKE=ON -DVW_ZLIB_SYS_DEP=OFF -DVW_FEAT_LAS_SIMD=ON" }
 
 [tool.cibuildwheel.macos]
 before-all = [
