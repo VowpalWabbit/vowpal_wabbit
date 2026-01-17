@@ -103,6 +103,15 @@ class BuildPyLibVWBindingsModule(_build_ext):
                 "-DVW_PYTHON_SHARED_LIB_SUFFIX={}".format(required_shared_lib_suffix)
             ]
 
+        # Automatically detect pybind11 if available
+        try:
+            import pybind11
+            pybind11_dir = pybind11.get_cmake_dir()
+            cmake_args += ["-Dpybind11_DIR={}".format(pybind11_dir)]
+        except (ImportError, AttributeError):
+            # pybind11 not available or doesn't have get_cmake_dir
+            pass
+
         # Read CMAKE_ARGS from environment variable if set
         if "CMAKE_ARGS" in os.environ:
             env_cmake_args = os.environ["CMAKE_ARGS"].split()

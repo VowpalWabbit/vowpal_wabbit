@@ -38,7 +38,8 @@ before-all = [
 before-build = []
 # Use vendored zlib (VW_ZLIB_SYS_DEP=OFF) for self-contained wheels that auditwheel can properly tag
 # Enable SIMD optimizations (VW_FEAT_LAS_SIMD=ON) for x64 builds - disabled for ARM64 in override below
-environment = { CMAKE_ARGS="-DVW_ZLIB_SYS_DEP=OFF -DVW_FEAT_LAS_SIMD=ON -Dpybind11_DIR=$(python -m pybind11 --cmakedir)" }
+# pybind11_DIR is automatically detected by setup.py
+environment = { CMAKE_ARGS="-DVW_ZLIB_SYS_DEP=OFF -DVW_FEAT_LAS_SIMD=ON" }
 
 [tool.cibuildwheel.macos]
 before-all = [
@@ -53,7 +54,8 @@ test-command = [
     "pytest {project}/python/tests",
 ]
 # Use macOS 11.0+ for compatibility
-environment = { MACOSX_DEPLOYMENT_TARGET="11.0", CMAKE_ARGS="-DVW_ZLIB_SYS_DEP=OFF -Dpybind11_DIR=$(python -m pybind11 --cmakedir)" }
+# pybind11_DIR is automatically detected by setup.py
+environment = { MACOSX_DEPLOYMENT_TARGET="11.0", CMAKE_ARGS="-DVW_ZLIB_SYS_DEP=OFF" }
 repair-wheel-command = "delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel} --ignore-missing-dependencies"
 
 [tool.cibuildwheel.windows]
@@ -71,4 +73,5 @@ environment = { CMAKE_ARGS="-DVW_ZLIB_SYS_DEP=OFF" }
 # -mtune=generic: Don't optimize for specific CPU variant
 [[tool.cibuildwheel.overrides]]
 select = "*-manylinux_*_aarch64"
-environment = { CMAKE_ARGS="-DVW_ZLIB_SYS_DEP=OFF -DVW_FEAT_LAS_SIMD=OFF -DCMAKE_CXX_FLAGS='-march=armv8-a -mtune=generic -mno-outline-atomics' -DCMAKE_C_FLAGS='-march=armv8-a -mtune=generic -mno-outline-atomics' -Dpybind11_DIR=$(python -m pybind11 --cmakedir)" }
+# pybind11_DIR is automatically detected by setup.py
+environment = { CMAKE_ARGS="-DVW_ZLIB_SYS_DEP=OFF -DVW_FEAT_LAS_SIMD=OFF -DCMAKE_CXX_FLAGS='-march=armv8-a -mtune=generic -mno-outline-atomics' -DCMAKE_C_FLAGS='-march=armv8-a -mtune=generic -mno-outline-atomics'" }
