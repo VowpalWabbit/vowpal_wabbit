@@ -418,11 +418,6 @@ void my_predict(vw_ptr all, example_ptr ec)
   all->predict(*ec);
 }
 
-float get_sum_loss(vw_ptr all)
-{
-  return static_cast<float>(all->sd->sum_loss);
-}
-
 // Minimal example accessor functions
 std::string my_get_tag(example_ptr ec)
 {
@@ -1165,15 +1160,38 @@ double get_weighted_examples(vw_ptr vw)
   return vw->sd->weighted_examples();
 }
 
+struct python_dict_writer : VW::metric_sink_visitor
+{
+  python_dict_writer(py::dict& dest_dict) : _dest_dict(dest_dict) {}
+  void int_metric(const std::string& key, uint64_t value) override { _dest_dict[key.c_str()] = value; }
+  void float_metric(const std::string& key, float value) override { _dest_dict[key.c_str()] = value; }
+  void string_metric(const std::string& key, const std::string& value) override { _dest_dict[key.c_str()] = value; }
+  void bool_metric(const std::string& key, bool value) override { _dest_dict[key.c_str()] = value; }
+  void sink_metric(const std::string& key, const VW::metric_sink& value) override
+  {
+    py::dict nested;
+    auto nested_py = python_dict_writer(nested);
+    value.visit(nested_py);
+    _dest_dict[key.c_str()] = nested;
+  }
+
+private:
+  py::dict& _dest_dict;
+};
+
 py::dict get_learner_metrics(vw_ptr all)
 {
-  py::dict metrics_dict;
-  const auto& metrics = all->l->get_learner_metrics();
-  for (const auto& metric : metrics)
+  py::dict dictionary;
+
+  if (all->output_runtime.global_metrics.are_metrics_enabled())
   {
-    metrics_dict[metric.first.c_str()] = metric.second;
+    auto metrics = all->output_runtime.global_metrics.collect_metrics(all->l.get());
+
+    python_dict_writer writer(dictionary);
+    metrics.visit(writer);
   }
-  return metrics_dict;
+
+  return dictionary;
 }
 
 search_ptr get_search_ptr(vw_ptr all)
