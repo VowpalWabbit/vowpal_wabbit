@@ -70,8 +70,9 @@ class BuildPyLibVWBindingsModule(_build_ext):
             if system == "Windows":
                 import glob
                 config = "Debug" if self.distribution.debug else "Release"
-                # CMake builds to build/temp.*/Release/python/Release/ on Windows
-                pattern = os.path.join(self.build_temp, config, "python", config, filename)
+                # CMake builds to build/temp.*/python/Release/ on Windows
+                # Note: self.build_temp already includes the config directory
+                pattern = os.path.join(self.build_temp, "python", config, filename)
                 matches = glob.glob(pattern)
                 if matches:
                     src = matches[0]
