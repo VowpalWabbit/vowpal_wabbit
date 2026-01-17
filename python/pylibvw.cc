@@ -693,7 +693,7 @@ void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list&
       auto t = item.cast<py::tuple>();
       if (t.size() != 2) THROW("features must be tuples of (int/str, float)");
       float fval = t[1].cast<float>();
-      
+
       if (py::isinstance<py::str>(t[0]))
       {
         std::string fname = t[0].cast<std::string>();
@@ -713,6 +713,32 @@ void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list&
     else
     {
       THROW("features must be a list of tuples (int/str, float)");
+    }
+  }
+}
+
+void ex_push_feature_dict(example_ptr ec, vw_ptr vw, unsigned char ns, py::dict& d)
+{
+  uint64_t ns_hash = VW::hash_space(*vw, std::string(1, (char)ns));
+  for (auto item : d)
+  {
+    float fval = item.second.cast<float>();
+    if (fval == 0.0f) continue;
+
+    if (py::isinstance<py::str>(item.first))
+    {
+      std::string fname = item.first.cast<std::string>();
+      uint64_t fhash = VW::hash_feature(*vw, fname, ns_hash);
+      ex_push_feature(ec, ns, fhash, fval);
+    }
+    else if (py::isinstance<py::int_>(item.first))
+    {
+      uint64_t fhash = item.first.cast<uint64_t>();
+      ex_push_feature(ec, ns, fhash, fval);
+    }
+    else
+    {
+      THROW("feature id must be int or str");
     }
   }
 }
@@ -759,15 +785,20 @@ void ex_push_dictionary(example_ptr ec, vw_ptr vw, py::dict dict)
     }
     
     ex_ensure_namespace_exists(ec, ns);
-    
-    if (py::isinstance<py::list>(item.second))
+
+    if (py::isinstance<py::dict>(item.second))
+    {
+      py::dict fdict = item.second.cast<py::dict>();
+      ex_push_feature_dict(ec, vw, ns, fdict);
+    }
+    else if (py::isinstance<py::list>(item.second))
     {
       py::list flist = item.second.cast<py::list>();
       ex_push_feature_list(ec, vw, ns, flist);
     }
     else
     {
-      THROW("namespace value must be a list of (feature, value) tuples");
+      THROW("namespace value must be a dict or list of (feature, value) tuples");
     }
   }
 }
