@@ -66,8 +66,20 @@ class BuildPyLibVWBindingsModule(_build_ext):
             fullname = self.get_ext_fullname(ext.name)
             filename = self.get_ext_filename(fullname)
 
-            # Source: where CMake built the extension
-            src = os.path.join(here, os.path.dirname(self.get_ext_fullpath(ext.name)), filename)
+            # On Windows, find where CMake actually built the extension
+            if system == "Windows":
+                import glob
+                config = "Debug" if self.distribution.debug else "Release"
+                # CMake builds to build/temp.*/Release/python/Release/ on Windows
+                pattern = os.path.join(self.build_temp, config, "python", config, filename)
+                matches = glob.glob(pattern)
+                if matches:
+                    src = matches[0]
+                else:
+                    raise RuntimeError(f"Could not find built extension at {pattern}")
+            else:
+                # On Unix, CMake builds to lib_output_dir
+                src = os.path.join(here, os.path.dirname(self.get_ext_fullpath(ext.name)), filename)
 
             # Destination: where setuptools expects it for packaging
             dest = os.path.join(self.build_lib, filename)
