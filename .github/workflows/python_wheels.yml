@@ -92,7 +92,8 @@ jobs:
         shell: bash
         run: |
           sudo apt update
-          sudo apt install libboost-test-dev libboost-python-dev zlib1g-dev cmake ninja-build g++
+          sudo apt install libboost-test-dev zlib1g-dev cmake ninja-build g++
+          pip install pybind11
       - name: Install source dist
         shell: bash
         run: pip install dist/*.tar.gz
@@ -132,8 +133,10 @@ jobs:
         shell: bash -l {0}
         run: |
           conda info
-          conda install python=${{ matrix.config.version }} wheel zlib boost py-boost flatbuffers
-          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DPython_INCLUDE_DIR=\"$CONDA_PREFIX/include/${{ matrix.config.include_dir_name }}\"" pip wheel . -w wheel_output/ --verbose
+          conda install python=${{ matrix.config.version }} wheel zlib flatbuffers
+          pip install pybind11
+          export PYBIND11_DIR=$(python -m pybind11 --cmakedir)
+          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DVW_ZLIB_SYS_DEP=OFF -Dpybind11_DIR=${PYBIND11_DIR} -DPython_INCLUDE_DIR=\"$CONDA_PREFIX/include/${{ matrix.config.include_dir_name }}\"" pip wheel . -w wheel_output/ --verbose
       - name: Upload built wheel
         uses: actions/upload-artifact@v4
         with:
@@ -164,7 +167,7 @@ jobs:
       - name: Test wheel
         shell: bash -l {0}
         run: |
-          conda install python=${{ matrix.version }} boost py-boost
+          conda install python=${{ matrix.version }}
           pip install --force-reinstall built_wheel/*.whl
           pip install -r requirements.txt
           pip install pytest vw-executor twine
@@ -218,56 +221,30 @@ jobs:
             mkdir -p "${{ env.VCPKG_DEFAULT_BINARY_CACHE }}"
           fi
 
-          echo "=== Download Boost headers directly ==="
-          BOOST_VERSION=1.82.0
-          BOOST_VERSION_UNDERSCORE=${BOOST_VERSION//./_}
-          BOOST_URL="https://archives.boost.io/release/${BOOST_VERSION}/source/boost_${BOOST_VERSION_UNDERSCORE}.tar.gz"
-          BOOST_DIR_WIN="${{ github.workspace }}\boost"
-          BOOST_DIR=$(cygpath "$BOOST_DIR_WIN")
-
-          echo "Downloading Boost from: $BOOST_URL"
-          curl -L "$BOOST_URL" -o boost.tar.gz
-          echo "Downloaded file info:"
-          file boost.tar.gz
-          ls -lh boost.tar.gz
-
-          echo "Creating Boost directory: $BOOST_DIR"
-          mkdir -p "$BOOST_DIR"
-          ls -ld "$BOOST_DIR"
-
-          echo "Extracting Boost..."
-          tar -xzf boost.tar.gz -C "$BOOST_DIR" --strip-components=1
-          rm boost.tar.gz
-
-          echo "Boost extraction complete. Checking boost/python.hpp:"
-          ls -la "$BOOST_DIR/boost/python.hpp" || echo "boost/python.hpp not found!"
-
-          echo "=== Install conda dependencies for Python-matched library ==="
+          echo "=== Install conda dependencies ==="
           conda info
-          # Install py-boost for boost_python${{ matrix.config.boost_py_suffix }}.lib that matches Python ${{ matrix.config.version }}
-          conda install -y --quiet python=${{ matrix.config.version }} wheel setuptools pip py-boost zlib flatbuffers
+          conda install -y --quiet python=${{ matrix.config.version }} wheel setuptools pip zlib flatbuffers
+
+          echo "=== Install pybind11 ==="
+          pip install pybind11
 
           echo "=== Verify Python version ==="
           python --version
           which python
 
-          echo -e "\n=== Verify installed conda packages ==="
-          conda list | grep -E "(boost|python)" || echo "No boost/python packages found"
-
           echo "=== Verify setup ==="
           echo "CONDA_PREFIX: $CONDA_PREFIX"
           echo "Working directory: $(pwd)"
 
-          echo -e "\n=== Using downloaded Boost headers, conda for libraries ==="
+          echo -e "\n=== Building wheel with pybind11 ==="
           echo "Converting paths to CMake-friendly format:"
           CONDA_PREFIX_CMAKE=$(cygpath -w "$CONDA_PREFIX" | sed 's/\\/\//g')
-          BOOST_DIR_CMAKE=$(cygpath -w "$BOOST_DIR" | sed 's/\\/\//g')
+          PYBIND11_DIR=$(python -m pybind11 --cmakedir | sed 's/\\/\//g')
           echo "CONDA_PREFIX_CMAKE: $CONDA_PREFIX_CMAKE"
-          echo "BOOST_DIR_CMAKE: $BOOST_DIR_CMAKE"
+          echo "PYBIND11_DIR: $PYBIND11_DIR"
 
-          CMAKE_OPTIONS="-DSTATIC_LINK_VW_JAVA=On;-DCMAKE_BUILD_TYPE=Release;-DZLIB_ROOT=$CONDA_PREFIX_CMAKE/Library;-DZLIB_INCLUDE_DIR=$CONDA_PREFIX_CMAKE/Library/include;-DZLIB_LIBRARY=$CONDA_PREFIX_CMAKE/Library/lib/zlib.lib;-DBoost_ROOT=$BOOST_DIR_CMAKE;-DBoost_INCLUDE_DIR=$BOOST_DIR_CMAKE;-DBoost_LIBRARY_DIR=$CONDA_PREFIX_CMAKE/Library/lib;-DBoost_PYTHON${{ matrix.config.boost_py_suffix }}_LIBRARY=$CONDA_PREFIX_CMAKE/Library/lib/boost_python${{ matrix.config.boost_py_suffix }}.lib;-DBoost_DIR=NOTFOUND;-DBoost_NO_BOOST_CMAKE=ON;-DBOOST_PY_VERSION_SUFFIX=${{ matrix.config.boost_py_suffix }}"
+          CMAKE_OPTIONS="-DSTATIC_LINK_VW_JAVA=On;-DCMAKE_BUILD_TYPE=Release;-DVW_ZLIB_SYS_DEP=OFF;-Dpybind11_DIR=$PYBIND11_DIR"
 
-          echo -e "\n=== Building wheel with setup.py (supports --cmake-options) ==="
           echo "CMAKE_OPTIONS: $CMAKE_OPTIONS"
 
           python setup.py \
