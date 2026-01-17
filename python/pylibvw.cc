@@ -139,7 +139,7 @@ public:
             opt.m_allow_override, opt.default_value(), false, opt.default_value(), true, opt.m_experimental));
       else
         return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
-            opt.m_allow_override, py::object(), false, not_supplied, false, opt.m_experimental));
+            opt.m_allow_override, py::none(), false, not_supplied, false, opt.m_experimental));
     }
   }
 
