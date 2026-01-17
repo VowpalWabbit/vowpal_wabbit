@@ -243,7 +243,7 @@ def test_ccb_and_automl():
 
     q_weights = q[0].model9("--invert_hash").weights.sort_index()
     automl_weights = automl[0].model9("--invert_hash").weights.sort_index()
-    automl_champ_weights = automl_weights[~automl_weights.index.str.contains("\[")]
+    automl_champ_weights = automl_weights[~automl_weights.index.str.contains(r"\[")]
 
     fts_names_q = set([n for n in q_weights.index])
     fts_names_automl = set([n for n in automl_weights.index if "[" not in n])
