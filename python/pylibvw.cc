@@ -396,9 +396,25 @@ example_ptr my_existing_example(vw_ptr all, size_t labelType, example_ptr existi
   return existing_example;
 }
 
+multi_ex unwrap_example_list(py::list& ec_list)
+{
+  multi_ex ex_coll;
+  for (auto item : ec_list)
+  {
+    ex_coll.push_back(item.cast<example_ptr>().get());
+  }
+  return ex_coll;
+}
+
 void my_finish_example(vw_ptr all, example_ptr ec)
 {
   all->finish_example(*ec);
+}
+
+void my_finish_multi_ex(vw_ptr& all, py::list& ec_list)
+{
+  multi_ex ex_coll = unwrap_example_list(ec_list);
+  all->finish_example(ex_coll);
 }
 
 void my_learn(vw_ptr all, example_ptr ec)
@@ -406,9 +422,77 @@ void my_learn(vw_ptr all, example_ptr ec)
   all->learn(*ec);
 }
 
+std::string my_json_weights(vw_ptr all)
+{
+  return all->dump_weights_to_json_experimental();
+}
+
 void my_predict(vw_ptr all, example_ptr ec)
 {
   all->predict(*ec);
+}
+
+bool my_is_multiline(vw_ptr all)
+{
+  return all->l->is_multiline();
+}
+
+template<bool learn>
+void predict_or_learn(vw_ptr& all, py::list& ec_list)
+{
+  multi_ex ex_coll = unwrap_example_list(ec_list);
+  if (learn) { all->learn(ex_coll); }
+  else { all->predict(ex_coll); }
+}
+
+py::list my_parse(vw_ptr& all, std::string str)
+{
+  std::vector<example_ptr> ex_ptrs;
+  VW::example* ae = VW::make_unique<VW::example>().release();
+  char* cstr = (char*)str.c_str();
+  VW::parsers::text::read_line(*all, ae, cstr);
+  VW::setup_example(*all, ae);
+  if (my_is_multiline(all))
+  {
+    while (!VW::example_is_newline(*ae))
+    {
+      ex_ptrs.push_back(std::shared_ptr<VW::example>(ae, my_delete_example));
+      ae = VW::make_unique<VW::example>().release();
+      VW::parsers::text::read_line(*all, ae, cstr);
+      VW::setup_example(*all, ae);
+    }
+    ex_ptrs.push_back(std::shared_ptr<VW::example>(ae, my_delete_example));
+  }
+  else
+  {
+    ex_ptrs.push_back(std::shared_ptr<VW::example>(ae, my_delete_example));
+  }
+
+  py::list result;
+  for (auto& ex : ex_ptrs)
+  {
+    result.append(ex);
+  }
+  return result;
+}
+
+void my_learn_multi_ex(vw_ptr& all, py::list& ec_list)
+{
+  predict_or_learn<true>(all, ec_list);
+}
+
+void my_predict_multi_ex(vw_ptr& all, py::list& ec_list)
+{
+  predict_or_learn<false>(all, ec_list);
+}
+
+// Helper to convert v_array to py::list
+template <class T>
+py::list varray_to_pylist(const VW::v_array<T>& a)
+{
+  py::list list;
+  for (const auto& elem : a) { list.append(elem); }
+  return list;
 }
 
 // Minimal example accessor functions
@@ -815,85 +899,6 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
   ae->indices.clear();
 }
 
-bool my_is_multiline(vw_ptr all)
-{
-  return all->l->is_multiline();
-}
-
-multi_ex unwrap_example_list(py::list& ec_list)
-{
-  multi_ex ex_coll;
-  for (auto item : ec_list)
-  {
-    ex_coll.push_back(item.cast<example_ptr>().get());
-  }
-  return ex_coll;
-}
-
-py::list my_parse(vw_ptr& all, std::string str)
-{
-  std::vector<example_ptr> ex_ptrs;
-  VW::example* ae = VW::make_unique<VW::example>().release();
-  char* cstr = (char*)str.c_str();
-  VW::parsers::text::read_line(*all, ae, cstr);
-  VW::setup_example(*all, ae);
-  if (my_is_multiline(all))
-  {
-    while (!VW::example_is_newline(*ae))
-    {
-      ex_ptrs.push_back(std::shared_ptr<VW::example>(ae, my_delete_example));
-      ae = VW::make_unique<VW::example>().release();
-      VW::parsers::text::read_line(*all, ae, cstr);
-      VW::setup_example(*all, ae);
-    }
-    ex_ptrs.push_back(std::shared_ptr<VW::example>(ae, my_delete_example));
-  }
-  else
-  {
-    ex_ptrs.push_back(std::shared_ptr<VW::example>(ae, my_delete_example));
-  }
-
-  py::list result;
-  for (auto& ex : ex_ptrs)
-  {
-    result.append(ex);
-  }
-  return result;
-}
-
-void my_finish_multi_ex(vw_ptr& all, py::list& ec_list)
-{
-  multi_ex ex_coll = unwrap_example_list(ec_list);
-  all->finish_example(ex_coll);
-}
-
-template<bool learn>
-void predict_or_learn(vw_ptr& all, py::list& ec_list)
-{
-  multi_ex ex_coll = unwrap_example_list(ec_list);
-  if (learn) { all->learn(ex_coll); }
-  else { all->predict(ex_coll); }
-}
-
-void my_learn_multi_ex(vw_ptr& all, py::list& ec_list) 
-{ 
-  predict_or_learn<true>(all, ec_list); 
-}
-
-void my_predict_multi_ex(vw_ptr& all, py::list& ec_list)
-{
-  predict_or_learn<false>(all, ec_list);
-}
-
-// Helper to convert v_array to py::list
-template <class T>
-py::list varray_to_pylist(const VW::v_array<T>& a)
-{
-  py::list list;
-  for (const auto& elem : a) { list.append(elem); }
-  return list;
-}
-
 std::string get_arguments(vw_ptr all)
 {
   VW::config::cli_options_serializer serializer;
@@ -929,14 +934,9 @@ void my_audit_example(vw_ptr all, example_ptr ec)
   VW::details::print_audit_features(*all, *ec); 
 }
 
-const char* get_model_id(vw_ptr all) 
-{ 
-  return all->id.c_str(); 
-}
-
-std::string my_json_weights(vw_ptr all) 
-{ 
-  return all->dump_weights_to_json_experimental(); 
+const char* get_model_id(vw_ptr all)
+{
+  return all->id.c_str();
 }
 
 // Example namespace and feature methods
