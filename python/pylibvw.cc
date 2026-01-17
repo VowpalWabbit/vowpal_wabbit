@@ -75,6 +75,157 @@ const size_t tACTION = 1;
 const size_t tSLOT = 2;
 const size_t tUNSET = 3;
 
+// OptionManager class for get_options support (backward compatibility)
+class OptionManager : VW::config::typed_option_visitor
+{
+  std::map<std::string, std::vector<VW::config::option_group_definition>> m_option_group_dic;
+  py::object m_py_opt_class;
+  VW::config::options_i& m_opt;
+  std::vector<std::string>& m_enabled_learners;
+  std::string default_group_name;
+  py::object* m_visitor_output_var;
+
+public:
+  OptionManager(VW::config::options_i& options, std::vector<std::string>& enabled_learners, py::object py_class)
+      : m_opt(options)
+      , m_enabled_learners(enabled_learners)
+      , m_option_group_dic(options.get_collection_of_options())
+      , m_py_opt_class(py_class)
+  {
+    default_group_name = options.DEFAULT_TINT;
+    m_visitor_output_var = nullptr;
+  }
+
+  py::object* value_to_pyobject(VW::config::typed_option<bool>& opt)
+  {
+    if (m_opt.was_supplied(opt.m_name))
+    {
+      if (opt.default_value_supplied())
+        return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
+            opt.m_allow_override, opt.value(), true, opt.default_value(), true, opt.m_experimental));
+      else
+        return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
+            opt.m_allow_override, opt.value(), true, false, true, opt.m_experimental));
+    }
+    else
+    {
+      if (opt.default_value_supplied())
+        return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
+            opt.m_allow_override, opt.default_value(), false, opt.default_value(), true, opt.m_experimental));
+      else
+        return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
+            opt.m_allow_override, false, false, false, true, opt.m_experimental));
+    }
+  }
+
+  template <typename T>
+  py::object* value_to_pyobject(VW::config::typed_option<T>& opt)
+  {
+    T not_supplied{};
+
+    if (m_opt.was_supplied(opt.m_name))
+    {
+      if (opt.default_value_supplied())
+        return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
+            opt.m_allow_override, opt.value(), true, opt.default_value(), true, opt.m_experimental));
+      else
+        return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
+            opt.m_allow_override, opt.value(), true, not_supplied, false, opt.m_experimental));
+    }
+    else
+    {
+      if (opt.default_value_supplied())
+        return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
+            opt.m_allow_override, opt.default_value(), false, opt.default_value(), true, opt.m_experimental));
+      else
+        return new py::object(m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary,
+            opt.m_allow_override, py::object(), false, not_supplied, false, opt.m_experimental));
+    }
+  }
+
+  template <typename T>
+  py::object* value_to_pyobject(VW::config::typed_option<std::vector<T>>& opt)
+  {
+    py::list values;
+
+    if (m_opt.was_supplied(opt.m_name))
+    {
+      auto vec = opt.value();
+      if (vec.size() > 0)
+      {
+        for (auto const& item : vec) { values.append(py::cast(item)); }
+      }
+    }
+
+    return new py::object(
+        m_py_opt_class(opt.m_name, opt.m_help, opt.m_short_name, opt.m_keep, opt.m_necessary, opt.m_allow_override,
+            values, m_opt.was_supplied(opt.m_name), py::list(), opt.default_value_supplied(), opt.m_experimental));
+  }
+
+  py::object base_option_to_pyobject(VW::config::base_option& option)
+  {
+    option.accept(*this);
+    if (m_visitor_output_var != nullptr)
+    {
+      auto repack = py::object(*m_visitor_output_var);
+      delete m_visitor_output_var;
+      m_visitor_output_var = nullptr;
+      return repack;
+    }
+
+    return {};
+  }
+
+  py::object get_vw_option_pyobjects(bool enabled_only)
+  {
+    py::dict dres;
+    auto it = m_option_group_dic.begin();
+
+    while (it != m_option_group_dic.end())
+    {
+      auto reduction_enabled =
+          std::find(m_enabled_learners.begin(), m_enabled_learners.end(), it->first) != m_enabled_learners.end();
+
+      if (((it->first).compare(default_group_name) != 0) && enabled_only && !reduction_enabled)
+      {
+        it++;
+        continue;
+      }
+
+      py::list option_groups;
+
+      for (auto& options_group : it->second)
+      {
+        py::list options;
+        for (auto& opt : options_group.m_options)
+        {
+          auto temp = base_option_to_pyobject(*opt);
+          options.append(temp);
+        }
+
+        option_groups.append(py::make_tuple(options_group.m_name, options));
+      }
+
+      dres[py::str(it->first)] = option_groups;
+
+      it++;
+    }
+    return dres;
+  }
+
+  void visit(VW::config::typed_option<uint32_t>& opt) override { m_visitor_output_var = value_to_pyobject(opt); };
+  void visit(VW::config::typed_option<uint64_t>& opt) override { m_visitor_output_var = value_to_pyobject(opt); };
+  void visit(VW::config::typed_option<int64_t>& opt) override { m_visitor_output_var = value_to_pyobject(opt); };
+  void visit(VW::config::typed_option<int32_t>& opt) override { m_visitor_output_var = value_to_pyobject(opt); };
+  void visit(VW::config::typed_option<bool>& opt) override { m_visitor_output_var = value_to_pyobject(opt); };
+  void visit(VW::config::typed_option<float>& opt) override { m_visitor_output_var = value_to_pyobject(opt); };
+  void visit(VW::config::typed_option<std::string>& opt) override { m_visitor_output_var = value_to_pyobject(opt); };
+  void visit(VW::config::typed_option<std::vector<std::string>>& opt) override
+  {
+    m_visitor_output_var = value_to_pyobject(opt);
+  };
+};
+
 void dont_delete_me(void* arg) {}
 
 void my_delete_example(void* voidec)
@@ -400,11 +551,19 @@ py::list get_enabled_learners(vw_ptr all)
   py::list py_enabled_learners;
   std::vector<std::string> enabled_learners;
   if (all->l) all->l->get_enabled_learners(enabled_learners);
-  for (auto ex : enabled_learners) 
-  { 
-    py_enabled_learners.append(ex); 
+  for (auto ex : enabled_learners)
+  {
+    py_enabled_learners.append(ex);
   }
   return py_enabled_learners;
+}
+
+py::object get_options(vw_ptr all, py::object py_class, bool enabled_only)
+{
+  std::vector<std::string> enabled_learners;
+  if (all->l) all->l->get_enabled_learners(enabled_learners);
+  auto opt_manager = OptionManager(*all->options, enabled_learners, py_class);
+  return opt_manager.get_vw_option_pyobjects(enabled_only);
 }
 
 void my_audit_example(vw_ptr all, example_ptr ec) 
@@ -657,6 +816,7 @@ PYBIND11_MODULE(pylibvw, m)
       .def("get_arguments", &get_arguments, "return the arguments after resolving all dependencies")
       .def("get_enabled_learners", &get_enabled_learners, "return the list of names of the enabled learners")
       .def("get_enabled_reductions", &get_enabled_learners, "return the list of names of the enabled learners")
+      .def("get_options", &get_options, "get available vw options")
       .def("audit_example", &my_audit_example, "print example audit information")
       .def("get_id", &get_model_id, "return the model id")
       .def("json_weights", &my_json_weights, "get json string of current weights")
