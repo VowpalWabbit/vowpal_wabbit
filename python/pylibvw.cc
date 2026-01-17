@@ -428,6 +428,92 @@ py::list get_enabled_learners(vw_ptr all)
   return py_enabled_learners;
 }
 
+predictor_ptr get_predictor(search_ptr _sch, ptag my_tag)
+{
+  HookTask::task_data* d = _sch->get_task_data<HookTask::task_data>();
+  Search::predictor* P = new Search::predictor(*_sch, my_tag);
+  return std::shared_ptr<Search::predictor>(P);
+}
+
+VW::label_parser* get_label_parser(VW::workspace* all, size_t labelType)
+{
+  switch (labelType)
+  {
+    case lDEFAULT:
+      return all ? &all->parser_runtime.example_parser->lbl_parser : NULL;
+    case lBINARY:  // or #lSIMPLE
+      return &VW::simple_label_parser_global;
+    case lMULTICLASS:
+      return &VW::multiclass_label_parser_global;
+    case lCOST_SENSITIVE:
+      return &VW::cs_label_parser_global;
+    case lCONTEXTUAL_BANDIT:
+      return &VW::cb_label_parser_global;
+    case lCONDITIONAL_CONTEXTUAL_BANDIT:
+      return &VW::ccb_label_parser_global;
+    case lSLATES:
+      return &VW::slates::slates_label_parser;
+    case lCONTINUOUS:
+      return &VW::cb_continuous::the_label_parser;
+    case lCONTEXTUAL_BANDIT_EVAL:
+      return &VW::cb_eval_label_parser_global;
+    case lMULTILABEL:
+      return &VW::multilabel_label_parser_global;
+    default:
+      THROW("get_label_parser called on invalid label type");
+  }
+}
+
+size_t my_get_label_type(VW::workspace* all)
+{
+  VW::label_parser* lp = &all->parser_runtime.example_parser->lbl_parser;
+  if (lp->parse_label == VW::simple_label_parser_global.parse_label) { return lSIMPLE; }
+  else if (lp->parse_label == VW::multiclass_label_parser_global.parse_label) { return lMULTICLASS; }
+  else if (lp->parse_label == VW::cs_label_parser_global.parse_label) { return lCOST_SENSITIVE; }
+  else if (lp->parse_label == VW::cb_label_parser_global.parse_label) { return lCONTEXTUAL_BANDIT; }
+  else if (lp->parse_label == VW::cb_eval_label_parser_global.parse_label) { return lCONTEXTUAL_BANDIT_EVAL; }
+  else if (lp->parse_label == VW::ccb_label_parser_global.parse_label) { return lCONDITIONAL_CONTEXTUAL_BANDIT; }
+  else if (lp->parse_label == VW::slates::slates_label_parser.parse_label) { return lSLATES; }
+  else if (lp->parse_label == VW::cb_continuous::the_label_parser.parse_label) { return lCONTINUOUS; }
+  else if (lp->parse_label == VW::multilabel_label_parser_global.parse_label) { return lMULTILABEL; }
+  else { THROW("unsupported label parser used"); }
+}
+
+size_t my_get_prediction_type(vw_ptr all)
+{
+  VW::prediction_type_t pred_type = all->l->get_output_prediction_type();
+  if (pred_type == VW::prediction_type_t::SCALAR) return pSCALAR;
+  else if (pred_type == VW::prediction_type_t::SCALARS) return pSCALARS;
+  else if (pred_type == VW::prediction_type_t::ACTION_SCORES) return pACTION_SCORES;
+  else if (pred_type == VW::prediction_type_t::ACTION_PROBS) return pACTION_PROBS;
+  else if (pred_type == VW::prediction_type_t::MULTICLASS) return pMULTICLASS;
+  else if (pred_type == VW::prediction_type_t::MULTILABELS) return pMULTILABELS;
+  else if (pred_type == VW::prediction_type_t::PROB) return pPROB;
+  else if (pred_type == VW::prediction_type_t::MULTICLASS_PROBS) return pMULTICLASSPROBS;
+  else if (pred_type == VW::prediction_type_t::DECISION_PROBS) return pDECISION_SCORES;
+  else if (pred_type == VW::prediction_type_t::ACTION_PDF_VALUE) return pACTION_PDF_VALUE;
+  else if (pred_type == VW::prediction_type_t::PDF) return pPDF;
+  else if (pred_type == VW::prediction_type_t::ACTIVE_MULTICLASS) return pACTIVE_MULTICLASS;
+  else if (pred_type == VW::prediction_type_t::NOPRED) return pNOPRED;
+  else THROW("Unknown prediction type");
+}
+
+void my_delete_example(void* voidec)
+{
+  VW::example* ec = (VW::example*)voidec;
+  delete ec;
+}
+
+VW::example* my_empty_example0(vw_ptr vw, size_t labelType)
+{
+  VW::label_parser* lp = get_label_parser(&*vw, labelType);
+  VW::example* ec = new VW::example;
+  lp->default_label(ec->l);
+  ec->interactions = &vw->feature_tweaks_config.interactions;
+  ec->extent_interactions = &vw->feature_tweaks_config.extent_interactions;
+  return ec;
+}
+
 // Example parsing functions
 example_ptr my_read_example(vw_ptr all, size_t labelType, std::string str)
 {
@@ -692,13 +778,6 @@ void ex_push_dictionary(example_ptr ec, vw_ptr vw, py::dict dict)
     }
   }
 }
-
-
-void my_set_test_only(example_ptr ec, bool test_only)
-{
-  ec->test_only = test_only;
-}
-
 
 // Multi-example type (VW expects raw pointers)
 typedef std::vector<VW::example*> multi_ex;
@@ -1211,6 +1290,11 @@ void search_takedown_fn(Search::search& _sch)
   }
 }
 
+void my_set_test_only(example_ptr ec, bool test_only)
+{
+  ec->test_only = test_only;
+}
+
 void set_force_oracle(search_ptr _sch, bool useOracle)
 {
   verify_search_set_properly(_sch);
@@ -1284,92 +1368,6 @@ bool search_should_output(search_ptr _sch)
 void search_output(search_ptr _sch, std::string s)
 {
   _sch->output() << s;
-}
-
-predictor_ptr get_predictor(search_ptr _sch, ptag my_tag)
-{
-  HookTask::task_data* d = _sch->get_task_data<HookTask::task_data>();
-  Search::predictor* P = new Search::predictor(*_sch, my_tag);
-  return std::shared_ptr<Search::predictor>(P);
-}
-
-VW::label_parser* get_label_parser(VW::workspace* all, size_t labelType)
-{
-  switch (labelType)
-  {
-    case lDEFAULT:
-      return all ? &all->parser_runtime.example_parser->lbl_parser : NULL;
-    case lBINARY:  // or #lSIMPLE
-      return &VW::simple_label_parser_global;
-    case lMULTICLASS:
-      return &VW::multiclass_label_parser_global;
-    case lCOST_SENSITIVE:
-      return &VW::cs_label_parser_global;
-    case lCONTEXTUAL_BANDIT:
-      return &VW::cb_label_parser_global;
-    case lCONDITIONAL_CONTEXTUAL_BANDIT:
-      return &VW::ccb_label_parser_global;
-    case lSLATES:
-      return &VW::slates::slates_label_parser;
-    case lCONTINUOUS:
-      return &VW::cb_continuous::the_label_parser;
-    case lCONTEXTUAL_BANDIT_EVAL:
-      return &VW::cb_eval_label_parser_global;
-    case lMULTILABEL:
-      return &VW::multilabel_label_parser_global;
-    default:
-      THROW("get_label_parser called on invalid label type");
-  }
-}
-
-size_t my_get_label_type(VW::workspace* all)
-{
-  VW::label_parser* lp = &all->parser_runtime.example_parser->lbl_parser;
-  if (lp->parse_label == VW::simple_label_parser_global.parse_label) { return lSIMPLE; }
-  else if (lp->parse_label == VW::multiclass_label_parser_global.parse_label) { return lMULTICLASS; }
-  else if (lp->parse_label == VW::cs_label_parser_global.parse_label) { return lCOST_SENSITIVE; }
-  else if (lp->parse_label == VW::cb_label_parser_global.parse_label) { return lCONTEXTUAL_BANDIT; }
-  else if (lp->parse_label == VW::cb_eval_label_parser_global.parse_label) { return lCONTEXTUAL_BANDIT_EVAL; }
-  else if (lp->parse_label == VW::ccb_label_parser_global.parse_label) { return lCONDITIONAL_CONTEXTUAL_BANDIT; }
-  else if (lp->parse_label == VW::slates::slates_label_parser.parse_label) { return lSLATES; }
-  else if (lp->parse_label == VW::cb_continuous::the_label_parser.parse_label) { return lCONTINUOUS; }
-  else if (lp->parse_label == VW::multilabel_label_parser_global.parse_label) { return lMULTILABEL; }
-  else { THROW("unsupported label parser used"); }
-}
-
-size_t my_get_prediction_type(vw_ptr all)
-{
-  VW::prediction_type_t pred_type = all->l->get_output_prediction_type();
-  if (pred_type == VW::prediction_type_t::SCALAR) return pSCALAR;
-  else if (pred_type == VW::prediction_type_t::SCALARS) return pSCALARS;
-  else if (pred_type == VW::prediction_type_t::ACTION_SCORES) return pACTION_SCORES;
-  else if (pred_type == VW::prediction_type_t::ACTION_PROBS) return pACTION_PROBS;
-  else if (pred_type == VW::prediction_type_t::MULTICLASS) return pMULTICLASS;
-  else if (pred_type == VW::prediction_type_t::MULTILABELS) return pMULTILABELS;
-  else if (pred_type == VW::prediction_type_t::PROB) return pPROB;
-  else if (pred_type == VW::prediction_type_t::MULTICLASS_PROBS) return pMULTICLASSPROBS;
-  else if (pred_type == VW::prediction_type_t::DECISION_PROBS) return pDECISION_SCORES;
-  else if (pred_type == VW::prediction_type_t::ACTION_PDF_VALUE) return pACTION_PDF_VALUE;
-  else if (pred_type == VW::prediction_type_t::PDF) return pPDF;
-  else if (pred_type == VW::prediction_type_t::ACTIVE_MULTICLASS) return pACTIVE_MULTICLASS;
-  else if (pred_type == VW::prediction_type_t::NOPRED) return pNOPRED;
-  else THROW("Unknown prediction type");
-}
-
-void my_delete_example(void* voidec)
-{
-  VW::example* ec = (VW::example*)voidec;
-  delete ec;
-}
-
-VW::example* my_empty_example0(vw_ptr vw, size_t labelType)
-{
-  VW::label_parser* lp = get_label_parser(&*vw, labelType);
-  VW::example* ec = new VW::example;
-  lp->default_label(ec->l);
-  ec->interactions = &vw->feature_tweaks_config.interactions;
-  ec->extent_interactions = &vw->feature_tweaks_config.extent_interactions;
-  return ec;
 }
 
 example_ptr my_empty_example(vw_ptr all, size_t label_type)
