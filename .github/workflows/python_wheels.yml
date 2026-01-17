@@ -360,10 +360,10 @@ jobs:
           VCPKG_ROOT_CMAKE=$(cygpath -w "${{ env.VCPKG_ROOT }}" | sed 's/\\/\//g')
           echo "VCPKG_ROOT_CMAKE: $VCPKG_ROOT_CMAKE"
 
-          # vcpkg installs boost-python as boost_python3.lib (generic name for all Python 3.x)
+          # vcpkg installs boost-python with version-specific names (e.g., boost_python312.lib for Python 3.12)
           # Directly specify the Boost Python library path to avoid component finding issues
           export BOOST_ROOT="$VCPKG_ROOT_CMAKE/installed/x64-windows"
-          export BOOST_PYTHON_LIB="$BOOST_ROOT/lib/boost_python3.lib"
+          export BOOST_PYTHON_LIB="$BOOST_ROOT/lib/${{ matrix.config.boost_py_lib }}.lib"
           export BOOST_INCLUDE_DIR="$BOOST_ROOT/include"
 
           CMAKE_OPTIONS="-DSTATIC_LINK_VW_JAVA=On;-DCMAKE_BUILD_TYPE=Release;-DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT_CMAKE/scripts/buildsystems/vcpkg.cmake;-DVW_ZLIB_SYS_DEP=OFF;-DBOOST_ROOT=$BOOST_ROOT;-DBoost_PYTHON3_LIBRARY=$BOOST_PYTHON_LIB;-DBoost_INCLUDE_DIR=$BOOST_INCLUDE_DIR;-DBOOST_PY_VERSION_SUFFIX=3"
