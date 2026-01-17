@@ -60,10 +60,24 @@ class BuildPyLibVWBindingsModule(_build_ext):
         for ext in self.extensions:
             self.build_cmake(ext)
 
-        # Don't call parent run() because CMake has already built the extension
-        # Calling it would cause setuptools to try building with an empty source list,
-        # which fails on Windows with IndexError: list index out of range
-        # _build_ext.run(self)
+        # Don't build extensions again (CMake already did), but we need to
+        # copy them to the build lib directory for packaging
+        for ext in self.extensions:
+            fullname = self.get_ext_fullname(ext.name)
+            filename = self.get_ext_filename(fullname)
+
+            # Source: where CMake built the extension
+            src = os.path.join(here, os.path.dirname(self.get_ext_fullpath(ext.name)), filename)
+
+            # Destination: where setuptools expects it for packaging
+            dest = os.path.join(self.build_lib, filename)
+
+            # Copy the extension
+            self.copy_file(src, dest)
+
+    def build_extension(self, ext):
+        # CMake has already built the extension, skip normal build
+        pass
 
     def build_cmake(self, ext):
         # Make build directory
