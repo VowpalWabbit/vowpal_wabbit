@@ -15,7 +15,7 @@ skip = [
     "*musllinux*",  # Only build manylinux wheels
 ]
 test-skip = "*-manylinux*_aarch64"  # Skip ARM64 tests due to illegal instruction errors
-test-requires = ["pytest", "pyclean", "vw-executor", "setuptools"]
+test-requires = ["pytest", "pyclean", "vw-executor", "setuptools", "scipy", "scikit-learn"]
 test-command = [
     "pyclean {project}/python/tests",
     "pytest {project}/python/tests",
