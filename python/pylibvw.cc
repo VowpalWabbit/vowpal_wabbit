@@ -377,9 +377,55 @@ void my_finish(vw_ptr all)
   all->finish();
 }
 
-void my_save(vw_ptr all, std::string name) 
-{ 
-  VW::save_predictor(*all, name); 
+void my_save(vw_ptr all, std::string name)
+{
+  VW::save_predictor(*all, name);
+}
+
+search_ptr get_search_ptr(vw_ptr all)
+{
+  auto* search_data = (Search::search*)all->l->get_internal_type_erased_data_pointer_test_use_only();
+  return std::shared_ptr<Search::search>(search_data, [](Search::search*){});
+}
+
+py::object get_options(vw_ptr all, py::object py_class, bool enabled_only)
+{
+  std::vector<std::string> enabled_learners;
+  if (all->l) all->l->get_enabled_learners(enabled_learners);
+  auto opt_manager = OptionManager(*all->options, enabled_learners, py_class);
+  return opt_manager.get_vw_option_pyobjects(enabled_only);
+}
+
+void my_audit_example(vw_ptr all, example_ptr ec)
+{
+  VW::details::print_audit_features(*all, *ec);
+}
+
+const char* get_model_id(vw_ptr all)
+{
+  return all->id.c_str();
+}
+
+std::string get_arguments(vw_ptr all)
+{
+  VW::config::cli_options_serializer serializer;
+  for (auto const& option : all->options->get_all_options())
+  {
+    if (all->options->was_supplied(option->m_name)) serializer.add(*option);
+  }
+  return serializer.str();
+}
+
+py::list get_enabled_learners(vw_ptr all)
+{
+  py::list py_enabled_learners;
+  std::vector<std::string> enabled_learners;
+  if (all->l) all->l->get_enabled_learners(enabled_learners);
+  for (auto ex : enabled_learners)
+  {
+    py_enabled_learners.append(ex);
+  }
+  return py_enabled_learners;
 }
 
 // Example parsing functions
@@ -899,46 +945,6 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
   ae->indices.clear();
 }
 
-std::string get_arguments(vw_ptr all)
-{
-  VW::config::cli_options_serializer serializer;
-  for (auto const& option : all->options->get_all_options())
-  {
-    if (all->options->was_supplied(option->m_name)) serializer.add(*option);
-  }
-  return serializer.str();
-}
-
-py::list get_enabled_learners(vw_ptr all)
-{
-  py::list py_enabled_learners;
-  std::vector<std::string> enabled_learners;
-  if (all->l) all->l->get_enabled_learners(enabled_learners);
-  for (auto ex : enabled_learners)
-  {
-    py_enabled_learners.append(ex);
-  }
-  return py_enabled_learners;
-}
-
-py::object get_options(vw_ptr all, py::object py_class, bool enabled_only)
-{
-  std::vector<std::string> enabled_learners;
-  if (all->l) all->l->get_enabled_learners(enabled_learners);
-  auto opt_manager = OptionManager(*all->options, enabled_learners, py_class);
-  return opt_manager.get_vw_option_pyobjects(enabled_only);
-}
-
-void my_audit_example(vw_ptr all, example_ptr ec) 
-{ 
-  VW::details::print_audit_features(*all, *ec); 
-}
-
-const char* get_model_id(vw_ptr all)
-{
-  return all->id.c_str();
-}
-
 // Example namespace and feature methods
 uint32_t ex_num_namespaces(example_ptr ec) 
 { 
@@ -1132,12 +1138,6 @@ double get_holdout_sum_loss(vw_ptr vw)
 double get_weighted_examples(vw_ptr vw)
 {
   return vw->sd->weighted_examples();
-}
-
-search_ptr get_search_ptr(vw_ptr all)
-{
-  auto* search_data = (Search::search*)all->l->get_internal_type_erased_data_pointer_test_use_only();
-  return std::shared_ptr<Search::search>(search_data, [](Search::search*){});
 }
 
 // Search helper functions
