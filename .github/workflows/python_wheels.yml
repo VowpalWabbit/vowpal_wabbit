@@ -299,6 +299,23 @@ jobs:
           twine check built_wheel/*.whl
           python -m pytest ./python/tests/
           python ./python/tests/run_doctest.py
+
+  # Windows x64 builds using cibuildwheel (Python 3.10-3.13)
+  cibuildwheel-build-windows:
+    name: cibuildwheel.windows-latest
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+          fetch-depth: 0
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v3.3.0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cibw-wheels-windows-latest
+          path: ./wheelhouse/*.whl
+
   windows-python-build:
     name: windows-2019.amd64.py${{ matrix.config.version }}.build
     runs-on: windows-2019
