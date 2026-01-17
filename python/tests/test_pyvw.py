@@ -453,7 +453,7 @@ def test_example_namespace():
     for i in range(ex_nm.num_features_in()):
         assert ex_nm[i] == next(iter_obj)
     assert ex_nm.pop_feature()
-    ex_nm.push_features(ns_id, ["c", "d"])
+    ex_nm.push_features(["c", "d"])
     assert ex_nm.num_features_in() == 4
 
 
