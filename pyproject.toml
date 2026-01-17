@@ -36,7 +36,9 @@ test-sources = "test/"
 before-all = [
     # Install build tools and boost development packages
     # cibuildwheel runs in Red Hat based Linux container environment
-    "dnf install -y cmake ninja-build boost-devel boost-python3-devel boost-static zlib-devel",
+    "dnf install -y cmake ninja-build boost-devel boost-python3-devel boost-static zlib-devel binutils",
+    # ARM64 only: Analyze system Boost libraries for problematic instructions
+    "bash -c 'if [ $(uname -m) = \"aarch64\" ]; then echo \"=== Analyzing Boost Python library for ARM64 instructions ===\"; BOOST_LIB=$(find /usr/lib64 -name \"libboost_python3*.so*\" | head -1); if [ -f \"$BOOST_LIB\" ]; then echo \"Library: $BOOST_LIB\"; echo \"Checking for LSE atomic instructions (cas, casp, ldadd, etc.)\"; objdump -d \"$BOOST_LIB\" | grep -E \"\\s(cas|casp|ldadd|stadd|ldclr|ldset|ldeor|swp)[a-z]*\\s\" | head -5 && echo \"FOUND: LSE atomics detected\" || echo \"NOT FOUND: No LSE atomics\"; echo \"Checking for SVE instructions\"; objdump -d \"$BOOST_LIB\" | grep -E \"\\sz[0-9]+\\.\" | head -5 && echo \"FOUND: SVE instructions detected\" || echo \"NOT FOUND: No SVE instructions\"; echo \"Build info:\"; readelf -p .comment \"$BOOST_LIB\" 2>/dev/null || echo \"No build info available\"; fi; fi'",
 ]
 before-build = [
     # Container uses an old version of Boost Python incompatible with Python 3.11+ C API
