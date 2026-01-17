@@ -166,6 +166,18 @@ public:
             values, m_opt.was_supplied(opt.m_name), py::list(), opt.default_value_supplied(), opt.m_experimental));
   }
 
+  template <typename T>
+  py::object* transform_if_t(VW::config::base_option& base_option)
+  {
+    if (base_option.m_type_hash == typeid(T).hash_code())
+    {
+      auto typed = dynamic_cast<VW::config::typed_option<T>&>(base_option);
+      return value_to_pyobject(typed);
+    }
+
+    return nullptr;
+  }
+
   py::object base_option_to_pyobject(VW::config::base_option& option)
   {
     option.accept(*this);
