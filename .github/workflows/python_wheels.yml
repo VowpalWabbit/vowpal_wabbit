@@ -364,7 +364,10 @@ jobs:
           # Set environment variable to tell CMakeLists.txt to use FindBoost MODULE mode
           # since boost-python alone doesn't provide BoostConfig.cmake files
           export VW_USE_FINDBOOST_MODULE_MODE=1
-          CMAKE_OPTIONS="-DSTATIC_LINK_VW_JAVA=On;-DCMAKE_BUILD_TYPE=Release;-DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT_CMAKE/scripts/buildsystems/vcpkg.cmake;-DVW_ZLIB_SYS_DEP=OFF;-DBoost_NO_BOOST_CMAKE=ON;-DBOOST_PY_VERSION_SUFFIX=3"
+
+          # Set BOOST_ROOT to vcpkg installation directory so FindBoost MODULE mode can find it
+          export BOOST_ROOT="$VCPKG_ROOT_CMAKE/installed/x64-windows"
+          CMAKE_OPTIONS="-DSTATIC_LINK_VW_JAVA=On;-DCMAKE_BUILD_TYPE=Release;-DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT_CMAKE/scripts/buildsystems/vcpkg.cmake;-DVW_ZLIB_SYS_DEP=OFF;-DBoost_NO_BOOST_CMAKE=ON;-DBOOST_ROOT=$BOOST_ROOT;-DBOOST_PY_VERSION_SUFFIX=3"
 
           echo -e "\n=== Building wheel with setup.py ==="
           echo "CMAKE_OPTIONS: $CMAKE_OPTIONS"
