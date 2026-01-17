@@ -41,12 +41,10 @@ jobs:
           name: cibw-wheels-${{ matrix.os }}
           path: ./wheelhouse/*.whl
 
-  # Linux aarch64 builds using cibuildwheel (Python 3.10-3.13, push-only)
+  # Linux aarch64 builds using cibuildwheel (Python 3.10-3.13)
   cibuildwheel-build-linux-aarch64:
     name: cibuildwheel.ubuntu-24.04-arm
     runs-on: ubuntu-24.04-arm
-    # Aarch builds are slow and are only run on push and not PR
-    if: ${{ github.event_name == 'push' }}
     steps:
       - uses: actions/checkout@v6
         with:
