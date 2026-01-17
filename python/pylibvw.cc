@@ -320,6 +320,16 @@ vw_ptr my_initialize(py::list args)
   return my_initialize_with_log(args, nullptr);
 }
 
+vw_ptr merge_workspaces(vw_ptr base_workspace, py::list workspaces)
+{
+  std::vector<const VW::workspace*> const_workspaces;
+  for (auto item : workspaces)
+  {
+    const_workspaces.push_back(item.cast<vw_ptr>().get());
+  }
+  return std::shared_ptr<VW::workspace>(VW::merge_models(base_workspace.get(), const_workspaces));
+}
+
 void my_run_parser(vw_ptr all)
 {
   VW::start_parser(*all);
@@ -765,15 +775,6 @@ float ex_get_ccb_weight(example_ptr ec)
   return ec->l.conditional_contextual_bandit.weight;
 }
 
-// Helper to convert v_array to py::list
-template <class T>
-py::list varray_to_pylist(const VW::v_array<T>& a)
-{
-  py::list list;
-  for (const auto& elem : a) { list.append(elem); }
-  return list;
-}
-
 py::list ex_get_ccb_explicitly_included_actions(example_ptr ec)
 {
   const auto& label = ec->l.conditional_contextual_bandit;
@@ -879,9 +880,18 @@ void my_learn_multi_ex(vw_ptr& all, py::list& ec_list)
   predict_or_learn<true>(all, ec_list); 
 }
 
-void my_predict_multi_ex(vw_ptr& all, py::list& ec_list) 
-{ 
-  predict_or_learn<false>(all, ec_list); 
+void my_predict_multi_ex(vw_ptr& all, py::list& ec_list)
+{
+  predict_or_learn<false>(all, ec_list);
+}
+
+// Helper to convert v_array to py::list
+template <class T>
+py::list varray_to_pylist(const VW::v_array<T>& a)
+{
+  py::list list;
+  for (const auto& elem : a) { list.append(elem); }
+  return list;
 }
 
 std::string get_arguments(vw_ptr all)
@@ -1716,4 +1726,6 @@ PYBIND11_MODULE(pylibvw, m)
       .def_readonly_static("EXAMPLES_DONT_CHANGE", &Search::EXAMPLES_DONT_CHANGE,
           "Tell search that on a single structured 'run', you don't change the examples you pass to predict")
       .def_readonly_static("IS_LDF", &Search::IS_LDF, "Tell search that this is an LDF task");
+
+  m.def("_merge_models_impl", &merge_workspaces, "Merge several Workspaces into one. Experimental.");
 }
