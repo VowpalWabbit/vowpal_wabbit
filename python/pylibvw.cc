@@ -547,6 +547,153 @@ std::string my_get_tag(example_ptr ec)
   return std::string(ec->tag.begin(), ec->tag.end());
 }
 
+// Example namespace and feature methods
+uint32_t ex_num_namespaces(example_ptr ec) 
+{ 
+  return (uint32_t)ec->indices.size(); 
+}
+
+unsigned char ex_namespace(example_ptr ec, uint32_t i) 
+{ 
+  return ec->indices[i]; 
+}
+
+uint32_t ex_num_features(example_ptr ec, unsigned char ns) 
+{ 
+  return (uint32_t)ec->feature_space[ns].size(); 
+}
+
+uint64_t ex_feature(example_ptr ec, unsigned char ns, uint32_t i) 
+{ 
+  return ec->feature_space[ns].indices[i]; 
+}
+
+float ex_feature_weight(example_ptr ec, unsigned char ns, uint32_t i) 
+{ 
+  return ec->feature_space[ns].values[i]; 
+}
+
+float ex_sum_feat_sq(example_ptr ec, unsigned char ns) 
+{ 
+  return ec->feature_space[ns].sum_feat_sq; 
+}
+
+void ex_push_feature(example_ptr ec, unsigned char ns, uint64_t fid, float v)
+{
+  ec->feature_space[ns].push_back(v, fid);
+  ec->feature_space[ns].sum_feat_sq += v * v;
+}
+
+void ex_push_namespace(example_ptr ec, unsigned char ns) 
+{ 
+  ec->indices.push_back(ns); 
+}
+
+void ex_ensure_namespace_exists(example_ptr ec, unsigned char ns)
+{
+  for (auto n : ec->indices)
+  {
+    if (n == ns) return;
+  }
+  ex_push_namespace(ec, ns);
+}
+
+bool ex_pop_namespace(example_ptr ec)
+{
+  if (ec->indices.empty()) return false;
+  ec->indices.pop_back();
+  return true;
+}
+
+void ex_erase_namespace(example_ptr ec, unsigned char ns)
+{
+  ec->feature_space[ns].clear();
+  ec->feature_space[ns].sum_feat_sq = 0;
+}
+
+bool ex_pop_feature(example_ptr ec, unsigned char ns)
+{
+  auto& fs = ec->feature_space[ns];
+  if (fs.empty()) return false;
+  float val = fs.values.back();
+  fs.sum_feat_sq -= val * val;
+  fs.indices.pop_back();
+  fs.values.pop_back();
+  return true;
+}
+
+void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list& a)
+{
+  for (auto item : a)
+  {
+    if (py::isinstance<py::tuple>(item))
+    {
+      auto t = item.cast<py::tuple>();
+      if (t.size() != 2) THROW("features must be tuples of (int/str, float)");
+      float fval = t[1].cast<float>();
+      
+      if (py::isinstance<py::str>(t[0]))
+      {
+        std::string fname = t[0].cast<std::string>();
+        uint64_t fhash = VW::hash_feature(*vw, fname, VW::hash_space(*vw, std::string(1, (char)ns)));
+        ex_push_feature(ec, ns, fhash, fval);
+      }
+      else if (py::isinstance<py::int_>(t[0]))
+      {
+        uint64_t fhash = t[0].cast<uint64_t>();
+        ex_push_feature(ec, ns, fhash, fval);
+      }
+      else
+      {
+        THROW("feature id must be int or str");
+      }
+    }
+    else
+    {
+      THROW("features must be a list of tuples (int/str, float)");
+    }
+  }
+}
+
+void ex_push_dictionary(example_ptr ec, vw_ptr vw, py::dict dict)
+{
+  for (auto item : dict)
+  {
+    unsigned char ns = 0;
+    uint64_t ns_hash = 0;
+    
+    if (py::isinstance<py::str>(item.first))
+    {
+      std::string ns_str = item.first.cast<std::string>();
+      if (ns_str.length() == 0) THROW("namespace must be non-empty");
+      ns = (unsigned char)ns_str[0];
+      ns_hash = VW::hash_space(*vw, ns_str);
+    }
+    else if (py::isinstance<py::int_>(item.first))
+    {
+      ns = item.first.cast<unsigned char>();
+      ns_hash = VW::hash_space(*vw, std::string(1, (char)ns));
+    }
+    else
+    {
+      THROW("namespace must be int or str");
+    }
+    
+    ex_ensure_namespace_exists(ec, ns);
+    
+    if (py::isinstance<py::list>(item.second))
+    {
+      py::list flist = item.second.cast<py::list>();
+      ex_push_feature_list(ec, vw, ns, flist);
+    }
+    else
+    {
+      THROW("namespace value must be a list of (feature, value) tuples");
+    }
+  }
+}
+
+
 void my_set_test_only(example_ptr ec, bool test_only)
 {
   ec->test_only = test_only;
@@ -945,151 +1092,6 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
   ae->indices.clear();
 }
 
-// Example namespace and feature methods
-uint32_t ex_num_namespaces(example_ptr ec) 
-{ 
-  return (uint32_t)ec->indices.size(); 
-}
-
-unsigned char ex_namespace(example_ptr ec, uint32_t i) 
-{ 
-  return ec->indices[i]; 
-}
-
-uint32_t ex_num_features(example_ptr ec, unsigned char ns) 
-{ 
-  return (uint32_t)ec->feature_space[ns].size(); 
-}
-
-uint64_t ex_feature(example_ptr ec, unsigned char ns, uint32_t i) 
-{ 
-  return ec->feature_space[ns].indices[i]; 
-}
-
-float ex_feature_weight(example_ptr ec, unsigned char ns, uint32_t i) 
-{ 
-  return ec->feature_space[ns].values[i]; 
-}
-
-float ex_sum_feat_sq(example_ptr ec, unsigned char ns) 
-{ 
-  return ec->feature_space[ns].sum_feat_sq; 
-}
-
-void ex_push_feature(example_ptr ec, unsigned char ns, uint64_t fid, float v)
-{
-  ec->feature_space[ns].push_back(v, fid);
-  ec->feature_space[ns].sum_feat_sq += v * v;
-}
-
-void ex_push_namespace(example_ptr ec, unsigned char ns) 
-{ 
-  ec->indices.push_back(ns); 
-}
-
-void ex_ensure_namespace_exists(example_ptr ec, unsigned char ns)
-{
-  for (auto n : ec->indices)
-  {
-    if (n == ns) return;
-  }
-  ex_push_namespace(ec, ns);
-}
-
-bool ex_pop_namespace(example_ptr ec)
-{
-  if (ec->indices.empty()) return false;
-  ec->indices.pop_back();
-  return true;
-}
-
-void ex_erase_namespace(example_ptr ec, unsigned char ns)
-{
-  ec->feature_space[ns].clear();
-  ec->feature_space[ns].sum_feat_sq = 0;
-}
-
-bool ex_pop_feature(example_ptr ec, unsigned char ns)
-{
-  auto& fs = ec->feature_space[ns];
-  if (fs.empty()) return false;
-  float val = fs.values.back();
-  fs.sum_feat_sq -= val * val;
-  fs.indices.pop_back();
-  fs.values.pop_back();
-  return true;
-}
-
-void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list& a)
-{
-  for (auto item : a)
-  {
-    if (py::isinstance<py::tuple>(item))
-    {
-      auto t = item.cast<py::tuple>();
-      if (t.size() != 2) THROW("features must be tuples of (int/str, float)");
-      float fval = t[1].cast<float>();
-      
-      if (py::isinstance<py::str>(t[0]))
-      {
-        std::string fname = t[0].cast<std::string>();
-        uint64_t fhash = VW::hash_feature(*vw, fname, VW::hash_space(*vw, std::string(1, (char)ns)));
-        ex_push_feature(ec, ns, fhash, fval);
-      }
-      else if (py::isinstance<py::int_>(t[0]))
-      {
-        uint64_t fhash = t[0].cast<uint64_t>();
-        ex_push_feature(ec, ns, fhash, fval);
-      }
-      else
-      {
-        THROW("feature id must be int or str");
-      }
-    }
-    else
-    {
-      THROW("features must be a list of tuples (int/str, float)");
-    }
-  }
-}
-
-void ex_push_dictionary(example_ptr ec, vw_ptr vw, py::dict dict)
-{
-  for (auto item : dict)
-  {
-    unsigned char ns = 0;
-    uint64_t ns_hash = 0;
-    
-    if (py::isinstance<py::str>(item.first))
-    {
-      std::string ns_str = item.first.cast<std::string>();
-      if (ns_str.length() == 0) THROW("namespace must be non-empty");
-      ns = (unsigned char)ns_str[0];
-      ns_hash = VW::hash_space(*vw, ns_str);
-    }
-    else if (py::isinstance<py::int_>(item.first))
-    {
-      ns = item.first.cast<unsigned char>();
-      ns_hash = VW::hash_space(*vw, std::string(1, (char)ns));
-    }
-    else
-    {
-      THROW("namespace must be int or str");
-    }
-    
-    ex_ensure_namespace_exists(ec, ns);
-    
-    if (py::isinstance<py::list>(item.second))
-    {
-      py::list flist = item.second.cast<py::list>();
-      ex_push_feature_list(ec, vw, ns, flist);
-    }
-    else
-    {
-      THROW("namespace value must be a list of (feature, value) tuples");
-    }
-  }
-}
 
 void ex_set_label_string(example_ptr ec, vw_ptr vw, std::string label, size_t labelType)
 {
