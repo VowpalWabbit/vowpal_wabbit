@@ -1216,6 +1216,13 @@ py::list ex_get_ccb_explicitly_included_actions(example_ptr ec)
   return varray_to_pylist(label.explicit_included_actions);
 }
 
+py::list ex_get_multilabel_labels(example_ptr ec)
+{
+  py::list l;
+  for (const auto& v : ec->l.multilabels.label_v) { l.append(v); }
+  return l;
+}
+
 // Additional example property accessors
 float ex_get_updated_prediction(example_ptr ec)
 {
