@@ -514,6 +514,12 @@ VW::example* my_empty_example0(vw_ptr vw, size_t labelType)
   return ec;
 }
 
+example_ptr my_empty_example(vw_ptr all, size_t label_type)
+{
+  VW::example* ec = my_empty_example0(all, label_type);
+  return std::shared_ptr<VW::example>(ec, my_delete_example);
+}
+
 // Example parsing functions
 example_ptr my_read_example(vw_ptr all, size_t labelType, std::string str)
 {
@@ -1375,12 +1381,6 @@ bool search_should_output(search_ptr _sch)
 void search_output(search_ptr _sch, std::string s)
 {
   _sch->output() << s;
-}
-
-example_ptr my_empty_example(vw_ptr all, size_t label_type)
-{
-  VW::example* ec = my_empty_example0(all, label_type);
-  return std::shared_ptr<VW::example>(ec, my_delete_example);
 }
 
 // Predictor helper functions
