@@ -1,65 +1,13 @@
+# Python bindings using pybind11
+
 if(NOT DEFINED PY_VERSION)
-  set(PY_VERSION 2.7)
+  set(PY_VERSION 3.10)
   message(WARNING "No PY_VERSION specified, Python ${PY_VERSION} will be used for VowpalWabbit Python bindings")
 else()
   message(STATUS "Python ${PY_VERSION} will be used for VowpalWabbit Python bindings")
 endif()
-string(REPLACE . "" PY_VERSION_STRIPPED ${PY_VERSION})
 
-if(STATIC_LINK_VW_JAVA)
-  set(Boost_USE_STATIC_LIBS ON)
-endif()
-set(Boost_USE_MULTITHREADED ON)
-set(Boost_USE_STATIC_RUNTIME OFF)
-find_package(Boost REQUIRED)
-
-# In boost version 1.67 Python version suffixes were instroduced for major and minor versions.
-# Allow BOOST_PY_VERSION_SUFFIX to be overridden (e.g., for vcpkg which uses empty suffix)
-if(NOT DEFINED BOOST_PY_VERSION_SUFFIX)
-  if(Boost_MINOR_VERSION GREATER 66)
-    set(BOOST_PY_VERSION_SUFFIX ${PY_VERSION_STRIPPED})
-  else(Boost_MINOR_VERSION GREATER 66)
-    string(SUBSTRING ${PY_VERSION_STRIPPED} 0 1 PY_VERSION_STRIPPED_FIRST_CHAR)
-    if(PY_VERSION_STRIPPED_FIRST_CHAR STREQUAL "2")
-      set(BOOST_PY_VERSION_SUFFIX "")
-    elseif(PY_VERSION_STRIPPED_FIRST_CHAR STREQUAL "3")
-      set(BOOST_PY_VERSION_SUFFIX "3")
-    endif(PY_VERSION_STRIPPED_FIRST_CHAR STREQUAL "2")
-  endif(Boost_MINOR_VERSION GREATER 66)
-endif()
-
-# If Boost_PYTHON<suffix>_LIBRARY is explicitly set (e.g., by conda build),
-# skip the component find and manually create the target
-if(DEFINED Boost_PYTHON${BOOST_PY_VERSION_SUFFIX}_LIBRARY)
-  message(STATUS "Using explicitly provided Boost Python library: ${Boost_PYTHON${BOOST_PY_VERSION_SUFFIX}_LIBRARY}")
-  message(STATUS "Boost_INCLUDE_DIR is set to: ${Boost_INCLUDE_DIR}")
-  message(STATUS "Boost_ROOT is set to: ${Boost_ROOT}")
-  if(TARGET Boost::boost)
-    message(STATUS "Boost::boost target EXISTS")
-    get_target_property(BOOST_INTERFACE_INCLUDES Boost::boost INTERFACE_INCLUDE_DIRECTORIES)
-    message(STATUS "Boost::boost INTERFACE_INCLUDE_DIRECTORIES: ${BOOST_INTERFACE_INCLUDES}")
-  else()
-    message(STATUS "Boost::boost target DOES NOT EXIST")
-  endif()
-  # Create imported target manually
-  if(NOT TARGET Boost::python${BOOST_PY_VERSION_SUFFIX})
-    add_library(Boost::python${BOOST_PY_VERSION_SUFFIX} UNKNOWN IMPORTED)
-    set_target_properties(Boost::python${BOOST_PY_VERSION_SUFFIX} PROPERTIES
-      IMPORTED_LOCATION "${Boost_PYTHON${BOOST_PY_VERSION_SUFFIX}_LIBRARY}"
-      INTERFACE_INCLUDE_DIRECTORIES "${Boost_INCLUDE_DIR}"
-    )
-    # Link to Boost::boost to get the header includes
-    if(TARGET Boost::boost)
-      set_property(TARGET Boost::python${BOOST_PY_VERSION_SUFFIX} APPEND PROPERTY
-        INTERFACE_LINK_LIBRARIES Boost::boost
-      )
-    endif()
-  endif()
-else()
-  find_package(Boost REQUIRED COMPONENTS python${BOOST_PY_VERSION_SUFFIX})
-endif()
-
-# Using find_package(Python...) allows us to only require the Python headers to be found.
+# Find Python
 if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
   find_package(PythonInterp ${PY_VERSION} REQUIRED)
   find_package(PythonLibs ${PY_VERSION} REQUIRED)
@@ -71,6 +19,11 @@ else()
   find_package(Python ${PY_VERSION} EXACT COMPONENTS Development.Module REQUIRED)
 endif()
 
+# Find pybind11
+# pybind11 can be installed via: pip install pybind11
+# or as a system package, or as a git submodule
+find_package(pybind11 REQUIRED)
+
 if (NOT WIN32)
   # Use position independent code for all targets in this directory
   set(CMAKE_POSITION_INDEPENDENT_CODE ON)
@@ -80,23 +33,8 @@ if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Darwin" AND NOT WIN32)
   set(EXPORT_DYNAMIC -Wl,--export-dynamic)
 endif()
 
-# Note: Python bindings previously built under c++0x
-
-# create the lib
-add_library(pylibvw SHARED pylibvw.cc)
-set_target_properties(pylibvw PROPERTIES PREFIX "")
-# Suppress Boost.Bind global placeholders deprecation warning
-# TODO: Migrate to using boost::placeholders namespace
-target_compile_definitions(pylibvw PRIVATE BOOST_BIND_GLOBAL_PLACEHOLDERS)
-
-# If we manually created Boost::python target, explicitly add Boost include directories
-if(DEFINED Boost_PYTHON${BOOST_PY_VERSION_SUFFIX}_LIBRARY AND DEFINED Boost_INCLUDE_DIR)
-  message(STATUS "Adding Boost_INCLUDE_DIR to pylibvw: ${Boost_INCLUDE_DIR}")
-  target_include_directories(pylibvw PRIVATE ${Boost_INCLUDE_DIR})
-  # Verify what include directories pylibvw has
-  get_target_property(PYLIBVW_INCLUDES pylibvw INCLUDE_DIRECTORIES)
-  message(STATUS "pylibvw INCLUDE_DIRECTORIES after adding Boost: ${PYLIBVW_INCLUDES}")
-endif()
+# Create the Python extension module
+pybind11_add_module(pylibvw pylibvw.cc)
 
 # The python setup.py script should communicate what suffix it wants.
 if(VW_PYTHON_SHARED_LIB_SUFFIX)
@@ -112,21 +50,5 @@ else()
   endif()
 endif()
 
-if (NOT WIN32)
-  # Windows links dynamically
-  target_compile_definitions(pylibvw PUBLIC BOOST_PYTHON_STATIC_LIB)
-else()
-  # Disable Boost auto-linking on Windows (we specify library explicitly)
-  target_compile_definitions(pylibvw PUBLIC BOOST_ALL_NO_LIB)
-endif()
-
-if(${CMAKE_VERSION} VERSION_LESS "3.12.0")
-  target_link_libraries(pylibvw PUBLIC ${PYTHON_LIBRARIES} Boost::python${BOOST_PY_VERSION_SUFFIX})
-  target_include_directories(pylibvw PRIVATE ${PYTHON_INCLUDE_PATH})
-elseif(${CMAKE_VERSION} VERSION_LESS "3.15.7")
-  target_link_libraries(pylibvw PUBLIC Python::Python Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
-else()
-  target_link_libraries(pylibvw PUBLIC Python::Module Boost::boost Boost::python${BOOST_PY_VERSION_SUFFIX})
-endif()
 target_link_libraries(pylibvw PUBLIC vw_core)
 target_compile_options(pylibvw PRIVATE ${EXPORT_DYNAMIC})
