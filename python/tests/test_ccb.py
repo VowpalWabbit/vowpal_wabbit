@@ -241,8 +241,8 @@ def test_ccb_and_automl():
     assert "total_champ_switches" in automl_metrics
     assert automl_metrics["total_champ_switches"] == 0
 
-    q_weights = q[0].model9("--invert_hash").weights.sort_index()
-    automl_weights = automl[0].model9("--invert_hash").weights.sort_index()
+    q_weights = q[0].model("--invert_hash").weights.sort_index()
+    automl_weights = automl[0].model("--invert_hash").weights.sort_index()
     automl_champ_weights = automl_weights[~automl_weights.index.str.contains(r"\[")]
 
     fts_names_q = set([n for n in q_weights.index])
