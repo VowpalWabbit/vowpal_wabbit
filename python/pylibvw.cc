@@ -723,10 +723,8 @@ void ex_push_feature(example_ptr ec, unsigned char ns, uint64_t fid, float v)
 }
 
 
-void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list& a)
+void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, uint64_t ns_hash, py::list& a)
 {
-  uint64_t ns_hash = VW::hash_space(*vw, std::string(1, (char)ns));
-
   for (auto item_handle : a)
   {
     py::object item = py::reinterpret_borrow<py::object>(item_handle);
@@ -841,7 +839,7 @@ void ex_push_dictionary(example_ptr ec, vw_ptr vw, py::dict dict)
     else if (py::isinstance<py::list>(item.second))
     {
       py::list flist = item.second.cast<py::list>();
-      ex_push_feature_list(ec, vw, ns, flist);
+      ex_push_feature_list(ec, vw, ns, ns_hash, flist);
     }
     else
     {
@@ -1796,7 +1794,7 @@ PYBIND11_MODULE(pylibvw, m)
       .def(py::init<py::object>());
 
   // Search::search class
-  py::class_<Search::search, search_ptr>(m, "search")
+  py::class_<Search::search, search_ptr>(m, "search", py::dynamic_attr())
       .def("set_options", &Search::search::set_options, "Set global search options (auto conditioning, etc.)")
       .def("get_history_length", &Search::search::get_history_length,
           "Get the value specified by --search_history_length")
