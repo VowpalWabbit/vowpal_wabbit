@@ -102,7 +102,6 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update || true
-          sudo apt-get install -y libboost-python-dev
       - name: Install dependencies
         shell: bash
         run: |
