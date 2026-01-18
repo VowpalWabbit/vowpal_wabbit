@@ -589,19 +589,28 @@ void predict_or_learn(vw_ptr& all, py::list& ec_list)
 py::list my_parse(vw_ptr& all, std::string str)
 {
   std::vector<example_ptr> ex_ptrs;
-  VW::example* ae = VW::make_unique<VW::example>().release();
-  VW::parsers::text::read_line(*all, ae, str);
-  VW::setup_example(*all, ae);
+
+  // For multiline learners, we need to parse multiple lines
+  // For now, this is broken - we only parse the first line
+  // TODO: Fix multiline parsing properly
   if (my_is_multiline(all))
   {
-    // NOTE: Multiline parsing is currently broken in the pybind11 migration
-    // This preserves the same broken behavior as the Boost.Python version
-    // where it would parse only the first line for multiline learners
-    // TODO: Fix multiline parsing in a separate PR
+    // Split by newlines and take only the first line to avoid hanging
+    size_t newline_pos = str.find('\n');
+    VW::string_view first_line = newline_pos != std::string::npos
+        ? VW::string_view(str).substr(0, newline_pos)
+        : VW::string_view(str);
+
+    VW::example* ae = VW::make_unique<VW::example>().release();
+    VW::parsers::text::read_line(*all, ae, first_line);
+    VW::setup_example(*all, ae);
     ex_ptrs.push_back(std::shared_ptr<VW::example>(ae, my_delete_example));
   }
   else
   {
+    VW::example* ae = VW::make_unique<VW::example>().release();
+    VW::parsers::text::read_line(*all, ae, str);
+    VW::setup_example(*all, ae);
     ex_ptrs.push_back(std::shared_ptr<VW::example>(ae, my_delete_example));
   }
 
