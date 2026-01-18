@@ -30,6 +30,7 @@
 #include <pybind11/functional.h>
 
 #include <memory>
+#include <fstream>
 
 namespace py = pybind11;
 
@@ -590,21 +591,22 @@ py::list my_parse(vw_ptr& all, std::string str)
 {
   std::vector<example_ptr> ex_ptrs;
 
-  // For multiline learners, we need to parse multiple lines
-  // For now, this is broken - we only parse the first line
-  // TODO: Fix multiline parsing properly
   if (my_is_multiline(all))
   {
-    // Split by newlines and take only the first line to avoid hanging
-    size_t newline_pos = str.find('\n');
-    VW::string_view first_line = newline_pos != std::string::npos
-        ? VW::string_view(str).substr(0, newline_pos)
-        : VW::string_view(str);
+    // For multiline learners, split by newlines and parse each line
+    std::vector<VW::string_view> lines;
+    VW::tokenize('\n', VW::string_view(str), lines);
 
-    VW::example* ae = VW::make_unique<VW::example>().release();
-    VW::parsers::text::read_line(*all, ae, first_line);
-    VW::setup_example(*all, ae);
-    ex_ptrs.push_back(std::shared_ptr<VW::example>(ae, my_delete_example));
+    for (const auto& line : lines)
+    {
+      // Skip empty lines
+      if (line.empty()) continue;
+
+      VW::example* ae = VW::make_unique<VW::example>().release();
+      VW::parsers::text::read_line(*all, ae, line);
+      VW::setup_example(*all, ae);
+      ex_ptrs.push_back(std::shared_ptr<VW::example>(ae, my_delete_example));
+    }
   }
   else
   {
