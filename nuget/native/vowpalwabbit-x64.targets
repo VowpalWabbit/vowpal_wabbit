@@ -30,4 +30,12 @@
       <AdditionalLibraryDirectories>$(MSBuildThisFileDirectory)..\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
+
+  <!-- Copy runtime DLLs to output directory -->
+  <Target Name="CopyVowpalWabbitDlls" AfterTargets="Build">
+    <ItemGroup>
+      <VwRuntimeDlls Include="$(MSBuildThisFileDirectory)..\bin\*.dll" />
+    </ItemGroup>
+    <Copy SourceFiles="@(VwRuntimeDlls)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+  </Target>
 </Project>
