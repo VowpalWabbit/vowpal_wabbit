@@ -63,20 +63,51 @@ else()
   set(CMAKE_POLICY_DEFAULT_CMP0048 NEW)
   set(CMAKE_POLICY_DEFAULT_CMP0042 NEW)
   set(SKIP_INSTALL_ALL ON CACHE BOOL "" FORCE)
-  add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/zlib_source ${CMAKE_CURRENT_BINARY_DIR}/zlib_build ${SHOULD_EXCLUDE_FROM_ALL_TEXT})
-  target_include_directories(zlibstatic PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/zlib_source>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/zlib_build>
-  )
-  add_library(ZLIB::ZLIB ALIAS zlibstatic)
 
-  if(VW_INSTALL)
-        install(
-          TARGETS zlibstatic
-          EXPORT VowpalWabbitConfig
-          ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-          LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-          RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+  # On Windows, build shared library (DLL) for NuGet packages
+  # On other platforms, build static library to avoid PIC linking issues
+  if(WIN32)
+    set(ZLIB_BUILD_SHARED ON CACHE BOOL "Build shared zlib on Windows" FORCE)
+    set(ZLIB_BUILD_STATIC OFF CACHE BOOL "Don't build static zlib on Windows" FORCE)
+  else()
+    set(ZLIB_BUILD_SHARED OFF CACHE BOOL "Don't build shared zlib on non-Windows" FORCE)
+    set(ZLIB_BUILD_STATIC ON CACHE BOOL "Build static zlib on non-Windows" FORCE)
+  endif()
+
+  add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/zlib_source ${CMAKE_CURRENT_BINARY_DIR}/zlib_build ${SHOULD_EXCLUDE_FROM_ALL_TEXT})
+
+  if(WIN32)
+    # On Windows, use the shared library
+    target_include_directories(zlib PUBLIC
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/zlib_source>
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/zlib_build>
+    )
+    add_library(ZLIB::ZLIB ALIAS zlib)
+
+    if(VW_INSTALL)
+      install(
+        TARGETS zlib
+        EXPORT VowpalWabbitConfig
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    endif()
+  else()
+    # On non-Windows, use the static library
+    target_include_directories(zlibstatic PUBLIC
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/zlib_source>
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/zlib_build>
+    )
+    add_library(ZLIB::ZLIB ALIAS zlibstatic)
+
+    if(VW_INSTALL)
+      install(
+        TARGETS zlibstatic
+        EXPORT VowpalWabbitConfig
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    endif()
   endif()
 endif()
 
