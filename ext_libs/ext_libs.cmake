@@ -64,17 +64,11 @@ else()
   set(CMAKE_POLICY_DEFAULT_CMP0042 NEW)
   set(SKIP_INSTALL_ALL ON CACHE BOOL "" FORCE)
 
-  # On Windows, build both static and shared libraries
-  # - Static for internal VW components (avoids DLL runtime issues for tests)
-  # - Shared for NuGet package distribution
-  # On other platforms, build only static to avoid PIC linking issues
-  if(WIN32)
-    set(ZLIB_BUILD_SHARED ON CACHE BOOL "Build shared zlib on Windows" FORCE)
-    set(ZLIB_BUILD_STATIC ON CACHE BOOL "Build static zlib on Windows" FORCE)
-  else()
-    set(ZLIB_BUILD_SHARED OFF CACHE BOOL "Don't build shared zlib on non-Windows" FORCE)
-    set(ZLIB_BUILD_STATIC ON CACHE BOOL "Build static zlib on non-Windows" FORCE)
-  endif()
+  # Build only static library on all platforms
+  # - Avoids DLL runtime issues for tests on Windows
+  # - Avoids PIC linking issues on Linux
+  set(ZLIB_BUILD_SHARED OFF CACHE BOOL "Don't build shared zlib" FORCE)
+  set(ZLIB_BUILD_STATIC ON CACHE BOOL "Build static zlib" FORCE)
 
   add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/zlib_source ${CMAKE_CURRENT_BINARY_DIR}/zlib_build ${SHOULD_EXCLUDE_FROM_ALL_TEXT})
 
@@ -93,16 +87,6 @@ else()
       ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
       LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
       RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-
-    # On Windows, also install shared library for NuGet package
-    if(WIN32)
-      install(
-        TARGETS zlib
-        EXPORT VowpalWabbitConfig
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-    endif()
   endif()
 endif()
 
