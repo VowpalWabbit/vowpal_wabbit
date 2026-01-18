@@ -602,18 +602,22 @@ py::list my_parse(vw_ptr& all, std::string str)
       // Skip empty lines
       if (line.empty()) continue;
 
-      VW::example* ae = VW::make_unique<VW::example>().release();
+      // Get example from the pool (not new allocation)
+      VW::example* ae = &VW::get_unused_example(all.get());
       VW::parsers::text::read_line(*all, ae, line);
       VW::setup_example(*all, ae);
-      ex_ptrs.push_back(std::shared_ptr<VW::example>(ae, my_delete_example));
+      // Use dont_delete_me because examples are returned to pool via finish_example()
+      ex_ptrs.push_back(std::shared_ptr<VW::example>(ae, dont_delete_me));
     }
   }
   else
   {
-    VW::example* ae = VW::make_unique<VW::example>().release();
+    // Get example from the pool (not new allocation)
+    VW::example* ae = &VW::get_unused_example(all.get());
     VW::parsers::text::read_line(*all, ae, str);
     VW::setup_example(*all, ae);
-    ex_ptrs.push_back(std::shared_ptr<VW::example>(ae, my_delete_example));
+    // Use dont_delete_me because examples are returned to pool via finish_example()
+    ex_ptrs.push_back(std::shared_ptr<VW::example>(ae, dont_delete_me));
   }
 
   py::list result;
