@@ -81,6 +81,19 @@ const size_t tUNSET = 3;
 
 void dont_delete_me(void* arg) {}
 
+// Safe deleter for py::object that prevents crashes during Python shutdown
+struct safe_pyobject_deleter
+{
+  void operator()(py::object* obj) const
+  {
+    if (Py_IsInitialized())
+    {
+      delete obj;
+    }
+    // else: leak the object - Python is shutting down anyway
+  }
+};
+
 // OptionManager class for get_options support (backward compatibility)
 class OptionManager : VW::config::typed_option_visitor
 {
@@ -186,7 +199,12 @@ public:
     if (m_visitor_output_var != nullptr)
     {
       auto repack = py::object(*m_visitor_output_var);
-      delete m_visitor_output_var;
+      // Safely delete py::object only if Python is still initialized
+      if (Py_IsInitialized())
+      {
+        delete m_visitor_output_var;
+      }
+      // else: leak it - Python is shutting down anyway
       m_visitor_output_var = nullptr;
       return repack;
     }
@@ -250,6 +268,18 @@ class py_log_wrapper
 public:
   py::object py_log;
   py_log_wrapper(py::object py_log) : py_log(py_log) {}
+
+  ~py_log_wrapper()
+  {
+    // Safely release the Python object only if interpreter is still active
+    // During shutdown, py::object destructor can crash if Python is already torn down
+    if (!Py_IsInitialized())
+    {
+      // Leak the reference - Python is shutting down anyway
+      // This prevents crashes from trying to decref during interpreter shutdown
+      (void)py_log.release().ptr();
+    }
+  }
 
   static void trace_listener_py(void* wrapper, const std::string& message)
   {
@@ -1394,15 +1424,15 @@ void set_structured_predict_hook(
   _sch->set_force_oracle(false);
 
   d->run_f = &search_run_fn;
-  d->run_object = std::make_shared<py::object>(run_object);
+  d->run_object = std::shared_ptr<py::object>(new py::object(run_object), safe_pyobject_deleter());
   if (!setup_object.is_none())
   {
-    d->setup_object = std::make_shared<py::object>(setup_object);
+    d->setup_object = std::shared_ptr<py::object>(new py::object(setup_object), safe_pyobject_deleter());
     d->run_setup_f = &search_setup_fn;
   }
   if (!takedown_object.is_none())
   {
-    d->takedown_object = std::make_shared<py::object>(takedown_object);
+    d->takedown_object = std::shared_ptr<py::object>(new py::object(takedown_object), safe_pyobject_deleter());
     d->run_takedown_f = &search_takedown_fn;
   }
 }
