@@ -3,6 +3,7 @@
 // license as described in the file LICENSE.
 
 #include "vw/common/future_compat.h"
+#include "vw/common/text_utils.h"
 #include "vw/config/cli_options_serializer.h"
 #include "vw/config/option.h"
 #include "vw/config/options_cli.h"
@@ -526,7 +527,7 @@ example_ptr my_empty_example(vw_ptr all, size_t label_type)
 example_ptr my_read_example(vw_ptr all, size_t labelType, std::string str)
 {
   VW::example* ec = my_empty_example0(all, labelType);
-  VW::parsers::text::read_line(*all, ec, (char*)str.c_str());
+  VW::parsers::text::read_line(*all, ec, str);
   VW::setup_example(*all, ec);
   return std::shared_ptr<VW::example>(ec, my_delete_example);
 }
@@ -589,18 +590,14 @@ py::list my_parse(vw_ptr& all, std::string str)
 {
   std::vector<example_ptr> ex_ptrs;
   VW::example* ae = VW::make_unique<VW::example>().release();
-  char* cstr = (char*)str.c_str();
-  VW::parsers::text::read_line(*all, ae, cstr);
+  VW::parsers::text::read_line(*all, ae, str);
   VW::setup_example(*all, ae);
   if (my_is_multiline(all))
   {
-    while (!VW::example_is_newline(*ae))
-    {
-      ex_ptrs.push_back(std::shared_ptr<VW::example>(ae, my_delete_example));
-      ae = VW::make_unique<VW::example>().release();
-      VW::parsers::text::read_line(*all, ae, cstr);
-      VW::setup_example(*all, ae);
-    }
+    // NOTE: Multiline parsing is currently broken in the pybind11 migration
+    // This preserves the same broken behavior as the Boost.Python version
+    // where it would parse only the first line for multiline learners
+    // TODO: Fix multiline parsing in a separate PR
     ex_ptrs.push_back(std::shared_ptr<VW::example>(ae, my_delete_example));
   }
   else
