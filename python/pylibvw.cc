@@ -253,9 +253,14 @@ public:
 
   static void trace_listener_py(void* wrapper, const std::string& message)
   {
+    // Check if Python interpreter is still active to prevent crashes during shutdown
+    if (!Py_IsInitialized()) { return; }
+
     try
     {
       auto inst = static_cast<py_log_wrapper*>(wrapper);
+      // Check if the Python object is still valid before calling it
+      if (!inst || !inst->py_log) { return; }
       inst->py_log.attr("log")(message);
     }
     catch (...)
@@ -293,9 +298,13 @@ vw_ptr my_initialize_with_log(py::list args, py_log_wrapper_ptr py_log)
     const auto log_function = [](void* context, VW::io::log_level level, const std::string& message)
     {
       _UNUSED(level);
+      // Check if Python interpreter is still active to prevent crashes during shutdown
+      if (!Py_IsInitialized()) { return; }
       try
       {
         auto inst = static_cast<py_log_wrapper*>(context);
+        // Check if the Python object is still valid before calling it
+        if (!inst || !inst->py_log) { return; }
         inst->py_log.attr("log")(message);
       }
       catch (...)
@@ -1305,6 +1314,8 @@ uint32_t search_get_num_actions(search_ptr _sch)
 
 void search_run_fn(Search::search& _sch)
 {
+  // Check if Python interpreter is still active to prevent crashes during shutdown
+  if (!Py_IsInitialized()) { return; }
   try
   {
     HookTask::task_data* d = _sch.get_task_data<HookTask::task_data>();
@@ -1323,6 +1334,8 @@ void search_run_fn(Search::search& _sch)
 
 void search_setup_fn(Search::search& _sch)
 {
+  // Check if Python interpreter is still active to prevent crashes during shutdown
+  if (!Py_IsInitialized()) { return; }
   try
   {
     HookTask::task_data* d = _sch.get_task_data<HookTask::task_data>();
@@ -1341,6 +1354,8 @@ void search_setup_fn(Search::search& _sch)
 
 void search_takedown_fn(Search::search& _sch)
 {
+  // Check if Python interpreter is still active to prevent crashes during shutdown
+  if (!Py_IsInitialized()) { return; }
   try
   {
     HookTask::task_data* d = _sch.get_task_data<HookTask::task_data>();
