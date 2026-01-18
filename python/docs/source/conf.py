@@ -90,8 +90,18 @@ html_theme_options = {"use_edit_page_button": True}
 
 jupyter_execute_notebooks = "cache"
 
+# Increase timeout for long-running simulation notebooks (default is 30 seconds)
+nb_execution_timeout = 120
+
 # This tutorial uses unrar so we can't execute it in the doc generation.
-execution_excludepatterns = ["DFtoVW_tutorial.ipynb"]
+# python_cats.ipynb is excluded due to VW JSON parser issue with unlabeled continuous actions
+# Long-running simulation notebooks that cause kernel crashes or timeouts
+execution_excludepatterns = [
+    "DFtoVW_tutorial.ipynb",
+    "python_cats.ipynb",
+    "python_Simulating_a_news_personalization_scenario_using_Contextual_Bandits.ipynb",
+    "python_slates.ipynb",
+]
 
 thebe_config = {
     "repository_url": "https://github.com/VowpalWabbit/vowpal_wabbit",
