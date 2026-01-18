@@ -1171,7 +1171,7 @@ bool ex_get_ccb_has_outcome(example_ptr ec)
   return ec->l.conditional_contextual_bandit.outcome != nullptr;
 }
 
-float ex_get_ccb_cost(example_ptr ec)
+float ex_get_ccb_outcome_cost(example_ptr ec)
 {
   if (!ex_get_ccb_has_outcome(ec)) { THROW("This label has no outcome"); }
   return ec->l.conditional_contextual_bandit.outcome->cost;
@@ -1224,25 +1224,24 @@ py::list ex_get_multilabel_labels(example_ptr ec)
 }
 
 // Additional example property accessors
-size_t ex_get_feature_number(example_ptr ec)
-{
-  return ec->get_num_features();
-}
-
 float ex_get_topic_prediction(VW::workspace& all, example_ptr ec, size_t i)
 {
   return VW::get_topic_prediction(ec.get(), i);
 }
-
 
 size_t get_example_counter(example_ptr ec) 
 { 
   return ec->example_counter; 
 }
 
-uint32_t get_ft_offset(example_ptr ec) 
-{ 
-  return ec->ft_offset; 
+uint32_t get_ft_offset(example_ptr ec)
+{
+  return ec->ft_offset;
+}
+
+size_t ex_get_feature_number(example_ptr ec)
+{
+  return ec->get_num_features();
 }
 
 float get_partial_prediction(example_ptr ec)
@@ -1680,7 +1679,7 @@ PYBIND11_MODULE(pylibvw, m)
       // CCB label accessors
       .def("get_ccb_type", &ex_get_ccb_type, "Assuming a CCB label type, return the example type")
       .def("get_ccb_has_outcome", &ex_get_ccb_has_outcome, "Assuming a CCB label type, check if has outcome")
-      .def("get_ccb_cost", &ex_get_ccb_cost, "Assuming a CCB label type, get the cost")
+      .def("get_ccb_cost", &ex_get_ccb_outcome_cost, "Assuming a CCB label type, get the cost")
       .def("get_ccb_num_probabilities", &ex_get_ccb_num_probabilities,
           "Assuming a CCB label type, return the number of probabilities")
       .def("get_ccb_num_explicitly_included_actions", &ex_get_ccb_num_explicitly_included_actions,
