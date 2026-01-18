@@ -725,33 +725,41 @@ void ex_push_feature(example_ptr ec, unsigned char ns, uint64_t fid, float v)
 
 void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, py::list& a)
 {
-  for (auto item : a)
+  uint64_t ns_hash = VW::hash_space(*vw, std::string(1, (char)ns));
+
+  for (auto item_handle : a)
   {
+    py::object item = py::reinterpret_borrow<py::object>(item_handle);
+    float fval = 1.0f;  // Default value for bare strings/ints (Boost.Python compatibility)
+    py::object feature_id = item;
+
+    // If it's a tuple, extract (feature_id, value)
     if (py::isinstance<py::tuple>(item))
     {
       auto t = item.cast<py::tuple>();
-      if (t.size() != 2) THROW("features must be tuples of (int/str, float)");
-      float fval = t[1].cast<float>();
+      if (t.size() != 2) THROW("feature tuples must be (int/str, float)");
+      feature_id = t[0];
+      fval = t[1].cast<float>();
+    }
 
-      if (py::isinstance<py::str>(t[0]))
-      {
-        std::string fname = t[0].cast<std::string>();
-        uint64_t fhash = VW::hash_feature(*vw, fname, VW::hash_space(*vw, std::string(1, (char)ns)));
-        ex_push_feature(ec, ns, fhash, fval);
-      }
-      else if (py::isinstance<py::int_>(t[0]))
-      {
-        uint64_t fhash = t[0].cast<uint64_t>();
-        ex_push_feature(ec, ns, fhash, fval);
-      }
-      else
-      {
-        THROW("feature id must be int or str");
-      }
+    // Skip zero-valued features
+    if (fval == 0.0f) continue;
+
+    // Process feature_id (either from tuple or bare value)
+    if (py::isinstance<py::str>(feature_id))
+    {
+      std::string fname = feature_id.cast<std::string>();
+      uint64_t fhash = VW::hash_feature(*vw, fname, ns_hash);
+      ex_push_feature(ec, ns, fhash, fval);
+    }
+    else if (py::isinstance<py::int_>(feature_id))
+    {
+      uint64_t fhash = feature_id.cast<uint64_t>();
+      ex_push_feature(ec, ns, fhash, fval);
     }
     else
     {
-      THROW("features must be a list of tuples (int/str, float)");
+      THROW("features must be strings, ints, or tuples of (str/int, float)");
     }
   }
 }
