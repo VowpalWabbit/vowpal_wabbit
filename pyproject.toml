@@ -25,7 +25,6 @@ test-command = [
     "pyclean {project}/python/tests",
     "pytest {project}/python/tests",
 ]
-test-sources = "test/"
 
 [tool.cibuildwheel.linux]
 before-all = [
