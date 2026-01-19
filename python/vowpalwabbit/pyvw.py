@@ -826,8 +826,8 @@ class Workspace(pylibvw.vw):
         """
         if self._log_fwd:
             # Combine both channels for backward compatibility
-            combined = self._log_fwd.driver_messages + self._log_fwd.logger_messages
-            return [m for m in combined if m]  # Filter empty strings
+            # Note: Don't filter empty strings as they serve as section delimiters
+            return self._log_fwd.driver_messages + self._log_fwd.logger_messages
         else:
             raise Exception("enable_logging set to false")
 
