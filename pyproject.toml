@@ -23,7 +23,7 @@ test-skip = "*-manylinux_aarch64"
 test-requires = ["pytest", "pyclean", "vw-executor", "setuptools", "scipy", "scikit-learn"]
 test-command = [
     "pyclean {project}/python/tests",
-    "pytest {project}/python/tests --ignore={project}/python/tests/e2e_v2",
+    "pytest {project}/python/tests",
 ]
 test-sources = "test/"
 
@@ -49,9 +49,8 @@ before-all = [
     "python -m pip install pybind11",
 ]
 test-command = [
-    # Run actual tests (excluding e2e_v2 which has fork safety issues with pybind11)
     "pyclean {project}/python/tests",
-    "pytest {project}/python/tests --ignore={project}/python/tests/e2e_v2",
+    "pytest {project}/python/tests",
 ]
 # Use macOS 11.0+ for compatibility
 # pybind11_DIR is automatically detected by setup.py
