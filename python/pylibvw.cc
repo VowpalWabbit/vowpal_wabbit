@@ -597,41 +597,21 @@ void predict_or_learn(vw_ptr& all, py::list& ec_list)
 
 py::list my_parse(vw_ptr& all, std::string str)
 {
-  std::vector<example_ptr> ex_ptrs;
+  VW::multi_ex examples;
+  examples.push_back(&VW::get_unused_example(all.get()));
 
-  if (my_is_multiline(all))
-  {
-    // For multiline learners, split by newlines and parse each line
-    std::vector<VW::string_view> lines;
-    VW::tokenize('\n', VW::string_view(str), lines);
-
-    for (const auto& line : lines)
-    {
-      // Skip empty lines
-      if (line.empty()) continue;
-
-      // Get example from the pool (not new allocation)
-      VW::example* ae = &VW::get_unused_example(all.get());
-      VW::parsers::text::read_line(*all, ae, line);
-      VW::setup_example(*all, ae);
-      // Use dont_delete_me because examples are returned to pool via finish_example()
-      ex_ptrs.push_back(std::shared_ptr<VW::example>(ae, dont_delete_me));
-    }
-  }
-  else
-  {
-    // Get example from the pool (not new allocation)
-    VW::example* ae = &VW::get_unused_example(all.get());
-    VW::parsers::text::read_line(*all, ae, str);
-    VW::setup_example(*all, ae);
-    // Use dont_delete_me because examples are returned to pool via finish_example()
-    ex_ptrs.push_back(std::shared_ptr<VW::example>(ae, dont_delete_me));
-  }
+  // Use the text_reader function pointer which is set to the appropriate
+  // parser (JSON or text) based on how the workspace was initialized.
+  // This handles --dsjson and other input formats correctly.
+  all->parser_runtime.example_parser->text_reader(all.get(), VW::string_view(str), examples);
 
   py::list result;
-  for (auto& ex : ex_ptrs)
+  for (auto* ex : examples)
   {
-    result.append(ex);
+    VW::setup_example(*all, ex);
+    // Examples created from parsed text should not be deleted normally.
+    // Instead they need to be returned to the pool using finish_example.
+    result.append(std::shared_ptr<VW::example>(ex, dont_delete_me));
   }
   return result;
 }
@@ -1546,10 +1526,14 @@ PYBIND11_MODULE(pylibvw, m)
   m.doc() = "Vowpal Wabbit Python bindings (pybind11 version)";
 
   // VW::workspace class (bound as "vw")
-  py::class_<VW::workspace, vw_ptr>(m, "vw",
+  // py::dynamic_attr() allows Python code to set arbitrary attributes on the object,
+  // which is needed for the Workspace class in pyvw.py to work correctly.
+  py::class_<VW::workspace, vw_ptr>(m, "vw", py::dynamic_attr(),
       "the basic VW object that holds weight vector, parser, etc.")
       .def(py::init(&my_initialize))
       .def(py::init(&my_initialize_with_log))
+      // Constructor that adopts an existing workspace (used by merge_models)
+      .def(py::init([](vw_ptr existing) { return existing; }))
       .def("run_parser", &my_run_parser, "parse external data file")
       .def("get_learner_metrics", &get_learner_metrics,
           "get current learner stack metrics. returns empty dict if --extra_metrics was not supplied.")
