@@ -748,14 +748,14 @@ class Workspace(pylibvw.vw):
             pylibvw.vw.finish(self)
             self.init = False
             self.finished = True
-            # Save log messages before clearing references so get_log() works after finish()
+            # Save log messages so get_log() still works after finish()
             if self._log_fwd:
                 self._saved_log = self._log_fwd.messages + [self._log_fwd.current_message]
-            # Clear logging references to break reference cycles and allow
-            # proper garbage collection of C++ resources (fixes memory leak
-            # when repeatedly creating/destroying Workspace objects)
-            self._log_wrapper = None
-            self._log_fwd = None
+            # Note: We intentionally do NOT clear _log_wrapper or _log_fwd here
+            # because the C++ VW::workspace still holds raw pointers to py_log_wrapper
+            # and could potentially call back into Python during destruction.
+            # The reference cycle between _log_wrapper and _log_fwd will be broken
+            # when the Workspace object is garbage collected.
 
     def get_log(self) -> List[str]:
         """Get all log messages produced. One line per item in the list. To get the complete log including run results, this should be called after :func:`~vowpalwabbit.vw.finish`
