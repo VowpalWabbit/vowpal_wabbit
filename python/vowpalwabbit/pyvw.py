@@ -458,6 +458,7 @@ class Workspace(pylibvw.vw):
         self.init = False
         self.finished = False
         self._log_fwd = None
+        self._final_log = None
 
         # Internal path: adopt an existing vw object (used by merge_models)
         if _existing_vw is not None:
@@ -753,9 +754,12 @@ class Workspace(pylibvw.vw):
             pylibvw.vw.finish(self)
             self.init = False
             self.finished = True
-            # Clear logging references to break reference cycles and allow
+            # Preserve log messages for get_log() calls after finish(),
+            # then clear logging references to break reference cycles and allow
             # proper garbage collection of C++ resources (fixes memory leak
             # when repeatedly creating/destroying Workspace objects)
+            if self._log_fwd:
+                self._final_log = self._log_fwd.messages + [self._log_fwd.current_message]
             self._log_wrapper = None
             self._log_fwd = None
 
@@ -770,6 +774,9 @@ class Workspace(pylibvw.vw):
         """
         if self._log_fwd:
             return self._log_fwd.messages + [self._log_fwd.current_message]
+        elif self._final_log is not None:
+            # Return cached log after finish() was called
+            return self._final_log
         else:
             raise Exception("enable_logging set to false")
 
