@@ -571,7 +571,10 @@ std::string my_json_weights(vw_ptr all)
 
 void my_predict(vw_ptr all, example_ptr ec)
 {
-  all->predict(*ec);
+  // Use the learner's predict directly instead of workspace::predict
+  // because workspace::predict sets ec->test_only = true, which would
+  // cause subsequent learn calls on the same example to skip learning.
+  VW::LEARNER::require_singleline(all->l)->predict(*ec);
 }
 
 bool my_is_multiline(vw_ptr all)
@@ -584,7 +587,12 @@ void predict_or_learn(vw_ptr& all, py::list& ec_list)
 {
   multi_ex ex_coll = unwrap_example_list(ec_list);
   if (learn) { all->learn(ex_coll); }
-  else { all->predict(ex_coll); }
+  else {
+    // Use the learner's predict directly instead of workspace::predict
+    // because workspace::predict sets test_only = true for all examples,
+    // which would cause subsequent learn calls to skip learning.
+    VW::LEARNER::require_multiline(all->l)->predict(ex_coll);
+  }
 }
 
 py::list my_parse(vw_ptr& all, std::string str)
@@ -693,8 +701,9 @@ float ex_sum_feat_sq(example_ptr ec, unsigned char ns)
 
 void ex_push_feature(example_ptr ec, unsigned char ns, uint64_t fid, float v)
 {
+  // Note: push_back already updates sum_feat_sq internally, so we don't need
+  // to add it here. The old Boost.Python code had this duplication bug.
   ec->feature_space[ns].push_back(v, fid);
-  ec->feature_space[ns].sum_feat_sq += v * v;
 }
 
 
@@ -861,11 +870,46 @@ void my_setup_example(vw_ptr vw, example_ptr ec)
 
 void unsetup_example(vw_ptr vwP, example_ptr ae)
 {
-  if (vwP->output_config.audit || vwP->output_config.hash_inv)
+  VW::workspace& all = *vwP;
+  ae->partial_prediction = 0.;
+  ae->num_features = 0;
+  ae->reset_total_sum_feat_sq();
+  ae->loss = 0.;
+
+  if (all.feature_tweaks_config.ignore_some) { THROW("Cannot unsetup example when some namespaces are ignored"); }
+
+  if (all.feature_tweaks_config.skip_gram_transformer != nullptr &&
+      !all.feature_tweaks_config.skip_gram_transformer->get_initial_ngram_definitions().empty())
   {
-    VW::details::truncate_example_namespaces_from_example(*ae, *ae);
+    THROW("Cannot unsetup example when ngrams are in use");
   }
-  ae->indices.clear();
+
+  if (all.feature_tweaks_config.add_constant)
+  {
+    ae->feature_space[VW::details::CONSTANT_NAMESPACE].clear();
+    int hit_constant = -1;
+    size_t N = ae->indices.size();
+    for (size_t i = 0; i < N; i++)
+    {
+      int j = (int)(N - 1 - i);
+      if (ae->indices[j] == VW::details::CONSTANT_NAMESPACE)
+      {
+        if (hit_constant >= 0) { THROW("Constant namespace was found twice. It can only exist 1 or 0 times."); }
+        hit_constant = j;
+        break;
+      }
+    }
+    if (hit_constant >= 0)
+    {
+      for (size_t i = hit_constant; i < N - 1; i++) ae->indices[i] = ae->indices[i + 1];
+      ae->indices.pop_back();
+    }
+  }
+
+  uint32_t multiplier = all.reduction_state.total_feature_width << all.weights.stride_shift();
+  if (multiplier != 1)  // make room for per-feature information.
+    for (auto ns : ae->indices)
+      for (auto& idx : ae->feature_space[ns].indices) idx /= multiplier;
 }
 
 
@@ -1651,6 +1695,8 @@ PYBIND11_MODULE(pylibvw, m)
       .def("get_active_multiclass", &ex_get_active_multiclass, "Get active multiclass from example prediction")
       .def("get_multilabel_predictions", &ex_get_multilabel_predictions,
           "Get multilabel predictions from example prediction")
+      .def("get_multilabel_labels", &ex_get_multilabel_labels,
+          "Get multilabel labels from example label")
 
       // Cost-sensitive label accessors
       .def("get_costsensitive_prediction", &ex_get_costsensitive_prediction,
