@@ -489,6 +489,8 @@ class Workspace(pylibvw.vw):
     finished: bool
     _log_fwd: Optional[_dual_log_forward]
     _saved_log: Optional[List[str]]
+    _saved_driver_log: Optional[List[str]]
+    _saved_logger_log: Optional[List[str]]
 
     def __init__(
         self,
@@ -520,6 +522,8 @@ class Workspace(pylibvw.vw):
         self.finished = False
         self._log_fwd = None
         self._saved_log = None
+        self._saved_driver_log = None
+        self._saved_logger_log = None
 
         if enable_logging:
             self._log_fwd = _dual_log_forward()
@@ -809,9 +813,12 @@ class Workspace(pylibvw.vw):
             pylibvw.vw.finish(self)
             self.init = False
             self.finished = True
-            # Save log messages so get_log() still works after finish()
+            # Save log messages so get_log(), get_driver_output(), and
+            # get_log_output() still work after finish()
             if self._log_fwd:
                 self._saved_log = self._log_fwd.driver_messages + self._log_fwd.logger_messages
+                self._saved_driver_log = [m for m in self._log_fwd.driver_messages if m]
+                self._saved_logger_log = [m for m in self._log_fwd.logger_messages if m]
             # Clear _log_fwd to free memory. The C++ py_log_wrapper uses a weak
             # reference to _log_fwd, so it will gracefully handle the case where
             # this object is garbage collected (callbacks will be skipped).
@@ -858,6 +865,8 @@ class Workspace(pylibvw.vw):
         """
         if self._log_fwd:
             return [m for m in self._log_fwd.driver_messages if m]
+        elif self._saved_driver_log is not None:
+            return self._saved_driver_log
         else:
             raise Exception("enable_logging set to false")
 
@@ -873,6 +882,8 @@ class Workspace(pylibvw.vw):
         """
         if self._log_fwd:
             return [m for m in self._log_fwd.logger_messages if m]
+        elif self._saved_logger_log is not None:
+            return self._saved_logger_log
         else:
             raise Exception("enable_logging set to false")
 
@@ -2156,6 +2167,8 @@ def merge_models(base_model: Optional[Workspace], models: List[Workspace]) -> Wo
     result.finished = False
     result._log_fwd = None
     result._saved_log = None
+    result._saved_driver_log = None
+    result._saved_logger_log = None
     return result
 
 
