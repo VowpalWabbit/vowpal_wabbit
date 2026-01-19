@@ -580,13 +580,21 @@ def test_get_weight_name():
 
 
 def test_runparser_cmd_string():
-    vw = vowpalwabbit.Workspace("--data ./test/train-sets/rcv1_small.dat")
+    # Use absolute path to handle running from different working directories
+    test_file = Path(__file__).resolve().parent.parent.parent / "test" / "train-sets" / "rcv1_small.dat"
+    if not test_file.exists():
+        pytest.skip(f"Test data file not found: {test_file}")
+    vw = vowpalwabbit.Workspace(f"--data {test_file}")
     assert vw.parser_ran == True, "vw should set parser_ran to true if --data present"
     vw.finish()
 
 
 def test_runparser_cmd_string_short():
-    vw = vowpalwabbit.Workspace("-d ./test/train-sets/rcv1_small.dat")
+    # Use absolute path to handle running from different working directories
+    test_file = Path(__file__).resolve().parent.parent.parent / "test" / "train-sets" / "rcv1_small.dat"
+    if not test_file.exists():
+        pytest.skip(f"Test data file not found: {test_file}")
+    vw = vowpalwabbit.Workspace(f"-d {test_file}")
     assert vw.parser_ran == True, "vw should set parser_ran to true if --data present"
     vw.finish()
 
