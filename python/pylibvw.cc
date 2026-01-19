@@ -250,7 +250,29 @@ public:
     try
     {
       auto inst = static_cast<py_log_wrapper*>(wrapper);
-      inst->py_log.attr("log")(message);
+      // Try log_driver first (new dual-channel interface), fall back to log (legacy)
+      if (PyObject_HasAttrString(inst->py_log.ptr(), "log_driver"))
+      { inst->py_log.attr("log_driver")(message); }
+      else { inst->py_log.attr("log")(message); }
+    }
+    catch (...)
+    {
+      // TODO: Properly translate and return Python exception. #2169
+      PyErr_Print();
+      PyErr_Clear();
+      std::cerr << "error using python logging. ignoring." << std::endl;
+    }
+  }
+
+  static void logger_callback_py(void* wrapper, const std::string& message)
+  {
+    try
+    {
+      auto inst = static_cast<py_log_wrapper*>(wrapper);
+      // Try log_logger first (new dual-channel interface), fall back to log (legacy)
+      if (PyObject_HasAttrString(inst->py_log.ptr(), "log_logger"))
+      { inst->py_log.attr("log_logger")(message); }
+      else { inst->py_log.attr("log")(message); }
     }
     catch (...)
     {
@@ -281,18 +303,7 @@ vw_ptr my_initialize_with_log(py::list args, py_log_wrapper_ptr py_log)
     const auto log_function = [](void* context, VW::io::log_level level, const std::string& message)
     {
       _UNUSED(level);
-      try
-      {
-        auto inst = static_cast<py_log_wrapper*>(context);
-        inst->py_log.attr("log")(message);
-      }
-      catch (...)
-      {
-        // TODO: Properly translate and return Python exception. #2169
-        PyErr_Print();
-        PyErr_Clear();
-        std::cerr << "error using python logging. ignoring." << std::endl;
-      }
+      py_log_wrapper::logger_callback_py(context, message);
     };
 
     logger_ptr = VW::make_unique<VW::io::logger>(VW::io::create_custom_sink_logger(py_log.get(), log_function));
