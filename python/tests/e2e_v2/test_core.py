@@ -1,5 +1,13 @@
+"""
+E2E tests for VowpalWabbit using vw_executor.
+
+This module uses pytest parametrize to generate test cases from JSON config files.
+Each grid combination becomes a separate test case.
+VW training is deferred to test execution time (not import time) to avoid
+multiprocessing issues with pybind11 bindings.
+"""
 from vw_executor.vw import Vw
-from vw_executor.vw_opts import Grid
+from vw_executor.vw_opts import Grid, VwOpts
 import pytest
 import os
 import logging
@@ -13,117 +21,135 @@ from test_helper import (
 )
 from conftest import STORE_OUTPUT
 
-CURR_DICT = os.path.dirname(os.path.abspath(__file__))
-TEST_CONFIG_FILES_NAME = os.listdir(os.path.join(CURR_DICT, "test_configs"))
-TEST_CONFIG_FILES = [json_to_dict_list(i) for i in TEST_CONFIG_FILES_NAME]
-GENERATED_TEST_CASES = []
+CURR_DIR = os.path.dirname(os.path.abspath(__file__))
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO
 )
 
 
-def cleanup_data_file():
-    script_directory = os.path.dirname(os.path.realpath(__file__))
-    # List all files in the directory
-    for name in TEST_CONFIG_FILES_NAME:
-        name = name.split(".")[0]
-        try:
-            files = os.listdir(os.path.join(script_directory, name))
-        except:
-            return
-        # Iterate over the files and remove the ones with .txt extension
-        for file in files:
-            if file.endswith(".txt"):
-                file_path = os.path.join(script_directory + "/" + name, file)
-                os.remove(file_path)
-
-
-@pytest.fixture
-def test_descriptions(request):
-    resource = request.param
-    yield resource
-    cleanup_data_file()
-
-
-def core_test(files, grid, outputs, job_assert, job_assert_args):
-    vw = Vw(CURR_DICT + "/.vw_cache", reset=True, handler=None)
-    result = vw.train(files, grid, outputs)
-    for j in result:
-        test_name = (
-            job_assert.__name__
-            + "_"
-            + "_".join("".join([i for i in str(j.opts) if i != "-"]).split(" "))
-        )
-        GENERATED_TEST_CASES.append(
-            [lambda: job_assert(j, **job_assert_args), test_name]
-        )
-        if STORE_OUTPUT:
-            if not os.path.exists(CURR_DICT + "/output"):
-                os.mkdir(CURR_DICT + "/output")
-            if not os.path.exists(CURR_DICT + "/output/" + test_name):
-                os.mkdir(CURR_DICT + "/output/" + test_name)
-            fileName = str(list(j.outputs.values())[0][0]).split("/")[-1]
-            for key, value in list(j.outputs.items()):
-                copy_file(
-                    value[0],
-                    CURR_DICT + "/output/" + test_name + "/" + f"{key}_" + fileName,
-                )
-            copy_file(
-                os.path.join(j.cache.path, "cacheNone/" + fileName),
-                CURR_DICT + "/output/" + test_name + "/" + fileName,
-            )
-
-
 def get_options(grids, expression):
+    """Convert grid config to VW options list."""
     final_variables = {}
     for key in grids:
         final_variables[key] = Grid(grids[key])
     return evaluate_expression(expression, final_variables)
 
 
-@pytest.mark.usefixtures("test_descriptions", TEST_CONFIG_FILES)
-def init_all(test_descriptions):
-    for tIndex, tests in enumerate(test_descriptions):
-        task_folder = TEST_CONFIG_FILES_NAME[tIndex].split(".")[0]
-        package_name = [task_folder + ".", ""]
-        package_name = custom_sort(task_folder, package_name)
-        package_name.append(".")
-        if type(tests) is not list:
-            tests = [tests]
-        for test_description in tests:
-            options = get_options(
-                test_description["grids"], test_description["grids_expression"]
-            )
-            data_func = get_function_obj_with_dirs(
-                package_name,
-                "data_generation",
-                test_description["data_func"]["name"],
-            )
-            scenario_directory = (
-                os.path.dirname(os.path.realpath(__file__)) + f"/{task_folder}"
-            )
-            data = datagen_driver(
-                scenario_directory, data_func, **test_description["data_func"]["params"]
-            )
-            script_directory = os.path.dirname(os.path.realpath(__file__))
-            for assert_func in test_description["assert_functions"]:
-                assert_job = get_function_obj_with_dirs(
-                    package_name, "assert_job", assert_func["name"]
-                )
-                core_test(
-                    os.path.join(script_directory, data),
-                    options,
-                    test_description["output"],
-                    assert_job,
-                    assert_func["params"],
-                )
+def make_test_id(task_folder, test_name, assert_name, opts):
+    """Create a unique test ID from the options."""
+    opts_str = "_".join("".join([i for i in str(opts) if i != "-"]).split(" "))
+    # Truncate if too long
+    if len(opts_str) > 80:
+        opts_str = opts_str[:77] + "..."
+    return f"{task_folder}_{test_name}_{assert_name}_{opts_str}"
 
 
-try:
-    init_all(TEST_CONFIG_FILES)
-    for generated_test_case in GENERATED_TEST_CASES:
-        test_name = f"test_{generated_test_case[1]}"
-        generated_test_case[0].__name__ = test_name
-        globals()[test_name] = generated_test_case[0]
-finally:
-    cleanup_data_file()
+def get_test_configs():
+    """Load test configurations and expand grid combinations without running VW."""
+    config_files = os.listdir(os.path.join(CURR_DIR, "test_configs"))
+    test_cases = []
+
+    for config_file in config_files:
+        task_folder = config_file.split(".")[0]
+        configs = json_to_dict_list(config_file)
+
+        if not isinstance(configs, list):
+            configs = [configs]
+
+        for idx, config in enumerate(configs):
+            test_name = config.get('test_name', f'test_{idx}')
+
+            # Compute grid combinations at parametrize time (no VW needed)
+            options = get_options(config["grids"], config["grids_expression"])
+
+            for opts in options:
+                opts = VwOpts(opts)
+                for assert_func in config["assert_functions"]:
+                    test_id = make_test_id(
+                        task_folder, test_name, assert_func['name'], opts
+                    )
+                    test_cases.append(pytest.param(
+                        task_folder,
+                        config,
+                        opts,
+                        assert_func,
+                        id=test_id
+                    ))
+
+    return test_cases
+
+
+def cleanup_data_files(task_folder):
+    """Clean up generated data files for a task folder."""
+    folder_path = os.path.join(CURR_DIR, task_folder)
+    try:
+        for file in os.listdir(folder_path):
+            if file.endswith(".txt"):
+                os.remove(os.path.join(folder_path, file))
+    except (FileNotFoundError, OSError):
+        pass
+
+
+def run_vw_training_single(task_folder, config, opts):
+    """Run VW training for a single grid point and return the job."""
+    package_name = [task_folder + ".", ""]
+    package_name = custom_sort(task_folder, package_name)
+    package_name.append(".")
+
+    # Generate data
+    data_func = get_function_obj_with_dirs(
+        package_name,
+        "data_generation",
+        config["data_func"]["name"],
+    )
+    scenario_directory = os.path.join(CURR_DIR, task_folder)
+    data = datagen_driver(
+        scenario_directory, data_func, **config["data_func"]["params"]
+    )
+
+    # Run training for this single grid point
+    vw = Vw(os.path.join(CURR_DIR, ".vw_cache"), reset=True, handler=None)
+    result = vw.train(os.path.join(CURR_DIR, data), Grid([opts]), config["output"])
+
+    return result[0], package_name
+
+
+@pytest.mark.parametrize("task_folder,config,opts,assert_func_config", get_test_configs())
+def test_vw_scenario(task_folder, config, opts, assert_func_config):
+    """
+    Run a VW training scenario for a single grid point and verify results.
+
+    VW training happens here at test execution time, not at module import time.
+    This avoids multiprocessing/fork issues with pybind11 bindings.
+    """
+    try:
+        # Run VW training for this single grid point
+        job, package_name = run_vw_training_single(task_folder, config, opts)
+
+        # Get the assertion function
+        assert_job = get_function_obj_with_dirs(
+            package_name, "assert_job", assert_func_config["name"]
+        )
+
+        # Run assertion
+        assert_job(job, **assert_func_config["params"])
+
+        # Optionally save outputs
+        if STORE_OUTPUT:
+            test_name = (
+                assert_job.__name__
+                + "_"
+                + "_".join("".join([i for i in str(job.opts) if i != "-"]).split(" "))
+            )
+            output_dir = os.path.join(CURR_DIR, "output", test_name)
+            os.makedirs(output_dir, exist_ok=True)
+
+            fileName = str(list(job.outputs.values())[0][0]).split("/")[-1]
+            for key, value in list(job.outputs.items()):
+                copy_file(value[0], os.path.join(output_dir, f"{key}_{fileName}"))
+            copy_file(
+                os.path.join(job.cache.path, "cacheNone/" + fileName),
+                os.path.join(output_dir, fileName),
+            )
+    finally:
+        cleanup_data_files(task_folder)
