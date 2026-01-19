@@ -68,6 +68,10 @@
         "VW_FEAT_CB_GRAPH_FEEDBACK": {
           "type": "BOOL",
           "value": "On"
+        },
+        "VW_FEAT_CSV": {
+          "type": "BOOL",
+          "value": "On"
         }
       }
     },
@@ -80,6 +84,10 @@
           "value": "Release"
         },
         "VW_FEAT_CB_GRAPH_FEEDBACK": {
+          "type": "BOOL",
+          "value": "On"
+        },
+        "VW_FEAT_CSV": {
           "type": "BOOL",
           "value": "On"
         }
