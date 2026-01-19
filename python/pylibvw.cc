@@ -242,15 +242,32 @@ public:
 class py_log_wrapper
 {
 public:
-  py::object py_log;
-  py_log_wrapper(py::object py_log) : py_log(py_log) {}
+  py::object weak_ref;  // Weak reference to Python log object (prevents reference cycles)
+
+  py_log_wrapper(py::object py_log)
+  {
+    // Create a weak reference to avoid preventing garbage collection
+    // This breaks the reference cycle: Workspace -> py_log_wrapper -> _log_fwd
+    py::object weakref_module = py::import("weakref");
+    weak_ref = weakref_module.attr("ref")(py_log);
+  }
+
+  // Get the Python log object, or None if it has been garbage collected
+  py::object get_log_object() const
+  {
+    // Call the weakref to get the actual object (returns None if collected)
+    return weak_ref();
+  }
 
   static void trace_listener_py(void* wrapper, const std::string& message)
   {
     try
     {
       auto inst = static_cast<py_log_wrapper*>(wrapper);
-      inst->py_log.attr("log")(message);
+      py::object py_log = inst->get_log_object();
+      // If the Python object has been garbage collected, skip logging
+      if (py_log.is_none()) { return; }
+      py_log.attr("log")(message);
     }
     catch (...)
     {
@@ -284,7 +301,10 @@ vw_ptr my_initialize_with_log(py::list args, py_log_wrapper_ptr py_log)
       try
       {
         auto inst = static_cast<py_log_wrapper*>(context);
-        inst->py_log.attr("log")(message);
+        py::object py_log = inst->get_log_object();
+        // If the Python object has been garbage collected, skip logging
+        if (py_log.is_none()) { return; }
+        py_log.attr("log")(message);
       }
       catch (...)
       {
