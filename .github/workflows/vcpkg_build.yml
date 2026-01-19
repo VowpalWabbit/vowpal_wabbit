@@ -73,10 +73,7 @@ jobs:
         if: runner.os == 'Windows' && matrix.preset == 'vcpkg-release'
         run: |
           python3 test/run_tests.py -f --clean_dirty -E 0.01 --skip_spanning_tree_tests `
-            --skip_test 275 276 `
             --vw_bin_path ${{ github.workspace }}/artifact/vw.exe
-      # Note: Tests 275 and 276 (--help tests) are skipped because test references
-      # include CSV parser options, but the vcpkg build does not include CSV features.
       - uses: actions/upload-artifact@v4
         if: runner.os == 'Windows' && matrix.preset == 'vcpkg-release'
         with:
