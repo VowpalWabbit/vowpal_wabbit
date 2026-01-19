@@ -26,6 +26,7 @@
 #include <cassert>
 #include <cfloat>
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <fstream>
@@ -565,7 +566,12 @@ void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
   size_t prev_sum = 0, total_sum = 0;
   for (size_t i = 0; i < all.runtime_state.all_reduce->total; i++)
   {
-    if (i <= (all.runtime_state.all_reduce->node - 1)) { prev_sum += sizes[i]; }
+    if (i <= (all.runtime_state.all_reduce->node - 1))
+    {
+      if (prev_sum > SIZE_MAX - sizes[i]) { THROW("Integer overflow detected in prev_sum calculation"); }
+      prev_sum += sizes[i];
+    }
+    if (total_sum > SIZE_MAX - sizes[i]) { THROW("Integer overflow detected in total_sum calculation"); }
     total_sum += sizes[i];
   }
 
