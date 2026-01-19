@@ -427,6 +427,7 @@ class Workspace(pylibvw.vw):
     init: bool
     finished: bool
     _log_fwd: Optional[_log_forward]
+    _saved_log: Optional[List[str]]
 
     def __init__(
         self,
@@ -457,6 +458,7 @@ class Workspace(pylibvw.vw):
         self.init = False
         self.finished = False
         self._log_fwd = None
+        self._saved_log = None
 
         if enable_logging:
             self._log_fwd = _log_forward()
@@ -746,6 +748,14 @@ class Workspace(pylibvw.vw):
             pylibvw.vw.finish(self)
             self.init = False
             self.finished = True
+            # Save log messages before clearing references so get_log() works after finish()
+            if self._log_fwd:
+                self._saved_log = self._log_fwd.messages + [self._log_fwd.current_message]
+            # Clear logging references to break reference cycles and allow
+            # proper garbage collection of C++ resources (fixes memory leak
+            # when repeatedly creating/destroying Workspace objects)
+            self._log_wrapper = None
+            self._log_fwd = None
 
     def get_log(self) -> List[str]:
         """Get all log messages produced. One line per item in the list. To get the complete log including run results, this should be called after :func:`~vowpalwabbit.vw.finish`
@@ -758,6 +768,8 @@ class Workspace(pylibvw.vw):
         """
         if self._log_fwd:
             return self._log_fwd.messages + [self._log_fwd.current_message]
+        elif self._saved_log is not None:
+            return self._saved_log
         else:
             raise Exception("enable_logging set to false")
 
@@ -2040,6 +2052,7 @@ def merge_models(base_model: Optional[Workspace], models: List[Workspace]) -> Wo
     result.init = True
     result.finished = False
     result._log_fwd = None
+    result._saved_log = None
     return result
 
 
