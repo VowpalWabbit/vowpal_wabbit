@@ -20,12 +20,12 @@ loss     last          counter         weight          label        predict feat
 17.16331 17.11736           64           64.0           none              0       55
 16.49466 15.82602          128          128.0           none              0      131
 15.91804 15.34142          256          256.0           none              0      433
-15.28166 14.64527          512          512.0           none              0       61
+15.25354 14.58904          512          512.0           none              0      166
 
 finished run
-number of examples per pass = 500
+number of examples per pass = 501
 passes used = 2
-weighted example sum = 1000.000000
+weighted example sum = 1002.000000
 weighted label sum = 0.000000
-average loss = 14.297977
-total feature number = 193156
+average loss = 14.269438
+total feature number = 193922

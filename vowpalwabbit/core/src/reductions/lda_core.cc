@@ -1220,7 +1220,16 @@ void compute_coherence_metrics(lda& l)
 
 void end_pass(lda& l)
 {
-  if (!l.batch_buffer.empty()) { learn_batch(l, l.batch_buffer); }
+  if (!l.batch_buffer.empty())
+  {
+    learn_batch(l, l.batch_buffer);
+    // Update stats for the final partial batch since update_stats_lda
+    // only updates when batch_buffer.size() == minibatch
+    for (auto* ex : l.batch_buffer)
+    {
+      l.all->sd->update(ex->test_only, true, ex->loss, ex->weight, ex->get_num_features());
+    }
+  }
 
   if (l.compute_coherence_metrics && l.all->runtime_state.passes_complete == l.all->runtime_config.numpasses)
   {
