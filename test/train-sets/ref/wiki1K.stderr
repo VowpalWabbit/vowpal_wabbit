@@ -14,8 +14,8 @@ loss     last          counter         weight          label        predict feat
 9.956974 9.510342          256          256.0           none              0      102
 
 finished run
-number of examples = 256
-weighted example sum = 256.000000
+number of examples = 384
+weighted example sum = 384.000000
 weighted label sum = 0.000000
-average loss = 9.956974
-total feature number = 22158
+average loss = 6.637983
+total feature number = 30530
