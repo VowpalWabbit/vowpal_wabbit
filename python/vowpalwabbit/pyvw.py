@@ -746,6 +746,11 @@ class Workspace(pylibvw.vw):
             pylibvw.vw.finish(self)
             self.init = False
             self.finished = True
+            # Clear logging references to break reference cycles and allow
+            # proper garbage collection of C++ resources (fixes memory leak
+            # when repeatedly creating/destroying Workspace objects)
+            self._log_wrapper = None
+            self._log_fwd = None
 
     def get_log(self) -> List[str]:
         """Get all log messages produced. One line per item in the list. To get the complete log including run results, this should be called after :func:`~vowpalwabbit.vw.finish`
