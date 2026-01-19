@@ -22,8 +22,7 @@ skip = [
 test-skip = "*-manylinux_aarch64"
 test-requires = ["pytest", "pyclean", "vw-executor", "setuptools", "scipy", "scikit-learn"]
 test-command = [
-    "pyclean {project}/python/tests",
-    "pytest {project}/python/tests",
+    "cd {project} && pyclean python/tests && pytest python/tests",
 ]
 
 [tool.cibuildwheel.linux]
@@ -48,8 +47,7 @@ before-all = [
     "python -m pip install pybind11",
 ]
 test-command = [
-    "pyclean {project}/python/tests",
-    "pytest {project}/python/tests",
+    "cd {project} && pyclean python/tests && pytest python/tests",
 ]
 # Use macOS 11.0+ for compatibility
 # pybind11_DIR is automatically detected by setup.py
