@@ -60,7 +60,37 @@ class BuildPyLibVWBindingsModule(_build_ext):
         for ext in self.extensions:
             self.build_cmake(ext)
 
-        _build_ext.run(self)
+        # Don't build extensions again (CMake already did), but we need to
+        # copy them to the build lib directory for packaging
+        for ext in self.extensions:
+            fullname = self.get_ext_fullname(ext.name)
+            filename = self.get_ext_filename(fullname)
+
+            # On Windows, find where CMake actually built the extension
+            if system == "Windows":
+                import glob
+                config = "Debug" if self.distribution.debug else "Release"
+                # CMake builds to build/temp.*/python/Release/ on Windows
+                # Note: self.build_temp already includes the config directory
+                pattern = os.path.join(self.build_temp, "python", config, filename)
+                matches = glob.glob(pattern)
+                if matches:
+                    src = matches[0]
+                else:
+                    raise RuntimeError(f"Could not find built extension at {pattern}")
+            else:
+                # On Unix, CMake builds to lib_output_dir
+                src = os.path.join(here, os.path.dirname(self.get_ext_fullpath(ext.name)), filename)
+
+            # Destination: where setuptools expects it for packaging
+            dest = os.path.join(self.build_lib, filename)
+
+            # Copy the extension
+            self.copy_file(src, dest)
+
+    def build_extension(self, ext):
+        # CMake has already built the extension, skip normal build
+        pass
 
     def build_cmake(self, ext):
         # Make build directory
@@ -103,10 +133,19 @@ class BuildPyLibVWBindingsModule(_build_ext):
                 "-DVW_PYTHON_SHARED_LIB_SUFFIX={}".format(required_shared_lib_suffix)
             ]
 
-        if self.distribution.enable_boost_cmake is None:
-            # Add this flag as default since testing indicates its safe.
-            # But add a way to disable it in case it becomes a problem
-            cmake_args += ["-DBoost_NO_BOOST_CMAKE=ON"]
+        # Automatically detect pybind11 if available
+        try:
+            import pybind11
+            pybind11_dir = pybind11.get_cmake_dir()
+            cmake_args += ["-Dpybind11_DIR={}".format(pybind11_dir)]
+        except (ImportError, AttributeError):
+            # pybind11 not available or doesn't have get_cmake_dir
+            pass
+
+        # Read CMAKE_ARGS from environment variable if set
+        if "CMAKE_ARGS" in os.environ:
+            env_cmake_args = os.environ["CMAKE_ARGS"].split()
+            cmake_args += env_cmake_args
 
         if self.distribution.cmake_options is not None:
             argslist = self.distribution.cmake_options.split(";")
@@ -178,10 +217,9 @@ class BuildPyLibVWBindingsModule(_build_ext):
             conda_bin = os.path.join(os.environ["CONDA_PREFIX"], "Library", "bin")
             print(f"Looking for runtime DLLs in: {conda_bin}")
 
-            # Copy all DLLs that pylibvw might depend on (boost, zlib, etc.)
-            # Include boost_python, zlib, and any other dependencies
+            # Copy all DLLs that pylibvw might depend on (zlib, etc.)
+            # Note: pybind11 is header-only and doesn't need DLLs
             dll_patterns_to_copy = [
-                "boost_python*.dll",
                 "zlib*.dll",
                 "libzlib*.dll"
             ]

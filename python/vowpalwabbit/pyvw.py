@@ -433,6 +433,7 @@ class Workspace(pylibvw.vw):
         arg_str: Optional[str] = None,
         enable_logging: bool = False,
         arg_list: Optional[List[str]] = None,
+        _existing_vw=None,
         **kw,
     ):
         """Initialize the Workspace object. arg_str, arg_list and the kwargs will be merged together. Duplicates will result in duplicate values in the command line.
@@ -457,6 +458,13 @@ class Workspace(pylibvw.vw):
         self.init = False
         self.finished = False
         self._log_fwd = None
+        self._final_log = None
+
+        # Internal path: adopt an existing vw object (used by merge_models)
+        if _existing_vw is not None:
+            super().__init__(_existing_vw)
+            self.init = True
+            return
 
         if enable_logging:
             self._log_fwd = _log_forward()
@@ -746,6 +754,14 @@ class Workspace(pylibvw.vw):
             pylibvw.vw.finish(self)
             self.init = False
             self.finished = True
+            # Preserve log messages for get_log() calls after finish(),
+            # then clear logging references to break reference cycles and allow
+            # proper garbage collection of C++ resources (fixes memory leak
+            # when repeatedly creating/destroying Workspace objects)
+            if self._log_fwd:
+                self._final_log = self._log_fwd.messages + [self._log_fwd.current_message]
+            self._log_wrapper = None
+            self._log_fwd = None
 
     def get_log(self) -> List[str]:
         """Get all log messages produced. One line per item in the list. To get the complete log including run results, this should be called after :func:`~vowpalwabbit.vw.finish`
@@ -758,6 +774,9 @@ class Workspace(pylibvw.vw):
         """
         if self._log_fwd:
             return self._log_fwd.messages + [self._log_fwd.current_message]
+        elif self._final_log is not None:
+            # Return cached log after finish() was called
+            return self._final_log
         else:
             raise Exception("enable_logging set to false")
 
@@ -2032,15 +2051,9 @@ def merge_models(base_model: Optional[Workspace], models: List[Workspace]) -> Wo
         This is an experimental feature and may change in future releases.
     """
 
-    # This needs to be promoted to the Workspace object defined in Python.
-    result = pylibvw._merge_models_impl(base_model, models)
-    result.__class__ = Workspace
-    result._log_wrapper = None
-    result.parser_ran = False
-    result.init = True
-    result.finished = False
-    result._log_fwd = None
-    return result
+    # Create the merged vw object and wrap it in a Workspace
+    vw_result = pylibvw._merge_models_impl(base_model, models)
+    return Workspace(_existing_vw=vw_result)
 
 
 ############################ DEPREECATED CLASSES ############################

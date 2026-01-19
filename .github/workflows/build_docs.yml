@@ -59,12 +59,13 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update || true
-          sudo apt-get install -y libboost-dev libboost-python-dev python3-dev python3-pip zlib1g-dev ninja-build
-          python3 -m pip install build wheel setuptools auditwheel
+          sudo apt-get install -y cmake ninja-build libboost-test-dev python3-dev python3-pip zlib1g-dev
+          python3 -m pip install build wheel setuptools auditwheel pybind11
       - name: Build wheel
         shell: bash
         run: |
-          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -DBoost_NO_BOOST_CMAKE=ON" BOOST_PY_VERSION_SUFFIX="310" python3 -m pip wheel . -w wheel_output/ --verbose
+          export PYBIND11_DIR=$(python3 -m pybind11 --cmakedir)
+          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -DVW_ZLIB_SYS_DEP=OFF -Dpybind11_DIR=${PYBIND11_DIR}" python3 -m pip wheel . -w wheel_output/ --verbose
           auditwheel repair wheel_output/*whl -w audit_output/
       - name: Upload built wheel
         uses: actions/upload-artifact@v4
@@ -101,7 +102,6 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update || true
-          sudo apt-get install -y libboost-python-dev
       - name: Install dependencies
         shell: bash
         run: |
@@ -119,14 +119,41 @@ jobs:
           pip install ${wheel_file}
           echo "Verifying installation..."
           python -c "import vowpalwabbit; print('vowpalwabbit imported successfully')"
+      - name: Test single notebook execution
+        shell: bash
+        run: |
+          cd python/docs
+          python3 -c "
+import nbformat
+from nbconvert.preprocessors import ExecutePreprocessor
+import sys
+
+print('Testing basics.ipynb in isolation...')
+try:
+    nb = nbformat.read('source/examples/basics.ipynb', as_version=4)
+    ep = ExecutePreprocessor(timeout=600, kernel_name='python3')
+    ep.preprocess(nb, {'metadata': {'path': 'source/examples/'}})
+    print('✓ basics.ipynb executed successfully')
+except Exception as e:
+    print(f'✗ basics.ipynb failed: {e}')
+    import traceback
+    traceback.print_exc()
+    sys.exit(1)
+"
       - name: Generate CLI docs
         run: |
           cd python/docs/cmd_options_template
           python generate_cmdline_docs.py --dump-options-bin ../../../vw-dump-options/vw-dump-options --template ./command_line_args.hbs --out ../source/ --extra-info ./cmdline_help_overrides.yml
       - name: Build docs
         run: |
+          # Enable core dumps for crash debugging
+          ulimit -c unlimited
+          # Set up better Python error handling
+          export PYTHONFAULTHANDLER=1
           cd python/docs
-          make html
+          make html || (find /tmp -name "sphinx-err-*.log" -exec cat {} \; && \
+                        find . -name "core*" -exec file {} \; && \
+                        exit 1)
       - name: Upload built docs
         uses: actions/upload-artifact@v4
         with:

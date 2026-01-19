@@ -90,8 +90,13 @@ html_theme_options = {"use_edit_page_button": True}
 
 jupyter_execute_notebooks = "cache"
 
+# Increase timeout for long-running simulation notebooks (default is 30 seconds)
+nb_execution_timeout = 120
+
 # This tutorial uses unrar so we can't execute it in the doc generation.
-execution_excludepatterns = ["DFtoVW_tutorial.ipynb"]
+execution_excludepatterns = [
+    "DFtoVW_tutorial.ipynb",
+]
 
 thebe_config = {
     "repository_url": "https://github.com/VowpalWabbit/vowpal_wabbit",

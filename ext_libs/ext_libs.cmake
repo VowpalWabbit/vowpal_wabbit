@@ -63,7 +63,16 @@ else()
   set(CMAKE_POLICY_DEFAULT_CMP0048 NEW)
   set(CMAKE_POLICY_DEFAULT_CMP0042 NEW)
   set(SKIP_INSTALL_ALL ON CACHE BOOL "" FORCE)
+
+  # Build only static library on all platforms
+  # - Avoids DLL runtime issues for tests on Windows
+  # - Avoids PIC linking issues on Linux
+  set(ZLIB_BUILD_SHARED OFF CACHE BOOL "Don't build shared zlib" FORCE)
+  set(ZLIB_BUILD_STATIC ON CACHE BOOL "Build static zlib" FORCE)
+
   add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/zlib_source ${CMAKE_CURRENT_BINARY_DIR}/zlib_build ${SHOULD_EXCLUDE_FROM_ALL_TEXT})
+
+  # Always use static library for internal VW components
   target_include_directories(zlibstatic PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/zlib_source>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/zlib_build>
@@ -71,12 +80,13 @@ else()
   add_library(ZLIB::ZLIB ALIAS zlibstatic)
 
   if(VW_INSTALL)
-        install(
-          TARGETS zlibstatic
-          EXPORT VowpalWabbitConfig
-          ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-          LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-          RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    # Install static library for linking
+    install(
+      TARGETS zlibstatic
+      EXPORT VowpalWabbitConfig
+      ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+      RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
   endif()
 endif()
 

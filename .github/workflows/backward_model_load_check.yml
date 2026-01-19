@@ -96,13 +96,14 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libboost-dev libboost-python-dev python3-dev python3-pip zlib1g-dev ninja-build
-          python3 -m pip install build wheel setuptools auditwheel
+          sudo apt-get install -y cmake ninja-build libboost-test-dev python3-dev python3-pip zlib1g-dev
+          python3 -m pip install build wheel setuptools auditwheel pybind11
       - name: Test loading model with current master
         shell: bash
         run: |
           mv .vw_runtests_model_gen_working_dir ~
-          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -DBoost_NO_BOOST_CMAKE=ON" BOOST_PY_VERSION_SUFFIX="310" python3 -m pip wheel . -w wheel_output/ --verbose
+          export PYBIND11_DIR=$(python3 -m pybind11 --cmakedir)
+          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -DVW_ZLIB_SYS_DEP=OFF -Dpybind11_DIR=${PYBIND11_DIR}" python3 -m pip wheel . -w wheel_output/ --verbose
           auditwheel repair wheel_output/*whl -w audit_output/
           python3 -m pip install audit_output/*.whl
           python3 ./test/run_tests_model_gen_and_load.py --load_models --skip_pr_tests "${{ github.event.pull_request.title }}"
