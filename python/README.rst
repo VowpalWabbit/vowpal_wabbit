@@ -8,6 +8,17 @@ Vowpal Wabbit Python Wrapper
 
 Vowpal Wabbit is a fast machine learning library for online learning, and this is the python wrapper for the project.
 
+Requirements
+------------
+
+**Python Version:** 3.10, 3.11, 3.12, or 3.13
+
+Pre-built wheels are available on PyPI for:
+
+* Linux (x86_64, aarch64)
+* macOS (x86_64, arm64)
+* Windows (x86_64)
+
 Installing this package builds Vowpal Wabbit locally for explicit use within python, it will not create the command-line version
 of the tool (or affect any previously existing command-line installations).
 To install the command-line version see the main project page: https://github.com/VowpalWabbit/vowpal_wabbit
