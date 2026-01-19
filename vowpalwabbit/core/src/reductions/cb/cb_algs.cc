@@ -148,7 +148,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_algs_setup(VW::setup_ba
                .default_value("dr")
                .one_of({"ips", "dm", "dr", "mtr", "sm"})
                .help("Contextual bandit method to use"))
-      .add(make_option("eval", eval).help("Evaluate a policy rather than optimizing"))
+      .add(make_option("eval", eval).keep().help("Evaluate a policy rather than optimizing"))
       .add(make_option("cb_force_legacy", force_legacy)
                .keep()
                .help("Default to non-adf cb implementation (cb_to_cb_adf)"));
