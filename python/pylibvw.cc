@@ -746,9 +746,8 @@ void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, uint64_t 
   }
 }
 
-void ex_push_feature_dict(example_ptr ec, vw_ptr vw, unsigned char ns, py::dict& d)
+void ex_push_feature_dict(example_ptr ec, vw_ptr vw, unsigned char ns, uint64_t ns_hash, py::dict& d)
 {
-  uint64_t ns_hash = VW::hash_space(*vw, std::string(1, (char)ns));
   for (auto item : d)
   {
     float fval = item.second.cast<float>();
@@ -818,7 +817,7 @@ void ex_push_dictionary(example_ptr ec, vw_ptr vw, py::dict dict)
     if (py::isinstance<py::dict>(item.second))
     {
       py::dict fdict = item.second.cast<py::dict>();
-      ex_push_feature_dict(ec, vw, ns, fdict);
+      ex_push_feature_dict(ec, vw, ns, ns_hash, fdict);
     }
     else if (py::isinstance<py::list>(item.second))
     {
