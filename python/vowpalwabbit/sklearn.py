@@ -853,9 +853,20 @@ def tovw(x, y=None, sample_weight=None, convert_labels=False):
             for col in cols:
                 x[row, col] = INVALID_CHARS.sub(".", x[row, col])
     elif x.dtype.kind == "u":
-        raise TypeError(
-            "tovw does not support unsigned integers. Please convert to signed integers. See issue: https://github.com/VowpalWabbit/vowpal_wabbit/issues/4609"
-        )
+        # Convert unsigned integers to signed with sufficient range
+        # sklearn's dump_svmlight_file doesn't support unsigned types
+        import scipy.sparse as sp
+        unsigned_to_signed = {
+            np.dtype('uint8'): np.int16,
+            np.dtype('uint16'): np.int32,
+            np.dtype('uint32'): np.int64,
+            np.dtype('uint64'): np.int64,  # May overflow for very large values
+        }
+        new_dtype = unsigned_to_signed.get(x.dtype, np.int64)
+        if sp.issparse(x):
+            x = x.astype(new_dtype)
+        else:
+            x = np.asarray(x, dtype=new_dtype)
 
     # convert input to svmlight format
     s = io.BytesIO()
