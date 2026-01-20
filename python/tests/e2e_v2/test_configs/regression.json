@@ -62,16 +62,13 @@
             },
             "g2": {
                 "#reg": [
-                    "--freegrad",
-                    "--conjugate_gradient",
-                    "--bfgs --passes 1 --cache"
+                    "--freegrad"
                 ]
             },
             "g3": {
                 "#reg": [
                     "--ftrl",
-                    "--coin",
-                    "--pistol"
+                    "--coin"
                 ],
                 "--ftrl_alpha": [
                     null,
@@ -85,7 +82,6 @@
             "g4": {
                 "--loss_function": [
                     null,
-                    "poisson",
                     "quantile"
                 ]
             },

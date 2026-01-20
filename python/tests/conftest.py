@@ -4,15 +4,15 @@
 # imported, then forks from that server. This avoids the pybind11 fork issues
 # while being faster than spawn (which starts a new Python interpreter each time).
 #
-# This must be set before any multiprocessing pools are created, which is why
-# it's in conftest.py (loaded early by pytest before test modules).
+# We use force=True because some pytest plugins or the environment may have
+# already initialized multiprocessing with fork before conftest.py loads.
 import multiprocessing
 import sys
 
 if sys.platform == 'linux':
     try:
-        multiprocessing.set_start_method('forkserver')
+        multiprocessing.set_start_method('forkserver', force=True)
     except RuntimeError:
-        # Already set, ignore
+        # In case force=True still fails for some reason
         pass
 

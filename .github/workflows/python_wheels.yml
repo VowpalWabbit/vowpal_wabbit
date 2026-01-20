@@ -108,7 +108,7 @@ jobs:
       - name: Run unit tests
         shell: bash
         run: |
-          python -m pytest ./python/tests/ --ignore=python/tests/e2e_v2
+          python -m pytest ./python/tests/
 
   macos-python-build:
     name: macos.amd64.py${{ matrix.config.version }}.build
@@ -173,7 +173,7 @@ jobs:
           pip install -r requirements.txt
           pip install pytest vw-executor twine
           twine check built_wheel/*.whl
-          python -m pytest ./python/tests/ --ignore=python/tests/e2e_v2
+          python -m pytest ./python/tests/
           python ./python/tests/run_doctest.py
 
   windows-python-build:
@@ -312,5 +312,5 @@ jobs:
           python -c "import vowpalwabbit; print('SUCCESS: vowpalwabbit imported successfully!')"
 
           twine check ${wheel_file}
-          python -m pytest .\\python\\tests\\ --ignore=python/tests/e2e_v2
+          python -m pytest .\\python\\tests\\
           python .\\python\\tests\\run_doctest.py
