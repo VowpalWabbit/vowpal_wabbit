@@ -11,6 +11,8 @@ from vw_executor.vw_opts import Grid, VwOpts
 import pytest
 import os
 import logging
+import signal
+import sys
 from test_helper import (
     json_to_dict_list,
     evaluate_expression,
@@ -114,6 +116,15 @@ def run_vw_training_single(task_folder, config, opts):
     return result[0], package_name
 
 
+class TestTimeout(Exception):
+    """Raised when a test exceeds its timeout."""
+    pass
+
+
+def timeout_handler(signum, frame):
+    raise TestTimeout("Test exceeded 60 second timeout")
+
+
 @pytest.mark.parametrize("task_folder,config,opts,assert_func_config", get_test_configs())
 def test_vw_scenario(task_folder, config, opts, assert_func_config):
     """
@@ -122,9 +133,19 @@ def test_vw_scenario(task_folder, config, opts, assert_func_config):
     VW training happens here at test execution time, not at module import time.
     This avoids multiprocessing/fork issues with pybind11 bindings.
     """
+    # Set up timeout (Unix only)
+    if sys.platform != 'win32':
+        old_handler = signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(60)  # 60 second timeout per test
+
     try:
+        # Diagnostic logging
+        print(f"  [VW] Starting training: {task_folder} opts={opts}", flush=True)
+
         # Run VW training for this single grid point
         job, package_name = run_vw_training_single(task_folder, config, opts)
+
+        print(f"  [VW] Training complete, running assertion: {assert_func_config['name']}", flush=True)
 
         # Get the assertion function
         assert_job = get_function_obj_with_dirs(
@@ -133,6 +154,8 @@ def test_vw_scenario(task_folder, config, opts, assert_func_config):
 
         # Run assertion
         assert_job(job, **assert_func_config["params"])
+
+        print(f"  [VW] Assertion passed", flush=True)
 
         # Optionally save outputs
         if STORE_OUTPUT:
@@ -152,4 +175,8 @@ def test_vw_scenario(task_folder, config, opts, assert_func_config):
                 os.path.join(output_dir, fileName),
             )
     finally:
+        # Cancel timeout
+        if sys.platform != 'win32':
+            signal.alarm(0)
+            signal.signal(signal.SIGALRM, old_handler)
         cleanup_data_files(task_folder)

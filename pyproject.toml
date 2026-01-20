@@ -21,9 +21,9 @@ skip = [
 # baseline ARMv8.0 flags and should work on all ARM64 systems.
 test-skip = "*-manylinux_aarch64"
 test-requires = ["pytest", "pyclean", "vw-executor", "setuptools", "scipy", "scikit-learn"]
-# Exclude e2e_v2 from cibuildwheel: multiprocessing forkserver workaround doesn't work in container
+# Run with verbose output to diagnose any hangs
 test-command = [
-    "cd {project} && pyclean python/tests && pytest python/tests --ignore=python/tests/e2e_v2",
+    "cd {project} && pyclean python/tests && pytest python/tests -v -s",
 ]
 
 [tool.cibuildwheel.linux]
@@ -48,7 +48,7 @@ before-all = [
     "python -m pip install pybind11",
 ]
 test-command = [
-    "cd {project} && pyclean python/tests && pytest python/tests --ignore=python/tests/e2e_v2",
+    "cd {project} && pyclean python/tests && pytest python/tests -v -s",
 ]
 # Use macOS 11.0+ for compatibility
 # pybind11_DIR is automatically detected by setup.py
