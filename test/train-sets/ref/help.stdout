@@ -453,7 +453,7 @@ Weight Options:
                                             necessary)
     --cb_type arg                           Contextual bandit method to use (type: str, default: dr, choices
                                             {dm, dr, ips, mtr, sm}, keep)
-    --eval                                  Evaluate a policy rather than optimizing (type: bool)
+    --eval                                  Evaluate a policy rather than optimizing (type: bool, keep)
     --cb_force_legacy                       Default to non-adf cb implementation (cb_to_cb_adf) (type: bool,
                                             keep)
 [Reduction] Contextual Bandit with Action Dependent Features Options:

@@ -44,12 +44,16 @@ def test_tovw():
     assert tovw(x=csr_matrix(x), y=y, sample_weight=w, convert_labels=True) == expected
 
 
-def test_tovw_raises_for_uint():
-    X = pd.DataFrame({"a": [1]}, dtype="uint32")
-    y = pd.Series(np.zeros(1))
+def test_tovw_handles_uint():
+    """Test that unsigned integers are properly converted to signed integers."""
+    X = pd.DataFrame({"a": [1, 2, 3]}, dtype="uint32")
+    y = pd.Series([0.0, 1.0, 0.5])
 
-    with pytest.raises(TypeError):
-        VWRegressor().fit(X, y)
+    # Should not raise - unsigned ints are converted to signed ints
+    model = VWRegressor()
+    model.fit(X, y)
+    predictions = model.predict(X)
+    assert len(predictions) == 3
 
 
 class BaseVWTest:
