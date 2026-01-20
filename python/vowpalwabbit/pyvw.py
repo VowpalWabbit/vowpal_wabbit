@@ -357,21 +357,63 @@ def get_all_vw_options():
     return config
 
 
-class _log_forward:
-    def __init__(self):
-        self.current_message = ""
-        self.messages = []
+class _dual_log_forward:
+    """Accumulates log messages from two separate channels (driver and logger)."""
 
-    def log(self, msg):
+    def __init__(self):
+        self._driver_current = ""
+        self._driver_messages = []
+        self._logger_current = ""
+        self._logger_messages = []
+
+    def log_driver(self, msg):
+        """Log message from driver_output channel (training stats, progress)."""
         if "\n" in msg:
             components = msg.split("\n")
-            self.current_message += components[0]
-            self.messages.append(self.current_message)
+            self._driver_current += components[0]
+            self._driver_messages.append(self._driver_current)
             for component in components[1:-1]:
-                self.messages.append(component)
-            self.current_message = components[-1]
+                self._driver_messages.append(component)
+            self._driver_current = components[-1]
         else:
-            self.current_message += msg
+            self._driver_current += msg
+
+    def log_logger(self, msg):
+        """Log message from log_output channel (warnings, info, errors)."""
+        if "\n" in msg:
+            components = msg.split("\n")
+            self._logger_current += components[0]
+            self._logger_messages.append(self._logger_current)
+            for component in components[1:-1]:
+                self._logger_messages.append(component)
+            self._logger_current = components[-1]
+        else:
+            self._logger_current += msg
+
+    # For backward compatibility with existing vw_log wrapper
+    def log(self, msg):
+        """Default log method routes to driver channel for compatibility."""
+        self.log_driver(msg)
+
+    @property
+    def driver_messages(self):
+        """Get driver output messages including current partial line."""
+        return self._driver_messages + [self._driver_current]
+
+    @property
+    def logger_messages(self):
+        """Get logger output messages including current partial line."""
+        return self._logger_messages + [self._logger_current]
+
+    @property
+    def messages(self):
+        """Get combined messages for backward compatibility."""
+        return self._driver_messages + [self._driver_current]
+
+    @property
+    def current_message(self):
+        """Get current partial message for backward compatibility."""
+        return self._driver_current
 
 
 def _build_command_line(
@@ -426,7 +468,10 @@ class Workspace(pylibvw.vw):
     parser_ran: bool
     init: bool
     finished: bool
-    _log_fwd: Optional[_log_forward]
+    _log_fwd: Optional[_dual_log_forward]
+    _saved_log: Optional[List[str]]
+    _saved_driver_log: Optional[List[str]]
+    _saved_logger_log: Optional[List[str]]
 
     def __init__(
         self,
@@ -458,7 +503,9 @@ class Workspace(pylibvw.vw):
         self.init = False
         self.finished = False
         self._log_fwd = None
-        self._final_log = None
+        self._saved_log = None
+        self._saved_driver_log = None
+        self._saved_logger_log = None
 
         # Internal path: adopt an existing vw object (used by merge_models)
         if _existing_vw is not None:
@@ -467,7 +514,7 @@ class Workspace(pylibvw.vw):
             return
 
         if enable_logging:
-            self._log_fwd = _log_forward()
+            self._log_fwd = _dual_log_forward()
             self._log_wrapper = pylibvw.vw_log(self._log_fwd)
 
         merged_arg_list = _build_command_line(arg_str, arg_list, **kw)
@@ -759,12 +806,21 @@ class Workspace(pylibvw.vw):
             # proper garbage collection of C++ resources (fixes memory leak
             # when repeatedly creating/destroying Workspace objects)
             if self._log_fwd:
-                self._final_log = self._log_fwd.messages + [self._log_fwd.current_message]
+                self._saved_log = self._log_fwd.driver_messages + self._log_fwd.logger_messages
+                self._saved_driver_log = self._log_fwd.driver_messages
+                self._saved_logger_log = self._log_fwd.logger_messages
             self._log_wrapper = None
             self._log_fwd = None
 
     def get_log(self) -> List[str]:
-        """Get all log messages produced. One line per item in the list. To get the complete log including run results, this should be called after :func:`~vowpalwabbit.vw.finish`
+        """Get all log messages produced (combined from both driver and logger channels).
+        One line per item in the list. To get the complete log including run results,
+        this should be called after :func:`~vowpalwabbit.vw.finish`
+
+        Note: This combines messages from both channels. For separate access to driver
+        output (progress, stats) and logger output (warnings, errors), use
+        :func:`~vowpalwabbit.Workspace.get_driver_output` and
+        :func:`~vowpalwabbit.Workspace.get_log_output` respectively.
 
         Raises:
             Exception: Raises an exception if this function is called but the init function was called without setting enable_logging to True
@@ -773,9 +829,44 @@ class Workspace(pylibvw.vw):
             A list of strings, where each item is a line in the log
         """
         if self._log_fwd:
-            return self._log_fwd.messages + [self._log_fwd.current_message]
-        elif self._final_log is not None:
-            return self._final_log
+            return self._log_fwd.driver_messages + self._log_fwd.logger_messages
+        elif self._saved_log is not None:
+            return self._saved_log
+        else:
+            raise Exception("enable_logging set to false")
+
+    def get_driver_output(self) -> List[str]:
+        """Get driver output messages (training progress, statistics, final results).
+        One line per item in the list. To get the complete log including run results,
+        this should be called after :func:`~vowpalwabbit.vw.finish`
+
+        Raises:
+            Exception: Raises an exception if this function is called but the init function was called without setting enable_logging to True
+
+        Returns:
+            A list of strings, where each item is a line in the driver output
+        """
+        if self._log_fwd:
+            return [m for m in self._log_fwd.driver_messages if m]
+        elif self._saved_driver_log is not None:
+            return self._saved_driver_log
+        else:
+            raise Exception("enable_logging set to false")
+
+    def get_log_output(self) -> List[str]:
+        """Get logger output messages (warnings, errors, info messages).
+        One line per item in the list.
+
+        Raises:
+            Exception: Raises an exception if this function is called but the init function was called without setting enable_logging to True
+
+        Returns:
+            A list of strings, where each item is a line in the logger output
+        """
+        if self._log_fwd:
+            return [m for m in self._log_fwd.logger_messages if m]
+        elif self._saved_logger_log is not None:
+            return self._saved_logger_log
         else:
             raise Exception("enable_logging set to false")
 
