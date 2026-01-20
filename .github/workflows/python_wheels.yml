@@ -223,55 +223,16 @@ jobs:
             mkdir -p "${{ env.VCPKG_DEFAULT_BINARY_CACHE }}"
           fi
 
-          echo "=== Install conda dependencies ==="
-          conda info
           conda install -y --quiet python=${{ matrix.config.version }} wheel setuptools pip zlib flatbuffers
-
-          echo "=== Install pybind11 ==="
           pip install pybind11
 
-          echo "=== Verify Python version ==="
-          python --version
-          which python
-
-          echo "=== Verify setup ==="
-          echo "CONDA_PREFIX: $CONDA_PREFIX"
-          echo "Working directory: $(pwd)"
-
-          echo -e "\n=== Building wheel with pybind11 ==="
-          echo "Converting paths to CMake-friendly format:"
-          CONDA_PREFIX_CMAKE=$(cygpath -w "$CONDA_PREFIX" | sed 's/\\/\//g')
           PYBIND11_DIR=$(python -m pybind11 --cmakedir | sed 's/\\/\//g')
-          echo "CONDA_PREFIX_CMAKE: $CONDA_PREFIX_CMAKE"
-          echo "PYBIND11_DIR: $PYBIND11_DIR"
-
           CMAKE_OPTIONS="-DSTATIC_LINK_VW_JAVA=On;-DCMAKE_BUILD_TYPE=Release;-DVW_ZLIB_SYS_DEP=OFF;-Dpybind11_DIR=$PYBIND11_DIR"
-
-          echo "CMAKE_OPTIONS: $CMAKE_OPTIONS"
 
           python setup.py \
             --cmake-generator="Visual Studio 16 2019" \
             --cmake-options="$CMAKE_OPTIONS" \
             bdist_wheel --dist-dir=wheel_output
-
-          echo -e "\n=== Inspecting built wheel ==="
-          WHEEL_FILE=$(ls wheel_output/*.whl | head -1)
-          echo "Wheel file: $WHEEL_FILE"
-
-          echo -e "\n=== Extracting wheel to inspect contents ==="
-          mkdir -p wheel_inspect
-          cd wheel_inspect
-          unzip -q "../$WHEEL_FILE"
-
-          echo -e "\n=== Wheel contents (top level) ==="
-          ls -la
-
-          echo -e "\n=== Looking for DLL and PYD files ==="
-          find . -name "*.dll" -o -name "*.pyd" | while read f; do
-            echo "$f ($(stat -c%s "$f" 2>/dev/null || stat -f%z "$f" 2>/dev/null || echo "?" ) bytes)"
-          done
-
-          cd ..
       - name: Upload built wheel
         uses: actions/upload-artifact@v4
         with:
@@ -301,16 +262,10 @@ jobs:
       - name: Install deps and test wheel
         shell: bash
         run: |
-          export wheel_files=(built_wheel/*)
-          export wheel_file="${wheel_files[0]}"
-          echo Installing ${wheel_file}...
+          export wheel_file=$(ls built_wheel/*.whl | head -1)
           pip install --force-reinstall ${wheel_file}
           pip install -r requirements.txt
           pip install pytest vw-executor twine
-
-          echo -e "\n=== Quick import test ==="
-          python -c "import vowpalwabbit; print('SUCCESS: vowpalwabbit imported successfully!')"
-
           twine check ${wheel_file}
           python -m pytest .\\python\\tests\\ --ignore=python/tests/e2e_v2
           python .\\python\\tests\\run_doctest.py
