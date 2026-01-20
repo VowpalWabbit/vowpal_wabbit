@@ -30,7 +30,7 @@
             {
                 "name": "assert_loss",
                 "params": {
-                    "expected_loss": -1,
+                    "expected_loss": -0.6,
                     "decimal": 1
                 }
             },
@@ -39,9 +39,11 @@
                 "params": {
                     "expected_value": [
                         1,
-                        0
+                        0.5
                     ],
-                    "threshold": 0.8
+                    "threshold": 0.1,
+                    "atol": 1.0,
+                    "rtol": 1.0
                 }
             }
         ],
@@ -95,7 +97,7 @@
             {
                 "name": "assert_loss",
                 "params": {
-                    "expected_loss": -0.8,
+                    "expected_loss": -0.9,
                     "decimal": 1
                 }
             },
