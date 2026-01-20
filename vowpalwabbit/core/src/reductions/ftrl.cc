@@ -5,6 +5,7 @@
 #include "vw/core/reductions/ftrl.h"
 
 #include "vw/core/correctedMath.h"
+#include "vw/core/metric_sink.h"
 #include "vw/core/crossplat_compat.h"
 #include "vw/core/label_parser.h"
 #include "vw/core/learner.h"
@@ -370,6 +371,41 @@ void end_pass(ftrl& g)
     }
   }
 }
+
+void persist_metrics(ftrl& f, VW::metric_sink& metrics)
+{
+  // Determine algorithm name from ftrl_size
+  std::string algorithm_name;
+  switch (f.ftrl_size)
+  {
+    case 3:
+      algorithm_name = "Proximal-FTRL";
+      break;
+    case 4:
+      algorithm_name = "PiSTOL";
+      break;
+    case 6:
+      algorithm_name = "Coin Betting";
+      break;
+    default:
+      algorithm_name = "FTRL";
+      break;
+  }
+
+  metrics.set_string("ftrl_algorithm", algorithm_name);
+  metrics.set_float("ftrl_alpha", f.ftrl_alpha);
+  metrics.set_float("ftrl_beta", f.ftrl_beta);
+  metrics.set_uint("ftrl_size", f.ftrl_size);
+
+  // Add training state if available
+  if (!f.gd_per_model_states.empty())
+  {
+    metrics.set_float(
+        "ftrl_total_weight", static_cast<float>(f.gd_per_model_states[0].total_weight));
+    metrics.set_float(
+        "ftrl_normalized_sum_norm_x", static_cast<float>(f.gd_per_model_states[0].normalized_sum_norm_x));
+  }
+}
 }  // namespace
 
 std::shared_ptr<VW::LEARNER::learner> VW::reductions::ftrl_setup(VW::setup_base_i& stack_builder)
@@ -493,6 +529,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::ftrl_setup(VW::setup_base_
                .set_multipredict(multipredict_ptr)
                .set_save_load(save_load)
                .set_end_pass(end_pass)
+               .set_persist_metrics(persist_metrics)
                .set_output_example_prediction(VW::details::output_example_prediction_simple_label<ftrl>)
                .set_update_stats(VW::details::update_stats_simple_label<ftrl>)
                .set_print_update(VW::details::print_update_simple_label<ftrl>)

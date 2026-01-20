@@ -935,3 +935,43 @@ def test_logging_average_loss_parseable():
             break
 
     # Note: average loss may not always be present depending on VW configuration
+
+
+def test_ftrl_metrics():
+    """Test that FTRL learner exposes metrics via get_learner_metrics()."""
+    # Test Proximal-FTRL
+    vw = vowpalwabbit.Workspace("--ftrl --extra_metrics --quiet")
+    vw.learn("1 | a b c")
+    vw.learn("-1 | d e f")
+    metrics = vw.get_learner_metrics()
+    assert metrics["ftrl_algorithm"] == "Proximal-FTRL"
+    assert "ftrl_alpha" in metrics
+    assert "ftrl_beta" in metrics
+    assert metrics["ftrl_size"] == 3
+    vw.finish()
+
+
+def test_pistol_metrics():
+    """Test that PiSTOL learner exposes metrics via get_learner_metrics()."""
+    vw = vowpalwabbit.Workspace("--pistol --extra_metrics --quiet")
+    vw.learn("1 | a b c")
+    vw.learn("-1 | d e f")
+    metrics = vw.get_learner_metrics()
+    assert metrics["ftrl_algorithm"] == "PiSTOL"
+    assert "ftrl_alpha" in metrics
+    assert "ftrl_beta" in metrics
+    assert metrics["ftrl_size"] == 4
+    vw.finish()
+
+
+def test_coin_metrics():
+    """Test that Coin Betting learner exposes metrics via get_learner_metrics()."""
+    vw = vowpalwabbit.Workspace("--coin --extra_metrics --quiet")
+    vw.learn("1 | a b c")
+    vw.learn("-1 | d e f")
+    metrics = vw.get_learner_metrics()
+    assert metrics["ftrl_algorithm"] == "Coin Betting"
+    assert "ftrl_alpha" in metrics
+    assert "ftrl_beta" in metrics
+    assert metrics["ftrl_size"] == 6
+    vw.finish()
