@@ -113,47 +113,15 @@ jobs:
       - name: Install wheel
         shell: bash
         run: |
-          ls -la python_wheel/
-          wheel_file=$(ls python_wheel/vowpalwabbit-*.whl)
-          echo "Installing ${wheel_file}..."
-          pip install ${wheel_file}
-          echo "Verifying installation..."
-          python -c "import vowpalwabbit; print('vowpalwabbit imported successfully')"
-      - name: Test single notebook execution
-        shell: bash
-        run: |
-          cd python/docs
-          python3 -c "
-import nbformat
-from nbconvert.preprocessors import ExecutePreprocessor
-import sys
-
-print('Testing basics.ipynb in isolation...')
-try:
-    nb = nbformat.read('source/examples/basics.ipynb', as_version=4)
-    ep = ExecutePreprocessor(timeout=600, kernel_name='python3')
-    ep.preprocess(nb, {'metadata': {'path': 'source/examples/'}})
-    print('✓ basics.ipynb executed successfully')
-except Exception as e:
-    print(f'✗ basics.ipynb failed: {e}')
-    import traceback
-    traceback.print_exc()
-    sys.exit(1)
-"
+          pip install python_wheel/vowpalwabbit-*.whl
       - name: Generate CLI docs
         run: |
           cd python/docs/cmd_options_template
           python generate_cmdline_docs.py --dump-options-bin ../../../vw-dump-options/vw-dump-options --template ./command_line_args.hbs --out ../source/ --extra-info ./cmdline_help_overrides.yml
       - name: Build docs
         run: |
-          # Enable core dumps for crash debugging
-          ulimit -c unlimited
-          # Set up better Python error handling
-          export PYTHONFAULTHANDLER=1
           cd python/docs
-          make html || (find /tmp -name "sphinx-err-*.log" -exec cat {} \; && \
-                        find . -name "core*" -exec file {} \; && \
-                        exit 1)
+          make html
       - name: Upload built docs
         uses: actions/upload-artifact@v4
         with:
@@ -179,12 +147,6 @@ except Exception as e:
         uses: actions/download-artifact@v4
         with:
           name: python_docs
-      - name: Print contents of directory
-        shell: bash
-        run: |
-          pwd
-          ls
-          echo $GITHUB_WORKSPACE
       - uses: actions/checkout@v1
         with:
           submodules: recursive
@@ -193,15 +155,6 @@ except Exception as e:
           # For some reason, path is relative to the directory above GITHUB_WORKSPACE
           # To ensure the rest of the script makes sense, we need to place this under vowpal_wabbit
           path: vowpal_wabbit/docs
-      - name: Print contents of directory
-        shell: bash
-        run: |
-          echo $GITHUB_WORKSPACE
-          pwd
-          ls
-          cd docs
-          pwd
-          ls
       - name: Copy c++ Docs
         shell: bash
         run: |
