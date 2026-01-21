@@ -179,7 +179,10 @@ inline void cb_explore_adf_base<ExploreType>::learn(
   }
   else
   {
-    predict(data, base, examples);
+    // No label - this is a no-op for learn. Callers should use predict() explicitly
+    // if they want predictions for unlabeled examples. This avoids the confusing
+    // behavior of predict being called implicitly during learn.
+    // See issue #4274: https://github.com/VowpalWabbit/vowpal_wabbit/issues/4274
     if (data._metrics) { data._metrics->metric_predict_in_learn++; }
   }
 }
