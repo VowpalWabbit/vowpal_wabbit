@@ -801,15 +801,15 @@ class Workspace(pylibvw.vw):
             pylibvw.vw.finish(self)
             self.init = False
             self.finished = True
-            # Preserve log messages for get_log() calls after finish(),
-            # then clear logging references to break reference cycles and allow
-            # proper garbage collection of C++ resources (fixes memory leak
-            # when repeatedly creating/destroying Workspace objects)
+            # Preserve log messages for get_log() calls after finish()
             if self._log_fwd:
                 self._saved_log = self._log_fwd.driver_messages + self._log_fwd.logger_messages
                 self._saved_driver_log = self._log_fwd.driver_messages
                 self._saved_logger_log = self._log_fwd.logger_messages
-            self._log_wrapper = None
+            # NOTE: Do NOT set _log_wrapper = None here. The C++ VW workspace destructor
+            # may still try to log messages (especially with --cats). Releasing the
+            # log wrapper before the C++ object is destroyed causes a segfault.
+            # Let Python's GC handle the destruction order naturally.
             self._log_fwd = None
 
     def get_log(self) -> List[str]:
