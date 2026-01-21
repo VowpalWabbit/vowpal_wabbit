@@ -449,7 +449,9 @@ if(MSVC)
   target_compile_options(vw_core PRIVATE /wd4661 /wd4117 /wd5308)
 endif()
 
-if(STD_INV_SQRT)
+# Use standard library inverse square root when VW_SIMD_INV_SQRT is OFF
+# (or when the deprecated STD_INV_SQRT is ON, which sets VW_SIMD_INV_SQRT=OFF)
+if(NOT VW_SIMD_INV_SQRT)
   target_compile_definitions(vw_core PUBLIC STD_INV_SQRT)
 endif()
 
