@@ -57,6 +57,26 @@ jobs:
           name: cibw-wheels-ubuntu-24.04-arm
           path: ./wheelhouse/*.whl
 
+  # macOS builds using cibuildwheel (Python 3.10-3.14)
+  cibuildwheel-build-macos:
+    name: cibuildwheel.${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-14, macos-15-intel]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+          fetch-depth: 0
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v3.3.0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cibw-wheels-${{ matrix.os }}
+          path: ./wheelhouse/*.whl
+
   linux-python-sdist-bundle:
     name: ubuntu-latest.amd64.py3.10.sdist-bundle
     runs-on: ubuntu-latest
