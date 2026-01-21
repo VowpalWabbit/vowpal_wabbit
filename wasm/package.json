@@ -5,22 +5,27 @@
   "exports": {
     ".": {
       "node": {
+        "types": "./types/index.d.ts",
         "require": "./dist/vwnode.js"
       },
       "browser": {
+        "types": "./types/index.d.ts",
         "import": "./dist/vwbrowser.js"
       },
+      "types": "./types/index.d.ts",
       "default": "./dist/vwnode.js"
     },
     "./package.json": "./package.json"
   },
   "main": "dist/vwnode.js",
   "module": "./dist/vwnode.js",
+  "types": "types/index.d.ts",
   "browser": {
     "./dist/vwbrowser.js": "./dist/vwbrowser.js"
   },
   "files": [
     "dist/**/*.js",
+    "types/**/*.d.ts",
     "src/**/*.ts",
     "!src/**/*.cc"
   ],
