@@ -49,7 +49,7 @@ jobs:
           -DWARNINGS=On
           -DWARNING_AS_ERROR=On
           -DVW_CXX_STANDARD=17
-          -DSTD_INV_SQRT=ON
+          -DVW_SIMD_INV_SQRT=OFF
           -DCMAKE_POLICY_VERSION_MINIMUM=3.5
       - name: Build
         run: cmake --build build
@@ -87,7 +87,7 @@ jobs:
           -DVW_ZLIB_SYS_DEP=Off
           -DVW_BOOST_MATH_SYS_DEP=Off
           -DVW_INSTALL=Off
-          -DSTD_INV_SQRT=ON
+          -DVW_SIMD_INV_SQRT=OFF
           -DCMAKE_POLICY_VERSION_MINIMUM=3.5
       - name: Build
         run: cmake --build "${{ env.CMAKE_BUILD_DIR }}" --config ${{ matrix.build_type }}
@@ -122,7 +122,7 @@ jobs:
           -DVW_ZLIB_SYS_DEP=Off
           -DVW_BOOST_MATH_SYS_DEP=Off
           -DVW_INSTALL=Off
-          -DSTD_INV_SQRT=ON
+          -DVW_SIMD_INV_SQRT=OFF
           -DCMAKE_POLICY_VERSION_MINIMUM=3.5
       - name: Build
         run: cmake --build build
