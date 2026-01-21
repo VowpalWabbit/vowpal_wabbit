@@ -116,11 +116,11 @@ jobs:
     strategy:
       matrix:
         config:
+        # Note: Python 3.14 not available in conda yet
         - { version: "3.10", include_dir_name: python3.10/}
         - { version: "3.11", include_dir_name: python3.11/}
         - { version: "3.12", include_dir_name: python3.12/}
         - { version: "3.13", include_dir_name: python3.13/}
-        - { version: "3.14", include_dir_name: python3.14/}
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -151,7 +151,8 @@ jobs:
     runs-on: macos-15-intel
     strategy:
       matrix:
-        version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        # Note: Python 3.14 not available in conda yet
+        version: ["3.10", "3.11", "3.12", "3.13"]
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -187,11 +188,11 @@ jobs:
     strategy:
       matrix:
         config:
+        # Note: Python 3.14 not available in conda yet
         - { version: "3.10", boost_py_suffix: "310" }
         - { version: "3.11", boost_py_suffix: "311" }
         - { version: "3.12", boost_py_suffix: "312" }
         - { version: "3.13", boost_py_suffix: "313" }
-        - { version: "3.14", boost_py_suffix: "314" }
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
@@ -247,7 +248,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        # Note: Python 3.14 not available in conda yet (needed for build)
+        version: ["3.10", "3.11", "3.12", "3.13"]
         os: ["windows-2019"]
       fail-fast: false
     steps:
