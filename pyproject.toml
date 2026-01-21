@@ -24,7 +24,8 @@ test-requires = ["pytest", "pyclean", "vw-executor", "setuptools", "scipy", "sci
 # Exclude e2e_v2: vw_executor uses multiprocessing.Pool(1) which hangs in GitHub Actions containers
 # due to pybind11 fork safety issues. Tests pass locally but hang in CI container environment.
 test-command = [
-    "cd {project} && pyclean python/tests && pytest python/tests -v -s --ignore=python/tests/e2e_v2",
+    "pyclean {project}/python/tests",
+    "pytest {project}/python/tests --ignore={project}/python/tests/e2e_v2",
 ]
 
 [tool.cibuildwheel.linux]
@@ -49,7 +50,8 @@ before-all = [
     "python -m pip install pybind11",
 ]
 test-command = [
-    "cd {project} && pyclean python/tests && pytest python/tests -v -s --ignore=python/tests/e2e_v2",
+    "pyclean {project}/python/tests",
+    "pytest {project}/python/tests --ignore={project}/python/tests/e2e_v2",
 ]
 # Use macOS 11.0+ for compatibility
 # pybind11_DIR is automatically detected by setup.py
