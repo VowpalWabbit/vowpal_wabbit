@@ -33,6 +33,9 @@ public:
   void set_bool(const std::string& key, bool value, bool overwrite = false);
   void set_metric_sink(const std::string& key, metric_sink value, bool overwrite = false);
 
+  /// Returns true if no metrics have been added to this sink
+  bool empty() const { return _keys.empty(); }
+
   uint64_t get_uint(const std::string& key) const;
   float get_float(const std::string& key) const;
   VW::string_view get_string(const std::string& key) const;
