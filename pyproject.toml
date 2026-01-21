@@ -16,11 +16,8 @@ skip = [
     "*musllinux*",  # Only build manylinux wheels
     "*-win32",  # Skip 32-bit Windows builds - scipy doesn't have 32-bit prebuilt wheels
 ]
-# Skip ARM64 tests: Even with conservative build flags (-mno-outline-atomics, -march=armv8-a),
-# tests fail with illegal instruction. Root cause: System Boost libraries from dnf contain
-# LSE atomics and SVE instructions compiled for newer ARM CPUs. Wheels build successfully with
-# baseline ARMv8.0 flags and should work on all ARM64 systems.
-test-skip = "*-manylinux_aarch64"
+# ARM64 tests enabled - pybind11 migration removes Boost dependency that was causing illegal instruction
+# test-skip = "*-manylinux_aarch64"  # Removed to enable ARM64 testing
 test-requires = ["pytest", "pyclean", "vw-executor", "setuptools", "scipy", "scikit-learn"]
 # Exclude e2e_v2: vw_executor uses multiprocessing.Pool(1) which hangs in GitHub Actions containers
 # due to pybind11 fork safety issues. Tests pass locally but hang in CI container environment.
@@ -75,6 +72,11 @@ environment = { CMAKE_ARGS="-DVW_ZLIB_SYS_DEP=OFF", CMAKE_GENERATOR="Visual Stud
 # -march=armv8-a: Baseline ARMv8.0 instruction set only (NEON is part of baseline and safe to use)
 # -mtune=generic: Don't optimize for specific CPU variant
 [[tool.cibuildwheel.overrides]]
-select = "*-manylinux_*_aarch64"
+select = "*_aarch64"
+before-test = [
+    # Diagnostic: Check CPU features and verify pybind11-based module
+    "echo '=== ARM64 Diagnostic: CPU Features ===' && cat /proc/cpuinfo | grep -E '^(Features|CPU)' | head -5 || true",
+    "echo '=== ARM64 Diagnostic: Testing imports ===' && python -c 'import sys; print(f\"Python {sys.version}\")' || true",
+]
 # pybind11_DIR is automatically detected by setup.py
 environment = { CMAKE_ARGS="-DVW_ZLIB_SYS_DEP=OFF -DVW_FEAT_LAS_SIMD=OFF -DCMAKE_CXX_FLAGS='-march=armv8-a -mtune=generic -mno-outline-atomics' -DCMAKE_C_FLAGS='-march=armv8-a -mtune=generic -mno-outline-atomics'" }

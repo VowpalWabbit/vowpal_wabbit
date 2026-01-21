@@ -1,0 +1,282 @@
+name: ARM Test Diagnostic
+
+# This workflow enables ARM64 testing and captures diagnostics to investigate
+# illegal instruction faults. The suspected root cause is that system Boost
+# libraries contain LSE atomics and SVE instructions compiled for newer ARM CPUs.
+
+on:
+  push:
+    branches:
+      - master
+      - 'releases/**'
+      - '**/arm*'
+  pull_request:
+    branches:
+      - '*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  arm64-diagnostic-build-test:
+    name: arm64.diagnostic
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - name: System Information
+        run: |
+          echo "=== CPU Information ==="
+          cat /proc/cpuinfo | head -50
+          echo ""
+          echo "=== CPU Features ==="
+          cat /proc/cpuinfo | grep -E "^(Features|CPU architecture|model name)" | head -5
+          echo ""
+          echo "=== uname ==="
+          uname -a
+          echo ""
+          echo "=== lscpu ==="
+          lscpu || true
+          echo ""
+          echo "=== Architecture ==="
+          dpkg --print-architecture || true
+          echo ""
+          echo "=== GCC Version ==="
+          gcc --version || true
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake ninja-build g++ \
+            libboost-dev libboost-program-options-dev libboost-system-dev \
+            libboost-thread-dev libboost-test-dev libboost-python-dev \
+            zlib1g-dev binutils gdb
+
+      - name: Analyze Boost Libraries for ARM Instructions
+        run: |
+          echo "=== Checking Boost library architecture and instruction usage ==="
+
+          # Find Boost libraries
+          echo "--- Boost library locations ---"
+          find /usr -name "libboost*.so*" -o -name "libboost*.a" 2>/dev/null | head -20
+
+          # Check for LSE atomics in Boost libraries
+          echo ""
+          echo "--- Checking for LSE atomic instructions (LDADD, STADD, SWPAL, CAS, etc.) ---"
+          for lib in $(find /usr -name "libboost*.so*" 2>/dev/null | head -10); do
+            echo "Checking: $lib"
+            # LSE atomics: ldadd, stadd, swp, cas, ldclr, ldset, ldeor
+            objdump -d "$lib" 2>/dev/null | grep -E '\s(ldadd|stadd|swp|cas|ldclr|ldset|ldeor|ldapr)' | head -5 || echo "  No LSE atomics found"
+          done
+
+          # Check for SVE instructions
+          echo ""
+          echo "--- Checking for SVE instructions (Z registers, P registers) ---"
+          for lib in $(find /usr -name "libboost*.so*" 2>/dev/null | head -10); do
+            echo "Checking: $lib"
+            objdump -d "$lib" 2>/dev/null | grep -E '\s(z[0-9]+|p[0-9]+)\.' | head -5 || echo "  No SVE instructions found"
+          done
+
+          # Check library build flags
+          echo ""
+          echo "--- Boost library build information ---"
+          for lib in $(find /usr -name "libboost*.so*" 2>/dev/null | head -5); do
+            echo "File: $lib"
+            file "$lib"
+            readelf -p .comment "$lib" 2>/dev/null | head -5 || true
+            readelf -A "$lib" 2>/dev/null | grep -E "(Tag_|Architecture)" | head -10 || true
+            echo ""
+          done
+
+      - name: Build VW with Diagnostics
+        run: |
+          echo "=== Building VW with conservative ARM flags ==="
+
+          mkdir -p build
+          cd build
+
+          # Use conservative ARM flags
+          export CXXFLAGS="-march=armv8-a -mtune=generic -mno-outline-atomics -g"
+          export CFLAGS="-march=armv8-a -mtune=generic -mno-outline-atomics -g"
+
+          cmake .. \
+            -GNinja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DVW_FEAT_LAS_SIMD=OFF \
+            -DBUILD_PYTHON=ON \
+            -DBUILD_TESTING=ON \
+            -DCMAKE_CXX_FLAGS="${CXXFLAGS}" \
+            -DCMAKE_C_FLAGS="${CFLAGS}" \
+            -DCMAKE_VERBOSE_MAKEFILE=ON
+
+          ninja -j$(nproc)
+
+          echo ""
+          echo "=== Build complete, checking VW binary for LSE/SVE instructions ==="
+
+          # Check if the VW binary contains any problematic instructions
+          if [ -f "vowpalwabbit/cli/vw" ]; then
+            echo "--- VW binary architecture info ---"
+            file vowpalwabbit/cli/vw
+            readelf -A vowpalwabbit/cli/vw 2>/dev/null | head -20 || true
+
+            echo ""
+            echo "--- Checking VW binary for LSE atomics ---"
+            objdump -d vowpalwabbit/cli/vw 2>/dev/null | grep -E '\s(ldadd|stadd|swp|cas|ldclr|ldset|ldeor|ldapr)' | head -10 || echo "No LSE atomics in VW binary"
+
+            echo ""
+            echo "--- Checking VW binary for SVE instructions ---"
+            objdump -d vowpalwabbit/cli/vw 2>/dev/null | grep -E '\s(z[0-9]+|p[0-9]+)\.' | head -10 || echo "No SVE instructions in VW binary"
+
+            echo ""
+            echo "--- Linked libraries ---"
+            ldd vowpalwabbit/cli/vw
+          fi
+
+      - name: Test VW Binary with Signal Handling
+        run: |
+          echo "=== Testing VW binary execution with signal diagnostics ==="
+          cd build
+
+          # Enable core dumps
+          ulimit -c unlimited
+          echo "core.%p" | sudo tee /proc/sys/kernel/core_pattern || true
+
+          # Try running VW with version flag first
+          echo "--- Testing vw --version ---"
+          timeout 30 ./vowpalwabbit/cli/vw --version || {
+            exit_code=$?
+            echo "VW exited with code: $exit_code"
+            if [ $exit_code -eq 132 ]; then
+              echo "ERROR: Exit code 132 = SIGILL (Illegal Instruction)"
+            fi
+          }
+
+          echo ""
+          echo "--- Testing vw --help ---"
+          timeout 30 ./vowpalwabbit/cli/vw --help 2>&1 | head -20 || {
+            exit_code=$?
+            echo "VW exited with code: $exit_code"
+            if [ $exit_code -eq 132 ]; then
+              echo "ERROR: Exit code 132 = SIGILL (Illegal Instruction)"
+            fi
+          }
+
+      - name: Run Unit Tests with Diagnostics
+        run: |
+          echo "=== Running unit tests with diagnostics ==="
+          cd build
+
+          # Run tests with verbose output
+          ctest --output-on-failure --label-regex VWTestList --parallel 2 -V 2>&1 | head -500 || {
+            exit_code=$?
+            echo ""
+            echo "Tests exited with code: $exit_code"
+
+            # Check for core dumps
+            echo ""
+            echo "--- Checking for core dumps ---"
+            ls -la core.* 2>/dev/null || echo "No core dumps found"
+
+            # If there's a core dump, analyze it
+            for core in core.*; do
+              if [ -f "$core" ]; then
+                echo "--- Analyzing core dump: $core ---"
+                gdb -batch -ex "bt full" -ex "info registers" ./vowpalwabbit/cli/vw "$core" 2>/dev/null || true
+              fi
+            done
+          }
+
+      - name: Build and Test Python Wheel
+        run: |
+          echo "=== Building Python wheel ==="
+          pip install build wheel pytest
+
+          # Set conservative flags for the wheel build
+          export CMAKE_ARGS="-DVW_FEAT_LAS_SIMD=OFF -DCMAKE_CXX_FLAGS='-march=armv8-a -mtune=generic -mno-outline-atomics -g' -DCMAKE_C_FLAGS='-march=armv8-a -mtune=generic -mno-outline-atomics -g'"
+          export BOOST_PY_VERSION_SUFFIX="3"
+
+          pip wheel . -w wheelhouse/ --verbose 2>&1 | tail -100
+
+          echo ""
+          echo "=== Installing wheel ==="
+          pip install wheelhouse/*.whl --force-reinstall
+
+          echo ""
+          echo "=== Testing Python import with diagnostics ==="
+          python3 -c "
+          import sys
+          import signal
+          import traceback
+
+          def sigill_handler(signum, frame):
+              print('SIGILL received!')
+              print('Frame info:', frame)
+              traceback.print_stack(frame)
+              sys.exit(132)
+
+          signal.signal(signal.SIGILL, sigill_handler)
+
+          print('Attempting to import vowpalwabbit...')
+          try:
+              import vowpalwabbit
+              print('SUCCESS: vowpalwabbit imported')
+              print('Version:', vowpalwabbit.__version__ if hasattr(vowpalwabbit, '__version__') else 'unknown')
+
+              # Try creating a simple workspace
+              print('Creating workspace...')
+              vw = vowpalwabbit.Workspace(quiet=True)
+              print('SUCCESS: Workspace created')
+
+              # Try a simple prediction
+              print('Running simple prediction...')
+              ex = vw.parse('| a b c')
+              pred = vw.predict(ex)
+              print('SUCCESS: Prediction =', pred)
+
+              vw.finish()
+              print('SUCCESS: All basic operations completed')
+          except Exception as e:
+              print('EXCEPTION:', type(e).__name__, str(e))
+              traceback.print_exc()
+              sys.exit(1)
+          " || {
+            exit_code=$?
+            echo "Python test exited with code: $exit_code"
+            if [ $exit_code -eq 132 ]; then
+              echo "ERROR: SIGILL (Illegal Instruction) detected during Python test"
+            fi
+          }
+
+      - name: Run Python Tests
+        run: |
+          echo "=== Running Python tests ==="
+          pip install pytest vw-executor scipy scikit-learn setuptools
+
+          # Run tests with verbose output and continue on failure
+          python -m pytest ./python/tests/ -v --tb=long 2>&1 | head -500 || {
+            exit_code=$?
+            echo ""
+            echo "Python tests exited with code: $exit_code"
+          }
+
+      - name: Upload Build Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: arm64-diagnostic-artifacts
+          path: |
+            build/vowpalwabbit/cli/vw
+            wheelhouse/*.whl
+            core.*
+          if-no-files-found: ignore
