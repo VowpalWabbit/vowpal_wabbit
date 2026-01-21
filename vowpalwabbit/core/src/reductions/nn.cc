@@ -166,7 +166,9 @@ void predict_or_learn_multi(nn& n, learner& base, VW::example& ec)
     auto save_set_minmax = n.all->set_minmax;
     float save_min_label;
     float save_max_label;
-    float dropscale = n.dropout ? 2.0f : 1.0f;
+    // Only apply dropout during learning; during inference use mean field (all neurons)
+    bool do_dropout = n.dropout && is_learn;
+    float dropscale = do_dropout ? 2.0f : 1.0f;
     auto loss_function_swap_guard = VW::swap_guard(n.all->loss_config.loss, n.squared_loss);
 
     VW::polyprediction* hidden_units = n.hidden_units_pred;
@@ -204,7 +206,7 @@ void predict_or_learn_multi(nn& n, learner& base, VW::example& ec)
 
       base.multipredict(ec, 0, n.k, hidden_units, true);
 
-      for (unsigned int i = 0; i < n.k; ++i) { dropped_out[i] = (n.dropout && VW::details::merand48(n.xsubi) < 0.5); }
+      for (unsigned int i = 0; i < n.k; ++i) { dropped_out[i] = (do_dropout && VW::details::merand48(n.xsubi) < 0.5); }
 
       if (ec.passthrough)
       {
@@ -381,7 +383,7 @@ void predict_or_learn_multi(nn& n, learner& base, VW::example& ec)
       save_ec_loss = n.output_layer.loss;
     }
 
-    if (n.dropout && !converse)
+    if (do_dropout && !converse)
     {
       for (unsigned int i = 0; i < n.k; ++i) { dropped_out[i] = !dropped_out[i]; }
 

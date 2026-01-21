@@ -503,6 +503,7 @@ set(vw_core_test_sources
       tests/minimal_custom_reduction.cc
       tests/model_util_test.cc
       tests/multiclass_label_parser_test.cc
+      tests/nn_test.cc
       tests/numeric_cast_test.cc
       tests/object_pool_test.cc
       tests/offset_tree_test.cc
