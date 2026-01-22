@@ -24,7 +24,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-dev python3-pip zlib1g-dev ninja-build
+          sudo apt-get install -y cmake ninja-build libboost-test-dev python3-dev python3-pip zlib1g-dev
           python3 -m pip install build wheel setuptools auditwheel pybind11
       - name: Build wheel
         shell: bash
@@ -46,7 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
       - name: Download artifact
@@ -54,7 +54,10 @@ jobs:
         with:
           name: test_manylinux_amd64_3.10
           path: built_wheel
-      # pybind11-based wheels don't require system Boost Python libraries
+      - name: Install dependencies
+        run: |
+          sudo apt-get update || true
+          sudo apt-get install -y libboost-test-dev
       - name: Build recent-models
         shell: bash
         run: |

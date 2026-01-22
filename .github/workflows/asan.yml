@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  VCPKG_DEFAULT_BINARY_CACHE: ${{github.workspace}}/vcpkg_binary_cache
+  VCPKG_BINARY_SOURCES: 'clear;x-gha,readwrite'
 
 jobs:
   test_with_sanitizers:
@@ -35,7 +35,7 @@ jobs:
       UBSAN_OPTIONS: "print_stacktrace=1"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
           fetch-depth: 0
@@ -48,11 +48,15 @@ jobs:
         run: |
           sudo apt-get update || true
           sudo apt-get install -y ninja-build autoconf automake autoconf-archive
-      - name: Clear vcpkg cache and update
+      - name: Export GitHub Actions cache environment variables
+        uses: actions/github-script@v7
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+      - name: Clear vcpkg temp files and update
         shell: bash
         run: |
-          rm -rf vcpkg_binary_cache
-          mkdir -p vcpkg_binary_cache
           rm -rf ext_libs/vcpkg/downloads
           rm -rf ext_libs/vcpkg/buildtrees
           git submodule update --init ext_libs/vcpkg
@@ -110,7 +114,7 @@ jobs:
       UBSAN_OPTIONS: "print_stacktrace=1"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
           fetch-depth: 0
@@ -120,11 +124,15 @@ jobs:
         run: |
           sudo apt-get update || true
           sudo apt-get install -y ninja-build autoconf automake autoconf-archive
-      - name: Clear vcpkg cache and update
+      - name: Export GitHub Actions cache environment variables
+        uses: actions/github-script@v7
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+      - name: Clear vcpkg temp files and update
         shell: bash
         run: |
-          rm -rf vcpkg_binary_cache
-          mkdir -p vcpkg_binary_cache
           rm -rf ext_libs/vcpkg/downloads
           rm -rf ext_libs/vcpkg/buildtrees
           git submodule update --init ext_libs/vcpkg

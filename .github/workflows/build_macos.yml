@@ -21,13 +21,13 @@ jobs:
         os: [macos-14]
         build_type: [Debug, Release]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
       - name: Install dependencies
         run: brew install cmake boost flatbuffers ninja
       - name: Configure
-        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DWARNINGS=Off -DVW_BUILD_VW_C_WRAPPER=Off -DBUILD_TESTING=On -DBUILD_EXPERIMENTAL_BINDING=On -DVW_FEAT_CSV=On -DVW_FEAT_CB_GRAPH_FEEDBACK=On -DVW_INSTALL=Off -DSTD_INV_SQRT=ON
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${{matrix.build_type}} -DWARNINGS=Off -DVW_BUILD_VW_C_WRAPPER=Off -DBUILD_TESTING=On -DBUILD_EXPERIMENTAL_BINDING=On -DVW_FEAT_CSV=On -DVW_FEAT_CB_GRAPH_FEEDBACK=On -DVW_INSTALL=Off -DVW_SIMD_INV_SQRT=OFF
       - name: Build
         run: cmake --build build --target all
       - name: Unit tests

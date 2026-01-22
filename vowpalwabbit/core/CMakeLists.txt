@@ -449,7 +449,9 @@ if(MSVC)
   target_compile_options(vw_core PRIVATE /wd4661 /wd4117 /wd5308)
 endif()
 
-if(STD_INV_SQRT)
+# Use standard library inverse square root when VW_SIMD_INV_SQRT is OFF
+# (or when the deprecated STD_INV_SQRT is ON, which sets VW_SIMD_INV_SQRT=OFF)
+if(NOT VW_SIMD_INV_SQRT)
   target_compile_definitions(vw_core PUBLIC STD_INV_SQRT)
 endif()
 
@@ -503,6 +505,7 @@ set(vw_core_test_sources
       tests/minimal_custom_reduction.cc
       tests/model_util_test.cc
       tests/multiclass_label_parser_test.cc
+      tests/nn_test.cc
       tests/numeric_cast_test.cc
       tests/object_pool_test.cc
       tests/offset_tree_test.cc

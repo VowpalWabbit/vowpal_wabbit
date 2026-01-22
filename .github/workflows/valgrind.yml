@@ -16,12 +16,12 @@ jobs:
       image: vowpalwabbit/ubuntu2004-build:latest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
       - name: Build C++ VW binary
         run: |
-          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_EXPERIMENTAL_BINDING=On -DVW_FEAT_FLATBUFFERS=On -DVW_FEAT_CSV=On -DVW_FEAT_CB_GRAPH_FEEDBACK=On -DSTD_INV_SQRT=ON
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_EXPERIMENTAL_BINDING=On -DVW_FEAT_FLATBUFFERS=On -DVW_FEAT_CSV=On -DVW_FEAT_CB_GRAPH_FEEDBACK=On -DVW_SIMD_INV_SQRT=OFF
           cmake --build build
       - name: Upload vw binary
         uses: actions/upload-artifact@v4
@@ -59,7 +59,7 @@ jobs:
       image: vowpalwabbit/ubuntu2004-build:latest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
       - uses: actions/download-artifact@v4

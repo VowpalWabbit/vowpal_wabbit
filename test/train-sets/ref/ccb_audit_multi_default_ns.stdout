@@ -1,4 +1,4 @@
-[warning] Any duplicate namespace interactions will be removed
+[info] Any duplicate namespace interactions will be removed
 You can use --leave_duplicate_interactions to disable this behaviour.
 0
 	b:163331:1:0@0	a:92594:1:0@0	Constant:116060:1:0@0	a:92594:1:0@0	_ccb_slot_index^index0:68306:1:0@0	b*b:139450:1:0@0	b*a:79627:1:0@0	a*a:2692:1:0@0	b*a:79627:1:0@0	a*a:2692:1:0@0	b*_ccb_slot_index^index0:87147:1:0@0	a*_ccb_slot_index^index0:27108:1:0@0	a*a:2692:1:0@0	a*_ccb_slot_index^index0:27108:1:0@0	b*b*_ccb_slot_index^index0:36380:1:0@0	b*a*_ccb_slot_index^index0:44163:1:0@0	a*a*_ccb_slot_index^index0:100126:1:0@0	b*a*_ccb_slot_index^index0:44163:1:0@0	a*a*_ccb_slot_index^index0:100126:1:0@0	a*a*_ccb_slot_index^index0:100126:1:0@0

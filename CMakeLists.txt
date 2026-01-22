@@ -199,7 +199,14 @@ option(VW_BUILD_VW_C_WRAPPER "Enable building the c_wrapper project" ON)
 option(vw_BUILD_NET_CORE "Build .NET Core targets" OFF)
 option(vw_BUILD_NET_FRAMEWORK "Build .NET Framework targets" OFF)
 option(VW_BUILD_WASM "Add WASM target" OFF)
-option(STD_INV_SQRT "Use standard library inverse square root" OFF)
+option(VW_SIMD_INV_SQRT "Use SIMD (SSE2/NEON) inverse square root for better performance (less accurate than std library)" ON)
+option(STD_INV_SQRT "Use standard library inverse square root (deprecated, use VW_SIMD_INV_SQRT=OFF instead)" OFF)
+
+# Handle backward compatibility: STD_INV_SQRT=ON is equivalent to VW_SIMD_INV_SQRT=OFF
+if(STD_INV_SQRT)
+  set(VW_SIMD_INV_SQRT OFF CACHE BOOL "Use SIMD inverse square root" FORCE)
+  message(STATUS "STD_INV_SQRT is deprecated. Use VW_SIMD_INV_SQRT=OFF instead.")
+endif()
 
 if(VW_INSTALL AND NOT VW_ZLIB_SYS_DEP)
   message(WARNING "Installing with a vendored version of zlib is not recommended. Use VW_ZLIB_SYS_DEP to use a system dependency or specify VW_INSTALL=OFF to silence this warning.")

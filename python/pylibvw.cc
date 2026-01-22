@@ -29,6 +29,7 @@
 #include <pybind11/stl.h>
 #include <pybind11/functional.h>
 
+#include <cstring>
 #include <memory>
 #include <fstream>
 
@@ -681,9 +682,9 @@ float ex_sum_feat_sq(example_ptr ec, unsigned char ns)
 
 void ex_push_feature(example_ptr ec, unsigned char ns, uint64_t fid, float v)
 {
-  // Note: push_back already updates sum_feat_sq internally, so we don't need
-  // to add it here. The old Boost.Python code had this duplication bug.
   ec->feature_space[ns].push_back(v, fid);
+  ec->num_features++;
+  ec->reset_total_sum_feat_sq();
 }
 
 
@@ -817,24 +818,29 @@ bool ex_pop_feature(example_ptr ec, unsigned char ns)
   auto& fs = ec->feature_space[ns];
   if (fs.empty()) return false;
   float val = fs.values.back();
-  fs.sum_feat_sq -= val * val;
-  fs.indices.pop_back();
   fs.values.pop_back();
+  if (!fs.indices.empty()) { fs.indices.pop_back(); }
+  if (!fs.space_names.empty()) { fs.space_names.pop_back(); }
+  ec->num_features--;
+  fs.sum_feat_sq -= val * val;
+  ec->reset_total_sum_feat_sq();
   return true;
 }
 
 
 void ex_erase_namespace(example_ptr ec, unsigned char ns)
 {
-  ec->feature_space[ns].clear();
-  ec->feature_space[ns].sum_feat_sq = 0;
+  ec->num_features -= ec->feature_space[ns].size();
+  ec->reset_total_sum_feat_sq();
+  ec->feature_space[ns].clear();  // clear() also sets sum_feat_sq = 0
 }
-
 
 bool ex_pop_namespace(example_ptr ec)
 {
   if (ec->indices.empty()) return false;
+  unsigned char ns = ec->indices.back();
   ec->indices.pop_back();
+  ex_erase_namespace(ec, ns);
   return true;
 }
 
@@ -1277,7 +1283,7 @@ size_t get_example_counter(example_ptr ec)
   return ec->example_counter; 
 }
 
-uint32_t get_ft_offset(example_ptr ec)
+uint64_t get_ft_offset(example_ptr ec)
 {
   return ec->ft_offset;
 }
@@ -1304,7 +1310,7 @@ float get_loss(example_ptr ec)
 
 float get_total_sum_feat_sq(example_ptr ec)
 {
-  return ec->total_sum_feat_sq;
+  return ec->get_total_sum_feat_sq();
 }
 
 // Workspace accessor functions
@@ -1336,7 +1342,12 @@ void search_output(search_ptr _sch, std::string s)
 // Search helper functions
 void verify_search_set_properly(search_ptr _sch)
 {
-  if (!_sch) { THROW("search object not initialized properly"); }
+  if (_sch->task_name == nullptr) { THROW("set_structured_predict_hook: search task not initialized properly"); }
+
+  if (std::strcmp(_sch->task_name, "hook") != 0)
+  {
+    THROW("set_structured_predict_hook: trying to set hook when search task is not 'hook'.");
+  }
 }
 
 uint32_t search_get_num_actions(search_ptr _sch)
@@ -1572,37 +1583,42 @@ PYBIND11_MODULE(pylibvw, m)
       .def("_parse", &my_parse, "Parse a string into a collection of VW examples")
       .def("_is_multiline", &my_is_multiline, "true if the base reduction is multiline")
 
-      .def_readonly_static("lDefault", &lDEFAULT)
-      .def_readonly_static("lBinary", &lBINARY)
-      .def_readonly_static("lSimple", &lSIMPLE)
-      .def_readonly_static("lMulticlass", &lMULTICLASS)
-      .def_readonly_static("lCostSensitive", &lCOST_SENSITIVE)
-      .def_readonly_static("lContextualBandit", &lCONTEXTUAL_BANDIT)
-      .def_readonly_static("lMax", &lMAX)
-      .def_readonly_static("lConditionalContextualBandit", &lCONDITIONAL_CONTEXTUAL_BANDIT)
-      .def_readonly_static("lSlates", &lSLATES)
-      .def_readonly_static("lContinuous", &lCONTINUOUS)
-      .def_readonly_static("lContextualBanditEval", &lCONTEXTUAL_BANDIT_EVAL)
-      .def_readonly_static("lMultilabel", &lMULTILABEL)
+      .def_readonly_static("lDefault", &lDEFAULT,
+          "Default label type -- used as input to the example() initializer")
+      .def_readonly_static("lBinary", &lBINARY, "Binary label type -- used as input to the example() initializer")
+      .def_readonly_static("lSimple", &lSIMPLE, "Simple label type -- used as input to the example() initializer")
+      .def_readonly_static("lMulticlass", &lMULTICLASS, "Multiclass label type -- used as input to the example() initializer")
+      .def_readonly_static("lCostSensitive", &lCOST_SENSITIVE,
+          "Cost sensitive label type -- used as input to the example() initializer")
+      .def_readonly_static("lContextualBandit", &lCONTEXTUAL_BANDIT,
+          "Contextual bandit label type -- used as input to the example() initializer")
+      .def_readonly_static("lMax", &lMAX, "DEPRECATED: Max label type -- used as input to the example() initializer")
+      .def_readonly_static("lConditionalContextualBandit", &lCONDITIONAL_CONTEXTUAL_BANDIT,
+          "Conditional contextual bandit label type -- used as input to the example() initializer")
+      .def_readonly_static("lSlates", &lSLATES, "Slates label type -- used as input to the example() initializer")
+      .def_readonly_static("lContinuous", &lCONTINUOUS, "Continuous label type -- used as input to the example() initializer")
+      .def_readonly_static("lContextualBanditEval", &lCONTEXTUAL_BANDIT_EVAL,
+          "Contextual bandit eval label type -- used as input to the example() initializer")
+      .def_readonly_static("lMultilabel", &lMULTILABEL, "Multilabel label type -- used as input to the example() initializer")
 
-      .def_readonly_static("pSCALAR", &pSCALAR)
-      .def_readonly_static("pSCALARS", &pSCALARS)
-      .def_readonly_static("pACTION_SCORES", &pACTION_SCORES)
-      .def_readonly_static("pACTION_PROBS", &pACTION_PROBS)
-      .def_readonly_static("pMULTICLASS", &pMULTICLASS)
-      .def_readonly_static("pMULTILABELS", &pMULTILABELS)
-      .def_readonly_static("pPROB", &pPROB)
-      .def_readonly_static("pMULTICLASSPROBS", &pMULTICLASSPROBS)
-      .def_readonly_static("pDECISION_SCORES", &pDECISION_SCORES)
-      .def_readonly_static("pACTION_PDF_VALUE", &pACTION_PDF_VALUE)
-      .def_readonly_static("pPDF", &pPDF)
-      .def_readonly_static("pACTIVE_MULTICLASS", &pACTIVE_MULTICLASS)
-      .def_readonly_static("pNOPRED", &pNOPRED)
+      .def_readonly_static("pSCALAR", &pSCALAR, "Scalar prediction type")
+      .def_readonly_static("pSCALARS", &pSCALARS, "Multiple scalar-valued prediction type")
+      .def_readonly_static("pACTION_SCORES", &pACTION_SCORES, "Multiple action scores prediction type")
+      .def_readonly_static("pACTION_PROBS", &pACTION_PROBS, "Multiple action probabilities prediction type")
+      .def_readonly_static("pMULTICLASS", &pMULTICLASS, "Multiclass prediction type")
+      .def_readonly_static("pMULTILABELS", &pMULTILABELS, "Multilabel prediction type")
+      .def_readonly_static("pPROB", &pPROB, "Probability prediction type")
+      .def_readonly_static("pMULTICLASSPROBS", &pMULTICLASSPROBS, "Multiclass probabilities prediction type")
+      .def_readonly_static("pDECISION_SCORES", &pDECISION_SCORES, "Decision scores prediction type")
+      .def_readonly_static("pACTION_PDF_VALUE", &pACTION_PDF_VALUE, "Action pdf value prediction type")
+      .def_readonly_static("pPDF", &pPDF, "PDF prediction type")
+      .def_readonly_static("pACTIVE_MULTICLASS", &pACTIVE_MULTICLASS, "Active multiclass prediction type")
+      .def_readonly_static("pNOPRED", &pNOPRED, "Nopred prediction type")
 
-      .def_readonly_static("tUNSET", &tUNSET)
-      .def_readonly_static("tSHARED", &tSHARED)
-      .def_readonly_static("tACTION", &tACTION)
-      .def_readonly_static("tSLOT", &tSLOT);
+      .def_readonly_static("tUNSET", &tUNSET, "Unset label type for CCB and Slates")
+      .def_readonly_static("tSHARED", &tSHARED, "Shared label type for CCB and Slates")
+      .def_readonly_static("tACTION", &tACTION, "Action label type for CCB and Slates")
+      .def_readonly_static("tSLOT", &tSLOT, "Slot label type for CCB and Slates");
 
   // example class
   py::class_<example, example_ptr>(m, "example")

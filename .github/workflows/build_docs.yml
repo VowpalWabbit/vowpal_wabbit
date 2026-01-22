@@ -76,11 +76,11 @@ jobs:
     needs: [python-build, dump-options-build]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
-      - uses: actions/setup-node@v3
-      - uses: actions/setup-python@v3
+      - uses: actions/setup-node@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
       - name: If this is a push build then set version to latest
@@ -147,7 +147,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: python_docs
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
           repository: VowpalWabbit/docs

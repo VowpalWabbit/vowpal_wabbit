@@ -68,15 +68,7 @@ before-all = [
 environment = { CMAKE_ARGS="-DVW_ZLIB_SYS_DEP=OFF", CMAKE_GENERATOR="Visual Studio 16 2019" }
 
 # Override for ARM64 Linux builds
-# Conservative compiler flags (-march=armv8-a -mtune=generic -mno-outline-atomics)
-# are applied directly in setup.py to ensure baseline ARMv8.0 compatibility
+# Compiler flags are applied in setup.py based on platform detection
 [[tool.cibuildwheel.overrides]]
 select = "*_aarch64"
-before-test = [
-    # Diagnostic: Check CPU features
-    "echo '=== ARM64 Diagnostic: CPU Features ===' && cat /proc/cpuinfo | grep -E '^(Features|CPU)' | head -5 || true",
-    "echo '=== ARM64 Diagnostic: Testing imports ===' && python -c 'import sys; print(f\"Python {sys.version}\")' || true",
-]
-# pybind11_DIR is automatically detected by setup.py
-# Compiler flags for ARM64 are now applied in setup.py based on platform detection
 environment = { CMAKE_ARGS="-DVW_ZLIB_SYS_DEP=OFF -DVW_FEAT_LAS_SIMD=OFF" }

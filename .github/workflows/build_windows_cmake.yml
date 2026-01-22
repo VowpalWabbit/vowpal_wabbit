@@ -30,12 +30,12 @@ jobs:
       VCPKG_REF: 25b458671af03578e6a34edd8f0d1ac85e084df4
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           path: 'vw'
           submodules: recursive
       - name: Restore vcpkg and build artifacts
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ${{ env.VCPKG_ROOT }}/installed/

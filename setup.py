@@ -112,7 +112,7 @@ class BuildPyLibVWBindingsModule(_build_ext):
             "-DBUILD_TESTING=Off",
             "-DWARNINGS=Off",
             "-DVW_FEAT_CB_GRAPH_FEEDBACK=On",
-            "-DSTD_INV_SQRT=On",
+            "-DVW_SIMD_INV_SQRT=Off",  # Use std::sqrt for reproducible results
         ]
 
         # This doesn't work as expected for Python3.6 and 3.7 on Windows.
@@ -148,13 +148,13 @@ class BuildPyLibVWBindingsModule(_build_ext):
             env_cmake_args = shlex.split(os.environ["CMAKE_ARGS"])
             cmake_args += env_cmake_args
 
-        # Apply conservative compiler flags for ARM64 Linux builds to ensure
-        # compatibility with baseline ARMv8.0 CPUs. This prevents GCC from
-        # emitting LSE atomic instructions (ARMv8.1+) that cause illegal
-        # instruction faults on older ARM processors.
+        # Apply compiler flags for ARM64 Linux builds:
+        # - armv8-a+crc: ARMv8.0 baseline with CRC32 extension (widely available)
+        # - mno-outline-atomics: Prevents GCC from emitting LSE atomic instructions
+        #   via libatomic calls, which can cause illegal instruction faults
         machine = platform.machine()
         if system == "Linux" and machine in ("aarch64", "arm64"):
-            arm_flags = "-march=armv8-a -mtune=generic -mno-outline-atomics"
+            arm_flags = "-march=armv8-a+crc -mno-outline-atomics"
             cmake_args += [
                 "-DCMAKE_CXX_FLAGS={}".format(arm_flags),
                 "-DCMAKE_C_FLAGS={}".format(arm_flags),
