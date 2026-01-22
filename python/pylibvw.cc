@@ -29,6 +29,7 @@
 #include <pybind11/stl.h>
 #include <pybind11/functional.h>
 
+#include <cstring>
 #include <memory>
 #include <fstream>
 
@@ -826,15 +827,18 @@ bool ex_pop_feature(example_ptr ec, unsigned char ns)
 
 void ex_erase_namespace(example_ptr ec, unsigned char ns)
 {
+  ec->num_features -= ec->feature_space[ns].size();
+  ec->reset_total_sum_feat_sq();
+  ec->feature_space[ns].sum_feat_sq = 0.;
   ec->feature_space[ns].clear();
-  ec->feature_space[ns].sum_feat_sq = 0;
 }
-
 
 bool ex_pop_namespace(example_ptr ec)
 {
   if (ec->indices.empty()) return false;
+  unsigned char ns = ec->indices.back();
   ec->indices.pop_back();
+  ex_erase_namespace(ec, ns);
   return true;
 }
 
@@ -1336,7 +1340,12 @@ void search_output(search_ptr _sch, std::string s)
 // Search helper functions
 void verify_search_set_properly(search_ptr _sch)
 {
-  if (!_sch) { THROW("search object not initialized properly"); }
+  if (_sch->task_name == nullptr) { THROW("set_structured_predict_hook: search task not initialized properly"); }
+
+  if (std::strcmp(_sch->task_name, "hook") != 0)
+  {
+    THROW("set_structured_predict_hook: trying to set hook when search task is not 'hook'.");
+  }
 }
 
 uint32_t search_get_num_actions(search_ptr _sch)
