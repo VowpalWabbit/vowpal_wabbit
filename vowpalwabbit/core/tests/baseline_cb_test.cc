@@ -167,7 +167,13 @@ TEST(BaselineCB, SaveLoadTest)
   auto m1 = run_simulation(50, -1);
   auto m2 = run_simulation(50, 20);
 
-  EXPECT_EQ(m1.get_bool("baseline_cb_baseline_in_use"), m2.get_bool("baseline_cb_baseline_in_use"));
-  EXPECT_EQ(m1.get_float("baseline_cb_baseline_lowerbound"), m2.get_float("baseline_cb_baseline_lowerbound"));
-  EXPECT_EQ(m1.get_float("baseline_cb_policy_expectation"), m2.get_float("baseline_cb_policy_expectation"));
+  auto baseline_metrics_1 = m1.get_metric_sink("baseline_challenger_cb");
+  auto baseline_metrics_2 = m2.get_metric_sink("baseline_challenger_cb");
+
+  EXPECT_EQ(
+      baseline_metrics_1.get_bool("baseline_cb_baseline_in_use"), baseline_metrics_2.get_bool("baseline_cb_baseline_in_use"));
+  EXPECT_EQ(baseline_metrics_1.get_float("baseline_cb_baseline_lowerbound"),
+      baseline_metrics_2.get_float("baseline_cb_baseline_lowerbound"));
+  EXPECT_EQ(baseline_metrics_1.get_float("baseline_cb_policy_expectation"),
+      baseline_metrics_2.get_float("baseline_cb_policy_expectation"));
 }
