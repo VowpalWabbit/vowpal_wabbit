@@ -12,6 +12,7 @@
 #  define ssize_t int64_t
 #  include <io.h>
 #  include <winsock2.h>
+#  include <direct.h>
 #else
 #  include <sys/socket.h>
 #  include <unistd.h>
@@ -28,6 +29,7 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <string>
 #include <vector>
 #if (ZLIB_VERNUM < 0x1252)
 typedef void* gzFile;
@@ -290,6 +292,48 @@ ssize_t stdio_adapter::write(const char* buffer, size_t num_bytes) { return _std
 // file_adapter
 //
 
+namespace
+{
+// Creates all parent directories for a given file path.
+// Returns true on success (or if no directories needed to be created), false on failure.
+bool create_parent_directories(const char* filepath)
+{
+  if (filepath == nullptr || *filepath == '\0') { return true; }
+
+  std::string path(filepath);
+
+  // Find the last directory separator
+  size_t last_sep = path.find_last_of("/\\");
+  if (last_sep == std::string::npos || last_sep == 0) { return true; }  // No parent directory or root
+
+  std::string parent_path = path.substr(0, last_sep);
+
+  // Create directories iteratively
+  for (size_t i = 1; i < parent_path.size(); ++i)
+  {
+    if (parent_path[i] == '/' || parent_path[i] == '\\')
+    {
+      std::string subpath = parent_path.substr(0, i);
+#ifdef _WIN32
+      _mkdir(subpath.c_str());
+#else
+      mkdir(subpath.c_str(), 0755);
+#endif
+      // Ignore errors - directory may already exist
+    }
+  }
+
+  // Create the final parent directory
+#ifdef _WIN32
+  _mkdir(parent_path.c_str());
+#else
+  mkdir(parent_path.c_str(), 0755);
+#endif
+
+  return true;
+}
+}  // namespace
+
 file_adapter::file_adapter(const char* filename, file_mode mode)
     : reader(true /*is_resettable*/), _mode(mode), _should_close(true)
 {
@@ -301,12 +345,17 @@ file_adapter::file_adapter(const char* filename, file_mode mode)
   }
   else
   {
+    create_parent_directories(filename);
     _sopen_s(
         &_file_descriptor, filename, _O_CREAT | _O_WRONLY | _O_BINARY | _O_TRUNC, _SH_DENYWR, _S_IREAD | _S_IWRITE);
   }
 #else
   if (_mode == file_mode::READ) { _file_descriptor = open(filename, O_RDONLY | O_LARGEFILE); }
-  else { _file_descriptor = open(filename, O_CREAT | O_WRONLY | O_LARGEFILE | O_TRUNC, 0666); }
+  else
+  {
+    create_parent_directories(filename);
+    _file_descriptor = open(filename, O_CREAT | O_WRONLY | O_LARGEFILE | O_TRUNC, 0666);
+  }
 #endif
 
   if (_file_descriptor == -1 && *filename != '\0') { THROWERRNO("can't open: " << filename); }
