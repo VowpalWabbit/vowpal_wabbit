@@ -661,25 +661,28 @@ def test_dsjson_with_metrics():
         assert isclose(a, b)
 
     learner_metric_dict = vw.get_learner_metrics()
-    assert len(vw.get_learner_metrics()) == 27
+    # Metrics are now namespaced by reduction name
+    extra_metrics = learner_metric_dict["extra_metrics"]
+    cb_metrics = learner_metric_dict["cb_explore_adf_greedy"]
+    sfm_metrics = learner_metric_dict["shared_feature_merger"]
 
-    assert learner_metric_dict["total_predict_calls"] == 2
-    assert learner_metric_dict["total_learn_calls"] == 1
-    assert learner_metric_dict["cbea_labeled_ex"] == 1
-    assert learner_metric_dict["cbea_predict_in_learn"] == 0
-    assert learner_metric_dict["cbea_label_first_action"] == 1
-    assert learner_metric_dict["cbea_label_not_first"] == 0
-    assert pytest.approx(learner_metric_dict["cbea_sum_cost"]) == -0.9
-    assert pytest.approx(learner_metric_dict["cbea_sum_cost_baseline"]) == -0.9
-    assert learner_metric_dict["cbea_non_zero_cost"] == 1
-    assert pytest.approx(learner_metric_dict["cbea_avg_feat_per_event"]) == 24
-    assert pytest.approx(learner_metric_dict["cbea_avg_actions_per_event"]) == 2
-    assert pytest.approx(learner_metric_dict["cbea_avg_ns_per_event"]) == 16
-    assert pytest.approx(learner_metric_dict["cbea_avg_feat_per_action"]) == 12
-    assert pytest.approx(learner_metric_dict["cbea_avg_ns_per_action"]) == 8
-    assert learner_metric_dict["cbea_min_actions"] == 2
-    assert learner_metric_dict["cbea_max_actions"] == 2
-    assert learner_metric_dict["sfm_count_learn_example_with_shared"] == 1
+    assert extra_metrics["total_predict_calls"] == 2
+    assert extra_metrics["total_learn_calls"] == 1
+    assert cb_metrics["cbea_labeled_ex"] == 1
+    assert cb_metrics["cbea_predict_in_learn"] == 0
+    assert cb_metrics["cbea_label_first_action"] == 1
+    assert cb_metrics["cbea_label_not_first"] == 0
+    assert pytest.approx(cb_metrics["cbea_sum_cost"]) == -0.9
+    assert pytest.approx(cb_metrics["cbea_sum_cost_baseline"]) == -0.9
+    assert cb_metrics["cbea_non_zero_cost"] == 1
+    assert pytest.approx(cb_metrics["cbea_avg_feat_per_event"]) == 24
+    assert pytest.approx(cb_metrics["cbea_avg_actions_per_event"]) == 2
+    assert pytest.approx(cb_metrics["cbea_avg_ns_per_event"]) == 16
+    assert pytest.approx(cb_metrics["cbea_avg_feat_per_action"]) == 12
+    assert pytest.approx(cb_metrics["cbea_avg_ns_per_action"]) == 8
+    assert cb_metrics["cbea_min_actions"] == 2
+    assert cb_metrics["cbea_max_actions"] == 2
+    assert sfm_metrics["sfm_count_learn_example_with_shared"] == 1
 
 
 def test_constructor_exception_is_safe():
@@ -786,8 +789,9 @@ def test_get_explore_eval_stats():
     vw.learn(ex_l)
     vw.finish_example(ex_l)
     learner_metric_dict = vw.get_learner_metrics()
-    assert learner_metric_dict["weighted_update_count"] == 1.0
-    assert learner_metric_dict["average_accepted_example_weight"] == 1.0
+    explore_eval_metrics = learner_metric_dict["explore_eval"]
+    assert explore_eval_metrics["weighted_update_count"] == 1.0
+    assert explore_eval_metrics["average_accepted_example_weight"] == 1.0
 
 
 # Tests for dual-channel logging (get_log, get_driver_output, get_log_output)
@@ -944,10 +948,11 @@ def test_ftrl_metrics():
     vw.learn("1 | a b c")
     vw.learn("-1 | d e f")
     metrics = vw.get_learner_metrics()
-    assert metrics["ftrl_algorithm"] == "Proximal-FTRL"
-    assert "ftrl_alpha" in metrics
-    assert "ftrl_beta" in metrics
-    assert metrics["ftrl_size"] == 3
+    ftrl_metrics = metrics["ftrl-Proximal-FTRL"]
+    assert ftrl_metrics["ftrl_algorithm"] == "Proximal-FTRL"
+    assert "ftrl_alpha" in ftrl_metrics
+    assert "ftrl_beta" in ftrl_metrics
+    assert ftrl_metrics["ftrl_size"] == 3
     vw.finish()
 
 
@@ -957,10 +962,11 @@ def test_pistol_metrics():
     vw.learn("1 | a b c")
     vw.learn("-1 | d e f")
     metrics = vw.get_learner_metrics()
-    assert metrics["ftrl_algorithm"] == "PiSTOL"
-    assert "ftrl_alpha" in metrics
-    assert "ftrl_beta" in metrics
-    assert metrics["ftrl_size"] == 4
+    ftrl_metrics = metrics["ftrl-PiSTOL"]
+    assert ftrl_metrics["ftrl_algorithm"] == "PiSTOL"
+    assert "ftrl_alpha" in ftrl_metrics
+    assert "ftrl_beta" in ftrl_metrics
+    assert ftrl_metrics["ftrl_size"] == 4
     vw.finish()
 
 
@@ -970,8 +976,9 @@ def test_coin_metrics():
     vw.learn("1 | a b c")
     vw.learn("-1 | d e f")
     metrics = vw.get_learner_metrics()
-    assert metrics["ftrl_algorithm"] == "Coin Betting"
-    assert "ftrl_alpha" in metrics
-    assert "ftrl_beta" in metrics
-    assert metrics["ftrl_size"] == 6
+    ftrl_metrics = metrics["ftrl-Coin Betting"]
+    assert ftrl_metrics["ftrl_algorithm"] == "Coin Betting"
+    assert "ftrl_alpha" in ftrl_metrics
+    assert "ftrl_beta" in ftrl_metrics
+    assert ftrl_metrics["ftrl_size"] == 6
     vw.finish()
