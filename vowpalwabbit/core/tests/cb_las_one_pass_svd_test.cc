@@ -47,8 +47,10 @@ TEST(Las, CheckMetricsWithLASRunsOK)
   vw->finish_example(examples);
 
   auto metrics = vw->output_runtime.global_metrics.collect_metrics(vw->l.get());
-  EXPECT_EQ(metrics.get_uint("cbea_labeled_ex"), 1);
-  EXPECT_EQ(metrics.get_uint("cb_las_filtering_factor"), 5);
+  auto cb_greedy_metrics = metrics.get_metric_sink("cb_explore_adf_greedy");
+  auto cb_las_metrics = metrics.get_metric_sink("cb_explore_adf_large_action_space");
+  EXPECT_EQ(cb_greedy_metrics.get_uint("cbea_labeled_ex"), 1);
+  EXPECT_EQ(cb_las_metrics.get_uint("cb_las_filtering_factor"), 5);
 }
 
 TEST(Las, CheckAOSameActionsSameRepresentation)

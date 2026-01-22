@@ -214,8 +214,9 @@ TEST(Automl, Assert0thEventMetricsWIterations)
       [&metric_name, &zero](cb_sim&, VW::workspace& all, VW::multi_ex&)
       {
         auto metrics = all.output_runtime.global_metrics.collect_metrics(all.l.get());
+        auto extra_metrics = metrics.get_metric_sink("extra_metrics");
 
-        EXPECT_EQ(metrics.get_uint(metric_name), zero);
+        EXPECT_EQ(extra_metrics.get_uint(metric_name), zero);
         return true;
       });
 
@@ -224,8 +225,9 @@ TEST(Automl, Assert0thEventMetricsWIterations)
       [&metric_name, &num_iterations](cb_sim&, VW::workspace& all, VW::multi_ex&)
       {
         auto metrics = all.output_runtime.global_metrics.collect_metrics(all.l.get());
+        auto extra_metrics = metrics.get_metric_sink("extra_metrics");
 
-        EXPECT_EQ(metrics.get_uint(metric_name), num_iterations);
+        EXPECT_EQ(extra_metrics.get_uint(metric_name), num_iterations);
         return true;
       });
 
