@@ -51,7 +51,8 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          # Use Python 3.12 to match system Boost.Python version
+          python-version: '3.12'
 
       - name: Install Build Dependencies
         run: |
@@ -61,6 +62,10 @@ jobs:
             libboost-dev libboost-program-options-dev libboost-system-dev \
             libboost-thread-dev libboost-test-dev libboost-python-dev \
             zlib1g-dev binutils gdb
+
+          # Show which Boost.Python versions are available
+          echo "=== Available Boost.Python libraries ==="
+          find /usr -name "libboost_python*.so*" 2>/dev/null || true
 
       - name: Analyze Boost Libraries for ARM Instructions
         run: |
@@ -109,12 +114,18 @@ jobs:
           export CXXFLAGS="-march=armv8-a -mtune=generic -mno-outline-atomics -g"
           export CFLAGS="-march=armv8-a -mtune=generic -mno-outline-atomics -g"
 
+          # Get Python version for Boost.Python matching
+          PY_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+          echo "Using Python version: $PY_VERSION"
+
           cmake .. \
             -GNinja \
             -DCMAKE_BUILD_TYPE=Debug \
             -DVW_FEAT_LAS_SIMD=OFF \
             -DBUILD_PYTHON=ON \
             -DBUILD_TESTING=ON \
+            -DPY_VERSION="${PY_VERSION}" \
+            -DBoost_NO_BOOST_CMAKE=ON \
             -DCMAKE_CXX_FLAGS="${CXXFLAGS}" \
             -DCMAKE_C_FLAGS="${CFLAGS}" \
             -DCMAKE_VERBOSE_MAKEFILE=ON
@@ -202,8 +213,12 @@ jobs:
           echo "=== Building Python wheel ==="
           pip install build wheel pytest
 
+          # Get Python version info
+          PY_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+          echo "Building wheel for Python $PY_VERSION"
+
           # Set conservative flags for the wheel build
-          export CMAKE_ARGS="-DVW_FEAT_LAS_SIMD=OFF -DCMAKE_CXX_FLAGS='-march=armv8-a -mtune=generic -mno-outline-atomics -g' -DCMAKE_C_FLAGS='-march=armv8-a -mtune=generic -mno-outline-atomics -g'"
+          export CMAKE_ARGS="-DVW_FEAT_LAS_SIMD=OFF -DBoost_NO_BOOST_CMAKE=ON -DPY_VERSION=${PY_VERSION} -DCMAKE_CXX_FLAGS='-march=armv8-a -mtune=generic -mno-outline-atomics -g' -DCMAKE_C_FLAGS='-march=armv8-a -mtune=generic -mno-outline-atomics -g'"
           export BOOST_PY_VERSION_SUFFIX="3"
 
           pip wheel . -w wheelhouse/ --verbose 2>&1 | tail -100
