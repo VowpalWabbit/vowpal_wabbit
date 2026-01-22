@@ -112,7 +112,7 @@ class BuildPyLibVWBindingsModule(_build_ext):
             "-DBUILD_TESTING=Off",
             "-DWARNINGS=Off",
             "-DVW_FEAT_CB_GRAPH_FEEDBACK=On",
-            "-DSTD_INV_SQRT=On",
+            "-DVW_SIMD_INV_SQRT=Off",  # Use std::sqrt for reproducible results
         ]
 
         # This doesn't work as expected for Python3.6 and 3.7 on Windows.

@@ -121,9 +121,9 @@
           "type": "BOOL",
           "value": "On"
         },
-        "STD_INV_SQRT": {
+        "VW_SIMD_INV_SQRT": {
           "type": "BOOL",
-          "value": "On"
+          "value": "Off"
         }
       }
     },
@@ -233,9 +233,9 @@
           "type": "STRING",
           "value": "wasm32-emscripten"
         },
-        "STD_INV_SQRT": {
+        "VW_SIMD_INV_SQRT": {
           "type": "BOOL",
-          "value": "On"
+          "value": "Off"
         }
       }
     },
