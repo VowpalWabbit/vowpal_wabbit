@@ -39,7 +39,7 @@
     "prepublish": "npm run build",
     "prepublishOnly": "npm install && npm test",
     "build": "tsc",
-    "test": "node --experimental-wasm-threads ./node_modules/mocha/bin/mocha --delay",
+    "test": "node ./node_modules/mocha/bin/mocha --delay",
     "docs": "jsdoc2md ./dist/vw*.js > documentation.md"
   },
   "dependencies": {
