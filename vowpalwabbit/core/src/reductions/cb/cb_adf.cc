@@ -512,6 +512,18 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_adf_setup(VW::setup_bas
 
   if (options.was_supplied("baseline") && check_baseline_enabled) { options.insert("check_enabled", ""); }
 
+  // Warn if no interactions are specified - CB ADF typically needs them to work well
+  if (!options.was_supplied("quadratic") && !options.was_supplied("cubic") &&
+      !options.was_supplied("interactions") && !options.was_supplied("experimental_full_name_interactions") &&
+      all.feature_tweaks_config.interactions.empty())
+  {
+    all.logger.err_warn(
+        "cb_adf is used without any interaction features (e.g., -q, --cubic, --interactions). "
+        "For contextual bandits with action dependent features, interactions between shared (context) "
+        "and action features are usually required for good performance. "
+        "Consider adding -q :: or specific interactions like -q sa (shared-action).");
+  }
+
   auto ld = VW::make_unique<VW::reductions::cb_adf>(
       cb_type, rank_all, clip_p, no_predict, feature_width_above, per_model_save_load, &all);
 
