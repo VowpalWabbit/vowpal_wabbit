@@ -78,9 +78,11 @@ jobs:
           export CXXFLAGS="-march=armv8-a -mtune=generic -mno-outline-atomics -g"
           export CFLAGS="-march=armv8-a -mtune=generic -mno-outline-atomics -g"
 
-          # Get pybind11 cmake dir
+          # Get pybind11 cmake dir and Python version
           PYBIND11_DIR=$(python -c "import pybind11; print(pybind11.get_cmake_dir())")
+          PY_VERSION=$(python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
           echo "Using pybind11 from: $PYBIND11_DIR"
+          echo "Using Python version: $PY_VERSION"
 
           cmake .. \
             -GNinja \
@@ -88,6 +90,7 @@ jobs:
             -DVW_FEAT_LAS_SIMD=OFF \
             -DBUILD_PYTHON=ON \
             -DBUILD_TESTING=ON \
+            -DPY_VERSION="${PY_VERSION}" \
             -Dpybind11_DIR="${PYBIND11_DIR}" \
             -DCMAKE_CXX_FLAGS="${CXXFLAGS}" \
             -DCMAKE_C_FLAGS="${CFLAGS}" \
