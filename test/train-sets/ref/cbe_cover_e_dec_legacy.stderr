@@ -13,13 +13,13 @@ Output pred = ACTION_PROBS
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
 0.000000 0.000000            1            1.0        1:0:0.5     1:0.500000        3
-0.323483 0.646967            2            2.0        2:1:0.5     1:0.500000        3
-0.456686 0.589888            4            4.0        1:2:0.5     2:0.591752        3
-0.541718 0.626750            8            8.0        2:1:0.5     2:0.732739        3
+0.323458 0.646916            2            2.0        2:1:0.5     1:0.500000        3
+0.456650 0.589841            4            4.0        1:2:0.5     2:0.591752        3
+0.541708 0.626767            8            8.0        2:1:0.5     2:0.732739        3
 
 finished run
 number of examples = 8
 weighted example sum = 8.000000
 weighted label sum = 0.000000
-average loss = 0.541718
+average loss = 0.541708
 total feature number = 25

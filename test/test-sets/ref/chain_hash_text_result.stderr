@@ -11,14 +11,14 @@ Output pred = SCALAR
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
 1.000000 1.000000            1            1.0         1.0000         0.0000        2
-0.621600 0.243201            2            2.0         1.0000         0.5068        2
-0.428942 0.236284            4            4.0         1.0000         0.7267        3
+0.621558 0.243117            2            2.0         1.0000         0.5069        2
+0.428907 0.236256            4            4.0         1.0000         0.7268        3
 
 finished run
 number of examples = 6
 weighted example sum = 6.000000
 weighted label sum = 6.000000
-average loss = 0.352323
+average loss = 0.352292
 best constant = 1.000000
 best constant's loss = 0.000000
 total feature number = 13

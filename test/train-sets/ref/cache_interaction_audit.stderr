@@ -13,8 +13,8 @@ Output pred = SCALAR
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
 1.000000 1.000000            1            1.0         1.0000         0.0000       16
-1.728843 2.457685            2            2.0         2.0000         0.4323       16
-1.189158 0.649473            4            4.0         2.0000         0.9061       16
+1.728791 2.457582            2            2.0         2.0000         0.4323       16
+1.189114 0.649436            4            4.0         2.0000         0.9061       16
 unknown  unknown             8            8.0         2.0000         1.6939       16 h
 
 finished run

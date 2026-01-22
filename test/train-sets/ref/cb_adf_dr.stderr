@@ -13,11 +13,11 @@ Output pred = ACTION_SCORES
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
 2.000000 2.000000            1            1.0        0:1:0.5            0:0       18
-0.931417 -0.13716            2            2.0        1:0:0.5         1:0.12        8
+0.931410 -0.13718            2            2.0        1:0:0.5         1:0.12        8
 
 finished run
 number of examples = 3
 weighted example sum = 3.000000
 weighted label sum = 0.000000
-average loss = 0.931417
+average loss = 0.931410
 total feature number = 31

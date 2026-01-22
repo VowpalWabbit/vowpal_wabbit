@@ -1,3 +1,3 @@
 [info] Generating 2-grams for all namespaces.
 [info] Generating 4-skips for all namespaces.
-[critical] vw (options_cli.cc:58): Disagreeing option values for 'data': 'train-sets/rcv1_raw_cb_small_p1.vw' vs 'train-sets/rcv1_raw_cb_small_p2.vw'
+[critical] vw (options_cli.cc:60): Disagreeing option values for 'data': 'train-sets/rcv1_raw_cb_small_p1.vw' vs 'train-sets/rcv1_raw_cb_small_p2.vw'

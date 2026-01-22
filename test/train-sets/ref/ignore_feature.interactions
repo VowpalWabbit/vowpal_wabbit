@@ -1,5 +1,5 @@
 Version 9.10.0
-Id
+Id 
 Min label:-1
 Max label:0
 bits:18
@@ -29,25 +29,25 @@ sd::oec.weighted_labeled_examples 8
 current_pass 1
 l1_state 0
 l2_state 1
-j^originethiopia:6311:-0.065725 1.03505 1
-j^roastdark:15410:-0.0864616 3.42656 1
-i^constant:26051:-0.098572 5.15033 1
-i^idCold_brew:39661:0.0237209 0.68872 1
-FromUrl^nameCathy:42529:0.013045 1.21817 1
-FromUrl^nameBob:50489:-0.0271927 1.72377 1
-j^originbrazil:54816:0.0197519 1.90689 1
-FromUrl^nameAlice:60658:-0.0638838 1.95863 1
-i^idIced_mocha:110846:-0.065725 1.03505 1
-Constant:116060:-0.098572 5.15033 1
-j^organicno:124303:-0.0404094 2.25322 1
-i^idLatte:152734:0.013045 1.21817 1
-i^idCappucino:153620:-0.0856707 2.2084 1
-FromUrl^weatherSunny:159054:0.0669293 1.1728 1
-FromUrl^weatherSnowy:173256:-0.158582 2.75937 1
-j^typehot:188731:-0.0864616 3.42656 1
-FromUrl^nameDave:189701:-0.065701 0.249763 1
-FromUrl^weatherRainy:194859:0.013045 1.21817 1
-j^organicyes:205927:-0.0672748 2.89712 1
-j^roastlight:219055:-0.0271927 1.72377 1
-j^originkenya:231314:-0.0856707 2.2084 1
-j^typecold:257035:-0.0271927 1.72377 1
+j^originethiopia:6311:-0.0657108 1.03506 1
+j^roastdark:15410:-0.0864535 3.4266 1
+i^constant:26051:-0.0985767 5.15034 1
+i^idCold_brew:39661:0.0237205 0.688679 1
+FromUrl^nameCathy:42529:0.0130525 1.21818 1
+FromUrl^nameBob:50489:-0.027199 1.72374 1
+j^originbrazil:54816:0.0197341 1.90685 1
+FromUrl^nameAlice:60658:-0.0638823 1.95864 1
+i^idIced_mocha:110846:-0.0657108 1.03506 1
+Constant:116060:-0.0985767 5.15034 1
+j^organicno:124303:-0.0404107 2.25324 1
+i^idLatte:152734:0.0130525 1.21818 1
+i^idCappucino:153620:-0.0856676 2.20843 1
+FromUrl^weatherSunny:159054:0.0669203 1.17274 1
+FromUrl^weatherSnowy:173256:-0.158574 2.75943 1
+j^typehot:188731:-0.0864535 3.4266 1
+FromUrl^nameDave:189701:-0.0657025 0.249787 1
+FromUrl^weatherRainy:194859:0.0130525 1.21818 1
+j^organicyes:205927:-0.0672765 2.8971 1
+j^roastlight:219055:-0.027199 1.72374 1
+j^originkenya:231314:-0.0856676 2.20843 1
+j^typecold:257035:-0.027199 1.72374 1

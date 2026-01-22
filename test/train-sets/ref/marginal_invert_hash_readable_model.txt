@@ -1,5 +1,5 @@
 Version 9.10.0
-Id
+Id 
 Min label:0
 Max label:1
 bits:18
@@ -19,7 +19,7 @@ f^constant*id1:0.9995:1.999
 initial_t 0
 norm normalizer 7.56231
 t 4
-sum_loss 0.886291
+sum_loss 0.886283
 sum_loss_since_last_dump 0
 dump_interval 8
 min_label 0
@@ -34,5 +34,5 @@ sd::oec.weighted_labeled_examples 4
 current_pass 1
 l1_state 0
 l2_state 1
-f^constant:17187:0.527579 0.886291 0.5
-f^constant2:261506:0.516337 0.883632 0.5
+f^constant:17187:0.527602 0.886283 0.5
+f^constant2:261506:0.51635 0.883626 0.5

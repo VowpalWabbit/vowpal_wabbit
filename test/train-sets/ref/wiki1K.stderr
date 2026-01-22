@@ -11,7 +11,7 @@ Output pred = NOPRED
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
 10.40360 10.40360          128          128.0           none              0      732
-9.956974 9.510342          256          256.0           none              0      102
+9.956975 9.510343          256          256.0           none              0      102
 
 finished run
 number of examples = 384
