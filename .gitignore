@@ -115,6 +115,7 @@ python/src/**
 python/vowpalwabbit.egg-info/**
 python/.coverage
 python/docs/build
+python/vowpalwabbit/_git_commit.py
 env/**
 
 # Java

@@ -1,5 +1,14 @@
 # Python bindings using pybind11
 
+# Generate _git_commit.py with the git commit hash
+# The vw_GIT_COMMIT variable is set in the root CMakeLists.txt
+set(VW_GIT_COMMIT "${vw_GIT_COMMIT}")
+configure_file(
+  "${CMAKE_CURRENT_SOURCE_DIR}/vowpalwabbit/_git_commit.py.in"
+  "${CMAKE_CURRENT_SOURCE_DIR}/vowpalwabbit/_git_commit.py"
+  @ONLY
+)
+
 if(NOT DEFINED PY_VERSION)
   set(PY_VERSION 3.10)
   message(WARNING "No PY_VERSION specified, Python ${PY_VERSION} will be used for VowpalWabbit Python bindings")
