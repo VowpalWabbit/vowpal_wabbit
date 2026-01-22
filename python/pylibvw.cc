@@ -682,9 +682,9 @@ float ex_sum_feat_sq(example_ptr ec, unsigned char ns)
 
 void ex_push_feature(example_ptr ec, unsigned char ns, uint64_t fid, float v)
 {
-  // Note: push_back already updates sum_feat_sq internally, so we don't need
-  // to add it here. The old Boost.Python code had this duplication bug.
   ec->feature_space[ns].push_back(v, fid);
+  ec->num_features++;
+  ec->reset_total_sum_feat_sq();
 }
 
 
@@ -818,9 +818,12 @@ bool ex_pop_feature(example_ptr ec, unsigned char ns)
   auto& fs = ec->feature_space[ns];
   if (fs.empty()) return false;
   float val = fs.values.back();
-  fs.sum_feat_sq -= val * val;
-  fs.indices.pop_back();
   fs.values.pop_back();
+  if (!fs.indices.empty()) { fs.indices.pop_back(); }
+  if (!fs.space_names.empty()) { fs.space_names.pop_back(); }
+  ec->num_features--;
+  fs.sum_feat_sq -= val * val;
+  ec->reset_total_sum_feat_sq();
   return true;
 }
 
@@ -1281,7 +1284,7 @@ size_t get_example_counter(example_ptr ec)
   return ec->example_counter; 
 }
 
-uint32_t get_ft_offset(example_ptr ec)
+uint64_t get_ft_offset(example_ptr ec)
 {
   return ec->ft_offset;
 }
@@ -1308,7 +1311,7 @@ float get_loss(example_ptr ec)
 
 float get_total_sum_feat_sq(example_ptr ec)
 {
-  return ec->total_sum_feat_sq;
+  return ec->get_total_sum_feat_sq();
 }
 
 // Workspace accessor functions
