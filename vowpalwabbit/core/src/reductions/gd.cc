@@ -353,9 +353,13 @@ class audit_results
 public:
   VW::workspace& all;
   const uint64_t offset;
+  const bool test_only;
   std::vector<VW::audit_strings> components;
   std::vector<string_value> results;
-  audit_results(VW::workspace& p_all, const size_t p_offset) : all(p_all), offset(p_offset) {}
+  audit_results(VW::workspace& p_all, const size_t p_offset, bool p_test_only = false)
+      : all(p_all), offset(p_offset), test_only(p_test_only)
+  {
+  }
 };
 
 inline void audit_interaction(audit_results& dat, const VW::audit_strings* f)
@@ -397,7 +401,11 @@ inline void audit_feature(audit_results& dat, const float ft_weight, const uint6
     dat.results.push_back(sv);
   }
 
-  if ((dat.all.passes_config.current_pass == 0 || dat.all.runtime_config.training == false) &&
+  // Populate index_name_map for --invert_hash during:
+  // - First pass (learning the mapping)
+  // - Test-only mode (predictions without training)
+  // - Per-example test_only mode (library API predict() calls)
+  if ((dat.all.passes_config.current_pass == 0 || dat.all.runtime_config.training == false || dat.test_only) &&
       dat.all.output_config.hash_inv)
   {
     const auto strided_index = index >> stride_shift;
@@ -436,7 +444,7 @@ void VW::details::print_features(VW::workspace& all, VW::example& ec)
   if (all.reduction_state.lda > 0) { print_lda_features(all, ec); }
   else
   {
-    audit_results dat(all, ec.ft_offset);
+    audit_results dat(all, ec.ft_offset, ec.test_only);
 
     for (VW::features& fs : ec)
     {
