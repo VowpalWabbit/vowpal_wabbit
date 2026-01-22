@@ -1,3 +1,3 @@
-[warning] Any duplicate namespace interactions will be removed
+[info] Any duplicate namespace interactions will be removed
 You can use --leave_duplicate_interactions to disable this behaviour.
 [info] VW 9.0.0 introduced a change to the default model save behavior. Please use '--predict_only_model' when using either '--invert_hash' or '--readable_model' to get the old behavior. Details: https://vowpalwabbit.org/link/1

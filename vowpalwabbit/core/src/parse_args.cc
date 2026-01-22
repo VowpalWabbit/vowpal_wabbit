@@ -759,7 +759,8 @@ void parse_feature_tweaks(options_i& options, VW::workspace& all, bool interacti
           [](const std::vector<VW::namespace_index>& interaction) { return VW::contains_wildcard(interaction); });
       if (any_contain_wildcards)
       {
-        all.logger.err_warn(
+        // This is informational, not a warning - it's expected behavior for wildcard interactions
+        all.logger.err_info(
             "Any duplicate namespace interactions will be removed\n"
             "You can use --leave_duplicate_interactions to disable this behaviour.");
       }
