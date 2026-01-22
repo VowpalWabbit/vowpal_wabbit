@@ -144,8 +144,21 @@ class BuildPyLibVWBindingsModule(_build_ext):
 
         # Read CMAKE_ARGS from environment variable if set
         if "CMAKE_ARGS" in os.environ:
-            env_cmake_args = os.environ["CMAKE_ARGS"].split()
+            import shlex
+            env_cmake_args = shlex.split(os.environ["CMAKE_ARGS"])
             cmake_args += env_cmake_args
+
+        # Apply conservative compiler flags for ARM64 Linux builds to ensure
+        # compatibility with baseline ARMv8.0 CPUs. This prevents GCC from
+        # emitting LSE atomic instructions (ARMv8.1+) that cause illegal
+        # instruction faults on older ARM processors.
+        machine = platform.machine()
+        if system == "Linux" and machine in ("aarch64", "arm64"):
+            arm_flags = "-march=armv8-a -mtune=generic -mno-outline-atomics"
+            cmake_args += [
+                "-DCMAKE_CXX_FLAGS={}".format(arm_flags),
+                "-DCMAKE_C_FLAGS={}".format(arm_flags),
+            ]
 
         if self.distribution.cmake_options is not None:
             argslist = self.distribution.cmake_options.split(";")

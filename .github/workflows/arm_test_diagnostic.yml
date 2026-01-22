@@ -1,0 +1,262 @@
+name: ARM Test Diagnostic
+
+# This workflow enables ARM64 testing and captures diagnostics.
+# Now uses pybind11 (header-only) instead of Boost.Python, avoiding
+# issues with system libraries compiled for newer ARM CPUs.
+
+on:
+  push:
+    branches:
+      - master
+      - 'releases/**'
+      - '**/arm*'
+  pull_request:
+    branches:
+      - '*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  arm64-diagnostic-build-test:
+    name: arm64.diagnostic
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - name: System Information
+        run: |
+          echo "=== CPU Information ==="
+          cat /proc/cpuinfo | head -50
+          echo ""
+          echo "=== CPU Features ==="
+          cat /proc/cpuinfo | grep -E "^(Features|CPU architecture|model name)" | head -5
+          echo ""
+          echo "=== uname ==="
+          uname -a
+          echo ""
+          echo "=== lscpu ==="
+          lscpu || true
+          echo ""
+          echo "=== Architecture ==="
+          dpkg --print-architecture || true
+          echo ""
+          echo "=== GCC Version ==="
+          gcc --version || true
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake ninja-build g++ \
+            zlib1g-dev binutils gdb
+
+          # Install pybind11
+          pip install pybind11
+
+          # Show pybind11 location
+          echo "=== pybind11 location ==="
+          python -c "import pybind11; print(pybind11.get_cmake_dir())"
+
+      - name: Build VW with Diagnostics
+        run: |
+          echo "=== Building VW with conservative ARM flags ==="
+
+          mkdir -p build
+          cd build
+
+          # Use conservative ARM flags
+          export CXXFLAGS="-march=armv8-a -mtune=generic -mno-outline-atomics -g"
+          export CFLAGS="-march=armv8-a -mtune=generic -mno-outline-atomics -g"
+
+          # Get pybind11 cmake dir and Python version
+          PYBIND11_DIR=$(python -c "import pybind11; print(pybind11.get_cmake_dir())")
+          PY_VERSION=$(python -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+          echo "Using pybind11 from: $PYBIND11_DIR"
+          echo "Using Python version: $PY_VERSION"
+
+          cmake .. \
+            -GNinja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DVW_FEAT_LAS_SIMD=OFF \
+            -DBUILD_PYTHON=ON \
+            -DBUILD_TESTING=ON \
+            -DPY_VERSION="${PY_VERSION}" \
+            -Dpybind11_DIR="${PYBIND11_DIR}" \
+            -DCMAKE_CXX_FLAGS="${CXXFLAGS}" \
+            -DCMAKE_C_FLAGS="${CFLAGS}" \
+            -DCMAKE_VERBOSE_MAKEFILE=ON
+
+          ninja -j$(nproc)
+
+          echo ""
+          echo "=== Build complete, checking VW binary for LSE/SVE instructions ==="
+
+          # Check if the VW binary contains any problematic instructions
+          if [ -f "vowpalwabbit/cli/vw" ]; then
+            echo "--- VW binary architecture info ---"
+            file vowpalwabbit/cli/vw
+            readelf -A vowpalwabbit/cli/vw 2>/dev/null | head -20 || true
+
+            echo ""
+            echo "--- Checking VW binary for LSE atomics ---"
+            objdump -d vowpalwabbit/cli/vw 2>/dev/null | grep -E '\s(ldadd|stadd|swp|cas|ldclr|ldset|ldeor|ldapr)' | head -10 || echo "No LSE atomics in VW binary"
+
+            echo ""
+            echo "--- Checking VW binary for SVE instructions ---"
+            objdump -d vowpalwabbit/cli/vw 2>/dev/null | grep -E '\s(z[0-9]+|p[0-9]+)\.' | head -10 || echo "No SVE instructions in VW binary"
+
+            echo ""
+            echo "--- Linked libraries ---"
+            ldd vowpalwabbit/cli/vw
+          fi
+
+      - name: Test VW Binary with Signal Handling
+        run: |
+          echo "=== Testing VW binary execution with signal diagnostics ==="
+          cd build
+
+          # Enable core dumps
+          ulimit -c unlimited
+          echo "core.%p" | sudo tee /proc/sys/kernel/core_pattern || true
+
+          # Try running VW with version flag first
+          echo "--- Testing vw --version ---"
+          timeout 30 ./vowpalwabbit/cli/vw --version || {
+            exit_code=$?
+            echo "VW exited with code: $exit_code"
+            if [ $exit_code -eq 132 ]; then
+              echo "ERROR: Exit code 132 = SIGILL (Illegal Instruction)"
+            fi
+          }
+
+          echo ""
+          echo "--- Testing vw --help ---"
+          timeout 30 ./vowpalwabbit/cli/vw --help 2>&1 | head -20 || {
+            exit_code=$?
+            echo "VW exited with code: $exit_code"
+            if [ $exit_code -eq 132 ]; then
+              echo "ERROR: Exit code 132 = SIGILL (Illegal Instruction)"
+            fi
+          }
+
+      - name: Run Unit Tests with Diagnostics
+        run: |
+          echo "=== Running unit tests with diagnostics ==="
+          cd build
+
+          # Run tests with verbose output
+          ctest --output-on-failure --label-regex VWTestList --parallel 2 -V 2>&1 | head -500 || {
+            exit_code=$?
+            echo ""
+            echo "Tests exited with code: $exit_code"
+
+            # Check for core dumps
+            echo ""
+            echo "--- Checking for core dumps ---"
+            ls -la core.* 2>/dev/null || echo "No core dumps found"
+
+            # If there's a core dump, analyze it
+            for core in core.*; do
+              if [ -f "$core" ]; then
+                echo "--- Analyzing core dump: $core ---"
+                gdb -batch -ex "bt full" -ex "info registers" ./vowpalwabbit/cli/vw "$core" 2>/dev/null || true
+              fi
+            done
+          }
+
+      - name: Build and Test Python Wheel
+        run: |
+          echo "=== Building Python wheel ==="
+          pip install build wheel pytest
+
+          # Get pybind11 cmake dir
+          PYBIND11_DIR=$(python -c "import pybind11; print(pybind11.get_cmake_dir())")
+          echo "Building wheel with pybind11 from: $PYBIND11_DIR"
+
+          # Set conservative flags for the wheel build
+          export CMAKE_ARGS="-DVW_FEAT_LAS_SIMD=OFF -Dpybind11_DIR=${PYBIND11_DIR} -DCMAKE_CXX_FLAGS='-march=armv8-a -mtune=generic -mno-outline-atomics -g' -DCMAKE_C_FLAGS='-march=armv8-a -mtune=generic -mno-outline-atomics -g'"
+
+          pip wheel . -w wheelhouse/ --verbose 2>&1 | tail -100
+
+          echo ""
+          echo "=== Installing wheel ==="
+          pip install wheelhouse/*.whl --force-reinstall
+
+          echo ""
+          echo "=== Testing Python import with diagnostics ==="
+          python3 -c "
+          import sys
+          import signal
+          import traceback
+
+          def sigill_handler(signum, frame):
+              print('SIGILL received!')
+              print('Frame info:', frame)
+              traceback.print_stack(frame)
+              sys.exit(132)
+
+          signal.signal(signal.SIGILL, sigill_handler)
+
+          print('Attempting to import vowpalwabbit...')
+          try:
+              import vowpalwabbit
+              print('SUCCESS: vowpalwabbit imported')
+              print('Version:', vowpalwabbit.__version__ if hasattr(vowpalwabbit, '__version__') else 'unknown')
+
+              # Try creating a simple workspace
+              print('Creating workspace...')
+              vw = vowpalwabbit.Workspace(quiet=True)
+              print('SUCCESS: Workspace created')
+
+              # Try a simple prediction
+              print('Running simple prediction...')
+              ex = vw.parse('| a b c')
+              pred = vw.predict(ex)
+              print('SUCCESS: Prediction =', pred)
+
+              vw.finish()
+              print('SUCCESS: All basic operations completed')
+          except Exception as e:
+              print('EXCEPTION:', type(e).__name__, str(e))
+              traceback.print_exc()
+              sys.exit(1)
+          " || {
+            exit_code=$?
+            echo "Python test exited with code: $exit_code"
+            if [ $exit_code -eq 132 ]; then
+              echo "ERROR: SIGILL (Illegal Instruction) detected during Python test"
+            fi
+          }
+
+      - name: Run Python Tests
+        run: |
+          echo "=== Running Python tests ==="
+          pip install pytest vw-executor scipy scikit-learn setuptools
+
+          # Run tests with verbose output (excluding e2e_v2 due to multiprocessing issues)
+          python -m pytest ./python/tests/ --ignore=./python/tests/e2e_v2 -v --tb=long 2>&1 | head -500 || {
+            exit_code=$?
+            echo ""
+            echo "Python tests exited with code: $exit_code"
+          }
+
+      - name: Upload Build Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: arm64-diagnostic-artifacts
+          path: |
+            build/vowpalwabbit/cli/vw
+            wheelhouse/*.whl
+            core.*
+          if-no-files-found: ignore
