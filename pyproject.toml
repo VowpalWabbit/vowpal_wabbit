@@ -67,16 +67,16 @@ before-all = [
 # CMAKE_GENERATOR specifies Visual Studio 2019 (available on windows-2019 runner)
 environment = { CMAKE_ARGS="-DVW_ZLIB_SYS_DEP=OFF", CMAKE_GENERATOR="Visual Studio 16 2019" }
 
-# Override for ARM64 Linux builds to use conservative architecture flags
-# -mno-outline-atomics: Prevents GCC from using LSE atomic instructions (ARMv8.1+) which cause illegal instruction on older CPUs
-# -march=armv8-a: Baseline ARMv8.0 instruction set only (NEON is part of baseline and safe to use)
-# -mtune=generic: Don't optimize for specific CPU variant
+# Override for ARM64 Linux builds
+# Conservative compiler flags (-march=armv8-a -mtune=generic -mno-outline-atomics)
+# are applied directly in setup.py to ensure baseline ARMv8.0 compatibility
 [[tool.cibuildwheel.overrides]]
 select = "*_aarch64"
 before-test = [
-    # Diagnostic: Check CPU features and verify pybind11-based module
+    # Diagnostic: Check CPU features
     "echo '=== ARM64 Diagnostic: CPU Features ===' && cat /proc/cpuinfo | grep -E '^(Features|CPU)' | head -5 || true",
     "echo '=== ARM64 Diagnostic: Testing imports ===' && python -c 'import sys; print(f\"Python {sys.version}\")' || true",
 ]
 # pybind11_DIR is automatically detected by setup.py
-environment = { CMAKE_ARGS="-DVW_ZLIB_SYS_DEP=OFF -DVW_FEAT_LAS_SIMD=OFF -DCMAKE_CXX_FLAGS='-march=armv8-a -mtune=generic -mno-outline-atomics' -DCMAKE_C_FLAGS='-march=armv8-a -mtune=generic -mno-outline-atomics'" }
+# Compiler flags for ARM64 are now applied in setup.py based on platform detection
+environment = { CMAKE_ARGS="-DVW_ZLIB_SYS_DEP=OFF -DVW_FEAT_LAS_SIMD=OFF" }
