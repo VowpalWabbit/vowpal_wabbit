@@ -832,8 +832,7 @@ void ex_erase_namespace(example_ptr ec, unsigned char ns)
 {
   ec->num_features -= ec->feature_space[ns].size();
   ec->reset_total_sum_feat_sq();
-  ec->feature_space[ns].sum_feat_sq = 0.;
-  ec->feature_space[ns].clear();
+  ec->feature_space[ns].clear();  // clear() also sets sum_feat_sq = 0
 }
 
 bool ex_pop_namespace(example_ptr ec)
