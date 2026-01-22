@@ -97,10 +97,10 @@ jobs:
     name: ubuntu-latest.amd64.py3.10.sdist-bundle
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
           architecture: 'x64'
@@ -119,7 +119,7 @@ jobs:
     needs: linux-python-sdist-bundle
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
       - uses: actions/download-artifact@v4
         with:
           name: python_source_distribution
@@ -133,7 +133,7 @@ jobs:
       - name: Install source dist
         shell: bash
         run: pip install dist/*.tar.gz
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
       - name: Install dependencies

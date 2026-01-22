@@ -28,7 +28,7 @@ jobs:
     runs-on: ${{matrix.config.os}}
     steps:
       # Setup for build
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: 'recursive'
       - name: Setup MSVC Developer Command Prompt
@@ -50,7 +50,7 @@ jobs:
         if: runner.os == 'macOS'
         run: brew install nuget
       - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v3
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
       - name: Install dotnet t4
@@ -169,7 +169,7 @@ jobs:
           - { os: "macos-15-intel", runtime_id: "osx-x64" }
     runs-on: ${{matrix.config.os}}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: 'recursive'
       - if: ${{ startsWith(matrix.config.os, 'windows') }}
@@ -233,7 +233,7 @@ jobs:
     needs: [build_nuget_dotnet]
     runs-on: "windows-latest"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: 'recursive'
       - uses: ilammy/msvc-dev-cmd@v1
@@ -300,7 +300,7 @@ jobs:
       deployments: write
     if: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: 'recursive'
       - uses: ilammy/msvc-dev-cmd@v1

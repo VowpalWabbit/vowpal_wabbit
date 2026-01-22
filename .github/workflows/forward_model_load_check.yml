@@ -21,7 +21,7 @@ jobs:
     name: Build latest python wheel
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
       - name: Install build dependencies
@@ -46,7 +46,7 @@ jobs:
     needs: python-build
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install python
         run: |
           sudo apt-get update || true
@@ -85,7 +85,7 @@ jobs:
     needs: generate-latest-model
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
       - name: Install python
