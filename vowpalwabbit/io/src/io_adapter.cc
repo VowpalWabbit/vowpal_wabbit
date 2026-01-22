@@ -34,6 +34,13 @@
 
 namespace
 {
+// Windows doesn't define S_ISDIR, so we need to provide our own
+#ifdef _WIN32
+#  ifndef S_ISDIR
+#    define S_ISDIR(mode) (((mode) & _S_IFMT) == _S_IFDIR)
+#  endif
+#endif
+
 // Creates all parent directories for the given file path.
 // Returns true on success, false on failure.
 bool create_parent_directories(const char* filepath)
