@@ -84,8 +84,7 @@ class _Col:
         Args:
             df: The dataframe from which to check the column's type.
         """
-        col_type = df[self.colname].dtype
-        return np.issubdtype(col_type, np.number)
+        return pd.api.types.is_numeric_dtype(df[self.colname])
 
     def check_col_type(self, df: pd.DataFrame) -> None:
         """Check if the type of the column is valid.
@@ -96,12 +95,25 @@ class _Col:
         Raises:
             TypeError: If the type of the column is not valid.
         """
+        col_type = df[self.colname].dtype
+
+        # Handle pandas extension dtypes (e.g., StringDtype) which are not
+        # compatible with np.issubdtype()
+        if str in self.expected_type and pd.api.types.is_string_dtype(col_type):
+            return
+
         expected_type = [
             self.mapping_python_numpy[exp_type] for exp_type in self.expected_type
         ]
-        col_type = df[self.colname].dtype
 
-        if not any(np.issubdtype(col_type, exp_type) for exp_type in expected_type):
+        def is_valid_subtype(col_type, exp_type):
+            try:
+                return np.issubdtype(col_type, exp_type)
+            except TypeError:
+                # np.issubdtype doesn't handle pandas extension dtypes
+                return False
+
+        if not any(is_valid_subtype(col_type, exp_type) for exp_type in expected_type):
             raise TypeError(
                 "column '{colname}' should be either of the following type(s): {type_name}.".format(
                     colname=self.colname,
