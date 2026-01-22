@@ -1,1 +1,1 @@
-[critical] vw (io_buf.h:369): model load failed. Error Details: Unexpected end of file encountered., model files = model-sets/corrupted_weights_gd_mf.model
+[critical] vw (io_buf.h:445): model load failed. Error Details: Unexpected end of file encountered., model files = model-sets/corrupted_weights_gd_mf.model

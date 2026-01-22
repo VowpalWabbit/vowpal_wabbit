@@ -20,5 +20,5 @@ number of examples = 6
 weighted example sum = 6.000000
 weighted label sum = 0.000000
 average loss = 0.833333
-average multiclass log loss = 1.534626
+average multiclass log loss = 1.534764
 total feature number = 18

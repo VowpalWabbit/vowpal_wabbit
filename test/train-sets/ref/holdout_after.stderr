@@ -20,6 +20,6 @@ finished run
 number of examples = 500
 weighted example sum = 500.000000
 weighted label sum = 261.609450
-average loss = 0.003059 h
+average loss = 0.003060 h
 best constant = 0.523219
 total feature number = 7497
