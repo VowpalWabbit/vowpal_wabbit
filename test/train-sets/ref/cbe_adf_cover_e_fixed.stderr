@@ -14,12 +14,12 @@ average  since         example        example        current        current  cur
 loss     last          counter         weight          label        predict features
 0.666667 0.666667            1            1.0        0:1:0.5         0:0.33       18
 0.333333 0.000000            2            2.0        1:0:0.5         1:0.75        8
-0.333333 0.333333            4            4.0        0:1:0.5         1:0.67       18
-0.222222 0.111111            8            8.0        1:0:0.5         1:0.75        8
+0.250000 0.166667            4            4.0        1:0:0.5         1:0.75        8
+0.208333 0.166667            8            8.0        1:0:0.5         1:0.75        8
 
 finished run
-number of examples = 15
-weighted example sum = 15.000000
+number of examples = 10
+weighted example sum = 10.000000
 weighted label sum = 0.000000
 average loss = 0.200000
-total feature number = 170
+total feature number = 130

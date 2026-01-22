@@ -5,10 +5,4 @@ You can use --leave_duplicate_interactions to disable this behaviour.
 0
 	Constant:116060:1:0@0	a:92594:1:0@0	s^a:220006:1:0@0	_ccb_slot_index^index0:68306:1:0@0	a*a:2692:1:0@0	a*s^a:145488:1:0@0	a*_ccb_slot_index^index0:27108:1:0@0	s^a*s^a:244468:1:0@0	s^a*_ccb_slot_index^index0:125760:1:0@0	a*a*_ccb_slot_index^index0:100126:1:0@0	a*s^a*_ccb_slot_index^index0:241442:1:0@0	s^a*s^a*_ccb_slot_index^index0:148686:1:0@0
 0
-	b:163331:1:0@0	a:92594:1:0@0	Constant:116060:1:0@0	s^a:220006:1:0@0	_ccb_slot_index^index0:68306:1:0@0	b*b:139450:1:0@0	b*a:79627:1:0@0	a*a:2692:1:0@0	b*s^a:198111:1:0@0	a*s^a:145488:1:0@0	b*_ccb_slot_index^index0:87147:1:0@0	a*_ccb_slot_index^index0:27108:1:0@0	s^a*s^a:244468:1:0@0	s^a*_ccb_slot_index^index0:125760:1:0@0	b*b*_ccb_slot_index^index0:36380:1:0@0	b*a*_ccb_slot_index^index0:44163:1:0@0	a*a*_ccb_slot_index^index0:100126:1:0@0	b*s^a*_ccb_slot_index^index0:210143:1:0@0	a*s^a*_ccb_slot_index^index0:241442:1:0@0	s^a*s^a*_ccb_slot_index^index0:148686:1:0@0
-0
-	Constant:116060:1:0@0	a:92594:1:0@0	s^a:220006:1:0@0	_ccb_slot_index^index0:68306:1:0@0	a*a:2692:1:0@0	a*s^a:145488:1:0@0	a*_ccb_slot_index^index0:27108:1:0@0	s^a*s^a:244468:1:0@0	s^a*_ccb_slot_index^index0:125760:1:0@0	a*a*_ccb_slot_index^index0:100126:1:0@0	a*s^a*_ccb_slot_index^index0:241442:1:0@0	s^a*s^a*_ccb_slot_index^index0:148686:1:0@0
-0
-	Constant:116060:1:0@0	a:92594:1:0@0	v^b:119331:1:0@0	_ccb_slot_index^index1:25433:1:0@0	a*a:2692:1:0@0	a*v^b:45333:1:0@0	a*_ccb_slot_index^index1:65647:1:0@0	v^b*v^b:7994:1:0@0	v^b*_ccb_slot_index^index1:110144:1:0@0	a*a*_ccb_slot_index^index1:61077:1:0@0	a*v^b*_ccb_slot_index^index1:173910:1:0@0	v^b*v^b*_ccb_slot_index^index1:84759:1:0@0
-0
 	Constant:116060:1:0@0	a:92594:1:0@0	v^b:119331:1:0@0	_ccb_slot_index^index1:25433:1:0@0	a*a:2692:1:0@0	a*v^b:45333:1:0@0	a*_ccb_slot_index^index1:65647:1:0@0	v^b*v^b:7994:1:0@0	v^b*_ccb_slot_index^index1:110144:1:0@0	a*a*_ccb_slot_index^index1:61077:1:0@0	a*v^b*_ccb_slot_index^index1:173910:1:0@0	v^b*v^b*_ccb_slot_index^index1:84759:1:0@0
