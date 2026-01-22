@@ -62,11 +62,11 @@ repair-wheel-command = "delocate-wheel --require-archs {delocate_archs} -w {dest
 
 [tool.cibuildwheel.windows]
 before-all = [
-    # Initialize vcpkg submodule and update to get latest ports
-    "git submodule update --init --recursive ext_libs\\vcpkg && cd ext_libs\\vcpkg && git pull origin master && cd ..\\..",
-    # Install pybind11 and zlib with x64-windows triplet
-    "cd ext_libs\\vcpkg && .\\bootstrap-vcpkg.bat && .\\vcpkg install pybind11:x64-windows zlib:x64-windows --classic --no-print-usage",
+    # Install pybind11 via pip - setup.py will detect it automatically
+    "pip install pybind11",
 ]
+# Use vendored zlib (VW_ZLIB_SYS_DEP=OFF) for self-contained wheels
+# pybind11_DIR is automatically detected by setup.py
 environment = { CMAKE_ARGS="-DVW_ZLIB_SYS_DEP=OFF" }
 
 # Override for ARM64 Linux builds to use conservative architecture flags

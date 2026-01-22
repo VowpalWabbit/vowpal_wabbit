@@ -77,6 +77,22 @@ jobs:
           name: cibw-wheels-${{ matrix.os }}
           path: ./wheelhouse/*.whl
 
+  # Windows builds using cibuildwheel (Python 3.10-3.14)
+  cibuildwheel-build-windows:
+    name: cibuildwheel.windows-2019
+    runs-on: windows-2019
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: true
+          fetch-depth: 0
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v3.3.0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cibw-wheels-windows-2019
+          path: ./wheelhouse/*.whl
+
   linux-python-sdist-bundle:
     name: ubuntu-latest.amd64.py3.10.sdist-bundle
     runs-on: ubuntu-latest
