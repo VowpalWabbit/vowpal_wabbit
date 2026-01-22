@@ -14,6 +14,7 @@ build-backend = "setuptools.build_meta"
 build = ["cp310-*", "cp311-*", "cp312-*", "cp313-*", "cp314-*"]  # Python 3.10-3.14 with pybind11
 skip = [
     "*musllinux*",  # Only build manylinux wheels
+    "*-win32",  # Skip 32-bit Windows builds - scipy doesn't have 32-bit prebuilt wheels
 ]
 # Skip ARM64 tests: Even with conservative build flags (-mno-outline-atomics, -march=armv8-a),
 # tests fail with illegal instruction. Root cause: System Boost libraries from dnf contain
