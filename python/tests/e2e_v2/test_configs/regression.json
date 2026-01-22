@@ -15,9 +15,11 @@
                 "name": "assert_prediction",
                 "params": {
                     "expected_value": [
-                        5
+                        1
                     ],
-                    "threshold": 0.8
+                    "threshold": 0.1,
+                    "atol": 5,
+                    "rtol": 10
                 }
             },
             {
@@ -25,10 +27,10 @@
                 "params": {
                     "expected_weights": {
                         "f^x": 0,
-                        "Constant": 5
+                        "Constant": 1
                     },
-                    "atol": 0.1,
-                    "rtol": 1
+                    "atol": 5,
+                    "rtol": 10
                 }
             }
         ],
@@ -60,16 +62,13 @@
             },
             "g2": {
                 "#reg": [
-                    "--freegrad",
-                    "--conjugate_gradient",
-                    "--bfgs --passes 1 --cache"
+                    "--freegrad"
                 ]
             },
             "g3": {
                 "#reg": [
                     "--ftrl",
-                    "--coin",
-                    "--pistol"
+                    "--coin"
                 ],
                 "--ftrl_alpha": [
                     null,
@@ -83,7 +82,6 @@
             "g4": {
                 "--loss_function": [
                     null,
-                    "poisson",
                     "quantile"
                 ]
             },

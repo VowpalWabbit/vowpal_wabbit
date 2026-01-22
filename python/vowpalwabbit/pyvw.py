@@ -357,25 +357,6 @@ def get_all_vw_options():
     return config
 
 
-class _log_forward:
-    """Accumulates log messages, handling partial lines."""
-
-    def __init__(self):
-        self.current_message = ""
-        self.messages = []
-
-    def log(self, msg):
-        if "\n" in msg:
-            components = msg.split("\n")
-            self.current_message += components[0]
-            self.messages.append(self.current_message)
-            for component in components[1:-1]:
-                self.messages.append(component)
-            self.current_message = components[-1]
-        else:
-            self.current_message += msg
-
-
 class _dual_log_forward:
     """Accumulates log messages from two separate channels (driver and logger)."""
 
@@ -497,6 +478,7 @@ class Workspace(pylibvw.vw):
         arg_str: Optional[str] = None,
         enable_logging: bool = False,
         arg_list: Optional[List[str]] = None,
+        _existing_vw=None,
         **kw,
     ):
         """Initialize the Workspace object. arg_str, arg_list and the kwargs will be merged together. Duplicates will result in duplicate values in the command line.
@@ -524,6 +506,12 @@ class Workspace(pylibvw.vw):
         self._saved_log = None
         self._saved_driver_log = None
         self._saved_logger_log = None
+
+        # Internal path: adopt an existing vw object (used by merge_models)
+        if _existing_vw is not None:
+            super().__init__(_existing_vw)
+            self.init = True
+            return
 
         if enable_logging:
             self._log_fwd = _dual_log_forward()
@@ -813,19 +801,16 @@ class Workspace(pylibvw.vw):
             pylibvw.vw.finish(self)
             self.init = False
             self.finished = True
-            # Save log messages so get_log(), get_driver_output(), and
-            # get_log_output() still work after finish()
+            # Preserve log messages for get_log() calls after finish()
             if self._log_fwd:
                 self._saved_log = self._log_fwd.driver_messages + self._log_fwd.logger_messages
-                self._saved_driver_log = [m for m in self._log_fwd.driver_messages if m]
-                self._saved_logger_log = [m for m in self._log_fwd.logger_messages if m]
-            # Clear _log_fwd to free memory. The C++ py_log_wrapper uses a weak
-            # reference to _log_fwd, so it will gracefully handle the case where
-            # this object is garbage collected (callbacks will be skipped).
+                self._saved_driver_log = self._log_fwd.driver_messages
+                self._saved_logger_log = self._log_fwd.logger_messages
+            # NOTE: Do NOT set _log_wrapper = None here. The C++ VW workspace destructor
+            # may still try to log messages (especially with --cats). Releasing the
+            # log wrapper before the C++ object is destroyed causes a segfault.
+            # Let Python's GC handle the destruction order naturally.
             self._log_fwd = None
-            # Note: We do NOT clear _log_wrapper because the C++ VW::workspace
-            # still holds raw pointers to py_log_wrapper. The _log_wrapper will
-            # be cleaned up when the Workspace object is garbage collected.
 
     def get_log(self) -> List[str]:
         """Get all log messages produced (combined from both driver and logger channels).
@@ -844,8 +829,6 @@ class Workspace(pylibvw.vw):
             A list of strings, where each item is a line in the log
         """
         if self._log_fwd:
-            # Combine both channels for backward compatibility
-            # Note: Don't filter empty strings as they serve as section delimiters
             return self._log_fwd.driver_messages + self._log_fwd.logger_messages
         elif self._saved_log is not None:
             return self._saved_log
@@ -2158,18 +2141,9 @@ def merge_models(base_model: Optional[Workspace], models: List[Workspace]) -> Wo
         This is an experimental feature and may change in future releases.
     """
 
-    # This needs to be promoted to the Workspace object defined in Python.
-    result = pylibvw._merge_models_impl(base_model, models)
-    result.__class__ = Workspace
-    result._log_wrapper = None
-    result.parser_ran = False
-    result.init = True
-    result.finished = False
-    result._log_fwd = None
-    result._saved_log = None
-    result._saved_driver_log = None
-    result._saved_logger_log = None
-    return result
+    # Create the merged vw object and wrap it in a Workspace
+    vw_result = pylibvw._merge_models_impl(base_model, models)
+    return Workspace(_existing_vw=vw_result)
 
 
 ############################ DEPREECATED CLASSES ############################

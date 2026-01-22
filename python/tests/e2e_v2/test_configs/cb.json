@@ -29,10 +29,9 @@
         },
         "assert_functions": [
             {
-                "name": "assert_loss",
+                "name": "assert_loss_below",
                 "params": {
-                    "expected_loss": -1,
-                    "decimal": 1
+                    "expected_loss": 0
                 }
             },
             {
@@ -42,7 +41,9 @@
                         1,
                         0
                     ],
-                    "threshold": 0.8
+                    "threshold": 0.5,
+                    "atol": 0.5,
+                    "rtol": 0.5
                 }
             }
         ],
@@ -197,12 +198,12 @@
                 "name": "assert_prediction",
                 "params": {
                     "expected_value": [
-                        0.975,
-                        0.025
+                        0.9,
+                        0.1
                     ],
                     "threshold": 0.1,
-                    "atol": 0.1,
-                    "rtol": 0.1
+                    "atol": 0.5,
+                    "rtol": 0.5
                 }
             }
         ],

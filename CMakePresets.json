@@ -72,6 +72,10 @@
         "VW_FEAT_CSV": {
           "type": "BOOL",
           "value": "On"
+        },
+        "VW_STRING_VIEW_LITE_SYS_DEP": {
+          "type": "BOOL",
+          "value": "OFF"
         }
       }
     },
@@ -90,6 +94,10 @@
         "VW_FEAT_CSV": {
           "type": "BOOL",
           "value": "On"
+        },
+        "VW_STRING_VIEW_LITE_SYS_DEP": {
+          "type": "BOOL",
+          "value": "OFF"
         }
       }
     },
