@@ -344,6 +344,8 @@ Weight Options:
                                             dependent features (type: bool, keep, necessary)
     --all_slots_loss                        Report average loss from all slots (type: bool)
     --no_predict                            Do not do a prediction when training (type: bool)
+    --ccb_no_slot_index                     Disable automatic _ccb_slot_index feature injection for multi-slot
+                                            examples (type: bool)
     --cb_type arg                           Contextual bandit method to use (type: str, default: mtr, choices
                                             {dm, dr, ips, mtr, sm}, keep)
 [Reduction] Confidence Options:
