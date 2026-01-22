@@ -144,4 +144,4 @@ jobs:
       - name: Run unit tests
         shell: bash
         run: |
-          python -m pytest ./python/tests/ --ignore=python/tests/e2e_v2 --ignore=python/tests/test_DFtoVW.py
+          python -m pytest ./python/tests/ --ignore=python/tests/e2e_v2
