@@ -21,7 +21,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Linux x64 and aarch64 builds using cibuildwheel (Python 3.10-3.13)
+  # Linux x64 builds using cibuildwheel (Python 3.10-3.14)
   cibuildwheel-build-linux:
     name: cibuildwheel.${{ matrix.os }}
     runs-on: ${{ matrix.os }}
@@ -41,7 +41,7 @@ jobs:
           name: cibw-wheels-${{ matrix.os }}
           path: ./wheelhouse/*.whl
 
-  # Linux aarch64 builds using cibuildwheel (Python 3.10-3.13)
+  # Linux ARM64 builds using cibuildwheel (Python 3.10-3.14)
   cibuildwheel-build-linux-aarch64:
     name: cibuildwheel.ubuntu-24.04-arm
     runs-on: ubuntu-24.04-arm
@@ -145,167 +145,3 @@ jobs:
         shell: bash
         run: |
           python -m pytest ./python/tests/ --ignore=python/tests/e2e_v2 --ignore=python/tests/test_DFtoVW.py
-
-  macos-python-build:
-    name: macos.amd64.py${{ matrix.config.version }}.build
-    runs-on: macos-15-intel
-    strategy:
-      matrix:
-        config:
-        # Note: Python 3.14 not available in conda yet
-        - { version: "3.10", include_dir_name: python3.10/}
-        - { version: "3.11", include_dir_name: python3.11/}
-        - { version: "3.12", include_dir_name: python3.12/}
-        - { version: "3.13", include_dir_name: python3.13/}
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - uses: conda-incubator/setup-miniconda@v3
-        with:
-          auto-update-conda: true
-          python-version: ${{ matrix.config.version }}
-          miniconda-version: "latest"
-      - name: Build wheel
-        shell: bash -l {0}
-        run: |
-          conda info
-          conda install python=${{ matrix.config.version }} wheel zlib flatbuffers
-          pip install pybind11
-          export PYBIND11_DIR=$(python -m pybind11 --cmakedir)
-          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DVW_ZLIB_SYS_DEP=OFF -Dpybind11_DIR=${PYBIND11_DIR} -DPython_INCLUDE_DIR=\"$CONDA_PREFIX/include/${{ matrix.config.include_dir_name }}\"" pip wheel . -w wheel_output/ --verbose
-      - name: Upload built wheel
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos_amd64_${{ matrix.config.version }}
-          path: wheel_output/
-
-  macos-python-test:
-    name: macos.amd64.py${{ matrix.version }}.test
-    needs: macos-python-build
-    runs-on: macos-15-intel
-    strategy:
-      matrix:
-        # Note: Python 3.14 not available in conda yet
-        version: ["3.10", "3.11", "3.12", "3.13"]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - uses: conda-incubator/setup-miniconda@v3
-        with:
-          auto-update-conda: true
-          python-version: ${{ matrix.version }}
-          miniconda-version: "latest"
-      - uses: actions/download-artifact@v4
-        with:
-          name: macos_amd64_${{ matrix.version }}
-          path: built_wheel
-      - name: Test wheel
-        shell: bash -l {0}
-        run: |
-          conda install python=${{ matrix.version }}
-          pip install --force-reinstall built_wheel/*.whl
-          pip install -r requirements.txt
-          pip install pytest vw-executor twine
-          twine check built_wheel/*.whl
-          python -m pytest ./python/tests/ --ignore=python/tests/e2e_v2 --ignore=python/tests/test_DFtoVW.py
-          python ./python/tests/run_doctest.py
-
-  windows-python-build:
-    name: windows-2019.amd64.py${{ matrix.config.version }}.build
-    runs-on: windows-2019
-    env:
-      VCPKG_ROOT: ${{ github.workspace }}\\vcpkg
-      VCPKG_REF: 25b458671af03578e6a34edd8f0d1ac85e084df4
-      VCPKG_DEFAULT_BINARY_CACHE: ${{ github.workspace }}\vcpkg_binary_cache
-    strategy:
-      matrix:
-        config:
-        # Note: Python 3.14 not available in conda yet
-        - { version: "3.10", boost_py_suffix: "310" }
-        - { version: "3.11", boost_py_suffix: "311" }
-        - { version: "3.12", boost_py_suffix: "312" }
-        - { version: "3.13", boost_py_suffix: "313" }
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - uses: conda-incubator/setup-miniconda@v3
-        with:
-          auto-update-conda: true
-          python-version: ${{ matrix.config.version }}
-          miniconda-version: "latest"
-          use-mamba: false
-      - uses: actions/checkout@v4
-        with:
-          path: ${{ env.VCPKG_ROOT }}
-          repository: 'microsoft/vcpkg'
-          ref: ${{ env.VCPKG_REF }}
-          fetch-depth: '0'
-      - name: Restore vcpkg and build artifacts
-        uses: actions/cache@v3
-        with:
-          path: |
-            ${{ env.VCPKG_DEFAULT_BINARY_CACHE }}
-          key: |
-            ${{ env.VCPKG_REF }}-${{ matrix.config.version }}-python-win-conda-cache-1
-      - run: ${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.bat
-        shell: cmd
-      - name: Build wheel
-        shell: bash -l {0}
-        run: |
-          if [ ! -d "${{ env.VCPKG_DEFAULT_BINARY_CACHE }}" ]; then
-            mkdir -p "${{ env.VCPKG_DEFAULT_BINARY_CACHE }}"
-          fi
-
-          conda install -y --quiet python=${{ matrix.config.version }} wheel setuptools pip zlib flatbuffers
-          pip install pybind11
-
-          PYBIND11_DIR=$(python -m pybind11 --cmakedir | sed 's/\\/\//g')
-          CMAKE_OPTIONS="-DSTATIC_LINK_VW_JAVA=On;-DCMAKE_BUILD_TYPE=Release;-DVW_ZLIB_SYS_DEP=OFF;-Dpybind11_DIR=$PYBIND11_DIR"
-
-          python setup.py \
-            --cmake-generator="Visual Studio 16 2019" \
-            --cmake-options="$CMAKE_OPTIONS" \
-            bdist_wheel --dist-dir=wheel_output
-      - name: Upload built wheel
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows_amd64_${{ matrix.config.version }}
-          path: wheel_output
-
-  windows-python-test:
-    name: ${{ matrix.os }}.amd64.py${{ matrix.version }}.test
-    needs: windows-python-build
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        # Note: Python 3.14 not available in conda yet (needed for build)
-        version: ["3.10", "3.11", "3.12", "3.13"]
-        os: ["windows-2019"]
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-      - uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.version }}
-      - uses: actions/download-artifact@v4
-        with:
-          name: windows_amd64_${{ matrix.version }}
-          path: built_wheel
-      - name: Install deps and test wheel
-        shell: bash
-        run: |
-          export wheel_file=$(ls built_wheel/*.whl | head -1)
-          pip install --force-reinstall ${wheel_file}
-          pip install -r requirements.txt
-          pip install pytest vw-executor twine
-          twine check ${wheel_file}
-          python -m pytest .\\python\\tests\\ --ignore=python/tests/e2e_v2 --ignore=python/tests/test_DFtoVW.py
-          python .\\python\\tests\\run_doctest.py
