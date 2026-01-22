@@ -67,7 +67,8 @@ before-all = [
 ]
 # Use vendored zlib (VW_ZLIB_SYS_DEP=OFF) for self-contained wheels
 # pybind11_DIR is automatically detected by setup.py
-environment = { CMAKE_ARGS="-DVW_ZLIB_SYS_DEP=OFF" }
+# CMAKE_GENERATOR specifies Visual Studio 2019 (available on windows-2019 runner)
+environment = { CMAKE_ARGS="-DVW_ZLIB_SYS_DEP=OFF", CMAKE_GENERATOR="Visual Studio 16 2019" }
 
 # Override for ARM64 Linux builds to use conservative architecture flags
 # -mno-outline-atomics: Prevents GCC from using LSE atomic instructions (ARMv8.1+) which cause illegal instruction on older CPUs
