@@ -22,6 +22,7 @@
 #include "vw/core/shared_data.h"
 #include "vw/core/simple_label_parser.h"
 #include "vw/core/slates_label.h"
+#include "vw/core/version.h"
 #include "vw/core/vw.h"
 #include "vw/text_parser/parse_example_text.h"
 
@@ -1535,6 +1536,10 @@ void my_set_tag(predictor_ptr P, ptag t) { P->set_tag(t); }
 PYBIND11_MODULE(pylibvw, m)
 {
   m.doc() = "Vowpal Wabbit Python bindings (pybind11 version)";
+
+  // Expose version information at module level
+  m.attr("__version__") = VW::VERSION.to_string();
+  m.attr("__git_commit__") = VW::GIT_COMMIT;
 
   // VW::workspace class (bound as "vw")
   // py::dynamic_attr() allows Python code to set arbitrary attributes on the object,

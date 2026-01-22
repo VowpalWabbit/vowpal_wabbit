@@ -67,7 +67,7 @@ __all__ = [
     "Workspace",
 ]
 
-from .version import __version__
+from .version import __version__, __git_commit__
 from . import pyvw
 from .pyvw import (
     AbstractLabel,
