@@ -1,0 +1,1 @@
+[warning] cb_adf is used with JSON input but without any interaction features (e.g., -q, --cubic, --interactions). For contextual bandits with action dependent features, interactions between shared (context) and action features are usually required for good performance. Consider adding -q :: or specific interactions like -q sa (shared-action).
