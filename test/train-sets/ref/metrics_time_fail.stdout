@@ -1,1 +1,1 @@
-[critical] vw (options_cli.cc:60): Disagreeing option values for 'data': 'train-sets/dsjson_cb_part1.json' vs 'train-sets/dsjson_cb_part2.json'
+[critical] vw (options_cli.cc:58): Disagreeing option values for 'data': 'train-sets/dsjson_cb_part1.json' vs 'train-sets/dsjson_cb_part2.json'

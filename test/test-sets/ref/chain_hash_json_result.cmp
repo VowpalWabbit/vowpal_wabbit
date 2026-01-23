@@ -8,7 +8,7 @@ lda:0
 options: --chain_hash
 Checksum: 2756098922
 :0
-emotion^happiness^true:106841:0.205235
-Constant:116060:0.702494
-happiness:143395:0.341187
-emotion^happiness:196388:0.221628
+emotion^happiness^true:106841:0.205255
+Constant:116060:0.702477
+happiness:143395:0.341188
+emotion^happiness:196388:0.221601

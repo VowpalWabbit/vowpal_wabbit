@@ -1,5 +1,5 @@
 Version 9.10.0
-Id 
+Id
 Min label:0
 Max label:1
 bits:18
@@ -9,23 +9,23 @@ lda:0
 options: --interactions aaa --noconstant --ignore_linear a
 Checksum: 204924803
 :0
-ab^feat_1*ab^feat_1*ab^feat_2:9267:0.0446561
-ac^feat_3*ac^feat_4*ac^feat_4:10957:0.0446561
-ab^feat_1*ab^feat_1*ab^feat_1:17567:0.0446561
-ab^feat_1*ab^feat_2*ac^feat_3:55085:0.0446561
-ab^feat_1*ac^feat_3*ac^feat_4:57365:0.0446561
-ab^feat_1*ab^feat_2*ac^feat_4:71115:0.0446561
-ab^feat_1*ac^feat_3*ac^feat_3:74483:0.0446561
-ab^feat_1*ac^feat_4*ac^feat_4:76367:0.0446561
-ab^feat_2*ab^feat_2*ab^feat_2:82811:0.0446561
-ac^feat_4*ac^feat_4*ac^feat_4:105271:0.0446561
-ab^feat_1*ab^feat_1*ac^feat_4:143623:0.0446561
-ac^feat_3*ac^feat_3*ac^feat_4:145159:0.0446561
-ab^feat_2*ac^feat_4*ac^feat_4:158155:0.0446561
-ab^feat_2*ab^feat_2*ac^feat_3:169129:0.0446561
-ab^feat_2*ac^feat_3*ac^feat_3:193439:0.0446561
-ab^feat_1*ab^feat_2*ab^feat_2:196863:0.0446561
-ab^feat_2*ac^feat_3*ac^feat_4:209273:0.0446561
-ab^feat_2*ab^feat_2*ac^feat_4:218703:0.0446561
-ab^feat_1*ab^feat_1*ac^feat_3:259041:0.0446561
-ac^feat_3*ac^feat_3*ac^feat_3:259553:0.0446561
+ab^feat_1*ab^feat_1*ab^feat_2:9267:0.0446532
+ac^feat_3*ac^feat_4*ac^feat_4:10957:0.0446532
+ab^feat_1*ab^feat_1*ab^feat_1:17567:0.0446532
+ab^feat_1*ab^feat_2*ac^feat_3:55085:0.0446532
+ab^feat_1*ac^feat_3*ac^feat_4:57365:0.0446532
+ab^feat_1*ab^feat_2*ac^feat_4:71115:0.0446532
+ab^feat_1*ac^feat_3*ac^feat_3:74483:0.0446532
+ab^feat_1*ac^feat_4*ac^feat_4:76367:0.0446532
+ab^feat_2*ab^feat_2*ab^feat_2:82811:0.0446532
+ac^feat_4*ac^feat_4*ac^feat_4:105271:0.0446532
+ab^feat_1*ab^feat_1*ac^feat_4:143623:0.0446532
+ac^feat_3*ac^feat_3*ac^feat_4:145159:0.0446532
+ab^feat_2*ac^feat_4*ac^feat_4:158155:0.0446532
+ab^feat_2*ab^feat_2*ac^feat_3:169129:0.0446532
+ab^feat_2*ac^feat_3*ac^feat_3:193439:0.0446532
+ab^feat_1*ab^feat_2*ab^feat_2:196863:0.0446532
+ab^feat_2*ac^feat_3*ac^feat_4:209273:0.0446532
+ab^feat_2*ab^feat_2*ac^feat_4:218703:0.0446532
+ab^feat_1*ab^feat_1*ac^feat_3:259041:0.0446532
+ac^feat_3*ac^feat_3*ac^feat_3:259553:0.0446532

@@ -8,9 +8,9 @@ lda:0
 options:
 Checksum: 2704463348
 :0
-happiness^true:42986:0.297646
-emotion^happiness^true:106841:0.208687
-Constant:116060:0.651581
-happiness:143395:0.369249
-sadness^false:187175:0.146148
-emotion^happiness:196388:0.218491
+happiness^true:42986:0.297672
+emotion^happiness^true:106841:0.208726
+Constant:116060:0.651544
+happiness:143395:0.36921
+sadness^false:187175:0.146142
+emotion^happiness:196388:0.218498

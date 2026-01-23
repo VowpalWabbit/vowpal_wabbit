@@ -1,4 +1,4 @@
 [info] Generating 3-grams for all namespaces.
 [info] Generating 1-skips for all namespaces.
 [info] m = 15, allocated 34M for weights and mem
-[critical] vw (bfgs.cc:1110): model load failed. Error Details: BFGS does not support models with save_resume data. Only models produced and consumed with --predict_only_model can be used with BFGS., model files = models/0001_1.model
+[critical] vw (bfgs.cc:1116): model load failed. Error Details: BFGS does not support models with save_resume data. Only models produced and consumed with --predict_only_model can be used with BFGS., model files = models/0001_1.model
