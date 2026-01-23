@@ -94,6 +94,9 @@ public:
   // This flag is required for loading cb models (which do not have has_seen_multi_slot_example flag) into ccb_data
   // reduction
   bool is_ccb_input_model = false;
+  // When true, disables automatic _ccb_slot_index feature injection and CCB_ID_NAMESPACE interactions.
+  // This allows users who want to manually control slot differentiation via their own features.
+  bool disable_slot_index = false;
 };
 
 void clear_all(ccb_data& data)
@@ -430,7 +433,7 @@ void learn_or_predict(ccb_data& data, learner& base, VW::multi_ex& examples)
         data.slots[0]->indices[0] != VW::details::CONSTANT_NAMESPACE;
     data.has_seen_multi_slot_example = data.has_seen_multi_slot_example || user_defined_slot_features_exist;
   }
-  const bool should_augment_with_slot_info = data.has_seen_multi_slot_example;
+  const bool should_augment_with_slot_info = data.has_seen_multi_slot_example && !data.disable_slot_index;
 
   // Even though the interactions reduction caches things when we move into CCB
   // mode a new namespace is added (VW::details::CCB_ID_NAMESPACE) and so we can be confident
@@ -637,7 +640,7 @@ void save_load(ccb_data& sm, VW::io_buf& io, bool read, bool text)
     VW::model_utils::write_model_field(io, sm.has_seen_multi_slot_example, "CCB: has_seen_multi_slot_example", text);
   }
 
-  if (read && sm.has_seen_multi_slot_example)
+  if (read && sm.has_seen_multi_slot_example && !sm.disable_slot_index)
   {
     insert_ccb_interactions(
         sm.all->feature_tweaks_config.interactions, sm.all->feature_tweaks_config.extent_interactions);
@@ -663,6 +666,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::ccb_explore_adf_setup(VW::
                .help("Do Conditional Contextual Bandit learning with multiline action dependent features"))
       .add(make_option("all_slots_loss", all_slots_loss_report).help("Report average loss from all slots"))
       .add(make_option("no_predict", data->no_pred).help("Do not do a prediction when training"))
+      .add(make_option("ccb_no_slot_index", data->disable_slot_index)
+               .help("Disable automatic _ccb_slot_index feature injection for multi-slot examples"))
       .add(make_option("cb_type", type_string)
                .keep()
                .default_value("mtr")

@@ -512,6 +512,27 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_adf_setup(VW::setup_bas
 
   if (options.was_supplied("baseline") && check_baseline_enabled) { options.insert("check_enabled", ""); }
 
+  // Warn if no interactions are specified when using JSON input - CB ADF typically needs them to work well.
+  // Only warn for dsjson/json formats where this mistake is most common (issue #2790).
+  // Exclude higher-level reductions that internally use cb_adf (automl, ccb, cb_explore, cbify, cb)
+  // as users of those interfaces may not need this warning.
+  bool using_json_input = options.was_supplied("dsjson") || options.was_supplied("json");
+  bool has_interactions = options.was_supplied("quadratic") || options.was_supplied("cubic") ||
+      options.was_supplied("interactions") || options.was_supplied("experimental_full_name_interactions") ||
+      !all.feature_tweaks_config.interactions.empty();
+  bool using_higher_level_reduction = options.was_supplied("automl") || options.was_supplied("ccb_explore_adf") ||
+      options.was_supplied("cb_explore_adf") || options.was_supplied("cbify") || options.was_supplied("cb") ||
+      options.was_supplied("cb_explore");
+
+  if (using_json_input && !has_interactions && !using_higher_level_reduction)
+  {
+    all.logger.err_warn(
+        "cb_adf is used with JSON input but without any interaction features (e.g., -q, --cubic, --interactions). "
+        "For contextual bandits with action dependent features, interactions between shared (context) "
+        "and action features are usually required for good performance. "
+        "Consider adding -q :: or specific interactions like -q sa (shared-action).");
+  }
+
   auto ld = VW::make_unique<VW::reductions::cb_adf>(
       cb_type, rank_all, clip_p, no_predict, feature_width_above, per_model_save_load, &all);
 

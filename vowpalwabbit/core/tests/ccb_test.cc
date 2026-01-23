@@ -162,6 +162,59 @@ TEST(Ccb, ExplicitIncludedActionsNonExistentAction)
   vw->finish_example(examples);
 }
 
+// Test that --ccb_no_slot_index disables the automatic slot index feature injection
+// Related to issue #4721: Removal of slot index effect in interactions
+TEST(Ccb, NoSlotIndexOptionDisablesSlotIndexInteractions)
+{
+  // With --ccb_no_slot_index, interactions should NOT include ccb_id namespace
+  auto vw = VW::initialize(
+      vwtest::make_args("--ccb_explore_adf", "--quiet", "-q", "AA", "-q", "BB", "--ccb_no_slot_index"));
+
+  // Even after seeing a multi-slot example, interactions should not change
+  VW::multi_ex examples;
+  examples.push_back(VW::read_example(*vw, "ccb shared | s"));
+  examples.push_back(VW::read_example(*vw, "ccb action | a"));
+  examples.push_back(VW::read_example(*vw, "ccb action | b"));
+  examples.push_back(VW::read_example(*vw, "ccb slot 0 |"));
+  examples.push_back(VW::read_example(*vw, "ccb slot 1 |"));
+
+  vw->predict(examples);
+
+  // Interactions should remain unchanged (no CCB_ID_NAMESPACE added)
+  std::set<std::string> expected{"AA", "BB"};
+  auto result = interaction_vec_t_to_set(vw->feature_tweaks_config.interactions);
+  EXPECT_THAT(result, testing::ContainerEq(expected));
+
+  vw->finish_example(examples);
+}
+
+// Test that without --ccb_no_slot_index, multi-slot examples DO add interactions
+TEST(Ccb, DefaultBehaviorAddsSlotIndexInteractions)
+{
+  auto vw = VW::initialize(vwtest::make_args("--ccb_explore_adf", "--quiet", "-q", "AA", "-q", "BB"));
+
+  std::set<std::string> expected_before{"AA", "BB"};
+  auto pre_result = interaction_vec_t_to_set(vw->feature_tweaks_config.interactions);
+  EXPECT_THAT(pre_result, testing::ContainerEq(expected_before));
+
+  // After seeing a multi-slot example, interactions should include ccb_id namespace
+  VW::multi_ex examples;
+  examples.push_back(VW::read_example(*vw, "ccb shared | s"));
+  examples.push_back(VW::read_example(*vw, "ccb action | a"));
+  examples.push_back(VW::read_example(*vw, "ccb action | b"));
+  examples.push_back(VW::read_example(*vw, "ccb slot 0 |"));
+  examples.push_back(VW::read_example(*vw, "ccb slot 1 |"));
+
+  vw->predict(examples);
+
+  // Interactions should now include CCB_ID_NAMESPACE
+  std::set<std::string> expected_after{"AA", "AA[ccbid]", "BB", "BB[ccbid]", "[wild][ccbid]"};
+  auto result = interaction_vec_t_to_set(vw->feature_tweaks_config.interactions);
+  EXPECT_THAT(result, testing::ContainerEq(expected_after));
+
+  vw->finish_example(examples);
+}
+
 TEST(Ccb, NoAvailableActions)
 {
   auto vw = VW::initialize(vwtest::make_args("--ccb_explore_adf", "--quiet", "--all_slots_loss"));

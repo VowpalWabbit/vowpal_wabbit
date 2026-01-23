@@ -68,6 +68,11 @@ __all__ = [
 ]
 
 from .version import __version__
+
+# Import the native module to get git commit from C++
+import pylibvw as _pylibvw
+__git_commit__ = getattr(_pylibvw, '__git_commit__', None)
+
 from . import pyvw
 from .pyvw import (
     AbstractLabel,
