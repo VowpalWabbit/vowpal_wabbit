@@ -10,6 +10,7 @@
 #ifdef _WIN32
 #  define NOMINMAX
 #  define ssize_t int64_t
+#  include <direct.h>  // for _mkdir
 #  include <io.h>
 #  include <winsock2.h>
 #else
@@ -28,7 +29,63 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <string>
 #include <vector>
+
+namespace
+{
+// Windows doesn't define S_ISDIR, so we need to provide our own
+#ifdef _WIN32
+#  ifndef S_ISDIR
+#    define S_ISDIR(mode) (((mode) & _S_IFMT) == _S_IFDIR)
+#  endif
+#endif
+
+// Creates all parent directories for the given file path.
+// Returns true on success, false on failure.
+bool create_parent_directories(const char* filepath)
+{
+  if (filepath == nullptr || *filepath == '\0') { return true; }
+
+  std::string path(filepath);
+
+  // Find the last path separator
+  size_t last_sep = path.find_last_of("/\\");
+  if (last_sep == std::string::npos || last_sep == 0) { return true; }  // No parent directory or root
+
+  std::string parent_path = path.substr(0, last_sep);
+
+  // Check if parent directory already exists
+  struct stat st;
+  if (stat(parent_path.c_str(), &st) == 0) { return S_ISDIR(st.st_mode); }
+
+  // Create parent directories recursively
+  for (size_t i = 1; i < parent_path.size(); ++i)
+  {
+    if (parent_path[i] == '/' || parent_path[i] == '\\')
+    {
+      std::string subpath = parent_path.substr(0, i);
+      if (stat(subpath.c_str(), &st) != 0)
+      {
+#ifdef _WIN32
+        if (_mkdir(subpath.c_str()) != 0 && errno != EEXIST) { return false; }
+#else
+        if (mkdir(subpath.c_str(), 0755) != 0 && errno != EEXIST) { return false; }
+#endif
+      }
+    }
+  }
+
+  // Create the final parent directory
+#ifdef _WIN32
+  if (_mkdir(parent_path.c_str()) != 0 && errno != EEXIST) { return false; }
+#else
+  if (mkdir(parent_path.c_str(), 0755) != 0 && errno != EEXIST) { return false; }
+#endif
+
+  return true;
+}
+}  // namespace
 #if (ZLIB_VERNUM < 0x1252)
 typedef void* gzFile;
 #else
@@ -293,6 +350,9 @@ ssize_t stdio_adapter::write(const char* buffer, size_t num_bytes) { return _std
 file_adapter::file_adapter(const char* filename, file_mode mode)
     : reader(true /*is_resettable*/), _mode(mode), _should_close(true)
 {
+  // Create parent directories if writing and they don't exist
+  if (_mode == file_mode::WRITE) { create_parent_directories(filename); }
+
 #ifdef _WIN32
   if (_mode == file_mode::READ)
   {
