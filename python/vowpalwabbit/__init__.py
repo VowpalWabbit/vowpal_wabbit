@@ -69,11 +69,9 @@ __all__ = [
 
 from .version import __version__
 
-# Import git commit hash if available (generated during CMake build)
-try:
-    from ._git_commit import __git_commit__
-except ImportError:
-    __git_commit__ = None
+# Import the native module to get git commit from C++
+import pylibvw as _pylibvw
+__git_commit__ = getattr(_pylibvw, '__git_commit__', None)
 
 from . import pyvw
 from .pyvw import (
