@@ -11,17 +11,17 @@ CCB: has_seen_multi_slot_example = true
 event_sum 2
 action_sum 5
 :0
-sj^f2:18865:-0.0850507
-sj^f2*_ccb_slot_index^index1:25338:-0.0850507
-_ccb_slot_index^index1:25433:-0.0850507
-sj^f1:32590:-0.085606
-_ccb_slot_index^index0:68306:-0.085606
-sj^f1*_ccb_slot_index^index0:93464:-0.085606
-action^f2*_ccb_slot_index^index1:97567:-0.0850507
-Constant:116060:-0.142776
-shared^f1*_ccb_slot_index^index0:137661:-0.085606
-shared^f1:147509:-0.142776
-action^f3*_ccb_slot_index^index0:189238:-0.085606
-action^f3:208140:-0.085606
-shared^f1*_ccb_slot_index^index1:225334:-0.0850507
-action^f2:257122:-0.0850507
+sj^f2:18865:-0.0850478
+sj^f2*_ccb_slot_index^index1:25338:-0.0850478
+_ccb_slot_index^index1:25433:-0.0850478
+sj^f1:32590:-0.085601
+_ccb_slot_index^index0:68306:-0.085601
+sj^f1*_ccb_slot_index^index0:93464:-0.085601
+action^f2*_ccb_slot_index^index1:97567:-0.0850478
+Constant:116060:-0.142772
+shared^f1*_ccb_slot_index^index0:137661:-0.085601
+shared^f1:147509:-0.142772
+action^f3*_ccb_slot_index^index0:189238:-0.085601
+action^f3:208140:-0.085601
+shared^f1*_ccb_slot_index^index1:225334:-0.0850478
+action^f2:257122:-0.0850478

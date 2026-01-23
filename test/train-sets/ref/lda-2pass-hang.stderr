@@ -11,21 +11,21 @@ Input label = NOLABEL
 Output pred = SCALARS
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
-12.81378 12.81378            1            1.0           none              0      201
-12.94687 13.07995            2            2.0           none              0      220
-13.71817 14.48948            4            4.0           none              0      136
+12.81377 12.81377            1            1.0           none              0      201
+12.94686 13.07995            2            2.0           none              0      220
+13.71817 14.48947            4            4.0           none              0      136
 14.78753 15.85688            8            8.0           none              0      371
 15.93484 17.08216           16           16.0           none              0      138
-17.20925 18.48367           32           32.0           none              0      276
+17.20925 18.48366           32           32.0           none              0      276
 17.16331 17.11736           64           64.0           none              0       55
 16.49466 15.82602          128          128.0           none              0      131
 15.91804 15.34142          256          256.0           none              0      433
-15.25354 14.58903          512          512.0           none              0      166
+15.25354 14.58904          512          512.0           none              0      166
 
 finished run
 number of examples per pass = 501
 passes used = 2
 weighted example sum = 1002.000000
 weighted label sum = 0.000000
-average loss = 14.269437
+average loss = 14.269438
 total feature number = 193922
