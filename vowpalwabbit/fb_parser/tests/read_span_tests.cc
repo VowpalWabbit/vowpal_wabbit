@@ -17,10 +17,43 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <cstdint>
+#include <memory>
 #include <string>
 #include <vector>
 
 USE_PROTOTYPE_MNEMONICS
+
+namespace
+{
+// Helper class to provide an 8-byte aligned buffer for flatbuffer parsing.
+// FlatBufferBuilder::GetBufferPointer() may return a misaligned pointer,
+// which causes sporadic test failures when read_span_flatbuffer checks alignment.
+class aligned_buffer
+{
+public:
+  aligned_buffer(const uint8_t* src, size_t size) : _size(size)
+  {
+    // Allocate with extra space to allow alignment adjustment
+    _storage = std::make_unique<uint8_t[]>(size + 7);
+    // Calculate the aligned pointer
+    uintptr_t addr = reinterpret_cast<uintptr_t>(_storage.get());
+    uintptr_t aligned_addr = (addr + 7) & ~static_cast<uintptr_t>(7);
+    _aligned_ptr = reinterpret_cast<uint8_t*>(aligned_addr);
+    // Copy the data to the aligned location
+    std::memcpy(_aligned_ptr, src, size);
+  }
+
+  uint8_t* data() { return _aligned_ptr; }
+  const uint8_t* data() const { return _aligned_ptr; }
+  size_t size() const { return _size; }
+
+private:
+  std::unique_ptr<uint8_t[]> _storage;
+  uint8_t* _aligned_ptr;
+  size_t _size;
+};
+}  // namespace
 
 namespace fb = VW::parsers::flatbuffer;
 using namespace flatbuffers;
@@ -81,13 +114,15 @@ void create_flatbuffer_span_and_validate(VW::workspace& w, vwtest::example_data_
 
   builder.FinishSizePrefixed(example_root);
 
-  const uint8_t* buffer = builder.GetBufferPointer();
-  flatbuffers::uoffset_t size = builder.GetSize();
+  // Copy the flatbuffer data to an 8-byte aligned buffer.
+  // FlatBufferBuilder::GetBufferPointer() may return a misaligned pointer,
+  // which causes sporadic test failures (issue #4685).
+  aligned_buffer buffer(builder.GetBufferPointer(), builder.GetSize());
 
   VW::multi_ex parsed_examples;
   if (data_gen.random_bool()) { parsed_examples.push_back(&ex_fac()); }
 
-  VW::parsers::flatbuffer::read_span_flatbuffer(&w, buffer, size, ex_fac, parsed_examples);
+  VW::parsers::flatbuffer::read_span_flatbuffer(&w, buffer.data(), buffer.size(), ex_fac, parsed_examples);
 
   verify_multi_ex(w, prototype, parsed_examples);
 
@@ -148,14 +183,14 @@ void finish_flatbuffer_and_expect_error(FlatBufferBuilder& builder, Offset<fb::E
 
   builder.FinishSizePrefixed(root);
 
-  const uint8_t* buffer = builder.GetBufferPointer();
-  flatbuffers::uoffset_t size = builder.GetSize();
-
-  std::vector<uint8_t> buffer_copy(buffer, buffer + size);
+  // Copy the flatbuffer data to an 8-byte aligned buffer.
+  // FlatBufferBuilder::GetBufferPointer() may return a misaligned pointer,
+  // which causes sporadic test failures (issue #4685).
+  aligned_buffer buffer(builder.GetBufferPointer(), builder.GetSize());
 
   VW::multi_ex parsed_examples;
   EXPECT_EQ(VW::parsers::flatbuffer::read_span_flatbuffer(
-                &w, buffer_copy.data(), buffer_copy.size(), ex_fac, parsed_examples, ex_sink),
+                &w, buffer.data(), buffer.size(), ex_fac, parsed_examples, ex_sink),
       error_code);
 }
 
