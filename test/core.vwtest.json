@@ -2557,6 +2557,18 @@
     ]
   },
   {
+    "id": 473,
+    "desc": "memory_tree with OAS (multilabel)",
+    "vw_command": "-d train-sets/multilabel --memory_tree 10 --oas --max_number_of_labels 10 --leaf_example_multiplier 2",
+    "diff_files": {
+      "stderr": "train-sets/ref/memory_tree_oas.stderr",
+      "stdout": "train-sets/ref/memory_tree_oas.stdout"
+    },
+    "input_files": [
+      "train-sets/multilabel"
+    ]
+  },
+  {
     "id": 198,
     "desc": "test cb_sample",
     "vw_command": "--cb_sample --cb_explore_adf -d test-sets/cb_sample_seed.data -p cb_sample_seed.predict --random_seed 1234",
