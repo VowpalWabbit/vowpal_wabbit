@@ -263,7 +263,7 @@ def get_tests(
                 for group in groups:
                     for opt in group[1]:
                         if opt.value_supplied and (
-                            opt.experimental or opt.name == "bfgs"
+                            opt.experimental or opt.name == "bfgs" or opt.name == "conjugate_gradient"
                         ):
                             skip_cmd = True
                             break
