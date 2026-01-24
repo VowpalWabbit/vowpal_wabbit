@@ -22,11 +22,12 @@ TEST(Ftrl, FtrlMetricsAreExposed)
   vw->finish_example(*ex);
 
   auto metrics = vw->output_runtime.global_metrics.collect_metrics(vw->l.get());
+  auto ftrl_metrics = metrics.get_metric_sink("ftrl-Proximal-FTRL");
 
-  EXPECT_EQ(metrics.get_string("ftrl_algorithm"), "Proximal-FTRL");
-  EXPECT_FLOAT_EQ(metrics.get_float("ftrl_alpha"), 0.5f);  // default for FTRL
-  EXPECT_FLOAT_EQ(metrics.get_float("ftrl_beta"), 1.0f);   // default for FTRL
-  EXPECT_EQ(metrics.get_uint("ftrl_size"), 3);
+  EXPECT_EQ(ftrl_metrics.get_string("ftrl_algorithm"), "Proximal-FTRL");
+  EXPECT_FLOAT_EQ(ftrl_metrics.get_float("ftrl_alpha"), 0.5f);  // default for FTRL
+  EXPECT_FLOAT_EQ(ftrl_metrics.get_float("ftrl_beta"), 1.0f);   // default for FTRL
+  EXPECT_EQ(ftrl_metrics.get_uint("ftrl_size"), 3);
 }
 
 TEST(Ftrl, PistolMetricsAreExposed)
@@ -42,11 +43,12 @@ TEST(Ftrl, PistolMetricsAreExposed)
   vw->finish_example(*ex);
 
   auto metrics = vw->output_runtime.global_metrics.collect_metrics(vw->l.get());
+  auto ftrl_metrics = metrics.get_metric_sink("ftrl-PiSTOL");
 
-  EXPECT_EQ(metrics.get_string("ftrl_algorithm"), "PiSTOL");
-  EXPECT_FLOAT_EQ(metrics.get_float("ftrl_alpha"), 1.0f);  // default for PiSTOL
-  EXPECT_FLOAT_EQ(metrics.get_float("ftrl_beta"), 0.5f);   // default for PiSTOL
-  EXPECT_EQ(metrics.get_uint("ftrl_size"), 4);
+  EXPECT_EQ(ftrl_metrics.get_string("ftrl_algorithm"), "PiSTOL");
+  EXPECT_FLOAT_EQ(ftrl_metrics.get_float("ftrl_alpha"), 1.0f);  // default for PiSTOL
+  EXPECT_FLOAT_EQ(ftrl_metrics.get_float("ftrl_beta"), 0.5f);   // default for PiSTOL
+  EXPECT_EQ(ftrl_metrics.get_uint("ftrl_size"), 4);
 }
 
 TEST(Ftrl, CoinMetricsAreExposed)
@@ -62,9 +64,10 @@ TEST(Ftrl, CoinMetricsAreExposed)
   vw->finish_example(*ex);
 
   auto metrics = vw->output_runtime.global_metrics.collect_metrics(vw->l.get());
+  auto ftrl_metrics = metrics.get_metric_sink("ftrl-Coin Betting");
 
-  EXPECT_EQ(metrics.get_string("ftrl_algorithm"), "Coin Betting");
-  EXPECT_FLOAT_EQ(metrics.get_float("ftrl_alpha"), 4.0f);  // default for Coin
-  EXPECT_FLOAT_EQ(metrics.get_float("ftrl_beta"), 1.0f);   // default for Coin
-  EXPECT_EQ(metrics.get_uint("ftrl_size"), 6);
+  EXPECT_EQ(ftrl_metrics.get_string("ftrl_algorithm"), "Coin Betting");
+  EXPECT_FLOAT_EQ(ftrl_metrics.get_float("ftrl_alpha"), 4.0f);  // default for Coin
+  EXPECT_FLOAT_EQ(ftrl_metrics.get_float("ftrl_beta"), 1.0f);   // default for Coin
+  EXPECT_EQ(ftrl_metrics.get_uint("ftrl_size"), 6);
 }

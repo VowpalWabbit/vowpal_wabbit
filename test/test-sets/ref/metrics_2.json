@@ -1,1 +1,1 @@
-{"sfm_count_learn_example_with_shared":0,"total_learn_calls":1000,"total_log_calls":2,"total_predict_calls":0}
+{"total_log_calls":2,"extra_metrics":{"total_learn_calls":1000,"total_predict_calls":0},"shared_feature_merger":{"sfm_count_learn_example_with_shared":0}}

@@ -469,6 +469,7 @@ set(vw_core_test_sources
       tests/automl_test.cc
       tests/automl_weights_test.cc
       tests/baseline_cb_test.cc
+      tests/boosting_test.cc
       tests/cats_test.cc
       tests/cats_tree_test.cc
       tests/cats_user_provided_pdf.cc
@@ -485,7 +486,9 @@ set(vw_core_test_sources
       tests/confidence_sequence_robust_test.cc
       tests/confidence_sequence_test.cc
       tests/continuous_actions_parser_test.cc
+      tests/cressieread_test.cc
       tests/custom_reduction_test.cc
+      tests/debug_print_test.cc
       tests/distributionally_robust_test.cc
       tests/eigen_memory_tree_test.cc
       tests/epsilon_decay_test.cc
@@ -503,6 +506,7 @@ set(vw_core_test_sources
       tests/math_test.cc
       tests/merge_header_opts_test.cc
       tests/merge_test.cc
+      tests/mf_test.cc
       tests/minimal_custom_reduction.cc
       tests/model_util_test.cc
       tests/multiclass_label_parser_test.cc

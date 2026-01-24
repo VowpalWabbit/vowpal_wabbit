@@ -238,8 +238,10 @@ def test_ccb_and_automl():
     automl_metrics = json.load(open(automl.outputs["--extra_metrics"][0]))
 
     # we need champ switches to be zero for this to work
-    assert "total_champ_switches" in automl_metrics
-    assert automl_metrics["total_champ_switches"] == 0
+    # metrics are now namespaced under reduction names
+    assert "automl" in automl_metrics
+    assert "total_champ_switches" in automl_metrics["automl"]
+    assert automl_metrics["automl"]["total_champ_switches"] == 0
 
     q_weights = q[0].model9("--invert_hash").weights.sort_index()
     automl_weights = automl[0].model9("--invert_hash").weights.sort_index()

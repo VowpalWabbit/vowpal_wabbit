@@ -468,7 +468,14 @@ void learner::pre_save_load(VW::workspace& all)
 
 void learner::persist_metrics(metric_sink& metrics)
 {
-  if (_persist_metrics_f) { _persist_metrics_f(metrics); }
+  if (_persist_metrics_f)
+  {
+    // Create a namespaced sub-sink for this reduction's metrics
+    metric_sink reduction_metrics;
+    _persist_metrics_f(reduction_metrics);
+    // Only add the namespace if the reduction actually added metrics
+    if (!reduction_metrics.empty()) { metrics.set_metric_sink(_name, std::move(reduction_metrics)); }
+  }
   if (_base_learner) { _base_learner->persist_metrics(metrics); }
 }
 
