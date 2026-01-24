@@ -3143,10 +3143,14 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::search_setup(VW::setup_bas
                .help("At what level should interpolation happen?"))
       .add(make_option("search_rollout", rollout_string)
                .one_of({"policy", "learn", "oracle", "ref", "mix_per_state", "mix_per_roll", "mix", "none"})
-               .help("How should rollouts be executed"))
+               .help("How should rollouts be executed: ref/oracle=reference policy, policy/learn=learned model, "
+                     "mix_per_roll/mix=random choice per trajectory, mix_per_state=random choice per action, "
+                     "none=no rollout"))
       .add(make_option("search_rollin", rollin_string)
                .one_of({"policy", "learn", "oracle", "ref", "mix_per_state", "mix_per_roll", "mix"})
-               .help("How should past trajectories be generated"))
+               .help("How should past trajectories be generated: ref/oracle=reference policy, "
+                     "policy/learn=learned model, mix_per_roll/mix=random choice per trajectory, "
+                     "mix_per_state=random choice per action"))
       .add(make_option("search_passes_per_policy", passes_per_policy)
                .default_value(1)
                .help("Number of passes per policy (only valid for search_interpolation=policy)"))

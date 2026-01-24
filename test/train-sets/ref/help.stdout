@@ -874,10 +874,16 @@ Weight Options:
                                             supplied in addition for this to output.) (type: str, keep)
     --search_interpolation arg              At what level should interpolation happen? (type: str, choices
                                             {data, policy}, keep)
-    --search_rollout arg                    How should rollouts be executed (type: str, choices {learn, mix,
-                                            mix_per_roll, mix_per_state, none, oracle, policy, ref})
-    --search_rollin arg                     How should past trajectories be generated (type: str, choices
-                                            {learn, mix, mix_per_roll, mix_per_state, oracle, policy, ref})
+    --search_rollout arg                    How should rollouts be executed: ref/oracle=reference policy,
+                                            policy/learn=learned model, mix_per_roll/mix=random choice per
+                                            trajectory, mix_per_state=random choice per action, none=no rollout
+                                            (type: str, choices {learn, mix, mix_per_roll, mix_per_state,
+                                            none, oracle, policy, ref})
+    --search_rollin arg                     How should past trajectories be generated: ref/oracle=reference
+                                            policy, policy/learn=learned model, mix_per_roll/mix=random choice
+                                            per trajectory, mix_per_state=random choice per action (type:
+                                            str, choices {learn, mix, mix_per_roll, mix_per_state, oracle,
+                                            policy, ref})
     --search_passes_per_policy arg          Number of passes per policy (only valid for search_interpolation=policy)
                                             (type: uint, default: 1)
     --search_beta arg                       Interpolation rate for policies (only valid for search_interpolation=policy)
