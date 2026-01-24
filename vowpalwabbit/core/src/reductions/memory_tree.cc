@@ -489,6 +489,10 @@ int compare_label(const void* a, const void* b) { return *(uint32_t*)a - *(uint3
 
 inline uint32_t over_lap(VW::v_array<uint32_t>& array_1, VW::v_array<uint32_t>& array_2)
 {
+  // Early return if either array is empty - no overlap possible
+  // Also avoids undefined behavior from passing null pointer to qsort
+  if (array_1.empty() || array_2.empty()) { return 0; }
+
   uint32_t num_overlap = 0;
 
   qsort(array_1.begin(), array_1.size(), sizeof(uint32_t), compare_label);
