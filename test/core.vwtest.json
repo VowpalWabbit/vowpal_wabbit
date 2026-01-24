@@ -2584,7 +2584,7 @@
   {
     "id": 475,
     "desc": "BFGS with output_feature_regularizer_text",
-    "vw_command": "-k -c -d train-sets/0001.dat --bfgs --passes 100 --holdout_off --predict_only_model --l2 0.1 --termination 0.01 --output_feature_regularizer_text bfgs_regularizer.txt",
+    "vw_command": "-k -c -d train-sets/0001.dat --bfgs --passes 100 --holdout_off --predict_only_model --l2 0.1 --termination 0.01 -b 10 --output_feature_regularizer_text bfgs_regularizer.txt",
     "diff_files": {
       "stderr": "train-sets/ref/bfgs_regularizer.stderr",
       "stdout": "train-sets/ref/bfgs_regularizer.stdout",

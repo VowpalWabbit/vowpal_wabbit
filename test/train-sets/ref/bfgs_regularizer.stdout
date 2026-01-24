@@ -1,4 +1,4 @@
-[info] m = 15, allocated 34M for weights and mem
+[info] m = 15, allocated 0M for weights and mem
 
-Termination condition reached in pass 18: decrease in loss less than 1.000%.
+Termination condition reached in pass 16: decrease in loss less than 1.000%.
 If you want to optimize further, decrease termination threshold.
