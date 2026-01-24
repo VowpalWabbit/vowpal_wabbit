@@ -117,6 +117,68 @@ TEST(Vwdll, ParseEscaped)
 }
 #endif
 
+// Test VW_SeedWithModel - creates a new model seeded from existing model
+TEST(Vwdll, SeedWithModel)
+{
+  // Create and train initial model
+  VW_HANDLE handle1 = VW_InitializeA("--quiet");
+  ASSERT_NE(handle1, nullptr);
+
+  VW_EXAMPLE ex = VW_ReadExampleA(handle1, "1 |f a b c");
+  VW_Learn(handle1, ex);
+  VW_FinishExample(handle1, ex);
+
+  ex = VW_ReadExampleA(handle1, "-1 |f d e f");
+  VW_Learn(handle1, ex);
+  VW_FinishExample(handle1, ex);
+
+  // Seed a new model from the trained model
+  VW_HANDLE handle2 = VW_SeedWithModel(handle1, "");
+  ASSERT_NE(handle2, nullptr);
+
+  // Verify predictions are the same
+  VW_EXAMPLE ex1 = VW_ReadExampleA(handle1, "|f a b c");
+  VW_Predict(handle1, ex1);
+  float pred1 = VW_GetPrediction(ex1);
+  VW_FinishExample(handle1, ex1);
+
+  VW_EXAMPLE ex2 = VW_ReadExampleA(handle2, "|f a b c");
+  VW_Predict(handle2, ex2);
+  float pred2 = VW_GetPrediction(ex2);
+  VW_FinishExample(handle2, ex2);
+
+  EXPECT_FLOAT_EQ(pred1, pred2);
+
+  VW_Finish(handle1);
+  VW_Finish(handle2);
+}
+
+// Test VW_SeedWithModel with extra arguments (test mode)
+TEST(Vwdll, SeedWithModelTestMode)
+{
+  // Create and train initial model
+  VW_HANDLE handle1 = VW_InitializeA("--quiet");
+  ASSERT_NE(handle1, nullptr);
+
+  VW_EXAMPLE ex = VW_ReadExampleA(handle1, "1 |f a b c");
+  VW_Learn(handle1, ex);
+  VW_FinishExample(handle1, ex);
+
+  // Seed a new model in test mode
+  VW_HANDLE handle2 = VW_SeedWithModel(handle1, "-t");
+  ASSERT_NE(handle2, nullptr);
+
+  // Predict with the seeded model - should work in test mode
+  VW_EXAMPLE ex2 = VW_ReadExampleA(handle2, "|f a b c");
+  VW_Predict(handle2, ex2);
+  float pred = VW_GetPrediction(ex2);
+  EXPECT_NE(pred, 0.0f);  // Should have a non-zero prediction
+  VW_FinishExample(handle2, ex2);
+
+  VW_Finish(handle1);
+  VW_Finish(handle2);
+}
+
 TEST(Vwdll, Utf16ToUtf8Conversion)
 {
   // Test 1: ASCII characters (1-byte UTF-8)
