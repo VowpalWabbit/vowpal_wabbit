@@ -124,6 +124,7 @@ public:
     free(mem);
     free(rho);
     free(alpha);
+    free(regularizers);
   }
 };
 

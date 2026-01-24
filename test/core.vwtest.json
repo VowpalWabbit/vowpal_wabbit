@@ -2557,6 +2557,44 @@
     ]
   },
   {
+    "id": 473,
+    "desc": "memory_tree with OAS (multilabel)",
+    "vw_command": "-d train-sets/multilabel --memory_tree 10 --oas --max_number_of_labels 10 --leaf_example_multiplier 2",
+    "diff_files": {
+      "stderr": "train-sets/ref/memory_tree_oas.stderr",
+      "stdout": "train-sets/ref/memory_tree_oas.stdout"
+    },
+    "input_files": [
+      "train-sets/multilabel"
+    ]
+  },
+  {
+    "id": 474,
+    "desc": "LDA with readable_model output",
+    "vw_command": "--lda 2 --lda_alpha 0.1 --lda_rho 0.1 --lda_D 5 -b 5 --minibatch 5 --random_seed 123 -d train-sets/wiki5.dat --readable_model lda_readable_model.txt --predict_only_model",
+    "diff_files": {
+      "stderr": "train-sets/ref/lda_readable_model.stderr",
+      "stdout": "train-sets/ref/lda_readable_model.stdout",
+      "lda_readable_model.txt": "train-sets/ref/lda_readable_model.txt"
+    },
+    "input_files": [
+      "train-sets/wiki5.dat"
+    ]
+  },
+  {
+    "id": 475,
+    "desc": "BFGS with output_feature_regularizer_text",
+    "vw_command": "-k -c -d train-sets/0001.dat --bfgs --passes 100 --holdout_off --predict_only_model --l2 0.1 --termination 0.01 -b 10 --output_feature_regularizer_text bfgs_regularizer.txt",
+    "diff_files": {
+      "stderr": "train-sets/ref/bfgs_regularizer.stderr",
+      "stdout": "train-sets/ref/bfgs_regularizer.stdout",
+      "bfgs_regularizer.txt": "train-sets/ref/bfgs_regularizer.txt"
+    },
+    "input_files": [
+      "train-sets/0001.dat"
+    ]
+  },
+  {
     "id": 198,
     "desc": "test cb_sample",
     "vw_command": "--cb_sample --cb_explore_adf -d test-sets/cb_sample_seed.data -p cb_sample_seed.predict --random_seed 1234",

@@ -1,0 +1,39 @@
+using l2 regularization = 0.1
+enabling BFGS based optimization **without** curvature calculation
+## avg. loss 	der. mag. 	d. m. cond.	 wolfe1    	wolfe2    	mix fraction	curvature 	dir. magnitude	step size
+creating cache_file = train-sets/0001.dat.cache
+Reading datafile = train-sets/0001.dat
+num sources = 1
+Num weight bits = 10
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+decay_learning_rate = 1
+Enabled learners: bfgs, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+ 1 0.45500   	0.88474   	16.11433  	          	          	          	674.59641 	5991.08789	0.02389
+ 3 0.26254   	0.01542   	30.83338  	 0.500000  	-0.000000 	          	          	0.02645   	1.00000
+ 4 0.25484   	0.01368   	27.36944  	 0.970317  	0.940636  	          	          	5.80883   	1.00000
+ 5 0.14220   	0.00783   	15.66682  	 0.632633  	0.265265  	          	          	1.75956   	1.00000
+ 6 0.08561   	0.00540   	10.79952  	 0.766159  	0.558195  	          	          	9.38326   	1.00000
+ 7 0.02489   	0.00022   	0.44285   	 0.565224  	0.176979  	          	          	0.73800   	1.00000
+ 8 0.01754   	0.00008   	0.16086   	 0.708731  	0.434736  	          	          	1.02488   	1.00000
+ 9 0.01301   	0.00001   	0.01815   	 0.546564  	0.095152  	          	          	0.18218   	1.00000
+10 0.01235   	0.00001   	0.02593   	 0.569775  	0.123233  	          	          	0.05116   	1.00000
+11 0.01210   	0.00000   	0.00880   	 0.777107  	0.528229  	          	          	0.11078   	1.00000
+12 0.01188   	0.00001   	0.01456   	 0.502071  	-0.053061 	          	          	0.01563   	1.00000
+13 0.01169   	0.00001   	0.01079   	 0.865396  	0.727948  	          	          	0.41588   	1.00000
+14 0.01134   	0.00000   	0.00700   	 0.459229  	-0.228420 	          	          	0.03062   	1.00000
+15 0.01120   	0.00000   	0.00286   	 0.511336  	0.022811  	          	          	0.05005   	1.00000
+16 0.01110   	0.00000   	0.00180   	 0.696865  	0.344064  	          	          	0.05584   	1.00000
+
+finished run
+number of examples per pass = 200
+passes used = 16
+weighted example sum = 3200.000000
+weighted label sum = 1456.000000
+average loss = 0.105238
+best constant = 0.455000
+best constant's loss = 0.247975
+total feature number = 247712
