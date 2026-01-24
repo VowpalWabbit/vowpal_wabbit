@@ -6102,5 +6102,29 @@
     "depends_on": [
       469
     ]
+  },
+  {
+    "id": 471,
+    "desc": "BFGS with hessian_on option for curvature calculation",
+    "vw_command": "-k -c -d train-sets/rcv1_small.dat --bfgs --hessian_on --passes 5 --mem 7 --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/bfgs_hessian.stderr",
+      "stdout": "train-sets/ref/bfgs_hessian.stdout"
+    },
+    "input_files": [
+      "train-sets/rcv1_small.dat"
+    ]
+  },
+  {
+    "id": 472,
+    "desc": "Conjugate gradient optimization",
+    "vw_command": "-k -c -d train-sets/rcv1_small.dat --conjugate_gradient --passes 5 --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/conjugate_gradient.stderr",
+      "stdout": "train-sets/ref/conjugate_gradient.stdout"
+    },
+    "input_files": [
+      "train-sets/rcv1_small.dat"
+    ]
   }
 ]
