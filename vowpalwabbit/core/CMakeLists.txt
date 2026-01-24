@@ -466,6 +466,7 @@ if(WIN32)
 endif()
 
 set(vw_core_test_sources
+      tests/additional_coverage_test.cc
       tests/automl_test.cc
       tests/automl_weights_test.cc
       tests/baseline_cb_test.cc
