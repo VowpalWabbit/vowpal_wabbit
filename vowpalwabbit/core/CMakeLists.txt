@@ -485,7 +485,9 @@ set(vw_core_test_sources
       tests/confidence_sequence_robust_test.cc
       tests/confidence_sequence_test.cc
       tests/continuous_actions_parser_test.cc
+      tests/cressieread_test.cc
       tests/custom_reduction_test.cc
+      tests/debug_print_test.cc
       tests/distributionally_robust_test.cc
       tests/eigen_memory_tree_test.cc
       tests/epsilon_decay_test.cc
