@@ -469,6 +469,7 @@ set(vw_core_test_sources
       tests/automl_test.cc
       tests/automl_weights_test.cc
       tests/baseline_cb_test.cc
+      tests/boosting_test.cc
       tests/cats_test.cc
       tests/cats_tree_test.cc
       tests/cats_user_provided_pdf.cc
@@ -505,6 +506,7 @@ set(vw_core_test_sources
       tests/math_test.cc
       tests/merge_header_opts_test.cc
       tests/merge_test.cc
+      tests/mf_test.cc
       tests/minimal_custom_reduction.cc
       tests/model_util_test.cc
       tests/multiclass_label_parser_test.cc
