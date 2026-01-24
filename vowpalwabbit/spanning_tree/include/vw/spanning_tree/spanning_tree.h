@@ -101,4 +101,22 @@ private:
 
 using SpanningTree VW_DEPRECATED(
     "VW::SpanningTree renamed to VW::spanning_tree. VW::SpanningTree will be removed in VW 10.") = spanning_tree;
+
+// Internal namespace for testable helper functions
+namespace spanning_tree_internal
+{
+/**
+ * @brief Build a binary spanning tree structure for distributed learning.
+ *
+ * Given a set of source nodes, builds a binary tree topology for allreduce operations.
+ * The tree is constructed recursively with the root at position (2^height - 1) from offset.
+ *
+ * @param parent Array to store parent indices for each node (-1 for root)
+ * @param kid_count Array to store number of children (0, 1, or 2) for each node
+ * @param source_count Number of nodes to connect
+ * @param offset Starting index offset in the arrays
+ * @return Index of the root node in the tree
+ */
+int build_tree(int* parent, uint16_t* kid_count, size_t source_count, int offset);
+}  // namespace spanning_tree_internal
 }  // namespace VW

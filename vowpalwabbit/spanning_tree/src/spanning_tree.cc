@@ -44,6 +44,10 @@ static int socket_sort(const void* s1, const void* s2)
   else { return (static_cast<int>(socket1->socket) - static_cast<int>(socket2->socket)); }
 }
 
+namespace VW
+{
+namespace spanning_tree_internal
+{
 int build_tree(int* parent, uint16_t* kid_count, size_t source_count, int offset)
 {
   if (source_count == 1)
@@ -73,6 +77,8 @@ int build_tree(int* parent, uint16_t* kid_count, size_t source_count, int offset
 
   return oroot;
 }
+}  // namespace spanning_tree_internal
+}  // namespace VW
 
 void fail_send(const socket_t fd, const void* buf, const int count)
 {
@@ -292,7 +298,7 @@ void spanning_tree::run()
       int* parent = static_cast<int*>(calloc(total, sizeof(int)));
       uint16_t* kid_count = static_cast<uint16_t*>(calloc(total, sizeof(uint16_t)));
 
-      int root = build_tree(parent, kid_count, total, 0);
+      int root = spanning_tree_internal::build_tree(parent, kid_count, total, 0);
       parent[root] = -1;
 
       for (size_t i = 0; i < total; i++)

@@ -17,3 +17,9 @@ vw_add_library(
 if(WIN32)
   target_link_libraries(vw_spanning_tree PRIVATE wsock32 ws2_32)
 endif()
+
+vw_add_test_executable(
+    FOR_LIB "spanning_tree"
+    SOURCES
+      tests/spanning_tree_test.cc
+)
