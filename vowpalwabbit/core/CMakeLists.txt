@@ -524,6 +524,7 @@ set(vw_core_test_sources
       tests/random_test.cc
       tests/save_load_test.cc
       tests/scope_exit_test.cc
+      tests/search_test.cc
       tests/simulator.cc
       tests/simulator.h
       tests/igl_simulator.h
