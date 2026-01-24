@@ -1,7 +1,8 @@
 <img src="/logo_assets/vowpal-wabbits-github-logo@3x.png" height="auto" width="100%" alt="Vowpal Wabbit">
 
-[![Linux build status](https://img.shields.io/azure-devops/build/vowpalwabbit/3934113c-9e2b-4dbc-8972-72ab9b9b4342/23?label=Linux%20build&logo=Azure%20Devops)](https://dev.azure.com/vowpalwabbit/Vowpal%20Wabbit/_build/latest?definitionId=23&branchName=master)
-[![Windows build status](https://img.shields.io/azure-devops/build/vowpalwabbit/3934113c-9e2b-4dbc-8972-72ab9b9b4342/14?label=Windows%20build&logo=Azure%20Devops)](https://dev.azure.com/vowpalwabbit/Vowpal%20Wabbit/_build/latest?definitionId=14&branchName=master)
+[![Linux build](https://github.com/VowpalWabbit/vowpal_wabbit/actions/workflows/vendor_build.yml/badge.svg?branch=master)](https://github.com/VowpalWabbit/vowpal_wabbit/actions/workflows/vendor_build.yml)
+[![macOS build](https://github.com/VowpalWabbit/vowpal_wabbit/actions/workflows/build_macos.yml/badge.svg?branch=master)](https://github.com/VowpalWabbit/vowpal_wabbit/actions/workflows/build_macos.yml)
+[![Windows build](https://github.com/VowpalWabbit/vowpal_wabbit/actions/workflows/vcpkg_build.yml/badge.svg?branch=master)](https://github.com/VowpalWabbit/vowpal_wabbit/actions/workflows/vcpkg_build.yml)
 
 [![codecov](https://codecov.io/gh/VowpalWabbit/vowpal_wabbit/branch/master/graph/badge.svg)](https://codecov.io/gh/VowpalWabbit/vowpal_wabbit)
 
