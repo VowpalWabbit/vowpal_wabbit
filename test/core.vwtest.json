@@ -2571,7 +2571,7 @@
   {
     "id": 474,
     "desc": "LDA with readable_model output",
-    "vw_command": "--lda 3 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 100 -b 10 --minibatch 1 -d train-sets/wiki256.dat --readable_model lda_readable_model.txt --predict_only_model",
+    "vw_command": "--lda 3 --lda_alpha 0.01 --lda_rho 0.01 --lda_D 100 -b 10 --minibatch 1 --random_seed 123 -d train-sets/wiki256.dat --readable_model lda_readable_model.txt --predict_only_model",
     "diff_files": {
       "stderr": "train-sets/ref/lda_readable_model.stderr",
       "stdout": "train-sets/ref/lda_readable_model.stdout",
