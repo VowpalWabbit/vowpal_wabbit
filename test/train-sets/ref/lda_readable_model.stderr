@@ -1,0 +1,28 @@
+using no cache
+Reading datafile = train-sets/wiki256.dat
+num sources = 1
+Num weight bits = 10
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+Enabled learners: lda
+Input label = NOLABEL
+Output pred = SCALARS
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+7.031456 7.031456            1            1.0           none              0      732
+7.182281 7.333107            2            2.0           none              0       27
+7.197025 7.211769            4            4.0           none              0       53
+7.232538 7.268050            8            8.0           none              0       60
+7.355249 7.477961           16           16.0           none              0       26
+7.622734 7.890219           32           32.0           none              0      125
+7.704530 7.786326           64           64.0           none              0      313
+7.484374 7.264218          128          128.0           none              0       50
+7.364366 7.244357          256          256.0           none              0       33
+
+finished run
+number of examples = 257
+weighted example sum = 257.000000
+weighted label sum = 0.000000
+average loss = 7.335710
+total feature number = 22191

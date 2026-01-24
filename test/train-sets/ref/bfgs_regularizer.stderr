@@ -1,0 +1,41 @@
+using l2 regularization = 0.1
+enabling BFGS based optimization **without** curvature calculation
+## avg. loss 	der. mag. 	d. m. cond.	 wolfe1    	wolfe2    	mix fraction	curvature 	dir. magnitude	step size
+creating cache_file = train-sets/0001.dat.cache
+Reading datafile = train-sets/0001.dat
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+decay_learning_rate = 1
+Enabled learners: bfgs, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+ 1 0.45500   	0.85515   	16.57389  	          	          	          	476.03981 	12286.92285	0.03482
+ 3 0.16646   	0.01167   	23.33049  	 0.500039  	0.001241  	          	          	0.10323   	1.00000
+ 4 0.16001   	0.00939   	18.77291  	 0.944838  	0.889674  	          	          	6.47482   	1.00000
+ 5 0.10947   	0.00422   	8.44252   	 0.685222  	0.419287  	          	          	2.94075   	1.00000
+ 6 0.07419   	0.00436   	8.72783   	 0.764300  	0.549081  	          	          	3.12357   	1.00000
+ 7 0.02850   	0.00037   	0.74464   	 0.642357  	0.310545  	          	          	1.70810   	1.00000
+ 8 0.01911   	0.00007   	0.14370   	 0.642269  	0.297274  	          	          	0.82392   	1.00000
+ 9 0.01651   	0.00010   	0.19474   	 0.701084  	0.413673  	          	          	1.34795   	1.00000
+10 0.01363   	0.00004   	0.08161   	 0.585170  	0.134831  	          	          	0.49395   	1.00000
+11 0.01228   	0.00001   	0.02640   	 0.734219  	0.452774  	          	          	0.57869   	1.00000
+12 0.01149   	0.00002   	0.03511   	 0.570547  	0.124678  	          	          	0.51003   	1.00000
+13 0.01052   	0.00002   	0.04088   	 0.640158  	0.236556  	          	          	0.97858   	1.00000
+14 0.01004   	0.00001   	0.02694   	 0.410044  	-0.256921 	          	          	0.09649   	1.00000
+15 0.00980   	0.00000   	0.00688   	 0.449513  	-0.067862 	          	          	0.03151   	1.00000
+16 0.00965   	0.00000   	0.00275   	 0.806979  	0.604296  	          	          	0.25792   	1.00000
+17 0.00954   	0.00000   	0.00573   	 0.356858  	-0.400774 	          	          	0.01348   	1.00000
+18 0.00950   	0.00000   	0.00108   	 0.394336  	-0.204237 	          	          	0.00484   	1.00000
+
+finished run
+number of examples per pass = 200
+passes used = 18
+weighted example sum = 3600.000000
+weighted label sum = 1638.000000
+average loss = 0.078234
+best constant = 0.455000
+best constant's loss = 0.247975
+total feature number = 278676
