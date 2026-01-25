@@ -6236,5 +6236,69 @@
     "input_files": [
       "train-sets/wiki5.dat"
     ]
+  },
+  {
+    "id": 482,
+    "desc": "automl save model with resume state (confidence_sequence serialization)",
+    "vw_command": "--automl 3 --cb_explore_adf --epsilon 0.2 -d train-sets/decisionservice.json --dsjson -f models/automl_save_resume.model --random_seed 123",
+    "diff_files": {
+      "stderr": "train-sets/ref/automl_save_resume.stderr",
+      "stdout": "train-sets/ref/automl_save_resume.stdout"
+    },
+    "input_files": [
+      "train-sets/decisionservice.json"
+    ]
+  },
+  {
+    "id": 483,
+    "desc": "automl load model with resume state (confidence_sequence deserialization)",
+    "vw_command": "-i models/automl_save_resume.model -d train-sets/decisionservice.json --dsjson",
+    "diff_files": {
+      "stderr": "train-sets/ref/automl_load_resume.stderr",
+      "stdout": "train-sets/ref/automl_load_resume.stdout"
+    },
+    "input_files": [
+      "train-sets/decisionservice.json",
+      "models/automl_save_resume.model"
+    ],
+    "depends_on": [482]
+  },
+  {
+    "id": 484,
+    "desc": "cats_pdf save model with resume state (cb_continuous_label serialization)",
+    "vw_command": "--cats_pdf 4 --min_value=185 --max_value=23959 --bandwidth 2000 -d train-sets/cats.acpx --passes 1 -b 18 --coin -f models/cats_pdf_save_resume.model --random_seed 123",
+    "diff_files": {
+      "stderr": "train-sets/ref/cats_pdf_save_resume.stderr",
+      "stdout": "train-sets/ref/cats_pdf_save_resume.stdout"
+    },
+    "input_files": [
+      "train-sets/cats.acpx"
+    ]
+  },
+  {
+    "id": 485,
+    "desc": "cats_pdf load model with resume state (cb_continuous_label deserialization)",
+    "vw_command": "-i models/cats_pdf_save_resume.model -d train-sets/cats.acpx",
+    "diff_files": {
+      "stderr": "train-sets/ref/cats_pdf_load_resume.stderr",
+      "stdout": "train-sets/ref/cats_pdf_load_resume.stdout"
+    },
+    "input_files": [
+      "train-sets/cats.acpx",
+      "models/cats_pdf_save_resume.model"
+    ],
+    "depends_on": [484]
+  },
+  {
+    "id": 486,
+    "desc": "print reduction (prints examples during training)",
+    "vw_command": "--print -d train-sets/regression_small.txt",
+    "diff_files": {
+      "stderr": "train-sets/ref/print_reduction.stderr",
+      "stdout": "train-sets/ref/print_reduction.stdout"
+    },
+    "input_files": [
+      "train-sets/regression_small.txt"
+    ]
   }
 ]
