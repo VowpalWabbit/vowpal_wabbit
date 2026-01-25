@@ -1,0 +1,31 @@
+final_regressor = models/cats_pdf_save_resume.model
+Enabling FTRL based optimization
+Algorithm used: Coin Betting
+ftrl_alpha = 4
+ftrl_beta = 1
+using no cache
+Reading datafile = train-sets/cats.acpx
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+Enabled learners: ftrl-Coin Betting, scorer-identity, binary, cats_tree, get_pmf, pmf_to_pdf, cb_explore_pdf, cats_pdf
+Input label = CONTINUOUS
+Output pred = PDF
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.657567 0.657567            1            1.0 {185.12,0.6... 185-1156.75...       10
+0.557941 0.458316            2            2.0 {772.59,0.4... 185-7100.25...       10
+0.363443 0.168945            4            4.0 {14122,0.02,0} 185-7100.25...       10
+0.299771 0.236098            8            8.0 {12715.1,0.... 185-7100.25...       10
+0.307594 0.315418           16           16.0 {669.12,0.4... 185-18987.2...       10
+0.290863 0.274131           32           32.0 {10786.7,0.... 185-18987.2...       10
+
+finished run
+number of examples = 57
+weighted example sum = 57.000000
+weighted label sum = 57.000000
+average loss = 0.267669
+total feature number = 570
+Learn() count per node: id=0, #l=21; id=1, #l=37; id=2, #l=20; 
