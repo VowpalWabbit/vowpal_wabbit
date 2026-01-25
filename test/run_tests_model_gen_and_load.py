@@ -106,11 +106,12 @@ def generate_model_and_weights(
         return
     weights_dir = working_dir / "test_weights"
     weights_dir.mkdir(parents=True, exist_ok=True)
-    # Skip json_weights() for KSVM models - they use support vectors instead of
-    # standard weights, and older VW versions segfault when calling json_weights()
-    if "--ksvm" in command:
+    # Skip json_weights() for models that don't use standard weights.
+    # Older VW versions segfault when calling json_weights() on these models.
+    skip_weights_flags = ["--ksvm", "--print"]
+    if any(flag in command for flag in skip_weights_flags):
         print(
-            f"{color_enum.LIGHT_PURPLE}Skipping weights for KSVM model (uses support vectors){color_enum.ENDC}"
+            f"{color_enum.LIGHT_PURPLE}Skipping weights (model doesn't use standard weights){color_enum.ENDC}"
         )
     else:
         with open(weights_dir / f"weights_{test_id}.json", "w") as weights_file:
@@ -163,11 +164,12 @@ def load_model(
         f"{color_enum.LIGHT_PURPLE}id: {test_id}, command: {load_command}{color_enum.ENDC}"
     )
 
-    # Skip KSVM models - they use support vectors instead of standard weights,
-    # and older VW versions segfault when calling json_weights()
-    if "--ksvm" in command:
+    # Skip models that don't use standard weights.
+    # Older VW versions segfault when calling json_weights() on these models.
+    skip_weights_flags = ["--ksvm", "--print"]
+    if any(flag in command for flag in skip_weights_flags):
         print(
-            f"{color_enum.LIGHT_CYAN}Skipping weight comparison for KSVM model (uses support vectors){color_enum.ENDC}"
+            f"{color_enum.LIGHT_CYAN}Skipping weight comparison (model doesn't use standard weights){color_enum.ENDC}"
         )
         return
 
