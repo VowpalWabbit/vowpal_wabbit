@@ -110,11 +110,21 @@ public:
 
   // iterator with stride
   iterator begin() { return iterator(_begin.get(), _begin.get(), stride_shift()); }
-  iterator end() { return iterator(_begin.get() + _weight_mask + 1, _begin.get(), stride_shift()); }
+  iterator end()
+  {
+    // Return empty range if weights not initialized
+    if (!_begin) { return begin(); }
+    return iterator(_begin.get() + _weight_mask + 1, _begin.get(), stride_shift());
+  }
 
   // const iterator
   const_iterator cbegin() const { return const_iterator(_begin.get(), _begin.get(), stride_shift()); }
-  const_iterator cend() const { return const_iterator(_begin.get() + _weight_mask + 1, _begin.get(), stride_shift()); }
+  const_iterator cend() const
+  {
+    // Return empty range if weights not initialized
+    if (!_begin) { return cbegin(); }
+    return const_iterator(_begin.get() + _weight_mask + 1, _begin.get(), stride_shift());
+  }
 
   inline const VW::weight& operator[](size_t i) const { return _begin.get()[i & _weight_mask]; }
   inline VW::weight& operator[](size_t i) { return _begin.get()[i & _weight_mask]; }

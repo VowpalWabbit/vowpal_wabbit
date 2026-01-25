@@ -258,13 +258,15 @@ std::string workspace::dump_weights_to_json_experimental()
   assert(l != nullptr);
   const auto* current = l.get();
 
-  // This could be extended to other base learners reasonably. Since this is new and experimental though keep the scope
-  // small.
+  // Walk to the base learner
   while (current->get_base_learner() != nullptr) { current = current->get_base_learner(); }
+
+  // KSVM uses support vectors instead of standard weights, so json_weights is not applicable
   if (current->get_name() == "ksvm")
   {
-    THROW("dump_weights_to_json is currently only supported for KSVM base learner. The current base learner is "
-        << current->get_name());
+    logger.warn("dump_weights_to_json: KSVM uses support vectors instead of standard weights. "
+                "Returning empty weights array.");
+    return R"({"weights":[]})";
   }
   if (output_model_config.dump_json_weights_include_feature_names && !output_config.hash_inv)
   {
@@ -279,11 +281,12 @@ std::string workspace::dump_weights_to_json_experimental()
     THROW("including extra online state is only allowed with GD as base learner");
   }
 
-  // Validate weights are initialized before iterating to detect memory corruption early
-  if (!weights.sparse && !weights.dense_weights.not_null())
+  // Check if weights are initialized - some learners (e.g., KSVM) don't use standard weights
+  if (!weights.not_null())
   {
-    THROW("dump_weights_to_json: dense_weights is not initialized or corrupted (data pointer is null). "
-          "This may indicate memory corruption from a previous operation.");
+    logger.warn("dump_weights_to_json: weights not initialized (learner may not use standard weights). "
+                "Returning empty weights array.");
+    return R"({"weights":[]})";
   }
 
   return weights.sparse ? dump_weights_to_json_weight_typed(weights.sparse_weights, output_runtime.index_name_map,
