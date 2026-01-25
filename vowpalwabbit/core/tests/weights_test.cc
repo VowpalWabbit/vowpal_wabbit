@@ -25,3 +25,26 @@ TYPED_TEST(WeightTests, TestDefaultFunctionWeightInitializationStridedIndex)
   w.set_default(weight_initializer);
   for (size_t i = 0; i < LENGTH; i++) { EXPECT_FLOAT_EQ(w.strided_index(i), 1.f * (i * w.stride())); }
 }
+
+TEST(DenseParametersTest, UninitializedIteratorIsEmptyRange)
+{
+  // Default constructor leaves _begin as nullptr
+  VW::dense_parameters params;
+
+  // Should report as not initialized
+  EXPECT_FALSE(params.not_null());
+
+  // Iterators should form an empty range (not crash)
+  EXPECT_EQ(params.begin(), params.end());
+  EXPECT_EQ(params.cbegin(), params.cend());
+
+  // Iterating should do nothing (not crash)
+  int count = 0;
+  for (auto it = params.begin(); it != params.end(); ++it) { count++; }
+  EXPECT_EQ(count, 0);
+
+  // Const iteration should also work
+  count = 0;
+  for (auto it = params.cbegin(); it != params.cend(); ++it) { count++; }
+  EXPECT_EQ(count, 0);
+}
