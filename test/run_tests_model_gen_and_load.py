@@ -106,13 +106,15 @@ def generate_model_and_weights(
         return
     weights_dir = working_dir / "test_weights"
     weights_dir.mkdir(parents=True, exist_ok=True)
-    with open(weights_dir / f"weights_{test_id}.json", "w") as weights_file:
-        try:
+    # Skip json_weights() for KSVM models - they use support vectors instead of
+    # standard weights, and older VW versions segfault when calling json_weights()
+    if "--ksvm" in command:
+        print(
+            f"{color_enum.LIGHT_PURPLE}Skipping weights for KSVM model (uses support vectors){color_enum.ENDC}"
+        )
+    else:
+        with open(weights_dir / f"weights_{test_id}.json", "w") as weights_file:
             weights_file.write(vw.json_weights())
-        except:
-            print(
-                f"{color_enum.LIGHT_PURPLE}Weights could not be generated as base learner is KSVM{color_enum.ENDC}"
-            )
     test_models_dir = working_dir / "test_models"
     test_models_dir.mkdir(parents=True, exist_ok=True)
     vw.save(str(test_models_dir / f"model_{test_id}.vw"))
@@ -161,6 +163,14 @@ def load_model(
         f"{color_enum.LIGHT_PURPLE}id: {test_id}, command: {load_command}{color_enum.ENDC}"
     )
 
+    # Skip KSVM models - they use support vectors instead of standard weights,
+    # and older VW versions segfault when calling json_weights()
+    if "--ksvm" in command:
+        print(
+            f"{color_enum.LIGHT_CYAN}Skipping weight comparison for KSVM model (uses support vectors){color_enum.ENDC}"
+        )
+        return
+
     try:
         vw = try_get_workspace_or_none(
             cli=load_command,
@@ -170,13 +180,7 @@ def load_model(
         )
         if vw is None:
             return
-        try:
-            new_weights = json.loads(vw.json_weights())
-        except:
-            print(
-                f"{color_enum.LIGHT_CYAN}Weights could not be loaded as base learner is KSVM{color_enum.ENDC}"
-            )
-            return
+        new_weights = json.loads(vw.json_weights())
         weights_dir = working_dir / "test_weights"
         weights_dir.mkdir(parents=True, exist_ok=True)
         weight_file = str(weights_dir / f"weights_{test_id}.json")
