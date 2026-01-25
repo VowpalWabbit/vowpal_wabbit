@@ -334,7 +334,7 @@ def generate_all(
     output_working_dir: Path,
     color_enum: Type[Union[Color, NoColor]] = Color,
     skip_missing_args: bool = False,
-    use_subprocess: bool = True,
+    use_subprocess: bool = False,
 ) -> None:
     os.chdir(output_working_dir.parent)
 
@@ -342,6 +342,8 @@ def generate_all(
         # Use subprocess isolation to prevent memory corruption issues
         # from affecting subsequent tests when running many tests sequentially.
         # Each test runs in its own process which cleans up memory on exit.
+        # Note: This is now disabled by default since the safe iterator fix (c97d0578e)
+        # handles uninitialized weights gracefully.
         no_color = color_enum == NoColor
         args_list = [
             (test.id, test.command_line, str(output_working_dir), no_color, skip_missing_args)
@@ -376,7 +378,7 @@ def load_all(
     output_working_dir: Path,
     color_enum: Type[Union[Color, NoColor]] = Color,
     skip_missing_args: bool = False,
-    use_subprocess: bool = True,
+    use_subprocess: bool = False,
 ) -> None:
     os.chdir(output_working_dir.parent)
     if len(os.listdir(output_working_dir / "test_models")) != len(tests):
@@ -388,6 +390,8 @@ def load_all(
         # Use subprocess isolation to prevent memory corruption issues
         # from affecting subsequent tests when running many tests sequentially.
         # Each test runs in its own process which cleans up memory on exit.
+        # Note: This is now disabled by default since the safe iterator fix (c97d0578e)
+        # handles uninitialized weights gracefully.
         no_color = color_enum == NoColor
         args_list = [
             (test.id, test.command_line, str(output_working_dir), no_color, skip_missing_args)
@@ -476,8 +480,8 @@ def main():
     )
 
     parser.add_argument(
-        "--no_subprocess_isolation",
-        help="Disable subprocess isolation for model generation (may cause crashes due to memory issues)",
+        "--subprocess_isolation",
+        help="Enable subprocess isolation for model generation (runs each test in separate process)",
         action="store_true",
     )
 
@@ -520,7 +524,7 @@ def main():
             skip_pr_tests,
         )
 
-        use_subprocess = not args.no_subprocess_isolation
+        use_subprocess = args.subprocess_isolation
         if args.generate_models:
             generate_all(tests, test_output_dir, color_enum, args.skip_missing_args, use_subprocess)
         elif args.load_models:
