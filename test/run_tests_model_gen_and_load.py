@@ -143,6 +143,29 @@ def _generate_model_subprocess_wrapper(args):
         return (test_id, False, str(e))
 
 
+def _load_model_subprocess_wrapper(args):
+    """Wrapper function for running load_model in a subprocess.
+
+    This provides process isolation to prevent memory corruption issues from
+    affecting subsequent tests when running many tests sequentially.
+    """
+    test_id, command, working_dir_str, no_color, skip_missing_args = args
+    working_dir = Path(working_dir_str)
+    color_enum = NoColor if no_color else Color
+    try:
+        os.chdir(working_dir.parent)
+        load_model(
+            test_id,
+            command,
+            working_dir,
+            color_enum,
+            skip_missing_args,
+        )
+        return (test_id, True, None)
+    except Exception as e:
+        return (test_id, False, str(e))
+
+
 def load_model(
     test_id: int,
     command: str,
@@ -353,6 +376,7 @@ def load_all(
     output_working_dir: Path,
     color_enum: Type[Union[Color, NoColor]] = Color,
     skip_missing_args: bool = False,
+    use_subprocess: bool = True,
 ) -> None:
     os.chdir(output_working_dir.parent)
     if len(os.listdir(output_working_dir / "test_models")) != len(tests):
@@ -360,14 +384,36 @@ def load_all(
             f"{color_enum.LIGHT_RED} Warning: There is a mismatch between the number of models in {output_working_dir} and the number of tests that will attempt to load them {color_enum.ENDC}"
         )
 
-    for test in tests:
-        load_model(
-            test.id,
-            test.command_line,
-            output_working_dir,
-            color_enum,
-            skip_missing_args,
-        )
+    if use_subprocess:
+        # Use subprocess isolation to prevent memory corruption issues
+        # from affecting subsequent tests when running many tests sequentially.
+        # Each test runs in its own process which cleans up memory on exit.
+        no_color = color_enum == NoColor
+        args_list = [
+            (test.id, test.command_line, str(output_working_dir), no_color, skip_missing_args)
+            for test in tests
+        ]
+
+        # Use a pool with 1 worker to run tests sequentially but in isolated processes
+        with multiprocessing.Pool(processes=1) as pool:
+            results = pool.map(_load_model_subprocess_wrapper, args_list)
+
+        # Check for failures
+        failures = [(test_id, error) for test_id, success, error in results if not success]
+        if failures:
+            for test_id, error in failures:
+                print(f"{color_enum.LIGHT_RED}Test {test_id} failed: {error}{color_enum.ENDC}")
+            raise RuntimeError(f"{len(failures)} test(s) failed during model loading")
+    else:
+        # Run directly without subprocess isolation (legacy mode)
+        for test in tests:
+            load_model(
+                test.id,
+                test.command_line,
+                output_working_dir,
+                color_enum,
+                skip_missing_args,
+            )
 
 
 def main():
@@ -478,10 +524,10 @@ def main():
         if args.generate_models:
             generate_all(tests, test_output_dir, color_enum, args.skip_missing_args, use_subprocess)
         elif args.load_models:
-            load_all(tests, test_output_dir, color_enum, args.skip_missing_args)
+            load_all(tests, test_output_dir, color_enum, args.skip_missing_args, use_subprocess)
         elif args.generate_and_load:
             generate_all(tests, test_output_dir, color_enum, args.skip_missing_args, use_subprocess)
-            load_all(tests, test_output_dir, color_enum, args.skip_missing_args)
+            load_all(tests, test_output_dir, color_enum, args.skip_missing_args, use_subprocess)
         else:
             print(
                 f"{color_enum.LIGHT_GREEN}Specify a run option, use --help for more info {color_enum.ENDC}"
