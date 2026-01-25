@@ -471,6 +471,7 @@ set(vw_core_test_sources
       tests/automl_weights_test.cc
       tests/baseline_cb_test.cc
       tests/boosting_test.cc
+      tests/bs_test.cc
       tests/cats_test.cc
       tests/cats_tree_test.cc
       tests/cats_user_provided_pdf.cc

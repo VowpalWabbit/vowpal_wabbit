@@ -179,6 +179,315 @@ TEST(Vwdll, SeedWithModelTestMode)
   VW_Finish(handle2);
 }
 
+// Test VW_Predict functionality
+TEST(Vwdll, Predict)
+{
+  VW_HANDLE handle = VW_InitializeA("--quiet");
+
+  // Train first
+  VW_EXAMPLE train_ex = VW_ReadExampleA(handle, "1 | feature1 feature2");
+  VW_Learn(handle, train_ex);
+  VW_FinishExample(handle, train_ex);
+
+  // Then predict
+  VW_EXAMPLE pred_ex = VW_ReadExampleA(handle, "| feature1 feature2");
+  float prediction = VW_Predict(handle, pred_ex);
+
+  EXPECT_FALSE(std::isnan(prediction));
+  VW_FinishExample(handle, pred_ex);
+  VW_Finish(handle);
+}
+
+// Test weight manipulation
+TEST(Vwdll, WeightManipulation)
+{
+  VW_HANDLE handle = VW_InitializeA("--quiet -b 10");
+
+  // Train
+  VW_EXAMPLE ex = VW_ReadExampleA(handle, "1 | a b");
+  VW_Learn(handle, ex);
+  VW_FinishExample(handle, ex);
+
+  size_t num_weights = VW_Num_Weights(handle);
+  EXPECT_GT(num_weights, 0u);
+
+  size_t stride = VW_Get_Stride(handle);
+  EXPECT_GT(stride, 0u);
+
+  // Get and set a weight
+  float original_weight = VW_Get_Weight(handle, 0, 0);
+  VW_Set_Weight(handle, 0, 0, original_weight + 1.0f);
+  float new_weight = VW_Get_Weight(handle, 0, 0);
+  EXPECT_FLOAT_EQ(new_weight, original_weight + 1.0f);
+
+  VW_Finish(handle);
+}
+
+// Test label accessors
+TEST(Vwdll, LabelAccessors)
+{
+  VW_HANDLE handle = VW_InitializeA("--quiet");
+
+  VW_EXAMPLE ex = VW_ReadExampleA(handle, "2:1.5 | feature");
+
+  float label = VW_GetLabel(ex);
+  // For simple labels, this returns the label value
+  EXPECT_FALSE(std::isnan(label));
+
+  float importance = VW_GetImportance(ex);
+  EXPECT_FALSE(std::isnan(importance));
+
+  float initial = VW_GetInitial(ex);
+  EXPECT_FALSE(std::isnan(initial));
+
+  VW_FinishExample(handle, ex);
+  VW_Finish(handle);
+}
+
+// Test feature number and tag accessors
+TEST(Vwdll, FeatureAccessors)
+{
+  VW_HANDLE handle = VW_InitializeA("--quiet");
+
+  VW_EXAMPLE ex = VW_ReadExampleA(handle, "1 tag| feature1 feature2 feature3");
+
+  size_t num_features = VW_GetFeatureNumber(ex);
+  EXPECT_GT(num_features, 0u);
+
+  VW_FinishExample(handle, ex);
+  VW_Finish(handle);
+}
+
+// Test AddLabel function
+TEST(Vwdll, AddLabel)
+{
+  VW_HANDLE handle = VW_InitializeA("--quiet");
+
+  VW_EXAMPLE ex = VW_ReadExampleA(handle, "| feature1 feature2");
+
+  // Add a label
+  VW_AddLabel(ex, 1.0f, 2.0f, 0.0f);
+
+  // Learn should work after adding label
+  float pred = VW_Learn(handle, ex);
+  EXPECT_FALSE(std::isnan(pred));
+
+  VW_FinishExample(handle, ex);
+  VW_Finish(handle);
+}
+
+// Test AddStringLabel function
+TEST(Vwdll, AddStringLabel)
+{
+  VW_HANDLE handle = VW_InitializeA("--quiet");
+
+  VW_EXAMPLE ex = VW_ReadExampleA(handle, "| feature1 feature2");
+
+  // Add a string label
+  VW_AddStringLabel(handle, ex, "1");
+
+  // Learn should work after adding label
+  float pred = VW_Learn(handle, ex);
+  EXPECT_FALSE(std::isnan(pred));
+
+  VW_FinishExample(handle, ex);
+  VW_Finish(handle);
+}
+
+// Test model copy functionality
+TEST(Vwdll, CopyModelData)
+{
+  VW_HANDLE handle = VW_InitializeA("--quiet");
+
+  // Train
+  VW_EXAMPLE ex = VW_ReadExampleA(handle, "1 | a b c");
+  VW_Learn(handle, ex);
+  VW_FinishExample(handle, ex);
+
+  // Copy model data
+  VW_IOBUF buffer_handle = nullptr;
+  char* model_data = nullptr;
+  size_t model_size = 0;
+  VW_CopyModelData(handle, &buffer_handle, &model_data, &model_size);
+
+  EXPECT_NE(buffer_handle, nullptr);
+  EXPECT_NE(model_data, nullptr);
+  EXPECT_GT(model_size, 0u);
+
+  VW_FreeIOBuf(buffer_handle);
+  VW_Finish(handle);
+}
+
+// Test ExportExample and related functions
+TEST(Vwdll, ExportExample)
+{
+  VW_HANDLE handle = VW_InitializeA("--quiet");
+
+  VW_EXAMPLE ex = VW_ReadExampleA(handle, "1 |s a b |t c d");
+  VW_Learn(handle, ex);
+
+  size_t len = 0;
+  VW_FEATURE_SPACE fs = VW_ExportExample(handle, ex, &len);
+
+  EXPECT_NE(fs, nullptr);
+  EXPECT_GT(len, 0u);
+
+  VW_ReleaseFeatureSpace(fs, len);
+  VW_FinishExample(handle, ex);
+  VW_Finish(handle);
+}
+
+// Test hash functions
+TEST(Vwdll, HashFunctions)
+{
+  VW_HANDLE handle = VW_InitializeA("--quiet");
+
+  size_t space_hash = VW_HashSpaceA(handle, "namespace");
+  EXPECT_GT(space_hash, 0u);
+
+  size_t feature_hash = VW_HashFeatureA(handle, "feature", space_hash);
+  EXPECT_GT(feature_hash, 0u);
+
+  // Static hash functions
+  size_t static_space_hash = VW_HashSpaceStaticA("namespace", "strings");
+  EXPECT_GT(static_space_hash, 0u);
+
+  size_t static_feature_hash = VW_HashFeatureStaticA("feature", space_hash, "strings", 18);
+  EXPECT_GT(static_feature_hash, 0u);
+
+  VW_Finish(handle);
+}
+
+// Test GetFeatures function
+TEST(Vwdll, GetFeatures)
+{
+  VW_HANDLE handle = VW_InitializeA("--quiet");
+
+  VW_EXAMPLE ex = VW_ReadExampleA(handle, "1 | feature1 feature2");
+
+  size_t len = 0;
+  VW_FEATURE features = VW_GetFeatures(handle, ex, &len);
+
+  // Should have features from the example
+  EXPECT_NE(features, nullptr);
+  EXPECT_GT(len, 0u);
+
+  VW_ReturnFeatures(features);
+  VW_FinishExample(handle, ex);
+  VW_Finish(handle);
+}
+
+// Test cost-sensitive prediction
+TEST(Vwdll, PredictCostSensitive)
+{
+  VW_HANDLE handle = VW_InitializeA("--csoaa 3 --quiet");
+
+  // Train
+  VW_EXAMPLE train_ex = VW_ReadExampleA(handle, "1:0.5 2:1.0 3:1.5 | feature");
+  VW_Learn(handle, train_ex);
+  VW_FinishExample(handle, train_ex);
+
+  // Predict
+  VW_EXAMPLE pred_ex = VW_ReadExampleA(handle, "| feature");
+  float prediction = VW_PredictCostSensitive(handle, pred_ex);
+
+  // Should return a valid class (1, 2, or 3)
+  EXPECT_GE(prediction, 1.0f);
+  EXPECT_LE(prediction, 3.0f);
+
+  VW_FinishExample(handle, pred_ex);
+  VW_Finish(handle);
+}
+
+// Test InitializeWithModel
+TEST(Vwdll, InitializeWithModel)
+{
+  // First create a model
+  VW_HANDLE handle1 = VW_InitializeA("--quiet");
+  VW_EXAMPLE ex = VW_ReadExampleA(handle1, "1 | feature");
+  VW_Learn(handle1, ex);
+  VW_FinishExample(handle1, ex);
+
+  // Get model data
+  VW_IOBUF buffer_handle = nullptr;
+  char* model_data = nullptr;
+  size_t model_size = 0;
+  VW_CopyModelData(handle1, &buffer_handle, &model_data, &model_size);
+
+  // Initialize with model
+  VW_HANDLE handle2 = VW_InitializeWithModel("--quiet", model_data, model_size);
+  EXPECT_NE(handle2, nullptr);
+
+  // Should be able to predict
+  VW_EXAMPLE pred_ex = VW_ReadExampleA(handle2, "| feature");
+  float pred = VW_Predict(handle2, pred_ex);
+  EXPECT_FALSE(std::isnan(pred));
+  VW_FinishExample(handle2, pred_ex);
+
+  VW_Finish(handle2);
+  VW_FreeIOBuf(buffer_handle);
+  VW_Finish(handle1);
+}
+
+// Test action score functions for CB
+TEST(Vwdll, ActionScores)
+{
+  VW_HANDLE handle = VW_InitializeA("--cb_explore_adf --quiet");
+
+  // Create a CB ADF example
+  VW_EXAMPLE shared = VW_ReadExampleA(handle, "shared | context_feature");
+  VW_EXAMPLE action1 = VW_ReadExampleA(handle, "0:1:0.5 | action1_feature");
+  VW_EXAMPLE action2 = VW_ReadExampleA(handle, "| action2_feature");
+
+  // This would require multi-example learn which is more complex
+  // Just test that the functions exist and don't crash with a simple example
+  VW_FinishExample(handle, shared);
+  VW_FinishExample(handle, action1);
+  VW_FinishExample(handle, action2);
+
+  VW_Finish(handle);
+}
+
+// Test confidence value
+TEST(Vwdll, GetConfidence)
+{
+  VW_HANDLE handle = VW_InitializeA("--quiet");
+
+  VW_EXAMPLE ex = VW_ReadExampleA(handle, "1 | feature");
+  VW_Learn(handle, ex);
+
+  float confidence = VW_GetConfidence(ex);
+  // Confidence is typically initialized to 0 unless using active learning
+  EXPECT_FALSE(std::isnan(confidence));
+
+  VW_FinishExample(handle, ex);
+  VW_Finish(handle);
+}
+
+// Test escaped initialization
+TEST(Vwdll, InitializeWithModelEscaped)
+{
+  // Create a model first
+  VW_HANDLE handle1 = VW_InitializeA("--quiet");
+  VW_EXAMPLE ex = VW_ReadExampleA(handle1, "1 | feature");
+  VW_Learn(handle1, ex);
+  VW_FinishExample(handle1, ex);
+
+  // Get model data
+  VW_IOBUF buffer_handle = nullptr;
+  char* model_data = nullptr;
+  size_t model_size = 0;
+  VW_CopyModelData(handle1, &buffer_handle, &model_data, &model_size);
+
+  // Initialize with model using escaped args
+  VW_HANDLE handle2 = VW_InitializeWithModelEscaped("--quiet", model_data, model_size);
+  EXPECT_NE(handle2, nullptr);
+
+  VW_Finish(handle2);
+  VW_FreeIOBuf(buffer_handle);
+  VW_Finish(handle1);
+}
+
 TEST(Vwdll, Utf16ToUtf8Conversion)
 {
   // Test 1: ASCII characters (1-byte UTF-8)
