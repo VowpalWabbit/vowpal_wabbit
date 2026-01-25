@@ -1,0 +1,29 @@
+using no cache
+Reading datafile = train-sets/regression_small.txt
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+Enabled learners: gd, scorer-identity, binary, cats_tree, get_pmf, pmf_to_pdf, cb_explore_pdf, cats_pdf, sample_pdf, cats, cbify-reg, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+1.000000 1.000000            1            1.0         1.0000         0.1070        2
+1.000000 1.000000            2            2.0         1.0000         0.4414        2
+1.000000 1.000000            4            4.0         1.0000         0.1654        2
+0.750000 0.500000            8            8.0         1.0000         0.8776        2
+0.750000 0.750000           16           16.0         1.0000         0.9743        2
+0.687500 0.625000           32           32.0         1.0000         0.9713        2
+0.640625 0.593750           64           64.0         1.0000         0.9880        2
+
+finished run
+number of examples = 100
+weighted example sum = 100.000000
+weighted label sum = 88.403802
+average loss = 0.670000
+best constant = 0.884038
+best constant's loss = 0.015007
+total feature number = 233
+Learn() count per node: id=0, #l=1; id=1, #l=4; id=2, #l=4; id=3, #l=8; id=4, #l=40; id=5, #l=16; id=6, #l=3; 

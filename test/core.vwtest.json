@@ -6164,5 +6164,77 @@
     "input_files": [
       "train-sets/rcv1_small.dat"
     ]
+  },
+  {
+    "id": 476,
+    "desc": "marginal features with update_before_learn and compete",
+    "vw_command": "--marginal f -d train-sets/marginal_features --noconstant --initial_numerator 0.5 --initial_denominator 1.0 --decay 0.001 --holdout_off -c -k --passes 100 --compete --update_before_learn",
+    "diff_files": {
+      "stderr": "train-sets/ref/marginal_update_before_learn.stderr",
+      "stdout": "train-sets/ref/marginal_update_before_learn.stdout"
+    },
+    "input_files": [
+      "train-sets/marginal_features"
+    ]
+  },
+  {
+    "id": 477,
+    "desc": "cs_active with debug output",
+    "vw_command": "--cs_active 3 -d train-sets/cs_test --cost_max 2 --mellowness 0.1 --simulation --adax --csa_debug",
+    "diff_files": {
+      "stderr": "train-sets/ref/cs_active_debug.stderr",
+      "stdout": "train-sets/ref/cs_active_debug.stdout"
+    },
+    "input_files": [
+      "train-sets/cs_test"
+    ]
+  },
+  {
+    "id": 478,
+    "desc": "BFGS with l2 regularization and no_bias_regularization",
+    "vw_command": "--bfgs --l2 0.1 --no_bias_regularization -d train-sets/0001.dat --passes 16 --holdout_off -c -k",
+    "diff_files": {
+      "stderr": "train-sets/ref/bfgs_no_bias.stderr",
+      "stdout": "train-sets/ref/bfgs_no_bias.stdout"
+    },
+    "input_files": [
+      "train-sets/0001.dat"
+    ]
+  },
+  {
+    "id": 479,
+    "desc": "cbify regression with absolute loss (loss_option 1)",
+    "vw_command": "--cbify 8 --cbify_reg --min_value 0 --max_value 2 --loss_option 1 --random_seed 123 -d train-sets/regression_small.txt",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbify_reg_absolute_loss.stderr",
+      "stdout": "train-sets/ref/cbify_reg_absolute_loss.stdout"
+    },
+    "input_files": [
+      "train-sets/regression_small.txt"
+    ]
+  },
+  {
+    "id": 480,
+    "desc": "cbify regression with 0/1 loss (loss_option 2)",
+    "vw_command": "--cbify 8 --cbify_reg --min_value 0 --max_value 2 --loss_option 2 --random_seed 123 -d train-sets/regression_small.txt",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbify_reg_01_loss.stderr",
+      "stdout": "train-sets/ref/cbify_reg_01_loss.stdout"
+    },
+    "input_files": [
+      "train-sets/regression_small.txt"
+    ]
+  },
+  {
+    "id": 481,
+    "desc": "LDA with audit output (print_lda_features)",
+    "vw_command": "--lda 2 --audit -d train-sets/wiki5.dat --random_seed 123",
+    "diff_files": {
+      "stderr": "train-sets/ref/lda_audit.stderr",
+      "stdout": "train-sets/ref/lda_audit.stdout"
+    },
+    "input_files": [
+      "train-sets/wiki5.dat"
+    ]
   }
 ]

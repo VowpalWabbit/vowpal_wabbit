@@ -1,0 +1,31 @@
+creating cache_file = train-sets/marginal_features.cache
+Reading datafile = train-sets/marginal_features
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+decay_learning_rate = 1
+Enabled learners: gd, marginal, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.250000 0.250000            1            1.0         0.5000         0.0000        4
+0.318194 0.386387            2            2.0         1.0000         0.3784        4
+0.220132 0.122070            4            4.0         0.5000         0.4824        4
+0.171941 0.123750            8            8.0         0.5000         0.5185        4
+0.142642 0.113343           16           16.0         0.5000         0.5315        4
+0.123564 0.104487           32           32.0         0.5000         0.5410        4
+0.110333 0.097102           64           64.0         0.5000         0.5481        4
+0.100786 0.091238          128          128.0         0.5000         0.5529        4
+0.093757 0.086728          256          256.0         0.5000         0.5561        4
+
+finished run
+number of examples per pass = 4
+passes used = 100
+weighted example sum = 400.000000
+weighted label sum = 225.000000
+average loss = 0.090226
+best constant = 0.562500
+total feature number = 1600
