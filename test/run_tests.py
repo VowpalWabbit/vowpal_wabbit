@@ -255,18 +255,32 @@ def create_file_diff(
 def is_line_different(
     output_line: str, ref_line: str, epsilon: float
 ) -> Tuple[bool, str, bool]:
-    output_tokens = re.split("[ \t:,@=]+", output_line)
-    ref_tokens = re.split("[ \t:,@=]+", ref_line)
+    output_tokens = re.split(r"[ \t:,@=\[\]]+", output_line)
+    ref_tokens = re.split(r"[ \t:,@=\[\]]+", ref_line)
 
     # some compile flags cause VW to report different code line number for the same exception
     # if this is the case we want to ignore that from the diff
-    if ref_tokens[0] == "[critical]" and output_tokens[0] == "[critical]":
-        # check that exception format is being followed
-        if ref_tokens[2][0] == "(" and ref_tokens[3][-1] == ")":
-            if ref_tokens[3][:-1].isnumeric():
+    # Filter out empty strings from tokenization (can occur when line starts with delimiter)
+    ref_tokens_filtered = [t for t in ref_tokens if t]
+    output_tokens_filtered = [t for t in output_tokens if t]
+    if (
+        len(ref_tokens_filtered) > 0
+        and ref_tokens_filtered[0] == "critical"
+        and len(output_tokens_filtered) > 0
+        and output_tokens_filtered[0] == "critical"
+    ):
+        # check that exception format is being followed: critical vw (file.cc 123) ...
+        if (
+            len(ref_tokens_filtered) > 3
+            and ref_tokens_filtered[2][0] == "("
+            and ref_tokens_filtered[3][-1] == ")"
+        ):
+            if ref_tokens_filtered[3][:-1].isnumeric():
                 # remove the line number before diffing
-                ref_tokens.pop(3)
-                output_tokens.pop(3)
+                # Find index in original tokens list
+                line_num_idx = ref_tokens.index(ref_tokens_filtered[3])
+                ref_tokens.pop(line_num_idx)
+                output_tokens.pop(line_num_idx)
 
     if len(output_tokens) != len(ref_tokens):
         return True, "Number of tokens different", False
@@ -295,8 +309,8 @@ def is_line_different(
                 )
 
     # ignore whitespace when considering delimiting tokens
-    output_delimiters = re.findall("[:,@]+", output_line)
-    ref_delimiters = re.findall("[:,@]+", ref_line)
+    output_delimiters = re.findall(r"[:,@\[\]]+", output_line)
+    ref_delimiters = re.findall(r"[:,@\[\]]+", ref_line)
 
     if len(output_delimiters) != len(ref_delimiters):
         return True, "Number of tokens different", found_close_floats
