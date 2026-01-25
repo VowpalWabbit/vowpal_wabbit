@@ -54,9 +54,8 @@ using namespace VW::config;
 #define LEARN_CURV 1
 #define LEARN_CONV 2
 
-class curv_exception : public std::exception
-{
-} curv_ex;
+// Note: curv_exception was removed to enable ASAN compatibility with Python bindings.
+// The bfgs_iter_middle function now returns false when curvature conditions are not met.
 
 /********************************************************************/
 /* mem & w definition ***********************************************/
@@ -289,7 +288,7 @@ void bfgs_iter_start(VW::workspace& all, bfgs& b, float* mem, int& lastj, double
 }
 
 template <class T>
-void bfgs_iter_middle(
+bool bfgs_iter_middle(
     VW::workspace& all, bfgs& b, float* mem, double* rho, double* alpha, int& lastj, int& origin, T& weights)
 {
   float* mem0 = mem;
@@ -324,7 +323,7 @@ void bfgs_iter_middle(
     }
     // TODO: spdlog can't print partial log lines. Figure out how to handle this..
     if (!all.output_config.quiet) { fprintf(stderr, "%f\t", beta); }
-    return;
+    return true;
   }
   else
   {
@@ -348,7 +347,7 @@ void bfgs_iter_middle(
     s_q += (static_cast<double>(mem1[(MEM_ST + origin) % b.mem_stride])) * ((&(*w))[W_GT]);
   }
 
-  if (y_s <= 0. || y_Hy <= 0.) { throw curv_ex; }
+  if (y_s <= 0. || y_Hy <= 0.) { return false; }
   rho[0] = 1 / y_s;
 
   float gamma = static_cast<float>(y_s / y_Hy);
@@ -412,12 +411,16 @@ void bfgs_iter_middle(
     (&(*w))[W_GT] = 0;
   }
   for (int j = lastj; j > 0; j--) { rho[j] = rho[j - 1]; }
+  return true;
 }
 
-void bfgs_iter_middle(VW::workspace& all, bfgs& b, float* mem, double* rho, double* alpha, int& lastj, int& origin)
+bool bfgs_iter_middle(VW::workspace& all, bfgs& b, float* mem, double* rho, double* alpha, int& lastj, int& origin)
 {
-  if (all.weights.sparse) { bfgs_iter_middle(all, b, mem, rho, alpha, lastj, origin, all.weights.sparse_weights); }
-  else { bfgs_iter_middle(all, b, mem, rho, alpha, lastj, origin, all.weights.dense_weights); }
+  if (all.weights.sparse)
+  {
+    return bfgs_iter_middle(all, b, mem, rho, alpha, lastj, origin, all.weights.sparse_weights);
+  }
+  else { return bfgs_iter_middle(all, b, mem, rho, alpha, lastj, origin, all.weights.dense_weights); }
 }
 
 template <class T>
@@ -794,11 +797,7 @@ int process_pass(VW::workspace& all, bfgs& b)
         b.curvature = 0;
         b.step_size = 1.0;
 
-        try
-        {
-          bfgs_iter_middle(all, b, b.mem, b.rho, b.alpha, b.lastj, b.origin);
-        }
-        catch (const curv_exception&)
+        if (!bfgs_iter_middle(all, b, b.mem, b.rho, b.alpha, b.lastj, b.origin))
         {
           fprintf(stdout, "In bfgs_iter_middle: %s", CURV_MESSAGE);
           b.step_size = 0.0;
