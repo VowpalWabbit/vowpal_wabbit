@@ -350,8 +350,11 @@ def generate_all(
             for test in tests
         ]
 
+        # Use 'spawn' context to create fresh Python interpreters, avoiding issues
+        # with forked processes inheriting locked resources (which can cause hangs in CI)
+        ctx = multiprocessing.get_context('spawn')
         # Use a pool with 1 worker to run tests sequentially but in isolated processes
-        with multiprocessing.Pool(processes=1) as pool:
+        with ctx.Pool(processes=1) as pool:
             results = pool.map(_generate_model_subprocess_wrapper, args_list)
 
         # Check for failures
@@ -398,8 +401,11 @@ def load_all(
             for test in tests
         ]
 
+        # Use 'spawn' context to create fresh Python interpreters, avoiding issues
+        # with forked processes inheriting locked resources (which can cause hangs in CI)
+        ctx = multiprocessing.get_context('spawn')
         # Use a pool with 1 worker to run tests sequentially but in isolated processes
-        with multiprocessing.Pool(processes=1) as pool:
+        with ctx.Pool(processes=1) as pool:
             results = pool.map(_load_model_subprocess_wrapper, args_list)
 
         # Check for failures
