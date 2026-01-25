@@ -334,36 +334,29 @@ def generate_all(
     output_working_dir: Path,
     color_enum: Type[Union[Color, NoColor]] = Color,
     skip_missing_args: bool = False,
-    use_subprocess: bool = True,
+    use_subprocess: bool = False,
 ) -> None:
     os.chdir(output_working_dir.parent)
 
     if use_subprocess:
-        # Use subprocess isolation to prevent memory corruption issues
-        # from affecting subsequent tests when running many tests sequentially.
-        # Each test runs in its own process which cleans up memory on exit.
-        # This is required for compatibility with older VW wheels that don't
-        # have the safe iterator fix.
+        # Optional subprocess isolation for debugging memory issues.
+        # Disabled by default due to significant overhead with spawn context.
         no_color = color_enum == NoColor
         args_list = [
             (test.id, test.command_line, str(output_working_dir), no_color, skip_missing_args)
             for test in tests
         ]
 
-        # Use 'spawn' context to create fresh Python interpreters, avoiding issues
-        # with forked processes inheriting locked resources (which can cause hangs in CI)
+        # Use 'spawn' context to create fresh Python interpreters
         ctx = multiprocessing.get_context('spawn')
-        # Use a pool with 1 worker to run tests sequentially but in isolated processes
         with ctx.Pool(processes=1) as pool:
             results = pool.map(_generate_model_subprocess_wrapper, args_list)
 
-        # Check for failures
         failures = [(test_id, error) for test_id, success, error in results if not success]
         if failures:
             for test_id, error in failures:
                 print(f"{color_enum.LIGHT_RED}Test {test_id} failed: {error}{color_enum.ENDC}")
     else:
-        # Run directly without subprocess isolation (legacy mode)
         for test in tests:
             generate_model_and_weights(
                 test.id,
@@ -381,7 +374,7 @@ def load_all(
     output_working_dir: Path,
     color_enum: Type[Union[Color, NoColor]] = Color,
     skip_missing_args: bool = False,
-    use_subprocess: bool = True,
+    use_subprocess: bool = False,
 ) -> None:
     os.chdir(output_working_dir.parent)
     if len(os.listdir(output_working_dir / "test_models")) != len(tests):
@@ -390,32 +383,25 @@ def load_all(
         )
 
     if use_subprocess:
-        # Use subprocess isolation to prevent memory corruption issues
-        # from affecting subsequent tests when running many tests sequentially.
-        # Each test runs in its own process which cleans up memory on exit.
-        # This is required for compatibility with older VW wheels that don't
-        # have the safe iterator fix.
+        # Optional subprocess isolation for debugging memory issues.
+        # Disabled by default due to significant overhead with spawn context.
         no_color = color_enum == NoColor
         args_list = [
             (test.id, test.command_line, str(output_working_dir), no_color, skip_missing_args)
             for test in tests
         ]
 
-        # Use 'spawn' context to create fresh Python interpreters, avoiding issues
-        # with forked processes inheriting locked resources (which can cause hangs in CI)
+        # Use 'spawn' context to create fresh Python interpreters
         ctx = multiprocessing.get_context('spawn')
-        # Use a pool with 1 worker to run tests sequentially but in isolated processes
         with ctx.Pool(processes=1) as pool:
             results = pool.map(_load_model_subprocess_wrapper, args_list)
 
-        # Check for failures
         failures = [(test_id, error) for test_id, success, error in results if not success]
         if failures:
             for test_id, error in failures:
                 print(f"{color_enum.LIGHT_RED}Test {test_id} failed: {error}{color_enum.ENDC}")
             raise RuntimeError(f"{len(failures)} test(s) failed during model loading")
     else:
-        # Run directly without subprocess isolation (legacy mode)
         for test in tests:
             load_model(
                 test.id,
@@ -486,8 +472,8 @@ def main():
     )
 
     parser.add_argument(
-        "--no_subprocess_isolation",
-        help="Disable subprocess isolation for model generation (runs tests in main process)",
+        "--subprocess_isolation",
+        help="Enable subprocess isolation (runs each test in separate process, slower but safer)",
         action="store_true",
     )
 
@@ -530,7 +516,7 @@ def main():
             skip_pr_tests,
         )
 
-        use_subprocess = not args.no_subprocess_isolation
+        use_subprocess = args.subprocess_isolation
         if args.generate_models:
             generate_all(tests, test_output_dir, color_enum, args.skip_missing_args, use_subprocess)
         elif args.load_models:
