@@ -5,7 +5,6 @@ import re
 import os
 import shutil
 import json
-import multiprocessing
 import sys
 from run_tests import convert_to_test_data, Color, NoColor, TestData
 import vowpalwabbit
@@ -118,52 +117,6 @@ def generate_model_and_weights(
     test_models_dir.mkdir(parents=True, exist_ok=True)
     vw.save(str(test_models_dir / f"model_{test_id}.vw"))
     vw.finish()
-
-
-def _generate_model_subprocess_wrapper(args):
-    """Wrapper function for running generate_model_and_weights in a subprocess.
-
-    This provides process isolation to prevent memory corruption issues from
-    affecting subsequent tests when running many tests sequentially.
-    """
-    test_id, command, working_dir_str, no_color, skip_missing_args = args
-    working_dir = Path(working_dir_str)
-    color_enum = NoColor if no_color else Color
-    try:
-        os.chdir(working_dir.parent)
-        generate_model_and_weights(
-            test_id,
-            command,
-            working_dir,
-            color_enum,
-            skip_missing_args,
-        )
-        return (test_id, True, None)
-    except Exception as e:
-        return (test_id, False, str(e))
-
-
-def _load_model_subprocess_wrapper(args):
-    """Wrapper function for running load_model in a subprocess.
-
-    This provides process isolation to prevent memory corruption issues from
-    affecting subsequent tests when running many tests sequentially.
-    """
-    test_id, command, working_dir_str, no_color, skip_missing_args = args
-    working_dir = Path(working_dir_str)
-    color_enum = NoColor if no_color else Color
-    try:
-        os.chdir(working_dir.parent)
-        load_model(
-            test_id,
-            command,
-            working_dir,
-            color_enum,
-            skip_missing_args,
-        )
-        return (test_id, True, None)
-    except Exception as e:
-        return (test_id, False, str(e))
 
 
 def load_model(
@@ -334,37 +287,17 @@ def generate_all(
     output_working_dir: Path,
     color_enum: Type[Union[Color, NoColor]] = Color,
     skip_missing_args: bool = False,
-    use_subprocess: bool = False,
 ) -> None:
     os.chdir(output_working_dir.parent)
 
-    if use_subprocess:
-        # Optional subprocess isolation for debugging memory issues.
-        # Disabled by default due to significant overhead with spawn context.
-        no_color = color_enum == NoColor
-        args_list = [
-            (test.id, test.command_line, str(output_working_dir), no_color, skip_missing_args)
-            for test in tests
-        ]
-
-        # Use 'spawn' context to create fresh Python interpreters
-        ctx = multiprocessing.get_context('spawn')
-        with ctx.Pool(processes=1) as pool:
-            results = pool.map(_generate_model_subprocess_wrapper, args_list)
-
-        failures = [(test_id, error) for test_id, success, error in results if not success]
-        if failures:
-            for test_id, error in failures:
-                print(f"{color_enum.LIGHT_RED}Test {test_id} failed: {error}{color_enum.ENDC}")
-    else:
-        for test in tests:
-            generate_model_and_weights(
-                test.id,
-                test.command_line,
-                output_working_dir,
-                color_enum,
-                skip_missing_args,
-            )
+    for test in tests:
+        generate_model_and_weights(
+            test.id,
+            test.command_line,
+            output_working_dir,
+            color_enum,
+            skip_missing_args,
+        )
 
     print(f"stored models in: {output_working_dir}")
 
@@ -374,7 +307,6 @@ def load_all(
     output_working_dir: Path,
     color_enum: Type[Union[Color, NoColor]] = Color,
     skip_missing_args: bool = False,
-    use_subprocess: bool = False,
 ) -> None:
     os.chdir(output_working_dir.parent)
     if len(os.listdir(output_working_dir / "test_models")) != len(tests):
@@ -382,34 +314,14 @@ def load_all(
             f"{color_enum.LIGHT_RED} Warning: There is a mismatch between the number of models in {output_working_dir} and the number of tests that will attempt to load them {color_enum.ENDC}"
         )
 
-    if use_subprocess:
-        # Optional subprocess isolation for debugging memory issues.
-        # Disabled by default due to significant overhead with spawn context.
-        no_color = color_enum == NoColor
-        args_list = [
-            (test.id, test.command_line, str(output_working_dir), no_color, skip_missing_args)
-            for test in tests
-        ]
-
-        # Use 'spawn' context to create fresh Python interpreters
-        ctx = multiprocessing.get_context('spawn')
-        with ctx.Pool(processes=1) as pool:
-            results = pool.map(_load_model_subprocess_wrapper, args_list)
-
-        failures = [(test_id, error) for test_id, success, error in results if not success]
-        if failures:
-            for test_id, error in failures:
-                print(f"{color_enum.LIGHT_RED}Test {test_id} failed: {error}{color_enum.ENDC}")
-            raise RuntimeError(f"{len(failures)} test(s) failed during model loading")
-    else:
-        for test in tests:
-            load_model(
-                test.id,
-                test.command_line,
-                output_working_dir,
-                color_enum,
-                skip_missing_args,
-            )
+    for test in tests:
+        load_model(
+            test.id,
+            test.command_line,
+            output_working_dir,
+            color_enum,
+            skip_missing_args,
+        )
 
 
 def main():
@@ -471,12 +383,6 @@ def main():
         action="store_true",
     )
 
-    parser.add_argument(
-        "--subprocess_isolation",
-        help="Enable subprocess isolation (runs each test in separate process, slower but safer)",
-        action="store_true",
-    )
-
     args = parser.parse_args()
     if args.skip_pr_tests and "skip:" in args.skip_pr_tests[0]:
         skip_pr_tests = [
@@ -516,14 +422,13 @@ def main():
             skip_pr_tests,
         )
 
-        use_subprocess = args.subprocess_isolation
         if args.generate_models:
-            generate_all(tests, test_output_dir, color_enum, args.skip_missing_args, use_subprocess)
+            generate_all(tests, test_output_dir, color_enum, args.skip_missing_args)
         elif args.load_models:
-            load_all(tests, test_output_dir, color_enum, args.skip_missing_args, use_subprocess)
+            load_all(tests, test_output_dir, color_enum, args.skip_missing_args)
         elif args.generate_and_load:
-            generate_all(tests, test_output_dir, color_enum, args.skip_missing_args, use_subprocess)
-            load_all(tests, test_output_dir, color_enum, args.skip_missing_args, use_subprocess)
+            generate_all(tests, test_output_dir, color_enum, args.skip_missing_args)
+            load_all(tests, test_output_dir, color_enum, args.skip_missing_args)
         else:
             print(
                 f"{color_enum.LIGHT_GREEN}Specify a run option, use --help for more info {color_enum.ENDC}"
