@@ -279,6 +279,13 @@ std::string workspace::dump_weights_to_json_experimental()
     THROW("including extra online state is only allowed with GD as base learner");
   }
 
+  // Validate weights are initialized before iterating to detect memory corruption early
+  if (!weights.sparse && !weights.dense_weights.not_null())
+  {
+    THROW("dump_weights_to_json: dense_weights is not initialized or corrupted (data pointer is null). "
+          "This may indicate memory corruption from a previous operation.");
+  }
+
   return weights.sparse ? dump_weights_to_json_weight_typed(weights.sparse_weights, output_runtime.index_name_map,
                               weights, output_model_config.dump_json_weights_include_feature_names,
                               output_model_config.dump_json_weights_include_extra_online_state)
