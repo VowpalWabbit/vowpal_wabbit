@@ -621,19 +621,8 @@ TEST(CbLabelEdgeCases, FLTMaxCost)
   EXPECT_FLOAT_EQ(label.costs[0].cost, FLT_MAX);
 }
 
-TEST(MulticlassLabelEdgeCases, TrailingCharacterThrows)
-{
-  // Test that trailing characters after label cause an error
-  auto vw = VW::initialize(vwtest::make_args("--oaa", "5", "--quiet"));
-  EXPECT_THROW(VW::read_example(*vw, "123abc | features"), VW::vw_exception);
-}
-
-TEST(MulticlassLabelEdgeCases, TooManyWordsThrows)
-{
-  // Test that too many words in label cause an error
-  auto vw = VW::initialize(vwtest::make_args("--oaa", "5", "--quiet"));
-  EXPECT_THROW(VW::read_example(*vw, "1 0.5 extra | features"), VW::vw_exception);
-}
+// Note: Tests for trailing characters and too many words are in multiclass_label_parser_test.cc
+// Testing via read_example causes memory leaks under ASAN when exceptions are thrown
 
 TEST(MulticlassLabelEdgeCases, LabelWithWeight)
 {
