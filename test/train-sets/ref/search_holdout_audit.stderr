@@ -1,0 +1,25 @@
+creating cache_file = train-sets/wsj_small.dat.gz.cache
+Reading datafile = train-sets/wsj_small.dat.gz
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+decay_learning_rate = 1
+Enabled learners: gd, scorer-identity, csoaa, search_task
+Input label = MULTICLASS
+Output pred = MULTICLASS
+average    since      instance            current true      current predicted   cur   cur   predic    cache  examples          
+loss       last        counter           output prefix          output prefix  pass   pol     made     hits    gener  beta    
+30.000000  30.000000         1  [1 2 3 1 4 5 6 7 8 ..] [1 1 1 1 1 1 1 1 1 ..]     0     0       37        0       37  0.000036
+23.000000  16.000000         2  [11 2 3 11 11 11 15..] [1 2 1 1 4 1 2 9 7 ..]     0     0       64        0       64  0.000063
+15.500000  8.000000          4  [3 4 6 3             ] [1 4 6 3             ]     0     0       97        0       97  0.000096
+7.750000   0.000000          8  [3 4 6 3             ] [3 4 6 3             ]     1     0      101        0      194  0.000193
+
+finished run
+number of examples per pass = 4
+passes used = 3
+weighted example sum = 12.000000
+weighted label sum = 0.000000
+average loss = undefined (no holdout)
+total feature number = 4555

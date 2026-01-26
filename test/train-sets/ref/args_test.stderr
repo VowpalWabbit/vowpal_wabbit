@@ -1,0 +1,34 @@
+final_regressor = model.1
+creating cache_file = train-sets/0002.dat.cache
+Reading datafile = train-sets/0002.dat
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+decay_learning_rate = 1
+Enabled learners: gd, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.271591 0.271591            1            1.0         0.5211         0.0000       15
+0.136120 0.000650            2            2.0         0.5353         0.5098       15
+0.109867 0.083614            4            4.0         0.5854         0.5854       15
+0.075648 0.041428            8            8.0         0.5575         0.4495       15
+0.080181 0.084715           16           16.0         0.5878         0.3546       15
+0.044887 0.009593           32           32.0         0.6038         0.6080       15
+0.028863 0.012839           64           64.0         0.5683         0.4630       15
+0.017336 0.005808          128          128.0         0.5351         0.4983       15
+0.010329 0.003322          256          256.0         0.5385         0.5623       15
+0.006261 0.002193          512          512.0         0.5053         0.5198       15
+0.003438 0.000615         1024         1024.0         0.6183         0.6159       15
+
+finished run
+number of examples per pass = 1000
+passes used = 2
+weighted example sum = 2000.000000
+weighted label sum = 1053.035055
+average loss = 0.001909
+best constant = 0.526518
+total feature number = 29992
