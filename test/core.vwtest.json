@@ -6429,12 +6429,12 @@
   },
   {
     "id": 497,
-    "desc": "initial_weight parameter",
-    "vw_command": "--initial_weight 0.5 -d train-sets/0002.dat -p initial_weight.predict",
+    "desc": "initial_weight parameter with value 0.5",
+    "vw_command": "--initial_weight 0.5 -d train-sets/0002.dat -p initial_weight_05.predict",
     "diff_files": {
-      "stderr": "train-sets/ref/initial_weight.stderr",
-      "stdout": "train-sets/ref/initial_weight.stdout",
-      "initial_weight.predict": "train-sets/ref/initial_weight.predict"
+      "stderr": "train-sets/ref/initial_weight_05.stderr",
+      "stdout": "train-sets/ref/initial_weight_05.stdout",
+      "initial_weight_05.predict": "train-sets/ref/initial_weight_05.predict"
     },
     "input_files": [
       "train-sets/0002.dat"
