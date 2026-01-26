@@ -1,0 +1,36 @@
+only testing
+predictions = ksvm_testmode.predict
+Lambda = 1
+Kernel = linear
+using no cache
+Reading datafile = train-sets/rcv1_smaller.dat
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+Enabled learners: ksvm, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.000000 0.000000            1            1.0         1.0000         1.0410       50
+0.000000 0.000000            2            2.0        -1.0000        -1.0330      103
+0.019906 0.039812            4            4.0        -1.0000        -1.3678      134
+0.073716 0.127526            8            8.0        -1.0000        -1.2484      145
+0.054830 0.035944           16           16.0         1.0000         1.1942       23
+0.070760 0.086690           32           32.0        -1.0000        -0.9417       31
+0.106297 0.141834           64           64.0        -1.0000        -0.8995       60
+0.118131 0.129964          128          128.0         1.0000         0.7444      105
+
+finished run
+number of examples = 250
+weighted example sum = 250.000000
+weighted label sum = -22.000000
+average loss = 0.149838
+best constant = -1.000000
+best constant's loss = 0.912000
+total feature number = 19870
+Num support = 245
+Number of kernel evaluations = 0 Number of cache queries = 0
+Total loss = 0.000000

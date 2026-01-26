@@ -1,0 +1,31 @@
+predictions = truncated_normal_weights.predict
+using no cache
+Reading datafile = train-sets/0002.dat
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+Enabled learners: gd, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.000000 0.000000            1            1.0         0.5211         0.5211       15
+0.021904 0.043808            2            2.0         0.5353         0.3259       15
+0.096628 0.171351            4            4.0         0.5854         0.0000       15
+0.090160 0.083692            8            8.0         0.5575         0.7325       15
+0.120250 0.150340           16           16.0         0.5878         0.0000       15
+0.114512 0.108774           32           32.0         0.6038         0.7325       15
+0.101317 0.088123           64           64.0         0.5683         0.7325       15
+0.095529 0.089740          128          128.0         0.5351         0.7739       15
+0.101755 0.107981          256          256.0         0.5385         0.7933       15
+0.100930 0.100105          512          512.0         0.5053         0.0000       15
+
+finished run
+number of examples = 1000
+weighted example sum = 1000.000000
+weighted label sum = 526.517528
+average loss = 0.089290
+best constant = 0.526518
+total feature number = 14996
