@@ -1,0 +1,34 @@
+using l2 regularization = 1
+final_regressor = models/ksvm_rbf_saveload.model
+Lambda = 1
+Kernel = rbf
+bandwidth = 1.5
+using no cache
+Reading datafile = train-sets/rcv1_25.dat
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+Enabled learners: ksvm, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+1.000000 1.000000            1            1.0         1.0000         0.0000       50
+1.030491 1.060981            2            2.0        -1.0000         0.0610      103
+1.001767 0.973043            4            4.0        -1.0000        -0.0554      134
+0.976473 0.951179            8            8.0        -1.0000        -0.1338      145
+0.966474 0.956475           16           16.0         1.0000        -0.2329       23
+
+finished run
+number of examples = 25
+weighted example sum = 25.000000
+weighted label sum = -7.000000
+average loss = 0.973515
+best constant = -1.000000
+best constant's loss = 0.720000
+total feature number = 2084
+Num support = 25
+Number of kernel evaluations = 1106 Number of cache queries = 775
+Total loss = 24.337868

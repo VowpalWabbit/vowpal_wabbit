@@ -5575,7 +5575,8 @@
       "models/cb_spin_off.m"
     ],
     "depends_on": [
-      425, 427
+      425,
+      427
     ]
   },
   {
@@ -5654,8 +5655,7 @@
   {
     "id": 435,
     "desc": "second order online learning with epoch",
-    "vw_command":
-        "--OjaNewton -d train-sets/0001.dat -p second_order_with_epoch.predict --predict_only_model --epoch_size 8",
+    "vw_command": "--OjaNewton -d train-sets/0001.dat -p second_order_with_epoch.predict --predict_only_model --epoch_size 8",
     "diff_files": {
       "stderr": "train-sets/ref/second_order_with_epoch.stderr",
       "second_order_with_epoch.predict": "pred-sets/ref/second_order_with_epoch.predict",
@@ -5803,7 +5803,8 @@
       "models/cb_spin_off_bag.m"
     ],
     "depends_on": [
-      441, 443
+      441,
+      443
     ]
   },
   {
@@ -5908,7 +5909,8 @@
       "models/ep_dec_spin_off_cb.m"
     ],
     "depends_on": [
-      449, 451
+      449,
+      451
     ]
   },
   {
@@ -6029,7 +6031,8 @@
       "igl_spinoff_cb.vw"
     ],
     "depends_on": [
-      458, 460
+      458,
+      460
     ]
   },
   {
@@ -6261,7 +6264,9 @@
       "train-sets/decisionservice.json",
       "models/automl_save_resume.model"
     ],
-    "depends_on": [482]
+    "depends_on": [
+      482
+    ]
   },
   {
     "id": 484,
@@ -6287,7 +6292,9 @@
       "train-sets/cats.acpx",
       "models/cats_pdf_save_resume.model"
     ],
-    "depends_on": [484]
+    "depends_on": [
+      484
+    ]
   },
   {
     "id": 486,
@@ -6299,6 +6306,236 @@
     },
     "input_files": [
       "train-sets/regression_small.txt"
+    ]
+  },
+  {
+    "id": 487,
+    "desc": "SVM rbf kernel with custom bandwidth",
+    "vw_command": "--ksvm --l2 1 --reprocess 5 -b 18 --kernel rbf --bandwidth 2.0 -p ksvm_rbf_bandwidth.predict -d train-sets/rcv1_25.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/ksvm_rbf_bandwidth.stderr",
+      "stdout": "train-sets/ref/ksvm_rbf_bandwidth.stdout",
+      "ksvm_rbf_bandwidth.predict": "train-sets/ref/ksvm_rbf_bandwidth.predict"
+    },
+    "input_files": [
+      "train-sets/rcv1_25.dat"
+    ]
+  },
+  {
+    "id": 488,
+    "desc": "SVM polynomial kernel with custom degree",
+    "vw_command": "--ksvm --l2 1 --reprocess 3 -b 18 --kernel poly --degree 3 -p ksvm_poly_degree3.predict -d train-sets/rcv1_25.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/ksvm_poly_degree3.stderr",
+      "stdout": "train-sets/ref/ksvm_poly_degree3.stdout",
+      "ksvm_poly_degree3.predict": "train-sets/ref/ksvm_poly_degree3.predict"
+    },
+    "input_files": [
+      "train-sets/rcv1_25.dat"
+    ]
+  },
+  {
+    "id": 489,
+    "desc": "SVM with pool_greedy and custom pool_size",
+    "vw_command": "--ksvm --l2 1 --reprocess 2 -b 18 --pool_greedy --pool_size 5 -p ksvm_pool_greedy.predict -d train-sets/rcv1_25.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/ksvm_pool_greedy.stderr",
+      "stdout": "train-sets/ref/ksvm_pool_greedy.stdout",
+      "ksvm_pool_greedy.predict": "train-sets/ref/ksvm_pool_greedy.predict"
+    },
+    "input_files": [
+      "train-sets/rcv1_25.dat"
+    ]
+  },
+  {
+    "id": 490,
+    "desc": "SVM save model for test mode",
+    "vw_command": "--ksvm --l2 1 --reprocess 2 -b 18 -d train-sets/rcv1_25.dat -f models/ksvm_testmode.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/ksvm_testmode_save.stderr",
+      "stdout": "train-sets/ref/ksvm_testmode_save.stdout"
+    },
+    "input_files": [
+      "train-sets/rcv1_25.dat"
+    ]
+  },
+  {
+    "id": 491,
+    "desc": "SVM test mode with loaded model",
+    "vw_command": "--ksvm -t -i models/ksvm_testmode.model -d train-sets/rcv1_25.dat -p ksvm_testmode.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/ksvm_testmode_load.stderr",
+      "stdout": "train-sets/ref/ksvm_testmode_load.stdout",
+      "ksvm_testmode.predict": "train-sets/ref/ksvm_testmode.predict"
+    },
+    "input_files": [
+      "train-sets/rcv1_25.dat",
+      "models/ksvm_testmode.model"
+    ],
+    "depends_on": [
+      490
+    ]
+  },
+  {
+    "id": 492,
+    "desc": "initial_weight parameter with value 0.5",
+    "vw_command": "--initial_weight 0.5 -d train-sets/0002_25.dat -p initial_weight_05.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/initial_weight_05.stderr",
+      "stdout": "train-sets/ref/initial_weight_05.stdout",
+      "initial_weight_05.predict": "train-sets/ref/initial_weight_05.predict"
+    },
+    "input_files": [
+      "train-sets/0002_25.dat"
+    ]
+  },
+  {
+    "id": 493,
+    "desc": "random_weights parameter",
+    "vw_command": "--random_weights --random_seed 42 -d train-sets/0002_25.dat -p random_weights.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/random_weights.stderr",
+      "stdout": "train-sets/ref/random_weights.stdout",
+      "random_weights.predict": "train-sets/ref/random_weights.predict"
+    },
+    "input_files": [
+      "train-sets/0002_25.dat"
+    ]
+  },
+  {
+    "id": 494,
+    "desc": "normal_weights parameter",
+    "vw_command": "--normal_weights --random_seed 42 -d train-sets/0002_25.dat -p normal_weights.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/normal_weights.stderr",
+      "stdout": "train-sets/ref/normal_weights.stdout",
+      "normal_weights.predict": "train-sets/ref/normal_weights.predict"
+    },
+    "input_files": [
+      "train-sets/0002_25.dat"
+    ]
+  },
+  {
+    "id": 495,
+    "desc": "truncated_normal_weights parameter",
+    "vw_command": "--truncated_normal_weights --random_seed 42 -d train-sets/0002_25.dat -p truncated_normal_weights.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/truncated_normal_weights.stderr",
+      "stdout": "train-sets/ref/truncated_normal_weights.stdout",
+      "truncated_normal_weights.predict": "train-sets/ref/truncated_normal_weights.predict"
+    },
+    "input_files": [
+      "train-sets/0002_25.dat"
+    ]
+  },
+  {
+    "id": 496,
+    "desc": "readable_model output",
+    "vw_command": "-d train-sets/0002_25.dat --readable_model readable_model_test.txt",
+    "diff_files": {
+      "stderr": "train-sets/ref/readable_model_test.stderr",
+      "stdout": "train-sets/ref/readable_model_test.stdout",
+      "readable_model_test.txt": "train-sets/ref/readable_model_test.txt"
+    },
+    "input_files": [
+      "train-sets/0002_25.dat"
+    ]
+  },
+  {
+    "id": 497,
+    "desc": "invert_hash output",
+    "vw_command": "-d train-sets/0002_25.dat --invert_hash invert_hash_test.txt",
+    "diff_files": {
+      "stderr": "train-sets/ref/invert_hash_test.stderr",
+      "stdout": "train-sets/ref/invert_hash_test.stdout",
+      "invert_hash_test.txt": "train-sets/ref/invert_hash_test.txt"
+    },
+    "input_files": [
+      "train-sets/0002_25.dat"
+    ]
+  },
+  {
+    "id": 498,
+    "desc": "SVM linear kernel with higher reprocess count",
+    "vw_command": "--ksvm --l2 1 --reprocess 10 -b 18 -p ksvm_reprocess10.predict -d train-sets/rcv1_25.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/ksvm_reprocess10.stderr",
+      "stdout": "train-sets/ref/ksvm_reprocess10.stdout",
+      "ksvm_reprocess10.predict": "train-sets/ref/ksvm_reprocess10.predict"
+    },
+    "input_files": [
+      "train-sets/rcv1_25.dat"
+    ]
+  },
+  {
+    "id": 499,
+    "desc": "initial_t parameter for learning rate schedule",
+    "vw_command": "--initial_t 100 -d train-sets/0002_25.dat -p initial_t.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/initial_t.stderr",
+      "stdout": "train-sets/ref/initial_t.stdout",
+      "initial_t.predict": "train-sets/ref/initial_t.predict"
+    },
+    "input_files": [
+      "train-sets/0002_25.dat"
+    ]
+  },
+  {
+    "id": 500,
+    "desc": "SVM rbf kernel save and load model",
+    "vw_command": "--ksvm --l2 1 --reprocess 3 -b 18 --kernel rbf --bandwidth 1.5 -d train-sets/rcv1_25.dat -f models/ksvm_rbf_saveload.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/ksvm_rbf_save.stderr",
+      "stdout": "train-sets/ref/ksvm_rbf_save.stdout"
+    },
+    "input_files": [
+      "train-sets/rcv1_25.dat"
+    ]
+  },
+  {
+    "id": 501,
+    "desc": "SVM rbf kernel load model and predict",
+    "vw_command": "--ksvm -t -i models/ksvm_rbf_saveload.model -d train-sets/rcv1_25.dat -p ksvm_rbf_loaded.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/ksvm_rbf_load.stderr",
+      "stdout": "train-sets/ref/ksvm_rbf_load.stdout",
+      "ksvm_rbf_loaded.predict": "train-sets/ref/ksvm_rbf_loaded.predict"
+    },
+    "input_files": [
+      "train-sets/rcv1_25.dat",
+      "models/ksvm_rbf_saveload.model"
+    ],
+    "depends_on": [
+      500
+    ]
+  },
+  {
+    "id": 502,
+    "desc": "SVM poly kernel save and load model",
+    "vw_command": "--ksvm --l2 1 --reprocess 3 -b 18 --kernel poly --degree 2 -d train-sets/rcv1_25.dat -f models/ksvm_poly_saveload.model",
+    "diff_files": {
+      "stderr": "train-sets/ref/ksvm_poly_save.stderr",
+      "stdout": "train-sets/ref/ksvm_poly_save.stdout"
+    },
+    "input_files": [
+      "train-sets/rcv1_25.dat"
+    ]
+  },
+  {
+    "id": 503,
+    "desc": "SVM poly kernel load model and predict",
+    "vw_command": "--ksvm -t -i models/ksvm_poly_saveload.model -d train-sets/rcv1_25.dat -p ksvm_poly_loaded.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/ksvm_poly_load.stderr",
+      "stdout": "train-sets/ref/ksvm_poly_load.stdout",
+      "ksvm_poly_loaded.predict": "train-sets/ref/ksvm_poly_loaded.predict"
+    },
+    "input_files": [
+      "train-sets/rcv1_25.dat",
+      "models/ksvm_poly_saveload.model"
+    ],
+    "depends_on": [
+      502
     ]
   }
 ]
