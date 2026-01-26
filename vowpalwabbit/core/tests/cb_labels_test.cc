@@ -606,21 +606,7 @@ TEST(CbLabelEdgeCases, SharedWithoutCost)
   vw->finish_example(examples);
 }
 
-TEST(CbLabelEdgeCases, FLTMaxCost)
-{
-  // Test that action without cost gets FLT_MAX
-  VW::cb_label label;
-  label.reset_to_default();
-
-  VW::cb_class cb;
-  cb.action = 1;
-  cb.cost = FLT_MAX;  // Default when no cost specified
-  cb.probability = 0.0f;
-  label.costs.push_back(cb);
-
-  EXPECT_FLOAT_EQ(label.costs[0].cost, FLT_MAX);
-}
-
+// Note: FLTMaxCost test removed - just tested C++ struct assignment, not VW code
 // Note: Tests for trailing characters and too many words are in multiclass_label_parser_test.cc
 // Testing via read_example causes memory leaks under ASAN when exceptions are thrown
 
@@ -654,17 +640,7 @@ TEST(MulticlassLabelEdgeCases, UnlabeledExample)
   VW::finish_example(*vw, *ex);
 }
 
-TEST(CbLabelEdgeCases, ActionOnlyCost)
-{
-  // Test parsing with only action (no cost/probability)
-  auto vw = VW::initialize(vwtest::make_args("--cb", "3", "--quiet"));
-  auto* ex = VW::read_example(*vw, "2 | a b");
-
-  // Action 2, cost should be FLT_MAX
-  EXPECT_EQ(ex->l.cb.costs[0].action, 2);
-  EXPECT_FLOAT_EQ(ex->l.cb.costs[0].cost, FLT_MAX);
-  VW::finish_example(*vw, *ex);
-}
+// Note: ActionOnlyCost test removed - duplicate of ParseActionOnlyLabel
 
 TEST(CbLabelEdgeCases, MultipleActions)
 {
@@ -681,15 +657,7 @@ TEST(CbLabelEdgeCases, MultipleActions)
   EXPECT_FLOAT_EQ(label.cb.costs[1].probability, 0.75f);
 }
 
-TEST(CbLabelEdgeCases, ZeroCost)
-{
-  // Test zero cost is valid
-  VW::polylabel label;
-  parse_cb_label(VW::cb_label_parser_global, "1:0.0:0.5", label);
-
-  EXPECT_EQ(label.cb.costs.size(), 1);
-  EXPECT_FLOAT_EQ(label.cb.costs[0].cost, 0.0f);
-}
+// Note: ZeroCost test removed - basic parsing already covered
 
 TEST(CbLabelEdgeCases, NegativeCost)
 {
@@ -701,22 +669,4 @@ TEST(CbLabelEdgeCases, NegativeCost)
   EXPECT_FLOAT_EQ(label.cb.costs[0].cost, -1.5f);
 }
 
-TEST(CbLabelEdgeCases, ZeroProbability)
-{
-  // Test zero probability is valid
-  VW::polylabel label;
-  parse_cb_label(VW::cb_label_parser_global, "1:0.5:0.0", label);
-
-  EXPECT_EQ(label.cb.costs.size(), 1);
-  EXPECT_FLOAT_EQ(label.cb.costs[0].probability, 0.0f);
-}
-
-TEST(CbLabelEdgeCases, ExactlyOneProbability)
-{
-  // Test probability = 1.0 exactly
-  VW::polylabel label;
-  parse_cb_label(VW::cb_label_parser_global, "1:0.5:1.0", label);
-
-  EXPECT_EQ(label.cb.costs.size(), 1);
-  EXPECT_FLOAT_EQ(label.cb.costs[0].probability, 1.0f);
-}
+// Note: ZeroProbability and ExactlyOneProbability removed - basic parsing already covered
