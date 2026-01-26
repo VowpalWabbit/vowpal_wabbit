@@ -188,10 +188,10 @@ void run_bfs(task_data& D, VW::multi_ex& ec)
 void setup(Search::search& sch, VW::multi_ex& ec)
 {
   task_data& D = *sch.get_task_data<task_data>();  // NOLINT
-  D.multiplier = D.total_feature_width << D.ss;
   D.total_feature_width = sch.get_vw_pointer_unsafe().reduction_state.total_feature_width;
   D.mask = sch.get_vw_pointer_unsafe().weights.mask();
   D.ss = sch.get_vw_pointer_unsafe().weights.stride_shift();
+  D.multiplier = D.total_feature_width << D.ss;
   D.N = 0;
   D.E = 0;
   for (size_t i = 0; i < ec.size(); i++)

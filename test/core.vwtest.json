@@ -6701,5 +6701,17 @@
       "train-sets/args_test.txt",
       "train-sets/0002.dat"
     ]
+  },
+  {
+    "id": 517,
+    "desc": "search_graph task basic test",
+    "vw_command": "--search_task graph --search 3 -d train-sets/search_graph_small.dat --no_stdin",
+    "diff_files": {
+      "stderr": "train-sets/ref/search_graph.stderr",
+      "stdout": "train-sets/ref/search_graph.stdout"
+    },
+    "input_files": [
+      "train-sets/search_graph_small.dat"
+    ]
   }
 ]
