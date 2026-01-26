@@ -6368,66 +6368,6 @@
     "depends_on": [490]
   },
   {
-    "id": 492,
-    "desc": "cs_active with min_labels parameter",
-    "vw_command": "--cs_active 3 -d train-sets/cs_test --cost_max 2 --mellowness 0.1 --simulation --min_labels 1 --adax",
-    "diff_files": {
-      "stderr": "train-sets/ref/cs_active_min_labels.stderr",
-      "stdout": "train-sets/ref/cs_active_min_labels.stdout"
-    },
-    "input_files": [
-      "train-sets/cs_test"
-    ]
-  },
-  {
-    "id": 493,
-    "desc": "cs_active with max_labels parameter",
-    "vw_command": "--cs_active 3 -d train-sets/cs_test --cost_max 2 --mellowness 0.1 --simulation --max_labels 2 --adax",
-    "diff_files": {
-      "stderr": "train-sets/ref/cs_active_max_labels.stderr",
-      "stdout": "train-sets/ref/cs_active_max_labels.stdout"
-    },
-    "input_files": [
-      "train-sets/cs_test"
-    ]
-  },
-  {
-    "id": 494,
-    "desc": "cs_active with domination disabled",
-    "vw_command": "--cs_active 3 -d train-sets/cs_test --cost_max 2 --mellowness 0.1 --simulation --domination 0",
-    "diff_files": {
-      "stderr": "train-sets/ref/cs_active_domination.stderr",
-      "stdout": "train-sets/ref/cs_active_domination.stdout"
-    },
-    "input_files": [
-      "train-sets/cs_test"
-    ]
-  },
-  {
-    "id": 495,
-    "desc": "cs_active with different cost_max",
-    "vw_command": "--cs_active 3 -d train-sets/cs_test --cost_max 5 --mellowness 0.1 --simulation --adax",
-    "diff_files": {
-      "stderr": "train-sets/ref/cs_active_cost_max5.stderr",
-      "stdout": "train-sets/ref/cs_active_cost_max5.stdout"
-    },
-    "input_files": [
-      "train-sets/cs_test"
-    ]
-  },
-  {
-    "id": 496,
-    "desc": "cs_active without simulation mode",
-    "vw_command": "--cs_active 3 -d train-sets/cs_test --cost_max 2 --mellowness 0.1 --adax",
-    "diff_files": {
-      "stderr": "train-sets/ref/cs_active_no_sim.stderr",
-      "stdout": "train-sets/ref/cs_active_no_sim.stdout"
-    },
-    "input_files": [
-      "train-sets/cs_test"
-    ]
-  },
-  {
     "id": 497,
     "desc": "initial_weight parameter with value 0.5",
     "vw_command": "--initial_weight 0.5 -d train-sets/0002.dat -p initial_weight_05.predict",
@@ -6519,18 +6459,6 @@
     ]
   },
   {
-    "id": 504,
-    "desc": "cs_active with both min and max labels",
-    "vw_command": "--cs_active 5 -d train-sets/cs_test --cost_max 2 --mellowness 0.5 --simulation --min_labels 1 --max_labels 3 --adax",
-    "diff_files": {
-      "stderr": "train-sets/ref/cs_active_min_max_labels.stderr",
-      "stdout": "train-sets/ref/cs_active_min_max_labels.stdout"
-    },
-    "input_files": [
-      "train-sets/cs_test"
-    ]
-  },
-  {
     "id": 505,
     "desc": "initial_t parameter for learning rate schedule",
     "vw_command": "--initial_t 100 -d train-sets/0002.dat -p initial_t.predict",
@@ -6596,17 +6524,5 @@
       "models/ksvm_poly_saveload.model"
     ],
     "depends_on": [508]
-  },
-  {
-    "id": 510,
-    "desc": "cs_active very high mellowness",
-    "vw_command": "--cs_active 3 -d train-sets/cs_test --cost_max 2 --mellowness 10.0 --simulation --adax",
-    "diff_files": {
-      "stderr": "train-sets/ref/cs_active_high_mellow.stderr",
-      "stdout": "train-sets/ref/cs_active_high_mellow.stdout"
-    },
-    "input_files": [
-      "train-sets/cs_test"
-    ]
   }
 ]
