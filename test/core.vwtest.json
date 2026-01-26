@@ -5575,7 +5575,8 @@
       "models/cb_spin_off.m"
     ],
     "depends_on": [
-      425, 427
+      425,
+      427
     ]
   },
   {
@@ -5654,8 +5655,7 @@
   {
     "id": 435,
     "desc": "second order online learning with epoch",
-    "vw_command":
-        "--OjaNewton -d train-sets/0001.dat -p second_order_with_epoch.predict --predict_only_model --epoch_size 8",
+    "vw_command": "--OjaNewton -d train-sets/0001.dat -p second_order_with_epoch.predict --predict_only_model --epoch_size 8",
     "diff_files": {
       "stderr": "train-sets/ref/second_order_with_epoch.stderr",
       "second_order_with_epoch.predict": "pred-sets/ref/second_order_with_epoch.predict",
@@ -5803,7 +5803,8 @@
       "models/cb_spin_off_bag.m"
     ],
     "depends_on": [
-      441, 443
+      441,
+      443
     ]
   },
   {
@@ -5908,7 +5909,8 @@
       "models/ep_dec_spin_off_cb.m"
     ],
     "depends_on": [
-      449, 451
+      449,
+      451
     ]
   },
   {
@@ -6029,7 +6031,8 @@
       "igl_spinoff_cb.vw"
     ],
     "depends_on": [
-      458, 460
+      458,
+      460
     ]
   },
   {
@@ -6261,7 +6264,9 @@
       "train-sets/decisionservice.json",
       "models/automl_save_resume.model"
     ],
-    "depends_on": [482]
+    "depends_on": [
+      482
+    ]
   },
   {
     "id": 484,
@@ -6287,7 +6292,9 @@
       "train-sets/cats.acpx",
       "models/cats_pdf_save_resume.model"
     ],
-    "depends_on": [484]
+    "depends_on": [
+      484
+    ]
   },
   {
     "id": 486,
@@ -6365,10 +6372,12 @@
       "train-sets/rcv1_smaller.dat",
       "models/ksvm_testmode.model"
     ],
-    "depends_on": [490]
+    "depends_on": [
+      490
+    ]
   },
   {
-    "id": 497,
+    "id": 492,
     "desc": "initial_weight parameter with value 0.5",
     "vw_command": "--initial_weight 0.5 -d train-sets/0002.dat -p initial_weight_05.predict",
     "diff_files": {
@@ -6381,7 +6390,7 @@
     ]
   },
   {
-    "id": 498,
+    "id": 493,
     "desc": "random_weights parameter",
     "vw_command": "--random_weights --random_seed 42 -d train-sets/0002.dat -p random_weights.predict",
     "diff_files": {
@@ -6394,7 +6403,7 @@
     ]
   },
   {
-    "id": 499,
+    "id": 494,
     "desc": "normal_weights parameter",
     "vw_command": "--normal_weights --random_seed 42 -d train-sets/0002.dat -p normal_weights.predict",
     "diff_files": {
@@ -6407,7 +6416,7 @@
     ]
   },
   {
-    "id": 500,
+    "id": 495,
     "desc": "truncated_normal_weights parameter",
     "vw_command": "--truncated_normal_weights --random_seed 42 -d train-sets/0002.dat -p truncated_normal_weights.predict",
     "diff_files": {
@@ -6420,7 +6429,7 @@
     ]
   },
   {
-    "id": 501,
+    "id": 496,
     "desc": "readable_model output",
     "vw_command": "-d train-sets/0002.dat --readable_model readable_model_test.txt",
     "diff_files": {
@@ -6433,7 +6442,7 @@
     ]
   },
   {
-    "id": 502,
+    "id": 497,
     "desc": "invert_hash output",
     "vw_command": "-d train-sets/0002.dat --invert_hash invert_hash_test.txt",
     "diff_files": {
@@ -6446,7 +6455,7 @@
     ]
   },
   {
-    "id": 503,
+    "id": 498,
     "desc": "SVM linear kernel with higher reprocess count",
     "vw_command": "--ksvm --l2 1 --reprocess 10 -b 18 -p ksvm_reprocess10.predict -d train-sets/rcv1_smaller.dat",
     "diff_files": {
@@ -6459,7 +6468,7 @@
     ]
   },
   {
-    "id": 505,
+    "id": 499,
     "desc": "initial_t parameter for learning rate schedule",
     "vw_command": "--initial_t 100 -d train-sets/0002.dat -p initial_t.predict",
     "diff_files": {
@@ -6472,7 +6481,7 @@
     ]
   },
   {
-    "id": 506,
+    "id": 500,
     "desc": "SVM rbf kernel save and load model",
     "vw_command": "--ksvm --l2 1 --reprocess 3 -b 18 --kernel rbf --bandwidth 1.5 -d train-sets/rcv1_smaller.dat -f models/ksvm_rbf_saveload.model",
     "diff_files": {
@@ -6484,7 +6493,7 @@
     ]
   },
   {
-    "id": 507,
+    "id": 501,
     "desc": "SVM rbf kernel load model and predict",
     "vw_command": "--ksvm -t -i models/ksvm_rbf_saveload.model -d train-sets/rcv1_smaller.dat -p ksvm_rbf_loaded.predict",
     "diff_files": {
@@ -6496,10 +6505,12 @@
       "train-sets/rcv1_smaller.dat",
       "models/ksvm_rbf_saveload.model"
     ],
-    "depends_on": [506]
+    "depends_on": [
+      500
+    ]
   },
   {
-    "id": 508,
+    "id": 502,
     "desc": "SVM poly kernel save and load model",
     "vw_command": "--ksvm --l2 1 --reprocess 3 -b 18 --kernel poly --degree 2 -d train-sets/rcv1_smaller.dat -f models/ksvm_poly_saveload.model",
     "diff_files": {
@@ -6511,7 +6522,7 @@
     ]
   },
   {
-    "id": 509,
+    "id": 503,
     "desc": "SVM poly kernel load model and predict",
     "vw_command": "--ksvm -t -i models/ksvm_poly_saveload.model -d train-sets/rcv1_smaller.dat -p ksvm_poly_loaded.predict",
     "diff_files": {
@@ -6523,6 +6534,8 @@
       "train-sets/rcv1_smaller.dat",
       "models/ksvm_poly_saveload.model"
     ],
-    "depends_on": [508]
+    "depends_on": [
+      502
+    ]
   }
 ]
