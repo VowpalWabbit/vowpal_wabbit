@@ -4,7 +4,7 @@ Lambda = 1
 Kernel = rbf
 bandwidth = 1.5
 using no cache
-Reading datafile = train-sets/rcv1_smaller.dat
+Reading datafile = train-sets/rcv1_25.dat
 num sources = 1
 Num weight bits = 18
 learning rate = 0.5
@@ -15,23 +15,20 @@ Input label = SIMPLE
 Output pred = SCALAR
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
-0.952243 0.952243            1            1.0         1.0000         0.0478       50
-0.955381 0.958518            2            2.0        -1.0000        -0.0415      103
-0.954489 0.953596            4            4.0        -1.0000        -0.0430      134
-0.954686 0.954883            8            8.0        -1.0000        -0.0447      145
-0.953464 0.952242           16           16.0         1.0000         0.0535       23
-0.954303 0.955142           32           32.0        -1.0000        -0.0443       31
-0.954895 0.955487           64           64.0        -1.0000        -0.0410       60
-0.954440 0.953985          128          128.0         1.0000         0.0428      105
+0.964509 0.964509            1            1.0         1.0000         0.0355       50
+0.958488 0.952467            2            2.0        -1.0000        -0.0475      103
+0.953912 0.949335            4            4.0        -1.0000        -0.0510      134
+0.953748 0.953584            8            8.0        -1.0000        -0.0499      145
+0.954063 0.954378           16           16.0         1.0000         0.0365       23
 
 finished run
-number of examples = 250
-weighted example sum = 250.000000
-weighted label sum = -22.000000
-average loss = 0.953769
+number of examples = 25
+weighted example sum = 25.000000
+weighted label sum = -7.000000
+average loss = 0.954734
 best constant = -1.000000
-best constant's loss = 0.912000
-total feature number = 19870
-Num support = 250
+best constant's loss = 0.720000
+total feature number = 2084
+Num support = 25
 Number of kernel evaluations = 0 Number of cache queries = 0
 Total loss = 0.000000

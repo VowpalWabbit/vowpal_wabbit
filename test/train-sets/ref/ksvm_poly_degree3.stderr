@@ -4,7 +4,7 @@ Lambda = 1
 Kernel = poly
 degree = 3
 using no cache
-Reading datafile = train-sets/rcv1_smaller.dat
+Reading datafile = train-sets/rcv1_25.dat
 num sources = 1
 Num weight bits = 18
 learning rate = 0.5
@@ -20,18 +20,15 @@ loss     last          counter         weight          label        predict feat
 1.051471 0.939257            4            4.0        -1.0000        -0.1602      134
 0.983261 0.915052            8            8.0        -1.0000        -0.2377      145
 0.945665 0.908069           16           16.0         1.0000        -0.3856       23
-0.944063 0.942462           32           32.0        -1.0000        -0.2197       31
-0.935869 0.927675           64           64.0        -1.0000        -0.6247       60
-0.922679 0.909489          128          128.0         1.0000         0.0221      105
 
 finished run
-number of examples = 250
-weighted example sum = 250.000000
-weighted label sum = -22.000000
-average loss = 0.840552
+number of examples = 25
+weighted example sum = 25.000000
+weighted label sum = -7.000000
+average loss = 0.959472
 best constant = -1.000000
-best constant's loss = 0.912000
-total feature number = 19870
-Num support = 246
-Number of kernel evaluations = 128191 Number of cache queries = 64202
-Total loss = 210.137985
+best constant's loss = 0.720000
+total feature number = 2084
+Num support = 25
+Number of kernel evaluations = 1191 Number of cache queries = 744
+Total loss = 23.986807

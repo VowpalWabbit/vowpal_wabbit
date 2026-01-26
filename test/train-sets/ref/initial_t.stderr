@@ -1,6 +1,6 @@
 predictions = initial_t.predict
 using no cache
-Reading datafile = train-sets/0002.dat
+Reading datafile = train-sets/0002_25.dat
 num sources = 1
 Num weight bits = 18
 learning rate = 0.5
@@ -16,16 +16,11 @@ loss     last          counter         weight          label        predict feat
 0.132543 0.070106            4            4.0         0.5854         0.4218       15
 0.089305 0.046068            8            8.0         0.5575         0.4735       15
 0.077239 0.065173           16           16.0         0.5878         0.4458       15
-0.043035 0.008831           32           32.0         0.6038         0.6048       15
-0.028980 0.014926           64           64.0         0.5683         0.4597       15
-0.017073 0.005166          128          128.0         0.5351         0.4940       15
-0.010232 0.003391          256          256.0         0.5385         0.5629       15
-0.006580 0.002928          512          512.0         0.5053         0.5150       15
 
 finished run
-number of examples = 1000
-weighted example sum = 1000.000000
-weighted label sum = 526.517528
-average loss = 0.004546
-best constant = 0.526518
-total feature number = 14996
+number of examples = 25
+weighted example sum = 25.000000
+weighted label sum = 12.754523
+average loss = 0.054067
+best constant = 0.510181
+total feature number = 374
