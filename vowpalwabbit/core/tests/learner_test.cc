@@ -263,3 +263,11 @@ TEST(Learner, FeatureWidthBelowForReductionStack)
   // Feature width below should be set properly in the stack
   EXPECT_GE(vw->l->feature_width_below, 1);
 }
+
+// Note: Edge case tests were removed as they duplicated tests above:
+// - LearnerIsMultiline duplicated IsMultilineReturnsFalse/TrueForSingleline/MultilineLearner
+// - LearnerPredictionType duplicated GetOutputPredictionType tests
+// - LearnerLabelType duplicated GetInputLabelType tests
+// - LearnerSaveLoad duplicated SaveLoadBasic
+// - LearnerHasName duplicated GetLearnerName
+// - LearnerMergeUnsupported was an empty test

@@ -490,3 +490,6 @@ TEST(SharedData, LabelObservationTracking)
   EXPECT_FLOAT_EQ(copy.first_observed_label, 0.0f);
   EXPECT_FLOAT_EQ(copy.second_observed_label, 1.0f);
 }
+
+// Note: Edge case tests for simple struct member get/set were removed
+// as they don't test actual code paths - they just test C++ assignment.

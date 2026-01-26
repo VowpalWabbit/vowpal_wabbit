@@ -567,3 +567,106 @@ TEST(MulticlassLabel, IntegrationWithVWOAA)
   EXPECT_LE(ex_pred->pred.multiclass, 3);
   VW::finish_example(*vw, *ex_pred);
 }
+
+// ==================== Edge Case Tests for Coverage ====================
+
+TEST(CbLabelEdgeCases, ProbabilityClampingAboveOne)
+{
+  // Test that probability > 1 gets clamped to 1.0
+  auto vw = VW::initialize(vwtest::make_args("--cb", "2", "--quiet"));
+  // Probability 1.5 should be clamped to 1.0
+  auto* ex = VW::read_example(*vw, "1:0.5:1.5 | a b");
+  EXPECT_FLOAT_EQ(ex->l.cb.costs[0].probability, 1.0f);
+  VW::finish_example(*vw, *ex);
+}
+
+TEST(CbLabelEdgeCases, ProbabilityClampingBelowZero)
+{
+  // Test that probability < 0 gets clamped to 0.0
+  auto vw = VW::initialize(vwtest::make_args("--cb", "2", "--quiet"));
+  // Probability -0.5 should be clamped to 0.0
+  auto* ex = VW::read_example(*vw, "1:0.5:-0.5 | a b");
+  EXPECT_FLOAT_EQ(ex->l.cb.costs[0].probability, 0.0f);
+  VW::finish_example(*vw, *ex);
+}
+
+TEST(CbLabelEdgeCases, SharedWithoutCost)
+{
+  // Test shared feature with no cost (probability set to -1)
+  auto vw = VW::initialize(vwtest::make_args("--cb_explore_adf", "--quiet"));
+  VW::multi_ex examples;
+  examples.push_back(VW::read_example(*vw, "shared | s_feature"));
+  examples.push_back(VW::read_example(*vw, "| a_feature"));
+  examples.push_back(VW::read_example(*vw, "| b_feature"));
+
+  // Shared example should have probability -1 as marker
+  EXPECT_FLOAT_EQ(examples[0]->l.cb.costs[0].probability, -1.0f);
+
+  vw->predict(examples);
+  vw->finish_example(examples);
+}
+
+// Note: FLTMaxCost test removed - just tested C++ struct assignment, not VW code
+// Note: Tests for trailing characters and too many words are in multiclass_label_parser_test.cc
+// Testing via read_example causes memory leaks under ASAN when exceptions are thrown
+
+TEST(MulticlassLabelEdgeCases, LabelWithWeight)
+{
+  // Test label with explicit weight
+  auto vw = VW::initialize(vwtest::make_args("--oaa", "10", "--quiet"));
+  auto* ex = VW::read_example(*vw, "5 2.5 | features");
+
+  EXPECT_EQ(ex->l.multi.label, 5);
+  EXPECT_FLOAT_EQ(ex->l.multi.weight, 2.5f);
+  VW::finish_example(*vw, *ex);
+}
+
+TEST(MulticlassLabelEdgeCases, UnlabeledExample)
+{
+  // Test unlabeled example for prediction
+  auto vw = VW::initialize(vwtest::make_args("--oaa", "5", "--quiet"));
+
+  // First train with some labeled examples
+  auto* ex_train = VW::read_example(*vw, "2 | features");
+  vw->learn(*ex_train);
+  VW::finish_example(*vw, *ex_train);
+
+  // Now test with unlabeled
+  auto* ex = VW::read_example(*vw, "| features");
+  vw->predict(*ex);
+  // Prediction should be in valid range
+  EXPECT_GE(ex->pred.multiclass, 1);
+  EXPECT_LE(ex->pred.multiclass, 5);
+  VW::finish_example(*vw, *ex);
+}
+
+// Note: ActionOnlyCost test removed - duplicate of ParseActionOnlyLabel
+
+TEST(CbLabelEdgeCases, MultipleActions)
+{
+  // Test parsing multiple actions in a label
+  VW::polylabel label;
+  parse_cb_label(VW::cb_label_parser_global, "1:0.5:0.25 2:0.3:0.75", label);
+
+  EXPECT_EQ(label.cb.costs.size(), 2);
+  EXPECT_EQ(label.cb.costs[0].action, 1);
+  EXPECT_FLOAT_EQ(label.cb.costs[0].cost, 0.5f);
+  EXPECT_FLOAT_EQ(label.cb.costs[0].probability, 0.25f);
+  EXPECT_EQ(label.cb.costs[1].action, 2);
+  EXPECT_FLOAT_EQ(label.cb.costs[1].cost, 0.3f);
+  EXPECT_FLOAT_EQ(label.cb.costs[1].probability, 0.75f);
+}
+
+// Note: ZeroCost test removed - basic parsing already covered
+
+TEST(CbLabelEdgeCases, NegativeCost)
+{
+  // Test negative cost is valid (reward)
+  VW::polylabel label;
+  parse_cb_label(VW::cb_label_parser_global, "1:-1.5:0.5", label);
+
+  EXPECT_EQ(label.cb.costs.size(), 1);
+  EXPECT_FLOAT_EQ(label.cb.costs[0].cost, -1.5f);
+}
+
+// Note: ZeroProbability and ExactlyOneProbability removed - basic parsing already covered
