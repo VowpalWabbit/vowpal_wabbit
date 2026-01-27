@@ -1,0 +1,25 @@
+creating cache_file = train-sets/ner_25.dat.gz.cache
+Reading datafile = train-sets/ner_25.dat.gz
+num sources = 1
+Num weight bits = 7
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+decay_learning_rate = 1
+Enabled learners: gd, scorer-identity, csoaa, search_task
+Input label = MULTICLASS
+Output pred = MULTICLASS
+average    since      instance            current true      current predicted   cur   cur   predic    cache  examples          
+loss       last        counter           output prefix          output prefix  pass   pol     made     hits    gener  beta    
+8.000000   8.000000          1  [1 2 3 2 2 2 3 2 2   ] [1 1 1 1 1 1 1 1 1   ]     0     0        9        0        9  0.000000
+5.000000   2.000000          2  [4 5                 ] [3 2                 ]     0     0       11        0       11  0.000000
+3.500000   2.000000          4  [2 1 7 2 2 2 2 2 2   ] [1 1 2 2 2 2 2 2 2   ]     0     0       22        0       22  0.000000
+2.625000   1.750000          8  [2 1 7 2 2 2 2 2 2   ] [4 1 5 2 2 2 2 2 2   ]     1     0       44        0       44  0.000000
+
+finished run
+number of examples per pass = 4
+passes used = 2
+weighted example sum = 8.000000
+weighted label sum = 0.000000
+average loss = 2.625000
+total feature number = 1910

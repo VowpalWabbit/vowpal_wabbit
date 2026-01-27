@@ -1,0 +1,25 @@
+creating cache_file = train-sets/er_24.vw.cache
+Reading datafile = train-sets/er_24.vw
+num sources = 1
+Num weight bits = 7
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+decay_learning_rate = 1
+Enabled learners: gd, scorer-identity, csoaa, search_task
+Input label = MULTICLASS
+Output pred = MULTICLASS
+average    since      instance            current true      current predicted   cur   cur   predic    cache  examples          
+loss       last        counter           output prefix          output prefix  pass   pol     made     hits    gener  beta    
+1.000000   1.000000          1  [4                   ] [1                   ]     0     0        1        0        1  0.000000
+2.500000   4.000000          2  [2 4 2 5 10 10       ] [4 4 4 7 7 7         ]     0     0        7        0        7  0.000000
+2.750000   3.000000          4  [4                   ] [4                   ]     1     0       23        0       23  0.000000
+1.750000   0.750000          8  [2 4 2 5 10 10       ] [4 4 4 10 10 10      ]     2     0       29        0       51  0.000000
+
+finished run
+number of examples per pass = 3
+passes used = 3
+weighted example sum = 9.000000
+weighted label sum = 0.000000
+average loss = undefined (no holdout)
+total feature number = 350

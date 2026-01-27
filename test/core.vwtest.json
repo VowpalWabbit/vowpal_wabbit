@@ -6537,5 +6537,181 @@
     "depends_on": [
       502
     ]
+  },
+  {
+    "id": 504,
+    "desc": "cb_explore_adf with cover exploration and audit",
+    "vw_command": "--cb_explore_adf --cover 3 -d train-sets/cb_test.ldf --noconstant --audit -p cb_explore_adf_cover_audit.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_explore_adf_cover_audit.stderr",
+      "stdout": "train-sets/ref/cb_explore_adf_cover_audit.stdout",
+      "cb_explore_adf_cover_audit.predict": "pred-sets/ref/cb_explore_adf_cover_audit.predict"
+    },
+    "input_files": [
+      "train-sets/cb_test.ldf"
+    ]
+  },
+  {
+    "id": 505,
+    "desc": "search sequence with holdout_period",
+    "vw_command": "-k -c -d train-sets/wsj_25.dat --passes 3 --search_task sequence --search 10 --search_alpha 1e-6 --holdout_period 5 -b 7",
+    "diff_files": {
+      "stderr": "train-sets/ref/search_holdout.stderr",
+      "stdout": "train-sets/ref/search_holdout.stdout"
+    },
+    "input_files": [
+      "train-sets/wsj_25.dat"
+    ]
+  },
+  {
+    "id": 506,
+    "desc": "search entity_relation (LDF-based)",
+    "vw_command": "-k -c -d train-sets/er_24.vw --passes 3 --search_task entity_relation --search 10 --constraints --search_alpha 1e-8 -b 7",
+    "diff_files": {
+      "stderr": "train-sets/ref/search_er_noaudit.stderr",
+      "stdout": "train-sets/ref/search_er_noaudit.stdout"
+    },
+    "input_files": [
+      "train-sets/er_24.vw"
+    ]
+  },
+  {
+    "id": 507,
+    "desc": "LDA with audit exercising get_top_weights",
+    "vw_command": "--lda 3 --lda_alpha 0.1 --lda_rho 0.1 --lda_D 5 -b 5 --minibatch 5 --random_seed 123 -d train-sets/wiki5.dat --audit",
+    "diff_files": {
+      "stderr": "train-sets/ref/lda_audit_top_weights.stderr",
+      "stdout": "train-sets/ref/lda_audit_top_weights.stdout"
+    },
+    "input_files": [
+      "train-sets/wiki5.dat"
+    ]
+  },
+  {
+    "id": 508,
+    "desc": "BFGS with L1 regularizer",
+    "vw_command": "-k -c -d train-sets/0001_25.dat --bfgs --passes 10 --holdout_off --l1 0.01 --termination 0.001 -b 7",
+    "diff_files": {
+      "stderr": "train-sets/ref/bfgs_l1_reg.stderr",
+      "stdout": "train-sets/ref/bfgs_l1_reg.stdout"
+    },
+    "input_files": [
+      "train-sets/0001_25.dat"
+    ]
+  },
+  {
+    "id": 509,
+    "desc": "kernel SVM with pool_greedy active learning",
+    "vw_command": "--ksvm --l2 1 --reprocess 2 -b 18 --pool_greedy --pool_size 5 -p ksvm_active.predict -d train-sets/rcv1_25.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/ksvm_active.stderr",
+      "stdout": "train-sets/ref/ksvm_active.stdout",
+      "ksvm_active.predict": "pred-sets/ref/ksvm_active.predict"
+    },
+    "input_files": [
+      "train-sets/rcv1_25.dat"
+    ]
+  },
+  {
+    "id": 510,
+    "desc": "GD with sparse_weights option",
+    "vw_command": "--cb_explore_adf --epsilon 0.1 -d train-sets/cb_test.ldf --noconstant --sparse_weights -p sparse_gd.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/sparse_gd.stderr",
+      "stdout": "train-sets/ref/sparse_gd.stdout",
+      "sparse_gd.predict": "pred-sets/ref/sparse_gd.predict"
+    },
+    "input_files": [
+      "train-sets/cb_test.ldf"
+    ]
+  },
+  {
+    "id": 511,
+    "desc": "using --keep option to filter namespaces",
+    "vw_command": "-d train-sets/multi_namespace.dat --keep A --keep B -p keep_test.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/keep_test.stderr",
+      "stdout": "train-sets/ref/keep_test.stdout",
+      "keep_test.predict": "pred-sets/ref/keep_test.predict"
+    },
+    "input_files": [
+      "train-sets/multi_namespace.dat"
+    ]
+  },
+  {
+    "id": 512,
+    "desc": "csoaa_ldf with audit exercising output_cs_example",
+    "vw_command": "-k -c -d train-sets/cs_test.ldf -p csoaa_ldf_audit.predict --passes 5 --csoaa_ldf multiline --holdout_off --noconstant --audit",
+    "diff_files": {
+      "stderr": "train-sets/ref/csoaa_ldf_audit.stderr",
+      "stdout": "train-sets/ref/csoaa_ldf_audit.stdout",
+      "csoaa_ldf_audit.predict": "pred-sets/ref/csoaa_ldf_audit.predict"
+    },
+    "input_files": [
+      "train-sets/cs_test.ldf"
+    ]
+  },
+  {
+    "id": 513,
+    "desc": "main.cc --onethread option",
+    "vw_command": "--onethread -d train-sets/0001_25.dat -p onethread.predict -b 7",
+    "diff_files": {
+      "stderr": "train-sets/ref/onethread.stderr",
+      "stdout": "train-sets/ref/onethread.stdout",
+      "onethread.predict": "pred-sets/ref/onethread.predict"
+    },
+    "input_files": [
+      "train-sets/0001_25.dat"
+    ]
+  },
+  {
+    "id": 514,
+    "desc": "compressed .gz input file support",
+    "vw_command": "-d train-sets/ner_25.dat.gz --passes 2 -c -k --search_task sequence --search 5 --holdout_off -b 7",
+    "diff_files": {
+      "stderr": "train-sets/ref/compressed_input.stderr",
+      "stdout": "train-sets/ref/compressed_input.stdout"
+    },
+    "input_files": [
+      "train-sets/ner_25.dat.gz"
+    ]
+  },
+  {
+    "id": 515,
+    "desc": "readable_model output verification",
+    "vw_command": "-d train-sets/0002_25.dat --readable_model readable_model_output.txt -b 7",
+    "diff_files": {
+      "stderr": "train-sets/ref/readable_compressed.stderr",
+      "stdout": "train-sets/ref/readable_compressed.stdout",
+      "readable_model_output.txt": "train-sets/ref/readable_model_compressed.txt"
+    },
+    "input_files": [
+      "train-sets/0002_25.dat"
+    ]
+  },
+  {
+    "id": 516,
+    "desc": "main.cc --args option for multi-model training",
+    "bash_command": "{VW} --args train-sets/args_test.txt",
+    "diff_files": {
+      "stderr": "train-sets/ref/args_test.stderr",
+      "stdout": "train-sets/ref/args_test.stdout"
+    },
+    "input_files": [
+      "train-sets/args_test.txt",
+      "train-sets/0002_25.dat"
+    ]
+  },
+  {
+    "id": 517,
+    "desc": "search_graph task basic test",
+    "vw_command": "--search_task graph --search 3 -d train-sets/search_graph_small.dat --no_stdin",
+    "diff_files": {
+      "stderr": "train-sets/ref/search_graph.stderr",
+      "stdout": "train-sets/ref/search_graph.stdout"
+    },
+    "input_files": [
+      "train-sets/search_graph_small.dat"
+    ]
   }
 ]
