@@ -556,7 +556,8 @@ void sync_queries(VW::workspace& all, svm_params& params, bool* train_pool)
     fec = &(params.pool[i]->ex);
     write_model_field_flat_example(
         *b, *fec, "_flat_example", false, all.parser_runtime.example_parser->lbl_parser, all.runtime_state.parse_mask);
-    delete params.pool[i];
+    params.pool[i]->~svm_example();
+    free(params.pool[i]);
   }
 
   size_t* sizes = VW::details::calloc_or_throw<size_t>(all.runtime_state.all_reduce->total);
@@ -659,7 +660,11 @@ void train(svm_params& params)
   {
     for (size_t i = 0; i < params.pool_pos; i++)
     {
-      if (!train_pool[i]) { delete params.pool[i]; }
+      if (!train_pool[i])
+      {
+        params.pool[i]->~svm_example();
+        free(params.pool[i]);
+      }
     }
     sync_queries(*(params.all), params, train_pool);
   }
@@ -713,7 +718,11 @@ void train(svm_params& params)
   }
   else
   {
-    for (size_t i = 0; i < params.pool_pos; i++) { delete params.pool[i]; }
+    for (size_t i = 0; i < params.pool_pos; i++)
+    {
+      params.pool[i]->~svm_example();
+      free(params.pool[i]);
+    }
   }
 
   free(scores);
@@ -756,7 +765,11 @@ void learn(svm_params& params, VW::example& ec)
 void finish_kernel_svm(svm_params& params)
 {
   // Free any remaining examples in the pool that haven't been processed
-  for (size_t i = 0; i < params.pool_pos; i++) { delete params.pool[i]; }
+  for (size_t i = 0; i < params.pool_pos; i++)
+  {
+    params.pool[i]->~svm_example();
+    free(params.pool[i]);
+  }
   params.pool_pos = 0;
 
   if (params.all != nullptr)
