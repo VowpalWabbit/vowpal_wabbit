@@ -1,0 +1,26 @@
+predictions = sparse_weights_simple.predict
+using no cache
+Reading datafile = train-sets/0002_25.dat
+num sources = 1
+Num weight bits = 7
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+Enabled learners: gd, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.271591 0.271591            1            1.0         0.5211         0.0000       15
+0.138482 0.005372            2            2.0         0.5353         0.4620       15
+0.112115 0.085748            4            4.0         0.5854         0.5854       15
+0.078160 0.044205            8            8.0         0.5575         0.4871       15
+0.080064 0.081967           16           16.0         0.5878         0.3590       15
+
+finished run
+number of examples = 25
+weighted example sum = 25.000000
+weighted label sum = 12.754523
+average loss = 0.055236
+best constant = 0.510181
+total feature number = 374

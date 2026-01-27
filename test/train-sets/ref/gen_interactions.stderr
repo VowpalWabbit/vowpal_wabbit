@@ -1,0 +1,26 @@
+creating features for following interactions: ab bc
+predictions = gen_interactions.predict
+using no cache
+Reading datafile = train-sets/multi_namespace.dat
+num sources = 1
+Num weight bits = 7
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+Enabled learners: gd, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+1.000000 1.000000            1            1.0         1.0000         0.0000       10
+0.613530 0.227060            2            2.0         0.0000         0.4765        7
+0.529736 0.445941            4            4.0         0.0000         0.6308        8
+
+finished run
+number of examples = 5
+weighted example sum = 5.000000
+weighted label sum = 3.000000
+average loss = 0.522990
+best constant = 0.600000
+best constant's loss = 0.240000
+total feature number = 38
