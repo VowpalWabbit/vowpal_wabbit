@@ -1,1 +1,1 @@
--d train-sets/0002.dat --passes 2 -c -k --holdout_off -f model.1 --no_stdin
+-d train-sets/0002_25.dat --passes 2 -c -k --holdout_off -b 7 -f model.1 --no_stdin

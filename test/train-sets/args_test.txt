@@ -1,1 +1,1 @@
--d train-sets/0002.dat --passes 2 -c -k --holdout_off
+-d train-sets/0002_25.dat --passes 2 -c -k --holdout_off -b 7

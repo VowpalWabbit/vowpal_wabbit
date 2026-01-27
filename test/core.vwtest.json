@@ -6554,25 +6554,25 @@
   {
     "id": 505,
     "desc": "search sequence with holdout_period",
-    "vw_command": "-k -c -d train-sets/wsj_small.dat.gz --passes 3 --search_task sequence --search 10 --search_alpha 1e-6 --holdout_period 5",
+    "vw_command": "-k -c -d train-sets/wsj_25.dat --passes 3 --search_task sequence --search 10 --search_alpha 1e-6 --holdout_period 5 -b 7",
     "diff_files": {
       "stderr": "train-sets/ref/search_holdout.stderr",
       "stdout": "train-sets/ref/search_holdout.stdout"
     },
     "input_files": [
-      "train-sets/wsj_small.dat.gz"
+      "train-sets/wsj_25.dat"
     ]
   },
   {
     "id": 506,
     "desc": "search entity_relation (LDF-based)",
-    "vw_command": "-k -c -d train-sets/er_small.vw --passes 3 --search_task entity_relation --search 10 --constraints --search_alpha 1e-8",
+    "vw_command": "-k -c -d train-sets/er_24.vw --passes 3 --search_task entity_relation --search 10 --constraints --search_alpha 1e-8 -b 7",
     "diff_files": {
       "stderr": "train-sets/ref/search_er_noaudit.stderr",
       "stdout": "train-sets/ref/search_er_noaudit.stdout"
     },
     "input_files": [
-      "train-sets/er_small.vw"
+      "train-sets/er_24.vw"
     ]
   },
   {
@@ -6590,26 +6590,26 @@
   {
     "id": 508,
     "desc": "BFGS with L1 regularizer",
-    "vw_command": "-k -c -d train-sets/0001.dat --bfgs --passes 10 --holdout_off --l1 0.01 --termination 0.001 -b 10",
+    "vw_command": "-k -c -d train-sets/0001_25.dat --bfgs --passes 10 --holdout_off --l1 0.01 --termination 0.001 -b 7",
     "diff_files": {
       "stderr": "train-sets/ref/bfgs_l1_reg.stderr",
       "stdout": "train-sets/ref/bfgs_l1_reg.stdout"
     },
     "input_files": [
-      "train-sets/0001.dat"
+      "train-sets/0001_25.dat"
     ]
   },
   {
     "id": 509,
     "desc": "kernel SVM with pool_greedy active learning",
-    "vw_command": "--ksvm --l2 1 --reprocess 2 -b 18 --pool_greedy --pool_size 5 -p ksvm_active.predict -d train-sets/rcv1_smaller.dat",
+    "vw_command": "--ksvm --l2 1 --reprocess 2 -b 18 --pool_greedy --pool_size 5 -p ksvm_active.predict -d train-sets/rcv1_25.dat",
     "diff_files": {
       "stderr": "train-sets/ref/ksvm_active.stderr",
       "stdout": "train-sets/ref/ksvm_active.stdout",
       "ksvm_active.predict": "pred-sets/ref/ksvm_active.predict"
     },
     "input_files": [
-      "train-sets/rcv1_smaller.dat"
+      "train-sets/rcv1_25.dat"
     ]
   },
   {
@@ -6654,39 +6654,39 @@
   {
     "id": 513,
     "desc": "main.cc --onethread option",
-    "vw_command": "--onethread -d train-sets/0001.dat -p onethread.predict",
+    "vw_command": "--onethread -d train-sets/0001_25.dat -p onethread.predict -b 7",
     "diff_files": {
       "stderr": "train-sets/ref/onethread.stderr",
       "stdout": "train-sets/ref/onethread.stdout",
       "onethread.predict": "pred-sets/ref/onethread.predict"
     },
     "input_files": [
-      "train-sets/0001.dat"
+      "train-sets/0001_25.dat"
     ]
   },
   {
     "id": 514,
     "desc": "compressed .gz input file support",
-    "vw_command": "-d train-sets/ner.train.gz --passes 2 -c -k --search_task sequence --search 5 --holdout_off",
+    "vw_command": "-d train-sets/ner_25.dat.gz --passes 2 -c -k --search_task sequence --search 5 --holdout_off -b 7",
     "diff_files": {
       "stderr": "train-sets/ref/compressed_input.stderr",
       "stdout": "train-sets/ref/compressed_input.stdout"
     },
     "input_files": [
-      "train-sets/ner.train.gz"
+      "train-sets/ner_25.dat.gz"
     ]
   },
   {
     "id": 515,
     "desc": "readable_model output verification",
-    "vw_command": "-d train-sets/0002.dat --readable_model readable_model_output.txt",
+    "vw_command": "-d train-sets/0002_25.dat --readable_model readable_model_output.txt -b 7",
     "diff_files": {
       "stderr": "train-sets/ref/readable_compressed.stderr",
       "stdout": "train-sets/ref/readable_compressed.stdout",
       "readable_model_output.txt": "train-sets/ref/readable_model_compressed.txt"
     },
     "input_files": [
-      "train-sets/0002.dat"
+      "train-sets/0002_25.dat"
     ]
   },
   {
@@ -6699,7 +6699,7 @@
     },
     "input_files": [
       "train-sets/args_test.txt",
-      "train-sets/0002.dat"
+      "train-sets/0002_25.dat"
     ]
   },
   {

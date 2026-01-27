@@ -1,7 +1,7 @@
-creating cache_file = train-sets/ner.train.gz.cache
-Reading datafile = train-sets/ner.train.gz
+creating cache_file = train-sets/ner_25.dat.gz.cache
+Reading datafile = train-sets/ner_25.dat.gz
 num sources = 1
-Num weight bits = 18
+Num weight bits = 7
 learning rate = 0.5
 initial_t = 0
 power_t = 0.5
@@ -12,18 +12,14 @@ Output pred = MULTICLASS
 average    since      instance            current true      current predicted   cur   cur   predic    cache  examples          
 loss       last        counter           output prefix          output prefix  pass   pol     made     hits    gener  beta    
 8.000000   8.000000          1  [1 2 3 2 2 2 3 2 2   ] [1 1 1 1 1 1 1 1 1   ]     0     0        9        0        9  0.000000
-5.000000   2.000000          2  [4 5                 ] [2 2                 ]     0     0       11        0       11  0.000000
-3.500000   2.000000          4  [2 1 7 2 2 2 2 2 2 ..] [4 5 2 2 2 2 2 2 2 ..]     0     0       43        0       43  0.000000
-3.375000   3.250000          8  [2 2 2 2 2 2 2 1 2 ..] [2 2 2 2 2 2 2 2 2 ..]     0     0      172        0      172  0.000000
-2.812500   2.250000         16  [3 2 2 2 2 2 2 2 2 ..] [3 2 2 2 2 2 2 2 2 ..]     0     0      365        0      365  0.000000
-2.937500   3.062500         32  [2 2 2 2 3 2 2 2 2 ..] [2 2 2 2 2 2 2 2 2 ..]     0     0      750        0      750  0.000000
-2.453125   1.968750         64  [2 1 7               ] [2 2 2               ]     0     0     1289        0     1289  0.000000
-1.890625   1.328125        128  [2 2 2 2 2 2 2 2 2 ..] [2 2 2 2 2 2 2 2 2 ..]     1     0     2218        0     2218  0.000000
+5.000000   2.000000          2  [4 5                 ] [3 2                 ]     0     0       11        0       11  0.000000
+3.500000   2.000000          4  [2 1 7 2 2 2 2 2 2   ] [1 1 2 2 2 2 2 2 2   ]     0     0       22        0       22  0.000000
+2.625000   1.750000          8  [2 1 7 2 2 2 2 2 2   ] [4 1 5 2 2 2 2 2 2   ]     1     0       44        0       44  0.000000
 
 finished run
-number of examples per pass = 113
+number of examples per pass = 4
 passes used = 2
-weighted example sum = 226.000000
+weighted example sum = 8.000000
 weighted label sum = 0.000000
-average loss = 1.592920
-total feature number = 184238
+average loss = 2.625000
+total feature number = 1910
