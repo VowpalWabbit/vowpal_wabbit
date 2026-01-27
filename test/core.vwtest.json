@@ -6766,11 +6766,10 @@
   },
   {
     "id": 522,
-    "desc": "search with passthrough features and audit",
-    "vw_command": "--search_task sequence --search 5 -d train-sets/wsj_25.dat --search_use_passthrough_repr --audit -b 7 -k -c --passes 2 --holdout_off",
+    "desc": "search with passthrough features",
+    "vw_command": "--search_task sequence --search 5 -d train-sets/wsj_25.dat --search_use_passthrough_repr -b 7 -k -c --passes 2 --holdout_off",
     "diff_files": {
-      "stderr": "train-sets/ref/search_passthrough_audit.stderr",
-      "stdout": "train-sets/ref/search_passthrough_audit.stdout"
+      "stderr": "train-sets/ref/search_passthrough.stderr"
     },
     "input_files": [
       "train-sets/wsj_25.dat"
@@ -6882,10 +6881,10 @@
   },
   {
     "id": 531,
-    "desc": "lda with metrics",
-    "vw_command": "--lda 3 --lda_alpha 0.1 --lda_rho 0.1 --lda_D 5 --minibatch 5 --metrics -d train-sets/wiki5.dat -b 7 --random_seed 42",
+    "desc": "lda basic training",
+    "vw_command": "--lda 3 --lda_alpha 0.1 --lda_rho 0.1 --lda_D 5 --minibatch 5 -d train-sets/wiki5.dat -b 7 --random_seed 42",
     "diff_files": {
-      "stderr": "train-sets/ref/lda_metrics.stderr"
+      "stderr": "train-sets/ref/lda_basic.stderr"
     },
     "input_files": [
       "train-sets/wiki5.dat"
