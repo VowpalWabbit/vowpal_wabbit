@@ -6713,5 +6713,247 @@
     "input_files": [
       "train-sets/search_graph_small.dat"
     ]
+  },
+  {
+    "id": 518,
+    "desc": "cbify with squared loss and raw prediction",
+    "vw_command": "--cbify 3 --loss_option 0 -d train-sets/multiclass -p cbify_squared_raw.predict --raw_predictions cbify_squared.raw -b 7",
+    "diff_files": {
+      "stderr": "train-sets/ref/cbify_squared_raw.stderr",
+      "stdout": "train-sets/ref/cbify_squared_raw.stdout",
+      "cbify_squared_raw.predict": "pred-sets/ref/cbify_squared_raw.predict",
+      "cbify_squared.raw": "pred-sets/ref/cbify_squared.raw"
+    },
+    "input_files": [
+      "train-sets/multiclass"
+    ]
+  },
+  {
+    "id": 519,
+    "desc": "search_graph with interactions",
+    "vw_command": "--search_task graph --search 3 -d train-sets/search_graph_small.dat --search_graph_num_loops 3 -q :: -b 7 --no_stdin",
+    "diff_files": {
+      "stderr": "train-sets/ref/search_graph_interactions.stderr",
+      "stdout": "train-sets/ref/search_graph_interactions.stdout"
+    },
+    "input_files": [
+      "train-sets/search_graph_small.dat"
+    ]
+  },
+  {
+    "id": 520,
+    "desc": "search entity_relation with er_mixed_decoding (search_order 1)",
+    "vw_command": "--search_task entity_relation --search 10 --search_order 1 --constraints -d train-sets/er_24.vw -b 7 -k -c --passes 2 --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/search_er_mixed.stderr",
+      "stdout": "train-sets/ref/search_er_mixed.stdout"
+    },
+    "input_files": [
+      "train-sets/er_24.vw"
+    ]
+  },
+  {
+    "id": 521,
+    "desc": "search entity_relation with entity_first_decoding (search_order 0)",
+    "vw_command": "--search_task entity_relation --search 10 --search_order 0 --constraints -d train-sets/er_24.vw -b 7 -k -c --passes 2 --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/search_er_entity_first.stderr",
+      "stdout": "train-sets/ref/search_er_entity_first.stdout"
+    },
+    "input_files": [
+      "train-sets/er_24.vw"
+    ]
+  },
+  {
+    "id": 522,
+    "desc": "search with passthrough features and audit",
+    "vw_command": "--search_task sequence --search 5 -d train-sets/wsj_25.dat --search_use_passthrough_repr --audit -b 7 -k -c --passes 2 --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/search_passthrough_audit.stderr",
+      "stdout": "train-sets/ref/search_passthrough_audit.stdout"
+    },
+    "input_files": [
+      "train-sets/wsj_25.dat"
+    ]
+  },
+  {
+    "id": 523,
+    "desc": "nn with inpass and multitask",
+    "vw_command": "--nn 3 --inpass --multitask -d train-sets/0002_25.dat -p nn_inpass_multitask.predict -b 7",
+    "diff_files": {
+      "stderr": "train-sets/ref/nn_inpass_multitask.stderr",
+      "stdout": "train-sets/ref/nn_inpass_multitask.stdout",
+      "nn_inpass_multitask.predict": "pred-sets/ref/nn_inpass_multitask.predict"
+    },
+    "input_files": [
+      "train-sets/0002_25.dat"
+    ]
+  },
+  {
+    "id": 524,
+    "desc": "memory_tree with one-against-some (oas)",
+    "vw_command": "--memory_tree 100 --max_number_of_labels 10 --oas -d train-sets/multiclass -p memory_tree_oas.predict -b 7",
+    "diff_files": {
+      "stderr": "train-sets/ref/memory_tree_oas.stderr",
+      "stdout": "train-sets/ref/memory_tree_oas.stdout",
+      "memory_tree_oas.predict": "pred-sets/ref/memory_tree_oas.predict"
+    },
+    "input_files": [
+      "train-sets/multiclass"
+    ]
+  },
+  {
+    "id": 525,
+    "desc": "stagewise_poly with multiple passes (end_pass)",
+    "vw_command": "--stage_poly --sched_exponent 1.0 --batch_sz 100 -d train-sets/0002_25.dat -p stagewise_poly.predict -b 7 -k -c --passes 3 --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/stagewise_poly.stderr",
+      "stdout": "train-sets/ref/stagewise_poly.stdout",
+      "stagewise_poly.predict": "pred-sets/ref/stagewise_poly.predict"
+    },
+    "input_files": [
+      "train-sets/0002_25.dat"
+    ]
+  },
+  {
+    "id": 526,
+    "desc": "generate_interactions with multiple interaction specs",
+    "vw_command": "--interactions ab --interactions bc -d train-sets/multi_namespace.dat -p gen_interactions.predict -b 7",
+    "diff_files": {
+      "stderr": "train-sets/ref/gen_interactions.stderr",
+      "stdout": "train-sets/ref/gen_interactions.stdout",
+      "gen_interactions.predict": "pred-sets/ref/gen_interactions.predict"
+    },
+    "input_files": [
+      "train-sets/multi_namespace.dat"
+    ]
+  },
+  {
+    "id": 527,
+    "desc": "gd_mf with audit",
+    "vw_command": "--rank 5 --audit -d train-sets/ml100k_small_train -p gd_mf_audit.predict -b 7",
+    "diff_files": {
+      "stderr": "train-sets/ref/gd_mf_audit.stderr",
+      "stdout": "train-sets/ref/gd_mf_audit.stdout",
+      "gd_mf_audit.predict": "pred-sets/ref/gd_mf_audit.predict"
+    },
+    "input_files": [
+      "train-sets/ml100k_small_train"
+    ]
+  },
+  {
+    "id": 528,
+    "desc": "eigen_memory_tree with not_self_consistent_rank scorer",
+    "vw_command": "--emt --emt_tree 100 --emt_leaf 10 --emt_scorer not_self_consistent_rank -d train-sets/multiclass -p emt_not_self_consistent.predict -b 7",
+    "diff_files": {
+      "stderr": "train-sets/ref/emt_not_self_consistent.stderr",
+      "stdout": "train-sets/ref/emt_not_self_consistent.stdout",
+      "emt_not_self_consistent.predict": "pred-sets/ref/emt_not_self_consistent.predict"
+    },
+    "input_files": [
+      "train-sets/multiclass"
+    ]
+  },
+  {
+    "id": 529,
+    "desc": "marginal with compete",
+    "vw_command": "--marginal f --compete -d train-sets/0002_25.dat -p marginal_compete.predict",
+    "diff_files": {
+      "stderr": "train-sets/ref/marginal_compete.stderr",
+      "stdout": "train-sets/ref/marginal_compete.stdout",
+      "marginal_compete.predict": "pred-sets/ref/marginal_compete.predict"
+    },
+    "input_files": [
+      "train-sets/0002_25.dat"
+    ]
+  },
+  {
+    "id": 530,
+    "desc": "kernel SVM with subsample",
+    "vw_command": "--ksvm --l2 1 --kernel rbf --bandwidth 1.0 --pool_size 10 --subsample 5 -d train-sets/rcv1_25.dat -p ksvm_subsample.predict -b 18",
+    "diff_files": {
+      "stderr": "train-sets/ref/ksvm_subsample.stderr",
+      "stdout": "train-sets/ref/ksvm_subsample.stdout",
+      "ksvm_subsample.predict": "pred-sets/ref/ksvm_subsample.predict"
+    },
+    "input_files": [
+      "train-sets/rcv1_25.dat"
+    ]
+  },
+  {
+    "id": 531,
+    "desc": "bfgs with L2 regularizer",
+    "vw_command": "--bfgs --l2 0.01 -d train-sets/0001_25.dat -p bfgs_l2_reg.predict -b 7 -k -c --passes 5 --holdout_off --termination 0.001",
+    "diff_files": {
+      "stderr": "train-sets/ref/bfgs_l2_reg.stderr",
+      "stdout": "train-sets/ref/bfgs_l2_reg.stdout",
+      "bfgs_l2_reg.predict": "pred-sets/ref/bfgs_l2_reg.predict"
+    },
+    "input_files": [
+      "train-sets/0001_25.dat"
+    ]
+  },
+  {
+    "id": 532,
+    "desc": "lda with metrics",
+    "vw_command": "--lda 3 --lda_alpha 0.1 --lda_rho 0.1 --lda_D 5 --minibatch 5 --metrics -d train-sets/wiki5.dat -b 7 --random_seed 42",
+    "diff_files": {
+      "stderr": "train-sets/ref/lda_metrics.stderr"
+    },
+    "input_files": [
+      "train-sets/wiki5.dat"
+    ]
+  },
+  {
+    "id": 533,
+    "desc": "csoaa with audit (output_cs_example)",
+    "vw_command": "--csoaa 3 --audit -d train-sets/cs_test.ldf -p csoaa_audit.predict -b 7",
+    "diff_files": {
+      "stderr": "train-sets/ref/csoaa_audit.stderr",
+      "stdout": "train-sets/ref/csoaa_audit.stdout",
+      "csoaa_audit.predict": "pred-sets/ref/csoaa_audit.predict"
+    },
+    "input_files": [
+      "train-sets/cs_test.ldf"
+    ]
+  },
+  {
+    "id": 534,
+    "desc": "regression with hinge loss",
+    "vw_command": "--loss_function hinge -d train-sets/0002_25.dat -p hinge_loss.predict -b 7",
+    "diff_files": {
+      "stderr": "train-sets/ref/hinge_loss.stderr",
+      "stdout": "train-sets/ref/hinge_loss.stdout",
+      "hinge_loss.predict": "pred-sets/ref/hinge_loss.predict"
+    },
+    "input_files": [
+      "train-sets/0002_25.dat"
+    ]
+  },
+  {
+    "id": 535,
+    "desc": "sparse weights with simple regression",
+    "vw_command": "--sparse_weights -d train-sets/0002_25.dat -p sparse_weights_simple.predict -b 7",
+    "diff_files": {
+      "stderr": "train-sets/ref/sparse_weights_simple.stderr",
+      "stdout": "train-sets/ref/sparse_weights_simple.stdout",
+      "sparse_weights_simple.predict": "pred-sets/ref/sparse_weights_simple.predict"
+    },
+    "input_files": [
+      "train-sets/0002_25.dat"
+    ]
+  },
+  {
+    "id": 536,
+    "desc": "cb_explore_adf basic example",
+    "vw_command": "--cb_explore_adf --epsilon 0.2 -d train-sets/cb_test.ldf --noconstant -p cb_explore_adf_example.predict -b 7",
+    "diff_files": {
+      "stderr": "train-sets/ref/cb_explore_adf_example.stderr",
+      "stdout": "train-sets/ref/cb_explore_adf_example.stdout",
+      "cb_explore_adf_example.predict": "pred-sets/ref/cb_explore_adf_example.predict"
+    },
+    "input_files": [
+      "train-sets/cb_test.ldf"
+    ]
   }
 ]

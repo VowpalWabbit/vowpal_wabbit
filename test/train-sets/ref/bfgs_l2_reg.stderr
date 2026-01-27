@@ -1,0 +1,30 @@
+using l2 regularization = 0.01
+predictions = bfgs_l2_reg.predict
+enabling BFGS based optimization **without** curvature calculation
+## avg. loss 	der. mag. 	d. m. cond.	 wolfe1    	wolfe2    	mix fraction	curvature 	dir. magnitude	step size
+creating cache_file = train-sets/0001_25.dat.cache
+Reading datafile = train-sets/0001_25.dat
+num sources = 1
+Num weight bits = 7
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+decay_learning_rate = 1
+Enabled learners: bfgs, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+ 1 0.36000   	0.81901   	9.35892   	          	          	          	491.75426 	633.59308 	0.01903
+ 3 0.27094   	0.06264   	156.59782 	 0.500000  	-0.000000 	          	          	0.01030   	1.00000
+ 4 0.25267   	0.05449   	136.22094 	 0.965745  	0.931491  	          	          	2.49442   	1.00000
+ 5 0.06126   	0.01624   	40.60946  	 0.583832  	0.194881  	          	          	0.51194   	1.00000
+Maximum number of passes reached. To optimize further, increase the number of passes
+
+finished run
+number of examples per pass = 25
+passes used = 5
+weighted example sum = 125.000000
+weighted label sum = 45.000000
+average loss = 0.260861
+best constant = 0.360000
+best constant's loss = 0.230400
+total feature number = 10545

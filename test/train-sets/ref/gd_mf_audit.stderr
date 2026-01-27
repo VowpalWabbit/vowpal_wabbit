@@ -1,0 +1,29 @@
+predictions = gd_mf_audit.predict
+using no cache
+Reading datafile = train-sets/ml100k_small_train
+num sources = 1
+Num weight bits = 7
+learning rate = 10
+initial_t = 1
+power_t = 0.5
+Enabled learners: rank, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+3.501440 3.501440            1            1.0         2.0000         0.1288        3
+2.295684 1.089928            2            2.0         3.0000         1.9560        3
+1.405058 0.514432            4            4.0         4.0000         4.0000        3
+1.203013 1.000967            8            8.0         2.0000         4.0000        3
+1.762697 2.322381           16           16.0         3.0000         3.9268        3
+2.270761 2.778825           32           32.0         2.0000         3.8461        3
+2.101195 1.931629           64           64.0         5.0000         3.4908        3
+1.961127 1.821059          128          128.0         4.0000         5.0000        3
+
+finished run
+number of examples = 237
+weighted example sum = 237.000000
+weighted label sum = 833.000000
+average loss = 2.417102
+best constant = 3.514768
+total feature number = 711

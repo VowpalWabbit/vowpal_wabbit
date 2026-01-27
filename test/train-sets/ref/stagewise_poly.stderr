@@ -1,0 +1,30 @@
+predictions = stagewise_poly.predict
+creating cache_file = train-sets/0002_25.dat.cache
+Reading datafile = train-sets/0002_25.dat
+num sources = 1
+Num weight bits = 7
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+decay_learning_rate = 1
+Enabled learners: gd, stage_poly, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.271591 0.271591            1            1.0         0.5211         0.0000       14
+0.136445 0.001299            2            2.0         0.5353         0.4992       14
+0.106350 0.076255            4            4.0         0.5854         0.5498       14
+0.075255 0.044161            8            8.0         0.5575         0.4384       14
+0.078059 0.080862           16           16.0         0.5878         0.3525       14
+0.044550 0.011042           32           32.0         0.7325         0.5655       14
+0.025523 0.006497           64           64.0         0.3612         0.3143       14
+
+finished run
+number of examples per pass = 25
+passes used = 3
+weighted example sum = 75.000000
+weighted label sum = 38.263568
+average loss = 0.021976
+best constant = 0.510181
+total feature number = 1041
