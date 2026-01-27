@@ -15,7 +15,7 @@ public class VWBenchmarkConfig : ManualConfig
 {
     public VWBenchmarkConfig()
     {
-        AddJob(Job.Default.AsBaseline().WithId(".NET Core 6.0").WithRuntime(CoreRuntime.Core60));
+        AddJob(Job.Default.AsBaseline().WithId(".NET 8.0").WithRuntime(CoreRuntime.Core80));
         AddJob(Job.Default.WithId(".NET Framework 4.8").WithRuntime(ClrRuntime.Net48));
         AddExporter(PlainExporter.Default);
         AddExporter(RPlotExporter.Default);
