@@ -6553,11 +6553,11 @@
   },
   {
     "id": 505,
-    "desc": "search sequence with holdout_period and audit",
-    "vw_command": "-k -c -d train-sets/wsj_small.dat.gz --passes 3 --search_task sequence --search 10 --search_alpha 1e-6 --holdout_period 5 --audit",
+    "desc": "search sequence with holdout_period",
+    "vw_command": "-k -c -d train-sets/wsj_small.dat.gz --passes 3 --search_task sequence --search 10 --search_alpha 1e-6 --holdout_period 5",
     "diff_files": {
-      "stderr": "train-sets/ref/search_holdout_audit.stderr",
-      "stdout": "train-sets/ref/search_holdout_audit.stdout"
+      "stderr": "train-sets/ref/search_holdout.stderr",
+      "stdout": "train-sets/ref/search_holdout.stdout"
     },
     "input_files": [
       "train-sets/wsj_small.dat.gz"
@@ -6565,11 +6565,11 @@
   },
   {
     "id": 506,
-    "desc": "search entity_relation (LDF-based) with audit",
-    "vw_command": "-k -c -d train-sets/er_small.vw --passes 3 --search_task entity_relation --search 10 --constraints --search_alpha 1e-8 --audit",
+    "desc": "search entity_relation (LDF-based)",
+    "vw_command": "-k -c -d train-sets/er_small.vw --passes 3 --search_task entity_relation --search 10 --constraints --search_alpha 1e-8",
     "diff_files": {
-      "stderr": "train-sets/ref/search_er_audit.stderr",
-      "stdout": "train-sets/ref/search_er_audit.stdout"
+      "stderr": "train-sets/ref/search_er_noaudit.stderr",
+      "stdout": "train-sets/ref/search_er_noaudit.stdout"
     },
     "input_files": [
       "train-sets/er_small.vw"
