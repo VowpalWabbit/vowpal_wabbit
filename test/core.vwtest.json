@@ -6882,19 +6882,6 @@
   },
   {
     "id": 531,
-    "desc": "bfgs with L2 regularizer",
-    "vw_command": "--bfgs --l2 0.01 -d train-sets/0001_25.dat -p bfgs_l2_reg.predict -b 7 -k -c --passes 5 --holdout_off --termination 0.001",
-    "diff_files": {
-      "stderr": "train-sets/ref/bfgs_l2_reg.stderr",
-      "stdout": "train-sets/ref/bfgs_l2_reg.stdout",
-      "bfgs_l2_reg.predict": "pred-sets/ref/bfgs_l2_reg.predict"
-    },
-    "input_files": [
-      "train-sets/0001_25.dat"
-    ]
-  },
-  {
-    "id": 532,
     "desc": "lda with metrics",
     "vw_command": "--lda 3 --lda_alpha 0.1 --lda_rho 0.1 --lda_D 5 --minibatch 5 --metrics -d train-sets/wiki5.dat -b 7 --random_seed 42",
     "diff_files": {
@@ -6905,7 +6892,7 @@
     ]
   },
   {
-    "id": 533,
+    "id": 532,
     "desc": "csoaa with audit (output_cs_example)",
     "vw_command": "--csoaa 3 --audit -d train-sets/cs_test.ldf -p csoaa_audit.predict -b 7",
     "diff_files": {
@@ -6918,7 +6905,7 @@
     ]
   },
   {
-    "id": 534,
+    "id": 533,
     "desc": "regression with hinge loss",
     "vw_command": "--loss_function hinge -d train-sets/0002_25.dat -p hinge_loss.predict -b 7",
     "diff_files": {
@@ -6931,7 +6918,7 @@
     ]
   },
   {
-    "id": 535,
+    "id": 534,
     "desc": "sparse weights with simple regression",
     "vw_command": "--sparse_weights -d train-sets/0002_25.dat -p sparse_weights_simple.predict -b 7",
     "diff_files": {
@@ -6944,7 +6931,7 @@
     ]
   },
   {
-    "id": 536,
+    "id": 535,
     "desc": "cb_explore_adf basic example",
     "vw_command": "--cb_explore_adf --epsilon 0.2 -d train-sets/cb_test.ldf --noconstant -p cb_explore_adf_example.predict -b 7",
     "diff_files": {
@@ -6957,7 +6944,7 @@
     ]
   },
   {
-    "id": 537,
+    "id": 536,
     "desc": "bfgs output binary regularizer (train to convergence)",
     "vw_command": "--bfgs --l2 0.1 -d train-sets/0001_25.dat -b 7 -k -c --passes 100 --holdout_off --termination 0.01 --output_feature_regularizer_binary bfgs_regularizer_small.bin --predict_only_model",
     "diff_files": {
@@ -6968,7 +6955,7 @@
     ]
   },
   {
-    "id": 538,
+    "id": 537,
     "desc": "bfgs input regularizer (regularize towards converged weights)",
     "vw_command": "--bfgs --l2 0.1 -d train-sets/0001_25.dat --input_feature_regularizer train-sets/ref/bfgs_regularizer_small.bin -b 7 -k -c --passes 5 --holdout_off --termination 0.01 -p bfgs_input_regularizer.predict --predict_only_model",
     "diff_files": {
@@ -6981,7 +6968,7 @@
     ]
   },
   {
-    "id": 539,
+    "id": 538,
     "desc": "automl with opt_func brentq (covers root_brentq)",
     "vw_command": "--automl 3 --cb_explore_adf --dsjson -d train-sets/decisionservice.json --opt_func brentq --oracle_type rand -p automl_brentq.predict -P 1",
     "diff_files": {
