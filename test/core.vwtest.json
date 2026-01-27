@@ -6790,12 +6790,12 @@
   },
   {
     "id": 524,
-    "desc": "memory_tree with one-against-some (oas)",
-    "vw_command": "--memory_tree 100 --max_number_of_labels 10 --oas -d train-sets/multiclass -p memory_tree_oas.predict -b 7",
+    "desc": "memory_tree with one-against-some (oas) on multiclass",
+    "vw_command": "--memory_tree 100 --max_number_of_labels 10 --oas -d train-sets/multiclass -p memory_tree_oas_multiclass.predict -b 7",
     "diff_files": {
-      "stderr": "train-sets/ref/memory_tree_oas.stderr",
-      "stdout": "train-sets/ref/memory_tree_oas.stdout",
-      "memory_tree_oas.predict": "pred-sets/ref/memory_tree_oas.predict"
+      "stderr": "train-sets/ref/memory_tree_oas_multiclass.stderr",
+      "stdout": "train-sets/ref/memory_tree_oas_multiclass.stdout",
+      "memory_tree_oas_multiclass.predict": "pred-sets/ref/memory_tree_oas_multiclass.predict"
     },
     "input_files": [
       "train-sets/multiclass"
@@ -6855,12 +6855,12 @@
   },
   {
     "id": 529,
-    "desc": "marginal with compete",
-    "vw_command": "--marginal f --compete -d train-sets/0002_25.dat -p marginal_compete.predict",
+    "desc": "marginal with compete on 0002 dataset",
+    "vw_command": "--marginal f --compete -d train-sets/0002_25.dat -p marginal_compete_0002.predict",
     "diff_files": {
-      "stderr": "train-sets/ref/marginal_compete.stderr",
-      "stdout": "train-sets/ref/marginal_compete.stdout",
-      "marginal_compete.predict": "pred-sets/ref/marginal_compete.predict"
+      "stderr": "train-sets/ref/marginal_compete_0002.stderr",
+      "stdout": "train-sets/ref/marginal_compete_0002.stdout",
+      "marginal_compete_0002.predict": "pred-sets/ref/marginal_compete_0002.predict"
     },
     "input_files": [
       "train-sets/0002_25.dat"
