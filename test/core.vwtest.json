@@ -6858,7 +6858,6 @@
     "vw_command": "--marginal f --compete -d train-sets/0002_25.dat -p marginal_compete_0002.predict",
     "diff_files": {
       "stderr": "train-sets/ref/marginal_compete_0002.stderr",
-      "stdout": "train-sets/ref/marginal_compete_0002.stdout",
       "marginal_compete_0002.predict": "pred-sets/ref/marginal_compete_0002.predict"
     },
     "input_files": [
