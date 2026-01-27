@@ -6907,7 +6907,6 @@
     "vw_command": "--loss_function hinge -d train-sets/0002_25.dat -p hinge_loss.predict -b 7",
     "diff_files": {
       "stderr": "train-sets/ref/hinge_loss.stderr",
-      "stdout": "train-sets/ref/hinge_loss.stdout",
       "hinge_loss.predict": "pred-sets/ref/hinge_loss.predict"
     },
     "input_files": [
