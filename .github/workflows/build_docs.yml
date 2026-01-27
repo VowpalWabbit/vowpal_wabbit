@@ -154,9 +154,7 @@ jobs:
           submodules: recursive
           repository: VowpalWabbit/docs
           ref: master
-          # For some reason, path is relative to the directory above GITHUB_WORKSPACE
-          # To ensure the rest of the script makes sense, we need to place this under vowpal_wabbit
-          path: vowpal_wabbit/docs
+          path: docs
       - name: Copy c++ Docs
         shell: bash
         run: |

@@ -388,7 +388,18 @@ jobs:
         shell: bash
         run: |
           cd test/benchmarks/dotnet/BenchmarkDotNet.Artifacts/results
-          cat BenchmarkRun-joined-*.json | jq '.Benchmarks |= map(select(.DisplayInfo | contains(".NET Framework") | not))' > BenchmarkRun.json
+          echo "=== Debug: Total benchmarks in source file ==="
+          cat BenchmarkRun-joined-*.json | jq '.Benchmarks | length'
+          echo "=== Debug: Benchmarks with null Statistics ==="
+          cat BenchmarkRun-joined-*.json | jq '[.Benchmarks[] | select(.Statistics == null)] | length'
+          echo "=== Debug: Benchmarks with null Statistics (showing DisplayInfo) ==="
+          cat BenchmarkRun-joined-*.json | jq '[.Benchmarks[] | select(.Statistics == null) | .DisplayInfo]'
+          echo "=== Debug: .NET Framework benchmarks count ==="
+          cat BenchmarkRun-joined-*.json | jq '[.Benchmarks[] | select(.DisplayInfo | contains(".NET Framework"))] | length'
+          echo "=== Filtering to .NET Core only with valid Statistics ==="
+          # Filter to .NET Core results with valid Statistics (some entries may have null Statistics if skipped)
+          cat BenchmarkRun-joined-*.json | jq '.Benchmarks |= map(select((.DisplayInfo | contains(".NET Framework") | not) and .Statistics != null))' > BenchmarkRun.json
+          echo "Filtered benchmark count: $(jq '.Benchmarks | length' BenchmarkRun.json)"
       - uses: benchmark-action/github-action-benchmark@v1
         with:
           tool: 'benchmarkdotnet'
