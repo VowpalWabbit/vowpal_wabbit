@@ -6955,5 +6955,41 @@
     "input_files": [
       "train-sets/cb_test.ldf"
     ]
+  },
+  {
+    "id": 537,
+    "desc": "bfgs output binary regularizer (train to convergence)",
+    "vw_command": "--bfgs --l2 0.1 -d train-sets/0001_25.dat -b 7 -k -c --passes 100 --holdout_off --termination 0.01 --output_feature_regularizer_binary bfgs_regularizer_small.bin --predict_only_model",
+    "diff_files": {
+      "stderr": "train-sets/ref/bfgs_output_regularizer.stderr"
+    },
+    "input_files": [
+      "train-sets/0001_25.dat"
+    ]
+  },
+  {
+    "id": 538,
+    "desc": "bfgs input regularizer (regularize towards converged weights)",
+    "vw_command": "--bfgs --l2 0.1 -d train-sets/0001_25.dat --input_feature_regularizer train-sets/ref/bfgs_regularizer_small.bin -b 7 -k -c --passes 5 --holdout_off --termination 0.01 -p bfgs_input_regularizer.predict --predict_only_model",
+    "diff_files": {
+      "stderr": "train-sets/ref/bfgs_input_regularizer.stderr",
+      "bfgs_input_regularizer.predict": "pred-sets/ref/bfgs_input_regularizer.predict"
+    },
+    "input_files": [
+      "train-sets/0001_25.dat",
+      "train-sets/ref/bfgs_regularizer_small.bin"
+    ]
+  },
+  {
+    "id": 539,
+    "desc": "automl with opt_func brentq (covers root_brentq)",
+    "vw_command": "--automl 3 --cb_explore_adf --dsjson -d train-sets/decisionservice.json --opt_func brentq --oracle_type rand -p automl_brentq.predict -P 1",
+    "diff_files": {
+      "stderr": "train-sets/ref/automl_brentq.stderr",
+      "automl_brentq.predict": "pred-sets/ref/automl_brentq.predict"
+    },
+    "input_files": [
+      "train-sets/decisionservice.json"
+    ]
   }
 ]

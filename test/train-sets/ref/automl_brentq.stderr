@@ -1,0 +1,24 @@
+predictions = automl_brentq.predict
+using no cache
+Reading datafile = train-sets/decisionservice.json
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+cb_type = mtr
+Enabled learners: gd, scorer-identity, csoaa_ldf-rank, cb_adf, automl, cb_explore_adf_greedy, shared_feature_merger
+Input label = CB
+Output pred = ACTION_PROBS
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+-0.10204 -0.10204            1            1.0      9:-1:0.82         0:0.08    10030
+-0.05102 0.000000            2            2.0       9:0:0.82         7:0.95    10030
+-0.03571 -0.00510            3            3.0      9:-1:0.82         7:0.95    10030
+
+finished run
+number of examples = 3
+weighted example sum = 3.000000
+weighted label sum = 0.000000
+average loss = -0.035714
+total feature number = 30090
