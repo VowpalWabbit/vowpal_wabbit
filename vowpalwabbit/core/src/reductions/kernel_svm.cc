@@ -755,6 +755,10 @@ void learn(svm_params& params, VW::example& ec)
 
 void finish_kernel_svm(svm_params& params)
 {
+  // Free any remaining examples in the pool that haven't been processed
+  for (size_t i = 0; i < params.pool_pos; i++) { delete params.pool[i]; }
+  params.pool_pos = 0;
+
   if (params.all != nullptr)
   {
     *(params.all->output_runtime.trace_message) << "Num support = " << params.model->num_support << endl;
