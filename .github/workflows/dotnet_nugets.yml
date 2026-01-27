@@ -213,16 +213,11 @@ jobs:
       - name: List downloaded packages
         run: ls downloaded_nugets
 
-        # Some of these commands may generate an error message because we are installing packages from local source with remote dependencies
-        # The missing dependencies are installed in later steps
       - name: Install package
         run: |
-          set +e
           cd nuget/dotnet/test
           dotnet add dotnetcore_nuget_test.csproj package VowpalWabbit --version ${{steps.get_version.outputs.version}} --source "${{github.workspace}}/downloaded_nugets" --no-restore
-          dotnet restore dotnetcore_nuget_test.csproj --runtime ${{matrix.config.runtime_id}} --source "${{github.workspace}}/downloaded_nugets"
-          dotnet restore dotnetcore_nuget_test.csproj --runtime ${{matrix.config.runtime_id}}
-          exit 0
+          dotnet restore dotnetcore_nuget_test.csproj --runtime ${{matrix.config.runtime_id}} --source "https://api.nuget.org/v3/index.json" --source "${{github.workspace}}/downloaded_nugets"
       - name: Build and run test
         run: |
           cd nuget/dotnet/test
@@ -276,16 +271,11 @@ jobs:
       - name: List downloaded packages
         run: ls downloaded_nugets
 
-        # Some of these commands may generate an error message because we are installing packages from local source with remote dependencies
-        # The missing dependencies are installed in later steps
       - name: Install package
         run: |
-          set +e
           cd nuget/dotnet/test
           dotnet add dotnetframework_nuget_test.csproj package VowpalWabbit --version ${{steps.get_version.outputs.version}} --source "${{github.workspace}}/downloaded_nugets" --no-restore
-          dotnet restore dotnetframework_nuget_test.csproj --runtime win-x64 --source "${{github.workspace}}/downloaded_nugets"
-          dotnet restore dotnetframework_nuget_test.csproj --runtime win-x64
-          exit 0
+          dotnet restore dotnetframework_nuget_test.csproj --runtime win-x64 --source "https://api.nuget.org/v3/index.json" --source "${{github.workspace}}/downloaded_nugets"
       - name: Build and run test
         run: |
           cd nuget/dotnet/test
@@ -345,17 +335,12 @@ jobs:
       - name: List downloaded packages
         run: ls downloaded_nugets
 
-        # Some of these commands may generate an error message because we are installing packages from local source with remote dependencies
-        # The missing dependencies are installed in later steps
       - name: Install package
         run: |
-          set +e
           cd test/benchmarks/dotnet
           dotnet add dotnet_benchmark.csproj package VowpalWabbit --version ${{steps.get_version.outputs.version}} --source "${{github.workspace}}/downloaded_nugets" --no-restore
           dotnet add dotnet_benchmark.csproj package VowpalWabbit.runtime.win-x64 --version ${{steps.get_version.outputs.version}} --source "${{github.workspace}}/downloaded_nugets" --no-restore
-          dotnet restore dotnet_benchmark.csproj --runtime win-x64 --source "${{github.workspace}}/downloaded_nugets"
-          dotnet restore dotnet_benchmark.csproj --runtime win-x64
-          exit 0
+          dotnet restore dotnet_benchmark.csproj --runtime win-x64 --source "https://api.nuget.org/v3/index.json" --source "${{github.workspace}}/downloaded_nugets"
       - name: Build and run benchmarks
         run: |
           cd test/benchmarks/dotnet
