@@ -143,10 +143,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: cxx_docs
+          path: cxx_docs
       - name: Download Python Docs
         uses: actions/download-artifact@v4
         with:
           name: python_docs
+          path: python_docs
       - uses: actions/checkout@v6
         with:
           submodules: recursive
