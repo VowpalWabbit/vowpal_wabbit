@@ -1,4 +1,4 @@
-predictions = memory_tree_oas.predict
+predictions = memory_tree_oas_multiclass.predict
 memory_tree: max_nodes = 100 max_leaf_examples = 6 alpha = 0.1 oas = 1 online =0 
 using no cache
 Reading datafile = train-sets/multiclass

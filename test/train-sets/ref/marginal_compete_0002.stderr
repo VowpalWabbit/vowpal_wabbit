@@ -1,4 +1,4 @@
-predictions = marginal_compete.predict
+predictions = marginal_compete_0002.predict
 using no cache
 Reading datafile = train-sets/0002_25.dat
 num sources = 1
