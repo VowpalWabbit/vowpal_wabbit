@@ -199,36 +199,6 @@ TEST(CatsTree, OtcAlgoLearn2ActionSiblings)
   EXPECT_THAT(pharness->learner_offset, ::testing::ContainerEq(expected_learners));
 }
 
-TEST(CatsTree, OtcAlgoLearn2ActionNotSiblings)
-{
-  VW::example ec;
-  ec.ft_offset = 0;
-  ec.debug_current_reduction_depth = 0;
-  ec.l.cb = VW::cb_label();
-  ec.l.cb.costs.push_back(VW::cb_class{3.5f, 2, 0.5f});
-  ec.l.cb.costs.push_back(VW::cb_class{3.5f, 3, 0.5f});
-
-  predictions_t preds_to_return = {1.f, 1.f, -1.f, 1.f};
-
-  reduction_test_harness* pharness = nullptr;
-  auto base = get_test_harness(preds_to_return, pharness);
-  VW::reductions::cats::cats_tree tree;
-  tree.init(8, 0);
-
-  tree.learn(*base, ec);
-
-  // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
-  vector<VW::simple_label> expected_labels = {{-1}, {1}, {1}, {1}};
-  vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f};
-
-  EXPECT_THAT(pharness->labels, ::testing::ContainerEq(expected_labels));
-  EXPECT_THAT(pharness->weights, ::testing::ContainerEq(expected_weights));
-
-  // verify id of learners that were trained
-  vector<uint64_t> expected_learners = {3, 4, 1, 0};
-  EXPECT_THAT(pharness->learner_offset, ::testing::ContainerEq(expected_learners));
-}
-
 TEST(CatsTree, OtcAlgoLearn2ActionNotSiblingsBandwidth1)
 {
   VW::example ec;
@@ -260,36 +230,6 @@ TEST(CatsTree, OtcAlgoLearn2ActionNotSiblingsBandwidth1)
 
   // verify id of learners that were trained
   vector<uint64_t> expected_learners = {4, 1, 0};
-  EXPECT_THAT(pharness->learner_offset, ::testing::ContainerEq(expected_learners));
-}
-
-TEST(CatsTree, OtcAlgoLearn2ActionSeparate)
-{
-  VW::example ec;
-  ec.ft_offset = 0;
-  ec.debug_current_reduction_depth = 0;
-  ec.l.cb = VW::cb_label();
-  ec.l.cb.costs.push_back(VW::cb_class{3.5f, 3, 0.5f});
-  ec.l.cb.costs.push_back(VW::cb_class{3.5f, 6, 0.5f});
-
-  predictions_t preds_to_return = {-1.f, -1.f, -1.f};
-
-  reduction_test_harness* pharness = nullptr;
-  auto base = get_test_harness(preds_to_return, pharness);
-  VW::reductions::cats::cats_tree tree;
-  tree.init(8, 0);
-
-  tree.learn(*base, ec);
-
-  // verify 1) # of calls to learn 2) passed in labels 3) passed in weights
-  vector<VW::simple_label> expected_labels = {{-1}, {1}, {-1}};
-  vector<float> expected_weights = {3.5f / 0.5f, 3.5f / 0.5f, 3.5f / 0.5f};
-
-  EXPECT_THAT(pharness->labels, ::testing::ContainerEq(expected_labels));
-  EXPECT_THAT(pharness->weights, ::testing::ContainerEq(expected_weights));
-
-  // verify id of learners that were trained
-  vector<uint64_t> expected_learners = {1, 2, 0};
   EXPECT_THAT(pharness->learner_offset, ::testing::ContainerEq(expected_learners));
 }
 

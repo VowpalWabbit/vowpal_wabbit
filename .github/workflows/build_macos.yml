@@ -38,8 +38,8 @@ jobs:
       - name: Test
         run: |
           # Run integration tests
-          # Skip test 111 and cbzo tests (282, 284, 285, 286) on all macos-14 builds due to floating-point precision issues
-          SKIP_TESTS="--skip_test 111 282 284 285 286"
+          # Skip test 109 and cbzo tests (280, 282, 283, 284) on all macos-14 builds due to floating-point precision issues
+          SKIP_TESTS="--skip_test 109 280 282 283 284"
           python3 test/run_tests.py --fuzzy_compare --exit_first_fail --epsilon 0.001 --ignore_dirty $SKIP_TESTS
           python3 test/run_tests.py --fuzzy_compare --exit_first_fail --epsilon 0.001 --ignore_dirty --extra_options=--onethread $SKIP_TESTS
           python3 test/run_tests.py --ignore_dirty --test_spec test/slow.vwtest.json --timeout 180

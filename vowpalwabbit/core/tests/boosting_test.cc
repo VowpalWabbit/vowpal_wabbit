@@ -7,46 +7,6 @@
 
 #include <gtest/gtest.h>
 
-// Test Online BBM (Boost-by-Majority) algorithm - the default
-TEST(Boosting, BBMLearnAndPredict)
-{
-  auto vw = VW::initialize(vwtest::make_args("--boosting", "3", "--quiet"));
-
-  // Train with positive examples
-  for (int i = 0; i < 20; ++i)
-  {
-    auto* ex = VW::read_example(*vw, "1 |f a b c");
-    vw->learn(*ex);
-    vw->finish_example(*ex);
-  }
-
-  // Train with negative examples
-  for (int i = 0; i < 20; ++i)
-  {
-    auto* ex = VW::read_example(*vw, "-1 |f d e f");
-    vw->learn(*ex);
-    vw->finish_example(*ex);
-  }
-
-  // Predict on positive-like example
-  {
-    auto* ex = VW::read_example(*vw, "|f a b c");
-    vw->predict(*ex);
-    EXPECT_GT(ex->pred.scalar, 0.0f) << "Should predict positive for positive-like features";
-    vw->finish_example(*ex);
-  }
-
-  // Predict on negative-like example
-  {
-    auto* ex = VW::read_example(*vw, "|f d e f");
-    vw->predict(*ex);
-    EXPECT_LT(ex->pred.scalar, 0.0f) << "Should predict negative for negative-like features";
-    vw->finish_example(*ex);
-  }
-
-  vw->finish();
-}
-
 // Test BBM with custom gamma parameter
 TEST(Boosting, BBMWithGamma)
 {

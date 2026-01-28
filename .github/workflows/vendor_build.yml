@@ -131,5 +131,5 @@ jobs:
         run: ctest --output-on-failure --no-tests=error --label-regex VWTestList --parallel 2
       - name: Test
         run: |
-          # Skip cbzo tests (282, 284, 285, 286) and test 111 on macOS-14 due to floating-point precision issues
-          python3 test/run_tests.py -f --clean_dirty -E 0.001 --skip_test 111 282 284 285 286
+          # Skip cbzo tests (280, 282, 283, 284) and test 109 on macOS-14 due to floating-point precision issues
+          python3 test/run_tests.py -f --clean_dirty -E 0.001 --skip_test 109 280 282 283 284
