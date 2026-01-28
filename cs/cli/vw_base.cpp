@@ -139,12 +139,6 @@ void VowpalWabbitBase::InternalDispose()
 
       m_examples = nullptr;
     }
-
-    if (m_model != nullptr)
-    { // this object doesn't own the VW instance
-      m_model->DecrementReference();
-      m_model = nullptr;
-    }
   }
 
   try
@@ -161,6 +155,15 @@ void VowpalWabbitBase::InternalDispose()
     // don't add code here as in the case of VW::finish throws an exception it won't be called
   }
   CATCHRETHROW
+
+  // Release the model reference AFTER finishing this workspace. The seeded workspace
+  // shares weights and shared_data with the model via shallow_copy/shared_ptr.
+  // If we decrement before finishing, the model may be destroyed while this workspace
+  // still needs the shared resources, causing an AccessViolationException.
+  if (m_model != nullptr)
+  { m_model->DecrementReference();
+    m_model = nullptr;
+  }
 }
 
 VowpalWabbitSettings^ VowpalWabbitBase::Settings::get()
