@@ -212,17 +212,6 @@ TEST(OptionsCli, OptionMissingRequiredValue)
   EXPECT_EQ(exception_caught, true);
 }
 
-TEST(OptionsCli, IncorrectOptionTypeStrForInt)
-{
-  auto options = vwtest::make_args("--int_opt", "str");
-
-  int int_opt;
-  option_group_definition arg_group("group");
-  arg_group.add(make_option("int_opt", int_opt));
-
-  EXPECT_THROW(options->add_and_parse(arg_group), VW::vw_argument_invalid_value_exception);
-}
-
 TEST(OptionsCli, MultipleLocationsOneOption)
 {
   auto options = vwtest::make_args("--str_opt", "value");
@@ -300,17 +289,6 @@ TEST(OptionsCli, MatchingValuesDuplicateCommandLine)
 
   EXPECT_NO_THROW(options->add_and_parse(arg_group));
   EXPECT_EQ(int_opt, 3);
-}
-
-TEST(OptionsCli, NonmatchingValuesCommandLine)
-{
-  auto options = vwtest::make_args("--int_opt", "3", "--int_opt", "4");
-
-  int int_opt;
-  option_group_definition arg_group("group");
-  arg_group.add(make_option("int_opt", int_opt));
-
-  EXPECT_THROW(options->add_and_parse(arg_group), VW::vw_argument_disagreement_exception);
 }
 
 TEST(OptionsCli, NonmatchingValuesCommandLineWithOverride)

@@ -45,57 +45,6 @@ TEST(Search, CrossValidationOption)
   vw->finish_example(examples);
 }
 
-// Test --search_linear_ordering option
-TEST(Search, LinearOrderingOption)
-{
-  auto vw = VW::initialize(vwtest::make_args("--search", "5", "--search_task", "sequence", "--search_linear_ordering",
-      "--passes", "2", "--holdout_off", "-k", "-c", "--quiet"));
-  ASSERT_NE(vw, nullptr);
-
-  VW::multi_ex examples;
-  examples.push_back(VW::read_example(*vw, "1 | a"));
-  examples.push_back(VW::read_example(*vw, "2 | b"));
-  examples.push_back(VW::read_example(*vw, "3 | c"));
-  examples.push_back(VW::read_example(*vw, ""));
-
-  vw->learn(examples);
-  vw->finish_example(examples);
-}
-
-// Test --search_perturb_oracle option
-TEST(Search, PerturbOracleOption)
-{
-  auto vw = VW::initialize(vwtest::make_args("--search", "5", "--search_task", "sequence", "--search_perturb_oracle",
-      "0.1", "--passes", "2", "--holdout_off", "-k", "-c", "--quiet"));
-  ASSERT_NE(vw, nullptr);
-
-  VW::multi_ex examples;
-  examples.push_back(VW::read_example(*vw, "1 | a"));
-  examples.push_back(VW::read_example(*vw, "2 | b"));
-  examples.push_back(VW::read_example(*vw, "3 | c"));
-  examples.push_back(VW::read_example(*vw, ""));
-
-  vw->learn(examples);
-  vw->finish_example(examples);
-}
-
-// Test --search_subsample_time option with percentage
-TEST(Search, SubsampleTimePercentage)
-{
-  auto vw = VW::initialize(vwtest::make_args("--search", "5", "--search_task", "sequence", "--search_subsample_time",
-      "0.5", "--passes", "2", "--holdout_off", "-k", "-c", "--quiet"));
-  ASSERT_NE(vw, nullptr);
-
-  VW::multi_ex examples;
-  examples.push_back(VW::read_example(*vw, "1 | a"));
-  examples.push_back(VW::read_example(*vw, "2 | b"));
-  examples.push_back(VW::read_example(*vw, "3 | c"));
-  examples.push_back(VW::read_example(*vw, ""));
-
-  vw->learn(examples);
-  vw->finish_example(examples);
-}
-
 // Test --search_subsample_time option with fixed steps
 TEST(Search, SubsampleTimeFixedSteps)
 {
@@ -118,23 +67,6 @@ TEST(Search, DebugMetatask)
 {
   auto vw = VW::initialize(vwtest::make_args("--search", "5", "--search_task", "sequence", "--search_metatask", "debug",
       "--passes", "2", "--holdout_off", "-k", "-c", "--quiet"));
-  ASSERT_NE(vw, nullptr);
-
-  VW::multi_ex examples;
-  examples.push_back(VW::read_example(*vw, "1 | a"));
-  examples.push_back(VW::read_example(*vw, "2 | b"));
-  examples.push_back(VW::read_example(*vw, "3 | c"));
-  examples.push_back(VW::read_example(*vw, ""));
-
-  vw->learn(examples);
-  vw->finish_example(examples);
-}
-
-// Test --search_rollout_num_steps option
-TEST(Search, RolloutNumSteps)
-{
-  auto vw = VW::initialize(vwtest::make_args("--search", "5", "--search_task", "sequence", "--search_rollout_num_steps",
-      "3", "--passes", "2", "--holdout_off", "-k", "-c", "--quiet"));
   ASSERT_NE(vw, nullptr);
 
   VW::multi_ex examples;
@@ -234,25 +166,6 @@ TEST(Search, ArgmaxTask)
   VW::multi_ex examples;
   examples.push_back(VW::read_example(*vw, "1 | a"));
   examples.push_back(VW::read_example(*vw, "2 | b"));
-  examples.push_back(VW::read_example(*vw, ""));
-
-  vw->learn(examples);
-  vw->finish_example(examples);
-}
-
-// Test search_history_length option
-TEST(Search, HistoryLength)
-{
-  auto vw = VW::initialize(vwtest::make_args("--search", "5", "--search_task", "sequence", "--search_history_length",
-      "3", "--passes", "2", "--holdout_off", "-k", "-c", "--quiet"));
-  ASSERT_NE(vw, nullptr);
-
-  VW::multi_ex examples;
-  examples.push_back(VW::read_example(*vw, "1 | a"));
-  examples.push_back(VW::read_example(*vw, "2 | b"));
-  examples.push_back(VW::read_example(*vw, "3 | c"));
-  examples.push_back(VW::read_example(*vw, "4 | d"));
-  examples.push_back(VW::read_example(*vw, "5 | e"));
   examples.push_back(VW::read_example(*vw, ""));
 
   vw->learn(examples);

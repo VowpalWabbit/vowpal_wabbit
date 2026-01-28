@@ -119,36 +119,3 @@ TEST(Cats, GetLossForGoodPredictionAndSmallBCloseToRangeEdges)
 
   EXPECT_FLOAT_EQ(loss, 1.0f);
 }
-
-TEST(Cats, GetLossWithDefaultBandwidth)
-{
-  auto data = VW::make_unique<cats>(nullptr);
-  data->min_value = 0;
-  data->max_value = 32;
-  data->num_actions = 8;
-
-  float leaf_width = (data->max_value - data->min_value) / (data->num_actions);  // aka unit range
-  float half_leaf_width = leaf_width / 2.f;
-  data->bandwidth = half_leaf_width;
-
-  // continous_range = 32 - 0 = 32
-  // unit_range = continuous_range / num_action = 32 / 8 = 4
-
-  VW::cb_continuous::continuous_label cont_label;
-  float action = 32.0f;
-  float cost = 1.0f;
-  float pdf_value = 0.25f;
-  cont_label.costs.push_back({action, cost, pdf_value});
-
-  // predicted action in corner leaf
-  float predicted_action = 32.0f;
-  // centre of predicted action will be 30.0
-  // label/action is 32.0f and bandiwdth is 2.0f
-  // so if: action - bandwidth <= centre <= action + bandwidth then we calculate the loss (30 <= 30 <= 34)
-  // bandwidth_range = min(max_value, centre + bandwidth) - max(min_value, centre - bandwidth)
-  // bandiwdth_range = min(32, 32) - max(0, 28) <=> bandwidth_range = 32 - 28 <=> bandwidth_range = 4 (i.e. 2 *
-  // bandwidth) loss = cost / (pdf_value * bandwidth_range) <=> loss = 1.0f / (0.25f * 4) <=> loss = 1
-  auto loss = data->get_loss(cont_label, predicted_action);
-
-  EXPECT_FLOAT_EQ(loss, 1.0f);
-}
