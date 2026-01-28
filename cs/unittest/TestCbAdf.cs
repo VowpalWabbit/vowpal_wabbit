@@ -112,9 +112,6 @@ namespace cs_unittest
             }
         }
 
-        // Test is flaky creating CI noise. Re-enable when fixed.
-        // https://github.com/VowpalWabbit/vowpal_wabbit/issues/3782
-        [Ignore]
         [TestMethod]
         [TestCategory("Vowpal Wabbit")]
         public void TestSharedModel()

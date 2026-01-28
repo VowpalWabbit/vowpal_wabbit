@@ -205,12 +205,6 @@ namespace VW {
     [ReliabilityContract(Consistency.WillNotCorruptState, Cer.MayFail)]
     private void OperatorDelete(IntPtr workspace)
     {
-      if (this.seedModel != null &&
-          this.seedModelNeedsRelease)
-      {
-        this.seedModel.DangerousRelease();
-      }
-
       using (ApiStatus status = new ApiStatus())
       {
         // It is so messed up that we can throw while shutting down.
@@ -218,6 +212,17 @@ namespace VW {
         {
           throw new VWException(status);
         }
+      }
+
+      // Release the seed model reference AFTER deleting this workspace. The seeded
+      // workspace shares weights and shared_data with the seed model via shallow_copy/
+      // shared_ptr. If we release before deleting, the seed model may be destroyed
+      // while this workspace still needs the shared resources, causing an
+      // AccessViolationException.
+      if (this.seedModel != null &&
+          this.seedModelNeedsRelease)
+      {
+        this.seedModel.DangerousRelease();
       }
     }
 
