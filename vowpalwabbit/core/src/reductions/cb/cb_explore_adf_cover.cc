@@ -282,6 +282,13 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_cover_setup
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
 
+  if (options.was_supplied("large_action_space"))
+  {
+    THROW("--cover and --large_action_space cannot be used together. "
+          "The cover algorithm assumes contiguous action indices which is incompatible "
+          "with the action filtering performed by large_action_space.");
+  }
+
   auto cb_type = VW::cb_type_from_string(type_string);
   switch (cb_type)
   {
