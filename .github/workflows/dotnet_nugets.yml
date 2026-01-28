@@ -346,12 +346,12 @@ jobs:
           cd test/benchmarks/dotnet
 
           # Build for both .NET Core and Framework
-          dotnet build dotnet_benchmark.csproj --framework net6.0 --runtime win-x64 --configuration Release --no-restore --self-contained
+          dotnet build dotnet_benchmark.csproj --framework net8.0 --runtime win-x64 --configuration Release --no-restore --self-contained
           dotnet build dotnet_benchmark.csproj --framework net4.8 --runtime win-x64 --configuration Release --no-restore --self-contained
 
           # Run with .NET Core as host process
           # Arguments after "--" are for BenchmarkDotNet
-          dotnet run --project dotnet_benchmark.csproj --framework net6.0 --runtime win-x64 --configuration Release --no-build -- --filter '*' --join
+          dotnet run --project dotnet_benchmark.csproj --framework net8.0 --runtime win-x64 --configuration Release --no-build -- --filter '*' --join
 
       # Generate output for Github workflow artifacts
       - name: Print benchmark results
