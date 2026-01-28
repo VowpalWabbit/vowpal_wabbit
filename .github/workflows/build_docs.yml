@@ -181,8 +181,10 @@ jobs:
           git config --local user.name "WoboWabbit"
           git commit -m "Update documentation for commit: VowpalWabbit/vowpal_wabbit@${{ github.sha }}"
       - name: Push changes
-        uses: ad-m/github-push-action@master
-        with:
-          repository: VowpalWabbit/docs
-          directory: docs
-          github_token: ${{ secrets.DOCS_DEPLOY_TOKEN }}
+        shell: bash
+        env:
+          DOCS_DEPLOY_TOKEN: ${{ secrets.DOCS_DEPLOY_TOKEN }}
+        run: |
+          cd docs
+          git remote set-url origin "https://x-access-token:${DOCS_DEPLOY_TOKEN}@github.com/VowpalWabbit/docs.git"
+          git push origin master
