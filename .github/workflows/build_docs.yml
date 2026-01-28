@@ -185,4 +185,4 @@ jobs:
         with:
           repository: VowpalWabbit/docs
           directory: docs
-          github_token: ${{ secrets.automation_github_token }}
+          github_token: ${{ secrets.DOCS_DEPLOY_TOKEN }}
