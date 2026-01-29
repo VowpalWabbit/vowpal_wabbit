@@ -153,6 +153,8 @@ def load_model(
     keep_arg_commands = [
         "--dictionary_path",
         "--loss_function",
+        "--quantile_tau",
+        "--expectile_q",
     ]
     for k in keep_arg_commands:
         cmd_split = command.split(" ")
