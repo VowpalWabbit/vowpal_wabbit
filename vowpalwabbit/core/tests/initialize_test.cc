@@ -254,7 +254,8 @@ TEST(Initialize, ConflictingOptionsThrows)
 // Test VW::initialize with split_command_line
 TEST(Initialize, WithSplitCommandLine)
 {
-  auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(VW::split_command_line("--quiet")));
+  auto vw = VW::initialize(
+      VW::make_unique<VW::config::options_cli>(VW::split_command_line(std::string("--quiet"))));
   ASSERT_NE(vw, nullptr);
   EXPECT_NE(vw->l, nullptr);
 }
@@ -262,8 +263,8 @@ TEST(Initialize, WithSplitCommandLine)
 // Test VW::initialize with split_command_line and multiple args
 TEST(Initialize, WithSplitCommandLineMultipleArgs)
 {
-  auto vw =
-      VW::initialize(VW::make_unique<VW::config::options_cli>(VW::split_command_line("--quiet --cb_explore_adf")));
+  auto vw = VW::initialize(
+      VW::make_unique<VW::config::options_cli>(VW::split_command_line(std::string("--quiet --cb_explore_adf"))));
   ASSERT_NE(vw, nullptr);
 }
 
