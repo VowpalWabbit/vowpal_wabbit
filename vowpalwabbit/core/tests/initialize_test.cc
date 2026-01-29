@@ -250,34 +250,24 @@ TEST(Initialize, ConflictingOptionsThrows)
   EXPECT_THROW(VW::initialize(std::move(options)), VW::vw_exception);
 }
 
-// Test VW::initialize with string overload
-TEST(Initialize, WithString)
+// Test VW::initialize with split_command_line
+TEST(Initialize, WithSplitCommandLine)
 {
-  auto vw = VW::initialize("--quiet");
+  auto vw = VW::initialize(VW::make_unique<VW::config::options_cli>(VW::split_command_line("--quiet")));
   ASSERT_NE(vw, nullptr);
   EXPECT_NE(vw->l, nullptr);
 }
 
-// Test VW::initialize_escaped
-TEST(Initialize, EscapedInit)
+// Test VW::initialize with split_command_line and multiple args
+TEST(Initialize, WithSplitCommandLineMultipleArgs)
 {
-  auto vw = VW::initialize_escaped("--quiet");
-  ASSERT_NE(vw, nullptr);
-  EXPECT_NE(vw->l, nullptr);
-}
-
-// Test VW::initialize_escaped with spaces in arguments
-TEST(Initialize, EscapedInitWithSpaces)
-{
-  auto vw = VW::initialize_escaped("--quiet --cb_explore_adf");
+  auto vw =
+      VW::initialize(VW::make_unique<VW::config::options_cli>(VW::split_command_line("--quiet --cb_explore_adf")));
   ASSERT_NE(vw, nullptr);
 }
 
 
-
-
-
-// Test VW::finish with workspace
+// Test workspace finish via destructor after learn
 TEST(Finish, BasicFinish)
 {
   auto vw = VW::initialize(vwtest::make_args("--quiet"));
@@ -286,7 +276,6 @@ TEST(Finish, BasicFinish)
   vw->learn(*ex);
   vw->finish_example(*ex);
 
-  // finish should not throw
-  VW::finish(*vw, false);
+  // Workspace cleanup happens via unique_ptr destructor — should not throw
 }
 

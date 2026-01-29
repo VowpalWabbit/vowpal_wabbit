@@ -197,7 +197,6 @@ TEST(LossFunctions, HingeLossTest)
   sd.max_label = 1.0f;
 
   constexpr float update_scale = 0.1f;
-  constexpr float pred_per_update = 1.0f;
 
   EXPECT_EQ("hinge", loss->get_type());
 
