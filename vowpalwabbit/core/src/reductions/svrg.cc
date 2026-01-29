@@ -128,9 +128,12 @@ void learn(svrg& s, VW::example& ec)
 
   if (pass % (s.stage_size + 1) == 0)  // Compute exact gradient
   {
-    if (s.prev_pass != pass && !s.all->output_config.quiet)
+    if (s.prev_pass != pass)
     {
-      *(s.all->output_runtime.trace_message) << "svrg pass " << pass << ": committing stable point" << std::endl;
+      if (!s.all->output_config.quiet)
+      {
+        *(s.all->output_runtime.trace_message) << "svrg pass " << pass << ": committing stable point" << std::endl;
+      }
       for (uint32_t j = 0; j < VW::num_weights(*s.all); j++)
       {
         float w = VW::get_weight(*s.all, j, W_INNER);
@@ -138,7 +141,10 @@ void learn(svrg& s, VW::example& ec)
         VW::set_weight(*s.all, j, W_STABLEGRAD, 0.f);
       }
       s.stable_grad_count = 0;
-      *(s.all->output_runtime.trace_message) << "svrg pass " << pass << ": computing exact gradient" << std::endl;
+      if (!s.all->output_config.quiet)
+      {
+        *(s.all->output_runtime.trace_message) << "svrg pass " << pass << ": computing exact gradient" << std::endl;
+      }
     }
     update_stable(s, ec);
     s.stable_grad_count++;
