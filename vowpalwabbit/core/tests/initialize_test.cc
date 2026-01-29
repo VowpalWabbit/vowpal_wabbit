@@ -4,6 +4,7 @@
 
 #include "vw/config/options_cli.h"
 #include "vw/core/multi_ex.h"
+#include "vw/core/parse_primitives.h"
 #include "vw/core/vw.h"
 #include "vw/io/io_adapter.h"
 #include "vw/io/logger.h"
