@@ -488,6 +488,165 @@ TEST(Vwdll, InitializeWithModelEscaped)
   VW_Finish(handle1);
 }
 
+// Test tag accessor functions
+TEST(Vwdll, TagAccessors)
+{
+  VW_HANDLE handle = VW_InitializeA("--quiet");
+
+  // Parse example with a tag (tag comes after label, before pipe)
+  VW_EXAMPLE ex = VW_ReadExampleA(handle, "1 my_tag| feature1 feature2");
+
+  size_t tag_len = VW_GetTagLength(ex);
+  EXPECT_GT(tag_len, 0u);
+
+  const char* tag = VW_GetTag(ex);
+  EXPECT_NE(tag, nullptr);
+  EXPECT_EQ(std::string(tag, tag_len), "my_tag");
+
+  VW_FinishExample(handle, ex);
+
+  // Example without a tag
+  VW_EXAMPLE ex2 = VW_ReadExampleA(handle, "1 | feature1");
+  size_t tag_len2 = VW_GetTagLength(ex2);
+  EXPECT_EQ(tag_len2, 0u);
+  VW_FinishExample(handle, ex2);
+
+  VW_Finish(handle);
+}
+
+// Test ClearCapturedAuditData
+TEST(Vwdll, ClearCapturedAuditData)
+{
+  VW_HANDLE handle = VW_InitializeA("--noconstant --quiet --audit");
+  VW_CaptureAuditData(handle);
+
+  VW_EXAMPLE ex = VW_ReadExampleA(handle, "1 | test");
+  VW_Learn(handle, ex);
+  VW_FinishExample(handle, ex);
+
+  // Audit buffer should have data
+  size_t audit_size1 = 0;
+  char* audit_data1 = VW_GetAuditDataA(handle, &audit_size1);
+  EXPECT_GT(audit_size1, 0u);
+  VW_FreeAuditDataA(handle, audit_data1);
+
+  // Clear the audit buffer
+  VW_ClearCapturedAuditData(handle);
+
+  // Audit buffer should now be empty
+  size_t audit_size2 = 0;
+  char* audit_data2 = VW_GetAuditDataA(handle, &audit_size2);
+  EXPECT_EQ(audit_size2, 0u);
+  VW_FreeAuditDataA(handle, audit_data2);
+
+  VW_Finish(handle);
+}
+
+// Test SaveModel (with a temp file)
+TEST(Vwdll, SaveModel)
+{
+  std::string model_path = "vwdll_test_model.bin";
+  std::string args = "--quiet -f " + model_path;
+  VW_HANDLE handle = VW_InitializeA(args.c_str());
+
+  VW_EXAMPLE ex = VW_ReadExampleA(handle, "1 | feature1 feature2");
+  VW_Learn(handle, ex);
+  VW_FinishExample(handle, ex);
+
+  // Save model
+  VW_SaveModel(handle);
+
+  VW_Finish(handle);
+
+  // Verify model file was created by loading it
+  std::string load_args = "--quiet -i " + model_path + " -t";
+  VW_HANDLE handle2 = VW_InitializeA(load_args.c_str());
+  EXPECT_NE(handle2, nullptr);
+
+  VW_EXAMPLE pred_ex = VW_ReadExampleA(handle2, "| feature1 feature2");
+  float pred = VW_Predict(handle2, pred_ex);
+  EXPECT_FALSE(std::isnan(pred));
+  VW_FinishExample(handle2, pred_ex);
+
+  VW_Finish(handle2);
+
+  // Clean up temp model file
+  std::remove(model_path.c_str());
+}
+
+// Test SaveModel with empty model name (should not crash)
+TEST(Vwdll, SaveModelNoFile)
+{
+  VW_HANDLE handle = VW_InitializeA("--quiet");
+
+  VW_EXAMPLE ex = VW_ReadExampleA(handle, "1 | feature");
+  VW_Learn(handle, ex);
+  VW_FinishExample(handle, ex);
+
+  // SaveModel with no -f specified should be a no-op
+  VW_SaveModel(handle);
+
+  VW_Finish(handle);
+}
+
+// Test GetTopicPrediction with LDA
+TEST(Vwdll, GetTopicPrediction)
+{
+  VW_HANDLE handle = VW_InitializeA("--lda 3 --quiet --min_prediction 0 --max_prediction 1");
+
+  VW_EXAMPLE ex = VW_ReadExampleA(handle, "| word1 word2 word3");
+  VW_Learn(handle, ex);
+
+  float topic0 = VW_GetTopicPrediction(ex, 0);
+  float topic1 = VW_GetTopicPrediction(ex, 1);
+  float topic2 = VW_GetTopicPrediction(ex, 2);
+
+  EXPECT_FALSE(std::isnan(topic0));
+  EXPECT_FALSE(std::isnan(topic1));
+  EXPECT_FALSE(std::isnan(topic2));
+
+  VW_FinishExample(handle, ex);
+  VW_Finish(handle);
+}
+
+// Test GetMultilabelPredictions
+TEST(Vwdll, GetMultilabelPredictions)
+{
+  VW_HANDLE handle = VW_InitializeA("--multilabel_oaa 3 --quiet");
+
+  VW_EXAMPLE ex = VW_ReadExampleA(handle, "1,2 | feature1 feature2");
+  VW_Learn(handle, ex);
+
+  size_t plen = 99;
+  void* preds = VW_GetMultilabelPredictions(ex, &plen);
+  // The function should set plen (may be 0 if no predictions yet)
+  // preds may be nullptr if the prediction vector is empty
+  if (plen > 0) { EXPECT_NE(preds, nullptr); }
+  (void)preds;
+
+  VW_FinishExample(handle, ex);
+  VW_Finish(handle);
+}
+
+// Test GetFeature accessor
+TEST(Vwdll, GetFeatureAccessor)
+{
+  auto fs = VW_InitializeFeatureSpaces(1);
+  auto space = VW_GetFeatureSpace(fs, 0);
+  VW_InitFeatures(space, 2);
+
+  VW_SetFeature(space, 0, 12345, 1.5f);
+  VW_SetFeature(space, 1, 67890, 2.5f);
+
+  VW_FEATURE f0 = VW_GetFeature(space, 0);
+  VW_FEATURE f1 = VW_GetFeature(space, 1);
+
+  EXPECT_NE(f0, nullptr);
+  EXPECT_NE(f1, nullptr);
+
+  VW_ReleaseFeatureSpace(fs, 1);
+}
+
 TEST(Vwdll, Utf16ToUtf8Conversion)
 {
   // Test 1: ASCII characters (1-byte UTF-8)
@@ -605,4 +764,51 @@ TEST(Vwdll, Utf16ToUtf8Conversion)
     std::string result = utf16_to_utf8(input);
     EXPECT_EQ(result, expected);
   }
+}
+
+// Test VW_GetCostSensitivePrediction
+TEST(Vwdll, GetCostSensitivePrediction)
+{
+  VW_HANDLE handle = VW_InitializeA("--csoaa 3 --quiet");
+  VW_EXAMPLE ex = VW_ReadExampleA(handle, "1:0 2:1 3:1 | feature1 feature2");
+  VW_Learn(handle, ex);
+
+  float pred = VW_GetCostSensitivePrediction(ex);
+  EXPECT_GE(pred, 1.0f);
+  EXPECT_LE(pred, 3.0f);
+
+  VW_FinishExample(handle, ex);
+  VW_Finish(handle);
+}
+
+// Test VW_GetActionScore and VW_GetActionScoreLength
+TEST(Vwdll, ActionScoreAccessors)
+{
+  VW_HANDLE handle = VW_InitializeA("--quiet");
+
+  // Action score accessors on a simple example (no action scores)
+  VW_EXAMPLE ex = VW_ReadExampleA(handle, "1 | feature1 feature2");
+  VW_Learn(handle, ex);
+
+  size_t as_len = VW_GetActionScoreLength(ex);
+  // Simple learner doesn't produce action scores, so length should be 0
+  EXPECT_EQ(as_len, 0u);
+
+  VW_FinishExample(handle, ex);
+  VW_Finish(handle);
+}
+
+// Test VW_Finish_Passes
+TEST(Vwdll, FinishPasses)
+{
+  VW_HANDLE handle = VW_InitializeA("--quiet");
+
+  VW_EXAMPLE ex = VW_ReadExampleA(handle, "1 | feature1");
+  VW_Learn(handle, ex);
+  VW_FinishExample(handle, ex);
+
+  // Should not crash
+  VW_Finish_Passes(handle);
+
+  VW_Finish(handle);
 }

@@ -165,3 +165,101 @@ TEST(LossFunctions, CompareExpectileLossWithSquaredLossTest)
   EXPECT_FLOAT_EQ(loss_expectile->second_derivative(&sd, prediction, label),
       loss_squared->second_derivative(&sd, prediction, label) * parameter);
 }
+
+TEST(LossFunctions, ClassicSquaredLossTest)
+{
+  auto vw = VW::initialize(vwtest::make_args("--quiet"));
+  auto loss = get_loss_function(*vw, "classic");
+  VW::shared_data sd;
+  sd.min_label = 0.0f;
+  sd.max_label = 1.0f;
+
+  constexpr float label = 0.5f;
+  constexpr float prediction = 0.4f;
+  constexpr float update_scale = 0.1f;
+  constexpr float pred_per_update = 1.0f;
+
+  EXPECT_EQ("classic", loss->get_type());
+  EXPECT_FLOAT_EQ(0.01f, loss->get_loss(&sd, prediction, label));
+  EXPECT_FLOAT_EQ(0.02f, loss->get_update(prediction, label, update_scale, pred_per_update));
+  EXPECT_FLOAT_EQ(0.02f, loss->get_unsafe_update(prediction, label, update_scale));
+  EXPECT_FLOAT_EQ(0.04f, loss->get_square_grad(prediction, label));
+  EXPECT_FLOAT_EQ(-0.2f, loss->first_derivative(&sd, prediction, label));
+  EXPECT_FLOAT_EQ(2.0f, loss->second_derivative(&sd, prediction, label));
+}
+
+TEST(LossFunctions, HingeLossTest)
+{
+  auto vw = VW::initialize(vwtest::make_args("--quiet"));
+  auto loss = get_loss_function(*vw, "hinge");
+  VW::shared_data sd;
+  sd.min_label = -1.0f;
+  sd.max_label = 1.0f;
+
+  constexpr float update_scale = 0.1f;
+  constexpr float pred_per_update = 1.0f;
+
+  EXPECT_EQ("hinge", loss->get_type());
+
+  // Prediction within margin (label * prediction < 1)
+  float label = 1.0f;
+  float prediction = 0.5f;
+  EXPECT_FLOAT_EQ(0.5f, loss->get_loss(&sd, prediction, label));
+  EXPECT_FLOAT_EQ(0.1f, loss->get_unsafe_update(prediction, label, update_scale));
+  EXPECT_FLOAT_EQ(-1.0f, loss->first_derivative(&sd, prediction, label));
+  EXPECT_FLOAT_EQ(0.0f, loss->second_derivative(&sd, prediction, label));
+
+  // Prediction outside margin (label * prediction >= 1)
+  prediction = 1.5f;
+  EXPECT_FLOAT_EQ(0.0f, loss->get_loss(&sd, prediction, label));
+  EXPECT_FLOAT_EQ(0.0f, loss->get_unsafe_update(prediction, label, update_scale));
+  EXPECT_FLOAT_EQ(0.0f, loss->first_derivative(&sd, prediction, label));
+}
+
+TEST(LossFunctions, QuantileLossDerivativesTest)
+{
+  auto vw = VW::initialize(vwtest::make_args("--quiet"));
+  float tau = 0.5f;
+  auto loss = get_loss_function(*vw, "quantile", tau);
+
+  EXPECT_EQ("quantile", loss->get_type());
+  EXPECT_FLOAT_EQ(0.5f, loss->get_parameter());
+
+  constexpr float label = 0.5f;
+  constexpr float prediction = 0.4f;
+  constexpr float update_scale = 0.1f;
+
+  EXPECT_FLOAT_EQ(0.05f, loss->get_unsafe_update(prediction, label, update_scale));
+  EXPECT_FLOAT_EQ(0.0f, loss->second_derivative(nullptr, prediction, label));
+}
+
+TEST(LossFunctions, PoissonLossTest)
+{
+  auto vw = VW::initialize(vwtest::make_args("--quiet"));
+  auto loss = get_loss_function(*vw, "poisson");
+  VW::shared_data sd;
+  sd.min_label = -50.0f;
+  sd.max_label = 50.0f;
+
+  constexpr float label = 3.0f;
+  constexpr float prediction = 1.0f;
+  constexpr float update_scale = 0.1f;
+  constexpr float pred_per_update = 1.0f;
+
+  EXPECT_EQ("poisson", loss->get_type());
+  float loss_val = loss->get_loss(&sd, prediction, label);
+  EXPECT_FALSE(std::isnan(loss_val));
+
+  float deriv1 = loss->first_derivative(&sd, prediction, label);
+  float exp_pred = std::exp(prediction);
+  EXPECT_FLOAT_EQ(exp_pred - label, deriv1);
+
+  float deriv2 = loss->second_derivative(&sd, prediction, label);
+  EXPECT_FLOAT_EQ(exp_pred, deriv2);
+
+  float update = loss->get_update(prediction, label, update_scale, pred_per_update);
+  EXPECT_FALSE(std::isnan(update));
+
+  float unsafe_update = loss->get_unsafe_update(prediction, label, update_scale);
+  EXPECT_FLOAT_EQ((label - exp_pred) * update_scale, unsafe_update);
+}

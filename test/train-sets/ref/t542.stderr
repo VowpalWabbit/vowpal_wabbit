@@ -1,0 +1,31 @@
+using no cache
+Reading datafile = train-sets/rcv1_small.dat
+num sources = 1
+Num weight bits = 18
+learning rate = 10
+initial_t = 10
+power_t = 0.5
+Enabled learners: gd, active, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+1.000000 1.000000            1            1.0        -1.0000         0.0000      128
+0.877644 0.755288            2            2.0        -1.0000        -0.1309       44
+0.981700 1.085755            4            4.0        -1.0000        -0.1546      190
+0.993937 1.006175            8            8.0         1.0000        -0.1150       34
+0.981144 0.968351           16           16.0         1.0000        -0.0242       43
+0.935279 0.889414           32           32.0        -1.0000         0.0257       47
+0.871503 0.807727           64           64.0         1.0000        -0.0155       54
+0.761188 0.650873          128          128.0        -1.0000        -0.3360       67
+0.640471 0.519754          256          256.0         1.0000         0.7506       86
+0.535024 0.429578          512          512.0        -1.0000        -0.6381      104
+
+finished run
+number of examples = 1000
+weighted example sum = 1000.000000
+weighted label sum = -82.000000
+average loss = 0.474795
+best constant = -0.082000
+best constant's loss = 0.993276
+total feature number = 78739

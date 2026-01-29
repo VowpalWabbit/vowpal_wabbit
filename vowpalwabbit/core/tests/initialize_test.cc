@@ -249,3 +249,44 @@ TEST(Initialize, ConflictingOptionsThrows)
   auto options = VW::make_unique<VW::config::options_cli>(std::vector<std::string>{"--cb", "2", "--oaa", "3", "--quiet"});
   EXPECT_THROW(VW::initialize(std::move(options)), VW::vw_exception);
 }
+
+// Test VW::initialize with string overload
+TEST(Initialize, WithString)
+{
+  auto vw = VW::initialize("--quiet");
+  ASSERT_NE(vw, nullptr);
+  EXPECT_NE(vw->l, nullptr);
+}
+
+// Test VW::initialize_escaped
+TEST(Initialize, EscapedInit)
+{
+  auto vw = VW::initialize_escaped("--quiet");
+  ASSERT_NE(vw, nullptr);
+  EXPECT_NE(vw->l, nullptr);
+}
+
+// Test VW::initialize_escaped with spaces in arguments
+TEST(Initialize, EscapedInitWithSpaces)
+{
+  auto vw = VW::initialize_escaped("--quiet --cb_explore_adf");
+  ASSERT_NE(vw, nullptr);
+}
+
+
+
+
+
+// Test VW::finish with workspace
+TEST(Finish, BasicFinish)
+{
+  auto vw = VW::initialize(vwtest::make_args("--quiet"));
+
+  auto* ex = VW::read_example(*vw, "1 |f a b c");
+  vw->learn(*ex);
+  vw->finish_example(*ex);
+
+  // finish should not throw
+  VW::finish(*vw, false);
+}
+
