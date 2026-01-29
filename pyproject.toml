@@ -39,7 +39,7 @@ before-build = []
 # Use vendored zlib (VW_ZLIB_SYS_DEP=OFF) for self-contained wheels that auditwheel can properly tag
 # Enable SIMD optimizations (VW_FEAT_LAS_SIMD=ON) for x64 builds - disabled for ARM64 in override below
 # pybind11_DIR is automatically detected by setup.py
-environment = { CMAKE_ARGS="-DVW_ZLIB_SYS_DEP=OFF -DVW_FEAT_LAS_SIMD=ON" }
+environment = { CMAKE_ARGS="-DVW_ZLIB_SYS_DEP=OFF -DVW_FEAT_LAS_SIMD=ON -DVW_FEAT_CSV=ON" }
 
 [tool.cibuildwheel.macos]
 before-all = [
@@ -54,7 +54,7 @@ test-command = [
 ]
 # Use macOS 11.0+ for compatibility
 # pybind11_DIR is automatically detected by setup.py
-environment = { MACOSX_DEPLOYMENT_TARGET="11.0", CMAKE_ARGS="-DVW_ZLIB_SYS_DEP=OFF" }
+environment = { MACOSX_DEPLOYMENT_TARGET="11.0", CMAKE_ARGS="-DVW_ZLIB_SYS_DEP=OFF -DVW_FEAT_CSV=ON" }
 repair-wheel-command = "delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel} --ignore-missing-dependencies"
 
 [tool.cibuildwheel.windows]
@@ -65,10 +65,10 @@ before-all = [
 # Use vendored zlib (VW_ZLIB_SYS_DEP=OFF) for self-contained wheels
 # pybind11_DIR is automatically detected by setup.py
 # CMAKE_GENERATOR specifies Visual Studio 2019 (available on windows-2019 runner)
-environment = { CMAKE_ARGS="-DVW_ZLIB_SYS_DEP=OFF", CMAKE_GENERATOR="Visual Studio 16 2019" }
+environment = { CMAKE_ARGS="-DVW_ZLIB_SYS_DEP=OFF -DVW_FEAT_CSV=ON", CMAKE_GENERATOR="Visual Studio 16 2019" }
 
 # Override for ARM64 Linux builds
 # Compiler flags are applied in setup.py based on platform detection
 [[tool.cibuildwheel.overrides]]
 select = "*_aarch64"
-environment = { CMAKE_ARGS="-DVW_ZLIB_SYS_DEP=OFF -DVW_FEAT_LAS_SIMD=OFF" }
+environment = { CMAKE_ARGS="-DVW_ZLIB_SYS_DEP=OFF -DVW_FEAT_LAS_SIMD=OFF -DVW_FEAT_CSV=ON" }
