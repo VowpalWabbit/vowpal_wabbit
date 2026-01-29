@@ -998,13 +998,25 @@ class Workspace(pylibvw.vw):
             if oracle is None:
                 pass
             elif isinstance(oracle, list):
-                assert 0 not in oracle, "multiclass labels are from 1..., "
-                "please do not use zero or bad things will happen!"
+                if sch.is_ldf():
+                    assert all(
+                        o >= 0 for o in oracle
+                    ), "LDF oracle actions are 0-indexed into the example list"
+                else:
+                    assert (
+                        0 not in oracle
+                    ), "multiclass labels are from 1..., please do not use zero or bad things will happen!"
                 if len(oracle) > 0:
                     P.set_oracles(oracle)
             elif isinstance(oracle, int):
-                assert oracle > 0, "multiclass labels are from 1...,"
-                " please do not use zero or bad things will happen!"
+                if sch.is_ldf():
+                    assert (
+                        oracle >= 0
+                    ), "LDF oracle actions are 0-indexed into the example list"
+                else:
+                    assert (
+                        oracle > 0
+                    ), "multiclass labels are from 1..., please do not use zero or bad things will happen!"
                 P.set_oracle(oracle)
             else:
                 raise TypeError("expecting oracle to be a list or an integer")

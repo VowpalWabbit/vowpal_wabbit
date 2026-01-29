@@ -105,10 +105,11 @@ void cb_explore_adf_cover::predict_or_learn_impl(VW::LEARNER::learner& base, VW:
     else if (_cb_type == VW::cb_type_t::DR) { VW::details::gen_cs_example_dr<false>(_gen_cs_dr, examples, _cs_labels); }
     else { VW::details::gen_cs_example_ips(examples, _cs_labels, _logger); }
 
-    if (base.learn_returns_prediction)
+    if (!base.learn_returns_prediction)
     {
-      // First predict() since the result of the predictions are used to learn
-      // later in the reduction
+      // Predict first to populate predictions, since learn will not return them.
+      // When learn_returns_prediction is true, learn already includes an internal
+      // predict call, so an explicit predict here would be redundant.
       VW_DBG(examples) << "cb_explore_adf_cover: "
                           "LEARNER::multiline_learn_or_predict<false>()"
                        << std::endl;
@@ -281,6 +282,13 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_cover_setup
 
   // Ensure serialization of cb_adf in all cases.
   if (!options.was_supplied("cb_adf")) { options.insert("cb_adf", ""); }
+
+  if (options.was_supplied("large_action_space"))
+  {
+    THROW("--cover and --large_action_space cannot be used together. "
+          "The cover algorithm assumes contiguous action indices which is incompatible "
+          "with the action filtering performed by large_action_space.");
+  }
 
   auto cb_type = VW::cb_type_from_string(type_string);
   switch (cb_type)

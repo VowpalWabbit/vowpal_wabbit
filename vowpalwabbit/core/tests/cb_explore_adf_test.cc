@@ -16,3 +16,10 @@ TEST(CbExploreAdf, ShouldThrowEmptyMultiExample)
   // An empty example collection is invalid and so should throw.
   EXPECT_THROW(vw->learn(example_collection), VW::vw_exception);
 }
+
+TEST(CbExploreAdf, CoverAndLargeActionSpaceIncompatible)
+{
+  EXPECT_THROW(VW::initialize(vwtest::make_args(
+                   "--cb_explore_adf", "--cover", "3", "--large_action_space", "--max_actions", "10", "--quiet")),
+      VW::vw_exception);
+}
