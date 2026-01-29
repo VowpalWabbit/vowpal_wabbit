@@ -1,0 +1,25 @@
+creating cache_file = train-sets/argmax_data.cache
+Reading datafile = train-sets/argmax_data
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+decay_learning_rate = 1
+Enabled learners: gd, scorer-identity, csoaa, search_task
+Input label = MULTICLASS
+Output pred = MULTICLASS
+average    since      instance            current true      current predicted   cur   cur   predic    cache  examples          
+loss       last        counter           output prefix          output prefix  pass   pol     made     hits    gener  beta    
+10.000000  10.000000         1  [2                   ] [1                   ]     0     0        5        0        5  0.000000
+5.500000   1.000000          2  [1                   ] [2                   ]     0     0        9        0        9  0.000000
+5.250000   5.000000          4  [2                   ] [1                   ]     0     0       15        0       15  0.000000
+2.875000   0.500000          8  [2                   ] [2                   ]     1     0       30        0       30  0.000000
+
+finished run
+number of examples per pass = 4
+passes used = 2
+weighted example sum = 8.000000
+weighted label sum = 0.000000
+average loss = 2.875000
+total feature number = 90

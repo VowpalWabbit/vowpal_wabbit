@@ -1,0 +1,21 @@
+using no cache
+Reading datafile = train-sets/0001.dat
+num sources = 1
+Num weight bits = 18
+learning rate = 20
+initial_t = 129600
+power_t = 1
+Input label = SIMPLE
+Output pred = SCALAR
+Regressor contains 61487 values
+example     values        total
+counter    audited     progress
+1              290           0%
+2              888           1%
+4             1963           3%
+8             4065           6%
+16            7445          12%
+32           14339          23%
+64           26397          42%
+128          43692          71%
+200          61487         100%

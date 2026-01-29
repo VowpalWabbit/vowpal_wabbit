@@ -1,0 +1,30 @@
+using no cache
+Reading datafile = train-sets/0002.dat
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+cb_type = mtr
+Enabled learners: gd, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_bag, shared_feature_merger, cb_to_cbadf
+Input label = CB
+Output pred = ACTION_PROBS
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+n.a.     n.a.                1            1.0        unknown         0:0.33       45
+n.a.     n.a.                2            2.0        unknown         0:0.33       45
+n.a.     n.a.                4            4.0        unknown         0:0.33       45
+n.a.     n.a.                8            8.0        unknown         0:0.33       45
+n.a.     n.a.               16           16.0        unknown         0:0.33       45
+n.a.     n.a.               32           32.0        unknown         0:0.33       45
+n.a.     n.a.               64           64.0        unknown         0:0.33       45
+n.a.     n.a.              128          128.0        unknown         0:0.33       45
+n.a.     n.a.              256          256.0        unknown         0:0.33       45
+n.a.     n.a.              512          512.0        unknown         0:0.33       45
+
+finished run
+number of examples = 1000
+weighted example sum = 1000.000000
+weighted label sum = 0.000000
+average loss = n.a.
+total feature number = 44988

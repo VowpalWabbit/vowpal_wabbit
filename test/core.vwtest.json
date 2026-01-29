@@ -7573,7 +7573,7 @@
   {
     "id": 590,
     "desc": "slates with DSJSON input format",
-    "vw_command": "--slates --dsjson -d train-sets/slates_simple_unlabeled.dsjson --quiet",
+    "vw_command": "--slates --dsjson -d train-sets/slates_simple_unlabeled.dsjson",
     "diff_files": {
       "stderr": "train-sets/ref/t590.stderr"
     },
@@ -7584,7 +7584,7 @@
   {
     "id": 591,
     "desc": "cbify with warm_start and lambda_scheme",
-    "vw_command": "--cbify 3 --cbify_cs --warm_start 2 --loss0 0.0 --loss1 1.0 -d train-sets/multiclass --quiet",
+    "vw_command": "--cbify 3 --cbify_cs --warm_start 2 --loss0 0.0 --loss1 1.0 -d train-sets/multiclass",
     "diff_files": {
       "stderr": "train-sets/ref/t591.stderr"
     },
@@ -7595,7 +7595,7 @@
   {
     "id": 592,
     "desc": "WAP LDF cost-sensitive learning",
-    "vw_command": "--wap_ldf m -d train-sets/cs_test.ldf --quiet",
+    "vw_command": "--wap_ldf m -d train-sets/cs_test.ldf",
     "diff_files": {
       "stderr": "train-sets/ref/t592.stderr"
     },
@@ -7606,7 +7606,7 @@
   {
     "id": 593,
     "desc": "csoaa with probabilities output",
-    "vw_command": "--csoaa 3 --csoaa_rank -d train-sets/multiclass --quiet",
+    "vw_command": "--csoaa 3 --csoaa_rank -d train-sets/multiclass",
     "diff_files": {
       "stderr": "train-sets/ref/t593.stderr"
     },
@@ -7617,7 +7617,7 @@
   {
     "id": 594,
     "desc": "interactions with leave_duplicate_interactions",
-    "vw_command": "-q :: --leave_duplicate_interactions -d train-sets/0002.dat --quiet",
+    "vw_command": "-q :: --leave_duplicate_interactions -d train-sets/0002.dat",
     "diff_files": {
       "stderr": "train-sets/ref/t594.stderr"
     },
@@ -7628,7 +7628,7 @@
   {
     "id": 595,
     "desc": "neural network reduction",
-    "vw_command": "--nn 3 -d train-sets/0002.dat --quiet",
+    "vw_command": "--nn 3 -d train-sets/0002.dat",
     "diff_files": {
       "stderr": "train-sets/ref/t595.stderr"
     },
@@ -7639,7 +7639,7 @@
   {
     "id": 596,
     "desc": "neural network with dropout",
-    "vw_command": "--nn 3 --dropout -d train-sets/0002.dat --quiet",
+    "vw_command": "--nn 3 --dropout -d train-sets/0002.dat",
     "diff_files": {
       "stderr": "train-sets/ref/t596.stderr"
     },
@@ -7650,7 +7650,7 @@
   {
     "id": 597,
     "desc": "FTRL optimization",
-    "vw_command": "--ftrl -d train-sets/0002.dat --quiet",
+    "vw_command": "--ftrl -d train-sets/0002.dat",
     "diff_files": {
       "stderr": "train-sets/ref/t597.stderr"
     },
@@ -7661,7 +7661,7 @@
   {
     "id": 598,
     "desc": "FTRL pistol optimization",
-    "vw_command": "--pistol -d train-sets/0002.dat --quiet",
+    "vw_command": "--pistol -d train-sets/0002.dat",
     "diff_files": {
       "stderr": "train-sets/ref/t598.stderr"
     },
@@ -7672,7 +7672,7 @@
   {
     "id": 599,
     "desc": "coin betting optimizer",
-    "vw_command": "--coin -d train-sets/0002.dat --quiet",
+    "vw_command": "--coin -d train-sets/0002.dat",
     "diff_files": {
       "stderr": "train-sets/ref/t599.stderr"
     },
@@ -7683,7 +7683,7 @@
   {
     "id": 600,
     "desc": "Oja-Newton optimizer",
-    "vw_command": "--OjaNewton -d train-sets/0002.dat --quiet",
+    "vw_command": "--OjaNewton -d train-sets/0002.dat",
     "diff_files": {
       "stderr": "train-sets/ref/t600.stderr"
     },
@@ -7694,7 +7694,7 @@
   {
     "id": 601,
     "desc": "gradient descent matrix factorization",
-    "vw_command": "--rank 5 -d train-sets/0002.dat --quiet",
+    "vw_command": "--rank 5 -d train-sets/0002.dat",
     "diff_files": {
       "stderr": "train-sets/ref/t601.stderr"
     },
@@ -7705,7 +7705,7 @@
   {
     "id": 602,
     "desc": "boosting reduction",
-    "vw_command": "--boosting 3 -d train-sets/0002.dat --quiet",
+    "vw_command": "--boosting 3 -d train-sets/0002.dat",
     "diff_files": {
       "stderr": "train-sets/ref/t602.stderr"
     },
@@ -7716,7 +7716,7 @@
   {
     "id": 603,
     "desc": "memory tree with training",
-    "vw_command": "--memory_tree 3 --max_number_of_labels 4 -d train-sets/multiclass --quiet",
+    "vw_command": "--memory_tree 3 --max_number_of_labels 4 -d train-sets/multiclass",
     "diff_files": {
       "stderr": "train-sets/ref/t603.stderr"
     },
@@ -7727,7 +7727,7 @@
   {
     "id": 604,
     "desc": "eigen memory tree with training",
-    "vw_command": "--emt -d train-sets/multiclass --quiet",
+    "vw_command": "--emt -d train-sets/multiclass",
     "diff_files": {
       "stderr": "train-sets/ref/t604.stderr"
     },
@@ -7738,7 +7738,7 @@
   {
     "id": 605,
     "desc": "FreeGrad optimization",
-    "vw_command": "--freegrad -d train-sets/0002.dat --quiet",
+    "vw_command": "--freegrad -d train-sets/0002.dat",
     "diff_files": {
       "stderr": "train-sets/ref/t605.stderr"
     },
@@ -7749,7 +7749,7 @@
   {
     "id": 606,
     "desc": "cb_explore_adf with cover policy",
-    "vw_command": "--cb_explore_adf --cover 3 -d train-sets/cb_test.ldf --quiet",
+    "vw_command": "--cb_explore_adf --cover 3 -d train-sets/cb_test.ldf",
     "diff_files": {
       "stderr": "train-sets/ref/t606.stderr"
     },
@@ -7760,7 +7760,7 @@
   {
     "id": 607,
     "desc": "cb_explore_adf with synthcover",
-    "vw_command": "--cb_explore_adf --synthcover -d train-sets/cb_test.ldf --quiet",
+    "vw_command": "--cb_explore_adf --synthcover -d train-sets/cb_test.ldf",
     "diff_files": {
       "stderr": "train-sets/ref/t607.stderr"
     },
@@ -7771,7 +7771,7 @@
   {
     "id": 608,
     "desc": "cb_explore_adf with JSON input",
-    "vw_command": "--cb_explore_adf --json -d train-sets/cb_test.json --quiet",
+    "vw_command": "--cb_explore_adf --json -d train-sets/cb_test.json",
     "diff_files": {
       "stderr": "train-sets/ref/t608.stderr"
     },
@@ -7782,7 +7782,7 @@
   {
     "id": 609,
     "desc": "cb_adf with DSJSON input",
-    "vw_command": "--cb_adf --dsjson -d train-sets/cb_features_w_zero_vals.dsjson --quiet",
+    "vw_command": "--cb_adf --dsjson -d train-sets/cb_features_w_zero_vals.dsjson",
     "diff_files": {
       "stderr": "train-sets/ref/t609.stderr"
     },
@@ -7793,7 +7793,7 @@
   {
     "id": 610,
     "desc": "CCB with DSJSON input",
-    "vw_command": "--ccb_explore_adf --dsjson -d train-sets/ccb_automl.dsjson --quiet",
+    "vw_command": "--ccb_explore_adf --dsjson -d train-sets/ccb_automl.dsjson",
     "diff_files": {
       "stderr": "train-sets/ref/t610.stderr"
     },
@@ -7804,7 +7804,7 @@
   {
     "id": 611,
     "desc": "CSV parser with custom header and no_file_header",
-    "vw_command": "--csv --csv_no_file_header --csv_header label,a,b,c -d train-sets/csv_test.csv --quiet",
+    "vw_command": "--csv --csv_no_file_header --csv_header label,a,b,c -d train-sets/csv_test.csv",
     "diff_files": {
       "stderr": "train-sets/ref/t611.stderr"
     },
@@ -7815,7 +7815,7 @@
   {
     "id": 612,
     "desc": "autolink polynomial feature generation",
-    "vw_command": "--autolink 3 -d train-sets/0002.dat --quiet",
+    "vw_command": "--autolink 3 -d train-sets/0002.dat",
     "diff_files": {
       "stderr": "train-sets/ref/t612.stderr"
     },
@@ -7826,7 +7826,7 @@
   {
     "id": 613,
     "desc": "multilabel_oaa with model save and load",
-    "vw_command": "--multilabel_oaa 5 -d train-sets/multilabel -f models/multilabel_oaa5.model --quiet",
+    "vw_command": "--multilabel_oaa 5 -d train-sets/multilabel -f models/multilabel_oaa5.model",
     "diff_files": {
       "stderr": "train-sets/ref/t613.stderr"
     },
@@ -7837,7 +7837,7 @@
   {
     "id": 614,
     "desc": "multilabel_oaa model load and test",
-    "vw_command": "-i models/multilabel_oaa5.model -t -d train-sets/multilabel --quiet",
+    "vw_command": "-i models/multilabel_oaa5.model -t -d train-sets/multilabel",
     "diff_files": {
       "stderr": "train-sets/ref/t614.stderr"
     },
@@ -7852,7 +7852,7 @@
   {
     "id": 615,
     "desc": "active cover reduction",
-    "vw_command": "--active_cover -d train-sets/0002.dat --quiet",
+    "vw_command": "--active_cover -d train-sets/0002.dat",
     "diff_files": {
       "stderr": "train-sets/ref/t615.stderr"
     },
@@ -7863,7 +7863,7 @@
   {
     "id": 616,
     "desc": "audit regressor with trained model",
-    "vw_command": "-d train-sets/0001.dat -i models/0001_1.model --audit_regressor audit_output.txt --quiet",
+    "vw_command": "-d train-sets/0001.dat -i models/0001_1.model --audit_regressor audit_output.txt",
     "diff_files": {
       "stderr": "train-sets/ref/t616.stderr"
     },
@@ -7878,7 +7878,7 @@
   {
     "id": 617,
     "desc": "baseline reduction with cb_adf",
-    "vw_command": "--cb_explore_adf --baseline -d train-sets/cb_test.ldf --quiet",
+    "vw_command": "--cb_explore_adf --baseline -d train-sets/cb_test.ldf",
     "diff_files": {
       "stderr": "train-sets/ref/t617.stderr"
     },
@@ -7889,7 +7889,7 @@
   {
     "id": 618,
     "desc": "search dependency parser task",
-    "vw_command": "-k -c -d train-sets/wsj_small.dparser.vw.gz --passes 2 --search_task dep_parser --search 12 --holdout_off --quiet",
+    "vw_command": "-k -c -d train-sets/wsj_small.dparser.vw.gz --passes 2 --search_task dep_parser --search 12 --holdout_off",
     "diff_files": {
       "stderr": "train-sets/ref/t618.stderr"
     },
@@ -7900,7 +7900,7 @@
   {
     "id": 619,
     "desc": "search sequencespan with BILOU tagging",
-    "vw_command": "-k -c -d train-sets/sequencespan_data --passes 2 --search_task sequencespan --search_span_bilou --search 7 --holdout_off --quiet",
+    "vw_command": "-k -c -d train-sets/sequencespan_data --passes 2 --search_task sequencespan --search_span_bilou --search 7 --holdout_off",
     "diff_files": {
       "stderr": "train-sets/ref/t619.stderr"
     },
@@ -7911,7 +7911,7 @@
   {
     "id": 620,
     "desc": "search argmax task",
-    "vw_command": "-k -c -d train-sets/argmax_data --passes 2 --search_task argmax --search 2 --holdout_off --quiet",
+    "vw_command": "-k -c -d train-sets/argmax_data --passes 2 --search_task argmax --search 2 --holdout_off",
     "diff_files": {
       "stderr": "train-sets/ref/t620.stderr"
     },
@@ -7922,7 +7922,7 @@
   {
     "id": 621,
     "desc": "search graph task",
-    "vw_command": "--search_task graph --search 6 -d train-sets/search_graph_small.dat --search_graph_num_loops 2 --quiet --no_stdin",
+    "vw_command": "--search_task graph --search 6 -d train-sets/search_graph_small.dat --search_graph_num_loops 2 --no_stdin",
     "diff_files": {
       "stderr": "train-sets/ref/t621.stderr"
     },
@@ -7933,7 +7933,7 @@
   {
     "id": 622,
     "desc": "cb_explore with epsilon greedy",
-    "vw_command": "--cb_explore 3 --epsilon 0.1 -d train-sets/0002.dat --quiet",
+    "vw_command": "--cb_explore 3 --epsilon 0.1 -d train-sets/0002.dat",
     "diff_files": {
       "stderr": "train-sets/ref/t622.stderr"
     },
@@ -7944,7 +7944,7 @@
   {
     "id": 623,
     "desc": "cb_explore with bag",
-    "vw_command": "--cb_explore 3 --bag 3 -d train-sets/0002.dat --quiet",
+    "vw_command": "--cb_explore 3 --bag 3 -d train-sets/0002.dat",
     "diff_files": {
       "stderr": "train-sets/ref/t623.stderr"
     },
@@ -7955,7 +7955,7 @@
   {
     "id": 624,
     "desc": "LDA with precise math mode",
-    "vw_command": "--lda 2 --lda_alpha 0.1 --lda_rho 0.1 --lda_D 5 -b 5 --minibatch 5 -d train-sets/wiki5.dat --math-mode 1 --quiet",
+    "vw_command": "--lda 2 --lda_alpha 0.1 --lda_rho 0.1 --lda_D 5 -b 5 --minibatch 5 -d train-sets/wiki5.dat --math-mode 1",
     "diff_files": {
       "stderr": "train-sets/ref/t624.stderr"
     },
@@ -7966,7 +7966,7 @@
   {
     "id": 625,
     "desc": "LDA with SIMD math mode",
-    "vw_command": "--lda 2 --lda_alpha 0.1 --lda_rho 0.1 --lda_D 5 -b 5 --minibatch 5 -d train-sets/wiki5.dat --math-mode 0 --quiet",
+    "vw_command": "--lda 2 --lda_alpha 0.1 --lda_rho 0.1 --lda_D 5 -b 5 --minibatch 5 -d train-sets/wiki5.dat --math-mode 0",
     "diff_files": {
       "stderr": "train-sets/ref/t625.stderr"
     },
@@ -7977,7 +7977,7 @@
   {
     "id": 626,
     "desc": "search sequence with no_caching",
-    "vw_command": "-k -c -d train-sets/seq_small --passes 2 --search_task sequence --search 4 --search_no_caching --holdout_off --quiet",
+    "vw_command": "-k -c -d train-sets/seq_small --passes 2 --search_task sequence --search 4 --search_no_caching --holdout_off",
     "diff_files": {
       "stderr": "train-sets/ref/t626.stderr"
     },
@@ -7988,7 +7988,7 @@
   {
     "id": 627,
     "desc": "search sequence with mix_per_roll rollout",
-    "vw_command": "-k -c -d train-sets/seq_small --passes 2 --search_task sequence --search 4 --search_rollout mix_per_roll --holdout_off --quiet",
+    "vw_command": "-k -c -d train-sets/seq_small --passes 2 --search_task sequence --search 4 --search_rollout mix_per_roll --holdout_off",
     "diff_files": {
       "stderr": "train-sets/ref/t627.stderr"
     },
@@ -7999,7 +7999,7 @@
   {
     "id": 628,
     "desc": "cb_explore_adf with bag exploration",
-    "vw_command": "--cb_explore_adf --bag 3 -d train-sets/cb_test.ldf --noconstant --quiet",
+    "vw_command": "--cb_explore_adf --bag 3 -d train-sets/cb_test.ldf --noconstant",
     "diff_files": {
       "stderr": "train-sets/ref/t628.stderr"
     },
@@ -8010,7 +8010,7 @@
   {
     "id": 629,
     "desc": "cbify with flip_loss_sign",
-    "vw_command": "--cbify 10 --epsilon 0.05 --flip_loss_sign -d train-sets/multiclass --quiet",
+    "vw_command": "--cbify 10 --epsilon 0.05 --flip_loss_sign -d train-sets/multiclass",
     "diff_files": {
       "stderr": "train-sets/ref/t629.stderr"
     },
@@ -8021,7 +8021,7 @@
   {
     "id": 630,
     "desc": "cs_active with baseline and simulation",
-    "vw_command": "--cs_active 3 -d train-sets/cs_test --cost_max 2 --mellowness 0.5 --simulation --baseline --global_only --quiet",
+    "vw_command": "--cs_active 3 -d train-sets/cs_test --cost_max 2 --mellowness 0.5 --simulation --baseline --global_only",
     "diff_files": {
       "stderr": "train-sets/ref/t630.stderr"
     },
@@ -8032,7 +8032,7 @@
   {
     "id": 631,
     "desc": "cb_explore_adf with regcb",
-    "vw_command": "--cb_explore_adf --regcb -d train-sets/cb_test.ldf --noconstant --quiet",
+    "vw_command": "--cb_explore_adf --regcb -d train-sets/cb_test.ldf --noconstant",
     "diff_files": {
       "stderr": "train-sets/ref/t631.stderr"
     },
@@ -8043,7 +8043,7 @@
   {
     "id": 632,
     "desc": "cb_explore_adf with rnd exploration",
-    "vw_command": "--cb_explore_adf --rnd 3 -d train-sets/cb_test.ldf --noconstant --quiet",
+    "vw_command": "--cb_explore_adf --rnd 3 -d train-sets/cb_test.ldf --noconstant",
     "diff_files": {
       "stderr": "train-sets/ref/t632.stderr"
     },
@@ -8054,7 +8054,7 @@
   {
     "id": 633,
     "desc": "slates with labeled text input",
-    "vw_command": "--slates -d train-sets/slates_simple.txt --quiet",
+    "vw_command": "--slates -d train-sets/slates_simple.txt",
     "diff_files": {
       "stderr": "train-sets/ref/t633.stderr"
     },
@@ -8065,7 +8065,7 @@
   {
     "id": 634,
     "desc": "cb_explore_adf cover with DR cb_type",
-    "vw_command": "--cb_explore_adf --cover 3 --cb_type dr -d train-sets/cb_test_medium.ldf --noconstant --quiet",
+    "vw_command": "--cb_explore_adf --cover 3 --cb_type dr -d train-sets/cb_test_medium.ldf --noconstant",
     "diff_files": {
       "stderr": "train-sets/ref/t634.stderr"
     },
@@ -8076,7 +8076,7 @@
   {
     "id": 635,
     "desc": "cb_explore_adf cover with IPS cb_type",
-    "vw_command": "--cb_explore_adf --cover 3 --cb_type ips -d train-sets/cb_test_medium.ldf --noconstant --quiet",
+    "vw_command": "--cb_explore_adf --cover 3 --cb_type ips -d train-sets/cb_test_medium.ldf --noconstant",
     "diff_files": {
       "stderr": "train-sets/ref/t635.stderr"
     },
@@ -8087,7 +8087,7 @@
   {
     "id": 636,
     "desc": "cb_explore_adf cover with first_only and nounif",
-    "vw_command": "--cb_explore_adf --cover 3 --first_only --nounif -d train-sets/cb_test_medium.ldf --noconstant --quiet",
+    "vw_command": "--cb_explore_adf --cover 3 --first_only --nounif -d train-sets/cb_test_medium.ldf --noconstant",
     "diff_files": {
       "stderr": "train-sets/ref/t636.stderr"
     },
@@ -8098,7 +8098,7 @@
   {
     "id": 637,
     "desc": "cb_explore_adf cover save and load model",
-    "vw_command": "--cb_explore_adf --cover 3 -d train-sets/cb_test_medium.ldf --noconstant --quiet -f models/cover_save.model",
+    "vw_command": "--cb_explore_adf --cover 3 -d train-sets/cb_test_medium.ldf --noconstant -f models/cover_save.model",
     "diff_files": {
       "stderr": "train-sets/ref/t637.stderr"
     },
@@ -8109,8 +8109,10 @@
   {
     "id": 638,
     "desc": "cb_explore_adf cover load saved model",
-    "depends_on": [637],
-    "vw_command": "--cb_explore_adf -t -i models/cover_save.model -d train-sets/cb_test_medium.ldf --noconstant --quiet",
+    "depends_on": [
+      637
+    ],
+    "vw_command": "--cb_explore_adf -t -i models/cover_save.model -d train-sets/cb_test_medium.ldf --noconstant",
     "diff_files": {
       "stderr": "train-sets/ref/t638.stderr"
     },
@@ -8122,7 +8124,7 @@
   {
     "id": 639,
     "desc": "csoaa with named_labels and raw predictions",
-    "vw_command": "--csoaa 3 -d train-sets/cs_test --named_labels animal,plant,mineral --quiet",
+    "vw_command": "--csoaa 3 -d train-sets/cs_test --named_labels animal,plant,mineral",
     "diff_files": {
       "stderr": "train-sets/ref/t639.stderr"
     },
@@ -8133,7 +8135,7 @@
   {
     "id": 640,
     "desc": "csoaa with audit mode for cost_sensitive output",
-    "vw_command": "--csoaa 3 -d train-sets/cs_test --audit --quiet",
+    "vw_command": "--csoaa 3 -d train-sets/cs_test --audit",
     "diff_files": {
       "stderr": "train-sets/ref/t640.stderr"
     },
@@ -8144,7 +8146,7 @@
   {
     "id": 641,
     "desc": "text parser with affix features",
-    "vw_command": "--affix -2 -d train-sets/affix_test.dat --quiet",
+    "vw_command": "--affix -2 -d train-sets/affix_test.dat",
     "diff_files": {
       "stderr": "train-sets/ref/t641.stderr"
     },
@@ -8155,7 +8157,7 @@
   {
     "id": 642,
     "desc": "text parser with invert_hash output",
-    "vw_command": "--invert_hash invert_hash_out.txt -d train-sets/0002_25.dat --quiet",
+    "vw_command": "--invert_hash invert_hash_out.txt -d train-sets/0002_25.dat",
     "diff_files": {
       "stderr": "train-sets/ref/t642.stderr"
     },
@@ -8166,7 +8168,7 @@
   {
     "id": 643,
     "desc": "svrg with multiple passes stage transitions",
-    "vw_command": "--svrg --stage_size 2 --passes 5 -d train-sets/0002_25.dat -k -c --holdout_off --quiet",
+    "vw_command": "--svrg --stage_size 2 --passes 5 -d train-sets/0002_25.dat -k -c --holdout_off",
     "diff_files": {
       "stderr": "train-sets/ref/t643.stderr"
     },
@@ -8177,7 +8179,7 @@
   {
     "id": 644,
     "desc": "svrg save and load with resume",
-    "vw_command": "--svrg -d train-sets/0002_25.dat -f models/svrg_resume.model --save_resume --quiet",
+    "vw_command": "--svrg -d train-sets/0002_25.dat -f models/svrg_resume.model --save_resume",
     "diff_files": {
       "stderr": "train-sets/ref/t644.stderr"
     },
@@ -8188,7 +8190,7 @@
   {
     "id": 645,
     "desc": "generate_interactions with leave_duplicate_interactions and audit",
-    "vw_command": "-q ab -q ba --leave_duplicate_interactions -d train-sets/interact.dat --audit --quiet",
+    "vw_command": "-q ab -q ba --leave_duplicate_interactions -d train-sets/interact.dat --audit",
     "diff_files": {
       "stderr": "train-sets/ref/t645.stderr"
     },
@@ -8199,7 +8201,7 @@
   {
     "id": 646,
     "desc": "generate_interactions with cubic and permutations",
-    "vw_command": "--cubic abc --permutations -d train-sets/0002_25.dat --quiet",
+    "vw_command": "--cubic abc --permutations -d train-sets/0002_25.dat",
     "diff_files": {
       "stderr": "train-sets/ref/t646.stderr"
     },
@@ -8210,7 +8212,7 @@
   {
     "id": 647,
     "desc": "oaa with named_labels",
-    "vw_command": "--oaa 3 --named_labels cat,dog,bird -d train-sets/multiclass --quiet",
+    "vw_command": "--oaa 3 --named_labels cat,dog,bird -d train-sets/multiclass",
     "diff_files": {
       "stderr": "train-sets/ref/t647.stderr"
     },
@@ -8221,7 +8223,7 @@
   {
     "id": 648,
     "desc": "search sequence with cross-validation (xv)",
-    "vw_command": "--search_task sequence --search 4 --search_xv -d train-sets/seq_small -k -c --passes 2 --holdout_off --quiet",
+    "vw_command": "--search_task sequence --search 4 --search_xv -d train-sets/seq_small -k -c --passes 2 --holdout_off",
     "diff_files": {
       "stderr": "train-sets/ref/t648.stderr"
     },
@@ -8232,7 +8234,7 @@
   {
     "id": 649,
     "desc": "search sequence with alpha and rollout mix_per_state",
-    "vw_command": "--search_task sequence --search 4 --search_alpha 1e-3 --search_rollout mix_per_state -d train-sets/seq_small -k -c --passes 2 --holdout_off --quiet",
+    "vw_command": "--search_task sequence --search 4 --search_alpha 1e-3 --search_rollout mix_per_state -d train-sets/seq_small -k -c --passes 2 --holdout_off",
     "diff_files": {
       "stderr": "train-sets/ref/t649.stderr"
     },
@@ -8243,7 +8245,7 @@
   {
     "id": 650,
     "desc": "search with perturb_oracle and linear_ordering",
-    "vw_command": "--search_task sequence --search 4 --search_perturb_oracle 0.1 --search_linear_ordering -d train-sets/seq_small -k -c --passes 2 --holdout_off --quiet",
+    "vw_command": "--search_task sequence --search 4 --search_perturb_oracle 0.1 --search_linear_ordering -d train-sets/seq_small -k -c --passes 2 --holdout_off",
     "diff_files": {
       "stderr": "train-sets/ref/t650.stderr"
     },
@@ -8254,7 +8256,7 @@
   {
     "id": 651,
     "desc": "lda with fast-approx math mode",
-    "vw_command": "--lda 2 --lda_alpha 0.1 --lda_rho 0.1 --lda_D 5 -b 5 --minibatch 5 -d train-sets/wiki5.dat --math-mode 2 --quiet",
+    "vw_command": "--lda 2 --lda_alpha 0.1 --lda_rho 0.1 --lda_D 5 -b 5 --minibatch 5 -d train-sets/wiki5.dat --math-mode 2",
     "diff_files": {
       "stderr": "train-sets/ref/t651.stderr"
     },
@@ -8265,7 +8267,7 @@
   {
     "id": 652,
     "desc": "lda with multiple passes",
-    "vw_command": "--lda 2 --lda_alpha 0.1 --lda_rho 0.1 --lda_D 5 -b 5 --minibatch 5 -d train-sets/wiki5.dat -k -c --passes 3 --holdout_off --quiet",
+    "vw_command": "--lda 2 --lda_alpha 0.1 --lda_rho 0.1 --lda_D 5 -b 5 --minibatch 5 -d train-sets/wiki5.dat -k -c --passes 3 --holdout_off",
     "diff_files": {
       "stderr": "train-sets/ref/t652.stderr"
     },
@@ -8276,7 +8278,7 @@
   {
     "id": 653,
     "desc": "search with neighbor features and history length",
-    "vw_command": "--search_task sequence --search 4 --search_neighbor_features -1:w,1:w --search_history_length 3 -d train-sets/seq_small -k -c --passes 2 --holdout_off --quiet",
+    "vw_command": "--search_task sequence --search 4 --search_neighbor_features -1:w,1:w --search_history_length 3 -d train-sets/seq_small -k -c --passes 2 --holdout_off",
     "diff_files": {
       "stderr": "train-sets/ref/t653.stderr"
     },

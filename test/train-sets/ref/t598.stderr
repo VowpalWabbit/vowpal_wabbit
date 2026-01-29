@@ -1,0 +1,34 @@
+Enabling FTRL based optimization
+Algorithm used: PiSTOL
+ftrl_alpha = 1
+ftrl_beta = 0.5
+using no cache
+Reading datafile = train-sets/0002.dat
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+Enabled learners: ftrl-PiSTOL, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.271591 0.271591            1            1.0         0.5211         0.0000       15
+0.135795 0.000000            2            2.0         0.5353         0.5353       15
+0.067898 0.000000            4            4.0         0.5854         0.5854       15
+0.046760 0.025622            8            8.0         0.5575         0.7325       15
+0.075508 0.104256           16           16.0         0.5878         0.7325       15
+0.051227 0.026946           32           32.0         0.6038         0.4013       15
+0.035158 0.019090           64           64.0         0.5683         0.4595       15
+0.022047 0.008936          128          128.0         0.5351         0.5380       15
+0.013632 0.005218          256          256.0         0.5385         0.5544       15
+0.010705 0.007777          512          512.0         0.5053         0.5251       15
+
+finished run
+number of examples = 1000
+weighted example sum = 1000.000000
+weighted label sum = 526.517528
+average loss = 0.006232
+best constant = 0.526518
+total feature number = 14996
