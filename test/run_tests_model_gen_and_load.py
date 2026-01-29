@@ -124,8 +124,8 @@ def generate_model_and_weights(
         weights_dir = working_dir / "test_weights"
         weights_dir.mkdir(parents=True, exist_ok=True)
         # Skip json_weights() for models that don't use standard weights.
-        # Older VW versions segfault or hang when calling json_weights() on these models.
-        skip_weights_flags = ["--ksvm", "--print", "--marginal"]
+        # Older VW versions segfault, hang, or produce invalid JSON for these models.
+        skip_weights_flags = ["--ksvm", "--print", "--marginal", "--loss_function poisson"]
         if any(flag in command for flag in skip_weights_flags):
             print(
                 f"{color_enum.LIGHT_PURPLE}Skipping weights (model doesn't use standard weights){color_enum.ENDC}"
@@ -191,8 +191,8 @@ def load_model(
     )
 
     # Skip models that don't use standard weights.
-    # Older VW versions segfault or hang when calling json_weights() on these models.
-    skip_weights_flags = ["--ksvm", "--print", "--marginal"]
+    # Older VW versions segfault, hang, or produce invalid JSON for these models.
+    skip_weights_flags = ["--ksvm", "--print", "--marginal", "--loss_function poisson"]
     if any(flag in command for flag in skip_weights_flags):
         print(
             f"{color_enum.LIGHT_CYAN}Skipping weight comparison (model doesn't use standard weights){color_enum.ENDC}"
