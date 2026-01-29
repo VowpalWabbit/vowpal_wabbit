@@ -15,7 +15,7 @@
 
 #include <string>
 
-#ifdef VW_FEAT_CB_GRAPH_FEEDBACK
+#ifdef VW_FEAT_CB_GRAPH_FEEDBACK_ENABLED
 using namespace testing;
 constexpr float EXPLICIT_FLOAT_TOL = 0.01f;
 
