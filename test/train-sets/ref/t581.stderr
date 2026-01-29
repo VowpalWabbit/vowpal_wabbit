@@ -1,0 +1,30 @@
+using no cache
+Reading datafile = train-sets/0002.dat
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+Enabled learners: noop, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.271591 0.271591            1            1.0         0.5211         0.0000       15
+0.279042 0.286494            2            2.0         0.5353         0.0000       15
+0.300773 0.322504            4            4.0         0.5854         0.0000       15
+0.309289 0.317804            8            8.0         0.5575         0.0000       15
+0.295602 0.281916           16           16.0         0.5878         0.0000       15
+0.298948 0.302294           32           32.0         0.6038         0.0000       15
+0.293966 0.288983           64           64.0         0.5683         0.0000       15
+0.290021 0.286077          128          128.0         0.5351         0.0000       15
+0.295309 0.300597          256          256.0         0.5385         0.0000       15
+0.279036 0.262763          512          512.0         0.5053         0.0000       15
+
+finished run
+number of examples = 1000
+weighted example sum = 1000.000000
+weighted label sum = 526.517528
+average loss = 0.283062
+best constant = 0.526518
+total feature number = 14996

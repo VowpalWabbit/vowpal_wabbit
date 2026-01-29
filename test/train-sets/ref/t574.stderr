@@ -1,0 +1,21 @@
+creating cache_file = train-sets/wsj_small.dparser.vw.gz.cache
+Reading datafile = train-sets/wsj_small.dparser.vw.gz
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+Enabled learners: gd, scorer-identity, csoaa, search_task
+Input label = CS
+Output pred = MULTICLASS
+average    since      instance            current true      current predicted   cur   cur   predic    cache  examples          
+loss       last        counter           output prefix          output prefix  pass   pol     made     hits    gener  beta    
+88.000000  88.000000         1  [43:1 5:2 5:2 5:2 1..] [0:8 1:1 2:1 3:1 4:..]     0     0      144        0      141  0.000000
+47.500000  7.000000          2  [2:2 3:5 0:8 3:7 99..] [4:2 4:2 4:2 0:8 99..]     0     0      153        0      150  0.000000
+
+finished run
+number of examples = 2
+weighted example sum = 2.000000
+weighted label sum = 0.000000
+average loss = 47.500000
+total feature number = 39431
