@@ -8285,5 +8285,405 @@
     "input_files": [
       "train-sets/seq_small"
     ]
+  },
+  {
+    "id": 654,
+    "desc": "boosting with logistic algorithm",
+    "vw_command": "--boosting 5 --alg logistic -d train-sets/0002.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/t654.stderr"
+    },
+    "input_files": [
+      "train-sets/0002.dat"
+    ]
+  },
+  {
+    "id": 655,
+    "desc": "boosting with adaptive algorithm",
+    "vw_command": "--boosting 5 --alg adaptive -d train-sets/0002.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/t655.stderr"
+    },
+    "input_files": [
+      "train-sets/0002.dat"
+    ]
+  },
+  {
+    "id": 656,
+    "desc": "boosting logistic save and load",
+    "vw_command": "--boosting 3 --alg logistic -d train-sets/0002.dat -f models/boosting_logistic.vw",
+    "diff_files": {
+      "stderr": "train-sets/ref/t656.stderr"
+    },
+    "input_files": [
+      "train-sets/0002.dat"
+    ]
+  },
+  {
+    "id": 657,
+    "desc": "boosting logistic load and predict",
+    "vw_command": "--boosting 3 --alg logistic -d train-sets/0002.dat -t -i models/boosting_logistic.vw",
+    "diff_files": {
+      "stderr": "train-sets/ref/t657.stderr"
+    },
+    "input_files": [
+      "train-sets/0002.dat",
+      "models/boosting_logistic.vw"
+    ],
+    "depends_on": [
+      656
+    ]
+  },
+  {
+    "id": 658,
+    "desc": "boosting adaptive with multiple passes",
+    "vw_command": "--boosting 5 --alg adaptive -d train-sets/0002.dat -k -c --passes 3 --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/t658.stderr"
+    },
+    "input_files": [
+      "train-sets/0002.dat"
+    ]
+  },
+  {
+    "id": 659,
+    "desc": "boosting BBM with custom gamma",
+    "vw_command": "--boosting 5 --alg BBM --gamma 0.5 -d train-sets/0002.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/t659.stderr"
+    },
+    "input_files": [
+      "train-sets/0002.dat"
+    ]
+  },
+  {
+    "id": 660,
+    "desc": "eigen memory tree random scorer",
+    "vw_command": "--emt --emt_scorer random -d train-sets/multiclass",
+    "diff_files": {
+      "stderr": "train-sets/ref/t660.stderr"
+    },
+    "input_files": [
+      "train-sets/multiclass"
+    ]
+  },
+  {
+    "id": 661,
+    "desc": "eigen memory tree distance scorer with gaussian initial",
+    "vw_command": "--emt --emt_scorer distance --emt_initial gaussian -d train-sets/multiclass",
+    "diff_files": {
+      "stderr": "train-sets/ref/t661.stderr"
+    },
+    "input_files": [
+      "train-sets/multiclass"
+    ]
+  },
+  {
+    "id": 662,
+    "desc": "eigen memory tree distance scorer with euclidean initial",
+    "vw_command": "--emt --emt_scorer distance --emt_initial euclidean -d train-sets/multiclass",
+    "diff_files": {
+      "stderr": "train-sets/ref/t662.stderr"
+    },
+    "input_files": [
+      "train-sets/multiclass"
+    ]
+  },
+  {
+    "id": 663,
+    "desc": "eigen memory tree self_consistent_rank scorer",
+    "vw_command": "--emt --emt_scorer self_consistent_rank -d train-sets/multiclass",
+    "diff_files": {
+      "stderr": "train-sets/ref/t663.stderr"
+    },
+    "input_files": [
+      "train-sets/multiclass"
+    ]
+  },
+  {
+    "id": 664,
+    "desc": "eigen memory tree random router with small leaf split",
+    "vw_command": "--emt --emt_router random --emt_leaf 3 -d train-sets/multiclass",
+    "diff_files": {
+      "stderr": "train-sets/ref/t664.stderr"
+    },
+    "input_files": [
+      "train-sets/multiclass"
+    ]
+  },
+  {
+    "id": 665,
+    "desc": "eigen memory tree bounded tree with LRU",
+    "vw_command": "--emt --emt_tree 10 --emt_leaf 3 -d train-sets/multiclass",
+    "diff_files": {
+      "stderr": "train-sets/ref/t665.stderr"
+    },
+    "input_files": [
+      "train-sets/multiclass"
+    ]
+  },
+  {
+    "id": 666,
+    "desc": "eigen memory tree distance scorer with none initial",
+    "vw_command": "--emt --emt_scorer distance --emt_initial none -d train-sets/multiclass",
+    "diff_files": {
+      "stderr": "train-sets/ref/t666.stderr"
+    },
+    "input_files": [
+      "train-sets/multiclass"
+    ]
+  },
+  {
+    "id": 667,
+    "desc": "search entity relation with custom skip cost",
+    "vw_command": "--search_task entity_relation --search 10 --search_order 1 --skip_cost 0.1 --constraints -d train-sets/er_small.vw -k -c --passes 2 --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/t667.stderr"
+    },
+    "input_files": [
+      "train-sets/er_small.vw"
+    ]
+  },
+  {
+    "id": 668,
+    "desc": "search entity relation without constraints",
+    "vw_command": "--search_task entity_relation --search 10 --search_order 0 -d train-sets/er_small.vw -k -c --passes 2 --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/t668.stderr"
+    },
+    "input_files": [
+      "train-sets/er_small.vw"
+    ]
+  },
+  {
+    "id": 669,
+    "desc": "search entity relation custom costs",
+    "vw_command": "--search_task entity_relation --search 10 --search_order 0 --constraints --relation_cost 2.0 --entity_cost 0.5 --relation_none_cost 0.1 -d train-sets/er_small.vw -k -c --passes 2 --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/t669.stderr"
+    },
+    "input_files": [
+      "train-sets/er_small.vw"
+    ]
+  },
+  {
+    "id": 670,
+    "desc": "search with rollout_num_steps early oracle",
+    "vw_command": "--search_task sequence --search 4 --search_rollout_num_steps 3 -d train-sets/seq_small -k -c --passes 2 --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/t670.stderr"
+    },
+    "input_files": [
+      "train-sets/seq_small"
+    ]
+  },
+  {
+    "id": 671,
+    "desc": "search with subsample time",
+    "vw_command": "--search_task sequence --search 4 --search_subsample_time 0.5 -d train-sets/seq_small -k -c --passes 2 --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/t671.stderr"
+    },
+    "input_files": [
+      "train-sets/seq_small"
+    ]
+  },
+  {
+    "id": 672,
+    "desc": "search with explicit beta and alpha",
+    "vw_command": "--search_task sequence --search 4 --search_beta 0.9 --search_alpha 1e-6 -d train-sets/seq_small -k -c --passes 3 --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/t672.stderr"
+    },
+    "input_files": [
+      "train-sets/seq_small"
+    ]
+  },
+  {
+    "id": 673,
+    "desc": "search with policy interpolation",
+    "vw_command": "--search_task sequence --search 4 --search_interpolation policy --search_passes_per_policy 2 -d train-sets/seq_small -k -c --passes 4 --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/t673.stderr"
+    },
+    "input_files": [
+      "train-sets/seq_small"
+    ]
+  },
+  {
+    "id": 674,
+    "desc": "search with condition feature value",
+    "vw_command": "--search_task sequence --search 4 --search_condition_feature_value 0.5 -d train-sets/seq_small -k -c --passes 2 --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/t674.stderr"
+    },
+    "input_files": [
+      "train-sets/seq_small"
+    ]
+  },
+  {
+    "id": 675,
+    "desc": "search save every k runs",
+    "vw_command": "--search_task sequence --search 4 --search_save_every_k_runs 2 -d train-sets/seq_small -k -c --passes 2 --holdout_off -f models/search_save_k.vw",
+    "diff_files": {
+      "stderr": "train-sets/ref/t675.stderr"
+    },
+    "input_files": [
+      "train-sets/seq_small"
+    ]
+  },
+  {
+    "id": 676,
+    "desc": "stagewise poly with exponent 0.1",
+    "vw_command": "--stage_poly --sched_exponent 0.1 --batch_sz 100 -d train-sets/rcv1_small.dat -k -c --passes 3 --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/t676.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_small.dat"
+    ]
+  },
+  {
+    "id": 677,
+    "desc": "stagewise poly with exponent 2.0",
+    "vw_command": "--stage_poly --sched_exponent 2.0 --batch_sz 500 -d train-sets/rcv1_small.dat -k -c --passes 3 --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/t677.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_small.dat"
+    ]
+  },
+  {
+    "id": 678,
+    "desc": "stagewise poly with small batch and doubling",
+    "vw_command": "--stage_poly --batch_sz 50 -d train-sets/rcv1_small.dat -k -c --passes 5 --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/t678.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_small.dat"
+    ]
+  },
+  {
+    "id": 679,
+    "desc": "gradient descent with feature_limit",
+    "vw_command": "--feature_limit n:5 -d train-sets/0002.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/t679.stderr"
+    },
+    "input_files": [
+      "train-sets/0002.dat"
+    ]
+  },
+  {
+    "id": 680,
+    "desc": "gradient descent with l1 and l2 regularization",
+    "vw_command": "--l1 0.001 --l2 0.001 -d train-sets/0002.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/t680.stderr"
+    },
+    "input_files": [
+      "train-sets/0002.dat"
+    ]
+  },
+  {
+    "id": 681,
+    "desc": "gradient descent with sparse_l2",
+    "vw_command": "--sparse_l2 0.01 -d train-sets/0002.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/t681.stderr"
+    },
+    "input_files": [
+      "train-sets/0002.dat"
+    ]
+  },
+  {
+    "id": 682,
+    "desc": "LDA with custom alpha and rho",
+    "vw_command": "--lda 3 --lda_alpha 0.5 --lda_rho 0.5 --math-mode 0 -d train-sets/wiki256.dat -k -c --passes 2 --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/t682.stderr"
+    },
+    "input_files": [
+      "train-sets/wiki256.dat"
+    ]
+  },
+  {
+    "id": 683,
+    "desc": "LDA with 5 topics and multiple passes",
+    "vw_command": "--lda 5 -d train-sets/wiki256.dat -k -c --passes 3 --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/t683.stderr"
+    },
+    "input_files": [
+      "train-sets/wiki256.dat"
+    ]
+  },
+  {
+    "id": 684,
+    "desc": "parse with save_per_pass",
+    "vw_command": "-d train-sets/0002.dat -k -c --passes 3 --holdout_off -f models/save_per_pass.vw --save_per_pass",
+    "diff_files": {
+      "stderr": "train-sets/ref/t684.stderr"
+    },
+    "input_files": [
+      "train-sets/0002.dat"
+    ]
+  },
+  {
+    "id": 685,
+    "desc": "output readable model with invert hash",
+    "vw_command": "-d train-sets/0002.dat --invert_hash readable_inv.txt --readable_model readable_model.txt",
+    "diff_files": {
+      "stderr": "train-sets/ref/t685.stderr"
+    },
+    "input_files": [
+      "train-sets/0002.dat"
+    ]
+  },
+  {
+    "id": 686,
+    "desc": "kernel SVM with RBF kernel",
+    "vw_command": "--ksvm --kernel rbf --bandwidth 1.0 -d train-sets/rcv1_smaller.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/t686.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_smaller.dat"
+    ]
+  },
+  {
+    "id": 687,
+    "desc": "kernel SVM with polynomial kernel",
+    "vw_command": "--ksvm --kernel poly --degree 2 -d train-sets/rcv1_smaller.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/t687.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_smaller.dat"
+    ]
+  },
+  {
+    "id": 688,
+    "desc": "kernel SVM pool greedy with reprocess",
+    "vw_command": "--ksvm --pool_greedy --pool_size 5 --reprocess 2 -d train-sets/rcv1_smaller.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/t688.stderr"
+    },
+    "input_files": [
+      "train-sets/rcv1_smaller.dat"
+    ]
+  },
+  {
+    "id": 689,
+    "desc": "cb_dro with distributionally robust optimization",
+    "vw_command": "--cb_explore_adf --cb_dro --cb_dro_alpha 0.05 -d train-sets/cb_test.ldf",
+    "diff_files": {
+      "stderr": "train-sets/ref/t689.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_test.ldf"
+    ]
   }
 ]

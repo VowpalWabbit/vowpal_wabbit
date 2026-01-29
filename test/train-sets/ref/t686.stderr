@@ -1,0 +1,35 @@
+Lambda = 1
+Kernel = rbf
+bandwidth = 1
+using no cache
+Reading datafile = train-sets/rcv1_smaller.dat
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+Enabled learners: ksvm, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+1.000000 1.000000            1            1.0         1.0000         0.0000       50
+1.077464 1.154928            2            2.0        -1.0000         0.1549      103
+1.003068 0.928672            4            4.0        -1.0000        -0.1453      134
+0.943495 0.883922            8            8.0        -1.0000        -0.3112      145
+0.926954 0.910414           16           16.0         1.0000        -0.4228       23
+0.926092 0.925230           32           32.0        -1.0000        -0.3619       31
+0.910957 0.895822           64           64.0        -1.0000        -0.5529       60
+0.935597 0.960238          128          128.0         1.0000        -0.1201      105
+
+finished run
+number of examples = 250
+weighted example sum = 250.000000
+weighted label sum = -22.000000
+average loss = 0.899290
+best constant = -1.000000
+best constant's loss = 0.912000
+total feature number = 19870
+Num support = 250
+Number of kernel evaluations = 62214 Number of cache queries = 36882
+Total loss = 224.822601

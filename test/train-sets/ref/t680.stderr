@@ -1,0 +1,32 @@
+using l1 regularization = 0.001
+using l2 regularization = 0.001
+using no cache
+Reading datafile = train-sets/0002.dat
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+Enabled learners: gd, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.271591 0.271591            1            1.0         0.5211         0.0000       15
+0.136139 0.000687            2            2.0         0.5353         0.5090       15
+0.109849 0.083560            4            4.0         0.5854         0.5854       15
+0.075898 0.041947            8            8.0         0.5575         0.4476       15
+0.080215 0.084531           16           16.0         0.5878         0.3455       15
+0.045064 0.009914           32           32.0         0.6038         0.6054       15
+0.029148 0.013231           64           64.0         0.5683         0.4585       15
+0.017439 0.005731          128          128.0         0.5351         0.4943       15
+0.010342 0.003245          256          256.0         0.5385         0.5599       15
+0.006603 0.002863          512          512.0         0.5053         0.5212       15
+
+finished run
+number of examples = 1000
+weighted example sum = 1000.000000
+weighted label sum = 526.517528
+average loss = 0.004135
+best constant = 0.526518
+total feature number = 14996

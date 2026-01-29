@@ -1,0 +1,31 @@
+final_regressor = models/boosting_logistic.vw
+using no cache
+Reading datafile = train-sets/0002.dat
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+Enabled learners: gd, scorer-identity, boosting-logistic, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.135795 0.135795            1            1.0         0.5211         0.0000       15
+0.068536 0.001276            2            2.0         0.5353         0.0000       15
+0.051921 0.035307            4            4.0         0.5854         0.7747       15
+0.036054 0.020187            8            8.0         0.5575         1.4503       15
+0.038695 0.041336           16           16.0         0.5878         1.5871       15
+0.021533 0.004371           32           32.0         0.6038         3.5830       15
+0.013938 0.006343           64           64.0         0.5683         2.6838       15
+0.007961 0.001984          128          128.0         0.5351         2.9184       15
+0.004431 0.000901          256          256.0         0.5385         3.3659       15
+0.002511 0.000591          512          512.0         0.5053         3.1242       15
+
+finished run
+number of examples = 1000
+weighted example sum = 1000.000000
+weighted label sum = 526.517528
+average loss = 0.001379
+best constant = 0.526518
+total feature number = 14996

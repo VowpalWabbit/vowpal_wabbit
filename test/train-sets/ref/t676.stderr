@@ -1,0 +1,35 @@
+creating cache_file = train-sets/rcv1_small.dat.cache
+Reading datafile = train-sets/rcv1_small.dat
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+decay_learning_rate = 1
+Enabled learners: gd, stage_poly, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+1.000000 1.000000            1            1.0        -1.0000         0.0000      128
+0.893728 0.787455            2            2.0        -1.0000        -0.1126       44
+0.905122 0.916517            4            4.0        -1.0000        -0.1701      190
+0.924790 0.944458            8            8.0         1.0000        -0.0231       34
+0.894742 0.864695           16           16.0         1.0000         0.0065       43
+0.875196 0.855650           32           32.0        -1.0000         0.0423       47
+0.838072 0.800947           64           64.0         1.0000         0.0619       54
+0.765721 0.693370          128          128.0        -1.0000        -0.3807       67
+0.680351 0.594982          256          256.0         1.0000         0.5034       86
+0.574137 0.467922          512          512.0        -1.0000        -0.9107      413
+0.496105 0.418073         1024         1024.0        -1.0000        -0.9847       58
+0.278988 0.061871         2048         2048.0        -1.0000        -0.8398      287
+
+finished run
+number of examples per pass = 1000
+passes used = 3
+weighted example sum = 3000.000000
+weighted label sum = -246.000000
+average loss = 0.194522
+best constant = -0.082000
+best constant's loss = 0.993276
+total feature number = 444274
