@@ -1,0 +1,25 @@
+creating quadratic features for pairs: ab ba
+using no cache
+Reading datafile = train-sets/interact.dat
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+Enabled learners: gd, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+1.000000 1.000000            1            1.0         1.0000         0.0000       72
+0.502341 0.004683            2            2.0         0.0000         0.0684       61
+0.317231 0.132121            4            4.0         0.0000         0.0645       72
+
+finished run
+number of examples = 6
+weighted example sum = 6.000000
+weighted label sum = 2.000000
+average loss = 0.378528
+best constant = 0.333333
+best constant's loss = 0.222222
+total feature number = 399

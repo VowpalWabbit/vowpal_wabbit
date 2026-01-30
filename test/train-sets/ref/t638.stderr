@@ -1,0 +1,24 @@
+only testing
+using no cache
+Reading datafile = train-sets/cb_test_small.ldf
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 6
+power_t = 0.5
+cb_type = mtr
+Enabled learners: gd, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_cover, shared_feature_merger
+Input label = CB
+Output pred = ACTION_PROBS
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.577350 0.577350            1            1.0        0:1:0.5         1:0.36       15
+0.288675 0.000000            2            2.0        1:0:0.5         1:0.65        6
+0.384900 0.577350            4            4.0        0:1:0.5         1:0.36       15
+
+finished run
+number of examples = 6
+weighted example sum = 6.000000
+weighted label sum = 0.000000
+average loss = 0.288675
+total feature number = 54

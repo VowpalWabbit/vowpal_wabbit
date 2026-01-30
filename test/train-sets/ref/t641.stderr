@@ -1,0 +1,24 @@
+using no cache
+Reading datafile = train-sets/affix_test.dat
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+Enabled learners: gd, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+1.000000 1.000000            1            1.0        -1.0000         0.0000        3
+1.211740 1.423480            2            2.0         1.0000        -0.1931        3
+0.963641 0.715542            4            4.0         1.0000         0.0888        3
+
+finished run
+number of examples = 6
+weighted example sum = 6.000000
+weighted label sum = 0.000000
+average loss = 0.808355
+best constant = 0.000000
+best constant's loss = 1.000000
+total feature number = 18

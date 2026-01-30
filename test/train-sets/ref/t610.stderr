@@ -1,0 +1,24 @@
+using no cache
+Reading datafile = train-sets/ccb_automl.dsjson
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+cb_type = mtr
+Enabled learners: gd, generate_interactions, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, cb_sample, shared_feature_merger, ccb_explore_adf
+Input label = CCB
+Output pred = DECISION_PROBS
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+-0.66666 -0.66666            1            1.0 1:-1,0:-0.7...            1,0       66
+-0.35000 -0.03333            2            2.0      0:-1,1:-1            0,1       66
+-0.87230 -1.39461            4            4.0 1:-0.889678...            1,0       66
+-0.69309 -0.51387            8            8.0 0:-0.849408...            0,1       42
+
+finished run
+number of examples = 9
+weighted example sum = 9.000000
+weighted label sum = 0.000000
+average loss = -0.824189
+total feature number = 484

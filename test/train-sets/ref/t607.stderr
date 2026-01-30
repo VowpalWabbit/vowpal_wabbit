@@ -1,0 +1,25 @@
+Using synthcover for CB exploration
+synthcoversize = 100
+synthcoverpsi = 0.1
+using no cache
+Reading datafile = train-sets/cb_test.ldf
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+cb_type = mtr
+Enabled learners: gd, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_synthcover, shared_feature_merger
+Input label = CB
+Output pred = ACTION_PROBS
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.660000 0.660000            1            1.0        0:1:0.5         2:0.34       18
+0.330000 0.000000            2            2.0        1:0:0.5            1:1        8
+
+finished run
+number of examples = 3
+weighted example sum = 3.000000
+weighted label sum = 0.000000
+average loss = 0.330000
+total feature number = 34

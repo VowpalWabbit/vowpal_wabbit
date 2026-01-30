@@ -1,0 +1,32 @@
+Lambda = 1
+Kernel = poly
+degree = 2
+using no cache
+Reading datafile = train-sets/ksvm_simple.dat
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+Enabled learners: ksvm, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+1.000000 1.000000            1            1.0         1.0000         0.0000        3
+1.000000 1.000000            2            2.0        -1.0000         0.0000        3
+0.575710 0.151421            4            4.0        -1.0000        -0.8472        3
+0.326578 0.077446            8            8.0        -1.0000        -0.9959        3
+0.192202 0.057826           16           16.0        -1.0000        -1.0012        3
+
+finished run
+number of examples = 20
+weighted example sum = 20.000000
+weighted label sum = 0.000000
+average loss = 0.189180
+best constant = -1.000000
+best constant's loss = 1.000000
+total feature number = 60
+Num support = 15
+Number of kernel evaluations = 305 Number of cache queries = 313
+Total loss = 3.783609

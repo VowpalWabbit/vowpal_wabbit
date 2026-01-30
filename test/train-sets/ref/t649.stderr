@@ -1,0 +1,23 @@
+creating cache_file = train-sets/seq_small.cache
+Reading datafile = train-sets/seq_small
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+decay_learning_rate = 1
+Enabled learners: gd, scorer-identity, csoaa, search_task
+Input label = MULTICLASS
+Output pred = MULTICLASS
+average    since      instance            current true      current predicted   cur   cur   predic    cache  examples          
+loss       last        counter           output prefix          output prefix  pass   pol     made     hits    gener  beta    
+4.000000   4.000000          1  [1 3 2 1 4 3         ] [1 1 1 1 1 1         ]     0     0        6        0        6  0.004990
+2.000000   0.000000          2  [1 3 2 1 4 3         ] [1 3 2 1 4 3         ]     1     0       12        0       12  0.010945
+
+finished run
+number of examples per pass = 1
+passes used = 2
+weighted example sum = 2.000000
+weighted label sum = 0.000000
+average loss = 2.000000
+total feature number = 36

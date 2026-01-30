@@ -1,0 +1,27 @@
+creating cache_file = train-sets/wiki25.dat.cache
+Reading datafile = train-sets/wiki25.dat
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+decay_learning_rate = 1
+Enabled learners: lda
+Input label = NOLABEL
+Output pred = SCALARS
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+12.57957 12.57957            1            1.0           none              0      732
+12.84585 13.11213            2            2.0           none              0       27
+12.02410 11.20235            4            4.0           none              0       53
+11.64423 11.26436            8            8.0           none              0       60
+11.31957 10.99491           16           16.0           none              0       26
+10.33678 9.353998           32           32.0           none              0       13
+
+finished run
+number of examples per pass = 26
+passes used = 2
+weighted example sum = 52.000000
+weighted label sum = 0.000000
+average loss = 9.243257
+total feature number = 6326
