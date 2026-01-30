@@ -258,14 +258,33 @@ std::string workspace::dump_weights_to_json_experimental()
   assert(l != nullptr);
   const auto* current = l.get();
 
+  // Check for reductions that store state outside the standard weight array.
+  // json_weights only exports the base learner weight array, so it cannot represent
+  // the full model state for these reductions.
+  {
+    const auto* walker = current;
+    while (walker != nullptr)
+    {
+      if (walker->get_name() == "marginal")
+      {
+        logger.err_error(
+            "dump_weights_to_json is not supported for models using the marginal reduction. "
+            "The marginal reduction stores state in a separate data structure that is not captured by json_weights.");
+        return R"({"weights":[]})";
+      }
+      walker = walker->get_base_learner();
+    }
+  }
+
   // Walk to the base learner
   while (current->get_base_learner() != nullptr) { current = current->get_base_learner(); }
 
   // KSVM uses support vectors instead of standard weights, so json_weights is not applicable
   if (current->get_name() == "ksvm")
   {
-    logger.warn("dump_weights_to_json: KSVM uses support vectors instead of standard weights. "
-                "Returning empty weights array.");
+    logger.err_error(
+        "dump_weights_to_json is not supported for models using KSVM. "
+        "KSVM uses support vectors instead of standard weights.");
     return R"({"weights":[]})";
   }
   if (output_model_config.dump_json_weights_include_feature_names && !output_config.hash_inv)
@@ -281,11 +300,11 @@ std::string workspace::dump_weights_to_json_experimental()
     THROW("including extra online state is only allowed with GD as base learner");
   }
 
-  // Check if weights are initialized - some learners (e.g., KSVM) don't use standard weights
   if (!weights.not_null())
   {
-    logger.warn("dump_weights_to_json: weights not initialized (learner may not use standard weights). "
-                "Returning empty weights array.");
+    logger.err_error(
+        "dump_weights_to_json: weights are not initialized. "
+        "The model may use a learner that does not use standard weights.");
     return R"({"weights":[]})";
   }
 
