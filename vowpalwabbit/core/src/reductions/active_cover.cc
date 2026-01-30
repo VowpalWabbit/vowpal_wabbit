@@ -195,7 +195,7 @@ void predict_or_learn_active_cover(active_cover& a, learner& base, VW::example& 
 
       // Update denominator of lambda
       a.lambda_d[i] += (static_cast<float>(VW::math::sign(ec.pred.scalar) != VW::math::sign(prediction) && in_dis)) /
-          static_cast<float>(pow(q2, 1.5));
+          std::pow(q2, 1.5f);
 
       // Accumulating weights of learners in the cover
       q2 += (static_cast<float>(VW::math::sign(ec.pred.scalar) != VW::math::sign(prediction))) *

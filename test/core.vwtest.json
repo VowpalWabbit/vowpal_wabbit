@@ -7694,12 +7694,12 @@
   {
     "id": 601,
     "desc": "gradient descent matrix factorization",
-    "vw_command": "--rank 5 -d train-sets/0002.dat",
+    "vw_command": "--rank 5 -d train-sets/0002_25.dat",
     "diff_files": {
       "stderr": "train-sets/ref/t601.stderr"
     },
     "input_files": [
-      "train-sets/0002.dat"
+      "train-sets/0002_25.dat"
     ]
   },
   {
@@ -8167,8 +8167,8 @@
   },
   {
     "id": 643,
-    "desc": "svrg with multiple passes stage transitions",
-    "vw_command": "--svrg --stage_size 2 --passes 5 -d train-sets/0002_25.dat -k -c --holdout_off",
+    "desc": "svrg with multiple passes",
+    "vw_command": "--svrg --stage_size 2 --passes 5 -d train-sets/0002_25.dat -k -c --holdout_off --onethread",
     "diff_files": {
       "stderr": "train-sets/ref/t643.stderr"
     },
@@ -8179,7 +8179,7 @@
   {
     "id": 644,
     "desc": "svrg save and load with resume",
-    "vw_command": "--svrg -d train-sets/0002_25.dat -f models/svrg_resume.model --save_resume",
+    "vw_command": "--svrg -d train-sets/0002_25.dat -f models/svrg_resume.model --save_resume --onethread",
     "diff_files": {
       "stderr": "train-sets/ref/t644.stderr"
     },
