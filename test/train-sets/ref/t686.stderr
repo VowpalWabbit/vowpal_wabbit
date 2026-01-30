@@ -2,7 +2,7 @@ Lambda = 1
 Kernel = rbf
 bandwidth = 1
 using no cache
-Reading datafile = train-sets/rcv1_smaller.dat
+Reading datafile = train-sets/rcv1_25.dat
 num sources = 1
 Num weight bits = 18
 learning rate = 0.5
@@ -13,23 +13,20 @@ Input label = SIMPLE
 Output pred = SCALAR
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
-1.000000 1.000000            1            1.0         1.0000         0.0000       50
-1.077464 1.154928            2            2.0        -1.0000         0.1549      103
-1.003068 0.928672            4            4.0        -1.0000        -0.1453      134
-0.943495 0.883922            8            8.0        -1.0000        -0.3112      145
-0.926954 0.910414           16           16.0         1.0000        -0.4228       23
-0.926092 0.925230           32           32.0        -1.0000        -0.3619       31
-0.910957 0.895822           64           64.0        -1.0000        -0.5529       60
-0.935597 0.960238          128          128.0         1.0000        -0.1201      105
+1.000000 1.000000            1            1.0        -1.0000         0.0000      128
+0.928958 0.857916            2            2.0        -1.0000        -0.1421       44
+0.991902 1.054846            4            4.0        -1.0000        -0.1445      190
+1.016844 1.041787            8            8.0         1.0000        -0.3165       34
+1.025759 1.034674           16           16.0         1.0000        -0.2323       43
 
 finished run
-number of examples = 250
-weighted example sum = 250.000000
-weighted label sum = -22.000000
-average loss = 0.899290
+number of examples = 25
+weighted example sum = 25.000000
+weighted label sum = -1.000000
+average loss = 1.032927
 best constant = -1.000000
-best constant's loss = 0.912000
-total feature number = 19870
-Num support = 250
-Number of kernel evaluations = 62214 Number of cache queries = 36882
-Total loss = 224.822601
+best constant's loss = 0.960000
+total feature number = 2320
+Num support = 25
+Number of kernel evaluations = 671 Number of cache queries = 358
+Total loss = 25.823183

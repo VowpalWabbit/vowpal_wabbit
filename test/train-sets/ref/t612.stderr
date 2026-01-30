@@ -1,5 +1,5 @@
 using no cache
-Reading datafile = train-sets/0002.dat
+Reading datafile = train-sets/0002_25.dat
 num sources = 1
 Num weight bits = 18
 learning rate = 0.5
@@ -15,16 +15,11 @@ loss     last          counter         weight          label        predict feat
 0.110752 0.085384            4            4.0         0.5854         0.5854       15
 0.069269 0.027785            8            8.0         0.5575         0.4348       15
 0.072420 0.075570           16           16.0         0.5878         0.4282       15
-0.039240 0.006061           32           32.0         0.6038         0.6307       15
-0.023438 0.007637           64           64.0         0.5683         0.4834       15
-0.014889 0.006339          128          128.0         0.5351         0.5253       15
-0.009123 0.003357          256          256.0         0.5385         0.5546       15
-0.007108 0.005093          512          512.0         0.5053         0.3886       15
 
 finished run
-number of examples = 1000
-weighted example sum = 1000.000000
-weighted label sum = 526.517528
-average loss = 0.005715
-best constant = 0.526518
-total feature number = 14996
+number of examples = 25
+weighted example sum = 25.000000
+weighted label sum = 12.754523
+average loss = 0.048590
+best constant = 0.510181
+total feature number = 374

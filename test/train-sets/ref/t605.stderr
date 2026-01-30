@@ -1,7 +1,7 @@
 Enabling FreeGrad based optimization
 Algorithm used: FreeGrad
 using no cache
-Reading datafile = train-sets/0002.dat
+Reading datafile = train-sets/0002_25.dat
 num sources = 1
 Num weight bits = 18
 learning rate = 0.5
@@ -17,16 +17,11 @@ loss     last          counter         weight          label        predict feat
 0.067898 0.000000            4            4.0         0.5854         0.5854       15
 0.046760 0.025622            8            8.0         0.5575         0.7325       15
 0.076490 0.106221           16           16.0         0.5878         0.5068       15
-0.040451 0.004412           32           32.0         0.6038         0.6063       15
-0.022552 0.004653           64           64.0         0.5683         0.4873       15
-0.013783 0.005013          128          128.0         0.5351         0.5191       15
-0.008811 0.003838          256          256.0         0.5385         0.5542       15
-0.028369 0.047927          512          512.0         0.5053         0.1404       15
 
 finished run
-number of examples = 1000
-weighted example sum = 1000.000000
-weighted label sum = 526.517528
-average loss = 0.017936
-best constant = 0.526518
-total feature number = 14996
+number of examples = 25
+weighted example sum = 25.000000
+weighted label sum = 12.754523
+average loss = 0.049825
+best constant = 0.510181
+total feature number = 374

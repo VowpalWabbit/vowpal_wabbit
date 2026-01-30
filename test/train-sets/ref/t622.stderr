@@ -1,5 +1,5 @@
 using no cache
-Reading datafile = train-sets/0002.dat
+Reading datafile = train-sets/0002_25.dat
 num sources = 1
 Num weight bits = 18
 learning rate = 0.5
@@ -16,15 +16,10 @@ n.a.     n.a.                2            2.0        unknown         0:0.33     
 n.a.     n.a.                4            4.0        unknown         0:0.33       45
 n.a.     n.a.                8            8.0        unknown         0:0.33       45
 n.a.     n.a.               16           16.0        unknown         0:0.33       45
-n.a.     n.a.               32           32.0        unknown         0:0.33       45
-n.a.     n.a.               64           64.0        unknown         0:0.33       45
-n.a.     n.a.              128          128.0        unknown         0:0.33       45
-n.a.     n.a.              256          256.0        unknown         0:0.33       45
-n.a.     n.a.              512          512.0        unknown         0:0.33       45
 
 finished run
-number of examples = 1000
-weighted example sum = 1000.000000
+number of examples = 25
+weighted example sum = 25.000000
 weighted label sum = 0.000000
 average loss = n.a.
-total feature number = 44988
+total feature number = 1122

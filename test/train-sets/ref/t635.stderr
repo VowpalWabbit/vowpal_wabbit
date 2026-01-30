@@ -1,5 +1,5 @@
 using no cache
-Reading datafile = train-sets/cb_test_medium.ldf
+Reading datafile = train-sets/cb_test_small.ldf
 num sources = 1
 Num weight bits = 18
 learning rate = 0.5
@@ -14,11 +14,10 @@ loss     last          counter         weight          label        predict feat
 0.666667 0.666667            1            1.0        0:1:0.5         0:0.33       15
 0.333333 0.000000            2            2.0        1:0:0.5          0:0.5        6
 0.444444 0.666667            4            4.0        0:1:0.5         0:0.33       15
-0.318447 0.192450            8            8.0        1:0:0.5         1:0.68        6
 
 finished run
-number of examples = 15
-weighted example sum = 15.000000
+number of examples = 6
+weighted example sum = 6.000000
 weighted label sum = 0.000000
-average loss = 0.279034
-total feature number = 135
+average loss = 0.333333
+total feature number = 54

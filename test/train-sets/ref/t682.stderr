@@ -1,5 +1,5 @@
-creating cache_file = train-sets/wiki256.dat.cache
-Reading datafile = train-sets/wiki256.dat
+creating cache_file = train-sets/wiki25.dat.cache
+Reading datafile = train-sets/wiki25.dat
 num sources = 1
 Num weight bits = 18
 learning rate = 0.5
@@ -16,16 +16,12 @@ loss     last          counter         weight          label        predict feat
 12.02410 11.20235            4            4.0           none              0       53
 11.64423 11.26436            8            8.0           none              0       60
 11.31957 10.99491           16           16.0           none              0       26
-10.97550 10.63142           32           32.0           none              0      125
-10.34132 9.707147           64           64.0           none              0      313
-9.722419 9.103514          128          128.0           none              0       50
-9.288363 8.854306          256          256.0           none              0       33
-8.868914 8.449466          512          512.0           none              0        7
+10.33678 9.353998           32           32.0           none              0       13
 
 finished run
-number of examples per pass = 257
+number of examples per pass = 26
 passes used = 2
-weighted example sum = 514.000000
+weighted example sum = 52.000000
 weighted label sum = 0.000000
-average loss = 8.850692
-total feature number = 44382
+average loss = 9.243257
+total feature number = 6326

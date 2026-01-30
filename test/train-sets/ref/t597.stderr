@@ -3,7 +3,7 @@ Algorithm used: Proximal-FTRL
 ftrl_alpha = 0.5
 ftrl_beta = 1
 using no cache
-Reading datafile = train-sets/0002.dat
+Reading datafile = train-sets/0002_25.dat
 num sources = 1
 Num weight bits = 18
 learning rate = 0.5
@@ -19,16 +19,11 @@ loss     last          counter         weight          label        predict feat
 0.067898 0.000000            4            4.0         0.5854         0.5498       15
 0.046760 0.025622            8            8.0         0.5575         0.7325       15
 0.066996 0.087232           16           16.0         0.5878         0.7325       15
-0.048992 0.030988           32           32.0         0.6038         0.7162       15
-0.028032 0.007073           64           64.0         0.5683         0.4823       15
-0.017172 0.006312          128          128.0         0.5351         0.5351       15
-0.011502 0.005831          256          256.0         0.5385         0.5522       15
-0.010484 0.009467          512          512.0         0.5053         0.4673       15
 
 finished run
-number of examples = 1000
-weighted example sum = 1000.000000
-weighted label sum = 526.517528
-average loss = 0.006906
-best constant = 0.526518
-total feature number = 14996
+number of examples = 25
+weighted example sum = 25.000000
+weighted label sum = 12.754523
+average loss = 0.059771
+best constant = 0.510181
+total feature number = 374

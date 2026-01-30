@@ -1,5 +1,5 @@
-creating cache_file = train-sets/rcv1_small.dat.cache
-Reading datafile = train-sets/rcv1_small.dat
+creating cache_file = train-sets/rcv1_25.dat.cache
+Reading datafile = train-sets/rcv1_25.dat
 num sources = 1
 Num weight bits = 18
 learning rate = 0.5
@@ -16,20 +16,15 @@ loss     last          counter         weight          label        predict feat
 0.905122 0.916517            4            4.0        -1.0000        -0.1701      190
 0.924790 0.944458            8            8.0         1.0000        -0.0231       34
 0.894742 0.864695           16           16.0         1.0000         0.0065       43
-0.875196 0.855650           32           32.0        -1.0000         0.0423       47
-0.838072 0.800947           64           64.0         1.0000         0.0619       54
-0.754589 0.671106          128          128.0        -1.0000        -0.2779       67
-0.662491 0.570393          256          256.0         1.0000         0.6543       86
-0.564571 0.466651          512          512.0        -1.0000        -0.7095     9242
-0.507634 0.450697         1024         1024.0        -1.0000        -1.0000     3004
-0.289294 0.070954         2048         2048.0        -1.0000        -0.8126    18147
+0.714043 0.533345           32           32.0        -1.0000        -0.8128       56
+0.366546 0.019048           64           64.0        -1.0000        -0.9725      103
 
 finished run
-number of examples per pass = 1000
+number of examples per pass = 25
 passes used = 3
-weighted example sum = 3000.000000
-weighted label sum = -246.000000
-average loss = 0.198319
-best constant = -0.082000
-best constant's loss = 0.993276
-total feature number = 18018002
+weighted example sum = 75.000000
+weighted label sum = -3.000000
+average loss = 0.312959
+best constant = -0.040000
+best constant's loss = 0.998400
+total feature number = 6960
