@@ -1,7 +1,7 @@
 Lambda = 1
 Kernel = linear
 using no cache
-Reading datafile = train-sets/rcv1_25.dat
+Reading datafile = train-sets/ksvm_simple.dat
 num sources = 1
 Num weight bits = 18
 learning rate = 0.5
@@ -12,20 +12,20 @@ Input label = SIMPLE
 Output pred = SCALAR
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
-1.000000 1.000000            1            1.0        -1.0000         0.0000      128
-1.000000 1.000000            2            2.0        -1.0000         0.0000       44
-1.000000 1.000000            4            4.0        -1.0000         0.0000      190
-0.930682 0.861364            8            8.0         1.0000        -0.3842       34
-0.993307 1.055932           16           16.0         1.0000        -0.5157       43
+1.000000 1.000000            1            1.0         1.0000         0.0000        3
+1.000000 1.000000            2            2.0        -1.0000         0.0000        3
+1.000000 1.000000            4            4.0        -1.0000         0.0000        3
+0.689824 0.379647            8            8.0        -1.0000        -0.8144        3
+0.365577 0.041330           16           16.0        -1.0000        -2.0766        3
 
 finished run
-number of examples = 25
-weighted example sum = 25.000000
-weighted label sum = -1.000000
-average loss = 0.988758
+number of examples = 20
+weighted example sum = 20.000000
+weighted label sum = 0.000000
+average loss = 0.292461
 best constant = -1.000000
-best constant's loss = 0.960000
-total feature number = 2320
-Num support = 25
-Number of kernel evaluations = 954 Number of cache queries = 454
-Total loss = 24.718962
+best constant's loss = 1.000000
+total feature number = 60
+Num support = 2
+Number of kernel evaluations = 159 Number of cache queries = 226
+Total loss = 5.849228

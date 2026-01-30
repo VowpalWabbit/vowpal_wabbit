@@ -6286,70 +6286,70 @@
   {
     "id": 485,
     "desc": "SVM rbf kernel with custom bandwidth",
-    "vw_command": "--ksvm --l2 1 --reprocess 5 -b 18 --kernel rbf --bandwidth 2.0 -p ksvm_rbf_bandwidth.predict -d train-sets/rcv1_25.dat",
+    "vw_command": "--ksvm --l2 1 --reprocess 5 -b 18 --kernel rbf --bandwidth 2.0 -p ksvm_rbf_bandwidth.predict -d train-sets/ksvm_simple.dat",
+    "input_files": [
+      "train-sets/ksvm_simple.dat"
+    ],
     "diff_files": {
       "stderr": "train-sets/ref/ksvm_rbf_bandwidth.stderr",
       "stdout": "train-sets/ref/ksvm_rbf_bandwidth.stdout",
       "ksvm_rbf_bandwidth.predict": "train-sets/ref/ksvm_rbf_bandwidth.predict"
-    },
-    "input_files": [
-      "train-sets/rcv1_25.dat"
-    ]
+    }
   },
   {
     "id": 486,
     "desc": "SVM polynomial kernel with custom degree",
-    "vw_command": "--ksvm --l2 1 --reprocess 3 -b 18 --kernel poly --degree 3 -p ksvm_poly_degree3.predict -d train-sets/rcv1_25.dat",
+    "vw_command": "--ksvm --l2 1 --reprocess 3 -b 18 --kernel poly --degree 3 -p ksvm_poly_degree3.predict -d train-sets/ksvm_simple.dat",
+    "input_files": [
+      "train-sets/ksvm_simple.dat"
+    ],
     "diff_files": {
       "stderr": "train-sets/ref/ksvm_poly_degree3.stderr",
       "stdout": "train-sets/ref/ksvm_poly_degree3.stdout",
       "ksvm_poly_degree3.predict": "train-sets/ref/ksvm_poly_degree3.predict"
-    },
-    "input_files": [
-      "train-sets/rcv1_25.dat"
-    ]
+    }
   },
   {
     "id": 487,
     "desc": "SVM with pool_greedy and custom pool_size",
-    "vw_command": "--ksvm --l2 1 --reprocess 2 -b 18 --pool_greedy --pool_size 5 -p ksvm_pool_greedy.predict -d train-sets/rcv1_25.dat",
+    "vw_command": "--ksvm --l2 1 --reprocess 2 -b 18 --pool_greedy --pool_size 5 -p ksvm_pool_greedy.predict -d train-sets/ksvm_simple.dat",
+    "input_files": [
+      "train-sets/ksvm_simple.dat"
+    ],
     "diff_files": {
       "stderr": "train-sets/ref/ksvm_pool_greedy.stderr",
       "stdout": "train-sets/ref/ksvm_pool_greedy.stdout",
       "ksvm_pool_greedy.predict": "train-sets/ref/ksvm_pool_greedy.predict"
-    },
-    "input_files": [
-      "train-sets/rcv1_25.dat"
-    ]
+    }
   },
   {
     "id": 488,
     "desc": "SVM save model for test mode",
-    "vw_command": "--ksvm --l2 1 --reprocess 2 -b 18 -d train-sets/rcv1_25.dat -f models/ksvm_testmode.model",
+    "vw_command": "--ksvm --l2 1 --reprocess 2 -b 18 -d train-sets/ksvm_simple.dat -f models/ksvm_testmode.model",
+    "input_files": [
+      "train-sets/ksvm_simple.dat"
+    ],
     "diff_files": {
       "stderr": "train-sets/ref/ksvm_testmode_save.stderr",
       "stdout": "train-sets/ref/ksvm_testmode_save.stdout"
-    },
-    "input_files": [
-      "train-sets/rcv1_25.dat"
-    ]
+    }
   },
   {
     "id": 489,
     "desc": "SVM test mode with loaded model",
-    "vw_command": "--ksvm -t -i models/ksvm_testmode.model -d train-sets/rcv1_25.dat -p ksvm_testmode.predict",
-    "diff_files": {
-      "stderr": "train-sets/ref/ksvm_testmode_load.stderr",
-      "stdout": "train-sets/ref/ksvm_testmode_load.stdout",
-      "ksvm_testmode.predict": "train-sets/ref/ksvm_testmode.predict"
-    },
+    "vw_command": "--ksvm -t -i models/ksvm_testmode.model -d train-sets/ksvm_simple.dat -p ksvm_testmode.predict",
     "input_files": [
-      "train-sets/rcv1_25.dat",
+      "train-sets/ksvm_simple.dat",
       "models/ksvm_testmode.model"
     ],
     "depends_on": [
       488
-    ]
+    ],
+    "diff_files": {
+      "stderr": "train-sets/ref/ksvm_testmode_load.stderr",
+      "stdout": "train-sets/ref/ksvm_testmode_load.stdout",
+      "ksvm_testmode.predict": "train-sets/ref/ksvm_testmode.predict"
+    }
   },
   {
     "id": 490,
@@ -6432,15 +6432,15 @@
   {
     "id": 496,
     "desc": "SVM linear kernel with higher reprocess count",
-    "vw_command": "--ksvm --l2 1 --reprocess 10 -b 18 -p ksvm_reprocess10.predict -d train-sets/rcv1_25.dat",
+    "vw_command": "--ksvm --l2 1 --reprocess 10 -b 18 -p ksvm_reprocess10.predict -d train-sets/ksvm_simple.dat",
+    "input_files": [
+      "train-sets/ksvm_simple.dat"
+    ],
     "diff_files": {
       "stderr": "train-sets/ref/ksvm_reprocess10.stderr",
       "stdout": "train-sets/ref/ksvm_reprocess10.stdout",
       "ksvm_reprocess10.predict": "train-sets/ref/ksvm_reprocess10.predict"
-    },
-    "input_files": [
-      "train-sets/rcv1_25.dat"
-    ]
+    }
   },
   {
     "id": 497,
@@ -6458,60 +6458,60 @@
   {
     "id": 498,
     "desc": "SVM rbf kernel save and load model",
-    "vw_command": "--ksvm --l2 1 --reprocess 3 -b 18 --kernel rbf --bandwidth 1.5 -d train-sets/rcv1_25.dat -f models/ksvm_rbf_saveload.model",
+    "vw_command": "--ksvm --l2 1 --reprocess 3 -b 18 --kernel rbf --bandwidth 1.5 -d train-sets/ksvm_simple.dat -f models/ksvm_rbf_saveload.model",
+    "input_files": [
+      "train-sets/ksvm_simple.dat"
+    ],
     "diff_files": {
       "stderr": "train-sets/ref/ksvm_rbf_save.stderr",
       "stdout": "train-sets/ref/ksvm_rbf_save.stdout"
-    },
-    "input_files": [
-      "train-sets/rcv1_25.dat"
-    ]
+    }
   },
   {
     "id": 499,
     "desc": "SVM rbf kernel load model and predict",
-    "vw_command": "--ksvm -t -i models/ksvm_rbf_saveload.model -d train-sets/rcv1_25.dat -p ksvm_rbf_loaded.predict",
-    "diff_files": {
-      "stderr": "train-sets/ref/ksvm_rbf_load.stderr",
-      "stdout": "train-sets/ref/ksvm_rbf_load.stdout",
-      "ksvm_rbf_loaded.predict": "train-sets/ref/ksvm_rbf_loaded.predict"
-    },
+    "vw_command": "--ksvm -t -i models/ksvm_rbf_saveload.model -d train-sets/ksvm_simple.dat -p ksvm_rbf_loaded.predict",
     "input_files": [
-      "train-sets/rcv1_25.dat",
+      "train-sets/ksvm_simple.dat",
       "models/ksvm_rbf_saveload.model"
     ],
     "depends_on": [
       498
-    ]
+    ],
+    "diff_files": {
+      "stderr": "train-sets/ref/ksvm_rbf_load.stderr",
+      "stdout": "train-sets/ref/ksvm_rbf_load.stdout",
+      "ksvm_rbf_loaded.predict": "train-sets/ref/ksvm_rbf_loaded.predict"
+    }
   },
   {
     "id": 500,
     "desc": "SVM poly kernel save and load model",
-    "vw_command": "--ksvm --l2 1 --reprocess 3 -b 18 --kernel poly --degree 2 -d train-sets/rcv1_25.dat -f models/ksvm_poly_saveload.model",
+    "vw_command": "--ksvm --l2 1 --reprocess 3 -b 18 --kernel poly --degree 2 -d train-sets/ksvm_simple.dat -f models/ksvm_poly_saveload.model",
+    "input_files": [
+      "train-sets/ksvm_simple.dat"
+    ],
     "diff_files": {
       "stderr": "train-sets/ref/ksvm_poly_save.stderr",
       "stdout": "train-sets/ref/ksvm_poly_save.stdout"
-    },
-    "input_files": [
-      "train-sets/rcv1_25.dat"
-    ]
+    }
   },
   {
     "id": 501,
     "desc": "SVM poly kernel load model and predict",
-    "vw_command": "--ksvm -t -i models/ksvm_poly_saveload.model -d train-sets/rcv1_25.dat -p ksvm_poly_loaded.predict",
-    "diff_files": {
-      "stderr": "train-sets/ref/ksvm_poly_load.stderr",
-      "stdout": "train-sets/ref/ksvm_poly_load.stdout",
-      "ksvm_poly_loaded.predict": "train-sets/ref/ksvm_poly_loaded.predict"
-    },
+    "vw_command": "--ksvm -t -i models/ksvm_poly_saveload.model -d train-sets/ksvm_simple.dat -p ksvm_poly_loaded.predict",
     "input_files": [
-      "train-sets/rcv1_25.dat",
+      "train-sets/ksvm_simple.dat",
       "models/ksvm_poly_saveload.model"
     ],
     "depends_on": [
       500
-    ]
+    ],
+    "diff_files": {
+      "stderr": "train-sets/ref/ksvm_poly_load.stderr",
+      "stdout": "train-sets/ref/ksvm_poly_load.stdout",
+      "ksvm_poly_loaded.predict": "train-sets/ref/ksvm_poly_loaded.predict"
+    }
   },
   {
     "id": 502,
@@ -6577,15 +6577,15 @@
   {
     "id": 507,
     "desc": "kernel SVM with pool_greedy active learning",
-    "vw_command": "--ksvm --l2 1 --reprocess 2 -b 18 --pool_greedy --pool_size 5 -p ksvm_active.predict -d train-sets/rcv1_25.dat",
+    "vw_command": "--ksvm --l2 1 --reprocess 2 -b 18 --pool_greedy --pool_size 5 -p ksvm_active.predict -d train-sets/ksvm_simple.dat",
+    "input_files": [
+      "train-sets/ksvm_simple.dat"
+    ],
     "diff_files": {
       "stderr": "train-sets/ref/ksvm_active.stderr",
       "stdout": "train-sets/ref/ksvm_active.stdout",
       "ksvm_active.predict": "pred-sets/ref/ksvm_active.predict"
-    },
-    "input_files": [
-      "train-sets/rcv1_25.dat"
-    ]
+    }
   },
   {
     "id": 508,
@@ -6842,15 +6842,15 @@
   {
     "id": 528,
     "desc": "kernel SVM with subsample",
-    "vw_command": "--ksvm --l2 1 --kernel rbf --bandwidth 1.0 --pool_size 10 --subsample 5 -d train-sets/rcv1_25.dat -p ksvm_subsample.predict -b 18",
+    "vw_command": "--ksvm --l2 1 --kernel rbf --bandwidth 1.0 --pool_size 10 --subsample 5 -d train-sets/ksvm_simple.dat -p ksvm_subsample.predict -b 18",
+    "input_files": [
+      "train-sets/ksvm_simple.dat"
+    ],
     "diff_files": {
       "stderr": "train-sets/ref/ksvm_subsample.stderr",
       "stdout": "train-sets/ref/ksvm_subsample.stdout",
       "ksvm_subsample.predict": "pred-sets/ref/ksvm_subsample.predict"
-    },
-    "input_files": [
-      "train-sets/rcv1_25.dat"
-    ]
+    }
   },
   {
     "id": 529,
@@ -8645,34 +8645,34 @@
   {
     "id": 686,
     "desc": "kernel SVM with RBF kernel",
-    "vw_command": "--ksvm --kernel rbf --bandwidth 1.0 -d train-sets/rcv1_25.dat",
+    "vw_command": "--ksvm --kernel rbf --bandwidth 1.0 -d train-sets/ksvm_simple.dat",
     "diff_files": {
       "stderr": "train-sets/ref/t686.stderr"
     },
     "input_files": [
-      "train-sets/rcv1_25.dat"
+      "train-sets/ksvm_simple.dat"
     ]
   },
   {
     "id": 687,
     "desc": "kernel SVM with polynomial kernel",
-    "vw_command": "--ksvm --kernel poly --degree 2 -d train-sets/rcv1_25.dat",
+    "vw_command": "--ksvm --kernel poly --degree 2 -d train-sets/ksvm_simple.dat",
     "diff_files": {
       "stderr": "train-sets/ref/t687.stderr"
     },
     "input_files": [
-      "train-sets/rcv1_25.dat"
+      "train-sets/ksvm_simple.dat"
     ]
   },
   {
     "id": 688,
     "desc": "kernel SVM pool greedy with reprocess",
-    "vw_command": "--ksvm --pool_greedy --pool_size 5 --reprocess 2 -d train-sets/rcv1_25.dat",
+    "vw_command": "--ksvm --pool_greedy --pool_size 5 --reprocess 2 -d train-sets/ksvm_simple.dat",
     "diff_files": {
       "stderr": "train-sets/ref/t688.stderr"
     },
     "input_files": [
-      "train-sets/rcv1_25.dat"
+      "train-sets/ksvm_simple.dat"
     ]
   },
   {

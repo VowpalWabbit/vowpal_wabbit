@@ -3,7 +3,7 @@ predictions = ksvm_pool_greedy.predict
 Lambda = 1
 Kernel = linear
 using no cache
-Reading datafile = train-sets/rcv1_25.dat
+Reading datafile = train-sets/ksvm_simple.dat
 num sources = 1
 Num weight bits = 18
 learning rate = 0.5
@@ -14,20 +14,20 @@ Input label = SIMPLE
 Output pred = SCALAR
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
-1.000000 1.000000            1            1.0         1.0000         0.0000       50
-1.000000 1.000000            2            2.0        -1.0000         0.0000      103
-1.000000 1.000000            4            4.0        -1.0000         0.0000      134
-0.929194 0.858387            8            8.0        -1.0000        -0.5578      145
-0.900038 0.870882           16           16.0         1.0000        -0.5938       23
+1.000000 1.000000            1            1.0         1.0000         0.0000        3
+1.000000 1.000000            2            2.0        -1.0000         0.0000        3
+1.000000 1.000000            4            4.0        -1.0000         0.0000        3
+0.689824 0.379647            8            8.0        -1.0000        -0.8144        3
+0.365577 0.041330           16           16.0        -1.0000        -2.0766        3
 
 finished run
-number of examples = 25
-weighted example sum = 25.000000
-weighted label sum = -7.000000
-average loss = 0.909032
+number of examples = 20
+weighted example sum = 20.000000
+weighted label sum = 0.000000
+average loss = 0.292461
 best constant = -1.000000
-best constant's loss = 0.720000
-total feature number = 2084
-Num support = 25
-Number of kernel evaluations = 924 Number of cache queries = 491
-Total loss = 22.725811
+best constant's loss = 1.000000
+total feature number = 60
+Num support = 2
+Number of kernel evaluations = 159 Number of cache queries = 226
+Total loss = 5.849228
