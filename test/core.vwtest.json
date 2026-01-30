@@ -7852,12 +7852,12 @@
   {
     "id": 615,
     "desc": "active cover reduction",
-    "vw_command": "--active_cover -d train-sets/0002.dat",
+    "vw_command": "--active_cover -d train-sets/0002_25.dat",
     "diff_files": {
       "stderr": "train-sets/ref/t615.stderr"
     },
     "input_files": [
-      "train-sets/0002.dat"
+      "train-sets/0002_25.dat"
     ]
   },
   {
