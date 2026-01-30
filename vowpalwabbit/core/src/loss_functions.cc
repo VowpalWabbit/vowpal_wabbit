@@ -458,7 +458,10 @@ public:
     else
     {
       float inner = exp_prediction * update_scale * pred_per_update;
-      if (!std::isfinite(inner)) { return -clamped / pred_per_update; }
+      if (!std::isfinite(inner))
+      {
+        return -(clamped + std::log(update_scale * pred_per_update)) / pred_per_update;
+      }
       return -std::log1p(inner) / pred_per_update;
     }
   }
