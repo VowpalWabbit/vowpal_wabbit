@@ -1,0 +1,21 @@
+using no cache
+Reading datafile = train-sets/cb_simple.json
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+cb_type = mtr
+Enabled learners: gd, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, shared_feature_merger
+Input label = CB
+Output pred = ACTION_PROBS
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+-1.00000 -1.00000            1            1.0       1:-1:0.5          0:0.5       12
+
+finished run
+number of examples = 1
+weighted example sum = 1.000000
+weighted label sum = 0.000000
+average loss = -1.000000
+total feature number = 12

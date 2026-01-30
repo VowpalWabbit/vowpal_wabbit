@@ -4,6 +4,7 @@
 
 #include "vw/config/options_cli.h"
 #include "vw/core/multi_ex.h"
+#include "vw/core/parse_primitives.h"
 #include "vw/core/vw.h"
 #include "vw/io/io_adapter.h"
 #include "vw/io/logger.h"
@@ -249,3 +250,34 @@ TEST(Initialize, ConflictingOptionsThrows)
   auto options = VW::make_unique<VW::config::options_cli>(std::vector<std::string>{"--cb", "2", "--oaa", "3", "--quiet"});
   EXPECT_THROW(VW::initialize(std::move(options)), VW::vw_exception);
 }
+
+// Test VW::initialize with split_command_line
+TEST(Initialize, WithSplitCommandLine)
+{
+  auto vw = VW::initialize(
+      VW::make_unique<VW::config::options_cli>(VW::split_command_line(std::string("--quiet"))));
+  ASSERT_NE(vw, nullptr);
+  EXPECT_NE(vw->l, nullptr);
+}
+
+// Test VW::initialize with split_command_line and multiple args
+TEST(Initialize, WithSplitCommandLineMultipleArgs)
+{
+  auto vw = VW::initialize(
+      VW::make_unique<VW::config::options_cli>(VW::split_command_line(std::string("--quiet --cb_explore_adf"))));
+  ASSERT_NE(vw, nullptr);
+}
+
+
+// Test workspace finish via destructor after learn
+TEST(Finish, BasicFinish)
+{
+  auto vw = VW::initialize(vwtest::make_args("--quiet"));
+
+  auto* ex = VW::read_example(*vw, "1 |f a b c");
+  vw->learn(*ex);
+  vw->finish_example(*ex);
+
+  // Workspace cleanup happens via unique_ptr destructor — should not throw
+}
+

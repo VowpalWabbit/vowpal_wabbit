@@ -1,0 +1,26 @@
+final_regressor = models/lda_audit.model
+creating cache_file = lda_audit_train.cache
+Reading datafile = train-sets/wiki5.dat
+num sources = 1
+Num weight bits = 8
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+decay_learning_rate = 1
+Enabled learners: lda
+Input label = NOLABEL
+Output pred = SCALARS
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+5.574331 5.574331            1            1.0           none              0      732
+5.620818 5.667305            2            2.0           none              0       27
+5.630819 5.640820            4            4.0           none              0       53
+unknown  unknown             8            8.0           none              0       27 h
+
+finished run
+number of examples per pass = 6
+passes used = 2
+weighted example sum = 12.000000
+weighted label sum = 0.000000
+average loss = 0.000000 h
+total feature number = 1774

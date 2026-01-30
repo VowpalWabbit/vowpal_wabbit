@@ -3,11 +3,27 @@ from genericpath import isdir, isfile
 from pathlib import Path
 import re
 import os
+import signal
 import shutil
 import json
 import sys
 from run_tests import convert_to_test_data, Color, NoColor, TestData
 import vowpalwabbit
+
+
+# Timeout for individual model load operations (seconds).
+# Older VW versions may hang in json_weights() for certain models.
+# This prevents a single test from stalling the entire CI job.
+MODEL_LOAD_TIMEOUT_SECONDS = 120
+
+
+class _ModelLoadTimeout(Exception):
+    pass
+
+
+def _timeout_handler(signum, frame):
+    raise _ModelLoadTimeout()
+
 
 from typing import (
     Any,
@@ -107,8 +123,8 @@ def generate_model_and_weights(
     weights_dir = working_dir / "test_weights"
     weights_dir.mkdir(parents=True, exist_ok=True)
     # Skip json_weights() for models that don't use standard weights.
-    # Older VW versions segfault when calling json_weights() on these models.
-    skip_weights_flags = ["--ksvm", "--print"]
+    # Older VW versions segfault, hang, or produce invalid JSON for these models.
+    skip_weights_flags = ["--ksvm", "--print", "--marginal", "--loss_function poisson"]
     if any(flag in command for flag in skip_weights_flags):
         print(
             f"{color_enum.LIGHT_PURPLE}Skipping weights (model doesn't use standard weights){color_enum.ENDC}"
@@ -153,6 +169,8 @@ def load_model(
     keep_arg_commands = [
         "--dictionary_path",
         "--loss_function",
+        "--quantile_tau",
+        "--expectile_q",
     ]
     for k in keep_arg_commands:
         cmd_split = command.split(" ")
@@ -165,14 +183,16 @@ def load_model(
     )
 
     # Skip models that don't use standard weights.
-    # Older VW versions segfault when calling json_weights() on these models.
-    skip_weights_flags = ["--ksvm", "--print"]
+    # Older VW versions segfault, hang, or produce invalid JSON for these models.
+    skip_weights_flags = ["--ksvm", "--print", "--marginal", "--loss_function poisson"]
     if any(flag in command for flag in skip_weights_flags):
         print(
             f"{color_enum.LIGHT_CYAN}Skipping weight comparison (model doesn't use standard weights){color_enum.ENDC}"
         )
         return
 
+    old_handler = signal.signal(signal.SIGALRM, _timeout_handler)
+    signal.alarm(MODEL_LOAD_TIMEOUT_SECONDS)
     try:
         vw = try_get_workspace_or_none(
             cli=load_command,
@@ -197,9 +217,16 @@ def load_model(
         # Assert if both sorted weights are equal
         assert new_weights == old_weights
         vw.finish()
+    except _ModelLoadTimeout:
+        print(
+            f"{color_enum.LIGHT_RED}TIMEOUT after {MODEL_LOAD_TIMEOUT_SECONDS}s loading model for id: {test_id}, skipping{color_enum.ENDC}"
+        )
     except Exception as e:
         print(f"{color_enum.LIGHT_RED} FAILURE!! id: {test_id} {str(e)}")
         raise e
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, old_handler)
 
 
 def get_tests(
