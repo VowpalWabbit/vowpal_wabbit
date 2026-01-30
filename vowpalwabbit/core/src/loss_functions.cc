@@ -433,48 +433,72 @@ public:
   float get_loss(const VW::shared_data*, float prediction, float label) const override
   {
     if (label < 0.f) { _logger.out_warn("The poisson loss function expects a label >= 0 but received '{}'.", label); }
-    float exp_prediction = std::exp(prediction);
+    float clamped = clamp_prediction(prediction);
+    float exp_prediction = std::exp(clamped);
     // deviance is used instead of log-likelihood
-    return 2 * (label * (std::log(label + 1e-6f) - prediction) - (label - exp_prediction));
+    return 2 * (label * (std::log(label + 1e-6f) - clamped) - (label - exp_prediction));
   }
 
   float get_update(float prediction, float label, float update_scale, float pred_per_update) const override
   {
-    float exp_prediction = std::exp(prediction);
+    float clamped = clamp_prediction(prediction);
+    float exp_prediction = std::exp(clamped);
     if (label > 0)
     {
+      float expm1_arg = label * update_scale * pred_per_update;
+      if (expm1_arg > MAX_EXP_ARG)
+      {
+        // For large arguments, the update converges to -(prediction - log(label)) / pred_per_update.
+        // This avoids overflow in expm1() while preserving the correct limiting behavior.
+        return -(clamped - std::log(label)) / pred_per_update;
+      }
       return label * update_scale -
-          std::log1p(exp_prediction * std::expm1(label * update_scale * pred_per_update) / label) / pred_per_update;
+          std::log1p(exp_prediction * std::expm1(expm1_arg) / label) / pred_per_update;
     }
-    else { return -std::log1p(exp_prediction * update_scale * pred_per_update) / pred_per_update; }
+    else
+    {
+      float inner = exp_prediction * update_scale * pred_per_update;
+      if (!std::isfinite(inner)) { return -clamped / pred_per_update; }
+      return -std::log1p(inner) / pred_per_update;
+    }
   }
 
   float get_unsafe_update(float prediction, float label, float update_scale) const override
   {
-    float exp_prediction = std::exp(prediction);
+    float exp_prediction = std::exp(clamp_prediction(prediction));
     return (label - exp_prediction) * update_scale;
   }
 
   float get_square_grad(float prediction, float label) const override
   {
-    float exp_prediction = std::exp(prediction);
+    float exp_prediction = std::exp(clamp_prediction(prediction));
     return (exp_prediction - label) * (exp_prediction - label);
   }
 
   float first_derivative(const VW::shared_data*, float prediction, float label) const override
   {
-    float exp_prediction = std::exp(prediction);
+    float exp_prediction = std::exp(clamp_prediction(prediction));
     return (exp_prediction - label);
   }
 
   float second_derivative(const VW::shared_data*, float prediction, float /* label */) const override
   {
-    float exp_prediction = std::exp(prediction);
+    float exp_prediction = std::exp(clamp_prediction(prediction));
     return exp_prediction;
   }
 
 private:
   mutable VW::io::logger _logger;
+
+  // Clamp prediction so that exp(prediction)^2 does not overflow float.
+  // FLT_MAX ~ 3.4e38, so we need exp(x)^2 < FLT_MAX, i.e. x < ln(sqrt(FLT_MAX)) ~ 44.36.
+  static constexpr float MAX_EXP_ARG = 44.0f;
+  static float clamp_prediction(float prediction)
+  {
+    if (prediction > MAX_EXP_ARG) { return MAX_EXP_ARG; }
+    if (prediction < -MAX_EXP_ARG) { return -MAX_EXP_ARG; }
+    return prediction;
+  }
 };
 }  // namespace
 namespace VW
