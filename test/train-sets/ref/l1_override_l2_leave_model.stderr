@@ -1,0 +1,20 @@
+final_regressor = l1_override_l2_leave_model.model
+using no cache
+Reading datafile = none
+num sources = 0
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+Enabled learners: gd, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+
+finished run
+number of examples = 0
+weighted example sum = 0.000000
+weighted label sum = 0.000000
+average loss = n.a.
+total feature number = 0

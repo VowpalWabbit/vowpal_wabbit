@@ -1,1 +1,14 @@
-[critical] vw (io_buf.h:369): model load failed. Error Details: Unexpected end of file encountered., model files = model-sets/corrupted_weights_gd_mf.model
+[info] Generating 0-grams for b namespaces.
+[info] Generating 0-grams for d namespaces.
+[info] Generating 0-grams for v namespaces.
+[info] Generating 3-grams for all namespaces.
+[info] Generating 0-grams for - namespaces.
+[error] The namespace index must be specified before the n
+[info] Generating 0-grams for i namespaces.
+[info] Generating 0-grams for n namespaces.
+[info] Generating 0-grams for s namespaces.
+[info] Generating 0-grams for a namespaces.
+[error] The namespace index must be specified before the n
+[error] The namespace index must be specified before the n
+[warning] currently, mtr is only used for the first policy in cover, other policies use dr
+[critical] vw (io_buf.h:445): model load failed. Error Details: Unexpected end of file encountered., model files = model-sets/corrupted_weights_gd_mf.model
