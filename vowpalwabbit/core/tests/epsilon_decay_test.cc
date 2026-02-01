@@ -255,7 +255,7 @@ TEST(EpsilonDecay, ScoreBoundsUnit)
   uint32_t feature_width = 8;
   VW::dense_parameters dense_weights(num_models);
   epsilon_decay_data ep_data(
-      num_models, 100, .05, dense_weights, "", false, feature_width, 0, 1.f, 0, false, 1e-6, "bisect", false, true);
+      num_models, 100, .05, dense_weights, "", false, feature_width, 0, 1.f, 0, false, 1e-6, true, false, true, VW::io::create_null_logger());
 
   // Set update counts to fixed values with expected horizon bound violation
   size_t score_idx = 0;
@@ -341,7 +341,7 @@ TEST(EpsilonDecay, HorizonBoundsUnit)
   uint32_t feature_width = 8;
   VW::dense_parameters dense_weights(num_models);
   epsilon_decay_data ep_data(
-      num_models, 100, .05, dense_weights, "", false, feature_width, 0, 1.f, 0, false, 1e-6, "bisect", false, true);
+      num_models, 100, .05, dense_weights, "", false, feature_width, 0, 1.f, 0, false, 1e-6, true, false, true, VW::io::create_null_logger());
 
   // Set update counts to fixed values with expected horizon bound violation
   size_t score_idx = 0;

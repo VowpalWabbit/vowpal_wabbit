@@ -2702,12 +2702,9 @@ TEST(ParseArgsCoverage, AuditMode)
 // Epsilon decay coverage
 // ============================================================
 
-// BUG: epsilon_decay with confidence_sequence_robust triggers assertion
-// `0.0 <= r && r <= 1.0` in confidence_sequence_robust.cc:316 because IPS-estimated
-// rewards can exceed [0,1] even when costs are within bounds. The IPS estimator
-// divides by probability, which can amplify the reward above 1.0.
-// This is a known issue documented here as a death test.
-static void epsilon_decay_trigger_assertion()
+// epsilon_decay clamps out-of-range rewards to [0,1] and warns.
+// This test verifies that costs outside [0,1] do not crash.
+TEST(ReductionsCoverage2, EpsilonDecayClampsOutOfRangeReward)
 {
   auto vw = VW::initialize(
       vwtest::make_args("--cb_explore_adf", "--epsilon_decay", "--model_count", "3", "--quiet"));
@@ -2724,11 +2721,6 @@ static void epsilon_decay_trigger_assertion()
     vw->learn(multi_ex);
     vw->finish_example(multi_ex);
   }
-}
-
-TEST(ReductionsCoverage2, EpsilonDecayAssertsOnOutOfRangeReward)
-{
-  ASSERT_DEATH(epsilon_decay_trigger_assertion(), "0.0 <= r && r <= 1.0");
 }
 
 // ============================================================
