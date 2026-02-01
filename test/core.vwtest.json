@@ -8685,5 +8685,402 @@
     "input_files": [
       "train-sets/cb_test.ldf"
     ]
+  },
+  {
+    "id": 690,
+    "desc": "CSV with semicolon separator",
+    "vw_command": "--csv --csv_separator ; -d train-sets/csv_tab.csv",
+    "diff_files": {
+      "stderr": "train-sets/ref/t690.stderr"
+    },
+    "input_files": [
+      "train-sets/csv_tab.csv"
+    ]
+  },
+  {
+    "id": 691,
+    "desc": "CSV with no file header and custom header",
+    "vw_command": "--csv --csv_no_file_header --csv_header label,feat_a,feat_b,feat_c -d train-sets/csv_no_header.csv",
+    "diff_files": {
+      "stderr": "train-sets/ref/t691.stderr"
+    },
+    "input_files": [
+      "train-sets/csv_no_header.csv"
+    ]
+  },
+  {
+    "id": 692,
+    "desc": "CSV with namespace value scaling",
+    "vw_command": "--csv --csv_ns_value feature_a:0.5,feature_b:2.0 -d train-sets/csv_test.csv",
+    "diff_files": {
+      "stderr": "train-sets/ref/t692.stderr"
+    },
+    "input_files": [
+      "train-sets/csv_test.csv"
+    ]
+  },
+  {
+    "id": 693,
+    "desc": "CSV with quoted fields",
+    "vw_command": "--csv -d train-sets/csv_quoted.csv",
+    "diff_files": {
+      "stderr": "train-sets/ref/t693.stderr"
+    },
+    "input_files": [
+      "train-sets/csv_quoted.csv"
+    ]
+  },
+  {
+    "id": 694,
+    "desc": "CSV with audit mode",
+    "vw_command": "--csv --audit -d train-sets/csv_test.csv",
+    "diff_files": {
+      "stderr": "train-sets/ref/t694.stderr"
+    },
+    "input_files": [
+      "train-sets/csv_test.csv"
+    ]
+  },
+  {
+    "id": 695,
+    "desc": "JSON CB with labelIndex and chain_hash",
+    "vw_command": "--cb_explore_adf --json --chain_hash -d train-sets/cb_simple.json",
+    "diff_files": {
+      "stderr": "train-sets/ref/t695.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_simple.json"
+    ]
+  },
+  {
+    "id": 696,
+    "desc": "DSJSON CB with default namespace",
+    "vw_command": "--cb_explore_adf --dsjson -d train-sets/dsjson_cb_default_ns.json",
+    "diff_files": {
+      "stderr": "train-sets/ref/t696.stderr"
+    },
+    "input_files": [
+      "train-sets/dsjson_cb_default_ns.json"
+    ]
+  },
+  {
+    "id": 697,
+    "desc": "JSON CCB with outcomes and original_label_cost",
+    "vw_command": "--ccb_explore_adf --dsjson -d train-sets/ccb_data.json",
+    "diff_files": {
+      "stderr": "train-sets/ref/t697.stderr"
+    },
+    "input_files": [
+      "train-sets/ccb_data.json"
+    ]
+  },
+  {
+    "id": 698,
+    "desc": "JSON CCB without event ID",
+    "vw_command": "--ccb_explore_adf --dsjson -d train-sets/ccb_data_noevent.json",
+    "diff_files": {
+      "stderr": "train-sets/ref/t698.stderr"
+    },
+    "input_files": [
+      "train-sets/ccb_data_noevent.json"
+    ]
+  },
+  {
+    "id": 699,
+    "desc": "DSJSON CB with pdrop",
+    "vw_command": "--cb_explore_adf --dsjson -d train-sets/cb_simple_pdrop.json",
+    "diff_files": {
+      "stderr": "train-sets/ref/t699.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_simple_pdrop.json"
+    ]
+  },
+  {
+    "id": 700,
+    "desc": "DSJSON CB with pdrop=1",
+    "vw_command": "--cb_explore_adf --dsjson -d train-sets/cb_simple_pdrop1.json",
+    "diff_files": {
+      "stderr": "train-sets/ref/t700.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_simple_pdrop1.json"
+    ]
+  },
+  {
+    "id": 701,
+    "desc": "DSJSON CB with features having zero values",
+    "vw_command": "--cb_explore_adf --dsjson -d train-sets/cb_features_w_zero_vals.dsjson",
+    "diff_files": {
+      "stderr": "train-sets/ref/t701.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_features_w_zero_vals.dsjson"
+    ]
+  },
+  {
+    "id": 702,
+    "desc": "JSON CCB simple format",
+    "vw_command": "--ccb_explore_adf --json -d train-sets/ccb_simple.json",
+    "diff_files": {
+      "stderr": "train-sets/ref/t702.stderr"
+    },
+    "input_files": [
+      "train-sets/ccb_simple.json"
+    ]
+  },
+  {
+    "id": 703,
+    "desc": "JSON CCB simple format with pdrop",
+    "vw_command": "--ccb_explore_adf --json -d train-sets/ccb_simple_pdrop.json",
+    "diff_files": {
+      "stderr": "train-sets/ref/t703.stderr"
+    },
+    "input_files": [
+      "train-sets/ccb_simple_pdrop.json"
+    ]
+  },
+  {
+    "id": 704,
+    "desc": "DSJSON CCB automl data",
+    "vw_command": "--ccb_explore_adf --dsjson --automl 3 -d train-sets/ccb_automl.dsjson",
+    "diff_files": {
+      "stderr": "train-sets/ref/t704.stderr"
+    },
+    "input_files": [
+      "train-sets/ccb_automl.dsjson"
+    ]
+  },
+  {
+    "id": 705,
+    "desc": "DSJSON CCB with reuse medium data",
+    "vw_command": "--ccb_explore_adf --dsjson -d train-sets/ccb_reuse_medium.dsjson",
+    "diff_files": {
+      "stderr": "train-sets/ref/t705.stderr"
+    },
+    "input_files": [
+      "train-sets/ccb_reuse_medium.dsjson"
+    ]
+  },
+  {
+    "id": 706,
+    "desc": "slates with interactions and invert_hash",
+    "vw_command": "--slates -d train-sets/slates_simple_w_interactions.txt -q :: --invert_hash slates_inv.txt",
+    "diff_files": {
+      "stderr": "train-sets/ref/t706.stderr"
+    },
+    "input_files": [
+      "train-sets/slates_simple_w_interactions.txt"
+    ]
+  },
+  {
+    "id": 707,
+    "desc": "text parser with affix features",
+    "vw_command": "--affix -1 -d train-sets/0001_25.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/t707.stderr"
+    },
+    "input_files": [
+      "train-sets/0001_25.dat"
+    ]
+  },
+  {
+    "id": 708,
+    "desc": "text parser with affix and audit",
+    "vw_command": "--affix -1 --audit -d train-sets/0001_25.dat -P 1",
+    "diff_files": {
+      "stderr": "train-sets/ref/t708.stderr"
+    },
+    "input_files": [
+      "train-sets/0001_25.dat"
+    ]
+  },
+  {
+    "id": 709,
+    "desc": "cost-sensitive LDF with shared header",
+    "vw_command": "--csoaa_ldf m -d train-sets/csoaa_ldf_shared.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/t709.stderr"
+    },
+    "input_files": [
+      "train-sets/csoaa_ldf_shared.dat"
+    ]
+  },
+  {
+    "id": 710,
+    "desc": "cost-sensitive LDF with audit and noconstant",
+    "vw_command": "--csoaa_ldf m --audit --noconstant -d train-sets/csoaa_ldf_shared.dat -P 1",
+    "diff_files": {
+      "stderr": "train-sets/ref/t710.stderr"
+    },
+    "input_files": [
+      "train-sets/csoaa_ldf_shared.dat"
+    ]
+  },
+  {
+    "id": 711,
+    "desc": "create cache then reuse for training",
+    "vw_command": "-d train-sets/0002_25.dat -k -c --passes 3 --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/t711.stderr"
+    },
+    "input_files": [
+      "train-sets/0002_25.dat"
+    ]
+  },
+  {
+    "id": 712,
+    "desc": "JSON with audit output",
+    "vw_command": "--cb_explore_adf --json --audit -d train-sets/cb_simple.json",
+    "diff_files": {
+      "stderr": "train-sets/ref/t712.stderr"
+    },
+    "input_files": [
+      "train-sets/cb_simple.json"
+    ]
+  },
+  {
+    "id": 713,
+    "desc": "training with holdout period",
+    "vw_command": "-d train-sets/0002_25.dat -k -c --passes 5 --holdout_period 3",
+    "diff_files": {
+      "stderr": "train-sets/ref/t713.stderr"
+    },
+    "input_files": [
+      "train-sets/0002_25.dat"
+    ]
+  },
+  {
+    "id": 714,
+    "desc": "training with early terminate",
+    "vw_command": "-d train-sets/0002_25.dat -k -c --passes 10 --early_terminate 2",
+    "diff_files": {
+      "stderr": "train-sets/ref/t714.stderr"
+    },
+    "input_files": [
+      "train-sets/0002_25.dat"
+    ]
+  },
+  {
+    "id": 715,
+    "desc": "search with allowed transitions",
+    "vw_command": "--search_task sequence --search 4 --search_allowed_transitions train-sets/search_allowed_transitions.txt -d train-sets/seq_small -k -c --passes 2 --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/t715.stderr"
+    },
+    "input_files": [
+      "train-sets/seq_small",
+      "train-sets/search_allowed_transitions.txt"
+    ]
+  },
+  {
+    "id": 716,
+    "desc": "search with rollin and rollout oracle",
+    "vw_command": "--search_task sequence --search 4 --search_rollin oracle --search_rollout oracle -d train-sets/seq_small -k -c --passes 2 --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/t716.stderr"
+    },
+    "input_files": [
+      "train-sets/seq_small"
+    ]
+  },
+  {
+    "id": 717,
+    "desc": "search with rollin learn and rollout none",
+    "vw_command": "--search_task sequence --search 4 --search_rollin learn --search_rollout none -d train-sets/seq_small -k -c --passes 2 --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/t717.stderr"
+    },
+    "input_files": [
+      "train-sets/seq_small"
+    ]
+  },
+  {
+    "id": 718,
+    "desc": "search sequence with max_bias_ngram",
+    "vw_command": "--search_task sequence --search 4 --search_max_bias_ngram_length 2 -d train-sets/seq_small -k -c --passes 2 --holdout_off",
+    "diff_files": {
+      "stderr": "train-sets/ref/t718.stderr"
+    },
+    "input_files": [
+      "train-sets/seq_small"
+    ]
+  },
+  {
+    "id": 719,
+    "desc": "BFGS with passes and holdout",
+    "vw_command": "--bfgs -d train-sets/0001_25.dat -k -c --passes 5",
+    "diff_files": {
+      "stderr": "train-sets/ref/t719.stderr"
+    },
+    "input_files": [
+      "train-sets/0001_25.dat"
+    ]
+  },
+  {
+    "id": 720,
+    "desc": "generate interactions with permutations and quadratics",
+    "vw_command": "-q ab --permutations -d train-sets/interact.dat",
+    "diff_files": {
+      "stderr": "train-sets/ref/t720.stderr"
+    },
+    "input_files": [
+      "train-sets/interact.dat"
+    ]
+  },
+  {
+    "id": 721,
+    "desc": "training with verbose output P=1",
+    "vw_command": "-d train-sets/0002_25.dat -P 1",
+    "diff_files": {
+      "stderr": "train-sets/ref/t721.stderr"
+    },
+    "input_files": [
+      "train-sets/0002_25.dat"
+    ]
+  },
+  {
+    "id": 722,
+    "desc": "JSON chain_hash with regular JSON",
+    "vw_command": "--json --chain_hash -d train-sets/0001_25.json",
+    "diff_files": {
+      "stderr": "train-sets/ref/t722.stderr"
+    },
+    "input_files": [
+      "train-sets/0001_25.json"
+    ]
+  },
+  {
+    "id": 723,
+    "desc": "DSJSON CB with audit",
+    "vw_command": "--cb_explore_adf --dsjson --audit -d train-sets/dsjson_cb.json -P 1",
+    "diff_files": {
+      "stderr": "train-sets/ref/t723.stderr"
+    },
+    "input_files": [
+      "train-sets/dsjson_cb.json"
+    ]
+  },
+  {
+    "id": 724,
+    "desc": "training with min and max prediction",
+    "vw_command": "-d train-sets/0002_25.dat --min_prediction 0.0 --max_prediction 1.0",
+    "diff_files": {
+      "stderr": "train-sets/ref/t724.stderr"
+    },
+    "input_files": [
+      "train-sets/0002_25.dat"
+    ]
+  },
+  {
+    "id": 725,
+    "desc": "training with loss_function logistic",
+    "vw_command": "-d train-sets/0001_25.dat --loss_function logistic",
+    "diff_files": {
+      "stderr": "train-sets/ref/t725.stderr"
+    },
+    "input_files": [
+      "train-sets/0001_25.dat"
+    ]
   }
 ]

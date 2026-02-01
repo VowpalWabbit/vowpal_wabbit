@@ -469,8 +469,11 @@ set(vw_core_test_sources
       tests/additional_coverage_test.cc
       tests/automl_test.cc
       tests/cb_labels_test.cc
+      tests/coverage_gap_test.cc
+      tests/example_utils_test.cc
       tests/learner_test.cc
       tests/shared_data_test.cc
+      tests/vw_c_api_test.cc
       tests/automl_weights_test.cc
       tests/baseline_cb_test.cc
       tests/baseline_reduction_test.cc
