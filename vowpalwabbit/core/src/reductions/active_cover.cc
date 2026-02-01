@@ -232,7 +232,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::active_cover_setup(VW::set
       .add(make_option("beta_scale", data->beta_scale)
                .default_value(sqrtf(10.f))
                .help("Active learning variance upper bound parameter beta_scale"))
-      .add(make_option("cover", cover_size).keep().default_value(12).help("Cover size"))
+      .add(make_option("cover", cover_size).keep().default_value(12).help("Number of policies in cover set"))
       .add(make_option("oracular", data->oracular).help("Use Oracular-CAL style query or not"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }

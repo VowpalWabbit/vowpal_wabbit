@@ -798,7 +798,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::kernel_svm_setup(VW::setup
   bool ksvm = false;
 
   option_group_definition new_options("[Reduction] Kernel SVM");
-  new_options.add(make_option("ksvm", ksvm).keep().necessary().help("Kernel svm"))
+  new_options.add(make_option("ksvm", ksvm).keep().necessary().help("Kernel SVM learner"))
       .add(make_option("reprocess", reprocess).default_value(1).help("Number of reprocess steps for LASVM"))
       .add(make_option("pool_greedy", params->active_pool_greedy).help("Use greedy selection on mini pools"))
       .add(make_option("para_active", params->para_active).help("Do parallel active learning"))
@@ -808,7 +808,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::kernel_svm_setup(VW::setup
                .keep()
                .default_value("linear")
                .one_of({"linear", "rbf", "poly"})
-               .help("Type of kernel"))
+               .help("Type of kernel (linear, rbf, poly)"))
       .add(make_option("bandwidth", bandwidth).keep().default_value(1.f).help("Bandwidth of rbf kernel"))
       .add(make_option("degree", degree).keep().default_value(2).help("Degree of poly kernel"));
 
