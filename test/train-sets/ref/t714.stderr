@@ -1,0 +1,29 @@
+creating cache_file = train-sets/0002_25.dat.cache
+Reading datafile = train-sets/0002_25.dat
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+decay_learning_rate = 1
+Enabled learners: gd, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.271591 0.271591            1            1.0         0.5211         0.0000       15
+0.136120 0.000650            2            2.0         0.5353         0.5098       15
+0.109867 0.083614            4            4.0         0.5854         0.5854       15
+0.075648 0.041428            8            8.0         0.5575         0.4495       15
+0.082329 0.089010           16           16.0         0.5000         0.2937       14
+0.009050 0.009050           32           32.0         0.6399         0.5544       15 h
+0.004960 0.002234           64           64.0         0.1427         0.1861       15 h
+
+finished run
+number of examples per pass = 23
+passes used = 4
+weighted example sum = 92.000000
+weighted label sum = 46.511951
+average loss = 0.001528 h
+best constant = 0.505565
+total feature number = 1376
