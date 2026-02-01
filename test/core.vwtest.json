@@ -1434,13 +1434,13 @@
   {
     "id": 109,
     "desc": "Train a depenency parser with neural network and one_learner approach (lols)",
-    "vw_command": "-k -c -d train-sets/wsj_small.dparser.vw.gz -b 20 --search_task dep_parser --search 25 --search_alpha 1e-5 --search_rollin mix_per_roll --search_rollout oracle --one_learner --nn 5 --ftrl --search_history_length 3 --root_label 8",
+    "vw_command": "-k -c -d train-sets/wsj_tiny.dparser.vw.gz -b 20 --search_task dep_parser --search 25 --search_alpha 1e-5 --search_rollin mix_per_roll --search_rollout oracle --one_learner --nn 5 --ftrl --search_history_length 3 --root_label 8",
     "diff_files": {
       "stderr": "train-sets/ref/search_dep_parser_one_learner.stderr",
       "stdout": "train-sets/ref/search_dep_parser_one_learner.stdout"
     },
     "input_files": [
-      "train-sets/wsj_small.dparser.vw.gz"
+      "train-sets/wsj_tiny.dparser.vw.gz"
     ]
   },
   {
@@ -3606,24 +3606,24 @@
   {
     "id": 280,
     "desc": "cbzo: learn and save linear template model. Note: Changing hyperparameters (-l, --l1, --radius etc.) or any options affecting the learning algorithm will require. preparing the dataset again",
-    "vw_command": "-d train-sets/cbzo_linear.dat --holdout_off --cbzo --policy linear -l 0.0001 --radius 0.1 --l1 0.2 --l2 0.3 --no_bias_regularization -f models/cbzo_linear.model",
+    "vw_command": "-d train-sets/cbzo_linear_small.dat --holdout_off --cbzo --policy linear -l 0.0001 --radius 0.1 --l1 0.2 --l2 0.3 --no_bias_regularization -f models/cbzo_linear.model",
     "diff_files": {
       "stderr": "train-sets/ref/cbzo_linear.stderr",
       "stdout": "train-sets/ref/cbzo_linear.stdout"
     },
     "input_files": [
-      "train-sets/cbzo_linear.dat"
+      "train-sets/cbzo_linear_small.dat"
     ]
   },
   {
     "id": 281,
     "desc": "cbzo: verify predictions of Test 282 model.. Also ends up testing if important cmd-line options (--cbzo, --policy) are saved with the model.",
-    "vw_command": "-d train-sets/cbzo_linear.dat --holdout_off -t --radius 0.1 -i models/cbzo_linear.model -p cbzo_linear.preds",
+    "vw_command": "-d train-sets/cbzo_linear_small.dat --holdout_off -t --radius 0.1 -i models/cbzo_linear.model -p cbzo_linear.preds",
     "diff_files": {
       "cbzo_linear.preds": "pred-sets/ref/cbzo_linear.preds"
     },
     "input_files": [
-      "train-sets/cbzo_linear.dat",
+      "train-sets/cbzo_linear_small.dat",
       "models/cbzo_linear.model"
     ],
     "depends_on": [
@@ -3633,34 +3633,34 @@
   {
     "id": 282,
     "desc": "cbzo: verify predictions without the intervention of model saving",
-    "vw_command": "-d train-sets/cbzo_linear.dat --holdout_off --cbzo --policy linear -l 0.0001 --radius 0.1 --l1 0.2 --l2 0.3 --no_bias_regularization -p cbzo_linear_online.preds",
+    "vw_command": "-d train-sets/cbzo_linear_small.dat --holdout_off --cbzo --policy linear -l 0.0001 --radius 0.1 --l1 0.2 --l2 0.3 --no_bias_regularization -p cbzo_linear_online.preds",
     "diff_files": {
       "cbzo_linear_online.preds": "pred-sets/ref/cbzo_linear_online.preds"
     },
     "input_files": [
-      "train-sets/cbzo_linear.dat"
+      "train-sets/cbzo_linear_small.dat"
     ]
   },
   {
     "id": 283,
     "desc": "cbzo: verify --readable_model file contents",
-    "vw_command": "-d train-sets/cbzo_linear.dat --holdout_off --cbzo --policy linear -l 0.0001 --radius 0.1 --l1 0.2 --l2 0.3 --no_bias_regularization --readable_model cbzo_linear_readable_model.txt --predict_only_model",
+    "vw_command": "-d train-sets/cbzo_linear_small.dat --holdout_off --cbzo --policy linear -l 0.0001 --radius 0.1 --l1 0.2 --l2 0.3 --no_bias_regularization --readable_model cbzo_linear_readable_model.txt --predict_only_model",
     "diff_files": {
       "cbzo_linear_readable_model.txt": "train-sets/ref/cbzo_linear_readable_model.txt"
     },
     "input_files": [
-      "train-sets/cbzo_linear.dat"
+      "train-sets/cbzo_linear_small.dat"
     ]
   },
   {
     "id": 284,
     "desc": "cbzo: verify --invert_hash file contents",
-    "vw_command": "-d train-sets/cbzo_linear.dat --holdout_off --cbzo --policy linear -l 0.0001 --radius 0.1 --l1 0.2 --l2 0.3 --no_bias_regularization --invert_hash cbzo_linear_invert_hash.txt --predict_only_model",
+    "vw_command": "-d train-sets/cbzo_linear_small.dat --holdout_off --cbzo --policy linear -l 0.0001 --radius 0.1 --l1 0.2 --l2 0.3 --no_bias_regularization --invert_hash cbzo_linear_invert_hash.txt --predict_only_model",
     "diff_files": {
       "cbzo_linear_invert_hash.txt": "train-sets/ref/cbzo_linear_invert_hash.txt"
     },
     "input_files": [
-      "train-sets/cbzo_linear.dat"
+      "train-sets/cbzo_linear_small.dat"
     ]
   },
   {

@@ -94,12 +94,7 @@ jobs:
       - name: Run python test script
         if: ${{ success() || failure() }}
         run: |
-          # Skip test 109 on macOS-14 due to floating-point precision issues
-          SKIP_TESTS="280 282 283 284"
-          if [[ "${{ matrix.os }}" == "macos-14" ]]; then
-            SKIP_TESTS="$SKIP_TESTS 109"
-          fi
-          python3 test/run_tests.py -f --clean_dirty -E 0.001 --include_flatbuffers --jobs 1 --skip_test $SKIP_TESTS
+          python3 test/run_tests.py -f --clean_dirty -E 0.001 --include_flatbuffers --jobs 1
 
   test_ubsan_minimal:
     # To avoid running out of disk space, build only VW executables and some unit tests on Linux
@@ -162,4 +157,4 @@ jobs:
         run: ./build/vowpalwabbit/core/vw_core_test --gtest_filter=-\*WIiterations
       - name: Run python test script
         if: ${{ success() || failure() }}
-        run: python3 test/run_tests.py -f --clean_dirty -E 0.001 --include_flatbuffers --skip_test 280 282 283 284
+        run: python3 test/run_tests.py -f --clean_dirty -E 0.001 --include_flatbuffers
