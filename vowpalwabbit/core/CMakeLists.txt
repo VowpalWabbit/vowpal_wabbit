@@ -469,6 +469,7 @@ set(vw_core_test_sources
       tests/additional_coverage_test.cc
       tests/automl_test.cc
       tests/cb_labels_test.cc
+      tests/coverage_batch6_test.cc
       tests/coverage_gap_test.cc
       tests/example_utils_test.cc
       tests/learner_test.cc
