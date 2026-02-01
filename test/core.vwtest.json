@@ -8876,23 +8876,23 @@
   {
     "id": 707,
     "desc": "text parser with affix features",
-    "vw_command": "--affix -1 -d train-sets/0001.dat",
+    "vw_command": "--affix -1 -d train-sets/0001_25.dat",
     "diff_files": {
       "stderr": "train-sets/ref/t707.stderr"
     },
     "input_files": [
-      "train-sets/0001.dat"
+      "train-sets/0001_25.dat"
     ]
   },
   {
     "id": 708,
     "desc": "text parser with affix and audit",
-    "vw_command": "--affix -1 --audit -d train-sets/0001.dat -P 1",
+    "vw_command": "--affix -1 --audit -d train-sets/0001_25.dat -P 1",
     "diff_files": {
       "stderr": "train-sets/ref/t708.stderr"
     },
     "input_files": [
-      "train-sets/0001.dat"
+      "train-sets/0001_25.dat"
     ]
   },
   {
@@ -8920,12 +8920,12 @@
   {
     "id": 711,
     "desc": "create cache then reuse for training",
-    "vw_command": "-d train-sets/0002.dat -k -c --passes 3 --holdout_off",
+    "vw_command": "-d train-sets/0002_25.dat -k -c --passes 3 --holdout_off",
     "diff_files": {
       "stderr": "train-sets/ref/t711.stderr"
     },
     "input_files": [
-      "train-sets/0002.dat"
+      "train-sets/0002_25.dat"
     ]
   },
   {
@@ -8942,23 +8942,23 @@
   {
     "id": 713,
     "desc": "training with holdout period",
-    "vw_command": "-d train-sets/0002.dat -k -c --passes 5 --holdout_period 3",
+    "vw_command": "-d train-sets/0002_25.dat -k -c --passes 5 --holdout_period 3",
     "diff_files": {
       "stderr": "train-sets/ref/t713.stderr"
     },
     "input_files": [
-      "train-sets/0002.dat"
+      "train-sets/0002_25.dat"
     ]
   },
   {
     "id": 714,
     "desc": "training with early terminate",
-    "vw_command": "-d train-sets/0002.dat -k -c --passes 10 --early_terminate 2",
+    "vw_command": "-d train-sets/0002_25.dat -k -c --passes 10 --early_terminate 2",
     "diff_files": {
       "stderr": "train-sets/ref/t714.stderr"
     },
     "input_files": [
-      "train-sets/0002.dat"
+      "train-sets/0002_25.dat"
     ]
   },
   {
@@ -9009,12 +9009,12 @@
   {
     "id": 719,
     "desc": "BFGS with passes and holdout",
-    "vw_command": "--bfgs -d train-sets/0001.dat -k -c --passes 5",
+    "vw_command": "--bfgs -d train-sets/0001_25.dat -k -c --passes 5",
     "diff_files": {
       "stderr": "train-sets/ref/t719.stderr"
     },
     "input_files": [
-      "train-sets/0001.dat"
+      "train-sets/0001_25.dat"
     ]
   },
   {
@@ -9031,23 +9031,23 @@
   {
     "id": 721,
     "desc": "training with verbose output P=1",
-    "vw_command": "-d train-sets/0002.dat -P 1",
+    "vw_command": "-d train-sets/0002_25.dat -P 1",
     "diff_files": {
       "stderr": "train-sets/ref/t721.stderr"
     },
     "input_files": [
-      "train-sets/0002.dat"
+      "train-sets/0002_25.dat"
     ]
   },
   {
     "id": 722,
     "desc": "JSON chain_hash with regular JSON",
-    "vw_command": "--json --chain_hash -d train-sets/0001.json",
+    "vw_command": "--json --chain_hash -d train-sets/0001_25.json",
     "diff_files": {
       "stderr": "train-sets/ref/t722.stderr"
     },
     "input_files": [
-      "train-sets/0001.json"
+      "train-sets/0001_25.json"
     ]
   },
   {
@@ -9064,23 +9064,23 @@
   {
     "id": 724,
     "desc": "training with min and max prediction",
-    "vw_command": "-d train-sets/0002.dat --min_prediction 0.0 --max_prediction 1.0",
+    "vw_command": "-d train-sets/0002_25.dat --min_prediction 0.0 --max_prediction 1.0",
     "diff_files": {
       "stderr": "train-sets/ref/t724.stderr"
     },
     "input_files": [
-      "train-sets/0002.dat"
+      "train-sets/0002_25.dat"
     ]
   },
   {
     "id": 725,
     "desc": "training with loss_function logistic",
-    "vw_command": "-d train-sets/0001.dat --loss_function logistic",
+    "vw_command": "-d train-sets/0001_25.dat --loss_function logistic",
     "diff_files": {
       "stderr": "train-sets/ref/t725.stderr"
     },
     "input_files": [
-      "train-sets/0001.dat"
+      "train-sets/0001_25.dat"
     ]
   }
 ]
