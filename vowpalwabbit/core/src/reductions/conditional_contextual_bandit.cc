@@ -672,7 +672,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::ccb_explore_adf_setup(VW::
                .keep()
                .default_value("mtr")
                .one_of({"ips", "dm", "dr", "mtr", "sm"})
-               .help("Contextual bandit method to use"));
+               .help("Contextual bandit method to use. Options: ips=Inverse Propensity Scoring, dm=Direct Method, dr=Doubly Robust, mtr=Multi-Task Regression, sm=Supervised Method"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
