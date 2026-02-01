@@ -1214,7 +1214,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::memory_tree_setup(VW::setu
       .add(make_option("leaf_example_multiplier", leaf_example_multiplier)
                .default_value(1)
                .help("Multiplier on examples per leaf (default = log nodes)"))
-      .add(make_option("alpha", tree->alpha).default_value(0.1f).help("Alpha"))
+      .add(make_option("alpha", tree->alpha).default_value(0.1f).help("Smoothing parameter for tree node routing"))
       .add(make_option("dream_repeats", tree->dream_repeats)
                .default_value(1)
                .help("Number of dream operations per example (default = 1)"))
@@ -1224,7 +1224,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::memory_tree_setup(VW::setu
       .add(make_option("dream_at_update", tree->dream_at_update)
                .default_value(0)
                .help("Turn on dream operations at reward based update as well"))
-      .add(make_option("online", tree->online).help("Turn on dream operations at reward based update as well"));
+      .add(make_option("online", tree->online).help("Turn on online learning mode for memory tree"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
   tree->max_nodes = VW::cast_to_smaller_type<size_t>(max_nodes);

@@ -223,8 +223,10 @@ Weight Options:
     --no_predict                            Do not do a prediction when training (type: bool)
     --clip_p arg                            Clipping probability in importance weight. Default: 0.f (no clipping)
                                             (type: float, default: 0, keep)
-    --cb_type arg                           Contextual bandit method to use (type: str, default: mtr, choices
-                                            {dm, dr, ips, mtr, sm}, keep)
+    --cb_type arg                           Contextual bandit method to use. Options: ips=Inverse Propensity
+                                            Scoring, dm=Direct Method, dr=Doubly Robust, mtr=Multi-Task Regression,
+                                            sm=Supervised Method (type: str, default: mtr, choices {dm, dr,
+                                            ips, mtr, sm}, keep)
     --per_model_save_load                   Save and load per model state (type: bool, keep)
 [Reduction] Contextual Bandit with Action Dependent Features Options:
     --cb_adf                                Do Contextual Bandit learning with multiline action dependent
@@ -233,8 +235,10 @@ Weight Options:
     --no_predict                            Do not do a prediction when training (type: bool)
     --clip_p arg                            Clipping probability in importance weight. Default: 0.f (no clipping)
                                             (type: float, default: 0, keep)
-    --cb_type arg                           Contextual bandit method to use (type: str, default: mtr, choices
-                                            {dm, dr, ips, mtr, sm}, keep)
+    --cb_type arg                           Contextual bandit method to use. Options: ips=Inverse Propensity
+                                            Scoring, dm=Direct Method, dr=Doubly Robust, mtr=Multi-Task Regression,
+                                            sm=Supervised Method (type: str, default: mtr, choices {dm, dr,
+                                            ips, mtr, sm}, keep)
     --per_model_save_load                   Save and load per model state (type: bool, keep)
 [Reduction] Contextual Bandit: cb -> cb_adf Options:
     --cb_to_cbadf arg                       Flag is unused and has no effect. It should not be passed. The
