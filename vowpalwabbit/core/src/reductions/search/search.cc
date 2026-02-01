@@ -3346,12 +3346,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::search_setup(VW::setup_bas
   }
   all.parser_runtime.example_parser->emptylines_separate_examples = true;
 
-  if (!options.was_supplied("csoaa") && !options.was_supplied("cs_active") && !options.was_supplied("csoaa_ldf") &&
-      !options.was_supplied("wap_ldf") && !options.was_supplied("cb"))
-  {
-    options.insert("csoaa", std::to_string(priv.A));
-  }
-
   priv.active_csoaa = options.was_supplied("cs_active");
   priv.active_csoaa_verify = -1.;
   if (options.was_supplied("search_active_verify"))
@@ -3366,6 +3360,17 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::search_setup(VW::setup_bas
 
   if (priv.task && priv.task->initialize) { priv.task->initialize(*sch.get(), priv.A, options); }
   if (priv.metatask && priv.metatask->initialize) { priv.metatask->initialize(*sch.get(), priv.A, options); }
+
+  // Insert the cost-sensitive learner AFTER task initialization, because
+  // task->initialize() may set IS_LDF which requires csoaa_ldf instead of csoaa.
+  if (priv.is_ldf && priv.A > 0) { priv.A = 0; }
+
+  if (!options.was_supplied("csoaa") && !options.was_supplied("cs_active") && !options.was_supplied("csoaa_ldf") &&
+      !options.was_supplied("wap_ldf") && !options.was_supplied("cb"))
+  {
+    if (priv.is_ldf) { options.insert("csoaa_ldf", "m"); }
+    else { options.insert("csoaa", std::to_string(priv.A)); }
+  }
   priv.meta_t = 0;
 
   VW::label_type_t expected_label_type = all.parser_runtime.example_parser->lbl_parser.label_type;

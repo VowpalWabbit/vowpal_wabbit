@@ -43,7 +43,7 @@ public:
   VW::example* ldf_relation;
 };
 
-void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options)
+void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 {
   auto my_task_data = std::make_shared<task_data>();
   sch.set_task_data<task_data>(my_task_data);
@@ -94,8 +94,14 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
     sch.set_options(Search::IS_LDF);
   }
 
-  sch.set_feature_width(2);
-  if (my_task_data->search_order == 4) { sch.set_feature_width(3); }
+  // search_order 2 uses LABEL_SKIP as an additional action beyond the standard
+  // entity/relation labels.  Ensure num_actions covers it so csoaa allocates enough classes.
+  if (my_task_data->search_order == 2 && num_actions < LABEL_SKIP) { num_actions = LABEL_SKIP; }
+
+  // search_order 0,1 use learner_ids 0,1 -> feature_width 2
+  // search_order 2,3,4 use learner_ids 1,2 -> feature_width 3
+  if (my_task_data->search_order >= 2) { sch.set_feature_width(3); }
+  else { sch.set_feature_width(2); }
 }
 
 bool check_constraints(size_t ent1_id, size_t ent2_id, size_t rel_id)
