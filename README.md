@@ -24,3 +24,8 @@ For the most up to date instructions for getting started on Windows, MacOS or Li
 - [Installing with a package manager](https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Getting-started)
 - [Building](https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Building)
 - [Tutorial](https://github.com/VowpalWabbit/vowpal_wabbit/wiki/Tutorial)
+
+## Examples and Demos
+- [demo/](demo/) - Command-line demos and experiments organized by VW feature
+- [python/docs/source/examples/](python/docs/source/examples/) - Python Jupyter notebook examples
+- [python/docs/source/tutorials/](python/docs/source/tutorials/) - Python and CLI tutorials

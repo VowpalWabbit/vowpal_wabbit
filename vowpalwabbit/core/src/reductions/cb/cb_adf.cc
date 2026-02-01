@@ -453,7 +453,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_adf_setup(VW::setup_bas
                .keep()
                .default_value("mtr")
                .one_of({"ips", "dm", "dr", "mtr", "sm"})
-               .help("Contextual bandit method to use"))
+               .help("Contextual bandit method to use. Options: ips=Inverse Propensity Scoring, dm=Direct Method, dr=Doubly Robust, mtr=Multi-Task Regression, sm=Supervised Method"))
       .add(make_option("per_model_save_load", per_model_save_load)
                .keep()
                .allow_override()

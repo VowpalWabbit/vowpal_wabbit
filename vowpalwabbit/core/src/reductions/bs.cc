@@ -232,7 +232,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::bs_setup(VW::setup_base_i&
                .keep()
                .default_value("mean")
                .one_of({"mean", "vote"})
-               .help("Prediction type"));
+               .help("Prediction type for bootstrap aggregation"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
   size_t feature_width = data->num_bootstrap_rounds;

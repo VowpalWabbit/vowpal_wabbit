@@ -1328,7 +1328,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::lda_setup(VW::setup_base_i
                .default_value(static_cast<int64_t>(lda_math_mode::USE_SIMD))
                .one_of({0, 1, 2})
                .help("Math mode: 0=simd, 1=accuracy, 2=fast-approx"))
-      .add(make_option("metrics", ld->compute_coherence_metrics).help("Compute metrics"));
+      .add(make_option("metrics", ld->compute_coherence_metrics).help("Compute coherence metrics for LDA topics"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 

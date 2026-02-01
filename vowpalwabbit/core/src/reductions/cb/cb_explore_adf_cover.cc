@@ -264,7 +264,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_cover_setup
                .keep()
                .default_value("mtr")
                .one_of({"ips", "dr", "mtr"})
-               .help("Contextual bandit method to use"))
+               .help("Contextual bandit method to use. Options: ips=Inverse Propensity Scoring, dr=Doubly Robust, mtr=Multi-Task Regression"))
       .add(make_option("epsilon", epsilon)
                .keep()
                .allow_override()
