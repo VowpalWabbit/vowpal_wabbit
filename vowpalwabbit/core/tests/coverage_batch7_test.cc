@@ -99,7 +99,8 @@ TEST(SharedDataBatch7, CopyAssignmentSelfAssign)
 {
   VW::shared_data sd;
   sd.queries = 10;
-  sd = sd;
+  auto* p = &sd;
+  sd = *p;
   EXPECT_EQ(sd.queries, 10u);
 }
 
