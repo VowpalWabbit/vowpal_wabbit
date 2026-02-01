@@ -1636,22 +1636,24 @@
   {
     "id": 124,
     "desc": "recall tree hello world",
-    "vw_command": "--quiet -d train-sets/gauss1k.dat.gz -f models/recall_tree_g100.model --recall_tree 100 -b 20 --loss_function logistic",
-    "diff_files": {},
+    "vw_command": "-d train-sets/gauss1k_small.dat.gz -f models/recall_tree_g100.model --recall_tree 100 -b 20 --loss_function logistic",
+    "diff_files": {
+      "stderr": "train-sets/ref/recall_tree_train.stderr"
+    },
     "input_files": [
-      "train-sets/gauss1k.dat.gz"
+      "train-sets/gauss1k_small.dat.gz"
     ]
   },
   {
     "id": 125,
     "desc": "recall_tree hello world predict-from-saved-model",
-    "vw_command": "-t -d train-sets/gauss1k.dat.gz -i models/recall_tree_g100.model",
+    "vw_command": "-t -d train-sets/gauss1k_small.dat.gz -i models/recall_tree_g100.model",
     "diff_files": {
       "stderr": "train-sets/ref/recall_tree_gauss1k.stderr",
       "stdout": "train-sets/ref/recall_tree_gauss1k.stdout"
     },
     "input_files": [
-      "train-sets/gauss1k.dat.gz",
+      "train-sets/gauss1k_small.dat.gz",
       "models/recall_tree_g100.model"
     ],
     "depends_on": [
@@ -1713,27 +1715,27 @@
   {
     "id": 130,
     "desc": "train a poisson model",
-    "vw_command": "--quiet -d train-sets/poisson.dat -f models/poisson.model --loss_function poisson --link poisson -b 2 -p poisson.train.predict",
+    "vw_command": "-d train-sets/poisson_small.dat -f models/poisson.model --loss_function poisson --link poisson -b 2 -p poisson.train.predict",
     "diff_files": {
       "stderr": "train-sets/ref/poisson.train.stderr",
       "poisson.train.predict": "pred-sets/ref/poisson.train.predict",
       "stdout": "train-sets/ref/poisson.train.stdout"
     },
     "input_files": [
-      "train-sets/poisson.dat"
+      "train-sets/poisson_small.dat"
     ]
   },
   {
     "id": 131,
     "desc": "train a poisson model without invariant updates",
-    "vw_command": "--quiet -d train-sets/poisson.dat -f models/poisson.normalized.model --normalized --loss_function poisson --link poisson -b 2 -l 0.1 -p poisson.train.normalized.predict",
+    "vw_command": "-d train-sets/poisson_small.dat -f models/poisson.normalized.model --normalized --loss_function poisson --link poisson -b 2 -l 0.1 -p poisson.train.normalized.predict",
     "diff_files": {
       "stderr": "train-sets/ref/poisson.train.normalized.stderr",
       "poisson.train.normalized.predict": "pred-sets/ref/poisson.train.normalized.predict",
       "stdout": "train-sets/ref/poisson.train.normalized.stdout"
     },
     "input_files": [
-      "train-sets/poisson.dat"
+      "train-sets/poisson_small.dat"
     ]
   },
   {
@@ -4314,9 +4316,10 @@
   {
     "id": 334,
     "desc": "",
-    "vw_command": "-d train-sets/dupeindex_self.dat --noconstant --ignore_linear a --interactions aa --quiet --invert_hash dupeindex_self_quadratic.txt --predict_only_model",
+    "vw_command": "-d train-sets/dupeindex_self.dat --noconstant --ignore_linear a --interactions aa --invert_hash dupeindex_self_quadratic.txt --predict_only_model",
     "diff_files": {
-      "dupeindex_self_quadratic.txt": "train-sets/ref/dupeindex_self_quadratic.txt"
+      "dupeindex_self_quadratic.txt": "train-sets/ref/dupeindex_self_quadratic.txt",
+      "stderr": "train-sets/ref/dupeindex_self_quadratic.stderr"
     },
     "input_files": [
       "train-sets/dupeindex_self.dat"
@@ -4325,9 +4328,10 @@
   {
     "id": 335,
     "desc": "",
-    "vw_command": "-d train-sets/dupeindex_self.dat --noconstant --ignore_linear a --interactions aaa --quiet --invert_hash dupeindex_self_cubic.txt --predict_only_model",
+    "vw_command": "-d train-sets/dupeindex_self.dat --noconstant --ignore_linear a --interactions aaa --invert_hash dupeindex_self_cubic.txt --predict_only_model",
     "diff_files": {
-      "dupeindex_self_cubic.txt": "train-sets/ref/dupeindex_self_cubic.txt"
+      "dupeindex_self_cubic.txt": "train-sets/ref/dupeindex_self_cubic.txt",
+      "stderr": "train-sets/ref/dupeindex_self_cubic.stderr"
     },
     "input_files": [
       "train-sets/dupeindex_self.dat"
@@ -4336,9 +4340,10 @@
   {
     "id": 336,
     "desc": "",
-    "vw_command": "-d train-sets/dupeindex_self.dat --noconstant --ignore_linear a --interactions aaaa --quiet --invert_hash dupeindex_self_quartic.txt --predict_only_model",
+    "vw_command": "-d train-sets/dupeindex_self.dat --noconstant --ignore_linear a --interactions aaaa --invert_hash dupeindex_self_quartic.txt --predict_only_model",
     "diff_files": {
-      "dupeindex_self_quartic.txt": "train-sets/ref/dupeindex_self_quartic.txt"
+      "dupeindex_self_quartic.txt": "train-sets/ref/dupeindex_self_quartic.txt",
+      "stderr": "train-sets/ref/dupeindex_self_quartic.stderr"
     },
     "input_files": [
       "train-sets/dupeindex_self.dat"
@@ -4481,7 +4486,7 @@
       "stderr": "train-sets/ref/corrupt_weights_gd.stderr",
       "stdout": "train-sets/ref/corrupt_weights_gd.stdout"
     },
-    "bash_command": "./negative-test.sh {VW} --no_stdin --cb_explore_adf --cover 3 --noconstant --quiet -i model-sets/corrupted_weights_gd.model",
+    "bash_command": "./negative-test.sh {VW} --no_stdin --cb_explore_adf --cover 3 --noconstant -i model-sets/corrupted_weights_gd.model",
     "input_files": [
       "negative-test.sh",
       "model-sets/corrupted_weights_gd.model"
@@ -4494,7 +4499,7 @@
       "stderr": "train-sets/ref/corrupt_weights_gd_mf.stderr",
       "stdout": "train-sets/ref/corrupt_weights_gd_mf.stdout"
     },
-    "bash_command": "./negative-test.sh {VW} --no_stdin --cb_explore_adf --cover 3 --noconstant --quiet -i model-sets/corrupted_weights_gd_mf.model",
+    "bash_command": "./negative-test.sh {VW} --no_stdin --cb_explore_adf --cover 3 --noconstant -i model-sets/corrupted_weights_gd_mf.model",
     "input_files": [
       "negative-test.sh",
       "model-sets/corrupted_weights_gd_mf.model"
@@ -4573,7 +4578,7 @@
       "stderr": "train-sets/ref/truncated_model_crash.stderr",
       "stdout": "train-sets/ref/truncated_model_crash.stdout"
     },
-    "bash_command": "./negative-test.sh {VW} --no_stdin --cb_explore_adf --cover 3 --noconstant --quiet -i model-sets/truncated_model",
+    "bash_command": "./negative-test.sh {VW} --no_stdin --cb_explore_adf --cover 3 --noconstant -i model-sets/truncated_model",
     "input_files": [
       "negative-test.sh",
       "model-sets/truncated_model"
@@ -4998,18 +5003,20 @@
   {
     "id": 387,
     "desc": "Produce model with default l1 and l2 state",
-    "vw_command": "--readable_model l1_l2_default_model.txt -f l1_l2_default_model.model --no_stdin --quiet",
+    "vw_command": "--readable_model l1_l2_default_model.txt -f l1_l2_default_model.model --no_stdin",
     "diff_files": {
-      "l1_l2_default_model.txt": "train-sets/ref/l1_l2_default_model.txt"
+      "l1_l2_default_model.txt": "train-sets/ref/l1_l2_default_model.txt",
+      "stderr": "train-sets/ref/l1_l2_default_model.stderr"
     },
     "input_files": []
   },
   {
     "id": 388,
     "desc": "Override l1 and l2 state",
-    "vw_command": "--readable_model l1_l2_override_model.txt -f l1_l2_override_model.model -i l1_l2_default_model.model --l1_state 5.34 --l2_state 0.003 --no_stdin --quiet",
+    "vw_command": "--readable_model l1_l2_override_model.txt -f l1_l2_override_model.model -i l1_l2_default_model.model --l1_state 5.34 --l2_state 0.003 --no_stdin",
     "diff_files": {
-      "l1_l2_override_model.txt": "train-sets/ref/l1_l2_override_model.txt"
+      "l1_l2_override_model.txt": "train-sets/ref/l1_l2_override_model.txt",
+      "stderr": "train-sets/ref/l1_l2_override_model.stderr"
     },
     "depends_on": [
       387
@@ -5021,9 +5028,10 @@
   {
     "id": 389,
     "desc": "Override l1 and leave l2 as model state",
-    "vw_command": "--readable_model l1_override_l2_leave_model.txt -f l1_override_l2_leave_model.model -i l1_l2_override_model.model --l1_state 89.4 --no_stdin --quiet",
+    "vw_command": "--readable_model l1_override_l2_leave_model.txt -f l1_override_l2_leave_model.model -i l1_l2_override_model.model --l1_state 89.4 --no_stdin",
     "diff_files": {
-      "l1_override_l2_leave_model.txt": "train-sets/ref/l1_override_l2_leave_model.txt"
+      "l1_override_l2_leave_model.txt": "train-sets/ref/l1_override_l2_leave_model.txt",
+      "stderr": "train-sets/ref/l1_override_l2_leave_model.stderr"
     },
     "depends_on": [
       388
@@ -5035,9 +5043,10 @@
   {
     "id": 390,
     "desc": "Migrate l1 l2 state from 8.10.0 model",
-    "vw_command": "--readable_model l1l2_migrate.txt -i model-sets/save_resume_with_l1l2_state.model --no_stdin --quiet",
+    "vw_command": "--readable_model l1l2_migrate.txt -i model-sets/save_resume_with_l1l2_state.model --no_stdin",
     "diff_files": {
-      "l1l2_migrate.txt": "train-sets/ref/l1l2_migrate.txt"
+      "l1l2_migrate.txt": "train-sets/ref/l1l2_migrate.txt",
+      "stderr": "train-sets/ref/l1l2_migrate.stderr"
     },
     "input_files": [
       "model-sets/save_resume_with_l1l2_state.model"
@@ -5046,9 +5055,10 @@
   {
     "id": 391,
     "desc": "Migrate l1 l2 state from 8.10.0 model and override",
-    "vw_command": "--readable_model l1l2_migrate_override.txt -i model-sets/save_resume_with_l1l2_state.model --l1_state 89.4 --l2_state 0.34 --no_stdin --quiet",
+    "vw_command": "--readable_model l1l2_migrate_override.txt -i model-sets/save_resume_with_l1l2_state.model --l1_state 89.4 --l2_state 0.34 --no_stdin",
     "diff_files": {
-      "l1l2_migrate_override.txt": "train-sets/ref/l1l2_migrate_override.txt"
+      "l1l2_migrate_override.txt": "train-sets/ref/l1l2_migrate_override.txt",
+      "stderr": "train-sets/ref/l1l2_migrate_override.stderr"
     },
     "input_files": [
       "model-sets/save_resume_with_l1l2_state.model"

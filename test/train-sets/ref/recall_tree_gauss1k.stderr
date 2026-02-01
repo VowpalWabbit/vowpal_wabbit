@@ -1,35 +1,26 @@
 only testing
 recall_tree: node_only = 0 bern_hyper = 1 max_depth = 7 routing = n/a testonly
 using no cache
-Reading datafile = train-sets/gauss1k.dat.gz
+Reading datafile = train-sets/gauss1k_small.dat.gz
 num sources = 1
 Num weight bits = 20
 learning rate = 0.5
-initial_t = 10000
+initial_t = 25
 power_t = 0.5
 Enabled learners: gd, scorer-identity, recall_tree
 Input label = MULTICLASS
 Output pred = MULTICLASS
-average  since         example        example        current        current  current 
-loss     last          counter         weight          label        predict features 
-0.000000 0.000000            1            1.0             49             49       93 
-0.000000 0.000000            2            2.0             52             52       93 
-0.000000 0.000000            4            4.0             70             70       93 
-0.000000 0.000000            8            8.0             43             43       93 
-0.000000 0.000000           16           16.0             56             56       93 
-0.000000 0.000000           32           32.0             28             28       93 
-0.000000 0.000000           64           64.0             67             67       93 
-0.000000 0.000000          128          128.0             83             83       93 
-0.000000 0.000000          256          256.0             41             41       93 
-0.000000 0.000000          512          512.0             38             38       93 
-0.000000 0.000000         1024         1024.0             54             54       93 
-0.000000 0.000000         2048         2048.0             65             65       93 
-0.000000 0.000000         4096         4096.0             47             47       93 
-0.000000 0.000000         8192         8192.0             33             33       93 
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+0.000000 0.000000            1            1.0             49             49       93
+0.000000 0.000000            2            2.0             52             52       93
+0.000000 0.000000            4            4.0             70             70       93
+0.250000 0.500000            8            8.0             43             43       93
+0.187500 0.125000           16           16.0             56             56       93
 
 finished run
-number of examples = 10000
-weighted example sum = 10000.000000
+number of examples = 25
+weighted example sum = 25.000000
 weighted label sum = 0.000000
-average loss = 0.000000
-total feature number = 930000
+average loss = 0.120000
+total feature number = 2325
