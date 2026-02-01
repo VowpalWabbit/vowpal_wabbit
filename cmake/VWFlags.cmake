@@ -29,7 +29,12 @@ set(LINUX_DEBUG_CONFIG -fno-stack-check)
 
 # Use default visiblity on UNIX otherwise a lot of the C++ symbols end up for exported and interpose'able
 set(VW_LINUX_FLAGS $<$<CONFIG:Debug>:${LINUX_DEBUG_CONFIG}> $<$<CONFIG:Release>:${LINUX_RELEASE_CONFIG}> $<$<CONFIG:RelWithDebInfo>:${LINUX_RELEASE_CONFIG}>)
-set(VW_WIN_FLAGS /MP /Zc:__cplusplus)
+
+set(WIN_X64_OPT_FLAGS "")
+if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "AMD64")
+  set(WIN_X64_OPT_FLAGS /arch:AVX2)
+endif()
+set(VW_WIN_FLAGS /MP /Zc:__cplusplus $<$<CONFIG:Release>:${WIN_X64_OPT_FLAGS}> $<$<CONFIG:RelWithDebInfo>:${WIN_X64_OPT_FLAGS}>)
 
 # Turn on warnings
 set(WARNING_OPTIONS "")

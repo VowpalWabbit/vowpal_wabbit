@@ -1,0 +1,25 @@
+enabling BFGS based optimization **without** curvature calculation
+## avg. loss 	der. mag. 	d. m. cond.	 wolfe1    	wolfe2    	mix fraction	curvature 	dir. magnitude	step size
+creating cache_file = train-sets/0001_25.dat.cache
+Reading datafile = train-sets/0001_25.dat
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+decay_learning_rate = 1
+Enabled learners: bfgs, scorer-identity, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+ 1 0.34783   	0.55066   	25.92180  	          	          	          	1451.11217	28423.57617	0.01786
+ 3 h0.36497   	0.02659   	0.00000   	 0.532134  	0.192465  	          	          	14.06817  	0.00000
+
+finished run
+number of examples per pass = 23
+passes used = 3
+weighted example sum = 69.000000
+weighted label sum = 24.000000
+average loss = 0.364972 h
+best constant = 0.347826
+best constant's loss = 0.226843
+total feature number = 5913

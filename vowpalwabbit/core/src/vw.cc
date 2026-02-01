@@ -1037,7 +1037,7 @@ VW::primitive_feature_space* VW::export_example(VW::workspace& all, VW::example*
 void VW::release_feature_space(primitive_feature_space* features, size_t len)
 {
   for (size_t i = 0; i < len; i++) { delete[] features[i].fs; }
-  delete (features);
+  delete[] features;
 }
 
 void VW::save_predictor(VW::workspace& all, const std::string& reg_name)
