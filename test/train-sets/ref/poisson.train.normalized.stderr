@@ -1,0 +1,26 @@
+final_regressor = models/poisson.normalized.model
+predictions = poisson.train.normalized.predict
+using no cache
+Reading datafile = train-sets/poisson_small.dat
+num sources = 1
+Num weight bits = 2
+learning rate = 0.1
+initial_t = 0
+power_t = 0.5
+Enabled learners: gd, scorer-poisson, count_label
+Input label = SIMPLE
+Output pred = SCALAR
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+37.63776 37.63776            1            1.0        12.0000         1.0000        3
+20.50772 3.377690            2            2.0        11.0000         5.9745        3
+15.84096 11.17420            4            4.0        13.0000         2.5084        3
+9.954718 4.068472            8            8.0        14.0000         6.8352        3
+5.463167 0.971617           16           16.0         9.0000         5.5233        3
+
+finished run
+number of examples = 25
+weighted example sum = 25.000000
+weighted label sum = 218.000000
+average loss = 4.062876
+total feature number = 70

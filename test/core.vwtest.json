@@ -1636,22 +1636,24 @@
   {
     "id": 124,
     "desc": "recall tree hello world",
-    "vw_command": "--quiet -d train-sets/gauss1k.dat.gz -f models/recall_tree_g100.model --recall_tree 100 -b 20 --loss_function logistic",
-    "diff_files": {},
+    "vw_command": "-d train-sets/gauss1k_small.dat.gz -f models/recall_tree_g100.model --recall_tree 100 -b 20 --loss_function logistic",
+    "diff_files": {
+      "stderr": "train-sets/ref/recall_tree_train.stderr"
+    },
     "input_files": [
-      "train-sets/gauss1k.dat.gz"
+      "train-sets/gauss1k_small.dat.gz"
     ]
   },
   {
     "id": 125,
     "desc": "recall_tree hello world predict-from-saved-model",
-    "vw_command": "-t -d train-sets/gauss1k.dat.gz -i models/recall_tree_g100.model",
+    "vw_command": "-t -d train-sets/gauss1k_small.dat.gz -i models/recall_tree_g100.model",
     "diff_files": {
       "stderr": "train-sets/ref/recall_tree_gauss1k.stderr",
       "stdout": "train-sets/ref/recall_tree_gauss1k.stdout"
     },
     "input_files": [
-      "train-sets/gauss1k.dat.gz",
+      "train-sets/gauss1k_small.dat.gz",
       "models/recall_tree_g100.model"
     ],
     "depends_on": [
@@ -1713,27 +1715,27 @@
   {
     "id": 130,
     "desc": "train a poisson model",
-    "vw_command": "--quiet -d train-sets/poisson.dat -f models/poisson.model --loss_function poisson --link poisson -b 2 -p poisson.train.predict",
+    "vw_command": "-d train-sets/poisson_small.dat -f models/poisson.model --loss_function poisson --link poisson -b 2 -p poisson.train.predict",
     "diff_files": {
       "stderr": "train-sets/ref/poisson.train.stderr",
       "poisson.train.predict": "pred-sets/ref/poisson.train.predict",
       "stdout": "train-sets/ref/poisson.train.stdout"
     },
     "input_files": [
-      "train-sets/poisson.dat"
+      "train-sets/poisson_small.dat"
     ]
   },
   {
     "id": 131,
     "desc": "train a poisson model without invariant updates",
-    "vw_command": "--quiet -d train-sets/poisson.dat -f models/poisson.normalized.model --normalized --loss_function poisson --link poisson -b 2 -l 0.1 -p poisson.train.normalized.predict",
+    "vw_command": "-d train-sets/poisson_small.dat -f models/poisson.normalized.model --normalized --loss_function poisson --link poisson -b 2 -l 0.1 -p poisson.train.normalized.predict",
     "diff_files": {
       "stderr": "train-sets/ref/poisson.train.normalized.stderr",
       "poisson.train.normalized.predict": "pred-sets/ref/poisson.train.normalized.predict",
       "stdout": "train-sets/ref/poisson.train.normalized.stdout"
     },
     "input_files": [
-      "train-sets/poisson.dat"
+      "train-sets/poisson_small.dat"
     ]
   },
   {
