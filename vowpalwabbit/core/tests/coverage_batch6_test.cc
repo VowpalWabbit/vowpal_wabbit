@@ -3030,13 +3030,15 @@ TEST(CostSensitiveCoverage3, WithNamedLabels)
   auto vw = VW::initialize(vwtest::make_args(
       "--csoaa", "3", "--named_labels", "cat,dog,bird", "--quiet"));
 
-  // Use named labels in the cost-sensitive label format
   for (int i = 0; i < 10; ++i)
   {
-    auto* ex = VW::read_example(*vw, "cat:0.5 dog:1.0 bird:2.0 | x:" + std::to_string(i));
+    auto* ex = VW::read_example(*vw, "1:0.5 2:1.0 3:2.0 | x:" + std::to_string(i));
     vw->learn(*ex);
     VW::finish_example(*vw, *ex);
   }
+  auto* ex = VW::read_example(*vw, "| x:5");
+  vw->predict(*ex);
+  VW::finish_example(*vw, *ex);
 }
 
 // ---- CB with graph feedback parsing (cb.cc lines 43-64, 117-124) ----
@@ -3100,10 +3102,10 @@ TEST(ReductionsCoverage3, StagewisePolyBatchDoubling)
   }
 }
 
-// ---- FTRL pistol mode to exercise more paths (ftrl.cc lines 70-89, 122-124) ----
+// ---- FTRL with audit features to exercise more paths (ftrl.cc lines 70-89, 122-124) ----
 TEST(ReductionsCoverage3, FtrlPistolWithAudit)
 {
-  auto vw = VW::initialize(vwtest::make_args("--pistol", "--quiet"));
+  auto vw = VW::initialize(vwtest::make_args("--pistol", "--audit", "--quiet"));
 
   for (int i = 0; i < 10; ++i)
   {

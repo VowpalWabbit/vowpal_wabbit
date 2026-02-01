@@ -12,8 +12,8 @@ namespace VW
 class parameters
 {
 public:
-  bool adaptive;
-  bool normalized;
+  bool adaptive = false;
+  bool normalized = false;
 
   bool sparse;
   dense_parameters dense_weights;
