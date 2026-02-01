@@ -2,7 +2,7 @@ using l2 regularization = 1
 Lambda = 1
 Kernel = linear
 using no cache
-Reading datafile = train-sets/rcv1_small50.dat
+Reading datafile = train-sets/ksvm_simple.dat
 num sources = 1
 Num weight bits = 18
 learning rate = 0.5
@@ -13,21 +13,20 @@ Input label = SIMPLE
 Output pred = SCALAR
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
-0.627784 0.627784            1            1.0         1.0000         0.3722       50
-0.368201 0.108618            2            2.0        -1.0000        -0.8914      103
-0.230693 0.093184            4            4.0        -1.0000        -0.8606      134
-0.171344 0.111996            8            8.0        -1.0000        -1.1229      145
-0.152122 0.132901           16           16.0         1.0000         0.8600       23
-0.145251 0.138381           32           32.0        -1.0000        -1.0311       31
+0.000000 0.000000            1            1.0         1.0000         1.1816        3
+0.000000 0.000000            2            2.0        -1.0000        -1.1835        3
+0.000000 0.000000            4            4.0        -1.0000        -1.0011        3
+0.000000 0.000000            8            8.0        -1.0000        -1.0000        3
+0.000000 0.000000           16           16.0        -1.0000        -1.0603        3
 
 finished run
-number of examples = 50
-weighted example sum = 50.000000
-weighted label sum = -16.000000
-average loss = 0.142100
+number of examples = 20
+weighted example sum = 20.000000
+weighted label sum = 0.000000
+average loss = 0.000178
 best constant = -1.000000
-best constant's loss = 0.680000
-total feature number = 4279
-Num support = 89
-Number of kernel evaluations = 16399 Number of cache queries = 13634
-Total loss = 7.104999
+best constant's loss = 1.000000
+total feature number = 60
+Num support = 7
+Number of kernel evaluations = 211 Number of cache queries = 980
+Total loss = 0.003554
