@@ -13,23 +13,23 @@ Input label = SIMPLE
 Output pred = SCALAR
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
-0.000000 0.000000            1            1.0         1.0000         1.1186       50
-0.028986 0.057973            2            2.0        -1.0000        -0.9420      103
-0.014493 0.000000            4            4.0        -1.0000        -1.0943      134
-0.068989 0.123484            8            8.0        -1.0000        -1.0258      145
-0.055026 0.041063           16           16.0         1.0000         0.9889       23
-0.068704 0.082382           32           32.0        -1.0000        -0.9003       31
-0.083263 0.097822           64           64.0        -1.0000        -1.0730       60
-0.076278 0.069292          128          128.0         1.0000         0.8545      105
+0.000000 0.000000            1            1.0         1.0000         1.0642       50
+0.032094 0.064187            2            2.0        -1.0000        -0.9358      103
+0.016047 0.000000            4            4.0        -1.0000        -1.1233      134
+0.037506 0.058966            8            8.0        -1.0000        -1.1869      145
+0.030419 0.023331           16           16.0         1.0000         0.9811       23
+0.047831 0.065243           32           32.0        -1.0000        -1.1037       31
+0.068906 0.089981           64           64.0        -1.0000        -0.9983       60
+0.067471 0.066035          128          128.0         1.0000         0.8246      105
 
 finished run
 number of examples = 250
 weighted example sum = 250.000000
 weighted label sum = -22.000000
-average loss = 0.069696
+average loss = 0.061365
 best constant = -1.000000
 best constant's loss = 0.912000
 total feature number = 19870
-Num support = 384
-Number of kernel evaluations = 419235 Number of cache queries = 258840
-Total loss = 17.424030
+Num support = 363
+Number of kernel evaluations = 378046 Number of cache queries = 275526
+Total loss = 15.341203
