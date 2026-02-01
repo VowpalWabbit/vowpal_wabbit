@@ -1,0 +1,21 @@
+using no cache
+Reading datafile = train-sets/ccb_simple_pdrop.json
+num sources = 1
+Num weight bits = 18
+learning rate = 0.5
+initial_t = 0
+power_t = 0.5
+cb_type = mtr
+Enabled learners: gd, generate_interactions, scorer-identity, csoaa_ldf-rank, cb_adf, cb_explore_adf_greedy, cb_sample, shared_feature_merger, ccb_explore_adf
+Input label = CCB
+Output pred = DECISION_PROBS
+average  since         example        example        current        current  current
+loss     last          counter         weight          label        predict features
+n.a.     n.a.                1            1.0            ?,?            0,1       60
+
+finished run
+number of examples = 1
+weighted example sum = 1.000000
+weighted label sum = 0.000000
+average loss = n.a.
+total feature number = 60

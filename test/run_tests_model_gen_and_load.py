@@ -4,6 +4,7 @@ from pathlib import Path
 import re
 import os
 import signal
+import shlex
 import shutil
 import json
 import sys
@@ -92,7 +93,8 @@ def try_get_workspace_or_none(
     skip_missing_args: bool = False,
 ):
     try:
-        vw = vowpalwabbit.Workspace(cli, quiet=quiet)
+        posix = sys.platform != "win32"
+        vw = vowpalwabbit.Workspace(arg_list=shlex.split(cli, posix=posix), quiet=quiet)
         return vw
     except RuntimeError as e:
         if skip_missing_args:
