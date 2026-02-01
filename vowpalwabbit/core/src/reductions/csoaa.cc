@@ -126,7 +126,7 @@ void predict_or_learn(csoaa& c, learner& base, VW::example& ec)
     base.multipredict(ec, 0, c.num_classes, c.pred, false);
     if (c.indexing == 0)
     {
-      for (uint32_t i = 0; i <= c.num_classes; i++)
+      for (uint32_t i = 0; i < c.num_classes; i++)
       {
         VW_ADD_PASSTHROUGH_FEATURE(ec, i, c.pred[i].scalar);
         if (c.pred[i].scalar < c.pred[prediction].scalar) { prediction = i; }

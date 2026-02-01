@@ -53,14 +53,26 @@ jobs:
         uses: lukka/run-vcpkg@v11
         with:
           vcpkgDirectory: '${{ github.workspace }}/ext_libs/vcpkg'
-      - uses: lukka/run-cmake@v10
+      - name: Configure with CMake (with retry)
         env:
           VCPKG_ROOT: ${{github.workspace}}/ext_libs/vcpkg
-        with:
-          cmakeListsTxtPath: "${{ github.workspace }}/CMakeLists.txt"
-          configurePreset: "${{ matrix.preset }}"
-          buildPreset: "${{ matrix.preset }}"
-          testPreset: "${{ matrix.preset }}"
+        shell: bash
+        run: |
+          max_attempts=3
+          attempt=1
+          until cmake --preset "${{ matrix.preset }}"; do
+            if [ $attempt -ge $max_attempts ]; then
+              echo "CMake configure failed after $max_attempts attempts"
+              exit 1
+            fi
+            echo "CMake configure failed (attempt $attempt/$max_attempts), retrying in 30 seconds..."
+            attempt=$((attempt + 1))
+            sleep 30
+          done
+      - name: Build
+        run: cmake --build --preset "${{ matrix.preset }}"
+      - name: Test
+        run: ctest --preset "${{ matrix.preset }}"
       - name: Package Windows binaries
         if: runner.os == 'Windows' && matrix.preset == 'vcpkg-release'
         shell: bash

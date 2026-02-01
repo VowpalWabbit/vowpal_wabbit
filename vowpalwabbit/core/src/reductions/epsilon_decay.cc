@@ -19,6 +19,7 @@
 #include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
 
+#include <algorithm>
 #include <utility>
 
 using namespace VW::config;
@@ -39,7 +40,7 @@ epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
     double epsilon_decay_significance_level, dense_parameters& weights, std::string epsilon_decay_audit_str,
     bool constant_epsilon, uint32_t& feature_width, uint64_t min_champ_examples, float initial_epsilon,
     uint64_t shift_model_bounds, bool reward_as_cost, double tol_x, bool is_brentq, bool predict_only_model,
-    bool challenger_epsilon)
+    bool challenger_epsilon, VW::io::logger logger)
     : _model_count(model_count)
     , _min_scope(min_scope)
     , _epsilon_decay_significance_level(epsilon_decay_significance_level)
@@ -53,6 +54,7 @@ epsilon_decay_data::epsilon_decay_data(uint64_t model_count, uint64_t min_scope,
     , _reward_as_cost(reward_as_cost)
     , _predict_only_model(predict_only_model)
     , _challenger_epsilon(challenger_epsilon)
+    , _logger(std::move(logger))
 {
   _weight_indices.resize(model_count);
   conf_seq_estimators.reserve(model_count);
@@ -79,7 +81,15 @@ void epsilon_decay_data::update_weights(float init_ep, VW::LEARNER::learner& bas
   {
     logged = (*it)->l.cb.costs[0];
     labelled_action = std::distance(examples.begin(), it);
-    const float r = _reward_as_cost ? logged.cost : -logged.cost;
+    float r = _reward_as_cost ? logged.cost : -logged.cost;
+    if (r < 0.f || r > 1.f)
+    {
+      _logger.err_warn(
+          "epsilon_decay: reward {} is outside [0,1] and will be clamped. "
+          "Ensure costs are in [0,1] when using epsilon_decay.",
+          r);
+      r = std::max(0.f, std::min(r, 1.f));
+    }
     if (_epsilon_decay_audit_str != "")
     {
       _audit_msg << "Example: " << _global_counter << " Labelled_action: " << labelled_action
@@ -439,7 +449,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::epsilon_decay_setup(VW::se
   auto data = VW::make_unique<VW::reductions::epsilon_decay::epsilon_decay_data>(model_count, min_scope,
       epsilon_decay_significance_level, all.weights.dense_weights, epsilon_decay_audit_str, constant_epsilon,
       all.reduction_state.total_feature_width, min_champ_examples, initial_epsilon, shift_model_bounds, reward_as_cost,
-      tol_x, is_brentq, predict_only_model, challenger_epsilon);
+      tol_x, is_brentq, predict_only_model, challenger_epsilon, all.logger);
 
   // make sure we setup the rest of the stack with cleared interactions
   // to make sure there are not subtle bugs

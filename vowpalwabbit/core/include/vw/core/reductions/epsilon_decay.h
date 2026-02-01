@@ -7,6 +7,7 @@
 #include "vw/core/io_buf.h"
 #include "vw/core/learner_fwd.h"
 #include "vw/core/vw_fwd.h"
+#include "vw/io/logger.h"
 
 #include <memory>
 #include <sstream>
@@ -29,7 +30,7 @@ public:
   epsilon_decay_data(uint64_t model_count, uint64_t min_scope, double epsilon_decay_significance_level,
       dense_parameters& weights, std::string epsilon_decay_audit_str, bool constant_epsilon, uint32_t& feature_width,
       uint64_t _min_champ_examples, float initial_epsilon, uint64_t shift_model_bounds, bool reward_as_cost,
-      double tol_x, bool is_brentq, bool predict_only_model, bool challenger_epsilon);
+      double tol_x, bool is_brentq, bool predict_only_model, bool challenger_epsilon, VW::io::logger logger);
   void update_weights(float init_ep, VW::LEARNER::learner& base, VW::multi_ex& examples);
   void promote_model(int64_t model_ind, int64_t swap_dist);
   void rebalance_greater_models(int64_t model_ind, int64_t swap_dist, int64_t model_count);
@@ -55,6 +56,7 @@ public:
   bool _reward_as_cost;
   bool _predict_only_model;
   bool _challenger_epsilon;
+  VW::io::logger _logger;
 };
 
 }  // namespace epsilon_decay
