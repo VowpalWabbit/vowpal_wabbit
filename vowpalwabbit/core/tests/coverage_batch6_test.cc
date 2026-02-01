@@ -854,6 +854,18 @@ TEST(ExampleCoverage, DestructorWithPassthrough)
 // vw.cc coverage - cmd_string_replace, seed_vw_model, are_features_compatible
 // ============================================================
 
+// These tests intentionally exercise deprecated APIs for coverage.
+#if defined(_MSC_VER)
+#  pragma warning(push)
+#  pragma warning(disable : 4996)
+#elif defined(__clang__)
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#elif defined(__GNUC__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 TEST(VwCoverage, CmdStringReplaceValueFlagPresent)
 {
   std::stringstream* ss = new std::stringstream("--learning_rate 0.1 --passes 2");
@@ -877,6 +889,14 @@ TEST(VwCoverage, CmdStringReplaceValueFlagAtEnd)
   EXPECT_THAT(ss->str(), testing::HasSubstr("--learning_rate 0.5"));
   delete ss;
 }
+
+#if defined(_MSC_VER)
+#  pragma warning(pop)
+#elif defined(__clang__)
+#  pragma clang diagnostic pop
+#elif defined(__GNUC__)
+#  pragma GCC diagnostic pop
+#endif
 
 TEST(VwCoverage, SeedVwModel)
 {
@@ -2641,6 +2661,18 @@ TEST(ReductionsCoverage2, ExploreEvalTraining)
 // vw.cc: to_argv and free_args paths
 // ============================================================
 
+// These tests intentionally exercise deprecated APIs for coverage.
+#if defined(_MSC_VER)
+#  pragma warning(push)
+#  pragma warning(disable : 4996)
+#elif defined(__clang__)
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#elif defined(__GNUC__)
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 TEST(VwCoverage2, InitializeWithStringOverload)
 {
   // Exercise the string-based initialize overload (to_argv + free_args paths)
@@ -2682,6 +2714,14 @@ TEST(VwCoverage2, InitializeWithStringAndModel)
   VW::finish_example(*vw, *ex);
   VW::finish(*vw);
 }
+
+#if defined(_MSC_VER)
+#  pragma warning(pop)
+#elif defined(__clang__)
+#  pragma clang diagnostic pop
+#elif defined(__GNUC__)
+#  pragma GCC diagnostic pop
+#endif
 
 // ============================================================
 // parse_args.cc: additional option paths
