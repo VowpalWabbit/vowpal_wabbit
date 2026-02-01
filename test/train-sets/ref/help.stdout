@@ -347,9 +347,9 @@ Weight Options:
     --ccb_no_slot_index                     Disable automatic _ccb_slot_index feature injection for multi-slot
                                             examples (type: bool)
     --cb_type arg                           Contextual bandit method to use. Options: ips=Inverse Propensity
-                                            Scoring, dm=Direct Method, dr=Doubly Robust, mtr=Multi-Task
-                                            Regression, sm=Supervised Method (type: str, default: mtr, choices
-                                            {dm, dr, ips, mtr, sm}, keep)
+                                            Scoring, dm=Direct Method, dr=Doubly Robust, mtr=Multi-Task Regression,
+                                            sm=Supervised Method (type: str, default: mtr, choices {dm, dr,
+                                            ips, mtr, sm}, keep)
 [Reduction] Confidence Options:
     --confidence                            Get confidence for binary predictions (type: bool, keep, necessary)
     --confidence_after_training             Confidence after training (type: bool)
@@ -457,9 +457,9 @@ Weight Options:
     --cb arg                                Use contextual bandit learning with <k> costs (type: uint, keep,
                                             necessary)
     --cb_type arg                           Contextual bandit method to use. Options: ips=Inverse Propensity
-                                            Scoring, dm=Direct Method, dr=Doubly Robust, mtr=Multi-Task
-                                            Regression, sm=Supervised Method (type: str, default: dr, choices
-                                            {dm, dr, ips, mtr, sm}, keep)
+                                            Scoring, dm=Direct Method, dr=Doubly Robust, mtr=Multi-Task Regression,
+                                            sm=Supervised Method (type: str, default: dr, choices {dm, dr,
+                                            ips, mtr, sm}, keep)
     --eval                                  Evaluate a policy rather than optimizing (type: bool, keep)
     --cb_force_legacy                       Default to non-adf cb implementation (cb_to_cb_adf) (type: bool,
                                             keep)
@@ -471,9 +471,9 @@ Weight Options:
     --clip_p arg                            Clipping probability in importance weight. Default: 0.f (no clipping)
                                             (type: float, default: 0, keep)
     --cb_type arg                           Contextual bandit method to use. Options: ips=Inverse Propensity
-                                            Scoring, dm=Direct Method, dr=Doubly Robust, mtr=Multi-Task
-                                            Regression, sm=Supervised Method (type: str, default: mtr, choices
-                                            {dm, dr, ips, mtr, sm}, keep)
+                                            Scoring, dm=Direct Method, dr=Doubly Robust, mtr=Multi-Task Regression,
+                                            sm=Supervised Method (type: str, default: mtr, choices {dm, dr,
+                                            ips, mtr, sm}, keep)
     --per_model_save_load                   Save and load per model state (type: bool, keep)
 [Reduction] Contextual Bandit: cb -> cb_adf Options:
     --cb_to_cbadf arg                       Flag is unused and has no effect. It should not be passed. The
