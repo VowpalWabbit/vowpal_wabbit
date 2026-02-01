@@ -255,8 +255,11 @@ def create_file_diff(
 def is_line_different(
     output_line: str, ref_line: str, epsilon: float
 ) -> Tuple[bool, str, bool]:
-    output_tokens = re.split(r"[ \t:,@=\[\]]+", output_line)
-    ref_tokens = re.split(r"[ \t:,@=\[\]]+", ref_line)
+    # Split on standard delimiters and also on '-' when used as a range
+    # separator between numbers (e.g. "0.123-0.456" or "-0.123--0.456").
+    # The lookbehind/lookahead ensures leading negative signs are preserved.
+    output_tokens = re.split(r"[ \t:,@=\[\]]+|(?<=\d)-(?=-?\d)", output_line)
+    ref_tokens = re.split(r"[ \t:,@=\[\]]+|(?<=\d)-(?=-?\d)", ref_line)
 
     # some compile flags cause VW to report different code line number for the same exception
     # if this is the case we want to ignore that from the diff

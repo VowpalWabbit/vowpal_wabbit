@@ -2,7 +2,7 @@ using l1 regularization = 0.2
 using l2 regularization = 0.3
 final_regressor = models/cbzo_linear.model
 using no cache
-Reading datafile = train-sets/cbzo_linear.dat
+Reading datafile = train-sets/cbzo_linear_small.dat
 num sources = 1
 Num weight bits = 18
 learning rate = 0.0001
@@ -18,14 +18,10 @@ loss     last          counter         weight          label        predict feat
 1.868347 3.484450            4            4.0 {-0.14465,4... -0.14--0.14...        5
 4.460369 7.052391            8            8.0 {0.14041,3.... -0.06--0.06...        5
 4.564887 4.669406           16           16.0 {0.29141,4.... 0.09-0.09:3...        5
-3.839800 3.114712           32           32.0 {0.5117,7.3... 0.31-0.31:8...        5
-5.337427 6.835055           64           64.0 {-0.20481,1... -0.2--0.2:1...        5
-5.115217 4.893006          128          128.0 {-0.14471,0... -0.14--0.14...        5
-3.413171 1.711126          256          256.0 {1.1829,2.9... 1.18-1.18:2...        5
 
 finished run
-number of examples = 500
-weighted example sum = 500.000000
-weighted label sum = 500.000000
-average loss = 2.206201
-total feature number = 2500
+number of examples = 25
+weighted example sum = 25.000000
+weighted label sum = 25.000000
+average loss = 3.499840
+total feature number = 125
