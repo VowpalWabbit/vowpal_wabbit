@@ -166,7 +166,7 @@ void flatten_features(VW::workspace& all, example& ec, features& fs)
     // TODO:temporary fix. all.weights is not initialized at this point in some cases.
     ffs.mask = all.weights.mask() >> all.weights.stride_shift();
   }
-  else { ffs.mask = static_cast<uint64_t>(LONG_MAX) >> all.weights.stride_shift(); }
+  else { ffs.mask = all.runtime_state.parse_mask >> all.weights.stride_shift(); }
   VW::foreach_feature<full_features_and_source, uint64_t, vec_ffs_store>(all, ec, ffs);
   ffs.fs.sort(all.runtime_state.parse_mask);
   ffs.fs.sum_feat_sq = collision_cleanup(ffs.fs);
