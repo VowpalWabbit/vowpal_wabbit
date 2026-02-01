@@ -235,7 +235,7 @@ Weight Options:
                                             default: 1)
     --beta_scale arg                        Active learning variance upper bound parameter beta_scale (type:
                                             float, default: 3.1622777)
-    --cover arg                             Cover size (type: uint, default: 12, keep)
+    --cover arg                             Number of policies in cover set (type: uint, default: 12, keep)
     --oracular                              Use Oracular-CAL style query or not (type: bool)
 [Reduction] Audit Regressor Options:
     --audit_regressor arg                   Stores feature names and their regressor values. Same dataset
@@ -301,8 +301,8 @@ Weight Options:
 [Reduction] Bootstrap Options:
     --bootstrap arg                         K-way bootstrap by online importance resampling (type: uint,
                                             keep, necessary)
-    --bs_type arg                           Prediction type (type: str, default: mean, choices {mean, vote},
-                                            keep)
+    --bs_type arg                           Prediction type for bootstrap aggregation (type: str, default:
+                                            mean, choices {mean, vote}, keep)
 [Reduction] CATS Tree Options:
     --cats_tree arg                         CATS Tree with <k> labels (type: uint, keep, necessary)
     --tree_bandwidth arg                    Tree bandwidth for continuous actions in terms of #actions (type:
@@ -346,7 +346,9 @@ Weight Options:
     --no_predict                            Do not do a prediction when training (type: bool)
     --ccb_no_slot_index                     Disable automatic _ccb_slot_index feature injection for multi-slot
                                             examples (type: bool)
-    --cb_type arg                           Contextual bandit method to use (type: str, default: mtr, choices
+    --cb_type arg                           Contextual bandit method to use. Options: ips=Inverse Propensity
+                                            Scoring, dm=Direct Method, dr=Doubly Robust, mtr=Multi-Task
+                                            Regression, sm=Supervised Method (type: str, default: mtr, choices
                                             {dm, dr, ips, mtr, sm}, keep)
 [Reduction] Confidence Options:
     --confidence                            Get confidence for binary predictions (type: bool, keep, necessary)
@@ -420,8 +422,9 @@ Weight Options:
                                             (type: bool, keep)
     --first_only                            Only explore the first action in a tie-breaking event (type:
                                             bool, keep)
-    --cb_type arg                           Contextual bandit method to use (type: str, default: mtr, choices
-                                            {dr, ips, mtr}, keep)
+    --cb_type arg                           Contextual bandit method to use. Options: ips=Inverse Propensity
+                                            Scoring, dr=Doubly Robust, mtr=Multi-Task Regression (type: str,
+                                            default: mtr, choices {dr, ips, mtr}, keep)
     --epsilon arg                           Epsilon-greedy exploration (type: float, default: 0.05, keep)
 [Reduction] Contextual Bandit Exploration with ADF (rnd) Options:
     --cb_explore_adf                        Online explore-exploit for a contextual bandit problem with multiline
@@ -453,7 +456,9 @@ Weight Options:
 [Reduction] Contextual Bandit Options:
     --cb arg                                Use contextual bandit learning with <k> costs (type: uint, keep,
                                             necessary)
-    --cb_type arg                           Contextual bandit method to use (type: str, default: dr, choices
+    --cb_type arg                           Contextual bandit method to use. Options: ips=Inverse Propensity
+                                            Scoring, dm=Direct Method, dr=Doubly Robust, mtr=Multi-Task
+                                            Regression, sm=Supervised Method (type: str, default: dr, choices
                                             {dm, dr, ips, mtr, sm}, keep)
     --eval                                  Evaluate a policy rather than optimizing (type: bool, keep)
     --cb_force_legacy                       Default to non-adf cb implementation (cb_to_cb_adf) (type: bool,
@@ -465,7 +470,9 @@ Weight Options:
     --no_predict                            Do not do a prediction when training (type: bool)
     --clip_p arg                            Clipping probability in importance weight. Default: 0.f (no clipping)
                                             (type: float, default: 0, keep)
-    --cb_type arg                           Contextual bandit method to use (type: str, default: mtr, choices
+    --cb_type arg                           Contextual bandit method to use. Options: ips=Inverse Propensity
+                                            Scoring, dm=Direct Method, dr=Doubly Robust, mtr=Multi-Task
+                                            Regression, sm=Supervised Method (type: str, default: mtr, choices
                                             {dm, dr, ips, mtr, sm}, keep)
     --per_model_save_load                   Save and load per model state (type: bool, keep)
 [Reduction] Contextual Bandit: cb -> cb_adf Options:
@@ -720,22 +727,23 @@ Weight Options:
     --experimental_igl                      Do Interaction Grounding with multiline action dependent features
                                             (type: bool, keep, necessary, experimental)
 [Reduction] Kernel SVM Options:
-    --ksvm                                  Kernel svm (type: bool, keep, necessary)
+    --ksvm                                  Kernel SVM learner (type: bool, keep, necessary)
     --reprocess arg                         Number of reprocess steps for LASVM (type: uint, default: 1)
     --pool_greedy                           Use greedy selection on mini pools (type: bool)
     --para_active                           Do parallel active learning (type: bool)
     --pool_size arg                         Size of pools for active learning (type: uint, default: 1)
     --subsample arg                         Number of items to subsample from the pool (type: uint, default:
                                             1)
-    --kernel arg                            Type of kernel (type: str, default: linear, choices {linear,
-                                            poly, rbf}, keep)
+    --kernel arg                            Type of kernel (linear, rbf, poly) (type: str, default: linear,
+                                            choices {linear, poly, rbf}, keep)
     --bandwidth arg                         Bandwidth of rbf kernel (type: float, default: 1, keep)
     --degree arg                            Degree of poly kernel (type: int, default: 2, keep)
 [Reduction] LBFGS and Conjugate Gradient Options:
     --bfgs                                  Use conjugate gradient based optimization (type: bool, keep,
                                             necessary)
     --hessian_on                            Use second derivative in line search (type: bool)
-    --mem arg                               Memory in bfgs (type: int, default: 15)
+    --mem arg                               Number of stored corrections for L-BFGS optimization (type: int,
+                                            default: 15)
     --termination arg                       Termination threshold (type: float, default: 0.001)
 [Reduction] Latent Dirichlet Allocation Options:
     --lda arg                               Run lda with <int> topics (type: uint, keep, necessary)
@@ -748,7 +756,7 @@ Weight Options:
     --minibatch arg                         Minibatch size, for LDA (type: uint, default: 1)
     --math-mode arg                         Math mode: 0=simd, 1=accuracy, 2=fast-approx (type: int, default:
                                             0, choices {0, 1, 2})
-    --metrics                               Compute metrics (type: bool)
+    --metrics                               Compute coherence metrics for LDA topics (type: bool)
 [Reduction] Logarithmic Time Multiclass Tree Options:
     --log_multi arg                         Use online tree for multiclass (type: uint, keep, necessary)
     --no_progress                           Disable progressive validation (type: bool)
@@ -785,7 +793,8 @@ Weight Options:
     --max_number_of_labels arg              Max number of unique label (type: uint, default: 10)
     --leaf_example_multiplier arg           Multiplier on examples per leaf (default = log nodes) (type:
                                             uint, default: 1)
-    --alpha arg                             Alpha (type: float, default: 0.1)
+    --alpha arg                             Smoothing parameter for tree node routing (type: float, default:
+                                            0.1)
     --dream_repeats arg                     Number of dream operations per example (default = 1) (type: uint,
                                             default: 1)
     --top_K arg                             Top K prediction error (type: int, default: 1)
@@ -793,8 +802,7 @@ Weight Options:
     --oas                                   Use oas at the leaf (type: bool)
     --dream_at_update arg                   Turn on dream operations at reward based update as well (type:
                                             int, default: 0)
-    --online                                Turn on dream operations at reward based update as well (type:
-                                            bool)
+    --online                                Turn on online learning mode for memory tree (type: bool)
 [Reduction] Multilabel One Against All Options:
     --multilabel_oaa arg                    One-against-all multilabel with <k> labels (type: uint, keep,
                                             necessary)
