@@ -8688,8 +8688,8 @@
   },
   {
     "id": 690,
-    "desc": "CSV with tab separator",
-    "vw_command": "--csv --csv_separator '\\t' -d train-sets/csv_tab.csv",
+    "desc": "CSV with semicolon separator",
+    "vw_command": "--csv --csv_separator ; -d train-sets/csv_tab.csv",
     "diff_files": {
       "stderr": "train-sets/ref/t690.stderr"
     },
