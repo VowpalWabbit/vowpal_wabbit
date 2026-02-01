@@ -4893,25 +4893,25 @@
   {
     "id": 379,
     "desc": "SVM linear kernel save_load save",
-    "vw_command": "--ksvm --l2 1 --reprocess 5 -b 18 -d train-sets/rcv1_smaller.dat -f models/ksvm.model",
+    "vw_command": "--ksvm --l2 1 --reprocess 5 -b 18 -d train-sets/ksvm_simple.dat -f models/ksvm.model",
     "diff_files": {
       "stderr": "train-sets/ref/ksvm_train.linear.save.stderr",
       "stdout": "train-sets/ref/ksvm_train.linear.save.stdout"
     },
     "input_files": [
-      "train-sets/rcv1_smaller.dat"
+      "train-sets/ksvm_simple.dat"
     ]
   },
   {
     "id": 380,
     "desc": "SVM linear kernel save_load load",
-    "vw_command": "--ksvm --l2 1 --reprocess 5 -b 18 -d train-sets/rcv1_smaller.dat -i models/ksvm.model",
+    "vw_command": "--ksvm --l2 1 --reprocess 5 -b 18 -d train-sets/ksvm_simple.dat -i models/ksvm.model",
     "diff_files": {
       "stderr": "train-sets/ref/ksvm_train.linear.load.stderr",
       "stdout": "train-sets/ref/ksvm_train.linear.load.stdout"
     },
     "input_files": [
-      "train-sets/rcv1_smaller.dat",
+      "train-sets/ksvm_simple.dat",
       "models/ksvm.model"
     ],
     "depends_on": [

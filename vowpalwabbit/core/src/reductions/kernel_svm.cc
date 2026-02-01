@@ -529,7 +529,7 @@ bool update(svm_params& params, size_t pos)
     model->delta[i] += diff * inprods[i] * ldi.label / params.lambda;
   }
 
-  if (std::fabs(ai) <= 1.0e-10) { remove(params, pos); }
+  if (std::fabs(ai) <= 1.0e-6) { remove(params, pos); }
   else { model->alpha[pos] = ai; }
 
   return overshoot;

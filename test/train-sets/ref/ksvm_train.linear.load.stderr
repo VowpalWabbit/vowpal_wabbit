@@ -2,7 +2,7 @@ using l2 regularization = 1
 Lambda = 1
 Kernel = linear
 using no cache
-Reading datafile = train-sets/rcv1_smaller.dat
+Reading datafile = train-sets/ksvm_simple.dat
 num sources = 1
 Num weight bits = 18
 learning rate = 0.5
@@ -13,23 +13,20 @@ Input label = SIMPLE
 Output pred = SCALAR
 average  since         example        example        current        current  current
 loss     last          counter         weight          label        predict features
-0.000000 0.000000            1            1.0         1.0000         1.1186       50
-0.028986 0.057973            2            2.0        -1.0000        -0.9420      103
-0.014493 0.000000            4            4.0        -1.0000        -1.0943      134
-0.068989 0.123484            8            8.0        -1.0000        -1.0258      145
-0.055026 0.041063           16           16.0         1.0000         0.9889       23
-0.068704 0.082382           32           32.0        -1.0000        -0.9003       31
-0.083263 0.097822           64           64.0        -1.0000        -1.0730       60
-0.076278 0.069292          128          128.0         1.0000         0.8545      105
+0.000000 0.000000            1            1.0         1.0000         1.1816        3
+0.000000 0.000000            2            2.0        -1.0000        -1.1835        3
+0.000000 0.000000            4            4.0        -1.0000        -1.0011        3
+0.000000 0.000000            8            8.0        -1.0000        -1.0000        3
+0.000000 0.000000           16           16.0        -1.0000        -1.0603        3
 
 finished run
-number of examples = 250
-weighted example sum = 250.000000
-weighted label sum = -22.000000
-average loss = 0.069696
+number of examples = 20
+weighted example sum = 20.000000
+weighted label sum = 0.000000
+average loss = 0.000178
 best constant = -1.000000
-best constant's loss = 0.912000
-total feature number = 19870
-Num support = 384
-Number of kernel evaluations = 419235 Number of cache queries = 258840
-Total loss = 17.424030
+best constant's loss = 1.000000
+total feature number = 60
+Num support = 7
+Number of kernel evaluations = 211 Number of cache queries = 980
+Total loss = 0.003554
