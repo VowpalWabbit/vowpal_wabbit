@@ -483,6 +483,30 @@ void options_cli::insert(const std::string& key, const std::string& value)
   if (!value.empty()) { _command_line.push_back(value); }
 }
 
+// Visitor that updates a typed_option's parsed value from a string.
+// Reuses convert_token_value<T>() for type conversion.
+class replace_value_visitor : public typed_option_visitor
+{
+public:
+  const std::string& m_value;
+  explicit replace_value_visitor(const std::string& value) : m_value(value) {}
+
+  void visit(typed_option<uint32_t>& option) override { set_value(option); }
+  void visit(typed_option<uint64_t>& option) override { set_value(option); }
+  void visit(typed_option<int64_t>& option) override { set_value(option); }
+  void visit(typed_option<int32_t>& option) override { set_value(option); }
+  void visit(typed_option<float>& option) override { set_value(option); }
+  void visit(typed_option<std::string>& option) override { set_value(option); }
+
+private:
+  template <typename T>
+  void set_value(typed_option<T>& option)
+  {
+    VW::string_view sv(m_value.data(), m_value.size());
+    option.value(convert_token_value<T>(sv));
+  }
+};
+
 // Note: does not work for vector options.
 void options_cli::replace(const std::string& key, const std::string& value)
 {
@@ -493,6 +517,14 @@ void options_cli::replace(const std::string& key, const std::string& value)
   if (it == _command_line.end())
   {
     insert(key, value);
+
+    // Update the parsed option value if it has already been parsed.
+    auto opt_it = _options.find(key);
+    if (opt_it != _options.end())
+    {
+      replace_value_visitor visitor(value);
+      opt_it->second->accept(visitor);
+    }
     return;
   }
 
@@ -504,6 +536,14 @@ void options_cli::replace(const std::string& key, const std::string& value)
 
   // Actually replace the value.
   *(it + 1) = value;
+
+  // Also update the parsed option value if it has already been parsed.
+  auto opt_it = _options.find(key);
+  if (opt_it != _options.end())
+  {
+    replace_value_visitor visitor(value);
+    opt_it->second->accept(visitor);
+  }
 }
 
 std::vector<std::string> options_cli::get_positional_tokens() const
