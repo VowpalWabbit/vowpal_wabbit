@@ -33,7 +33,23 @@ jobs:
       - uses: actions/checkout@v6
         with:
           path: 'vw'
-          submodules: recursive
+          submodules: false
+
+      - name: Init submodules with retry
+        shell: bash
+        working-directory: vw
+        run: |
+          git config --global --add safe.directory "$(pwd)"
+          for attempt in 1 2 3 4 5; do
+            if git submodule update --init --recursive; then
+              echo "Submodule init succeeded on attempt $attempt"
+              exit 0
+            fi
+            echo "Attempt $attempt failed, retrying in 15s..."
+            sleep 15
+          done
+          echo "Submodule init failed after 5 attempts"
+          exit 1
       - name: Restore vcpkg and build artifacts
         uses: actions/cache@v4
         with:
