@@ -2461,7 +2461,6 @@ void end_pass(search& sch)
     // reset search_trained_nb_policies in options_from_file so it is saved to regressor file later
     // TODO work out a better system to update state that will be saved in the model.
     all->options->replace("search_trained_nb_policies", std::to_string(priv.current_policy));
-    all->options->get_typed_option<uint32_t>("search_trained_nb_policies").value(priv.current_policy);
   }
 }
 
@@ -2477,11 +2476,9 @@ void end_examples(search& sch)
     // --search_trained_nb_policies
     auto val = (priv.passes_since_new_policy == 0) ? priv.current_policy : (priv.current_policy + 1);
     all->options->replace("search_trained_nb_policies", std::to_string(val));
-    all->options->get_typed_option<uint32_t>("search_trained_nb_policies").value(val);
     // Dig out option and change it in case we already loaded a predictor which had a value stored for
     // --search_total_nb_policies
     all->options->replace("search_total_nb_policies", std::to_string(priv.total_number_of_policies));
-    all->options->get_typed_option<uint32_t>("search_total_nb_policies").value(priv.total_number_of_policies);
   }
 }
 
@@ -3291,10 +3288,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::search_setup(VW::setup_bas
   if (!all.runtime_config.training && priv.current_policy > 0) { priv.current_policy--; }
 
   all.options->replace("search_trained_nb_policies", std::to_string(priv.current_policy));
-  all.options->get_typed_option<uint32_t>("search_trained_nb_policies").value(priv.current_policy);
-
   all.options->replace("search_total_nb_policies", std::to_string(priv.total_number_of_policies));
-  all.options->get_typed_option<uint32_t>("search_total_nb_policies").value(priv.total_number_of_policies);
 
   cdbg << "search current_policy = " << priv.current_policy
        << " total_number_of_policies = " << priv.total_number_of_policies << endl;

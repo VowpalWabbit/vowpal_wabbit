@@ -516,6 +516,70 @@ TEST(OptionsCli, CheckWasSuppliedCommonPrefixBefore)
   EXPECT_TRUE(options->was_supplied("int_opt_two"));
 }
 
+TEST(OptionsCli, ReplaceUpdatesParsedStringValue)
+{
+  auto options = vwtest::make_args("--str_opt", "original");
+
+  std::string str_opt;
+  option_group_definition arg_group("group");
+  arg_group.add(make_option("str_opt", str_opt));
+  options->add_and_parse(arg_group);
+  EXPECT_EQ(str_opt, "original");
+  EXPECT_EQ(options->get_typed_option<std::string>("str_opt").value(), "original");
+
+  options->replace("str_opt", "replaced");
+  EXPECT_EQ(options->get_typed_option<std::string>("str_opt").value(), "replaced");
+}
+
+TEST(OptionsCli, ReplaceUpdatesParsedIntValue)
+{
+  auto options = vwtest::make_args("--int_opt", "10");
+
+  uint32_t int_opt;
+  option_group_definition arg_group("group");
+  arg_group.add(make_option("int_opt", int_opt));
+  options->add_and_parse(arg_group);
+  EXPECT_EQ(options->get_typed_option<uint32_t>("int_opt").value(), 10);
+
+  options->replace("int_opt", "42");
+  EXPECT_EQ(options->get_typed_option<uint32_t>("int_opt").value(), 42);
+}
+
+TEST(OptionsCli, ReplaceInsertsFallbackAndUpdatesParsedValue)
+{
+  auto options = vwtest::make_args("--other_opt", "hello");
+
+  std::string other_opt;
+  std::string str_opt;
+  option_group_definition arg_group("group");
+  arg_group.add(make_option("other_opt", other_opt));
+  arg_group.add(make_option("str_opt", str_opt).default_value("default_val"));
+  options->add_and_parse(arg_group);
+  EXPECT_FALSE(options->was_supplied("str_opt"));
+  EXPECT_EQ(options->get_typed_option<std::string>("str_opt").value(), "default_val");
+
+  // replace on a key not in _command_line falls back to insert
+  options->replace("str_opt", "inserted");
+  EXPECT_TRUE(options->was_supplied("str_opt"));
+  EXPECT_EQ(options->get_typed_option<std::string>("str_opt").value(), "inserted");
+}
+
+TEST(OptionsCli, ReplaceBeforeParsingDoesNotCrash)
+{
+  auto options = vwtest::make_args("--str_opt", "original");
+
+  // replace before the option has been parsed (not in _options map yet)
+  EXPECT_NO_THROW(options->replace("str_opt", "replaced"));
+
+  // Now parse and verify the replaced command-line value is used
+  std::string str_opt;
+  option_group_definition arg_group("group");
+  arg_group.add(make_option("str_opt", str_opt));
+  options->add_and_parse(arg_group);
+  EXPECT_EQ(str_opt, "replaced");
+  EXPECT_EQ(options->get_typed_option<std::string>("str_opt").value(), "replaced");
+}
+
 TEST(OptionsCli, MakeOptionTags)
 {
   int int_opt{};
