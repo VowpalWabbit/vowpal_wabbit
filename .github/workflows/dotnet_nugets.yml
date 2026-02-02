@@ -30,7 +30,22 @@ jobs:
       # Setup for build
       - uses: actions/checkout@v6
         with:
-          submodules: 'recursive'
+          submodules: false
+
+      - name: Init submodules with retry
+        shell: bash
+        run: |
+          git config --global --add safe.directory "$(pwd)"
+          for attempt in 1 2 3 4 5; do
+            if git submodule update --init --recursive; then
+              echo "Submodule init succeeded on attempt $attempt"
+              exit 0
+            fi
+            echo "Attempt $attempt failed, retrying in 15s..."
+            sleep 15
+          done
+          echo "Submodule init failed after 5 attempts"
+          exit 1
       - name: Setup MSVC Developer Command Prompt
         if: ${{ startsWith(matrix.config.os, 'windows') }}
         uses: ilammy/msvc-dev-cmd@v1
@@ -171,7 +186,22 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          submodules: 'recursive'
+          submodules: false
+
+      - name: Init submodules with retry
+        shell: bash
+        run: |
+          git config --global --add safe.directory "$(pwd)"
+          for attempt in 1 2 3 4 5; do
+            if git submodule update --init --recursive; then
+              echo "Submodule init succeeded on attempt $attempt"
+              exit 0
+            fi
+            echo "Attempt $attempt failed, retrying in 15s..."
+            sleep 15
+          done
+          echo "Submodule init failed after 5 attempts"
+          exit 1
       - if: ${{ startsWith(matrix.config.os, 'windows') }}
         uses: ilammy/msvc-dev-cmd@v1
 
@@ -230,7 +260,22 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          submodules: 'recursive'
+          submodules: false
+
+      - name: Init submodules with retry
+        shell: bash
+        run: |
+          git config --global --add safe.directory "$(pwd)"
+          for attempt in 1 2 3 4 5; do
+            if git submodule update --init --recursive; then
+              echo "Submodule init succeeded on attempt $attempt"
+              exit 0
+            fi
+            echo "Attempt $attempt failed, retrying in 15s..."
+            sleep 15
+          done
+          echo "Submodule init failed after 5 attempts"
+          exit 1
       - uses: ilammy/msvc-dev-cmd@v1
 
       # Get version number
@@ -292,7 +337,22 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          submodules: 'recursive'
+          submodules: false
+
+      - name: Init submodules with retry
+        shell: bash
+        run: |
+          git config --global --add safe.directory "$(pwd)"
+          for attempt in 1 2 3 4 5; do
+            if git submodule update --init --recursive; then
+              echo "Submodule init succeeded on attempt $attempt"
+              exit 0
+            fi
+            echo "Attempt $attempt failed, retrying in 15s..."
+            sleep 15
+          done
+          echo "Submodule init failed after 5 attempts"
+          exit 1
       - uses: ilammy/msvc-dev-cmd@v1
       # Needed for generating benchmark plots
       - uses: r-lib/actions/setup-r@v2

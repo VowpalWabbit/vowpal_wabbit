@@ -21,8 +21,23 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          submodules: recursive
+          submodules: false
           ref: ${{ github.event.inputs.benchmarks_ref }}
+
+      - name: Init submodules with retry
+        shell: bash
+        run: |
+          git config --global --add safe.directory "$(pwd)"
+          for attempt in 1 2 3 4 5; do
+            if git submodule update --init --recursive; then
+              echo "Submodule init succeeded on attempt $attempt"
+              exit 0
+            fi
+            echo "Attempt $attempt failed, retrying in 15s..."
+            sleep 15
+          done
+          echo "Submodule init failed after 5 attempts"
+          exit 1
       - name: Store benchmark related script(s)
         shell: bash
         run: cp ./.scripts/linux/*benchmarks.sh test/benchmarks/
@@ -35,8 +50,23 @@ jobs:
 # checkout first ref
       - uses: actions/checkout@v6
         with:
-          submodules: recursive
+          submodules: false
           ref: ${{ github.event.inputs.base_ref }}
+
+      - name: Init submodules with retry
+        shell: bash
+        run: |
+          git config --global --add safe.directory "$(pwd)"
+          for attempt in 1 2 3 4 5; do
+            if git submodule update --init --recursive; then
+              echo "Submodule init succeeded on attempt $attempt"
+              exit 0
+            fi
+            echo "Attempt $attempt failed, retrying in 15s..."
+            sleep 15
+          done
+          echo "Submodule init failed after 5 attempts"
+          exit 1
       - name: Remove existing benchmark module (in favour of master)
         shell: bash
         run: rm -rf test/benchmarks
@@ -82,8 +112,23 @@ jobs:
 # checkout second ref
       - uses: actions/checkout@v6
         with:
-          submodules: recursive
+          submodules: false
           ref: ${{ github.event.inputs.compare_ref }}
+
+      - name: Init submodules with retry
+        shell: bash
+        run: |
+          git config --global --add safe.directory "$(pwd)"
+          for attempt in 1 2 3 4 5; do
+            if git submodule update --init --recursive; then
+              echo "Submodule init succeeded on attempt $attempt"
+              exit 0
+            fi
+            echo "Attempt $attempt failed, retrying in 15s..."
+            sleep 15
+          done
+          echo "Submodule init failed after 5 attempts"
+          exit 1
       - name: Download ${{ github.event.inputs.base_ref }} benchmark results
         uses: actions/download-artifact@v4
         with:

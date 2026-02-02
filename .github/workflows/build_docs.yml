@@ -38,7 +38,22 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          submodules: recursive
+          submodules: false
+
+      - name: Init submodules with retry
+        shell: bash
+        run: |
+          git config --global --add safe.directory "$(pwd)"
+          for attempt in 1 2 3 4 5; do
+            if git submodule update --init --recursive; then
+              echo "Submodule init succeeded on attempt $attempt"
+              exit 0
+            fi
+            echo "Attempt $attempt failed, retrying in 15s..."
+            sleep 15
+          done
+          echo "Submodule init failed after 5 attempts"
+          exit 1
       - name: Install Ninja
         uses: seanmiddleditch/gha-setup-ninja@master
       - name: Configure
@@ -55,7 +70,22 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          submodules: recursive
+          submodules: false
+
+      - name: Init submodules with retry
+        shell: bash
+        run: |
+          git config --global --add safe.directory "$(pwd)"
+          for attempt in 1 2 3 4 5; do
+            if git submodule update --init --recursive; then
+              echo "Submodule init succeeded on attempt $attempt"
+              exit 0
+            fi
+            echo "Attempt $attempt failed, retrying in 15s..."
+            sleep 15
+          done
+          echo "Submodule init failed after 5 attempts"
+          exit 1
       - name: Install dependencies
         run: |
           sudo apt-get update || true
@@ -78,7 +108,22 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          submodules: recursive
+          submodules: false
+
+      - name: Init submodules with retry
+        shell: bash
+        run: |
+          git config --global --add safe.directory "$(pwd)"
+          for attempt in 1 2 3 4 5; do
+            if git submodule update --init --recursive; then
+              echo "Submodule init succeeded on attempt $attempt"
+              exit 0
+            fi
+            echo "Attempt $attempt failed, retrying in 15s..."
+            sleep 15
+          done
+          echo "Submodule init failed after 5 attempts"
+          exit 1
       - uses: actions/setup-node@v4
       - uses: actions/setup-python@v5
         with:
@@ -151,12 +196,28 @@ jobs:
           path: python_docs
       - uses: actions/checkout@v6
         with:
-          submodules: recursive
+          submodules: false
           repository: VowpalWabbit/docs
           ref: master
           path: docs
           token: ${{ secrets.DOCS_DEPLOY_TOKEN }}
           persist-credentials: true
+
+      - name: Init submodules with retry
+        shell: bash
+        working-directory: docs
+        run: |
+          git config --global --add safe.directory "$(pwd)"
+          for attempt in 1 2 3 4 5; do
+            if git submodule update --init --recursive; then
+              echo "Submodule init succeeded on attempt $attempt"
+              exit 0
+            fi
+            echo "Attempt $attempt failed, retrying in 15s..."
+            sleep 15
+          done
+          echo "Submodule init failed after 5 attempts"
+          exit 1
       - name: Copy c++ Docs
         shell: bash
         run: |

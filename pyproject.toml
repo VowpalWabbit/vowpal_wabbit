@@ -18,7 +18,10 @@ skip = [
 ]
 # ARM64 tests enabled - pybind11 migration removes Boost dependency that was causing illegal instruction
 # test-skip = "*-manylinux_aarch64"  # Removed to enable ARM64 testing
-test-requires = ["pytest", "pyclean", "vw-executor", "setuptools", "scipy", "scikit-learn"]
+# vw-executor depends on vowpalwabbit, so it must be in test-requires (runs after wheel install)
+# Large packages go in before-test with retry to handle transient SSL errors during download
+test-requires = ["vw-executor"]
+before-test = "pip install pytest pyclean setuptools scipy scikit-learn || pip install pytest pyclean setuptools scipy scikit-learn || pip install pytest pyclean setuptools scipy scikit-learn"
 # Exclude e2e_v2: vw_executor uses multiprocessing.Pool(1) which hangs in GitHub Actions containers
 # due to pybind11 fork safety issues. Tests pass locally but hang in CI container environment.
 test-command = [
