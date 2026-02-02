@@ -54,7 +54,7 @@ jobs:
     needs: build-valgrind
     strategy:
       matrix:
-        test-segment: ["..100", "101..200", "201..300", "301..400", "401.."]
+        test-segment: ["..123", "124..252", "253..391", "392..558", "559.."]
     container:
       image: vowpalwabbit/ubuntu2004-build:latest
     runs-on: ubuntu-latest
