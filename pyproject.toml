@@ -46,18 +46,24 @@ environment = { CMAKE_ARGS="-DVW_ZLIB_SYS_DEP=OFF -DVW_FEAT_LAS_SIMD=ON -DVW_FEA
 
 [tool.cibuildwheel.macos]
 before-all = [
-    # Install build tools via Homebrew
-    "brew install cmake ninja",
+    # Install build tools via Homebrew (ccache for C++ compilation caching across Python versions)
+    "brew install cmake ninja ccache",
     # Install pybind11
     "python -m pip install pybind11",
+    # Reset ccache stats for this job
+    "ccache --zero-stats",
 ]
+# Show ccache stats before each Python version build (cp310 = all misses, cp311+ = cache hits)
+before-build = "ccache --show-stats || true"
 test-command = [
     "pyclean {project}/python/tests",
     "pytest {project}/python/tests --ignore={project}/python/tests/e2e_v2",
 ]
 # Use macOS 11.0+ for compatibility
 # pybind11_DIR is automatically detected by setup.py
-environment = { MACOSX_DEPLOYMENT_TARGET="11.0", CMAKE_ARGS="-DVW_ZLIB_SYS_DEP=OFF -DVW_FEAT_CSV=ON" }
+# ccache: CMAKE_C/CXX_COMPILER_LAUNCHER=ccache caches object files across the 5 Python version builds
+# CCACHE_BASEDIR normalizes paths so different build_temp dirs per Python version still get cache hits
+environment = { MACOSX_DEPLOYMENT_TARGET="11.0", CMAKE_ARGS="-DVW_ZLIB_SYS_DEP=OFF -DVW_FEAT_CSV=ON -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache", CCACHE_DIR="/tmp/ccache", CCACHE_BASEDIR="/Users/runner/work/vowpal_wabbit/vowpal_wabbit", CCACHE_MAXSIZE="500M", CCACHE_COMPILERCHECK="content" }
 repair-wheel-command = "delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel} --ignore-missing-dependencies"
 
 [tool.cibuildwheel.windows]
@@ -68,6 +74,8 @@ before-all = [
 # Use vendored zlib (VW_ZLIB_SYS_DEP=OFF) for self-contained wheels
 # pybind11_DIR is automatically detected by setup.py
 # CMAKE_GENERATOR specifies Visual Studio 2019 (available on windows-2019 runner)
+# Note: ccache/compiler caching requires Ninja generator, but Ninja needs vcvarsall.bat
+# which cibuildwheel can't persist across commands. VS generator handles MSVC discovery natively.
 environment = { CMAKE_ARGS="-DVW_ZLIB_SYS_DEP=OFF -DVW_FEAT_CSV=ON", CMAKE_GENERATOR="Visual Studio 16 2019" }
 
 # Override for ARM64 Linux builds
