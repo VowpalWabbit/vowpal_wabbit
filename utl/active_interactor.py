@@ -76,7 +76,7 @@ def _get_getch_impl_macos() -> Optional[Callable[[], str]]:
         if Carbon.Evt.EventAvail(0x0008)[0] == 0:  # 0x0008 is the keyDownMask
             return ""
         else:
-            (what, msg, when, where, mod) = Carbon.Evt.GetNextEvent(0x0008)[1]
+            what, msg, when, where, mod = Carbon.Evt.GetNextEvent(0x0008)[1]
             ch = chr(msg & 0x000000FF)
             if ord(ch) == 3:
                 raise KeyboardInterrupt

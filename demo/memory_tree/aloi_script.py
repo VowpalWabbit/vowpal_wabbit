@@ -2,7 +2,6 @@ import os
 import time
 import numpy as np
 
-
 # for shot in available_shots.iterkeys():
 print("## perform experiments on aloi ##")
 num_of_classes = 1000

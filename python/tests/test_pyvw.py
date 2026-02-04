@@ -381,17 +381,13 @@ def helper_parse(examples):
 def test_parse():
     helper_parse("| a:1 b:0.5\n0:0.1:0.75 | a:0.5 b:1 c:2")
 
-    helper_parse(
-        """| a:1 b:0.5
-    0:0.1:0.75 | a:0.5 b:1 c:2"""
-    )
+    helper_parse("""| a:1 b:0.5
+    0:0.1:0.75 | a:0.5 b:1 c:2""")
 
-    helper_parse(
-        """
+    helper_parse("""
     | a:1 b:0.5
     0:0.1:0.75 | a:0.5 b:1 c:2
-    """
-    )
+    """)
 
     helper_parse(["| a:1 b:0.5", "0:0.1:0.75 | a:0.5 b:1 c:2"])
 

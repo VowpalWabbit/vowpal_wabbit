@@ -2,7 +2,6 @@ import os
 import time
 import numpy as np
 
-
 # available_shots = {'three':3, "one":1}
 available_shots = {"three": 3}
 

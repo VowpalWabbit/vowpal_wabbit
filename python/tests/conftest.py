@@ -10,9 +10,9 @@ import multiprocessing
 import sys
 import os
 
-if sys.platform == 'linux':
+if sys.platform == "linux":
     try:
-        multiprocessing.set_start_method('forkserver', force=True)
+        multiprocessing.set_start_method("forkserver", force=True)
     except RuntimeError:
         # In case force=True still fails for some reason
         pass
@@ -32,4 +32,3 @@ def pytest_runtest_logstart(nodeid, location):
 def pytest_runtest_logfinish(nodeid, location):
     """Log when each test finishes."""
     print(f"[TEST END] {nodeid}", flush=True)
-

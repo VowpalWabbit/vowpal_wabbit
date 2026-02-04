@@ -856,11 +856,12 @@ def tovw(x, y=None, sample_weight=None, convert_labels=False):
         # Convert unsigned integers to signed with sufficient range
         # sklearn's dump_svmlight_file doesn't support unsigned types
         import scipy.sparse as sp
+
         unsigned_to_signed = {
-            np.dtype('uint8'): np.int16,
-            np.dtype('uint16'): np.int32,
-            np.dtype('uint32'): np.int64,
-            np.dtype('uint64'): np.int64,  # May overflow for very large values
+            np.dtype("uint8"): np.int16,
+            np.dtype("uint16"): np.int32,
+            np.dtype("uint32"): np.int64,
+            np.dtype("uint64"): np.int64,  # May overflow for very large values
         }
         new_dtype = unsigned_to_signed.get(x.dtype, np.int64)
         if sp.issparse(x):

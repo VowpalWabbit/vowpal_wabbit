@@ -1,7 +1,6 @@
 import os, random
 from test_helper import get_function_object
 
-
 script_directory = os.path.dirname(os.path.realpath(__file__))
 random.seed(10)
 

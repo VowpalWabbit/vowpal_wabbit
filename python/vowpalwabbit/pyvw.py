@@ -803,7 +803,9 @@ class Workspace(pylibvw.vw):
             self.finished = True
             # Preserve log messages for get_log() calls after finish()
             if self._log_fwd:
-                self._saved_log = self._log_fwd.driver_messages + self._log_fwd.logger_messages
+                self._saved_log = (
+                    self._log_fwd.driver_messages + self._log_fwd.logger_messages
+                )
                 self._saved_driver_log = self._log_fwd.driver_messages
                 self._saved_logger_log = self._log_fwd.logger_messages
             # NOTE: Do NOT set _log_wrapper = None here. The C++ VW workspace destructor

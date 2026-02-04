@@ -11,7 +11,6 @@ import sys
 from run_tests import convert_to_test_data, Color, NoColor, TestData
 import vowpalwabbit
 
-
 # Timeout for individual model load operations (seconds).
 # Older VW versions may hang in json_weights() for certain models.
 # This prevents a single test from stalling the entire CI job.
@@ -299,7 +298,9 @@ def get_tests(
                 for group in groups:
                     for opt in group[1]:
                         if opt.value_supplied and (
-                            opt.experimental or opt.name == "bfgs" or opt.name == "conjugate_gradient"
+                            opt.experimental
+                            or opt.name == "bfgs"
+                            or opt.name == "conjugate_gradient"
                         ):
                             skip_cmd = True
                             break

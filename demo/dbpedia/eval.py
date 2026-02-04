@@ -4,7 +4,6 @@ from __future__ import print_function
 import argparse
 from sklearn.metrics import classification_report, confusion_matrix
 
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluate Classification Results")
     parser.add_argument(
