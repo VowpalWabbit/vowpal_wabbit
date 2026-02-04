@@ -209,6 +209,16 @@ void ect_train(ect& e, learner& base, VW::example& ec)
   }
   VW::multiclass_label mc = ec.l.multi;
 
+  // Validate label is within valid range [1, k] to prevent out-of-bounds access
+  if (mc.label == 0 || mc.label > e.k)
+  {
+    e.logger.out_warn(
+        "ect_train: label {} is not in {{1, {}}}, skipping example. "
+        "This may indicate a data format issue.",
+        mc.label, e.k);
+    return;
+  }
+
   VW::simple_label simple_temp;
 
   e.tournaments_won.clear();

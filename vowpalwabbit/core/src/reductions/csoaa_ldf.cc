@@ -112,6 +112,18 @@ void unsubtract_example(VW::example* ec, VW::io::logger& logger)
 
 void make_single_prediction(ldf& data, learner& base, VW::example& ec)
 {
+  // Validate that costs array is non-empty before accessing costs[0]
+  if (ec.l.cs.costs.empty())
+  {
+    if (data.all != nullptr)
+    {
+      data.all->logger.out_warn(
+          "make_single_prediction: example has empty costs array, skipping prediction. "
+          "This may indicate a data format issue.");
+    }
+    return;
+  }
+
   uint64_t old_offset = ec.ft_offset;
 
   VW::details::append_example_namespace_from_memory(data.label_features, ec, ec.l.cs.costs[0].class_index);
@@ -143,7 +155,14 @@ bool test_ldf_sequence(const VW::multi_ex& ec_seq, VW::io::logger& logger)
   for (const auto& ec : ec_seq)
   {
     // Each sub-example must have just one cost
-    assert(ec->l.cs.costs.size() == 1);
+    if (ec->l.cs.costs.size() != 1)
+    {
+      logger.err_warn(
+          "ldf example has {} costs, expected exactly 1. Treating as test. "
+          "This may indicate a data format issue.",
+          ec->l.cs.costs.size());
+      return true;
+    }
 
     if (ec->l.cs.is_test_label() != is_test)
     {
