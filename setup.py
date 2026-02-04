@@ -69,6 +69,7 @@ class BuildPyLibVWBindingsModule(_build_ext):
             # On Windows, find where CMake actually built the extension
             if system == "Windows":
                 import glob
+
                 config = "Debug" if self.distribution.debug else "Release"
                 # CMake builds to build/temp.*/python/Release/ on Windows
                 # Note: self.build_temp already includes the config directory
@@ -80,7 +81,9 @@ class BuildPyLibVWBindingsModule(_build_ext):
                     raise RuntimeError(f"Could not find built extension at {pattern}")
             else:
                 # On Unix, CMake builds to lib_output_dir
-                src = os.path.join(here, os.path.dirname(self.get_ext_fullpath(ext.name)), filename)
+                src = os.path.join(
+                    here, os.path.dirname(self.get_ext_fullpath(ext.name)), filename
+                )
 
             # Destination: where setuptools expects it for packaging
             dest = os.path.join(self.build_lib, filename)
@@ -136,6 +139,7 @@ class BuildPyLibVWBindingsModule(_build_ext):
         # Automatically detect pybind11 if available
         try:
             import pybind11
+
             pybind11_dir = pybind11.get_cmake_dir()
             cmake_args += ["-Dpybind11_DIR={}".format(pybind11_dir)]
         except (ImportError, AttributeError):
@@ -145,6 +149,7 @@ class BuildPyLibVWBindingsModule(_build_ext):
         # Read CMAKE_ARGS from environment variable if set
         if "CMAKE_ARGS" in os.environ:
             import shlex
+
             env_cmake_args = shlex.split(os.environ["CMAKE_ARGS"])
             cmake_args += env_cmake_args
 
@@ -232,10 +237,7 @@ class BuildPyLibVWBindingsModule(_build_ext):
 
             # Copy all DLLs that pylibvw might depend on (zlib, etc.)
             # Note: pybind11 is header-only and doesn't need DLLs
-            dll_patterns_to_copy = [
-                "zlib*.dll",
-                "libzlib*.dll"
-            ]
+            dll_patterns_to_copy = ["zlib*.dll", "libzlib*.dll"]
 
             conda_dlls = []
             for pattern in dll_patterns_to_copy:
@@ -279,7 +281,7 @@ class BuildPyLibVWBindingsModule(_build_ext):
             for dll in build_dlls:
                 basename = os.path.basename(dll)
                 # Skip python DLLs and duplicates
-                if basename not in seen and not basename.startswith('python'):
+                if basename not in seen and not basename.startswith("python"):
                     seen.add(basename)
                     vw_dlls.append(dll)
 
@@ -303,7 +305,7 @@ class BuildPyLibVWBindingsModule(_build_ext):
 
             print(f"\nDLL files at root:")
             for f in os.listdir(lib_output_dir):
-                if f.endswith('.dll'):
+                if f.endswith(".dll"):
                     print(f"  {f}")
 
 

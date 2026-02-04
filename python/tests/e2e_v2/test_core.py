@@ -6,6 +6,7 @@ Each grid combination becomes a separate test case.
 VW training is deferred to test execution time (not import time) to avoid
 multiprocessing issues with pybind11 bindings.
 """
+
 from vw_executor.vw import Vw
 from vw_executor.vw_opts import Grid, VwOpts
 import pytest
@@ -59,7 +60,7 @@ def get_test_configs():
             configs = [configs]
 
         for idx, config in enumerate(configs):
-            test_name = config.get('test_name', f'test_{idx}')
+            test_name = config.get("test_name", f"test_{idx}")
 
             # Compute grid combinations at parametrize time (no VW needed)
             options = get_options(config["grids"], config["grids_expression"])
@@ -68,15 +69,11 @@ def get_test_configs():
                 opts = VwOpts(opts)
                 for assert_func in config["assert_functions"]:
                     test_id = make_test_id(
-                        task_folder, test_name, assert_func['name'], opts
+                        task_folder, test_name, assert_func["name"], opts
                     )
-                    test_cases.append(pytest.param(
-                        task_folder,
-                        config,
-                        opts,
-                        assert_func,
-                        id=test_id
-                    ))
+                    test_cases.append(
+                        pytest.param(task_folder, config, opts, assert_func, id=test_id)
+                    )
 
     return test_cases
 
@@ -118,6 +115,7 @@ def run_vw_training_single(task_folder, config, opts):
 
 class TestTimeout(Exception):
     """Raised when a test exceeds its timeout."""
+
     pass
 
 
@@ -125,7 +123,9 @@ def timeout_handler(signum, frame):
     raise TestTimeout("Test exceeded 60 second timeout")
 
 
-@pytest.mark.parametrize("task_folder,config,opts,assert_func_config", get_test_configs())
+@pytest.mark.parametrize(
+    "task_folder,config,opts,assert_func_config", get_test_configs()
+)
 def test_vw_scenario(task_folder, config, opts, assert_func_config):
     """
     Run a VW training scenario for a single grid point and verify results.
@@ -134,7 +134,7 @@ def test_vw_scenario(task_folder, config, opts, assert_func_config):
     This avoids multiprocessing/fork issues with pybind11 bindings.
     """
     # Set up timeout (Unix only)
-    if sys.platform != 'win32':
+    if sys.platform != "win32":
         old_handler = signal.signal(signal.SIGALRM, timeout_handler)
         signal.alarm(60)  # 60 second timeout per test
 
@@ -145,7 +145,10 @@ def test_vw_scenario(task_folder, config, opts, assert_func_config):
         # Run VW training for this single grid point
         job, package_name = run_vw_training_single(task_folder, config, opts)
 
-        print(f"  [VW] Training complete, running assertion: {assert_func_config['name']}", flush=True)
+        print(
+            f"  [VW] Training complete, running assertion: {assert_func_config['name']}",
+            flush=True,
+        )
 
         # Get the assertion function
         assert_job = get_function_obj_with_dirs(
@@ -176,7 +179,7 @@ def test_vw_scenario(task_folder, config, opts, assert_func_config):
             )
     finally:
         # Cancel timeout
-        if sys.platform != 'win32':
+        if sys.platform != "win32":
             signal.alarm(0)
             signal.signal(signal.SIGALRM, old_handler)
         cleanup_data_files(task_folder)

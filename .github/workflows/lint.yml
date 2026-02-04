@@ -20,7 +20,7 @@ jobs:
     strategy:
       matrix:
         config:
-        - { version: "3.10" }
+        - { version: "3.10", artifact_name: "wheel_3_10" }
     steps:
       - uses: actions/checkout@v6
         with:
@@ -40,6 +40,10 @@ jobs:
           done
           echo "Submodule init failed after 5 attempts"
           exit 1
+      - name: Set up Python ${{ matrix.config.version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.config.version }}
       - name: Install build dependencies
         run: |
           sudo apt-get update
@@ -47,14 +51,14 @@ jobs:
       - name: Build wheel
         shell: bash
         run: |
-          python3 -m pip install wheel setuptools auditwheel pybind11
-          export PYBIND11_DIR=$(python3 -m pybind11 --cmakedir)
-          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -DVW_ZLIB_SYS_DEP=OFF -Dpybind11_DIR=${PYBIND11_DIR}" python3 -m pip wheel . -w wheel_output/ --verbose
+          python -m pip install wheel setuptools auditwheel pybind11
+          export PYBIND11_DIR=$(python -m pybind11 --cmakedir)
+          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -DVW_ZLIB_SYS_DEP=OFF -Dpybind11_DIR=${PYBIND11_DIR}" python -m pip wheel . -w wheel_output/ --verbose
           auditwheel repair wheel_output/*whl -w audit_output/
       - name: Upload built wheel
         uses: actions/upload-artifact@v4
         with:
-          name: wheel_${{ replace(matrix.config.version, '.', '_') }}
+          name: ${{ matrix.config.artifact_name }}
           path: audit_output/
   typecheck-check:
     name: lint.python.typecheck-check
@@ -65,7 +69,7 @@ jobs:
     strategy:
       matrix:
         config:
-        - { version: "3.10" }
+        - { version: "3.10", artifact_name: "wheel_3_10" }
     steps:
       - uses: actions/checkout@v6
         with:
@@ -88,7 +92,8 @@ jobs:
       - name: Download Wheel
         uses: actions/download-artifact@v4
         with:
-          name: wheel_${{ replace(matrix.config.version, '.', '_') }}
+          name: ${{ matrix.config.artifact_name }}
+          path: ${{ matrix.config.artifact_name }}
       - name: Install dependencies
         shell: bash
         run: |
@@ -99,7 +104,7 @@ jobs:
       - name: Install wheel
         shell: bash
         run: |
-          export wheel_files=(wheel_${{ replace(matrix.config.version, '.', '_') }}/*)
+          export wheel_files=(${{ matrix.config.artifact_name }}/*)
           export wheel_file="${wheel_files[0]}"
           echo Installing ${wheel_file}...
           pip install ${wheel_file}

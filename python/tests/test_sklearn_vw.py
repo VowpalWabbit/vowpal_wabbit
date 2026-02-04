@@ -18,7 +18,6 @@ from vowpalwabbit.sklearn import (
     VWRegressor,
 )
 
-
 """
 Test utilities to support integration of Vowpal Wabbit and scikit-learn
 """
