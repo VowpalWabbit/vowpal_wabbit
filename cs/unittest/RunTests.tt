@@ -23,8 +23,10 @@ using (StreamReader sr = File.OpenText(Path.Combine(testRoot, "core.vwtest.json"
 var skipList = new[] {
     // Model dependency / multiline learner issues
     31, 32, 33, 34,
-    // Performance stat mismatches (multi-pass counting differs from CLI)
-    64, 66, 69, 88, 89, 96, 110,
+    // Search algorithm stat mismatches (feature count and average loss differ)
+    64, 66, 110,
+    // --examples flag not respected by test helper (IndexOutOfRangeException)
+    69,
     // Multiline learner not supported
     237, 238,
     // Float delta too large

@@ -248,6 +248,7 @@ API vw_net_native::ERROR_CODE WorkspaceNotifyEndOfPass(
 {
   try
   {
+    workspace->vw->passes_config.current_pass++;
     workspace->vw->l->end_pass();
     sync_stats(*workspace->vw);
 
