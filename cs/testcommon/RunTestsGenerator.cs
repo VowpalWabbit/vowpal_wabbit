@@ -40,7 +40,7 @@ namespace Vw.Net.Test
     private static readonly HashSet<int> SkipList = new HashSet<int>(new [] {
         // Model dependency / multiline learner issues
         31, 32, 33, 34,
-        // Performance stat mismatches
+        // Performance stat mismatches (multi-pass counting differs from CLI)
         64, 66, 69, 88, 89, 96, 110,
         // Multiline learner not supported
         237, 238,
@@ -52,6 +52,8 @@ namespace Vw.Net.Test
         227,
         // flatbuffer input not supported
         239, 240, 241, 242, 243, 244,
+        // --help causes process exit, crashing test host
+        273, 274,
     });
 
     private bool ShouldInclude(RunTestEntry entry)
