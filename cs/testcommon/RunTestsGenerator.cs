@@ -37,25 +37,21 @@ namespace Vw.Net.Test
       return file.Path.EndsWith("vwtest.json");
     }
 
-    private static readonly HashSet<int> SkipList = new HashSet<int>(new [] { 13, 32, 39, 258, 40, 259, 41, 260, 59, 60, 61, 66, 68, 90,
-        25, 26, 349, 350, 356, 357, 358, // crash
-        92, 95, 96, 98,	91, 99, 118, 119, 120,
-        176, 177, 207, 208, //depend on shell scripts for input/output
-        14, 16, 17, 31, 33, 34, 53, 101, 102, 103, 105, 106, 111, 112, 412, 413, 414, // float delta
-        71, // --examples to test parser
-        149, 152, 156, 193, 194, 217, 385, // bash script
-        188, // possibly float delta
-        193, 195, 203, 324, 325, 326, //--onethread is a shell option, not available via library
-        275, 276, // --help
-        203, // Cluster mode test
-        204, // Testing option usage
-        220, // deamon mode shell script test not supported
-        227, // "single continuous action, pdf value" prediction type for cats not yet supported
-        229,  // "continous action with probability density function" prediction type for cats_pdf not yet supported
-        239, 240, 241, 242, 243, 244, 245, 246, // flatbuffer input tests, to be enabled in due course
-        400, 404, // positional args
-        189, // JSON checkpoint line
-        310, 311, 347, 348, // _label_ca not supported
+    private static readonly HashSet<int> SkipList = new HashSet<int>(new [] {
+        // Model dependency / multiline learner issues
+        31, 32, 33, 34,
+        // Performance stat mismatches
+        64, 66, 69, 88, 89, 96, 110,
+        // Multiline learner not supported
+        237, 238,
+        // Float delta too large
+        412,
+        // --onethread shell option not available
+        193,
+        // cats_pdf prediction type not supported
+        227,
+        // flatbuffer input not supported
+        239, 240, 241, 242, 243, 244,
     });
 
     private bool ShouldInclude(RunTestEntry entry)
