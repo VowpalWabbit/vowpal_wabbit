@@ -89,6 +89,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ matrix.config.artifact_name }}
+          path: ${{ matrix.config.artifact_name }}
       - name: Install dependencies
         shell: bash
         run: |
