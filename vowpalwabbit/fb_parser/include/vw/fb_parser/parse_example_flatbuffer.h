@@ -76,14 +76,15 @@ private:
   }
 
   void parse_simple_label(shared_data* sd, polylabel* l, reduction_features* red_features, const SimpleLabel* label);
-  void parse_cb_label(polylabel* l, const CBLabel* label);
-  void parse_ccb_label(polylabel* l, const CCBLabel* label);
-  void parse_cs_label(polylabel* l, const CS_Label* label);
-  void parse_cb_eval_label(polylabel* l, const CB_EVAL_Label* label);
+  bool parse_cb_label(polylabel* l, const CBLabel* label, VW::io::logger& logger);
+  bool parse_ccb_label(polylabel* l, const CCBLabel* label, VW::io::logger& logger);
+  bool parse_cs_label(polylabel* l, const CS_Label* label, VW::io::logger& logger);
+  bool parse_cb_eval_label(polylabel* l, const CB_EVAL_Label* label, VW::io::logger& logger);
   void parse_mc_label(shared_data* sd, polylabel* l, const MultiClass* label, VW::io::logger& logger);
-  void parse_multi_label(polylabel* l, const MultiLabel* label);
-  int parse_slates_label(polylabel* l, const Slates_Label* label, VW::experimental::api_status* status = nullptr);
-  void parse_continuous_action_label(polylabel* l, const ContinuousLabel* label);
+  bool parse_multi_label(polylabel* l, const MultiLabel* label, VW::io::logger& logger);
+  int parse_slates_label(polylabel* l, const Slates_Label* label, VW::io::logger& logger,
+      VW::experimental::api_status* status = nullptr);
+  bool parse_continuous_action_label(polylabel* l, const ContinuousLabel* label, VW::io::logger& logger);
 };
 }  // namespace flatbuffer
 }  // namespace parsers

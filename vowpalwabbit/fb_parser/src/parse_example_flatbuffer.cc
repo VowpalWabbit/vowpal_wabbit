@@ -524,25 +524,25 @@ int parser::parse_flat_label(
     case Label_CBLabel:
     {
       const CBLabel* cb_label = static_cast<const CBLabel*>(eg->label());
-      parse_cb_label(&(ae->l), cb_label);
+      parse_cb_label(&(ae->l), cb_label, logger);
       break;
     }
     case Label_CCBLabel:
     {
       const CCBLabel* ccb_label = static_cast<const CCBLabel*>(eg->label());
-      parse_ccb_label(&(ae->l), ccb_label);
+      parse_ccb_label(&(ae->l), ccb_label, logger);
       break;
     }
     case Label_CB_EVAL_Label:
     {
       auto cb_eval_label = static_cast<const CB_EVAL_Label*>(eg->label());
-      parse_cb_eval_label(&(ae->l), cb_eval_label);
+      parse_cb_eval_label(&(ae->l), cb_eval_label, logger);
       break;
     }
     case Label_CS_Label:
     {
       auto cs_label = static_cast<const CS_Label*>(eg->label());
-      parse_cs_label(&(ae->l), cs_label);
+      parse_cs_label(&(ae->l), cs_label, logger);
       break;
     }
     case Label_MultiClass:
@@ -554,19 +554,19 @@ int parser::parse_flat_label(
     case Label_MultiLabel:
     {
       auto multi_label = static_cast<const MultiLabel*>(eg->label());
-      parse_multi_label(&(ae->l), multi_label);
+      parse_multi_label(&(ae->l), multi_label, logger);
       break;
     }
     case Label_Slates_Label:
     {
       auto slates_label = static_cast<const Slates_Label*>(eg->label());
-      RETURN_IF_FAIL(parse_slates_label(&(ae->l), slates_label, nullptr));
+      RETURN_IF_FAIL(parse_slates_label(&(ae->l), slates_label, logger, nullptr));
       break;
     }
     case Label_ContinuousLabel:
     {
       auto continuous_label = static_cast<const ContinuousLabel*>(eg->label());
-      parse_continuous_action_label(&(ae->l), continuous_label);
+      parse_continuous_action_label(&(ae->l), continuous_label, logger);
       break;
     }
     case Label_NONE:
