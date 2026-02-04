@@ -33,11 +33,25 @@ void parser::parse_simple_label(
   simple_red_features.initial = label->initial();
 }
 
-void parser::parse_cb_label(polylabel* l, const CBLabel* label)
+bool parser::parse_cb_label(polylabel* l, const CBLabel* label, VW::io::logger& logger)
 {
+  if (label == nullptr)
+  {
+    logger.err_warn("Flatbuffer: CB label is null, using default label.");
+    return false;
+  }
+
   l->cb.weight = label->weight();
+
+  if (label->costs() == nullptr)
+  {
+    logger.err_warn("Flatbuffer: CB label has null costs array, treating as unlabeled.");
+    return true;
+  }
+
   for (auto const& cost : *(label->costs()))
   {
+    if (cost == nullptr) { continue; }
     VW::cb_class f;
     f.action = cost->action();
     f.cost = cost->cost();
@@ -45,10 +59,17 @@ void parser::parse_cb_label(polylabel* l, const CBLabel* label)
     f.partial_prediction = cost->partial_pred();
     l->cb.costs.push_back(f);
   }
+  return true;
 }
 
-void parser::parse_ccb_label(polylabel* l, const CCBLabel* label)
+bool parser::parse_ccb_label(polylabel* l, const CCBLabel* label, VW::io::logger& logger)
 {
+  if (label == nullptr)
+  {
+    logger.err_warn("Flatbuffer: CCB label is null, using default label.");
+    return false;
+  }
+
   l->conditional_contextual_bandit.weight = label->weight();
   if (label->example_type() == 1)
     l->conditional_contextual_bandit.type = VW::ccb_example_type::SHARED;
@@ -74,20 +95,47 @@ void parser::parse_ccb_label(polylabel* l, const CCBLabel* label)
       ccb_outcome.cost = label->outcome()->cost();
       ccb_outcome.probabilities.clear();
 
-      for (auto const& as : *(label->outcome()->probabilities()))
-        ccb_outcome.probabilities.push_back({as->action(), as->score()});
+      if (label->outcome()->probabilities() != nullptr)
+      {
+        for (auto const& as : *(label->outcome()->probabilities()))
+        {
+          if (as != nullptr) { ccb_outcome.probabilities.push_back({as->action(), as->score()}); }
+        }
+      }
 
       l->conditional_contextual_bandit.outcome = &ccb_outcome;
     }
   }
+  return true;
 }
 
-void parser::parse_cb_eval_label(polylabel* l, const CB_EVAL_Label* label)
+bool parser::parse_cb_eval_label(polylabel* l, const CB_EVAL_Label* label, VW::io::logger& logger)
 {
+  if (label == nullptr)
+  {
+    logger.err_warn("Flatbuffer: CB_EVAL label is null, using default label.");
+    return false;
+  }
+
   l->cb_eval.action = label->action();
+
+  if (label->event() == nullptr)
+  {
+    logger.err_warn("Flatbuffer: CB_EVAL label has null event, treating as unlabeled.");
+    return true;
+  }
+
   l->cb_eval.event.weight = label->event()->weight();
+
+  if (label->event()->costs() == nullptr)
+  {
+    logger.err_warn("Flatbuffer: CB_EVAL event has null costs array, treating as unlabeled.");
+    return true;
+  }
+
   for (const auto& cb_cost : *(label->event()->costs()))
   {
+    if (cb_cost == nullptr) { continue; }
     VW::cb_class f;
     f.cost = cb_cost->cost();
     f.action = cb_cost->action();
@@ -95,12 +143,32 @@ void parser::parse_cb_eval_label(polylabel* l, const CB_EVAL_Label* label)
     f.partial_prediction = cb_cost->partial_pred();
     l->cb_eval.event.costs.push_back(f);
   }
+  return true;
 }
 
-void parser::parse_cs_label(polylabel* l, const CS_Label* label)
+bool parser::parse_cs_label(polylabel* l, const CS_Label* label, VW::io::logger& logger)
 {
+  if (label == nullptr)
+  {
+    logger.err_warn("Flatbuffer: CS label is null, using default label.");
+    return false;
+  }
+
+  if (label->costs() == nullptr)
+  {
+    logger.err_warn("Flatbuffer: CS label has null costs array, treating as unlabeled.");
+    return true;
+  }
+
+  if (label->costs()->size() == 0)
+  {
+    logger.err_warn("Flatbuffer: CS label has empty costs array, treating as unlabeled.");
+    return true;
+  }
+
   for (auto const& cost : *(label->costs()))
   {
+    if (cost == nullptr) { continue; }
     VW::cs_class f;
     f.x = cost->x();
     f.partial_prediction = cost->partial_pred();
@@ -108,6 +176,7 @@ void parser::parse_cs_label(polylabel* l, const CS_Label* label)
     f.class_index = cost->class_index();
     l->cs.costs.push_back(f);
   }
+  return true;
 }
 
 void parser::parse_mc_label(shared_data* sd, polylabel* l, const MultiClass* label, VW::io::logger& logger)
@@ -124,13 +193,33 @@ void parser::parse_mc_label(shared_data* sd, polylabel* l, const MultiClass* lab
   l->multi.weight = label->weight();
 }
 
-void parser::parse_multi_label(polylabel* l, const MultiLabel* label)
+bool parser::parse_multi_label(polylabel* l, const MultiLabel* label, VW::io::logger& logger)
 {
-  for (auto const& lab : *(label->labels())) l->multilabels.label_v.push_back(lab);
+  if (label == nullptr)
+  {
+    logger.err_warn("Flatbuffer: MultiLabel is null, using default label.");
+    return false;
+  }
+
+  if (label->labels() == nullptr)
+  {
+    logger.err_warn("Flatbuffer: MultiLabel has null labels array, treating as unlabeled.");
+    return true;
+  }
+
+  for (auto const& lab : *(label->labels())) { l->multilabels.label_v.push_back(lab); }
+  return true;
 }
 
-int parser::parse_slates_label(polylabel* l, const Slates_Label* label, VW::experimental::api_status* status)
+int parser::parse_slates_label(
+    polylabel* l, const Slates_Label* label, VW::io::logger& logger, VW::experimental::api_status* status)
 {
+  if (label == nullptr)
+  {
+    logger.err_warn("Flatbuffer: Slates label is null, using default label.");
+    return VW::experimental::error_code::success;
+  }
+
   l->slates.weight = label->weight();
   if (label->example_type() == VW::parsers::flatbuffer::CCB_Slates_example_type::CCB_Slates_example_type_shared)
   {
@@ -149,19 +238,40 @@ int parser::parse_slates_label(polylabel* l, const Slates_Label* label, VW::expe
     l->slates.probabilities.clear();
     l->slates.type = VW::slates::example_type::SLOT;
 
-    for (auto const& as : *(label->probabilities())) l->slates.probabilities.push_back({as->action(), as->score()});
+    if (label->probabilities() != nullptr)
+    {
+      for (auto const& as : *(label->probabilities()))
+      {
+        if (as != nullptr) { l->slates.probabilities.push_back({as->action(), as->score()}); }
+      }
+    }
   }
   else { RETURN_ERROR(status, not_implemented, "Example type not understood"); }
   return VW::experimental::error_code::success;
 }
 
-void parser::parse_continuous_action_label(polylabel* l, const VW::parsers::flatbuffer::ContinuousLabel* label)
+bool parser::parse_continuous_action_label(
+    polylabel* l, const VW::parsers::flatbuffer::ContinuousLabel* label, VW::io::logger& logger)
 {
+  if (label == nullptr)
+  {
+    logger.err_warn("Flatbuffer: ContinuousLabel is null, using default label.");
+    return false;
+  }
+
+  if (label->costs() == nullptr)
+  {
+    logger.err_warn("Flatbuffer: ContinuousLabel has null costs array, treating as unlabeled.");
+    return true;
+  }
+
   for (auto const& continuous_element : *(label->costs()))
   {
+    if (continuous_element == nullptr) { continue; }
     l->cb_cont.costs.push_back(
         {continuous_element->action(), continuous_element->cost(), continuous_element->pdf_value()});
   }
+  return true;
 }
 }  // namespace flatbuffer
 }  // namespace parsers

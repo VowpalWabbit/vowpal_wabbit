@@ -645,6 +645,12 @@ void VW::details::enable_sources(
         all.parser_runtime.flat_converter = VW::make_unique<VW::parsers::flatbuffer::parser>();
         all.parser_runtime.example_parser->reader = VW::parsers::flatbuffer::flatbuffer_to_examples;
       }
+#else
+      else if (input_options.flatbuffer)
+      {
+        THROW("--flatbuffer was specified but this VW binary was built without flatbuffer support. "
+              "Rebuild with -DVW_FEAT_FLATBUFFERS=ON to enable flatbuffer parsing.");
+      }
 #endif
 #ifdef VW_FEAT_CSV_ENABLED
       else if (input_options.csv_opts && input_options.csv_opts->enabled)
