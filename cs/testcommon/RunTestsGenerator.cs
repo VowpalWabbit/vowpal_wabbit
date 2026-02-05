@@ -38,20 +38,16 @@ namespace Vw.Net.Test
     }
 
     private static readonly HashSet<int> SkipList = new HashSet<int>(new [] {
-        // Model dependency / multiline learner issues
-        31, 32, 33, 34,
-        // --examples flag not respected by test helper (IndexOutOfRangeException)
+        // Model dependency (depends_on other tests, C# test generator doesn't handle dependencies)
+        31, 32, 33, 34, 412,
+        // --examples flag not respected by C# test helper
         69,
-        // Multiline learner not supported
-        237, 238,
-        // Float delta too large
-        412,
-        // --onethread shell option not available
+        // Reference file mismatch (CLI now emits warnings not in reference)
         193,
-        // cats/cats_pdf prediction type not supported
+        // cats/cats_pdf uses ACTION_PDF_VALUE prediction type not supported in C# wrapper
         225, 227, 309, 345, 346,
-        // flatbuffer input not supported
-        239, 240, 241, 242, 243, 244,
+        // flatbuffer input not supported in C# wrapper
+        237, 238, 239, 240, 241, 242, 243, 244,
         // --help causes process exit, crashing test host
         273, 274,
     });
