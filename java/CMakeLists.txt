@@ -135,8 +135,6 @@ if(NOT WIN32)
   add_custom_command(TARGET vw_jni POST_BUILD
       COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:vw_jni> target/bin/natives/${VW_JNI_NATIVES_DIR}/
       COMMAND echo $<TARGET_FILE:vw_cli_bin> > ${CMAKE_CURRENT_SOURCE_DIR}/target/test-classes/vw_cli_bin.txt
-      # -B is batch mode and avoids the massive download progress print out
-      COMMAND mvn -B verify
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
       COMMENT "Copying shared library to output directory: target/bin/natives/${VW_JNI_NATIVES_DIR}/")
 
