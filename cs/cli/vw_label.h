@@ -383,5 +383,94 @@ public:
   { return m_label;
   }
 };
+
+// clang-format off
+/// <summary>
+/// Label for continuous action (CATS) problems.
+/// Used with --cats option for continuous action tree search.
+/// </summary>
+public ref class ContinuousActionLabel sealed : ILabel
+{
+private:
+  float m_action;
+  float m_cost;
+  float m_pdfValue;
+
+public:
+  ContinuousActionLabel()
+    : m_action(0), m_cost(0), m_pdfValue(0)
+  { }
+
+  ContinuousActionLabel(float action, float cost, float pdfValue)
+    : m_action(action), m_cost(cost), m_pdfValue(pdfValue)
+  { }
+
+  /// <summary>
+  /// The continuous action value.
+  /// </summary>
+  [JsonProperty("action")]
+  property float Action
+  { float get()
+    { return m_action;
+    }
+
+    void set(float value)
+    { m_action = value;
+    }
+  }
+
+  /// <summary>
+  /// The cost of this action.
+  /// </summary>
+  [JsonProperty("cost")]
+  property float Cost
+  { float get()
+    { return m_cost;
+    }
+
+    void set(float value)
+    { m_cost = value;
+    }
+  }
+
+  /// <summary>
+  /// The PDF density of the chosen location, specifies the probability
+  /// the data collection policy chose this action.
+  /// </summary>
+  [JsonProperty("pdf_value")]
+  property float PdfValue
+  { float get()
+    { return m_pdfValue;
+    }
+
+    void set(float value)
+    { m_pdfValue = value;
+    }
+  }
+
+  virtual void ReadFromExample(example* ex)
+  { throw gcnew NotImplementedException("Reading continuous action labels from examples is not yet implemented.");
+  }
+
+  virtual void UpdateExample(VW::workspace* vw, example* ex)
+  { // Format: ca action:cost:pdf_value
+    auto labelString = String::Format(CultureInfo::InvariantCulture, "ca {0}:{1}:{2}", m_action, m_cost, m_pdfValue);
+    auto bytes = System::Text::Encoding::UTF8->GetBytes(labelString);
+    auto valueHandle = GCHandle::Alloc(bytes, GCHandleType::Pinned);
+
+    try
+    { VW::parse_example_label(*vw, *ex, reinterpret_cast<char*>(valueHandle.AddrOfPinnedObject().ToPointer()));
+    }
+    CATCHRETHROW
+    finally
+    { valueHandle.Free();
+    }
+  }
+
+  virtual String^ ToString() override
+  { return String::Format(CultureInfo::InvariantCulture, "ca {0}:{1}:{2}", m_action, m_cost, m_pdfValue);
+  }
+};
+// clang-format on
 }
 }
