@@ -66,6 +66,10 @@ namespace Vw.Net.Native
     {
       try
       {
+#if NETSTANDARD2_1_OR_GREATER
+        Span<byte> bufferSpan = new Span<byte>((byte*)buffer, num_bytes);
+        return this.stream.Read(bufferSpan);
+#else
         // .NET Standard 2.0 doesn't have Stream.Read(Span<byte>), so use a temp buffer
         byte[] temp = new byte[num_bytes];
         int bytesRead = this.stream.Read(temp, 0, num_bytes);
@@ -74,6 +78,7 @@ namespace Vw.Net.Native
           Marshal.Copy(temp, 0, (IntPtr)buffer, bytesRead);
         }
         return bytesRead;
+#endif
       }
       catch (IOException)
       {
