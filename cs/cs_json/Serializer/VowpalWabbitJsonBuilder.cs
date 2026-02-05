@@ -50,6 +50,7 @@ namespace VW.Serializer
         static VowpalWabbitJsonBuilder()
         {
             // find mapping from property names to types
+            // Note: ContinuousActionLabel is handled separately via _label_ca property detection
             var q = from t in new[] { typeof(SimpleLabel), typeof(ContextualBanditLabel) }
                     from p in t.GetProperties()
                     let jsonProperty = (JsonPropertyAttribute)p.GetCustomAttributes(typeof(JsonPropertyAttribute), true).FirstOrDefault()
@@ -329,6 +330,30 @@ namespace VW.Serializer
                     return;
 
                 this.LabelIndex = (int)(long)this.reader.Value;
+            }
+            else if (propertyName.Equals("_label_ca", StringComparison.OrdinalIgnoreCase))
+            {
+                // Handle continuous action (CATS) labels: {"_label_ca": {"action": ..., "cost": ..., "pdf_value": ...}}
+                if (label != null)
+                {
+                    reader.Skip();
+                    return;
+                }
+
+                if (!this.reader.Read())
+                    throw new VowpalWabbitJsonException(this.reader, "Unexpected end");
+
+                if (this.reader.TokenType == JsonToken.Null)
+                    return;
+
+                if (this.reader.TokenType != JsonToken.StartObject)
+                    throw new VowpalWabbitJsonException(this.reader, "_label_ca must be an object");
+
+                var caLabel = (ContinuousActionLabel)jsonSerializer.Deserialize(this.reader, typeof(ContinuousActionLabel));
+                if (this.foundMulti)
+                    this.Label = caLabel;
+                else
+                    this.defaultMarshaller.MarshalLabel(this.DefaultNamespaceContext, caLabel);
             }
             else if (propertyName.StartsWith(propertyConfiguration.LabelPropertyPrefix, StringComparison.OrdinalIgnoreCase))
             {
