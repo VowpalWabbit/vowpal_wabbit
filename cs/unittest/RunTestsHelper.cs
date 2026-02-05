@@ -137,7 +137,8 @@ namespace cs_unittest
 
             // Multi-pass learning (e.g., SVRG, BFGS) requires the parser to re-read from cache
             // Line-by-line processing doesn't work - must use Driver()
-            if (args.Contains("--passes") || args.Contains("-c"))
+            // Note: use "-c " with space to avoid matching --csoaa which contains "-c" as substring
+            if (args.Contains("--passes") || args.Contains("-c ") || args.Contains("--cache"))
             {
                 ExecuteTestWithDriver(testCaseNr, args, input, stderr, predictFile, useOneThread);
                 return;
