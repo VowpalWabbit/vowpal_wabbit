@@ -38,8 +38,6 @@ namespace Vw.Net.Test
     }
 
     private static readonly HashSet<int> SkipList = new HashSet<int>(new [] {
-        // Model dependency (depends_on other tests, C# test generator doesn't handle dependencies)
-        31, 32, 33, 34, 412,
         // --examples flag not respected by C# test helper
         69,
         // cats/cats_pdf uses ACTION_PDF_VALUE prediction type not supported in C# wrapper
@@ -61,7 +59,7 @@ namespace Vw.Net.Test
       return match.Success ? match.Groups["value"].Value : "";
     }
 
-    private TestCase GenerateTestCase(RunTestEntry entry, Dictionary<string, TestCase> outputModels, string testRoot)
+    private TestCase GenerateTestCase(RunTestEntry entry)
     {
       TestCase testCase = new TestCase()
       {
@@ -70,7 +68,8 @@ namespace Vw.Net.Test
         Arguments = entry.vw_command,
         InputData = MatchArgument(entry.vw_command, "-d"),
         InitialRegressor = MatchArgument(entry.vw_command, "-i"),
-        FinalRegressor = MatchArgument(entry.vw_command, "-f")
+        FinalRegressor = MatchArgument(entry.vw_command, "-f"),
+        DependsOn = entry.depends_on
       };
 
       foreach (KeyValuePair<string, string> diffFile in entry.diff_files)
@@ -84,33 +83,28 @@ namespace Vw.Net.Test
           testCase.Predict = diffFile.Value;
         }
       }
-      
-      // resolve dependencies
-      if (!string.IsNullOrEmpty(testCase.FinalRegressor))
-        outputModels[testCase.FinalRegressor] = testCase;
-
-      if (!string.IsNullOrEmpty(testCase.InitialRegressor))
-      {
-        TestCase dep;
-        bool foundInitialRegressor = false;
-        if (outputModels.TryGetValue(testCase.InitialRegressor, out dep))
-        {
-            testCase.Dependency = dep;
-            foundInitialRegressor = true;
-        }
-        else if (testCase.InitialRegressor.StartsWith("model-sets/"))
-        {
-            string fullPath = Path.Combine(testRoot, testCase.InitialRegressor);
-            foundInitialRegressor = File.Exists(fullPath);
-        }
-
-        if (!foundInitialRegressor)
-        {
-            throw new Exception("Missing dependency: '" + testCase.InitialRegressor + "' for test case " + testCase.Id);
-        }
-      }
 
       return testCase;
+    }
+
+    private void ResolveDependencies(Dictionary<int, TestCase> testCases)
+    {
+      foreach (var testCase in testCases.Values)
+      {
+        // Use explicit depends_on from JSON if available
+        if (testCase.DependsOn != null && testCase.DependsOn.Count > 0)
+        {
+          // For simplicity, use the last dependency in the chain
+          // (tests typically have a single dependency or a linear chain)
+          foreach (int depId in testCase.DependsOn)
+          {
+            if (testCases.TryGetValue(depId, out TestCase dep))
+            {
+              testCase.Dependency = dep;
+            }
+          }
+        }
+      }
     }
 
     private string GenerateSource(string testSet, Dictionary<int, TestCase> testCases)
@@ -184,17 +178,19 @@ $@"
       {
         string testSet = Path.GetFileNameWithoutExtension(file.Path).Replace(".", "_");
         string targetFile = testSet + ".Generated.cs";
-        string testRoot = Path.GetDirectoryName(file.Path);
 
         List<RunTestEntry> entries = JsonConvert.DeserializeObject<List<RunTestEntry>>(file.GetText().ToString());
 
-        Dictionary<string, TestCase> outputModels = new Dictionary<string, TestCase>();
+        // First pass: create all test cases
         Dictionary<int, TestCase> testCases = entries.Where(ShouldInclude)
-                                                     .Select(e => GenerateTestCase(e, outputModels, testRoot))
+                                                     .Select(e => GenerateTestCase(e))
                                                      .ToDictionary(t => t.Id);
 
+        // Second pass: resolve dependencies using depends_on field
+        ResolveDependencies(testCases);
+
         string source = GenerateSource(testSet, testCases);
-        
+
         context.AddSource(targetFile, source);
       }
     }
@@ -236,6 +232,8 @@ $@"
     public string Comment;
 
     public TestCase Dependency;
+
+    public IList<int> DependsOn;
 
     public List<TestCase> InDependencyOrder()
     {
