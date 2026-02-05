@@ -21,18 +21,10 @@ using (StreamReader sr = File.OpenText(Path.Combine(testRoot, "core.vwtest.json"
 }
 
 var skipList = new[] {
-    // Model dependency / multiline learner issues
-    31, 32, 33, 34,
-    // Search algorithm stat mismatches (feature count and average loss differ)
-    64, 66, 110,
     // --examples flag not respected by test helper (IndexOutOfRangeException)
     69,
-    // Multiline learner not supported
-    237, 238,
-    // Float delta too large
-    412,
     // flatbuffer input not supported
-    239, 240, 241, 242, 243, 244,
+    237, 238, 239, 240, 241, 242, 243, 244,
     // --help causes process exit, crashing test host
     273, 274,
     // native json parsing (TT-specific, not filtered by ShouldInclude)
@@ -40,10 +32,8 @@ var skipList = new[] {
     // DSJSON not supported (TT-specific)
     156, 216, 256, 299, 300, 306, 310, 327, 330, 331, 367, 368, 392, 396, 398,
     404, 405, 406, 407, 411, 413, 415, 417, 422, 423, 424, 456, 457, 458, 459, 461, 462,
-    // no data file
-    389, 390, 391, 393,
-    // Empty lines not supported
-    464
+    // no data file (model-only operations)
+    389, 390, 391
     };
 
 var outputModels = new Dictionary<string, TestCase>();
