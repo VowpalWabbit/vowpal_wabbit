@@ -48,7 +48,7 @@ namespace Vw.Net.Test
 
     private bool ShouldInclude(RunTestEntry entry)
     {
-      return entry.vw_command != null && !entry.vw_command.Contains("--dsjson") && !entry.desc.Contains("SkipC#") && !entry.skip_csharp;
+      return entry.vw_command != null && !entry.vw_command.Contains("--dsjson") && !entry.desc.Contains("SkipC#");
     }
 
     private string MatchArgument(string args, string option)
@@ -208,7 +208,6 @@ $@"
     public Dictionary<string, string> diff_files { get; set; }
     public IList<string> input_files { get; set; }
     public IList<int> depends_on { get; set; }
-    public bool skip_csharp { get; set; }
   }
 
   internal class TestCase
