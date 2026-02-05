@@ -77,7 +77,7 @@ public class RunTestsIT {
         TestExecutor executor = new TestExecutor(testRoot, tempDir);
         try {
             executor.executeTest(testCase);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             fail("Test " + testId + " failed: " + e.getMessage(), e);
         }
     }

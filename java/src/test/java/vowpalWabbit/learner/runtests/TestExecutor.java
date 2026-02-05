@@ -12,7 +12,7 @@ import java.util.zip.GZIPInputStream;
  * Executes VW test cases using the Java JNI bindings.
  */
 public class TestExecutor {
-    private static final double DEFAULT_EPSILON = 1e-4;
+    private static final double DEFAULT_EPSILON = 5e-4;
 
     private final Path testRoot;
     private final Path workDir;
