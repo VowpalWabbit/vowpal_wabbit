@@ -76,9 +76,11 @@ jobs:
         working-directory: java
         run: |
           # The CMake build already copies the library and configures pom.xml
-          mvn -B verify
+          # Run both unit tests and integration tests (RunTests)
+          mvn -B verify -DVW_TEST_ROOT=${{ github.workspace }}/test
         env:
           JAVA_HOME: ${{ env.JAVA_HOME }}
+          VW_TEST_ROOT: ${{ github.workspace }}/test
 
       - name: Upload JNI library
         uses: actions/upload-artifact@v4
