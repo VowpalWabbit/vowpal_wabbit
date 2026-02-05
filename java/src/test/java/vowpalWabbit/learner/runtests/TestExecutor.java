@@ -58,23 +58,18 @@ public class TestExecutor {
         boolean isMultiline = isMultilineData(inputPath);
 
         // Execute the test
-        try (VWLearnerBase<?> learner = createLearner(args)) {
+        try (VWLearner learner = createLearner(args)) {
             if (isMultiline) {
                 executeMultiline(learner, inputPath, tc.isTestOnly());
             } else {
                 executeSingleLine(learner, inputPath, tc.isTestOnly(), expectedPredictions);
             }
 
-            // Handle multi-pass
-            if (tc.isMultiPass()) {
-                learner.endOfPass();
-            }
-
             // Save model if needed
             if (tc.hasFinalRegressor()) {
                 Path modelPath = workDir.resolve(tc.getFinalRegressor());
                 Files.createDirectories(modelPath.getParent());
-                learner.saveModel(modelPath.toString());
+                learner.saveModel(modelPath.toFile());
                 modelCache.put(tc.getFinalRegressor(), modelPath);
             }
         }
@@ -136,9 +131,8 @@ public class TestExecutor {
     /**
      * Create appropriate VW learner based on arguments.
      */
-    @SuppressWarnings("unchecked")
-    private VWLearnerBase<?> createLearner(String args) {
-        return (VWLearnerBase<?>) VWLearners.create(args);
+    private VWLearner createLearner(String args) {
+        return VWLearners.create(args);
     }
 
     /**
@@ -159,7 +153,7 @@ public class TestExecutor {
     /**
      * Execute test with single-line examples.
      */
-    private void executeSingleLine(VWLearnerBase<?> learner, Path inputPath,
+    private void executeSingleLine(VWLearner learner, Path inputPath,
                                    boolean testOnly, String[] expectedPredictions) throws IOException {
         int lineNr = 0;
         try (BufferedReader reader = openReader(inputPath)) {
@@ -189,7 +183,7 @@ public class TestExecutor {
     /**
      * Execute test with multiline examples.
      */
-    private void executeMultiline(VWLearnerBase<?> learner, Path inputPath, boolean testOnly) throws IOException {
+    private void executeMultiline(VWLearner learner, Path inputPath, boolean testOnly) throws IOException {
         List<String> lines = new ArrayList<>();
 
         try (BufferedReader reader = openReader(inputPath)) {
@@ -223,7 +217,7 @@ public class TestExecutor {
     /**
      * Learn from a single example.
      */
-    private Object learn(VWLearnerBase<?> learner, String example) {
+    private Object learn(VWLearner learner, String example) {
         if (learner instanceof VWScalarLearner) {
             return ((VWScalarLearner) learner).learn(example);
         } else if (learner instanceof VWMulticlassLearner) {
@@ -244,7 +238,7 @@ public class TestExecutor {
     /**
      * Predict from a single example.
      */
-    private Object predict(VWLearnerBase<?> learner, String example) {
+    private Object predict(VWLearner learner, String example) {
         if (learner instanceof VWScalarLearner) {
             return ((VWScalarLearner) learner).predict(example);
         } else if (learner instanceof VWMulticlassLearner) {
@@ -263,7 +257,7 @@ public class TestExecutor {
     /**
      * Learn from multiline example.
      */
-    private void learnMultiline(VWLearnerBase<?> learner, List<String> lines) {
+    private void learnMultiline(VWLearner learner, List<String> lines) {
         String[] examples = lines.toArray(new String[0]);
         if (learner instanceof VWActionScoresLearner) {
             ((VWActionScoresLearner) learner).learn(examples);
@@ -282,7 +276,7 @@ public class TestExecutor {
     /**
      * Predict from multiline example.
      */
-    private Object predictMultiline(VWLearnerBase<?> learner, List<String> lines) {
+    private Object predictMultiline(VWLearner learner, List<String> lines) {
         String[] examples = lines.toArray(new String[0]);
         if (learner instanceof VWActionScoresLearner) {
             return ((VWActionScoresLearner) learner).predict(examples);
