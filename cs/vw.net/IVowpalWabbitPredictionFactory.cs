@@ -58,6 +58,9 @@ namespace Vw.Net.Native
 
     [DllImport("vw.net.native")]
     public static extern int GetPredictionActiveMulticlassMoreInfoRequiredClasses(IntPtr workspace, IntPtr example, IntPtr more_info_required_classes_buffer, int more_info_required_classes_buffer_size);
+
+    [DllImport("vw.net.native")]
+    public static extern VW.VowpalWabbitActionPdfValue GetPredictionActionPdfValue(IntPtr workspace, IntPtr example);
   }
 }
 
@@ -148,6 +151,8 @@ namespace VW
           return VowpalWabbitPredictionType.MultiClassProbabilities.Create(vw, ex);
         case prediction_type_t.active_multiclass:
           return VowpalWabbitPredictionType.ActiveMulticlass.Create(vw, ex);
+        case prediction_type_t.action_pdf_value:
+          return VowpalWabbitPredictionType.ActionPdfValue.Create(vw, ex);
         /*
          * There are other types we should consider implementing, but the goal is to hit 1:1 with previous
          * bindings first.
@@ -444,6 +449,13 @@ namespace VW
     public int[] more_info_required_for_classes;
   }
 
+  [StructLayout(LayoutKind.Sequential)]
+  public struct VowpalWabbitActionPdfValue
+  {
+    public float Action;
+    public float PdfValue;
+  }
+
   public class VowpalWabbitActiveMulticlassPredictionFactory : IVowpalWabbitPredictionFactory<VowpalWabbitActiveMulticlass>
   {
     public prediction_type_t PredictionType => prediction_type_t.multiclass;
@@ -490,7 +502,23 @@ namespace VW
 
       GC.KeepAlive(vw);
       ex.KeepAliveNative();
-      
+
+      return result;
+    }
+  }
+
+  public class VowpalWabbitActionPdfValuePredictionFactory : IVowpalWabbitPredictionFactory<VowpalWabbitActionPdfValue>
+  {
+    public prediction_type_t PredictionType => prediction_type_t.action_pdf_value;
+
+    public VowpalWabbitActionPdfValue Create(VowpalWabbit vw, VowpalWabbitExample ex)
+    {
+      PredictionHelpers.CheckExample(vw, ex, this.PredictionType);
+
+      VowpalWabbitActionPdfValue result = NativeMethods.GetPredictionActionPdfValue(vw.DangerousGetHandle(), ex.DangerousGetNativeHandle());
+      GC.KeepAlive(vw);
+      ex.KeepAliveNative();
+
       return result;
     }
   }
@@ -522,6 +550,8 @@ namespace VW
     public static VowpalWabbitMulticlassProbabilitiesPredictionFactory MultiClassProbabilities = new VowpalWabbitMulticlassProbabilitiesPredictionFactory();
 
     public static VowpalWabbitActiveMulticlassPredictionFactory ActiveMulticlass = new VowpalWabbitActiveMulticlassPredictionFactory();
+
+    public static VowpalWabbitActionPdfValuePredictionFactory ActionPdfValue = new VowpalWabbitActionPdfValuePredictionFactory();
 
   }
 }

@@ -40,8 +40,6 @@ namespace Vw.Net.Test
     private static readonly HashSet<int> SkipList = new HashSet<int>(new [] {
         // --examples flag not respected by C# test helper
         69,
-        // cats/cats_pdf uses ACTION_PDF_VALUE prediction type not supported in C# wrapper
-        225, 227, 309, 345, 346,
         // flatbuffer input not supported in C# wrapper
         237, 238, 239, 240, 241, 242, 243, 244,
         // --help causes process exit, crashing test host

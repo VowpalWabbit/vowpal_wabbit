@@ -119,3 +119,11 @@ API vw_net_native::dotnet_size_t GetPredictionActiveMulticlassMoreInfoRequiredCl
   return vw_net_native::v_copy_to_managed(
       ex->pred.active_multiclass.more_info_required_for_classes, unsigned_values, count);
 }
+
+API vw_net_native::action_pdf_value_t GetPredictionActionPdfValue(VW::workspace* vw, VW::example* ex)
+{
+  vw_net_native::action_pdf_value_t ret;
+  ret.action = ex->pred.pdf_value.action;
+  ret.pdf_value = ex->pred.pdf_value.pdf_value;
+  return ret;
+}

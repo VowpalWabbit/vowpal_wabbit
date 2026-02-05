@@ -242,6 +242,20 @@ namespace cs_unittest
                                         VWTestHelper.FuzzyEqual(expectedPredictions[0], actualScalar.Value.Value, 1e-4, "Prediction value mismatch");
                                         VWTestHelper.FuzzyEqual(expectedPredictions[1], actualScalar.Value.Confidence, 1e-4, "Prediction confidence mismatch");
                                     }
+
+                                    var actualActionPdfValue = actualValue as VowpalWabbitActionPdfValue?;
+                                    if (actualActionPdfValue != null)
+                                    {
+                                        // CATS predictions are in format: action,pdf_value
+                                        var expectedPredictions = predictions[lineNr]
+                                            .Split(',')
+                                            .Select(field => float.Parse(field, CultureInfo.InvariantCulture))
+                                            .ToArray();
+
+                                        Assert.AreEqual(2, expectedPredictions.Length);
+                                        VWTestHelper.FuzzyEqual(expectedPredictions[0], actualActionPdfValue.Value.Action, 1e-4, "CATS action mismatch");
+                                        VWTestHelper.FuzzyEqual(expectedPredictions[1], actualActionPdfValue.Value.PdfValue, 1e-4, "CATS pdf_value mismatch");
+                                    }
                                 }
                             }
                             else
@@ -324,6 +338,20 @@ namespace cs_unittest
                                     Assert.AreEqual(2, expectedPredictions.Length);
                                     VWTestHelper.FuzzyEqual(expectedPredictions[0], actualScalar.Value.Value, 1e-4, "Prediction value mismatch");
                                     VWTestHelper.FuzzyEqual(expectedPredictions[1], actualScalar.Value.Confidence, 1e-4, "Prediction confidence mismatch");
+                                }
+
+                                var actualActionPdfValue = actualValue as VowpalWabbitActionPdfValue?;
+                                if (actualActionPdfValue != null)
+                                {
+                                    // CATS predictions are in format: action,pdf_value
+                                    var expectedPredictions = predictions[lineNr]
+                                        .Split(',')
+                                        .Select(field => float.Parse(field, CultureInfo.InvariantCulture))
+                                        .ToArray();
+
+                                    Assert.AreEqual(2, expectedPredictions.Length);
+                                    VWTestHelper.FuzzyEqual(expectedPredictions[0], actualActionPdfValue.Value.Action, 1e-4, "CATS action mismatch");
+                                    VWTestHelper.FuzzyEqual(expectedPredictions[1], actualActionPdfValue.Value.PdfValue, 1e-4, "CATS pdf_value mismatch");
                                 }
                             }
                         }
