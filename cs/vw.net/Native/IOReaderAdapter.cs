@@ -64,10 +64,16 @@ namespace Vw.Net.Native
 
     private unsafe long Read(void* buffer, int num_bytes)
     {
-      Span<byte> bufferSpan = new Span<byte>((byte*)buffer, num_bytes);
       try
       {
-        return this.stream.Read(bufferSpan);
+        // .NET Standard 2.0 doesn't have Stream.Read(Span<byte>), so use a temp buffer
+        byte[] temp = new byte[num_bytes];
+        int bytesRead = this.stream.Read(temp, 0, num_bytes);
+        if (bytesRead > 0)
+        {
+          Marshal.Copy(temp, 0, (IntPtr)buffer, bytesRead);
+        }
+        return bytesRead;
       }
       catch (IOException)
       {

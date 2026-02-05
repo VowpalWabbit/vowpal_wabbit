@@ -46,11 +46,13 @@ namespace Vw.Net.Native
 
     private unsafe long Write(void* buffer, int num_bytes)
     {
-      Span<byte> bufferSpan = new Span<byte>((byte*)buffer, num_bytes);
       try
       {
-        this.stream.Write(bufferSpan);
-        return bufferSpan.Length;
+        // .NET Standard 2.0 doesn't have Stream.Write(Span<byte>), so use a temp buffer
+        byte[] temp = new byte[num_bytes];
+        Marshal.Copy((IntPtr)buffer, temp, 0, num_bytes);
+        this.stream.Write(temp, 0, num_bytes);
+        return num_bytes;
       }
       catch (IOException)
       {
