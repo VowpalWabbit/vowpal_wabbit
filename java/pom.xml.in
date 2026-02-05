@@ -169,6 +169,10 @@
                             <rules>
                                 <banDuplicateClasses>
                                     <findAllDuplicates>true</findAllDuplicates>
+                                    <ignoreClasses>
+                                        <!-- Ignore module-info.class duplicates from Java 9+ modules -->
+                                        <ignoreClass>module-info</ignoreClass>
+                                    </ignoreClasses>
                                 </banDuplicateClasses>
                             </rules>
                             <fail>true</fail>
