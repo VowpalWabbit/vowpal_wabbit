@@ -2784,22 +2784,15 @@ void search::set_options(uint32_t opts)
   }
 }
 
-void search::set_label_parser(VW::label_parser& lp, bool (*is_test)(const VW::polylabel&))
+void search::set_label_parser(VW::label_parser lp)
 {
   if (this->priv->all->runtime_config.vw_is_main && (this->priv->state != search_state::INITIALIZE))
   {
     priv->all->logger.err_warn("Task should not set label parser except in initialize function.");
   }
 
-  // This will override the label parser object passed in, and it will persist.
-  // I don't know why Search needs to override is_test, and if it didn't then this would not be necessary.
-  // Remove the overriding of is_test breaks the unit tests.
-  // TODO: figure out why Search needs to override is_test and remove this.
-  lp.test_label = is_test;
-
   this->priv->all->parser_runtime.example_parser->lbl_parser = lp;
-  this->priv->all->parser_runtime.example_parser->lbl_parser.test_label = is_test;
-  this->priv->label_is_test = is_test;
+  this->priv->label_is_test = lp.test_label;
 }
 
 void search::get_test_action_sequence(std::vector<action>& V)
