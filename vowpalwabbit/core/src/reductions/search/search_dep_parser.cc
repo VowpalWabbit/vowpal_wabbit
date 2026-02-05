@@ -6,9 +6,9 @@
 #include "vw/common/vw_exception.h"
 #include "vw/config/options.h"
 #include "vw/core/cost_sensitive.h"
-#include "vw/core/multilabel.h"
 #include "vw/core/label_dictionary.h"  // for add_example_namespaces_from_example
 #include "vw/core/label_parser.h"
+#include "vw/core/multilabel.h"
 #include "vw/core/numeric_casts.h"
 #include "vw/core/reductions/gd.h"
 #include "vw/core/vw.h"
