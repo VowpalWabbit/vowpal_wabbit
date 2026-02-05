@@ -45,6 +45,23 @@ namespace cs_unittest
             return false;
         }
 
+        private static bool IsSearchTask(string args)
+        {
+            // Search learners require multiline input even when data doesn't have blank line separators
+            return args.Contains("--search_task") || args.Contains("--search ");
+        }
+
+        private static bool IsCsvInput(string args)
+        {
+            return args.Contains("--csv");
+        }
+
+        private static bool HasCsvHeader(string args)
+        {
+            // CSV files have headers unless --csv_no_file_header is specified
+            return IsCsvInput(args) && !args.Contains("--csv_no_file_header");
+        }
+
         public static void ExecuteTest(int testCaseNr, string args, string input, string stderr, string predictFile)
         {
             var isJson = args.Contains("--json") || args.Contains("--dsjson");
@@ -54,9 +71,17 @@ namespace cs_unittest
                 return;
             }
 
+            // CSV input is handled natively by VW - use Driver() instead of line-by-line
+            if (IsCsvInput(args))
+            {
+                ExecuteTestWithDriver(testCaseNr, args, input, stderr, predictFile);
+                return;
+            }
+
             using (var vw = new VowpalWabbit(args))
             {
-                var multiline = IsMultilineData(input);
+                // Search tasks require multiline learner even if data doesn't have blank lines
+                var multiline = IsMultilineData(input) || IsSearchTask(args);
                 using (var streamReader = Open(input))
                 {
                     if (multiline)
@@ -94,6 +119,10 @@ namespace cs_unittest
                         string dataLine;
                         while ((dataLine = streamReader.ReadLine()) != null)
                         {
+                            // Skip empty lines in singleline mode
+                            if (string.IsNullOrWhiteSpace(dataLine))
+                                continue;
+
                             if (!string.IsNullOrWhiteSpace(predictFile) && File.Exists(predictFile))
                             {
                                 object actualValue;
@@ -142,6 +171,18 @@ namespace cs_unittest
                     if (!string.IsNullOrWhiteSpace(stderr) && File.Exists(stderr))
                         VWTestHelper.AssertEqual(stderr, vw.PerformanceStatistics);
                 }
+            }
+        }
+
+        public static void ExecuteTestWithDriver(int testCaseNr, string args, string input, string stderr, string predictFile)
+        {
+            // Use VW's native Driver() for formats like CSV that need native parsing
+            using (var vw = new VowpalWabbit(args))
+            {
+                vw.Driver();
+
+                if (!string.IsNullOrWhiteSpace(stderr) && File.Exists(stderr))
+                    VWTestHelper.AssertEqual(stderr, vw.PerformanceStatistics);
             }
         }
 

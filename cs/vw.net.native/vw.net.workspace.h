@@ -72,6 +72,8 @@ extern "C"
       vw_net_native::workspace_context* workspace, VW::experimental::api_status* status);
   API vw_net_native::ERROR_CODE WorkspaceNotifyEndOfPass(
       vw_net_native::workspace_context* workspace, VW::experimental::api_status* status);
+  API vw_net_native::ERROR_CODE WorkspaceRunDriver(
+      vw_net_native::workspace_context* workspace, VW::experimental::api_status* status);
 
   API vw_net_native::ERROR_CODE WorkspaceParseJson(vw_net_native::workspace_context* workspace, char* json,
       size_t length, vw_net_native::example_pool_get_example_fn get_example, void* example_pool_context,
