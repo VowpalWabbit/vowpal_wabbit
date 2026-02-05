@@ -28,6 +28,36 @@ namespace cs_unittest
                 return new StreamReader(input);
         }
 
+        private static bool IsMultilineLearner(string args)
+        {
+            // These learners require multiline input (multi_ex) regardless of data format
+            // NOTE: --cbify (not --cbify_ldf) and --warm_cb wrap cb_adf but are themselves singleline
+            if ((args.Contains("--cbify") && !args.Contains("--cbify_ldf")) || args.Contains("--warm_cb"))
+                return false;
+
+            return args.Contains("--cb_adf") ||
+                   args.Contains("--cb_explore_adf") ||
+                   args.Contains("--ccb_explore_adf") ||
+                   args.Contains("--slates") ||
+                   args.Contains("--cbify_ldf") ||
+                   args.Contains("--explore_eval") ||
+                   args.Contains("--search_task") ||
+                   args.Contains("--search ") ||
+                   args.Contains("--search=") ||
+                   args.Contains("--csoaa_ldf") ||
+                   args.Contains("--wap_ldf");
+        }
+
+        private static bool IsSinglelineLearner(string args)
+        {
+            // These learners are explicitly singleline even with LDF-formatted data
+            // They process each line individually, blank lines are just separators
+            return (args.Contains("--cbify") && !args.Contains("--cbify_ldf")) ||
+                   args.Contains("--warm_cb") ||
+                   (args.Contains("--csoaa ") || args.Contains("--csoaa=")) && !args.Contains("--csoaa_ldf") ||
+                   (args.Contains("--wap ") || args.Contains("--wap=")) && !args.Contains("--wap_ldf");
+        }
+
         private static bool IsMultilineData(string input)
         {
             using (var streamReader = Open(input))
@@ -45,8 +75,52 @@ namespace cs_unittest
             return false;
         }
 
+        private static bool RequiresMultilineInput(string args, string input)
+        {
+            // If args explicitly specify a multiline learner, use multiline
+            if (IsMultilineLearner(args))
+                return true;
+
+            // If args explicitly specify a singleline learner, use singleline
+            if (IsSinglelineLearner(args))
+                return false;
+
+            // For test-only mode with loaded models (-i flag), check the data format
+            // because the model's learner type isn't visible from command line
+            if (args.Contains("-i ") || args.Contains("--initial_regressor"))
+                return IsMultilineData(input);
+
+            // Default: VW's default learner (gd/sgd) is singleline
+            // Empty lines in data should be skipped, not treated as multiline separators
+            return false;
+        }
+
+        private static bool IsCsvInput(string args)
+        {
+            return args.Contains("--csv");
+        }
+
+        private static bool HasCsvHeader(string args)
+        {
+            // CSV files have headers unless --csv_no_file_header is specified
+            return IsCsvInput(args) && !args.Contains("--csv_no_file_header");
+        }
+
+        private static string StripShellOnlyOptions(string args)
+        {
+            // These options are only valid for the VW command-line shell, not the library API
+            // --onethread: controls shell's thread pool (library doesn't have one)
+            return args.Replace("--onethread", "").Replace("  ", " ").Trim();
+        }
+
         public static void ExecuteTest(int testCaseNr, string args, string input, string stderr, string predictFile)
         {
+            // Track if --onethread was specified (affects SVRG and other algorithms)
+            var useOneThread = args.Contains("--onethread");
+
+            // Strip shell-only options that aren't recognized by the library
+            args = StripShellOnlyOptions(args);
+
             var isJson = args.Contains("--json") || args.Contains("--dsjson");
             if (isJson)
             {
@@ -54,9 +128,49 @@ namespace cs_unittest
                 return;
             }
 
+            // CSV input is handled natively by VW - use Driver() instead of line-by-line
+            if (IsCsvInput(args))
+            {
+                ExecuteTestWithDriver(testCaseNr, args, input, stderr, predictFile, useOneThread);
+                return;
+            }
+
+            // Multi-pass learning (e.g., SVRG, BFGS) requires the parser to re-read from cache
+            // Line-by-line processing doesn't work - must use Driver()
+            // Note: use "-c " with space to avoid matching --csoaa which contains "-c" as substring
+            if (args.Contains("--passes") || args.Contains("-c ") || args.Contains("--cache"))
+            {
+                ExecuteTestWithDriver(testCaseNr, args, input, stderr, predictFile, useOneThread);
+                return;
+            }
+
+            // Neural network (--nn) uses random initialization that produces different results
+            // when examples come through Learn() vs through the parser. Use Driver() for consistency.
+            if (args.Contains("--nn ") || args.Contains("--nn="))
+            {
+                ExecuteTestWithDriver(testCaseNr, args, input, stderr, predictFile, useOneThread);
+                return;
+            }
+
+            // explore_eval with --coin uses randomization that differs between Learn() and Driver()
+            if (args.Contains("--explore_eval") && args.Contains("--coin"))
+            {
+                ExecuteTestWithDriver(testCaseNr, args, input, stderr, predictFile, useOneThread);
+                return;
+            }
+
+            // truncated_normal_weights uses random initialization that differs between Learn() and Driver()
+            if (args.Contains("--truncated_normal_weights"))
+            {
+                ExecuteTestWithDriver(testCaseNr, args, input, stderr, predictFile, useOneThread);
+                return;
+            }
+
             using (var vw = new VowpalWabbit(args))
             {
-                var multiline = IsMultilineData(input);
+                // Determine if multiline input is needed based on learner type
+                // For explicit learner args, use the learner type; for loaded models, check data format
+                var multiline = RequiresMultilineInput(args, input);
                 using (var streamReader = Open(input))
                 {
                     if (multiline)
@@ -94,6 +208,10 @@ namespace cs_unittest
                         string dataLine;
                         while ((dataLine = streamReader.ReadLine()) != null)
                         {
+                            // Skip empty lines in singleline mode
+                            if (string.IsNullOrWhiteSpace(dataLine))
+                                continue;
+
                             if (!string.IsNullOrWhiteSpace(predictFile) && File.Exists(predictFile))
                             {
                                 object actualValue;
@@ -124,6 +242,20 @@ namespace cs_unittest
                                         VWTestHelper.FuzzyEqual(expectedPredictions[0], actualScalar.Value.Value, 1e-4, "Prediction value mismatch");
                                         VWTestHelper.FuzzyEqual(expectedPredictions[1], actualScalar.Value.Confidence, 1e-4, "Prediction confidence mismatch");
                                     }
+
+                                    var actualActionPdfValue = actualValue as VowpalWabbitActionPdfValue?;
+                                    if (actualActionPdfValue != null)
+                                    {
+                                        // CATS predictions are in format: action,pdf_value
+                                        var expectedPredictions = predictions[lineNr]
+                                            .Split(',')
+                                            .Select(field => float.Parse(field, CultureInfo.InvariantCulture))
+                                            .ToArray();
+
+                                        Assert.AreEqual(2, expectedPredictions.Length);
+                                        VWTestHelper.FuzzyEqual(expectedPredictions[0], actualActionPdfValue.Value.Action, 1e-4, "CATS action mismatch");
+                                        VWTestHelper.FuzzyEqual(expectedPredictions[1], actualActionPdfValue.Value.PdfValue, 1e-4, "CATS pdf_value mismatch");
+                                    }
                                 }
                             }
                             else
@@ -142,6 +274,21 @@ namespace cs_unittest
                     if (!string.IsNullOrWhiteSpace(stderr) && File.Exists(stderr))
                         VWTestHelper.AssertEqual(stderr, vw.PerformanceStatistics);
                 }
+            }
+        }
+
+        public static void ExecuteTestWithDriver(int testCaseNr, string args, string input, string stderr, string predictFile, bool useOneThread = false)
+        {
+            // Use VW's native Driver() for formats like CSV that need native parsing
+            using (var vw = new VowpalWabbit(args))
+            {
+                if (useOneThread)
+                    vw.DriverOneThread();
+                else
+                    vw.Driver();
+
+                if (!string.IsNullOrWhiteSpace(stderr) && File.Exists(stderr))
+                    VWTestHelper.AssertEqual(stderr, vw.PerformanceStatistics);
             }
         }
 
@@ -191,6 +338,20 @@ namespace cs_unittest
                                     Assert.AreEqual(2, expectedPredictions.Length);
                                     VWTestHelper.FuzzyEqual(expectedPredictions[0], actualScalar.Value.Value, 1e-4, "Prediction value mismatch");
                                     VWTestHelper.FuzzyEqual(expectedPredictions[1], actualScalar.Value.Confidence, 1e-4, "Prediction confidence mismatch");
+                                }
+
+                                var actualActionPdfValue = actualValue as VowpalWabbitActionPdfValue?;
+                                if (actualActionPdfValue != null)
+                                {
+                                    // CATS predictions are in format: action,pdf_value
+                                    var expectedPredictions = predictions[lineNr]
+                                        .Split(',')
+                                        .Select(field => float.Parse(field, CultureInfo.InvariantCulture))
+                                        .ToArray();
+
+                                    Assert.AreEqual(2, expectedPredictions.Length);
+                                    VWTestHelper.FuzzyEqual(expectedPredictions[0], actualActionPdfValue.Value.Action, 1e-4, "CATS action mismatch");
+                                    VWTestHelper.FuzzyEqual(expectedPredictions[1], actualActionPdfValue.Value.PdfValue, 1e-4, "CATS pdf_value mismatch");
                                 }
                             }
                         }

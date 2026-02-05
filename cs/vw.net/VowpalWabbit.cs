@@ -28,6 +28,9 @@ namespace Vw.Net.Native
     public static extern int WorkspaceRunDriver(IntPtr workspace, IntPtr api_status);
 
     [DllImport("vw.net.native")]
+    public static extern int WorkspaceRunDriverOneThread(IntPtr workspace, IntPtr api_status);
+
+    [DllImport("vw.net.native")]
     public static extern int WorkspaceNotifyEndOfPass(IntPtr workspace, IntPtr api_status);
 
     internal unsafe delegate IntPtr ExamplePoolGetExampleFn(IntPtr context);
@@ -783,6 +786,15 @@ namespace VW {
     {
       ApiStatus status = new ApiStatus();
       if (NativeMethods.WorkspaceRunDriver(this.DangerousGetHandle(), status.DangerousGetHandle()) != NativeMethods.SuccessStatus)
+      {
+        throw new VWException(status);
+      }
+    }
+
+    public void DriverOneThread()
+    {
+      ApiStatus status = new ApiStatus();
+      if (NativeMethods.WorkspaceRunDriverOneThread(this.DangerousGetHandle(), status.DangerousGetHandle()) != NativeMethods.SuccessStatus)
       {
         throw new VWException(status);
       }

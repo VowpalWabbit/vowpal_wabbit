@@ -112,9 +112,8 @@ public:  // INTERFACE
   // this should be an or ("|") of AUTO_CONDITION_FEATURES, etc.
   void set_options(uint32_t opts);
 
-  // change the default label parser, but you _must_ tell me how
-  // to detect test examples!
-  void set_label_parser(VW::label_parser& lp, bool (*is_test)(const VW::polylabel&));
+  // change the default label parser
+  void set_label_parser(VW::label_parser lp);
 
   // for explicitly declaring a loss incrementally
   void loss(float incr_loss);

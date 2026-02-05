@@ -10,6 +10,12 @@ struct scalar_confidence_t
   float value;
   float confidence;
 };
+
+struct action_pdf_value_t
+{
+  float action;
+  float pdf_value;
+};
 }  // namespace vw_net_native
 
 extern "C"
@@ -35,4 +41,5 @@ extern "C"
   API size_t GetPredictionActiveMulticlassMoreInfoRequiredClassesCount(VW::workspace* vw, VW::example* ex);
   API vw_net_native::dotnet_size_t GetPredictionActiveMulticlassMoreInfoRequiredClasses(
       VW::workspace* vw, VW::example* ex, int32_t* values, vw_net_native::dotnet_size_t count);
+  API vw_net_native::action_pdf_value_t GetPredictionActionPdfValue(VW::workspace* vw, VW::example* ex);
 }

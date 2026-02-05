@@ -248,8 +248,37 @@ API vw_net_native::ERROR_CODE WorkspaceNotifyEndOfPass(
 {
   try
   {
+    workspace->vw->passes_config.current_pass++;
     workspace->vw->l->end_pass();
     sync_stats(*workspace->vw);
+
+    return VW::experimental::error_code::success;
+  }
+  CATCH_RETURN_STATUS
+}
+
+API vw_net_native::ERROR_CODE WorkspaceRunDriver(
+    vw_net_native::workspace_context* workspace, VW::experimental::api_status* status)
+{
+  try
+  {
+    VW::start_parser(*workspace->vw);
+    VW::LEARNER::generic_driver(*workspace->vw);
+    VW::end_parser(*workspace->vw);
+
+    return VW::experimental::error_code::success;
+  }
+  CATCH_RETURN_STATUS
+}
+
+API vw_net_native::ERROR_CODE WorkspaceRunDriverOneThread(
+    vw_net_native::workspace_context* workspace, VW::experimental::api_status* status)
+{
+  try
+  {
+    // Use single-threaded driver (equivalent to --onethread CLI option)
+    // This processes examples synchronously without a parser thread
+    VW::LEARNER::generic_driver_onethread(*workspace->vw);
 
     return VW::experimental::error_code::success;
   }

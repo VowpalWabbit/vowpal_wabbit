@@ -37,25 +37,13 @@ namespace Vw.Net.Test
       return file.Path.EndsWith("vwtest.json");
     }
 
-    private static readonly HashSet<int> SkipList = new HashSet<int>(new [] { 13, 32, 39, 258, 40, 259, 41, 260, 59, 60, 61, 66, 68, 90,
-        25, 26, 349, 350, 356, 357, 358, // crash
-        92, 95, 96, 98,	91, 99, 118, 119, 120,
-        176, 177, 207, 208, //depend on shell scripts for input/output
-        14, 16, 17, 31, 33, 34, 53, 101, 102, 103, 105, 106, 111, 112, 412, 413, 414, // float delta
-        71, // --examples to test parser
-        149, 152, 156, 193, 194, 217, 385, // bash script
-        188, // possibly float delta
-        193, 195, 203, 324, 325, 326, //--onethread is a shell option, not available via library
-        275, 276, // --help
-        203, // Cluster mode test
-        204, // Testing option usage
-        220, // deamon mode shell script test not supported
-        227, // "single continuous action, pdf value" prediction type for cats not yet supported
-        229,  // "continous action with probability density function" prediction type for cats_pdf not yet supported
-        239, 240, 241, 242, 243, 244, 245, 246, // flatbuffer input tests, to be enabled in due course
-        400, 404, // positional args
-        189, // JSON checkpoint line
-        310, 311, 347, 348, // _label_ca not supported
+    private static readonly HashSet<int> SkipList = new HashSet<int>(new [] {
+        // --examples flag not respected by C# test helper
+        69,
+        // flatbuffer input not supported in C# wrapper
+        237, 238, 239, 240, 241, 242, 243, 244,
+        // --help causes process exit, crashing test host
+        273, 274,
     });
 
     private bool ShouldInclude(RunTestEntry entry)
@@ -69,7 +57,7 @@ namespace Vw.Net.Test
       return match.Success ? match.Groups["value"].Value : "";
     }
 
-    private TestCase GenerateTestCase(RunTestEntry entry, Dictionary<string, TestCase> outputModels, string testRoot)
+    private TestCase GenerateTestCase(RunTestEntry entry)
     {
       TestCase testCase = new TestCase()
       {
@@ -78,7 +66,8 @@ namespace Vw.Net.Test
         Arguments = entry.vw_command,
         InputData = MatchArgument(entry.vw_command, "-d"),
         InitialRegressor = MatchArgument(entry.vw_command, "-i"),
-        FinalRegressor = MatchArgument(entry.vw_command, "-f")
+        FinalRegressor = MatchArgument(entry.vw_command, "-f"),
+        DependsOn = entry.depends_on
       };
 
       foreach (KeyValuePair<string, string> diffFile in entry.diff_files)
@@ -92,33 +81,28 @@ namespace Vw.Net.Test
           testCase.Predict = diffFile.Value;
         }
       }
-      
-      // resolve dependencies
-      if (!string.IsNullOrEmpty(testCase.FinalRegressor))
-        outputModels[testCase.FinalRegressor] = testCase;
-
-      if (!string.IsNullOrEmpty(testCase.InitialRegressor))
-      {
-        TestCase dep;
-        bool foundInitialRegressor = false;
-        if (outputModels.TryGetValue(testCase.InitialRegressor, out dep))
-        {
-            testCase.Dependency = dep;
-            foundInitialRegressor = true;
-        }
-        else if (testCase.InitialRegressor.StartsWith("model-sets/"))
-        {
-            string fullPath = Path.Combine(testRoot, testCase.InitialRegressor);
-            foundInitialRegressor = File.Exists(fullPath);
-        }
-
-        if (!foundInitialRegressor)
-        {
-            throw new Exception("Missing dependency: '" + testCase.InitialRegressor + "' for test case " + testCase.Id);
-        }
-      }
 
       return testCase;
+    }
+
+    private void ResolveDependencies(Dictionary<int, TestCase> testCases)
+    {
+      foreach (var testCase in testCases.Values)
+      {
+        // Use explicit depends_on from JSON if available
+        if (testCase.DependsOn != null && testCase.DependsOn.Count > 0)
+        {
+          // For simplicity, use the last dependency in the chain
+          // (tests typically have a single dependency or a linear chain)
+          foreach (int depId in testCase.DependsOn)
+          {
+            if (testCases.TryGetValue(depId, out TestCase dep))
+            {
+              testCase.Dependency = dep;
+            }
+          }
+        }
+      }
     }
 
     private string GenerateSource(string testSet, Dictionary<int, TestCase> testCases)
@@ -192,17 +176,19 @@ $@"
       {
         string testSet = Path.GetFileNameWithoutExtension(file.Path).Replace(".", "_");
         string targetFile = testSet + ".Generated.cs";
-        string testRoot = Path.GetDirectoryName(file.Path);
 
         List<RunTestEntry> entries = JsonConvert.DeserializeObject<List<RunTestEntry>>(file.GetText().ToString());
 
-        Dictionary<string, TestCase> outputModels = new Dictionary<string, TestCase>();
+        // First pass: create all test cases
         Dictionary<int, TestCase> testCases = entries.Where(ShouldInclude)
-                                                     .Select(e => GenerateTestCase(e, outputModels, testRoot))
+                                                     .Select(e => GenerateTestCase(e))
                                                      .ToDictionary(t => t.Id);
 
+        // Second pass: resolve dependencies using depends_on field
+        ResolveDependencies(testCases);
+
         string source = GenerateSource(testSet, testCases);
-        
+
         context.AddSource(targetFile, source);
       }
     }
@@ -243,6 +229,8 @@ $@"
     public string Comment;
 
     public TestCase Dependency;
+
+    public IList<int> DependsOn;
 
     public List<TestCase> InDependencyOrder()
     {

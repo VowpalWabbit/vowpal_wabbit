@@ -1,13 +1,13 @@
-1:1.0 |n node_a shared_feat
-2:1.0 |n node_b shared_feat
-1:1.0 |n node_c shared_feat
-1 2 |e edge_ab
-2 3 |e edge_bc
-1 3 |e edge_ac
+1 |n node_a shared_feat
+2 |n node_b shared_feat
+1 |n node_c shared_feat
+1,2 |e edge_ab
+2,3 |e edge_bc
+1,3 |e edge_ac
 
-2:1.0 |n node_x shared_feat
-1:1.0 |n node_y shared_feat
-2:1.0 |n node_z shared_feat
-1 2 |e edge_xy
-2 3 |e edge_yz
+2 |n node_x shared_feat
+1 |n node_y shared_feat
+2 |n node_z shared_feat
+1,2 |e edge_xy
+2,3 |e edge_yz
 

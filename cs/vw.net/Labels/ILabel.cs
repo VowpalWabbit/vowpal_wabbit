@@ -322,6 +322,79 @@ namespace VW.Labels
     }
   }
 
+  /// <summary>
+  /// Label for continuous action (CATS) problems.
+  /// Used with --cats option for continuous action tree search.
+  /// </summary>
+  public sealed class ContinuousActionLabel : ILabel
+  {
+    [DllImport("vw.net.native")]
+    private extern static int StringLabelParseAndUpdateExample(IntPtr workspace, IntPtr example, IntPtr label, IntPtr label_len, IntPtr api_status);
+
+    public ContinuousActionLabel()
+    {
+    }
+
+    public ContinuousActionLabel(float action, float cost, float pdfValue)
+    {
+      this.Action = action;
+      this.Cost = cost;
+      this.PdfValue = pdfValue;
+    }
+
+    /// <summary>
+    /// The continuous action value.
+    /// </summary>
+    [JsonProperty("action")]
+    public float Action { get; set; }
+
+    /// <summary>
+    /// The cost of this action.
+    /// </summary>
+    [JsonProperty("cost")]
+    public float Cost { get; set; }
+
+    /// <summary>
+    /// The PDF density of the chosen location, specifies the probability
+    /// the data collection policy chose this action.
+    /// </summary>
+    [JsonProperty("pdf_value")]
+    public float PdfValue { get; set; }
+
+    unsafe private static void ParseLabelAndUpdateExample(VowpalWabbitExample example, string label, Vw.Net.ApiStatus status = null)
+    {
+      VowpalWabbit workspace = example.Owner.Native;
+
+      fixed (byte* labelBytes = NativeMethods.StringEncoding.GetBytes(label))
+      {
+        IntPtr labelPtr = new IntPtr(labelBytes);
+        IntPtr labelLen = new IntPtr(label.Length);
+
+        if (StringLabelParseAndUpdateExample(workspace.DangerousGetHandle(), example.DangerousGetNativeHandle(), labelPtr, labelLen, status.ToNativeHandleOrNullptrDangerous()) != NativeMethods.SuccessStatus)
+          throw new Vw.Net.VWException(status);
+
+        example.KeepAliveNative();
+        GC.KeepAlive(workspace);
+      }
+    }
+
+    void ILabel.UpdateExample(VowpalWabbit vw, VowpalWabbitExample example)
+    {
+      ParseLabelAndUpdateExample(example, this.ToString());
+    }
+
+    void ILabel.ReadFromExample(VowpalWabbitExample example)
+    {
+      throw new NotImplementedException("Reading continuous action labels from examples is not yet implemented.");
+    }
+
+    public override string ToString()
+    {
+      // Format: ca action:cost:pdf_value
+      return string.Format(CultureInfo.InvariantCulture, "ca {0}:{1}:{2}", this.Action, this.Cost, this.PdfValue);
+    }
+  }
+
   public sealed class StringLabel : ILabel
   {
     [DllImport("vw.net.native")]

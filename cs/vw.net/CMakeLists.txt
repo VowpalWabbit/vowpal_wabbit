@@ -3,6 +3,7 @@ set(VW_NET_CORE_SOURCES
   IVowpalWabbitExamplePool.cs
   IVowpalWabbitLabelComparator.cs
   IVowpalWabbitPredictionFactory.cs
+  Labels/ILabel.cs
   MultiExAdapter.cs
   SpanningTreeClr.cs
   VowpalWabbit.cs
@@ -18,7 +19,7 @@ set(VW_NET_CORE_SOURCES
   VowpalWabbitNamespaceBuilder.cs
   VowpalWabbitPerformanceStatistics.cs
   VowpalWabbitSettings.cs
-  VwException.cs 
+  VwException.cs
 )
 
 if (vw_DOTNET_USE_MSPROJECT)

@@ -6,7 +6,7 @@ learning rate = 0.5
 initial_t = 0
 power_t = 0.5
 Enabled learners: gd, scorer-identity, csoaa, search_task
-Input label = CS
+Input label = MULTILABEL
 Output pred = MULTICLASS
 average    since      instance            current true      current predicted   cur   cur   predic    cache  examples          
 loss       last        counter           output prefix          output prefix  pass   pol     made     hits    gener  beta    

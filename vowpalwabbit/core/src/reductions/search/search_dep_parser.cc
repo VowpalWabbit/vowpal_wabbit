@@ -8,6 +8,7 @@
 #include "vw/core/cost_sensitive.h"
 #include "vw/core/label_dictionary.h"  // for add_example_namespaces_from_example
 #include "vw/core/label_parser.h"
+#include "vw/core/multilabel.h"
 #include "vw/core/numeric_casts.h"
 #include "vw/core/reductions/gd.h"
 #include "vw/core/vw.h"
@@ -118,7 +119,7 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
   if (data->cost_to_go) { sch.set_options(AUTO_CONDITION_FEATURES | NO_CACHING | ACTION_COSTS); }
   else { sch.set_options(AUTO_CONDITION_FEATURES | NO_CACHING); }
 
-  sch.set_label_parser(VW::cs_label_parser_global, [](const VW::polylabel& l) -> bool { return l.cs.costs.empty(); });
+  sch.set_label_parser(VW::multilabel_label_parser_global);
 }
 
 void inline add_feature(
@@ -613,18 +614,18 @@ void setup(Search::search& sch, VW::multi_ex& ec)
   gold_tags.push_back(0);
   for (size_t i = 0; i < n; i++)
   {
-    const auto& costs = ec[i]->l.cs.costs;
+    const auto& labels = ec[i]->l.multilabels.label_v;
     uint32_t head, tag;
     if (data->old_style_labels)
     {
-      uint32_t label = costs[0].class_index;
+      uint32_t label = labels[0];
       head = (label & 255) - 1;
       tag = label >> 8;
     }
     else
     {
-      head = (costs.size() == 0) ? 0 : costs[0].class_index;
-      tag = (costs.size() <= 1) ? static_cast<uint32_t>(data->root_label) : costs[1].class_index;
+      head = (labels.size() == 0) ? 0 : labels[0];
+      tag = (labels.size() <= 1) ? static_cast<uint32_t>(data->root_label) : labels[1];
     }
     if (tag > data->num_label) THROW("invalid label " << tag << " which is > num actions=" << data->num_label);
 
