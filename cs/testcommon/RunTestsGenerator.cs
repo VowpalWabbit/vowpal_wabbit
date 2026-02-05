@@ -40,8 +40,6 @@ namespace Vw.Net.Test
     private static readonly HashSet<int> SkipList = new HashSet<int>(new [] {
         // Model dependency / multiline learner issues
         31, 32, 33, 34,
-        // Search algorithm stat mismatches (feature count and average loss differ)
-        64, 66, 110,
         // --examples flag not respected by test helper (IndexOutOfRangeException)
         69,
         // Multiline learner not supported
