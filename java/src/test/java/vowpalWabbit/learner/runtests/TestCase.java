@@ -3,6 +3,7 @@ package vowpalWabbit.learner.runtests;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -32,7 +33,7 @@ public class TestCase {
         String stderrTemp = "";
         String predictTemp = "";
         if (data.diff_files != null) {
-            for (var entry : data.diff_files.entrySet()) {
+            for (Map.Entry<String, String> entry : data.diff_files.entrySet()) {
                 if ("stderr".equals(entry.getKey())) {
                     stderrTemp = entry.getValue();
                 } else if (entry.getKey().endsWith(".predict")) {

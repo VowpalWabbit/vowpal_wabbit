@@ -157,7 +157,7 @@ public class ClosingTest  extends VWTestHelper {
             Thread.sleep(Math.min(5000, msBeforeRegisteringCallback));
 
         // Register callback.
-        Futures.addCallback(closeInFuture, callback);
+        Futures.addCallback(closeInFuture, callback, MoreExecutors.directExecutor());
 
         // Test whether the callback is called.
         for (; i < maxIterations && !callback.wasCalled(); ++i) {
