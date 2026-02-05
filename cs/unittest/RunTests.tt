@@ -31,10 +31,6 @@ var skipList = new[] {
     237, 238,
     // Float delta too large
     412,
-    // --onethread shell option not available
-    193,
-    // cats_pdf prediction type not supported
-    227,
     // flatbuffer input not supported
     239, 240, 241, 242, 243, 244,
     // --help causes process exit, crashing test host
