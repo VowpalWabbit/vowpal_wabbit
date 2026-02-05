@@ -11,7 +11,9 @@ JNIEXPORT jlong JNICALL Java_vowpalWabbit_learner_VWLearners_initialize(JNIEnv* 
   jlong vwPtr = 0;
   try
   {
-    VW::workspace* vwInstance = VW::initialize(env->GetStringUTFChars(command, NULL));
+    const char* utf_string = env->GetStringUTFChars(command, NULL);
+    VW::workspace* vwInstance = VW::initialize(utf_string);
+    env->ReleaseStringUTFChars(command, utf_string);
     vwPtr = (jlong)vwInstance;
   }
   catch (...)

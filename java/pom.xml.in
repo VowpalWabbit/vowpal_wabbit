@@ -211,7 +211,7 @@
                 </execution>
                 </executions>
                 <configuration>
-                    <argLine>-Djava.library.path=${project.build.directory}/bin/natives/@VW_JNI_NATIVES_DIR@</argLine>
+                    <argLine>-Xmx256m -Djava.library.path=${project.build.directory}/bin/natives/@VW_JNI_NATIVES_DIR@</argLine>
                     <!-- Set test root for RunTests integration tests -->
                     <systemPropertyVariables>
                         <VW_TEST_ROOT>${project.basedir}/../test</VW_TEST_ROOT>
@@ -246,7 +246,7 @@
                     <!--<forkMode>once</forkMode>-->
                     <forkCount>1</forkCount>
                     <reuseForks>false</reuseForks>
-                    <argLine>-Djava.library.path=${project.build.directory}/bin/natives/@VW_JNI_NATIVES_DIR@</argLine>
+                    <argLine>-Xmx256m -Djava.library.path=${project.build.directory}/bin/natives/@VW_JNI_NATIVES_DIR@</argLine>
                     <!-- Set test root for RunTests -->
                     <systemPropertyVariables>
                         <VW_TEST_ROOT>${project.basedir}/../test</VW_TEST_ROOT>
