@@ -1,24 +1,28 @@
-# Summary
-The Java layer for Vowpal Wabbit uses the [Java Native Interface](https://en.wikipedia.org/wiki/Java_Native_Interface) to communicate between Java and the native Vowpal Wabbit C code.  The philosophy of this layer is that we want to expose a simple type safe, thread safe interface so a Java programmer can use Vowpal Wabbit for either learning or scoring.  An example usage is shown below
+# Vowpal Wabbit Java Bindings
+
+The Java layer for Vowpal Wabbit uses the [Java Native Interface](https://en.wikipedia.org/wiki/Java_Native_Interface) to communicate between Java and the native Vowpal Wabbit C code. The philosophy of this layer is to expose a simple type-safe, thread-safe interface so Java programmers can use Vowpal Wabbit for learning and scoring.
+
+## Quick Start
 
 ```java
-class Foo {
-    static {
-        // Create the model.  The model type is checked here
-        VWScalarLearner learner = VWLearners.create("-f model.vw");
+import vowpalWabbit.learner.VWLearners;
+import vowpalWabbit.learner.VWScalarLearner;
 
-        // Learn some data
-        learner.learn("0 | price:.23 sqft:.25 age:.05 2006");
-        learner.learn("1 2 'second_house | price:.18 sqft:.15 age:.35 1976");
-        learner.learn("0 1 0.5 'third_house | price:.53 sqft:.32 age:.87 1924");
+public class Example {
+    public static void main(String[] args) {
+        // Create the model (type is checked at runtime)
+        try (VWScalarLearner learner = VWLearners.create("-f model.vw --quiet")) {
+            // Learn some data
+            learner.learn("0 | price:.23 sqft:.25 age:.05 2006");
+            learner.learn("1 2 'second_house | price:.18 sqft:.15 age:.35 1976");
+            learner.learn("0 1 0.5 'third_house | price:.53 sqft:.32 age:.87 1924");
+        } // Model is automatically closed and saved
 
-        // Closing finalizes the model and frees up the native memory
-        learner.close();
-
-        VWScalarLearner learner = VWLearners.create("-i model.vw -t --quiet");
-        // Get a prediction.
-        float prediction = learner.predict("| price:0.23 sqft:0.25 age:0.05 2006");
-        learner.close();
+        // Load model for prediction
+        try (VWScalarLearner scorer = VWLearners.create("-i model.vw -t --quiet")) {
+            float prediction = scorer.predict("| price:0.23 sqft:0.25 age:0.05 2006");
+            System.out.println("Prediction: " + prediction);
+        }
     }
 }
 ```
@@ -27,39 +31,180 @@ More examples can be found in the [Java tests](src/test/java/vowpalWabbit/learne
 
 ## Important Notes
 
-1.  Most standard Vowpal Wabbit command line options are supported when calling create.  If you find some that work from the regular command line and not within the JNI please file a bug.
-2.  The type returned from the create function is checked on the C side.  This means that the type will vary depending on the arguments supplied to create.  While this doesn't give full compile time safety it does fail as early as possible at runtime.  This also means that the expected output type can be safely used and checked at compile time.
-3.  There is only a small amount of memory used on the Java side including a pointer to the VW model on the C side.  Because of this the Java base interface implements `Closeable` and models MUST BE CLOSED or else you will leak memory.  The Java garbage collector will not clean up the C memory.
+1. **Type Safety**: The type returned from `VWLearners.create()` is checked on the C side based on the VW arguments. While this doesn't provide full compile-time safety, it fails as early as possible at runtime.
 
-# Installation
-The Java artifacts are periodically released to [Maven Central](https://mvnrepository.com/artifact/com.github.johnlangford/vw-jni) and can be included like any other Java dependency.  Prior to version 8.4.1 some precompiled native libraries were included in the jar.  This made usage easier for users on supported platforms but became a nightmare to manage as the number of platforms grew.  It also added problems as these precompiled libraries used specific boost versions that had to be matched.  This is no longer the case as from 8.4.1 onwards the jars are much slimmer and only contain Java code.  The following is called within the Java code
+2. **Memory Management**: The Java garbage collector will NOT clean up native C memory. Models MUST be closed explicitly by calling `close()` or using try-with-resources. Failure to close models will leak memory.
+
+3. **Thread Safety**: Each learner instance uses a `ReentrantLock` for learn/predict operations. Multi-pass operations require a global lock.
+
+4. **Command Line Options**: Most standard VW command line options are supported. If you find options that work from the command line but not via JNI, please file a bug.
+
+## Installation
+
+### Maven Dependency
+
+The Java artifacts are released to [Maven Central](https://mvnrepository.com/artifact/com.github.vowpalwabbit/vw-jni):
+
+```xml
+<dependency>
+    <groupId>com.github.vowpalwabbit</groupId>
+    <artifactId>vw-jni</artifactId>
+    <version>9.10.0</version>
+</dependency>
+```
+
+### Native Library Requirements
+
+The JNI layer requires a platform-specific native library. The library loader attempts to:
+
+1. Load from `java.library.path` using `System.loadLibrary("vw_jni")`
+2. If that fails, extract from the JAR file (if bundled)
+
+#### Supported Platforms
+
+| Platform | Directory | Library Name |
+|----------|-----------|--------------|
+| Linux x64 | `natives/linux_64/` | `libvw_jni.so` |
+| Linux ARM64 | `natives/linux_arm64/` | `libvw_jni.so` |
+| macOS x64 | `natives/macos_x64/` | `libvw_jni.dylib` |
+| macOS ARM64 | `natives/macos_arm64/` | `libvw_jni.dylib` |
+| Windows x64 | `natives/windows_64/` | `vw_jni.dll` |
+
+#### Building the Native Library
+
+```bash
+# From the vowpal_wabbit root directory
+mkdir build && cd build
+cmake .. -DBUILD_JAVA=ON
+make vw_jni
+```
+
+The native library will be created at `java/target/bin/natives/<platform>/`.
+
+#### Installing the Native Library
+
+Copy the library to a location on your `java.library.path`:
+
+- **Linux**: `/usr/lib` or `/usr/local/lib`
+- **macOS**: `/Library/Java/Extensions`
+- **Windows**: Add to `PATH` or application directory
+
+Alternatively, specify the path at runtime:
+
+```bash
+java -Djava.library.path=/path/to/natives/linux_64 -jar myapp.jar
+```
+
+## API Overview
+
+### Learner Types
+
+| Class | Use Case | Return Type |
+|-------|----------|-------------|
+| `VWScalarLearner` | Regression, binary classification | `float` |
+| `VWMulticlassLearner` | Multiclass classification | `int` |
+| `VWMultilabelsLearner` | Multilabel classification | `int[]` |
+| `VWActionScoresLearner` | Contextual bandits | `ActionScores` |
+| `VWActionProbsLearner` | CB with exploration | `ActionProbs` |
+| `VWCCBLearner` | Conditional contextual bandits | `DecisionScores` |
+| `VWProbLearner` | Continuous actions | `PDF` |
+
+### Core Methods
 
 ```java
-final public class VWLearners {
-    static {
-        System.loadLibrary("vw_jni");
+// Learning
+learner.learn("label | features");
+learner.learn("label | features", "tag");
+
+// Prediction
+T prediction = learner.predict("| features");
+
+// Model persistence
+learner.saveModel("model.vw");
+```
+
+## Known Limitations
+
+### File-based Training (`-d` option)
+
+The Java API is designed for programmatic example feeding. The `-d` (data file) option is not supported because the JNI layer initializes VW but does not run the full training driver loop.
+
+**Workaround**: Read the file in Java and feed examples programmatically:
+
+```java
+try (VWScalarLearner learner = VWLearners.create("--quiet");
+     BufferedReader reader = new BufferedReader(new FileReader("data.vw"))) {
+    String line;
+    while ((line = reader.readLine()) != null) {
+        learner.learn(line);
     }
 }
 ```
 
-The implication here is that platform specific library must be on your `java.library.path` with the [appropriate name](https://stackoverflow.com/questions/37203247/while-loading-jni-library-how-the-mapping-happens-with-the-actual-library-name).  Creating this file is already part of the standard build process of VW, therefore you only have to execute `make java` to create the shared library.  After executing this a file will be created under `java/target/*vw_jni*` where the `*` are platform specific.  This file then needs to be put somewhere on the `java.library.path` of the machine you wish to use the JNI library from.
+For large-scale file-based training, use the VW command-line tool directly.
 
-It should also be noted that Vowpal Wabbit makes all attempts at compatibility between versions, but the only true way to guarantee compatibility to use the exact same git hash that was used when creating the jar.  I will try and keep this list up to date as new versions are released.
+### Other Limitations
 
-| VW Version | Git Commit Hash                          |
-| ---------- | ---------------------------------------- |
-| 8.4.1      | 10bd09ab06f59291e04ad7805e88fd3e693b7159 |
-| 8.1.0      | 9e5831a72d5b0a124c845dcaec75879f498b355f |
+- Some advanced options may not be fully supported
+- Multi-pass learning requires careful memory management
+- The Spark layer only supports simple labels (classification/regression)
 
-# Spark Layer
-To improve performance when hosting VW in Spark an additional optimized layer can be found in org.vowpalwabbit.spark.*. The actual VW/Spark integration will be available through [MMLSpark](https://github.com/Azure/mmlspark).
+## Version Compatibility
 
-## Features
+| VW Version | Git Commit Hash |
+|------------|-----------------|
+| 9.10.0 | (current) |
+| 8.4.1 | 10bd09ab06f59291e04ad7805e88fd3e693b7159 |
+| 8.1.0 | 9e5831a72d5b0a124c845dcaec75879f498b355f |
 
-1. Native dependencies are included in the JAR file.
-2. Features are expected to be already hashed.
-3. Multi-pass support.
+## Spark Integration
 
-## Limitations
+For improved performance when hosting VW in Spark, an optimized layer is available in `org.vowpalwabbit.spark.*`. The full VW/Spark integration is available through [SynapseML](https://github.com/microsoft/SynapseML) (formerly MMLSpark).
 
-1. Only simple label is supported for now (e.g. classification/regression).
+### Spark Layer Features
+
+1. Native dependencies bundled in JAR
+2. Pre-hashed feature support
+3. Multi-pass learning support
+
+### Spark Layer Limitations
+
+1. Only simple labels supported (classification/regression)
+
+## Troubleshooting
+
+### UnsatisfiedLinkError
+
+```
+java.lang.UnsatisfiedLinkError: no vw_jni in java.library.path
+```
+
+**Solution**: Ensure the native library is on your `java.library.path` or bundled in the JAR.
+
+### Platform Not Supported
+
+```
+UnsupportedOperationException: No native library found for platform: <platform>
+```
+
+**Solution**: Build the native library for your platform or use a supported platform.
+
+### Memory Leaks
+
+If you see increasing memory usage, ensure all learners are closed:
+
+```java
+// BAD - leaks memory
+VWScalarLearner learner = VWLearners.create("--quiet");
+learner.learn("...");
+// forgot to close!
+
+// GOOD - properly cleaned up
+try (VWScalarLearner learner = VWLearners.create("--quiet")) {
+    learner.learn("...");
+}
+```
+
+## Contributing
+
+See the main [VowpalWabbit contributing guide](https://github.com/VowpalWabbit/vowpal_wabbit/blob/master/CONTRIBUTING.md).
