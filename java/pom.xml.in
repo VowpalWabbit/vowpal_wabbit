@@ -234,6 +234,11 @@
                 <configuration>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
 
+                    <!-- Exclude integration tests - they are run by failsafe plugin -->
+                    <excludes>
+                        <exclude>**/*IT.java</exclude>
+                    </excludes>
+
                     <!-- It's important to run tests serially because we are doing timing tests in some of the tests. -->
                     <!-- TODO: That tests may fail when executed in parallel is likely an indication of a thread-safety issue -->
                     <!-- TODO: This thread-safety issue could be on the Java or C side.  Merits future investigation. -->
