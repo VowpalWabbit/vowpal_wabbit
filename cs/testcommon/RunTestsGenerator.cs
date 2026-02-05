@@ -42,8 +42,6 @@ namespace Vw.Net.Test
         31, 32, 33, 34, 412,
         // --examples flag not respected by C# test helper
         69,
-        // Reference file mismatch (CLI now emits warnings not in reference)
-        193,
         // cats/cats_pdf uses ACTION_PDF_VALUE prediction type not supported in C# wrapper
         225, 227, 309, 345, 346,
         // flatbuffer input not supported in C# wrapper
