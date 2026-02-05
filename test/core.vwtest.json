@@ -7624,8 +7624,7 @@
     },
     "input_files": [
       "train-sets/multiclass"
-    ],
-    "skip_csharp": true
+    ]
   },
   {
     "id": 594,

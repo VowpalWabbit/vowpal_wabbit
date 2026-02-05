@@ -50,8 +50,8 @@ namespace Vw.Net.Test
         412,
         // --onethread shell option not available
         193,
-        // cats_pdf prediction type not supported
-        227,
+        // cats/cats_pdf prediction type not supported
+        225, 227, 309, 345, 346,
         // flatbuffer input not supported
         239, 240, 241, 242, 243, 244,
         // --help causes process exit, crashing test host
@@ -60,7 +60,7 @@ namespace Vw.Net.Test
 
     private bool ShouldInclude(RunTestEntry entry)
     {
-      return entry.vw_command != null && !entry.vw_command.Contains("--dsjson") && !entry.desc.Contains("SkipC#");
+      return entry.vw_command != null && !entry.vw_command.Contains("--dsjson") && !entry.desc.Contains("SkipC#") && !entry.skip_csharp;
     }
 
     private string MatchArgument(string args, string option)
@@ -222,6 +222,7 @@ $@"
     public Dictionary<string, string> diff_files { get; set; }
     public IList<string> input_files { get; set; }
     public IList<int> depends_on { get; set; }
+    public bool skip_csharp { get; set; }
   }
 
   internal class TestCase
