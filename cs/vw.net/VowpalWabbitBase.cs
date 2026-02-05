@@ -170,11 +170,11 @@ namespace VW {
         return arguments.Contains("--no_stdin ") || arguments.EndsWith("--no_stdin");
       }
 
-      void EnsureArguments(ref string arguments, VowpalWabbitSettings settings)
+      void EnsureArguments(ref string arguments, VowpalWabbitSettings vwSettings)
       {
-        if (settings.Model != null)
+        if (vwSettings.Model != null)
         {
-          if (!settings.Verbose && !ArgumentStringHasQuiet(arguments) && !ArgumentStringHasQuiet(settings.Model.Arguments.CommandLine))
+          if (!vwSettings.Verbose && !ArgumentStringHasQuiet(arguments) && !ArgumentStringHasQuiet(vwSettings.Model.Arguments.CommandLine))
           {
             arguments += " --quiet";
           }
@@ -186,7 +186,7 @@ namespace VW {
             arguments += " --no_stdin";
           }
 
-          if (!settings.Verbose && settings.ModelStream == null && !ArgumentStringHasQuiet(arguments))
+          if (!vwSettings.Verbose && vwSettings.ModelStream == null && !ArgumentStringHasQuiet(arguments))
           {
             arguments += " --quiet";
           }
@@ -335,7 +335,7 @@ namespace VW {
         throw new NotSupportedException("Cannot reaload model if AllReduce is enabled.");
       }
 
-      args ??= String.Empty;
+      if (args == null) args = String.Empty;
 
       byte[] argumentsBytes = Vw.Net.Native.NativeMethods.StringEncoding.GetBytes(args);
       unsafe

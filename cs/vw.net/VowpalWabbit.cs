@@ -589,7 +589,7 @@ namespace VW {
     private void InvokeLearner(Func<IntPtr, IntPtr, NativeMethods.CreatePredictionCallback, IntPtr, int> learnerCall, VowpalWabbitExample ex, NativeMethods.CreatePredictionCallback createPrediction = null)
     {
       // TODO: Needed?
-      createPrediction ??= () => {};
+      if (createPrediction == null) createPrediction = () => {};
 
       using (ApiStatus status = new ApiStatus())
       {

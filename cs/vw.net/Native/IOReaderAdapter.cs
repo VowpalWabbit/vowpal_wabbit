@@ -70,7 +70,6 @@ namespace Vw.Net.Native
         Span<byte> bufferSpan = new Span<byte>((byte*)buffer, num_bytes);
         return this.stream.Read(bufferSpan);
 #else
-        // .NET Standard 2.0 doesn't have Stream.Read(Span<byte>), so use a temp buffer
         byte[] temp = new byte[num_bytes];
         int bytesRead = this.stream.Read(temp, 0, num_bytes);
         if (bytesRead > 0)

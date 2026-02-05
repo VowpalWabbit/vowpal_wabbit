@@ -53,7 +53,6 @@ namespace Vw.Net.Native
         this.stream.Write(bufferSpan);
         return bufferSpan.Length;
 #else
-        // .NET Standard 2.0 doesn't have Stream.Write(Span<byte>), so use a temp buffer
         byte[] temp = new byte[num_bytes];
         Marshal.Copy((IntPtr)buffer, temp, 0, num_bytes);
         this.stream.Write(temp, 0, num_bytes);
