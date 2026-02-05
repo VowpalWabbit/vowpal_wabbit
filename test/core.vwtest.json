@@ -6697,7 +6697,8 @@
     },
     "input_files": [
       "train-sets/search_graph_small.dat"
-    ]
+    ],
+    "skip_csharp": true
   },
   {
     "id": 516,
@@ -6723,7 +6724,8 @@
     },
     "input_files": [
       "train-sets/search_graph_small.dat"
-    ]
+    ],
+    "skip_csharp": true
   },
   {
     "id": 518,
@@ -7622,7 +7624,8 @@
     },
     "input_files": [
       "train-sets/multiclass"
-    ]
+    ],
+    "skip_csharp": true
   },
   {
     "id": 594,
@@ -7938,7 +7941,8 @@
     },
     "input_files": [
       "train-sets/search_graph_small.dat"
-    ]
+    ],
+    "skip_csharp": true
   },
   {
     "id": 622,

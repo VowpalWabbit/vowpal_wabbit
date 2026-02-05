@@ -144,6 +144,28 @@ namespace cs_unittest
                 return;
             }
 
+            // Neural network (--nn) uses random initialization that produces different results
+            // when examples come through Learn() vs through the parser. Use Driver() for consistency.
+            if (args.Contains("--nn ") || args.Contains("--nn="))
+            {
+                ExecuteTestWithDriver(testCaseNr, args, input, stderr, predictFile, useOneThread);
+                return;
+            }
+
+            // explore_eval with --coin uses randomization that differs between Learn() and Driver()
+            if (args.Contains("--explore_eval") && args.Contains("--coin"))
+            {
+                ExecuteTestWithDriver(testCaseNr, args, input, stderr, predictFile, useOneThread);
+                return;
+            }
+
+            // truncated_normal_weights uses random initialization that differs between Learn() and Driver()
+            if (args.Contains("--truncated_normal_weights"))
+            {
+                ExecuteTestWithDriver(testCaseNr, args, input, stderr, predictFile, useOneThread);
+                return;
+            }
+
             using (var vw = new VowpalWabbit(args))
             {
                 // Determine if multiline input is needed based on learner type
