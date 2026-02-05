@@ -28,6 +28,35 @@ namespace cs_unittest
                 return new StreamReader(input);
         }
 
+        private static bool IsMultilineLearner(string args)
+        {
+            // These learners require multiline input (multi_ex) regardless of data format
+            // NOTE: --cbify (not --cbify_ldf) and --warm_cb wrap cb_adf but are themselves singleline
+            if ((args.Contains("--cbify") && !args.Contains("--cbify_ldf")) || args.Contains("--warm_cb"))
+                return false;
+
+            return args.Contains("--cb_adf") ||
+                   args.Contains("--cb_explore_adf") ||
+                   args.Contains("--ccb_explore_adf") ||
+                   args.Contains("--slates") ||
+                   args.Contains("--cbify_ldf") ||
+                   args.Contains("--search_task") ||
+                   args.Contains("--search ") ||
+                   args.Contains("--search=") ||
+                   args.Contains("--csoaa_ldf") ||
+                   args.Contains("--wap_ldf");
+        }
+
+        private static bool IsSinglelineLearner(string args)
+        {
+            // These learners are explicitly singleline even with LDF-formatted data
+            // They process each line individually, blank lines are just separators
+            return (args.Contains("--cbify") && !args.Contains("--cbify_ldf")) ||
+                   args.Contains("--warm_cb") ||
+                   (args.Contains("--csoaa ") || args.Contains("--csoaa=")) && !args.Contains("--csoaa_ldf") ||
+                   (args.Contains("--wap ") || args.Contains("--wap=")) && !args.Contains("--wap_ldf");
+        }
+
         private static bool IsMultilineData(string input)
         {
             using (var streamReader = Open(input))
@@ -45,10 +74,23 @@ namespace cs_unittest
             return false;
         }
 
-        private static bool IsSearchTask(string args)
+        private static bool RequiresMultilineInput(string args, string input)
         {
-            // Search learners require multiline input even when data doesn't have blank line separators
-            return args.Contains("--search_task") || args.Contains("--search ");
+            // If args explicitly specify a multiline learner, use multiline
+            if (IsMultilineLearner(args))
+                return true;
+
+            // If args explicitly specify a singleline learner, use singleline
+            if (IsSinglelineLearner(args))
+                return false;
+
+            // For test-only mode with loaded models (-i flag), check the data format
+            // because the model's learner type isn't visible from command line
+            if (args.Contains("-i ") || args.Contains("--initial_regressor"))
+                return IsMultilineData(input);
+
+            // Default: check data format for backwards compatibility
+            return IsMultilineData(input);
         }
 
         private static bool IsCsvInput(string args)
@@ -80,8 +122,9 @@ namespace cs_unittest
 
             using (var vw = new VowpalWabbit(args))
             {
-                // Search tasks require multiline learner even if data doesn't have blank lines
-                var multiline = IsMultilineData(input) || IsSearchTask(args);
+                // Determine if multiline input is needed based on learner type
+                // For explicit learner args, use the learner type; for loaded models, check data format
+                var multiline = RequiresMultilineInput(args, input);
                 using (var streamReader = Open(input))
                 {
                     if (multiline)
