@@ -40,6 +40,7 @@ namespace cs_unittest
                    args.Contains("--ccb_explore_adf") ||
                    args.Contains("--slates") ||
                    args.Contains("--cbify_ldf") ||
+                   args.Contains("--explore_eval") ||
                    args.Contains("--search_task") ||
                    args.Contains("--search ") ||
                    args.Contains("--search=") ||
@@ -89,8 +90,9 @@ namespace cs_unittest
             if (args.Contains("-i ") || args.Contains("--initial_regressor"))
                 return IsMultilineData(input);
 
-            // Default: check data format for backwards compatibility
-            return IsMultilineData(input);
+            // Default: VW's default learner (gd/sgd) is singleline
+            // Empty lines in data should be skipped, not treated as multiline separators
+            return false;
         }
 
         private static bool IsCsvInput(string args)
@@ -104,8 +106,21 @@ namespace cs_unittest
             return IsCsvInput(args) && !args.Contains("--csv_no_file_header");
         }
 
+        private static string StripShellOnlyOptions(string args)
+        {
+            // These options are only valid for the VW command-line shell, not the library API
+            // --onethread: controls shell's thread pool (library doesn't have one)
+            return args.Replace("--onethread", "").Replace("  ", " ").Trim();
+        }
+
         public static void ExecuteTest(int testCaseNr, string args, string input, string stderr, string predictFile)
         {
+            // Track if --onethread was specified (affects SVRG and other algorithms)
+            var useOneThread = args.Contains("--onethread");
+
+            // Strip shell-only options that aren't recognized by the library
+            args = StripShellOnlyOptions(args);
+
             var isJson = args.Contains("--json") || args.Contains("--dsjson");
             if (isJson)
             {
@@ -116,7 +131,15 @@ namespace cs_unittest
             // CSV input is handled natively by VW - use Driver() instead of line-by-line
             if (IsCsvInput(args))
             {
-                ExecuteTestWithDriver(testCaseNr, args, input, stderr, predictFile);
+                ExecuteTestWithDriver(testCaseNr, args, input, stderr, predictFile, useOneThread);
+                return;
+            }
+
+            // Multi-pass learning (e.g., SVRG, BFGS) requires the parser to re-read from cache
+            // Line-by-line processing doesn't work - must use Driver()
+            if (args.Contains("--passes") || args.Contains("-c"))
+            {
+                ExecuteTestWithDriver(testCaseNr, args, input, stderr, predictFile, useOneThread);
                 return;
             }
 
@@ -217,12 +240,15 @@ namespace cs_unittest
             }
         }
 
-        public static void ExecuteTestWithDriver(int testCaseNr, string args, string input, string stderr, string predictFile)
+        public static void ExecuteTestWithDriver(int testCaseNr, string args, string input, string stderr, string predictFile, bool useOneThread = false)
         {
             // Use VW's native Driver() for formats like CSV that need native parsing
             using (var vw = new VowpalWabbit(args))
             {
-                vw.Driver();
+                if (useOneThread)
+                    vw.DriverOneThread();
+                else
+                    vw.Driver();
 
                 if (!string.IsNullOrWhiteSpace(stderr) && File.Exists(stderr))
                     VWTestHelper.AssertEqual(stderr, vw.PerformanceStatistics);
