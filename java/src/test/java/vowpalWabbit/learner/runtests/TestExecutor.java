@@ -108,8 +108,10 @@ public class TestExecutor {
             args = args + " --quiet";
         }
 
-        // Remove cache file option (we don't use caching in tests)
-        args = args.replaceAll("-c\\s*", "");
+        // Remove cache options (we don't use caching in tests)
+        // Must match -c and --cache as whole tokens to avoid stripping -c from --csoaa, --cubic, etc.
+        args = args.replaceAll("(^| )-c( |$)", "$1$2");
+        args = args.replaceAll("(^| )--cache( |$)", "$1$2");
         args = args.replaceAll("--cache_file\\s+\\S+", "");
 
         // Remove holdout_off as it may cause issues
