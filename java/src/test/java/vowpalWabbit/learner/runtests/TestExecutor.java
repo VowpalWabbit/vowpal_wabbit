@@ -26,6 +26,14 @@ public class TestExecutor {
     }
 
     /**
+     * Convert a path to a forward-slash string suitable for VW arguments.
+     * Windows backslashes are interpreted as escape characters by VW's parser.
+     */
+    private static String toVWPath(Path path) {
+        return path.toString().replace('\\', '/');
+    }
+
+    /**
      * Execute a test case and all its dependencies.
      */
     public void executeTest(TestCase testCase) throws Exception {
@@ -130,7 +138,7 @@ public class TestExecutor {
         String args = tc.getArguments();
 
         // Resolve -d to absolute path
-        args = args.replaceAll("-d\\s+\\S+", "-d " + inputPath.toString());
+        args = args.replaceAll("-d\\s+\\S+", "-d " + Matcher.quoteReplacement(toVWPath(inputPath)));
 
         // Resolve -i (initial regressor) path
         if (tc.hasInitialRegressor()) {
@@ -140,22 +148,22 @@ public class TestExecutor {
         // Resolve -f (final regressor) path to work directory
         if (tc.hasFinalRegressor()) {
             Path modelPath = workDir.resolve(tc.getFinalRegressor());
-            args = args.replaceAll("-f\\s+\\S+", "-f " + modelPath.toString());
+            args = args.replaceAll("-f\\s+\\S+", "-f " + Matcher.quoteReplacement(toVWPath(modelPath)));
         }
 
         // Redirect -p (predictions) to work directory
         Path predictOutPath = workDir.resolve("test_" + tc.getId() + ".predict");
         if (args.matches(".*-p\\s+\\S+.*")) {
-            args = args.replaceAll("-p\\s+\\S+", "-p " + predictOutPath.toString());
+            args = args.replaceAll("-p\\s+\\S+", "-p " + Matcher.quoteReplacement(toVWPath(predictOutPath)));
         }
 
         // Redirect --cache_file to work directory, or add one if -c/--cache is present
         if (args.matches(".*--cache_file\\s+\\S+.*")) {
             Path cacheFile = workDir.resolve("test_" + tc.getId() + ".cache");
-            args = args.replaceAll("--cache_file\\s+\\S+", "--cache_file " + cacheFile.toString());
+            args = args.replaceAll("--cache_file\\s+\\S+", "--cache_file " + Matcher.quoteReplacement(toVWPath(cacheFile)));
         } else if (args.matches(".*(^| )-c( |$).*") || args.contains("--cache")) {
             Path cacheFile = workDir.resolve("test_" + tc.getId() + ".cache");
-            args = args + " --cache_file " + cacheFile.toString();
+            args = args + " --cache_file " + toVWPath(cacheFile);
         }
 
         // Resolve remaining file path arguments relative to testRoot
@@ -230,7 +238,7 @@ public class TestExecutor {
             modelPath = testRoot.resolve(modelName);
         }
         return args.replaceAll(Pattern.quote(option) + "\\s+\\S+",
-            Matcher.quoteReplacement(option + " " + modelPath.toString()));
+            Matcher.quoteReplacement(option + " " + toVWPath(modelPath)));
     }
 
     /**
@@ -245,7 +253,7 @@ public class TestExecutor {
             if (modelPath == null) {
                 modelPath = testRoot.resolve(modelName);
             }
-            args = args.substring(0, m.start()) + option + " " + modelPath.toString() + args.substring(m.end());
+            args = args.substring(0, m.start()) + option + " " + toVWPath(modelPath) + args.substring(m.end());
         }
         return args;
     }
@@ -263,9 +271,9 @@ public class TestExecutor {
             Matcher m = p.matcher(args);
             if (m.find()) {
                 String value = m.group(1);
-                if (!value.startsWith("/")) {
+                if (!Paths.get(value).isAbsolute()) {
                     Path resolved = testRoot.resolve(value);
-                    args = args.substring(0, m.start()) + opt + " " + resolved.toString() + args.substring(m.end());
+                    args = args.substring(0, m.start()) + opt + " " + toVWPath(resolved) + args.substring(m.end());
                 }
             }
         }
@@ -282,9 +290,9 @@ public class TestExecutor {
             Matcher m = p.matcher(args);
             if (m.find()) {
                 String value = m.group(1);
-                if (!value.startsWith("/")) {
+                if (!Paths.get(value).isAbsolute()) {
                     Path resolved = workDir.resolve(value);
-                    args = args.substring(0, m.start()) + opt + " " + resolved.toString() + args.substring(m.end());
+                    args = args.substring(0, m.start()) + opt + " " + toVWPath(resolved) + args.substring(m.end());
                 }
             }
         }

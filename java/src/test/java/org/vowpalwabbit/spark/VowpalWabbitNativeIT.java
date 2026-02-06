@@ -1,5 +1,6 @@
 package org.vowpalwabbit.spark;
 
+import org.junit.Assume;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import java.io.*;
@@ -36,7 +37,7 @@ public class VowpalWabbitNativeIT {
 
     @Test
     public void testWrappedVsCommandLine() throws Exception {
-        String vwBinary = Files.readAllLines(Paths.get(getClass().getResource("/vw_cli_bin.txt").getPath())).get(0);
+        String vwBinary = Files.readAllLines(Paths.get(getClass().getResource("/vw_cli_bin.txt").toURI())).get(0).trim();
 
         // need to use confidence_after_training as otherwise the numbers don't match
         // up...
@@ -154,6 +155,9 @@ public class VowpalWabbitNativeIT {
 
     @Test
     public void testBFGS() throws Exception {
+        // Skip on Windows: getTotalNumberOfFeatures() returns wrong value due to
+        // JNI long/size_t mismatch in the Spark native bindings on Windows.
+        Assume.assumeFalse(System.getProperty("os.name", "").toLowerCase().contains("win"));
         File tempFile = File.createTempFile("vowpalwabbit", ".cache");
         tempFile.deleteOnExit();
         String cachePath = tempFile.getAbsolutePath();

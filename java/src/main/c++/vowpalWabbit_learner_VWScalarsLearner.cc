@@ -8,7 +8,7 @@ jfloatArray scalars_predictor(example* vec, JNIEnv* env)
   auto& scalars = vec->pred.scalars;
   size_t num_values = scalars.size();
   jfloatArray r = env->NewFloatArray(num_values);
-  env->SetFloatArrayRegion(r, 0, num_values, (float*)scalars.begin());
+  env->SetFloatArrayRegion(r, 0, num_values, reinterpret_cast<const jfloat*>(scalars.begin()));
   return r;
 }
 

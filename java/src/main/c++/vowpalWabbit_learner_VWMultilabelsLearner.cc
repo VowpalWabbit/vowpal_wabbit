@@ -8,7 +8,7 @@ jobject multilabel_predictor(example* vec, JNIEnv* env)
   auto& labels = vec->pred.multilabels.label_v;
   size_t num_values = labels.size();
   jintArray j_labels = env->NewIntArray(num_values);
-  env->SetIntArrayRegion(j_labels, 0, num_values, (int*)labels.begin());
+  env->SetIntArrayRegion(j_labels, 0, num_values, reinterpret_cast<const jint*>(labels.begin()));
 
   jclass clazz = env->FindClass("vowpalWabbit/responses/Multilabels");
   jmethodID constructor = env->GetMethodID(clazz, "<init>", "([I)V");
