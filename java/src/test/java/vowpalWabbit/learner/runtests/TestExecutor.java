@@ -55,9 +55,11 @@ public class TestExecutor {
     }
 
     /**
-     * Execute a multi-pass test.
-     * Pass 1 is done manually (populates the cache). close() triggers
-     * performRemainingPasses() which uses generic_driver() for passes 2-N.
+     * Execute a multi-pass test using the VW driver.
+     * The driver starts the parser which reads the data file (-d), handles
+     * caching, and processes all passes automatically. This matches the C#
+     * bindings' ExecuteTestWithDriver() approach and correctly handles both
+     * single-line and multiline learners (e.g., cb_adf).
      */
     private void executeMultiPassTest(TestCase tc, Path inputPath) throws Exception {
         String args = prepareMultiPassArguments(tc, inputPath);
@@ -68,15 +70,11 @@ public class TestExecutor {
             Files.createDirectories(modelPath.getParent());
         }
 
-        // Create learner. close() will call performRemainingPasses() + finish()
-        // which handles passes 2-N and saves the model via -f.
+        // Let the driver handle all passes. close() will call finish()
+        // which saves the model via -f. runDriver() sets numpasses=1
+        // so performRemainingPasses() in close() is a no-op.
         try (VWLearner learner = createLearner(args)) {
-            // Feed examples manually for pass 1 to populate the cache.
-            if (learner.isMultiline()) {
-                executeMultiline(learner, inputPath, tc.isTestOnly());
-            } else {
-                executeSingleLine(learner, inputPath, tc.isTestOnly(), null);
-            }
+            learner.runDriver();
         }
 
         // Register model in cache for dependent tests

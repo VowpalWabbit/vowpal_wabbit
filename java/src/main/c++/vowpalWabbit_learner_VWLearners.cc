@@ -42,6 +42,23 @@ JNIEXPORT void JNICALL Java_vowpalWabbit_learner_VWLearners_performRemainingPass
   }
 }
 
+JNIEXPORT void JNICALL Java_vowpalWabbit_learner_VWLearners_runDriver(JNIEnv* env, jclass obj, jlong vwPtr)
+{
+  try
+  {
+    VW::workspace* vwInstance = (VW::workspace*)vwPtr;
+    VW::start_parser(*vwInstance);
+    VW::LEARNER::generic_driver(*vwInstance);
+    VW::end_parser(*vwInstance);
+    // Prevent performRemainingPasses from re-running during close()
+    vwInstance->runtime_config.numpasses = 1;
+  }
+  catch (...)
+  {
+    rethrow_cpp_exception_as_java_exception(env);
+  }
+}
+
 JNIEXPORT void JNICALL Java_vowpalWabbit_learner_VWLearners_closeInstance(JNIEnv* env, jclass obj, jlong vwPtr)
 {
   try

@@ -39,10 +39,7 @@ public class TestLoader {
         203,
 
         // ===== Daemon mode (not supported via library) =====
-        220,
-
-        // ===== cb_adf multipass (close/finish crash) =====
-        342
+        220
     )));
 
     private final Path testRoot;
