@@ -122,8 +122,10 @@ jobs:
       - name: Verify JAR contents
         shell: bash
         run: |
+          VERSION=$(cat version.txt | tr -d '[:space:]')
+          MAIN_JAR="java/target/vw-jni-${VERSION}.jar"
           echo "=== Natives in JAR ==="
-          jar tf java/target/vw-jni-*.jar | grep natives/ | sort
+          jar tf "$MAIN_JAR" | grep natives/ | sort
           echo ""
           echo "=== All JARs ==="
           ls -lh java/target/vw-jni-*.jar
