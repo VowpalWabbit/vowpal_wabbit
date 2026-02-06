@@ -48,4 +48,16 @@ public interface VWLearner extends Closeable {
     Callable<Boolean> closer();
 
     void saveModel(File filename);
+
+    /**
+     * @return true if the underlying VW learner requires multiline examples.
+     */
+    boolean isMultiline();
+
+    /**
+     * Run the VW driver, which starts the parser and processes all passes.
+     * Use this for multi-pass learning where the data file is specified via -d.
+     * The parser handles reading the data file, caching, and all passes automatically.
+     */
+    void runDriver();
 }

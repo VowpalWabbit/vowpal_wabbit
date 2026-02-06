@@ -11,7 +11,9 @@ JNIEXPORT jlong JNICALL Java_vowpalWabbit_learner_VWLearners_initialize(JNIEnv* 
   jlong vwPtr = 0;
   try
   {
-    VW::workspace* vwInstance = VW::initialize(env->GetStringUTFChars(command, NULL));
+    const char* utf_string = env->GetStringUTFChars(command, NULL);
+    VW::workspace* vwInstance = VW::initialize(utf_string);
+    env->ReleaseStringUTFChars(command, utf_string);
     vwPtr = (jlong)vwInstance;
   }
   catch (...)
@@ -33,6 +35,23 @@ JNIEXPORT void JNICALL Java_vowpalWabbit_learner_VWLearners_performRemainingPass
       VW::LEARNER::generic_driver(*vwInstance);
       VW::end_parser(*vwInstance);
     }
+  }
+  catch (...)
+  {
+    rethrow_cpp_exception_as_java_exception(env);
+  }
+}
+
+JNIEXPORT void JNICALL Java_vowpalWabbit_learner_VWLearners_runDriver(JNIEnv* env, jclass obj, jlong vwPtr)
+{
+  try
+  {
+    VW::workspace* vwInstance = (VW::workspace*)vwPtr;
+    VW::start_parser(*vwInstance);
+    VW::LEARNER::generic_driver(*vwInstance);
+    VW::end_parser(*vwInstance);
+    // Prevent performRemainingPasses from re-running during close()
+    vwInstance->runtime_config.numpasses = 1;
   }
   catch (...)
   {
@@ -71,6 +90,20 @@ JNIEXPORT void JNICALL Java_vowpalWabbit_learner_VWLearners_saveModel(
   }
 }
 
+JNIEXPORT jboolean JNICALL Java_vowpalWabbit_learner_VWLearners_isMultiline(JNIEnv* env, jclass obj, jlong vwPtr)
+{
+  try
+  {
+    VW::workspace* vwInstance = (VW::workspace*)vwPtr;
+    return vwInstance->l->is_multiline() ? JNI_TRUE : JNI_FALSE;
+  }
+  catch (...)
+  {
+    rethrow_cpp_exception_as_java_exception(env);
+  }
+  return JNI_FALSE;
+}
+
 JNIEXPORT jobject JNICALL Java_vowpalWabbit_learner_VWLearners_getReturnType(JNIEnv* env, jclass obj, jlong vwPtr)
 {
   jclass clVWReturnType = env->FindClass(RETURN_TYPE);
@@ -101,6 +134,18 @@ JNIEXPORT jobject JNICALL Java_vowpalWabbit_learner_VWLearners_getReturnType(JNI
       break;
     case VW::prediction_type_t::DECISION_PROBS:
       field = env->GetStaticFieldID(clVWReturnType, "DecisionProbs", RETURN_TYPE_INSTANCE);
+      break;
+    case VW::prediction_type_t::ACTION_PDF_VALUE:
+      field = env->GetStaticFieldID(clVWReturnType, "ActionPDFValue", RETURN_TYPE_INSTANCE);
+      break;
+    case VW::prediction_type_t::PDF:
+      field = env->GetStaticFieldID(clVWReturnType, "PDF", RETURN_TYPE_INSTANCE);
+      break;
+    case VW::prediction_type_t::ACTIVE_MULTICLASS:
+      field = env->GetStaticFieldID(clVWReturnType, "ActiveMulticlass", RETURN_TYPE_INSTANCE);
+      break;
+    case VW::prediction_type_t::NOPRED:
+      field = env->GetStaticFieldID(clVWReturnType, "NoPred", RETURN_TYPE_INSTANCE);
       break;
     default:
       field = env->GetStaticFieldID(clVWReturnType, "Unknown", RETURN_TYPE_INSTANCE);

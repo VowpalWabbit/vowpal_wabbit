@@ -125,8 +125,15 @@ void decode_tag(const VW::v_array<char>& tag, char& type, int& id1, int& id2)
     idx++;
   }
   id1 = atoi(s1.c_str());
+
+  // Only relation tags (starting with 'R') have a second ID
+  if (type != 'R')
+  {
+    id2 = 0;
+    return;
+  }
+
   idx++;
-  assert(type == 'R');
   while (idx < tag.size() && tag[idx] != '_' && tag[idx] != '\0')
   {
     s2.push_back(tag[idx]);

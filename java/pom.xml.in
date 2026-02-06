@@ -58,14 +58,36 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>1.7</java.version>
+        <java.version>1.8</java.version>
+        <junit.version>5.10.0</junit.version>
     </properties>
 
     <dependencies>
+        <!-- JUnit 5 -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- JUnit 4 compatibility for existing tests -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.11</version>
+            <version>4.13.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- JSON parsing for test loader -->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.10.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -77,8 +99,15 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>16.0.1</version>
+            <version>32.1.3-jre</version>
             <scope>test</scope>
+            <exclusions>
+                <!-- Exclude listenablefuture to avoid duplicate class issues -->
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>listenablefuture</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 
@@ -119,10 +148,11 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.0</version>
+                <version>3.11.0</version>
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
+                    <release>8</release>
                 </configuration>
             </plugin>
             <plugin>
@@ -139,6 +169,10 @@
                             <rules>
                                 <banDuplicateClasses>
                                     <findAllDuplicates>true</findAllDuplicates>
+                                    <ignoreClasses>
+                                        <!-- Ignore module-info.class duplicates from Java 9+ modules -->
+                                        <ignoreClass>module-info</ignoreClass>
+                                    </ignoreClasses>
                                 </banDuplicateClasses>
                             </rules>
                             <fail>true</fail>
@@ -167,7 +201,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <version>2.19.1</version>
+                <version>3.1.2</version>
                 <executions>
                 <execution>
                     <goals>
@@ -177,13 +211,17 @@
                 </execution>
                 </executions>
                 <configuration>
-                    <argLine>-Djava.library.path=${project.build.directory}/bin/natives/linux_64</argLine>
+                    <argLine>-Xmx256m -Djava.library.path=${project.build.directory}/bin/natives/@VW_JNI_NATIVES_DIR@</argLine>
+                    <!-- Set test root for RunTests integration tests -->
+                    <systemPropertyVariables>
+                        <VW_TEST_ROOT>${project.basedir}/../test</VW_TEST_ROOT>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.17</version>
+                <version>3.1.2</version>
                 <executions>
                     <execution>
                         <id>surefire-test</id>
@@ -196,6 +234,11 @@
                 <configuration>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
 
+                    <!-- Exclude integration tests - they are run by failsafe plugin -->
+                    <excludes>
+                        <exclude>**/*IT.java</exclude>
+                    </excludes>
+
                     <!-- It's important to run tests serially because we are doing timing tests in some of the tests. -->
                     <!-- TODO: That tests may fail when executed in parallel is likely an indication of a thread-safety issue -->
                     <!-- TODO: This thread-safety issue could be on the Java or C side.  Merits future investigation. -->
@@ -203,8 +246,11 @@
                     <!--<forkMode>once</forkMode>-->
                     <forkCount>1</forkCount>
                     <reuseForks>false</reuseForks>
-                    <argLine>-Djava.library.path=${project.build.directory}/bin/natives/linux_64</argLine>
-
+                    <argLine>-Xmx256m -Djava.library.path=${project.build.directory}/bin/natives/@VW_JNI_NATIVES_DIR@</argLine>
+                    <!-- Set test root for RunTests -->
+                    <systemPropertyVariables>
+                        <VW_TEST_ROOT>${project.basedir}/../test</VW_TEST_ROOT>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
             <plugin>

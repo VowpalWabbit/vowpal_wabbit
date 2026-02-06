@@ -38,11 +38,16 @@ SOURCES
   src/main/java/vowpalWabbit/learner/VWScalarLearner.java
   src/main/java/vowpalWabbit/learner/VWScalarsLearner.java
   src/main/java/vowpalWabbit/learner/VWTypedLearner.java
+  src/main/java/vowpalWabbit/learner/VWNoPredLearner.java
+  src/main/java/vowpalWabbit/learner/VWActionPDFValueLearner.java
+  src/main/java/vowpalWabbit/learner/VWPDFLearner.java
+  src/main/java/vowpalWabbit/learner/VWActiveMulticlassLearner.java
   src/main/java/vowpalWabbit/responses/ActionProb.java
   src/main/java/vowpalWabbit/responses/ActionProbs.java
   src/main/java/vowpalWabbit/responses/ActionScore.java
   src/main/java/vowpalWabbit/responses/ActionScores.java
   src/main/java/vowpalWabbit/responses/DecisionScores.java
+  src/main/java/vowpalWabbit/responses/ActiveMulticlass.java
   src/main/java/vowpalWabbit/responses/Multilabels.java
   src/main/java/vowpalWabbit/responses/PDF.java
   src/main/java/vowpalWabbit/responses/PDFSegment.java
@@ -69,6 +74,10 @@ set(vw_jni_sources
   ${src_base}/vowpalWabbit_learner_VWProbLearner.cc
   ${src_base}/vowpalWabbit_learner_VWScalarLearner.cc
   ${src_base}/vowpalWabbit_learner_VWScalarsLearner.cc
+  ${src_base}/vowpalWabbit_learner_VWNoPredLearner.cc
+  ${src_base}/vowpalWabbit_learner_VWActionPDFValueLearner.cc
+  ${src_base}/vowpalWabbit_learner_VWPDFLearner.cc
+  ${src_base}/vowpalWabbit_learner_VWActiveMulticlassLearner.cc
   ${src_base}/vowpalWabbit_VW.cc
   ${src_base}/jni_spark_vw.cc
   ${src_base}/jni_spark_cluster.cc
@@ -86,16 +95,35 @@ target_include_directories(vw_jni PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${JNI_INCLUDE_DIRS})
 
+# Determine platform-specific natives directory
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64")
+    set(VW_JNI_NATIVES_DIR "linux_arm64")
+  else()
+    set(VW_JNI_NATIVES_DIR "linux_64")
+  endif()
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64")
+    set(VW_JNI_NATIVES_DIR "macos_arm64")
+  else()
+    set(VW_JNI_NATIVES_DIR "macos_x64")
+  endif()
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  set(VW_JNI_NATIVES_DIR "windows_64")
+else()
+  set(VW_JNI_NATIVES_DIR "unknown")
+  message(WARNING "Unknown platform for Java natives: ${CMAKE_SYSTEM_NAME}")
+endif()
+
 # Ensure target directory exists
-file(MAKE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/target/bin/natives/linux_64/)
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/target/bin/natives/${VW_JNI_NATIVES_DIR}/)
 add_custom_command(TARGET vw_jni POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:vw_jni> ${CMAKE_CURRENT_SOURCE_DIR}/target/bin/natives/linux_64/
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:vw_jni> ${CMAKE_CURRENT_SOURCE_DIR}/target/bin/natives/${VW_JNI_NATIVES_DIR}/
 )
 
-if(${CMAKE_EXECUTABLE_FORMAT} MATCHES "ELF")
-  # enable-new-dtags and rpath enables shared object library lookup in the location of libvw_spark_jni.so
-  # dtags are an ELF feature
-  target_link_libraries(vw_jni PUBLIC -Wl,--enable-new-dtags)
+# Enable new dtags for RPATH on Linux only (ELF-specific feature)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  target_link_options(vw_jni PRIVATE "-Wl,--enable-new-dtags")
 endif()
 
 # Replace version number in POM
@@ -105,21 +133,19 @@ if(NOT WIN32)
   # Ensure target directory exists
   file(MAKE_DIRECTORY target/classes)
   file(MAKE_DIRECTORY target/test-classes)
-  file(MAKE_DIRECTORY target/bin/natives/linux_64)
+  file(MAKE_DIRECTORY target/bin/natives/${VW_JNI_NATIVES_DIR})
 
-  if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set(JAVA_INSTALL_PATH /Library/Java/Extensions)
   else()
     set(JAVA_INSTALL_PATH /usr/lib)
   endif()
 
   add_custom_command(TARGET vw_jni POST_BUILD
-      COMMAND cp $<TARGET_FILE:vw_jni> target/bin/natives/linux_64
+      COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:vw_jni> target/bin/natives/${VW_JNI_NATIVES_DIR}/
       COMMAND echo $<TARGET_FILE:vw_cli_bin> > ${CMAKE_CURRENT_SOURCE_DIR}/target/test-classes/vw_cli_bin.txt
-      # -B is batch mode and avoids the massive download progress print out
-      COMMAND mvn -B verify
       WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-      COMMENT "Copying shared libary dependencies to output directory")
+      COMMENT "Copying shared library to output directory: target/bin/natives/${VW_JNI_NATIVES_DIR}/")
 
   # Replace version number in POM
   configure_file(pom.xml.in ${CMAKE_CURRENT_SOURCE_DIR}/pom.xml @ONLY)
