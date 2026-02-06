@@ -13,7 +13,8 @@ jobject active_multiclass_prediction(example* vec, JNIEnv* env)
   jintArray j_classes = env->NewIntArray(num_classes);
   if (num_classes > 0)
   {
-    env->SetIntArrayRegion(j_classes, 0, num_classes, (jint*)am.more_info_required_for_classes.begin());
+    env->SetIntArrayRegion(
+        j_classes, 0, num_classes, reinterpret_cast<const jint*>(am.more_info_required_for_classes.begin()));
   }
 
   jclass clazz = env->FindClass("vowpalWabbit/responses/ActiveMulticlass");

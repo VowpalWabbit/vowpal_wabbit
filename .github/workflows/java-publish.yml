@@ -23,6 +23,7 @@ jobs:
           - { os: ubuntu-24.04-arm, name: linux_arm64 }
           - { os: macos-14,         name: macos_arm64 }
           - { os: macos-15-intel,   name: macos_x64 }
+          - { os: windows-latest,   name: windows_64 }
     steps:
       - uses: actions/checkout@v6
         with:
@@ -43,6 +44,10 @@ jobs:
       - name: Install dependencies (macOS)
         if: startsWith(matrix.config.os, 'macos')
         run: brew install ninja
+
+      - name: Set up MSVC (Windows)
+        if: startsWith(matrix.config.os, 'windows')
+        uses: ilammy/msvc-dev-cmd@v1
 
       - name: Configure CMake
         shell: bash
@@ -97,7 +102,7 @@ jobs:
           echo "=== Native libraries ==="
           find java/target/bin/natives/ -type f | sort
           echo ""
-          for platform in linux_64 linux_arm64 macos_arm64 macos_x64; do
+          for platform in linux_64 linux_arm64 macos_arm64 macos_x64 windows_64; do
             count=$(find "java/target/bin/natives/$platform" -type f 2>/dev/null | wc -l)
             if [ "$count" -eq 0 ]; then
               echo "ERROR: Missing native library for $platform"

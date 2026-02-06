@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-14]
+        os: [ubuntu-latest, macos-14, windows-latest]
     steps:
       - uses: actions/checkout@v6
         with:
@@ -58,14 +58,18 @@ jobs:
         run: |
           brew install ninja boost
 
+      - name: Set up MSVC (Windows)
+        if: startsWith(matrix.os, 'windows')
+        uses: ilammy/msvc-dev-cmd@v1
+
       - name: Configure CMake
+        shell: bash
         run: |
-          cmake -S . -B build -G Ninja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DBUILD_JAVA=On \
-            -DBUILD_TESTING=Off \
-            -DVW_FEAT_FLATBUFFERS=Off \
-            -DVW_FEAT_CSV=On
+          CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DBUILD_JAVA=On -DBUILD_TESTING=Off -DVW_FEAT_FLATBUFFERS=Off -DVW_FEAT_CSV=On"
+          if [[ "${{ matrix.os }}" == windows-* ]]; then
+            CMAKE_ARGS="$CMAKE_ARGS -DRAPIDJSON_SYS_DEP=Off -DFMT_SYS_DEP=Off -DSPDLOG_SYS_DEP=Off -DVW_ZLIB_SYS_DEP=Off -DVW_BOOST_MATH_SYS_DEP=Off"
+          fi
+          cmake -S . -B build -G Ninja $CMAKE_ARGS
 
       - name: Build VW core and CLI
         run: cmake --build build -t vw_cli_bin
@@ -74,6 +78,7 @@ jobs:
         run: cmake --build build -t vw_jni
 
       - name: Run Java tests
+        shell: bash
         working-directory: java
         run: |
           # The CMake build copies the library and configures pom.xml

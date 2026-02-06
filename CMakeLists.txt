@@ -234,7 +234,7 @@ if(VW_GCOV AND (NOT CMAKE_BUILD_TYPE STREQUAL "Debug"))
   message(FATAL_ERROR "VW_GCOV requires Debug build type.")
 endif()
 
-if(WIN32 AND (STATIC_LINK_VW OR BUILD_JAVA OR VW_GOV))
+if(WIN32 AND (STATIC_LINK_VW OR VW_GCOV))
   message(FATAL_ERROR "Unsupported option enabled on Windows build")
 endif()
 

@@ -129,26 +129,17 @@ endif()
 # Replace version number in POM
 configure_file(pom.xml.in ${CMAKE_CURRENT_SOURCE_DIR}/pom.xml @ONLY)
 
-if(NOT WIN32)
-  # Ensure target directory exists
-  file(MAKE_DIRECTORY target/classes)
-  file(MAKE_DIRECTORY target/test-classes)
-  file(MAKE_DIRECTORY target/bin/natives/${VW_JNI_NATIVES_DIR})
+# Write vw_cli_bin path for integration tests (using file(GENERATE) for cross-platform support)
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/target/test-classes)
+file(GENERATE OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/target/test-classes/vw_cli_bin.txt
+    CONTENT "$<TARGET_FILE:vw_cli_bin>\n")
 
+if(NOT WIN32)
   if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set(JAVA_INSTALL_PATH /Library/Java/Extensions)
   else()
     set(JAVA_INSTALL_PATH /usr/lib)
   endif()
-
-  add_custom_command(TARGET vw_jni POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:vw_jni> target/bin/natives/${VW_JNI_NATIVES_DIR}/
-      COMMAND echo $<TARGET_FILE:vw_cli_bin> > ${CMAKE_CURRENT_SOURCE_DIR}/target/test-classes/vw_cli_bin.txt
-      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-      COMMENT "Copying shared library to output directory: target/bin/natives/${VW_JNI_NATIVES_DIR}/")
-
-  # Replace version number in POM
-  configure_file(pom.xml.in ${CMAKE_CURRENT_SOURCE_DIR}/pom.xml @ONLY)
 
   if(VW_INSTALL)
       install(TARGETS vw_jni
@@ -156,5 +147,4 @@ if(NOT WIN32)
       LIBRARY DESTINATION ${JAVA_INSTALL_PATH}
       )
   endif()
-
 endif()
