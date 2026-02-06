@@ -64,7 +64,8 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release \
             -DBUILD_JAVA=On \
             -DBUILD_TESTING=Off \
-            -DVW_FEAT_FLATBUFFERS=Off
+            -DVW_FEAT_FLATBUFFERS=Off \
+            -DVW_FEAT_CSV=On
 
       - name: Build VW core and CLI
         run: cmake --build build -t vw_cli_bin
