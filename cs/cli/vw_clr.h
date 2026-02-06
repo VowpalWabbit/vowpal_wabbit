@@ -4,6 +4,24 @@
 
 #pragma once
 
+// ============================================================================
+// DEPRECATION NOTICE
+// ============================================================================
+// The C++/CLI bindings are deprecated and will be removed in a future release.
+// Please migrate to the cross-platform .NET Standard bindings in cs/vw.net/
+// which support .NET Framework 4.6.1+, .NET Core 2.0+, and .NET 5+.
+//
+// The .NET Standard bindings provide the same functionality and work on
+// Windows, Linux, and macOS.
+//
+// See: https://github.com/VowpalWabbit/vowpal_wabbit/tree/master/cs
+// ============================================================================
+// clang-format off
+#pragma message("WARNING: The C++/CLI bindings (VowpalWabbit.Core from cs/cli/) are deprecated. " \
+                "Please migrate to the cross-platform .NET Standard bindings in cs/vw.net/. "     \
+                "See https://github.com/VowpalWabbit/vowpal_wabbit/tree/master/cs for details.")
+// clang-format on
+
 #ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
 #endif
