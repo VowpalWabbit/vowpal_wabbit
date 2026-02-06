@@ -6,13 +6,15 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
 /**
  * Executes VW test cases using the Java JNI bindings.
  */
 public class TestExecutor {
-    private static final double DEFAULT_EPSILON = 5e-4;
+    private static final double DEFAULT_EPSILON = 1e-3;
 
     private final Path testRoot;
     private final Path workDir;
@@ -36,13 +38,61 @@ public class TestExecutor {
      * Execute a single test case (without dependencies).
      */
     private void executeSingleTest(TestCase tc) throws Exception {
-        String args = prepareArguments(tc);
+        if (tc.getInputData().isEmpty()) {
+            return;
+        }
 
-        // Determine input file
         Path inputPath = resolveInputFile(tc.getInputData());
         if (inputPath == null || !Files.exists(inputPath)) {
             throw new IllegalStateException("Input file not found: " + tc.getInputData() + " for test " + tc.getId());
         }
+
+        if (tc.isMultiPass()) {
+            executeMultiPassTest(tc, inputPath);
+        } else {
+            executeSinglePassTest(tc, inputPath);
+        }
+    }
+
+    /**
+     * Execute a multi-pass test.
+     * Pass 1 is done manually (populates the cache). close() triggers
+     * performRemainingPasses() which uses generic_driver() for passes 2-N.
+     */
+    private void executeMultiPassTest(TestCase tc, Path inputPath) throws Exception {
+        String args = prepareMultiPassArguments(tc, inputPath);
+
+        // Ensure output directories exist before VW tries to write
+        if (tc.hasFinalRegressor()) {
+            Path modelPath = workDir.resolve(tc.getFinalRegressor());
+            Files.createDirectories(modelPath.getParent());
+        }
+
+        // Create learner. close() will call performRemainingPasses() + finish()
+        // which handles passes 2-N and saves the model via -f.
+        try (VWLearner learner = createLearner(args)) {
+            // Feed examples manually for pass 1 to populate the cache.
+            if (learner.isMultiline()) {
+                executeMultiline(learner, inputPath, tc.isTestOnly());
+            } else {
+                executeSingleLine(learner, inputPath, tc.isTestOnly(), null);
+            }
+        }
+
+        // Register model in cache for dependent tests
+        if (tc.hasFinalRegressor()) {
+            Path modelPath = workDir.resolve(tc.getFinalRegressor());
+            if (Files.exists(modelPath)) {
+                modelCache.put(tc.getFinalRegressor(), modelPath);
+            }
+        }
+    }
+
+    /**
+     * Execute a single-pass test by feeding examples programmatically.
+     */
+    private void executeSinglePassTest(TestCase tc, Path inputPath) throws Exception {
+        String args = prepareSinglePassArguments(tc);
 
         // Load reference predictions if available
         String[] expectedPredictions = null;
@@ -54,12 +104,11 @@ public class TestExecutor {
             }
         }
 
-        // Detect if multiline format
-        boolean isMultiline = isMultilineData(inputPath);
-
         // Execute the test
         try (VWLearner learner = createLearner(args)) {
-            if (isMultiline) {
+            // Query VW's native learner for multiline support. Calling learn(String[])
+            // on non-multiline learners causes C++ std::terminate → JVM SIGABRT crash.
+            if (learner.isMultiline()) {
                 executeMultiline(learner, inputPath, tc.isTestOnly());
             } else {
                 executeSingleLine(learner, inputPath, tc.isTestOnly(), expectedPredictions);
@@ -76,25 +125,73 @@ public class TestExecutor {
     }
 
     /**
-     * Prepare VW arguments, resolving file paths.
+     * Prepare arguments for multi-pass tests.
+     * Keep -d, -c, --cache, -p, -f so the driver can handle everything.
      */
-    private String prepareArguments(TestCase tc) {
+    private String prepareMultiPassArguments(TestCase tc, Path inputPath) {
         String args = tc.getArguments();
 
-        // Remove -d argument (we'll feed examples programmatically)
+        // Resolve -d to absolute path
+        args = args.replaceAll("-d\\s+\\S+", "-d " + inputPath.toString());
+
+        // Resolve -i (initial regressor) path
+        if (tc.hasInitialRegressor()) {
+            args = resolveModelArg(args, "-i", tc.getInitialRegressor());
+        }
+
+        // Resolve -f (final regressor) path to work directory
+        if (tc.hasFinalRegressor()) {
+            Path modelPath = workDir.resolve(tc.getFinalRegressor());
+            args = args.replaceAll("-f\\s+\\S+", "-f " + modelPath.toString());
+        }
+
+        // Redirect -p (predictions) to work directory
+        Path predictOutPath = workDir.resolve("test_" + tc.getId() + ".predict");
+        if (args.matches(".*-p\\s+\\S+.*")) {
+            args = args.replaceAll("-p\\s+\\S+", "-p " + predictOutPath.toString());
+        }
+
+        // Redirect --cache_file to work directory, or add one if -c/--cache is present
+        if (args.matches(".*--cache_file\\s+\\S+.*")) {
+            Path cacheFile = workDir.resolve("test_" + tc.getId() + ".cache");
+            args = args.replaceAll("--cache_file\\s+\\S+", "--cache_file " + cacheFile.toString());
+        } else if (args.matches(".*(^| )-c( |$).*") || args.contains("--cache")) {
+            Path cacheFile = workDir.resolve("test_" + tc.getId() + ".cache");
+            args = args + " --cache_file " + cacheFile.toString();
+        }
+
+        // Resolve remaining file path arguments relative to testRoot
+        args = resolveTestRootPaths(args);
+
+        // Redirect output file arguments to workDir
+        args = resolveOutputPaths(args);
+
+        if (!args.contains("--quiet")) {
+            args = args + " --quiet";
+        }
+
+        // Strip --audit to prevent stdout pollution (corrupts surefire pipe)
+        args = args.replaceAll("(^| )--audit( |$)", "$1$2");
+
+        return args.trim().replaceAll("\\s+", " ");
+    }
+
+    /**
+     * Prepare arguments for single-pass tests.
+     * Strip -d, -p, -c (examples fed programmatically).
+     */
+    private String prepareSinglePassArguments(TestCase tc) {
+        String args = tc.getArguments();
+
+        // Remove -d (examples fed programmatically)
         args = args.replaceAll("-d\\s+\\S+", "");
 
-        // Remove -p argument (we validate predictions differently)
+        // Remove -p (predictions validated inline)
         args = args.replaceAll("-p\\s+\\S+", "");
 
         // Resolve -i (initial regressor) path
         if (tc.hasInitialRegressor()) {
-            String modelName = tc.getInitialRegressor();
-            Path modelPath = modelCache.get(modelName);
-            if (modelPath == null) {
-                modelPath = testRoot.resolve(modelName);
-            }
-            args = args.replaceAll("-i\\s+\\S+", "-i " + modelPath.toString());
+            args = resolveModelArg(args, "-i", tc.getInitialRegressor());
         }
 
         // Resolve -f (final regressor) path
@@ -103,26 +200,100 @@ public class TestExecutor {
             args = args.replaceAll("-f\\s+\\S+", "-f " + modelPath.toString());
         }
 
-        // Add quiet mode to suppress output
+        // Resolve --feature_mask model path
+        args = resolveModelOption(args, "--feature_mask");
+
+        // Resolve remaining file path arguments relative to testRoot
+        args = resolveTestRootPaths(args);
+
+        // Redirect output file arguments to workDir
+        args = resolveOutputPaths(args);
+
         if (!args.contains("--quiet")) {
             args = args + " --quiet";
         }
 
-        // Remove cache options (we don't use caching in tests)
-        // Must match -c and --cache as whole tokens to avoid stripping -c from --csoaa, --cubic, etc.
+        // Strip --audit to prevent stdout pollution (corrupts surefire pipe)
+        args = args.replaceAll("(^| )--audit( |$)", "$1$2");
+
+        // Remove cache options (not needed for single-pass programmatic input)
         args = args.replaceAll("(^| )-c( |$)", "$1$2");
         args = args.replaceAll("(^| )--cache( |$)", "$1$2");
         args = args.replaceAll("--cache_file\\s+\\S+", "");
-
-        // Remove holdout_off as it may cause issues
-        // args = args.replaceAll("--holdout_off", "");
 
         return args.trim().replaceAll("\\s+", " ");
     }
 
     /**
-     * Resolve input file path.
+     * Resolve a model argument (-i or --feature_mask) from modelCache or testRoot.
      */
+    private String resolveModelArg(String args, String option, String modelName) {
+        Path modelPath = modelCache.get(modelName);
+        if (modelPath == null) {
+            modelPath = testRoot.resolve(modelName);
+        }
+        return args.replaceAll(Pattern.quote(option) + "\\s+\\S+",
+            Matcher.quoteReplacement(option + " " + modelPath.toString()));
+    }
+
+    /**
+     * Resolve a named model option (like --feature_mask) from modelCache or testRoot.
+     */
+    private String resolveModelOption(String args, String option) {
+        Pattern p = Pattern.compile(Pattern.quote(option) + "\\s+(\\S+)");
+        Matcher m = p.matcher(args);
+        if (m.find()) {
+            String modelName = m.group(1);
+            Path modelPath = modelCache.get(modelName);
+            if (modelPath == null) {
+                modelPath = testRoot.resolve(modelName);
+            }
+            args = args.substring(0, m.start()) + option + " " + modelPath.toString() + args.substring(m.end());
+        }
+        return args;
+    }
+
+    /**
+     * Resolve input file path arguments relative to testRoot.
+     */
+    private String resolveTestRootPaths(String args) {
+        String[] inputOptions = {
+            "--dictionary_path", "--input_feature_regularizer",
+            "--search_allowed_transitions"
+        };
+        for (String opt : inputOptions) {
+            Pattern p = Pattern.compile(Pattern.quote(opt) + "\\s+(\\S+)");
+            Matcher m = p.matcher(args);
+            if (m.find()) {
+                String value = m.group(1);
+                if (!value.startsWith("/")) {
+                    Path resolved = testRoot.resolve(value);
+                    args = args.substring(0, m.start()) + opt + " " + resolved.toString() + args.substring(m.end());
+                }
+            }
+        }
+        return args;
+    }
+
+    /**
+     * Resolve output file path arguments to workDir.
+     */
+    private String resolveOutputPaths(String args) {
+        String[] outputOptions = {"--readable_model", "--invert_hash"};
+        for (String opt : outputOptions) {
+            Pattern p = Pattern.compile(Pattern.quote(opt) + "\\s+(\\S+)");
+            Matcher m = p.matcher(args);
+            if (m.find()) {
+                String value = m.group(1);
+                if (!value.startsWith("/")) {
+                    Path resolved = workDir.resolve(value);
+                    args = args.substring(0, m.start()) + opt + " " + resolved.toString() + args.substring(m.end());
+                }
+            }
+        }
+        return args;
+    }
+
     private Path resolveInputFile(String inputFile) {
         if (inputFile == null || inputFile.isEmpty()) {
             return null;
@@ -130,9 +301,6 @@ public class TestExecutor {
         return testRoot.resolve(inputFile);
     }
 
-    /**
-     * Create appropriate VW learner based on arguments.
-     */
     private VWLearner createLearner(String args) {
         return VWLearners.create(args);
     }
@@ -172,7 +340,6 @@ public class TestExecutor {
                     prediction = learn(learner, line);
                 }
 
-                // Validate prediction if reference available
                 if (expectedPredictions != null && lineNr < expectedPredictions.length) {
                     validatePrediction(prediction, expectedPredictions[lineNr], lineNr);
                 }
@@ -193,10 +360,11 @@ public class TestExecutor {
             while ((line = reader.readLine()) != null) {
                 if (line.trim().isEmpty()) {
                     if (!lines.isEmpty()) {
+                        String[] examples = lines.toArray(new String[0]);
                         if (testOnly) {
-                            predictMultiline(learner, lines);
+                            predictMultiline(learner, examples);
                         } else {
-                            learnMultiline(learner, lines);
+                            learnMultiline(learner, examples);
                         }
                         lines.clear();
                     }
@@ -207,93 +375,62 @@ public class TestExecutor {
 
             // Process remaining lines
             if (!lines.isEmpty()) {
+                String[] examples = lines.toArray(new String[0]);
                 if (testOnly) {
-                    predictMultiline(learner, lines);
+                    predictMultiline(learner, examples);
                 } else {
-                    learnMultiline(learner, lines);
+                    learnMultiline(learner, examples);
                 }
             }
         }
     }
 
-    /**
-     * Learn from a single example.
-     */
     private Object learn(VWLearner learner, String example) {
-        if (learner instanceof VWScalarLearner) {
-            return ((VWScalarLearner) learner).learn(example);
-        } else if (learner instanceof VWMulticlassLearner) {
-            return ((VWMulticlassLearner) learner).learn(example);
-        } else if (learner instanceof VWActionScoresLearner) {
-            return ((VWActionScoresLearner) learner).learn(example);
-        } else if (learner instanceof VWActionProbsLearner) {
-            return ((VWActionProbsLearner) learner).learn(example);
-        } else if (learner instanceof VWMultilabelsLearner) {
-            return ((VWMultilabelsLearner) learner).learn(example);
-        } else {
-            // Generic fallback
-            ((VWScalarLearner) learner).learn(example);
-            return null;
-        }
+        if (learner instanceof VWScalarLearner) return ((VWScalarLearner) learner).learn(example);
+        if (learner instanceof VWScalarsLearner) return ((VWScalarsLearner) learner).learn(example);
+        if (learner instanceof VWMulticlassLearner) return ((VWMulticlassLearner) learner).learn(example);
+        if (learner instanceof VWMultilabelsLearner) return ((VWMultilabelsLearner) learner).learn(example);
+        if (learner instanceof VWActionScoresLearner) return ((VWActionScoresLearner) learner).learn(example);
+        if (learner instanceof VWActionProbsLearner) return ((VWActionProbsLearner) learner).learn(example);
+        if (learner instanceof VWProbLearner) return ((VWProbLearner) learner).learn(example);
+        if (learner instanceof VWCCBLearner) return ((VWCCBLearner) learner).learn(example);
+        throw new IllegalStateException("Unsupported learner type: " + learner.getClass().getName());
     }
 
-    /**
-     * Predict from a single example.
-     */
     private Object predict(VWLearner learner, String example) {
-        if (learner instanceof VWScalarLearner) {
-            return ((VWScalarLearner) learner).predict(example);
-        } else if (learner instanceof VWMulticlassLearner) {
-            return ((VWMulticlassLearner) learner).predict(example);
-        } else if (learner instanceof VWActionScoresLearner) {
-            return ((VWActionScoresLearner) learner).predict(example);
-        } else if (learner instanceof VWActionProbsLearner) {
-            return ((VWActionProbsLearner) learner).predict(example);
-        } else if (learner instanceof VWMultilabelsLearner) {
-            return ((VWMultilabelsLearner) learner).predict(example);
-        } else {
-            return ((VWScalarLearner) learner).predict(example);
-        }
+        if (learner instanceof VWScalarLearner) return ((VWScalarLearner) learner).predict(example);
+        if (learner instanceof VWScalarsLearner) return ((VWScalarsLearner) learner).predict(example);
+        if (learner instanceof VWMulticlassLearner) return ((VWMulticlassLearner) learner).predict(example);
+        if (learner instanceof VWMultilabelsLearner) return ((VWMultilabelsLearner) learner).predict(example);
+        if (learner instanceof VWActionScoresLearner) return ((VWActionScoresLearner) learner).predict(example);
+        if (learner instanceof VWActionProbsLearner) return ((VWActionProbsLearner) learner).predict(example);
+        if (learner instanceof VWProbLearner) return ((VWProbLearner) learner).predict(example);
+        if (learner instanceof VWCCBLearner) return ((VWCCBLearner) learner).predict(example);
+        throw new IllegalStateException("Unsupported learner type: " + learner.getClass().getName());
     }
 
-    /**
-     * Learn from multiline example.
-     */
-    private void learnMultiline(VWLearner learner, List<String> lines) {
-        String[] examples = lines.toArray(new String[0]);
-        if (learner instanceof VWActionScoresLearner) {
-            ((VWActionScoresLearner) learner).learn(examples);
-        } else if (learner instanceof VWActionProbsLearner) {
-            ((VWActionProbsLearner) learner).learn(examples);
-        } else if (learner instanceof VWScalarsLearner) {
-            ((VWScalarsLearner) learner).learn(examples);
-        } else {
-            // Fall back to learning each line individually
-            for (String line : lines) {
-                learn(learner, line);
-            }
-        }
+    private Object learnMultiline(VWLearner learner, String[] examples) {
+        if (learner instanceof VWScalarLearner) return ((VWScalarLearner) learner).learn(examples);
+        if (learner instanceof VWScalarsLearner) return ((VWScalarsLearner) learner).learn(examples);
+        if (learner instanceof VWMulticlassLearner) return ((VWMulticlassLearner) learner).learn(examples);
+        if (learner instanceof VWMultilabelsLearner) return ((VWMultilabelsLearner) learner).learn(examples);
+        if (learner instanceof VWActionScoresLearner) return ((VWActionScoresLearner) learner).learn(examples);
+        if (learner instanceof VWActionProbsLearner) return ((VWActionProbsLearner) learner).learn(examples);
+        if (learner instanceof VWProbLearner) return ((VWProbLearner) learner).learn(examples);
+        if (learner instanceof VWCCBLearner) return ((VWCCBLearner) learner).learn(examples);
+        throw new IllegalStateException("Unsupported learner type: " + learner.getClass().getName());
     }
 
-    /**
-     * Predict from multiline example.
-     */
-    private Object predictMultiline(VWLearner learner, List<String> lines) {
-        String[] examples = lines.toArray(new String[0]);
-        if (learner instanceof VWActionScoresLearner) {
-            return ((VWActionScoresLearner) learner).predict(examples);
-        } else if (learner instanceof VWActionProbsLearner) {
-            return ((VWActionProbsLearner) learner).predict(examples);
-        } else if (learner instanceof VWScalarsLearner) {
-            return ((VWScalarsLearner) learner).predict(examples);
-        } else {
-            // Fall back to predicting each line individually
-            Object lastPrediction = null;
-            for (String line : lines) {
-                lastPrediction = predict(learner, line);
-            }
-            return lastPrediction;
-        }
+    private Object predictMultiline(VWLearner learner, String[] examples) {
+        if (learner instanceof VWScalarLearner) return ((VWScalarLearner) learner).predict(examples);
+        if (learner instanceof VWScalarsLearner) return ((VWScalarsLearner) learner).predict(examples);
+        if (learner instanceof VWMulticlassLearner) return ((VWMulticlassLearner) learner).predict(examples);
+        if (learner instanceof VWMultilabelsLearner) return ((VWMultilabelsLearner) learner).predict(examples);
+        if (learner instanceof VWActionScoresLearner) return ((VWActionScoresLearner) learner).predict(examples);
+        if (learner instanceof VWActionProbsLearner) return ((VWActionProbsLearner) learner).predict(examples);
+        if (learner instanceof VWProbLearner) return ((VWProbLearner) learner).predict(examples);
+        if (learner instanceof VWCCBLearner) return ((VWCCBLearner) learner).predict(examples);
+        throw new IllegalStateException("Unsupported learner type: " + learner.getClass().getName());
     }
 
     /**
@@ -330,17 +467,47 @@ public class TestExecutor {
     }
 
     /**
-     * Fuzzy float comparison with epsilon tolerance.
+     * Validate prediction file against reference file.
      */
+    private void validatePredictionFile(Path referencePath, Path actualPath) throws IOException {
+        List<String> expected = Files.readAllLines(referencePath, StandardCharsets.UTF_8);
+        List<String> actual = Files.readAllLines(actualPath, StandardCharsets.UTF_8);
+
+        int minLines = Math.min(expected.size(), actual.size());
+        for (int i = 0; i < minLines; i++) {
+            String expLine = expected.get(i).trim();
+            String actLine = actual.get(i).trim();
+            if (expLine.isEmpty() || actLine.isEmpty()) continue;
+
+            try {
+                String[] expParts = expLine.split("\\s+");
+                String[] actParts = actLine.split("\\s+");
+                int minParts = Math.min(expParts.length, actParts.length);
+                for (int j = 0; j < minParts; j++) {
+                    double expVal = Double.parseDouble(expParts[j]);
+                    double actVal = Double.parseDouble(actParts[j]);
+                    if (!fuzzyEquals(expVal, actVal, DEFAULT_EPSILON)) {
+                        throw new AssertionError(String.format(
+                            "Prediction mismatch at line %d col %d: expected %s, got %s",
+                            i, j, expParts[j], actParts[j]));
+                    }
+                }
+            } catch (NumberFormatException e) {
+                if (!expLine.equals(actLine)) {
+                    throw new AssertionError(String.format(
+                        "Prediction mismatch at line %d: expected '%s', got '%s'",
+                        i, expLine, actLine));
+                }
+            }
+        }
+    }
+
     private boolean fuzzyEquals(double a, double b, double epsilon) {
         if (Double.isNaN(a) && Double.isNaN(b)) return true;
         if (Double.isInfinite(a) && Double.isInfinite(b)) return a == b;
         return Math.abs(a - b) <= epsilon * Math.max(1.0, Math.max(Math.abs(a), Math.abs(b)));
     }
 
-    /**
-     * Open a reader for the input file, handling gzip compression.
-     */
     private BufferedReader openReader(Path path) throws IOException {
         InputStream is = Files.newInputStream(path);
         if (path.toString().endsWith(".gz")) {

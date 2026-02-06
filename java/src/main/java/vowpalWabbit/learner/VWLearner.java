@@ -48,4 +48,9 @@ public interface VWLearner extends Closeable {
     Callable<Boolean> closer();
 
     void saveModel(File filename);
+
+    /**
+     * @return true if the underlying VW learner requires multiline examples.
+     */
+    boolean isMultiline();
 }

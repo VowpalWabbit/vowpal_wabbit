@@ -73,6 +73,20 @@ JNIEXPORT void JNICALL Java_vowpalWabbit_learner_VWLearners_saveModel(
   }
 }
 
+JNIEXPORT jboolean JNICALL Java_vowpalWabbit_learner_VWLearners_isMultiline(JNIEnv* env, jclass obj, jlong vwPtr)
+{
+  try
+  {
+    VW::workspace* vwInstance = (VW::workspace*)vwPtr;
+    return vwInstance->l->is_multiline() ? JNI_TRUE : JNI_FALSE;
+  }
+  catch (...)
+  {
+    rethrow_cpp_exception_as_java_exception(env);
+  }
+  return JNI_FALSE;
+}
+
 JNIEXPORT jobject JNICALL Java_vowpalWabbit_learner_VWLearners_getReturnType(JNIEnv* env, jclass obj, jlong vwPtr)
 {
   jclass clVWReturnType = env->FindClass(RETURN_TYPE);

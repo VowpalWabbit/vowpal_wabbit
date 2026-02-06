@@ -76,4 +76,6 @@ final public class VWLearners {
     static native void performRemainingPasses(long nativePointer);
 
     static native void saveModel(long nativePointer, String filename);
+
+    static native boolean isMultiline(long nativePointer);
 }

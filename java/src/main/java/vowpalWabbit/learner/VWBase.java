@@ -91,6 +91,20 @@ abstract class VWBase implements VWLearner {
     }
 
     @Override
+    public boolean isMultiline() {
+        lock.lock();
+        try {
+            if (isOpen()) {
+                return VWLearners.isMultiline(nativePointer);
+            }
+            throw new IllegalStateException("Already closed.");
+        }
+        finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

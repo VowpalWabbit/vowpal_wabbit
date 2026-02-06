@@ -17,6 +17,7 @@ public class TestCase {
     private final String inputData;
     private final String initialRegressor;
     private final String finalRegressor;
+    private final String featureMask;
     private final String stderr;
     private final String predictFile;
     private TestCase dependency;
@@ -28,6 +29,7 @@ public class TestCase {
         this.inputData = matchArgument(arguments, "-d");
         this.initialRegressor = matchArgument(arguments, "-i");
         this.finalRegressor = matchArgument(arguments, "-f");
+        this.featureMask = matchArgument(arguments, "--feature_mask");
 
         // Parse diff_files for stderr and predict file
         String stderrTemp = "";
@@ -87,6 +89,14 @@ public class TestCase {
 
     public boolean hasDependency() {
         return dependency != null;
+    }
+
+    public String getFeatureMask() {
+        return featureMask;
+    }
+
+    public boolean hasFeatureMask() {
+        return featureMask != null && !featureMask.isEmpty();
     }
 
     public boolean hasInitialRegressor() {
