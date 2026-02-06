@@ -46,11 +46,18 @@ namespace Vw.Net.Native
 
     private unsafe long Write(void* buffer, int num_bytes)
     {
-      Span<byte> bufferSpan = new Span<byte>((byte*)buffer, num_bytes);
       try
       {
+#if NETSTANDARD2_1_OR_GREATER
+        Span<byte> bufferSpan = new Span<byte>((byte*)buffer, num_bytes);
         this.stream.Write(bufferSpan);
         return bufferSpan.Length;
+#else
+        byte[] temp = new byte[num_bytes];
+        Marshal.Copy((IntPtr)buffer, temp, 0, num_bytes);
+        this.stream.Write(temp, 0, num_bytes);
+        return num_bytes;
+#endif
       }
       catch (IOException)
       {
