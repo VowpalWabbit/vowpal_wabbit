@@ -32,36 +32,17 @@ public class TestLoader {
         // ===== Java-specific: additional flatbuffer tests =====
         245, 246,
 
-        // ===== Unsupported prediction types (not mapped in JNI getReturnType) =====
-        // CATS/CATS_PDF → ACTION_PDF_VALUE / PDF prediction types
-        224, 225, 226, 227, 229, 482, 483,
-        // cs_active → ACTIVE_MULTICLASS prediction type
-        162, 163, 475, 543, 544, 630,
-        // cbzo → NOPRED prediction type
-        277, 278, 279, 280, 281, 282, 283, 284,
-        // LDA → returns MULTICLASS_PROBS (not mapped in JNI)
-        17, 472, 505, 529, 624, 625, 651, 652,
-
         // ===== --onethread is a shell option, not available via library =====
         193, 195, 275, 276, 511, 643, 644,
-
-        // ===== --csv is not compiled into the library build =====
-        555, 611, 690, 691, 692, 693, 694,
-
-        // ===== search entity_relation task has C++ assert() that aborts JVM =====
-        63, 504, 518, 519, 559, 667, 668, 669,
-
-        // ===== automl --predict_only_model bit_precision mismatch =====
-        424, 440, 448,
-
-        // ===== cb_adf multipass crash regression test (close exception in library mode) =====
-        342,
 
         // ===== Cluster mode (not supported via library) =====
         203,
 
         // ===== Daemon mode (not supported via library) =====
-        220
+        220,
+
+        // ===== cb_adf multipass (close/finish crash) =====
+        342
     )));
 
     private final Path testRoot;

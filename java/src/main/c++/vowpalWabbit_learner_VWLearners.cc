@@ -118,6 +118,18 @@ JNIEXPORT jobject JNICALL Java_vowpalWabbit_learner_VWLearners_getReturnType(JNI
     case VW::prediction_type_t::DECISION_PROBS:
       field = env->GetStaticFieldID(clVWReturnType, "DecisionProbs", RETURN_TYPE_INSTANCE);
       break;
+    case VW::prediction_type_t::ACTION_PDF_VALUE:
+      field = env->GetStaticFieldID(clVWReturnType, "ActionPDFValue", RETURN_TYPE_INSTANCE);
+      break;
+    case VW::prediction_type_t::PDF:
+      field = env->GetStaticFieldID(clVWReturnType, "PDF", RETURN_TYPE_INSTANCE);
+      break;
+    case VW::prediction_type_t::ACTIVE_MULTICLASS:
+      field = env->GetStaticFieldID(clVWReturnType, "ActiveMulticlass", RETURN_TYPE_INSTANCE);
+      break;
+    case VW::prediction_type_t::NOPRED:
+      field = env->GetStaticFieldID(clVWReturnType, "NoPred", RETURN_TYPE_INSTANCE);
+      break;
     default:
       field = env->GetStaticFieldID(clVWReturnType, "Unknown", RETURN_TYPE_INSTANCE);
   }

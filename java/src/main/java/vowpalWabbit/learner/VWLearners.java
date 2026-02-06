@@ -10,7 +10,8 @@ import common.Native;
  */
 final public class VWLearners {
     private enum VWReturnType {
-        Unknown, ActionProbs, ActionScores, Multiclass, Multilabels, Prob, Scalar, Scalars, DecisionProbs
+        Unknown, ActionProbs, ActionScores, Multiclass, Multilabels, Prob, Scalar, Scalars, DecisionProbs,
+        ActionPDFValue, PDF, ActiveMulticlass, NoPred
     }
 
     static {
@@ -58,6 +59,10 @@ final public class VWLearners {
             case Scalar: return (T)new VWScalarLearner(nativePointer);
             case Scalars: return (T)new VWScalarsLearner(nativePointer);
             case DecisionProbs: return (T)new VWCCBLearner(nativePointer);
+            case ActionPDFValue: return (T)new VWActionPDFValueLearner(nativePointer);
+            case PDF: return (T)new VWPDFLearner(nativePointer);
+            case ActiveMulticlass: return (T)new VWActiveMulticlassLearner(nativePointer);
+            case NoPred: return (T)new VWNoPredLearner(nativePointer);
             case Unknown:
             default:
                 // Doing this will allow for all cases when a C object is made to be closed.

@@ -38,11 +38,16 @@ SOURCES
   src/main/java/vowpalWabbit/learner/VWScalarLearner.java
   src/main/java/vowpalWabbit/learner/VWScalarsLearner.java
   src/main/java/vowpalWabbit/learner/VWTypedLearner.java
+  src/main/java/vowpalWabbit/learner/VWNoPredLearner.java
+  src/main/java/vowpalWabbit/learner/VWActionPDFValueLearner.java
+  src/main/java/vowpalWabbit/learner/VWPDFLearner.java
+  src/main/java/vowpalWabbit/learner/VWActiveMulticlassLearner.java
   src/main/java/vowpalWabbit/responses/ActionProb.java
   src/main/java/vowpalWabbit/responses/ActionProbs.java
   src/main/java/vowpalWabbit/responses/ActionScore.java
   src/main/java/vowpalWabbit/responses/ActionScores.java
   src/main/java/vowpalWabbit/responses/DecisionScores.java
+  src/main/java/vowpalWabbit/responses/ActiveMulticlass.java
   src/main/java/vowpalWabbit/responses/Multilabels.java
   src/main/java/vowpalWabbit/responses/PDF.java
   src/main/java/vowpalWabbit/responses/PDFSegment.java
@@ -69,6 +74,10 @@ set(vw_jni_sources
   ${src_base}/vowpalWabbit_learner_VWProbLearner.cc
   ${src_base}/vowpalWabbit_learner_VWScalarLearner.cc
   ${src_base}/vowpalWabbit_learner_VWScalarsLearner.cc
+  ${src_base}/vowpalWabbit_learner_VWNoPredLearner.cc
+  ${src_base}/vowpalWabbit_learner_VWActionPDFValueLearner.cc
+  ${src_base}/vowpalWabbit_learner_VWPDFLearner.cc
+  ${src_base}/vowpalWabbit_learner_VWActiveMulticlassLearner.cc
   ${src_base}/vowpalWabbit_VW.cc
   ${src_base}/jni_spark_vw.cc
   ${src_base}/jni_spark_cluster.cc

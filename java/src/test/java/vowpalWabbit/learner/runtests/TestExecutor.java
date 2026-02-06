@@ -194,11 +194,10 @@ public class TestExecutor {
             args = resolveModelArg(args, "-i", tc.getInitialRegressor());
         }
 
-        // Resolve -f (final regressor) path
-        if (tc.hasFinalRegressor()) {
-            Path modelPath = workDir.resolve(tc.getFinalRegressor());
-            args = args.replaceAll("-f\\s+\\S+", "-f " + modelPath.toString());
-        }
+        // Remove -f (model saved explicitly via saveModel() in executeSinglePassTest).
+        // Keeping -f would cause a double-save: once via saveModel() and once during
+        // finish(), which breaks reductions like automl that modify state in pre_save_load.
+        args = args.replaceAll("-f\\s+\\S+", "");
 
         // Resolve --feature_mask model path
         args = resolveModelOption(args, "--feature_mask");
@@ -394,6 +393,10 @@ public class TestExecutor {
         if (learner instanceof VWActionProbsLearner) return ((VWActionProbsLearner) learner).learn(example);
         if (learner instanceof VWProbLearner) return ((VWProbLearner) learner).learn(example);
         if (learner instanceof VWCCBLearner) return ((VWCCBLearner) learner).learn(example);
+        if (learner instanceof VWNoPredLearner) return ((VWNoPredLearner) learner).learn(example);
+        if (learner instanceof VWActionPDFValueLearner) return ((VWActionPDFValueLearner) learner).learn(example);
+        if (learner instanceof VWPDFLearner) return ((VWPDFLearner) learner).learn(example);
+        if (learner instanceof VWActiveMulticlassLearner) return ((VWActiveMulticlassLearner) learner).learn(example);
         throw new IllegalStateException("Unsupported learner type: " + learner.getClass().getName());
     }
 
@@ -406,6 +409,10 @@ public class TestExecutor {
         if (learner instanceof VWActionProbsLearner) return ((VWActionProbsLearner) learner).predict(example);
         if (learner instanceof VWProbLearner) return ((VWProbLearner) learner).predict(example);
         if (learner instanceof VWCCBLearner) return ((VWCCBLearner) learner).predict(example);
+        if (learner instanceof VWNoPredLearner) return ((VWNoPredLearner) learner).predict(example);
+        if (learner instanceof VWActionPDFValueLearner) return ((VWActionPDFValueLearner) learner).predict(example);
+        if (learner instanceof VWPDFLearner) return ((VWPDFLearner) learner).predict(example);
+        if (learner instanceof VWActiveMulticlassLearner) return ((VWActiveMulticlassLearner) learner).predict(example);
         throw new IllegalStateException("Unsupported learner type: " + learner.getClass().getName());
     }
 
@@ -418,6 +425,10 @@ public class TestExecutor {
         if (learner instanceof VWActionProbsLearner) return ((VWActionProbsLearner) learner).learn(examples);
         if (learner instanceof VWProbLearner) return ((VWProbLearner) learner).learn(examples);
         if (learner instanceof VWCCBLearner) return ((VWCCBLearner) learner).learn(examples);
+        if (learner instanceof VWNoPredLearner) return ((VWNoPredLearner) learner).learn(examples);
+        if (learner instanceof VWActionPDFValueLearner) return ((VWActionPDFValueLearner) learner).learn(examples);
+        if (learner instanceof VWPDFLearner) return ((VWPDFLearner) learner).learn(examples);
+        if (learner instanceof VWActiveMulticlassLearner) return ((VWActiveMulticlassLearner) learner).learn(examples);
         throw new IllegalStateException("Unsupported learner type: " + learner.getClass().getName());
     }
 
@@ -430,6 +441,10 @@ public class TestExecutor {
         if (learner instanceof VWActionProbsLearner) return ((VWActionProbsLearner) learner).predict(examples);
         if (learner instanceof VWProbLearner) return ((VWProbLearner) learner).predict(examples);
         if (learner instanceof VWCCBLearner) return ((VWCCBLearner) learner).predict(examples);
+        if (learner instanceof VWNoPredLearner) return ((VWNoPredLearner) learner).predict(examples);
+        if (learner instanceof VWActionPDFValueLearner) return ((VWActionPDFValueLearner) learner).predict(examples);
+        if (learner instanceof VWPDFLearner) return ((VWPDFLearner) learner).predict(examples);
+        if (learner instanceof VWActiveMulticlassLearner) return ((VWActiveMulticlassLearner) learner).predict(examples);
         throw new IllegalStateException("Unsupported learner type: " + learner.getClass().getName());
     }
 
