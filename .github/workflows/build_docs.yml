@@ -33,6 +33,32 @@ jobs:
         with:
           name: cxx_docs
           path: result/html/
+  java:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: false
+      - name: Set up JDK 11
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+      - name: Generate pom.xml
+        shell: bash
+        run: |
+          VERSION=$(cat version.txt | tr -d '[:space:]')
+          sed -e "s/@PACKAGE_VERSION@/$VERSION/g" \
+              -e "s/@VW_JNI_NATIVES_DIR@/linux_64/g" \
+              java/pom.xml.in > java/pom.xml
+      - name: Generate Javadoc
+        working-directory: java
+        run: mvn -B javadoc:javadoc -DskipTests=true
+      - name: Upload Javadoc
+        uses: actions/upload-artifact@v4
+        with:
+          name: java_docs
+          path: java/target/site/apidocs/
   dump-options-build:
     runs-on: ubuntu-latest
     steps:
@@ -173,7 +199,7 @@ jobs:
           name: python_docs
           path: python/docs/build/
   upload:
-    needs: [cpp, python-doc]
+    needs: [cpp, java, python-doc]
     runs-on: ubuntu-latest
     # The upload step should only be run on the main repository and only for pushes or releases (not pull requests).
     if: ${{ github.repository == 'VowpalWabbit/vowpal_wabbit' && (github.event_name == 'push' || github.event_name == 'release' || github.event_name == 'workflow_dispatch') }}
@@ -194,6 +220,11 @@ jobs:
         with:
           name: python_docs
           path: python_docs
+      - name: Download Java Docs
+        uses: actions/download-artifact@v4
+        with:
+          name: java_docs
+          path: java_docs
       - uses: actions/checkout@v6
         with:
           submodules: false
@@ -230,6 +261,12 @@ jobs:
           rm -rf docs/vowpal_wabbit/python/$FOLDER_NAME/
           mkdir -p docs/vowpal_wabbit/python/$FOLDER_NAME/
           cp -r python_docs/html/* docs/vowpal_wabbit/python/$FOLDER_NAME/
+      - name: Copy Java Docs
+        shell: bash
+        run: |
+          rm -rf docs/vowpal_wabbit/java/$FOLDER_NAME/
+          mkdir -p docs/vowpal_wabbit/java/$FOLDER_NAME/
+          cp -r java_docs/* docs/vowpal_wabbit/java/$FOLDER_NAME/
       - name: Checkout master
         shell: bash
         run: |
