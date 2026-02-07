@@ -12,6 +12,7 @@ coverage:
         base: auto
         # Coverage can drop by 0.5% before it is a failure.
         threshold: 0.5%
+        after_n_builds: 0
         paths:
           - "vowpalwabbit/"
 
