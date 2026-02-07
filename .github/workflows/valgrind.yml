@@ -56,6 +56,46 @@ jobs:
           name: to_flatbuff
           path: build/utl/flatbuffer/to_flatbuff
           if-no-files-found: error
+      - name: Package build tree for unit tests
+        run: tar czf valgrind-build.tar.gz --exclude='*.o' build/
+      - name: Upload build tree
+        uses: actions/upload-artifact@v4
+        with:
+          name: valgrind-build
+          path: valgrind-build.tar.gz
+          if-no-files-found: error
+
+  valgrind-unit-tests:
+    name: ubuntu2004.amd64.valgrind-unit-tests
+    needs: build-valgrind
+    container:
+      image: vowpalwabbit/ubuntu2004-build:latest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: false
+
+      - name: Init submodules with retry
+        shell: bash
+        run: |
+          git config --global --add safe.directory "$(pwd)"
+          for attempt in 1 2 3 4 5; do
+            if git submodule update --init --recursive; then
+              echo "Submodule init succeeded on attempt $attempt"
+              exit 0
+            fi
+            echo "Attempt $attempt failed, retrying in 15s..."
+            sleep 15
+          done
+          echo "Submodule init failed after 5 attempts"
+          exit 1
+      - name: Download build tree
+        uses: actions/download-artifact@v4
+        with:
+          name: valgrind-build
+      - name: Extract build tree
+        run: tar xzf valgrind-build.tar.gz
       - name: Run unit tests with Valgrind
         working-directory: build
         run: |
