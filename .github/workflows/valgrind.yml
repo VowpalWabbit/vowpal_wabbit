@@ -109,7 +109,7 @@ jobs:
     needs: build-valgrind
     strategy:
       matrix:
-        test-segment: ["..123", "124..252", "253..391", "392..558", "559.."]
+        test-segment: ["..391", "392.."]
     container:
       image: vowpalwabbit/ubuntu2004-build:latest
     runs-on: ubuntu-latest
