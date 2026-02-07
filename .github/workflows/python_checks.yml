@@ -1,0 +1,514 @@
+name: Python Checks
+
+# Unified workflow for Python wheel-dependent CI:
+# - Forward/backward model compatibility checks
+# - Python type checking (pytype)
+# - Python + C++ documentation builds
+# Consolidates what was previously 3 separate workflows + 2 lint jobs,
+# reducing Python wheel builds from 6 to 2 per CI run.
+
+on:
+  push:
+    branches:
+      - master
+      - 'releases/**'
+  pull_request:
+    branches:
+      - '*'
+  release:
+    types:
+      - published
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  build-wheel:
+    name: Build python wheel (current)
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: false
+
+      - name: Init submodules with retry
+        shell: bash
+        run: |
+          git config --global --add safe.directory "$(pwd)"
+          for attempt in 1 2 3 4 5; do
+            if git submodule update --init --recursive; then
+              echo "Submodule init succeeded on attempt $attempt"
+              exit 0
+            fi
+            echo "Attempt $attempt failed, retrying in 15s..."
+            sleep 15
+          done
+          echo "Submodule init failed after 5 attempts"
+          exit 1
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build libboost-test-dev python3-dev python3-pip zlib1g-dev
+          python3 -m pip install pybind11
+      - name: Build wheel
+        shell: bash
+        run: |
+          python3 -m pip install wheel auditwheel
+          export PYBIND11_DIR=$(python3 -m pybind11 --cmakedir)
+          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -DVW_ZLIB_SYS_DEP=OFF -DVW_FEAT_CSV=ON -Dpybind11_DIR=${PYBIND11_DIR}" python3 -m pip wheel . -w wheel_output/ --verbose
+          auditwheel repair wheel_output/*whl -w audit_output/
+      - name: Upload built wheel
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheel-current
+          path: audit_output/
+
+  build-wheel-master:
+    name: Build python wheel (master)
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build libboost-test-dev python3-dev python3-pip zlib1g-dev
+          python3 -m pip install build wheel setuptools auditwheel pybind11
+      - name: Build wheel
+        shell: bash
+        run: |
+          git clone --recursive https://github.com/VowpalWabbit/vowpal_wabbit.git
+          cd vowpal_wabbit
+          export PYBIND11_DIR=$(python3 -m pybind11 --cmakedir)
+          CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -DVW_ZLIB_SYS_DEP=OFF -DVW_FEAT_CSV=ON -Dpybind11_DIR=${PYBIND11_DIR}" python3 -m pip wheel . -w wheel_last_commit/ --verbose
+          cd ..
+          auditwheel repair vowpal_wabbit/wheel_last_commit/*whl -w audit_last_commit/
+      - name: Upload built wheel
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheel-master
+          path: audit_last_commit/
+
+  # --- Model compatibility checks ---
+
+  forward-generate:
+    name: Generate models from current code
+    needs: build-wheel
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: wheel-current
+          path: built_wheel
+      - name: Install dependencies
+        run: |
+          sudo apt-get update || true
+          sudo apt-get install -y python3-pip
+      - name: Generate models
+        shell: bash
+        run: |
+          set -x
+          python3 -m pip install setuptools wheel
+          echo "=== Installing wheel ==="
+          python3 -m pip install built_wheel/*.whl
+          echo "=== Verifying vowpalwabbit import ==="
+          python3 -c "import vowpalwabbit; print('vowpalwabbit imported successfully')"
+          echo "=== Running model generation script ==="
+          python3 ./test/run_tests_model_gen_and_load.py --generate_models --skip_pr_tests "${{ github.event.pull_request.title }}" || (echo "Model generation failed with exit code $?" && exit 1)
+          echo "=== Checking generated files ==="
+          ls -la ~/.vw_runtests_model_gen_working_dir/ || echo "Working directory not found"
+      - name: Copy generated files to workspace
+        run: |
+          cp -r ~/.vw_runtests_model_gen_working_dir ./vw_generated_models_upload
+          ls -la ./vw_generated_models_upload/
+      - name: Upload generated models
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: forward-generated-models
+          path: vw_generated_models_upload/*
+          if-no-files-found: error
+
+  forward-test:
+    name: Test current models with master code
+    needs: [build-wheel-master, forward-generate]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: false
+
+      - name: Init submodules with retry
+        shell: bash
+        run: |
+          git config --global --add safe.directory "$(pwd)"
+          for attempt in 1 2 3 4 5; do
+            if git submodule update --init --recursive; then
+              echo "Submodule init succeeded on attempt $attempt"
+              exit 0
+            fi
+            echo "Attempt $attempt failed, retrying in 15s..."
+            sleep 15
+          done
+          echo "Submodule init failed after 5 attempts"
+          exit 1
+      - name: Install python
+        run: |
+          sudo apt-get update || true
+          sudo apt-get install -y python3-pip
+      - uses: actions/download-artifact@v4
+        with:
+          name: forward-generated-models
+          path: .vw_runtests_model_gen_working_dir
+      - name: Download master wheel
+        uses: actions/download-artifact@v4
+        with:
+          name: wheel-master
+          path: master_wheel
+      - name: Test loading models with master
+        shell: bash
+        run: |
+          mv .vw_runtests_model_gen_working_dir ~
+          python3 -m pip install setuptools wheel
+          python3 -m pip install master_wheel/*.whl
+          python3 ./test/run_tests_model_gen_and_load.py --load_models --skip_missing_args --skip_pr_tests "${{ github.event.pull_request.title }}"
+
+  backward-generate:
+    name: Generate models from master code
+    needs: build-wheel-master
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: wheel-master
+          path: built_wheel
+      - name: Install dependencies
+        run: |
+          sudo apt-get update || true
+          sudo apt-get install -y libboost-test-dev
+      - name: Generate models
+        shell: bash
+        run: |
+          set -x
+          pip install setuptools wheel
+          echo "=== Installing wheel ==="
+          pip install built_wheel/*.whl
+          echo "=== Verifying vowpalwabbit import ==="
+          python -c "import vowpalwabbit; print('vowpalwabbit imported successfully')"
+          echo "=== Running model generation script ==="
+          python ./test/run_tests_model_gen_and_load.py --generate_models --skip_missing_args --skip_pr_tests "${{ github.event.pull_request.title }}" || (echo "Model generation failed with exit code $?" && exit 1)
+          echo "=== Checking generated files ==="
+          ls -la ~/.vw_runtests_model_gen_working_dir/ || echo "Working directory not found"
+      - name: Copy generated files to workspace
+        run: |
+          cp -r ~/.vw_runtests_model_gen_working_dir ./vw_generated_models_upload
+          ls -la ./vw_generated_models_upload/
+      - name: Upload generated models
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backward-generated-models
+          path: vw_generated_models_upload/*
+          if-no-files-found: error
+
+  backward-test:
+    name: Test master models with current code
+    needs: [build-wheel, backward-generate]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: false
+
+      - name: Init submodules with retry
+        shell: bash
+        run: |
+          git config --global --add safe.directory "$(pwd)"
+          for attempt in 1 2 3 4 5; do
+            if git submodule update --init --recursive; then
+              echo "Submodule init succeeded on attempt $attempt"
+              exit 0
+            fi
+            echo "Attempt $attempt failed, retrying in 15s..."
+            sleep 15
+          done
+          echo "Submodule init failed after 5 attempts"
+          exit 1
+      - uses: actions/download-artifact@v4
+        with:
+          name: backward-generated-models
+          path: .vw_runtests_model_gen_working_dir
+      - name: Download current wheel
+        uses: actions/download-artifact@v4
+        with:
+          name: wheel-current
+          path: current_wheel
+      - name: Test loading models with current code
+        shell: bash
+        run: |
+          mv .vw_runtests_model_gen_working_dir ~
+          python3 -m pip install setuptools wheel
+          python3 -m pip install current_wheel/*.whl
+          python3 ./test/run_tests_model_gen_and_load.py --load_models --skip_pr_tests "${{ github.event.pull_request.title }}"
+
+  # --- Type checking ---
+
+  typecheck:
+    name: Python typecheck
+    needs: build-wheel
+    container:
+      image: python:3.10
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: false
+
+      - name: Init submodules with retry
+        shell: bash
+        run: |
+          git config --global --add safe.directory "$(pwd)"
+          for attempt in 1 2 3 4 5; do
+            if git submodule update --init --recursive; then
+              echo "Submodule init succeeded on attempt $attempt"
+              exit 0
+            fi
+            echo "Attempt $attempt failed, retrying in 15s..."
+            sleep 15
+          done
+          echo "Submodule init failed after 5 attempts"
+          exit 1
+      - name: Download Wheel
+        uses: actions/download-artifact@v4
+        with:
+          name: wheel-current
+          path: wheel-current
+      - name: Install dependencies
+        shell: bash
+        run: |
+          pip install -r requirements.txt
+          pip install pytype
+          # required for test and utl directory typecheck
+          pip install hyperopt matplotlib seaborn
+      - name: Install wheel
+        shell: bash
+        run: |
+          export wheel_files=(wheel-current/*)
+          export wheel_file="${wheel_files[0]}"
+          echo Installing ${wheel_file}...
+          pip install ${wheel_file}
+      - name: Run pytype
+        shell: bash
+        run: |
+          python -m pytype ./python/vowpalwabbit/ --verbosity=2
+          python -m pytype ./test/ --verbosity=2
+          python -m pytype ./utl/ --verbosity=2
+
+  # --- Documentation ---
+
+  cpp-docs:
+    name: Build C++ docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: cachix/install-nix-action@v18
+      - name: Build docs
+        run: nix build --print-build-logs .#vw-cpp-docs
+      - name: Upload built docs
+        uses: actions/upload-artifact@v4
+        with:
+          name: cxx_docs
+          path: result/html/
+
+  dump-options:
+    name: Build vw-dump-options
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: false
+
+      - name: Init submodules with retry
+        shell: bash
+        run: |
+          git config --global --add safe.directory "$(pwd)"
+          for attempt in 1 2 3 4 5; do
+            if git submodule update --init --recursive; then
+              echo "Submodule init succeeded on attempt $attempt"
+              exit 0
+            fi
+            echo "Attempt $attempt failed, retrying in 15s..."
+            sleep 15
+          done
+          echo "Submodule init failed after 5 attempts"
+          exit 1
+      - name: Install Ninja
+        uses: seanmiddleditch/gha-setup-ninja@master
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DBUILD_TESTING=OFF
+      - name: Build dump options
+        run: cmake --build build -t vw-dump-options
+      - name: Upload vw-dump-options
+        uses: actions/upload-artifact@v4
+        with:
+          name: vw-dump-options
+          path: build/utl/dump_options/vw-dump-options
+
+  python-docs:
+    name: Build Python docs
+    needs: [build-wheel, dump-options]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: false
+
+      - name: Init submodules with retry
+        shell: bash
+        run: |
+          git config --global --add safe.directory "$(pwd)"
+          for attempt in 1 2 3 4 5; do
+            if git submodule update --init --recursive; then
+              echo "Submodule init succeeded on attempt $attempt"
+              exit 0
+            fi
+            echo "Attempt $attempt failed, retrying in 15s..."
+            sleep 15
+          done
+          echo "Submodule init failed after 5 attempts"
+          exit 1
+      - uses: actions/setup-node@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: If this is a push build then set version to latest
+        if: ${{ github.event_name == 'push' }}
+        run: echo "VW_SPHINX_VERSION_OVERRIDE=latest" >> $GITHUB_ENV
+      - name: Download Wheel
+        uses: actions/download-artifact@v4
+        with:
+          name: wheel-current
+          path: wheel-current
+      - name: Download vw-dump-options
+        uses: actions/download-artifact@v4
+        with:
+          name: vw-dump-options
+          path: vw-dump-options
+      - name: Change permissions to vw-dump-options
+        shell: bash
+        run: chmod +x ./vw-dump-options/vw-dump-options
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update || true
+      - name: Install dependencies
+        shell: bash
+        run: |
+          pip install setuptools wheel
+          pip install -r python/docs/build-requirements.txt
+          pip install -r requirements.txt
+          pip install PyYAML
+          npm install -g handlebars
+      - name: Install wheel
+        shell: bash
+        run: |
+          pip install wheel-current/vowpalwabbit-*.whl
+      - name: Generate CLI docs
+        run: |
+          cd python/docs/cmd_options_template
+          python generate_cmdline_docs.py --dump-options-bin ../../../vw-dump-options/vw-dump-options --template ./command_line_args.hbs --out ../source/ --extra-info ./cmdline_help_overrides.yml
+      - name: Build docs
+        run: |
+          cd python/docs
+          make html
+      - name: Upload built docs
+        uses: actions/upload-artifact@v4
+        with:
+          name: python_docs
+          path: python/docs/build/
+
+  upload-docs:
+    name: Upload documentation
+    needs: [cpp-docs, python-docs]
+    runs-on: ubuntu-latest
+    if: ${{ github.repository == 'VowpalWabbit/vowpal_wabbit' && (github.event_name == 'push' || github.event_name == 'release' || github.event_name == 'workflow_dispatch') }}
+    steps:
+      - name: Set folder name to latest if push
+        if: ${{ github.event_name == 'push' }}
+        run: echo "FOLDER_NAME=latest" >> $GITHUB_ENV
+      - name: Set folder name to version if release
+        if: ${{ github.event_name == 'release' || github.event_name == 'workflow_dispatch' }}
+        run: echo "FOLDER_NAME=$(echo ${GITHUB_REF:10})" >> $GITHUB_ENV
+      - name: Download c++ Docs
+        uses: actions/download-artifact@v4
+        with:
+          name: cxx_docs
+          path: cxx_docs
+      - name: Download Python Docs
+        uses: actions/download-artifact@v4
+        with:
+          name: python_docs
+          path: python_docs
+      - uses: actions/checkout@v6
+        with:
+          submodules: false
+          repository: VowpalWabbit/docs
+          ref: master
+          path: docs
+          token: ${{ secrets.DOCS_DEPLOY_TOKEN }}
+          persist-credentials: true
+
+      - name: Init submodules with retry
+        shell: bash
+        working-directory: docs
+        run: |
+          git config --global --add safe.directory "$(pwd)"
+          for attempt in 1 2 3 4 5; do
+            if git submodule update --init --recursive; then
+              echo "Submodule init succeeded on attempt $attempt"
+              exit 0
+            fi
+            echo "Attempt $attempt failed, retrying in 15s..."
+            sleep 15
+          done
+          echo "Submodule init failed after 5 attempts"
+          exit 1
+      - name: Copy c++ Docs
+        shell: bash
+        run: |
+          rm -rf docs/vowpal_wabbit/cpp/$FOLDER_NAME/
+          mkdir -p docs/vowpal_wabbit/cpp/$FOLDER_NAME/
+          cp -r cxx_docs/* docs/vowpal_wabbit/cpp/$FOLDER_NAME/
+      - name: Copy Python Docs
+        shell: bash
+        run: |
+          rm -rf docs/vowpal_wabbit/python/$FOLDER_NAME/
+          mkdir -p docs/vowpal_wabbit/python/$FOLDER_NAME/
+          cp -r python_docs/html/* docs/vowpal_wabbit/python/$FOLDER_NAME/
+      - name: Checkout master
+        shell: bash
+        run: |
+          cd docs
+          git checkout master
+      - name: Commit changes
+        shell: bash
+        run: |
+          cd docs
+          git add --all
+          git config --local user.email "WoboWabbit@hunch.net"
+          git config --local user.name "WoboWabbit"
+          git commit -m "Update documentation for commit: VowpalWabbit/vowpal_wabbit@${{ github.sha }}"
+      - name: Push changes
+        shell: bash
+        run: |
+          cd docs
+          git push origin master
