@@ -134,62 +134,6 @@ jobs:
           ../../testCode/movielensRatings2vw.pl pre.train.vw test.prep ml-1m/ratings.dat
           perl -ne 'BEGIN { srand 8675309; }; 1; print join "\t", rand (), $_;' \
             pre.train.vw | sort -k1 | cut -f2- > train.prep
-      - name: Run tests
-        working-directory: big_tests
-        run: |
-          VW=${{ github.workspace }}/vw
-          DIFF="perl testCode/floatingTolerance.pl"
-          TOL=0.001
-
-          run_test() {
-            local name="$1"
-            shift
-            echo "=== Running test $name ==="
-            mkdir -p runs/$name.dir
-            $VW "$@" > runs/$name.dir/raw_out 2> runs/$name.dir/raw_err
-            grep "average loss" runs/$name.dir/raw_err > runs/$name.dir/err
-            echo "Result: $(cat runs/$name.dir/err)"
-            $DIFF $TOL $TOL runs/$name.dir/err expected/$name/err
-            echo "=== Test $name PASSED ==="
-          }
-
-          # Test 2: Covertype
-          run_test 2 --oaa 7 -d dataSets/covtype.dir/prep
-
-          # Test 3: URL Reputation
-          run_test 3 -d dataSets/URLRep.dir/prep
-
-          # Test 6a: OCR train
-          run_test 6a -d dataSets/OCR.dir/train.prep \
-            -f runs/6a.dir/OCR.model --cache_file runs/6a.dir/OCR.cache -k \
-            --oaa 26 --adaptive --invariant --holdout_off --loss_function logistic --passes 14
-
-          # Test 6b: OCR predict
-          run_test 6b -i runs/6a.dir/OCR.model -d dataSets/OCR.dir/test.prep --testonly
-
-          # Test 5a: MovieLens train
-          run_test 5a --loss_function quantile -l 0.45 -b 24 --passes 100 -k \
-            --cache_file runs/5a.dir/movielens.cache -d dataSets/movielens.dir/train.prep \
-            --holdout_off --lrq um14 --lrqdropout --adaptive --invariant \
-            -f runs/5a.dir/movielens.model
-
-          # Test 5b: MovieLens predict
-          run_test 5b --loss_function quantile -t \
-            -i runs/5a.dir/movielens.model -d dataSets/movielens.dir/test.prep
-  big-tests-mnist:
-    name: big-tests-mnist
-    needs: build_vendor_linux
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          submodules: false
-      - name: Download vw binary
-        uses: actions/download-artifact@v4
-        with:
-          name: vw-linux-release
-      - name: Prepare vw binary
-        run: chmod +x vw
       - name: Download and prepare MNIST dataset
         working-directory: big_tests
         run: |
@@ -233,6 +177,30 @@ jobs:
 
           # Test 1b: MNIST predict
           run_test 1b -t -d dataSets/mnist.dir/test.prep -i runs/1a.dir/mnist.model
+
+          # Test 2: Covertype
+          run_test 2 --oaa 7 -d dataSets/covtype.dir/prep
+
+          # Test 3: URL Reputation
+          run_test 3 -d dataSets/URLRep.dir/prep
+
+          # Test 5a: MovieLens train
+          run_test 5a --loss_function quantile -l 0.45 -b 24 --passes 100 -k \
+            --cache_file runs/5a.dir/movielens.cache -d dataSets/movielens.dir/train.prep \
+            --holdout_off --lrq um14 --lrqdropout --adaptive --invariant \
+            -f runs/5a.dir/movielens.model
+
+          # Test 5b: MovieLens predict
+          run_test 5b --loss_function quantile -t \
+            -i runs/5a.dir/movielens.model -d dataSets/movielens.dir/test.prep
+
+          # Test 6a: OCR train
+          run_test 6a -d dataSets/OCR.dir/train.prep \
+            -f runs/6a.dir/OCR.model --cache_file runs/6a.dir/OCR.cache -k \
+            --oaa 26 --adaptive --invariant --holdout_off --loss_function logistic --passes 14
+
+          # Test 6b: OCR predict
+          run_test 6b -i runs/6a.dir/OCR.model -d dataSets/OCR.dir/test.prep --testonly
   build_vendor_windows:
     name: core-cli.${{ matrix.os }}.amd64.${{ matrix.build_type }}.msvc.standalone
     runs-on: ${{matrix.os}}
