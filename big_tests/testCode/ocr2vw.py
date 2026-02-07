@@ -25,13 +25,13 @@ def data2vw(ifn, train, test, names):
     if ifn.endswith(".gz"):
         import gzip
 
-        iopener = gzip.open
+        iopener = lambda f: gzip.open(f, "rt")
     else:
         iopener = open
     id_pos = names.index("id")
     letter_pos = names.index("letter")
     pixel_start = find_pixel_start(names)
-    with iopener(ifn) as ins, open(train, "wb") as trainS, open(test, "wb") as testS:
+    with iopener(ifn) as ins, open(train, "w") as trainS, open(test, "w") as testS:
         for line in ins:
             lineno += 1
             vals = line.rstrip().split("\t")

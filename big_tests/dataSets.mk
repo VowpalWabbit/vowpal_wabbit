@@ -153,5 +153,5 @@ $(dataDir)/mnist.dir/%.gz:
 	mkdir -p $$dir ;\
 	cd $$dir ;\
 	fileName=`basename $@` ;\
-	$(WGET) http://yann.lecun.com/exdb/mnist/$$fileName
+	$(WGET) https://storage.googleapis.com/cvdf-datasets/mnist/$$fileName
 
