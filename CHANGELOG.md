@@ -43,7 +43,7 @@ prior to this file's creation, see [GitHub Releases](https://github.com/VowpalWa
 
 ### CI / Build
 
-- Replace EOL Ubuntu 18.04 CI containers with `ubuntu-latest`
+- Replace EOL Ubuntu 18.04 CI containers with `ubuntu-latest` (gcc 7 → 13)
 - Update fmt 9.1.0 → 11.0.2 and spdlog 1.11.0 → 1.15.0
 - Consolidate Python wheel CI workflows into single `python_checks.yml` (#4872)
 - Parallelize valgrind unit tests with integration test segments (#4873)
@@ -64,7 +64,10 @@ prior to this file's creation, see [GitHub Releases](https://github.com/VowpalWa
 
 ### Tests
 
-- Push line coverage from ~82% to 90%+ with ~900 new tests across C++, E2E, Java, and Python
+- Add ~900 new tests across C++, E2E, Java, and Python; reported line coverage
+  rose from ~82% to 90%+ but then reset to ~82% when the coverage build moved
+  from gcc 7 to gcc 13 (gcc 13 instruments branch coverage more thoroughly,
+  counting untaken assert/if branches as partial)
 - Add C++ unit tests across loss functions, initialization, C wrapper, search,
   parsers, BFGS, LDA, kernel_svm, and many more reductions
 - Add Java integration test runner (`RunTestsIT`) executing E2E tests through JNI bindings
