@@ -60,7 +60,7 @@ prior to this file's creation, see [GitHub Releases](https://github.com/VowpalWa
 
 ### Tests
 
-- Push line coverage from ~88% to 90%+ with ~500 new unit and E2E tests
+- Push line coverage from ~82% to 90%+ with ~500 new unit and E2E tests
 - Add coverage tests across loss functions, initialization, C wrapper, search,
   parsers, BFGS, LDA, kernel_svm, and many more reductions
 - Unskip macOS ARM precision tests by reducing dataset sizes (#4850)
