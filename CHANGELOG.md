@@ -14,6 +14,10 @@ prior to this file's creation, see [GitHub Releases](https://github.com/VowpalWa
 - Add namespace-level metrics output per reduction (#4811)
 - Add TypeScript declarations for Wasm npm package (#4784)
 - Expose FTRL/Coin/PiSTOL config via `get_config()` (#4780)
+- Add Java support for `ActionPDFValue`, `PDF`, `ActiveMulticlass`, and `NoPred` prediction types
+- Add Java `runDriver()` and `isMultiline()` JNI methods for multi-pass and multiline learning
+- Add C# `ActionPdfValue` prediction type and `ContinuousActionLabel` label type for CATS
+- Add C# `WorkspaceRunDriver()` and `WorkspaceRunDriverOneThread()` native APIs
 - Downgrade C# bindings from .NET Standard 2.1 to 2.0 for broader compatibility (#4865)
 - Enable AVX2 for Windows x64 Release builds (#4844)
 - Support building with Eigen 5.0.0 (#4728)
@@ -60,9 +64,11 @@ prior to this file's creation, see [GitHub Releases](https://github.com/VowpalWa
 
 ### Tests
 
-- Push line coverage from ~82% to 90%+ with ~500 new unit and E2E tests
-- Add coverage tests across loss functions, initialization, C wrapper, search,
+- Push line coverage from ~82% to 90%+ with ~900 new tests across C++, E2E, Java, and Python
+- Add C++ unit tests across loss functions, initialization, C wrapper, search,
   parsers, BFGS, LDA, kernel_svm, and many more reductions
-- Unskip macOS ARM precision tests by reducing dataset sizes (#4850)
+- Add Java integration test runner (`RunTestsIT`) executing E2E tests through JNI bindings
+- Unskip dozens of C# tests by adding `ActionPdfValue` and `ContinuousActionLabel` support
+- Unskip Python and macOS ARM precision tests by reducing dataset sizes (#4850)
 - Remove `--quiet` from tests 334–391 to improve coverage (#4851)
 - Remove 26 redundant tests with identical coverage (#4830)

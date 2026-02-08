@@ -41,8 +41,8 @@ cd build && ctest --output-on-failure --label-regex VWTestList --parallel 2
 python3 test/run_tests.py --fuzzy_compare --exit_first_fail --epsilon 0.001
 ```
 
-For Java bindings, add `-DBUILD_JAVA=On` to the configure step. For Python
-bindings, see `python/README.rst`.
+For Java bindings, add `-DBUILD_JAVA=On` to the configure step. For C#
+bindings, see `cs/README.md`. For Python bindings, see `python/README.rst`.
 
 ### Implementation
 
@@ -84,7 +84,7 @@ Start a GitHub pull request to merge your topic branch into the
 
 When you submit a pull request, a suite of ~80 CI jobs will run automatically,
 covering C++ builds on Linux/macOS/Windows, Python wheel builds, Java builds,
-sanitizers (ASAN/UBSAN), Valgrind, code coverage, and linting. The results show
+C#/.NET builds, sanitizers (ASAN/UBSAN), Valgrind, code coverage, and linting. The results show
 up in the "Checks" section of the PR. Generally, we'll wait for these to all
 pass before we review your PR. If you need help resolving build or test issues
 feel free to reach out in the comments of your PR.
