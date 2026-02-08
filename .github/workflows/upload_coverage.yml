@@ -44,6 +44,20 @@ jobs:
       - name: Test with coverage C++
         run: ./.scripts/linux/test-with-coverage.sh
 
+      - name: Generate lcov report
+        run: |
+          lcov --capture --directory build --output-file coverage.info \
+            --include '*/vowpalwabbit/*' \
+            --exclude '*/tests/*' --exclude '*/test/*' --exclude '*/ext_libs/*'
+          lcov --summary coverage.info
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lcov-coverage-report
+          path: coverage.info
+          retention-days: 7
+
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v5
         with:
