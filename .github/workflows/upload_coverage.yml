@@ -48,7 +48,8 @@ jobs:
         run: |
           lcov --capture --directory build --output-file coverage.info \
             --include '*/vowpalwabbit/*' \
-            --exclude '*/tests/*' --exclude '*/test/*' --exclude '*/ext_libs/*'
+            --exclude '*/tests/*' --exclude '*/test/*' --exclude '*/ext_libs/*' \
+            --ignore-errors unused
           lcov --summary coverage.info
 
       - name: Upload coverage artifact
