@@ -36,7 +36,7 @@ jobs:
           exit 1
 
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y ninja-build lcov
+        run: sudo apt-get update && sudo apt-get install -y ninja-build lcov flatbuffers-compiler libflatbuffers-dev
 
       - name: Build with coverage C++
         run: ./.scripts/linux/build-with-coverage.sh
@@ -48,3 +48,4 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}
