@@ -4,12 +4,11 @@
 
 // Batch 12: Targeted tests for label parsing coverage gaps.
 
-#include "vw/core/cost_sensitive.h"
-
 #include "vw/common/string_view.h"
 #include "vw/common/text_utils.h"
 #include "vw/core/cb.h"
 #include "vw/core/cb_with_observations_label.h"
+#include "vw/core/cost_sensitive.h"
 #include "vw/core/example.h"
 #include "vw/core/io_buf.h"
 #include "vw/core/memory.h"
@@ -98,8 +97,8 @@ void parse_multiclass_label_with_ldict_b12(
   lp.parse_label(l, red_fts, mem, ldict, words, null_logger);
 }
 
-void parse_simple_label_b12(VW::label_parser& lp, VW::string_view label, VW::polylabel& l,
-    VW::reduction_features& red_features)
+void parse_simple_label_b12(
+    VW::label_parser& lp, VW::string_view label, VW::polylabel& l, VW::reduction_features& red_features)
 {
   std::vector<VW::string_view> words;
   VW::tokenize(' ', label, words);
@@ -501,7 +500,7 @@ TEST(CoverageLabelParser, CSClassEquality)
   VW::cs_class b{2.0f, 5, 0.1f, 0.2f};
   VW::cs_class c{1.0f, 3, 0.f, 0.f};
 
-  EXPECT_TRUE(a == b);   // equality based on class_index
+  EXPECT_TRUE(a == b);  // equality based on class_index
   EXPECT_FALSE(a == c);
 }
 

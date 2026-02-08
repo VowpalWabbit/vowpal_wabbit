@@ -1018,8 +1018,8 @@ TEST(CoverageJsonParser, SlatesJsonBasicStructure)
       {"slot_feature": 2}
     ]
   })";
-  auto vw =
-      VW::initialize(vwtest::make_args("--slates", "--dsjson", "--chain_hash", "--no_stdin", "--noconstant", "--quiet"));
+  auto vw = VW::initialize(
+      vwtest::make_args("--slates", "--dsjson", "--chain_hash", "--no_stdin", "--noconstant", "--quiet"));
   auto examples = vwtest::parse_json(*vw, json_text);
   EXPECT_EQ(examples.size(), 6);  // shared + 3 actions + 2 slots
   EXPECT_EQ(examples[0]->l.slates.type, VW::slates::example_type::SHARED);
@@ -1046,8 +1046,8 @@ TEST(CoverageJsonParser, SlatesJsonSlotIds)
       {"sf": 3}
     ]
   })";
-  auto vw =
-      VW::initialize(vwtest::make_args("--slates", "--dsjson", "--chain_hash", "--no_stdin", "--noconstant", "--quiet"));
+  auto vw = VW::initialize(
+      vwtest::make_args("--slates", "--dsjson", "--chain_hash", "--no_stdin", "--noconstant", "--quiet"));
   auto examples = vwtest::parse_json(*vw, json_text);
   EXPECT_EQ(examples.size(), 7);
   EXPECT_EQ(examples[1]->l.slates.slot_id, 0);
@@ -1068,8 +1068,8 @@ TEST(CoverageJsonParser, SlatesJsonSharedFeatures)
       {"S": {"s_f": 1}}
     ]
   })";
-  auto vw =
-      VW::initialize(vwtest::make_args("--slates", "--dsjson", "--chain_hash", "--no_stdin", "--noconstant", "--quiet"));
+  auto vw = VW::initialize(
+      vwtest::make_args("--slates", "--dsjson", "--chain_hash", "--no_stdin", "--noconstant", "--quiet"));
   auto examples = vwtest::parse_json(*vw, json_text);
   EXPECT_EQ(examples.size(), 3);
   EXPECT_EQ(examples[0]->l.slates.type, VW::slates::example_type::SHARED);
@@ -1087,8 +1087,8 @@ TEST(CoverageJsonParser, SlatesJsonNoMulti)
       {"S": {"s_f": 1}}
     ]
   })";
-  auto vw =
-      VW::initialize(vwtest::make_args("--slates", "--dsjson", "--chain_hash", "--no_stdin", "--noconstant", "--quiet"));
+  auto vw = VW::initialize(
+      vwtest::make_args("--slates", "--dsjson", "--chain_hash", "--no_stdin", "--noconstant", "--quiet"));
   auto examples = vwtest::parse_json(*vw, json_text);
   EXPECT_EQ(examples.size(), 2);  // shared + 1 slot
   EXPECT_EQ(examples[0]->l.slates.type, VW::slates::example_type::SHARED);
@@ -1106,8 +1106,8 @@ TEST(CoverageJsonParser, SlatesJsonNoSlots)
       {"_slot_id": 0, "A": {"f": 1}}
     ]
   })";
-  auto vw =
-      VW::initialize(vwtest::make_args("--slates", "--dsjson", "--chain_hash", "--no_stdin", "--noconstant", "--quiet"));
+  auto vw = VW::initialize(
+      vwtest::make_args("--slates", "--dsjson", "--chain_hash", "--no_stdin", "--noconstant", "--quiet"));
   auto examples = vwtest::parse_json(*vw, json_text);
   EXPECT_EQ(examples.size(), 2);  // shared + 1 action
   EXPECT_EQ(examples[0]->l.slates.type, VW::slates::example_type::SHARED);
@@ -1126,8 +1126,8 @@ TEST(CoverageJsonParser, SlatesJsonActionFeatures)
       {"Slot": {"position": 1}}
     ]
   })";
-  auto vw =
-      VW::initialize(vwtest::make_args("--slates", "--dsjson", "--chain_hash", "--no_stdin", "--noconstant", "--quiet"));
+  auto vw = VW::initialize(
+      vwtest::make_args("--slates", "--dsjson", "--chain_hash", "--no_stdin", "--noconstant", "--quiet"));
   auto examples = vwtest::parse_json(*vw, json_text);
   EXPECT_EQ(examples.size(), 3);
   // Action example should have features in namespace 'A'
@@ -1227,8 +1227,8 @@ TEST(CoverageJsonParser, SlatesJsonManyActionsPerSlot)
       {"S": {"s": 1}}
     ]
   })";
-  auto vw =
-      VW::initialize(vwtest::make_args("--slates", "--dsjson", "--chain_hash", "--no_stdin", "--noconstant", "--quiet"));
+  auto vw = VW::initialize(
+      vwtest::make_args("--slates", "--dsjson", "--chain_hash", "--no_stdin", "--noconstant", "--quiet"));
   auto examples = vwtest::parse_json(*vw, json_text);
   EXPECT_EQ(examples.size(), 7);  // shared + 5 actions + 1 slot
   for (int i = 1; i <= 5; i++)
@@ -1251,8 +1251,8 @@ TEST(CoverageJsonParser, SlatesJsonStringFeatures)
       {"S": {"type": "banner"}}
     ]
   })";
-  auto vw =
-      VW::initialize(vwtest::make_args("--slates", "--dsjson", "--chain_hash", "--no_stdin", "--noconstant", "--quiet"));
+  auto vw = VW::initialize(
+      vwtest::make_args("--slates", "--dsjson", "--chain_hash", "--no_stdin", "--noconstant", "--quiet"));
   auto examples = vwtest::parse_json(*vw, json_text);
   EXPECT_EQ(examples.size(), 3);
   // Check audit info for string features
@@ -1290,8 +1290,8 @@ TEST(CoverageJsonParser, JsonMalformedThrows)
   std::string json_text = R"({invalid json)";
   VW::multi_ex examples;
   examples.push_back(&VW::get_unused_example(vw.get()));
-  EXPECT_THROW(VW::parsers::json::read_line_json<true>(
-                   *vw, examples, (char*)json_text.c_str(), json_text.length(), std::bind(VW::get_unused_example, vw.get())),
+  EXPECT_THROW(VW::parsers::json::read_line_json<true>(*vw, examples, (char*)json_text.c_str(), json_text.length(),
+                   std::bind(VW::get_unused_example, vw.get())),
       VW::vw_exception);
   for (auto* ex : examples) { VW::finish_example(*vw, *ex); }
 }
@@ -1302,8 +1302,8 @@ TEST(CoverageJsonParser, JsonMissingClosingBrace)
   std::string json_text = R"({"ns": {"f1": 1.0})";
   VW::multi_ex examples;
   examples.push_back(&VW::get_unused_example(vw.get()));
-  EXPECT_THROW(VW::parsers::json::read_line_json<true>(
-                   *vw, examples, (char*)json_text.c_str(), json_text.length(), std::bind(VW::get_unused_example, vw.get())),
+  EXPECT_THROW(VW::parsers::json::read_line_json<true>(*vw, examples, (char*)json_text.c_str(), json_text.length(),
+                   std::bind(VW::get_unused_example, vw.get())),
       VW::vw_exception);
   for (auto* ex : examples) { VW::finish_example(*vw, *ex); }
 }

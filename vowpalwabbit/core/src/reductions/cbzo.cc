@@ -106,7 +106,13 @@ void constant_update(cbzo& data, VW::example& ec)
   if (feature_mask_off || fw != 0.0f)
   {
     float action_centroid = inference<CONSTANT_POLICY>(*data.all, ec);
-    float grad = ec.l.cb_cont.costs[0].cost / (ec.l.cb_cont.costs[0].action - action_centroid);
+    float denom = ec.l.cb_cont.costs[0].action - action_centroid;
+    // When action is very close to centroid, the gradient estimate cost/denom
+    // becomes numerically unstable. Clamp |denom| to at least radius.
+    if (denom > 0.f && denom < data.radius) { denom = data.radius; }
+    else if (denom < 0.f && denom > -data.radius) { denom = -data.radius; }
+    else if (denom == 0.f) { return; }
+    float grad = ec.l.cb_cont.costs[0].cost / denom;
     float update = -data.all->update_rule_config.eta *
         (grad + l1_grad(*data.all, VW::details::CONSTANT) + l2_grad(*data.all, VW::details::CONSTANT));
 
@@ -132,7 +138,11 @@ void linear_update(cbzo& data, VW::example& ec)
   float mult = -data.all->update_rule_config.eta;
 
   float action_centroid = inference<LINEAR_POLICY>(*data.all, ec);
-  float part_grad = ec.l.cb_cont.costs[0].cost / (ec.l.cb_cont.costs[0].action - action_centroid);
+  float denom = ec.l.cb_cont.costs[0].action - action_centroid;
+  if (denom > 0.f && denom < data.radius) { denom = data.radius; }
+  else if (denom < 0.f && denom > -data.radius) { denom = -data.radius; }
+  else if (denom == 0.f) { return; }
+  float part_grad = ec.l.cb_cont.costs[0].cost / denom;
 
   linear_update_data upd_data;
   upd_data.mult = mult;
@@ -351,6 +361,14 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cbzo_setup(VW::setup_base_
                .help("Exploration Radius"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+
+  constexpr float MIN_RADIUS = 1e-3f;
+  if (data->radius < MIN_RADIUS)
+  {
+    all.logger.err_warn("--radius {} is below minimum {}. Clamping to {} for numerical stability.", data->radius,
+        MIN_RADIUS, MIN_RADIUS);
+    data->radius = MIN_RADIUS;
+  }
 
   bool feature_mask_off = true;
   if (options.was_supplied("feature_mask")) { feature_mask_off = false; }

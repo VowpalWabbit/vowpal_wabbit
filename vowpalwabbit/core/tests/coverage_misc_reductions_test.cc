@@ -480,7 +480,8 @@ TEST(CoverageMiscReductions, NnInpassMultipleExamples)
   for (int i = 0; i < 15; i++)
   {
     float label = static_cast<float>(i) / 10.0f;
-    auto* ex = VW::read_example(*vw, std::to_string(label) + " | a:" + std::to_string(i * 0.1f) + " b:" + std::to_string(1.0f - i * 0.1f));
+    auto* ex = VW::read_example(
+        *vw, std::to_string(label) + " | a:" + std::to_string(i * 0.1f) + " b:" + std::to_string(1.0f - i * 0.1f));
     vw->learn(*ex);
     vw->finish_example(*ex);
   }
@@ -785,7 +786,9 @@ TEST(CoverageMiscReductions, LrqWithDropout)
   auto vw = VW::initialize(vwtest::make_args("--lrq", "ab3", "--lrqdropout", "--quiet"));
   for (int i = 0; i < 10; i++)
   {
-    auto* ex = VW::read_example(*vw, std::to_string((i % 2 == 0) ? 1.0f : -1.0f) + " |a x:" + std::to_string(i * 0.1f) + " |b y:" + std::to_string(1.0f - i * 0.1f));
+    auto* ex = VW::read_example(*vw,
+        std::to_string((i % 2 == 0) ? 1.0f : -1.0f) + " |a x:" + std::to_string(i * 0.1f) +
+            " |b y:" + std::to_string(1.0f - i * 0.1f));
     vw->learn(*ex);
     vw->finish_example(*ex);
   }
@@ -796,7 +799,8 @@ TEST(CoverageMiscReductions, LrqMultipleExamples)
   auto vw = VW::initialize(vwtest::make_args("--lrq", "ab2", "--quiet"));
   for (int i = 0; i < 20; i++)
   {
-    auto* ex = VW::read_example(*vw, std::to_string(i * 0.1f) + " |a x:" + std::to_string(i * 0.1f) + " |b y:" + std::to_string(1.0f - i * 0.05f));
+    auto* ex = VW::read_example(*vw,
+        std::to_string(i * 0.1f) + " |a x:" + std::to_string(i * 0.1f) + " |b y:" + std::to_string(1.0f - i * 0.05f));
     vw->learn(*ex);
     vw->finish_example(*ex);
   }
@@ -863,7 +867,9 @@ TEST(CoverageMiscReductions, InteractMultipleExamples)
   for (int i = 0; i < 15; i++)
   {
     float label = (i % 2 == 0) ? 1.0f : -1.0f;
-    auto* ex = VW::read_example(*vw, std::to_string(label) + " |a 1:1 x:" + std::to_string(i * 0.1f) + " |b 1:1 y:" + std::to_string(1.0f - i * 0.1f));
+    auto* ex = VW::read_example(*vw,
+        std::to_string(label) + " |a 1:1 x:" + std::to_string(i * 0.1f) +
+            " |b 1:1 y:" + std::to_string(1.0f - i * 0.1f));
     vw->learn(*ex);
     vw->finish_example(*ex);
   }
@@ -933,7 +939,8 @@ TEST(CoverageMiscReductions, InteractLearnThenPredict)
   auto vw = VW::initialize(vwtest::make_args("--interact", "ab", "--quiet"));
   for (int i = 0; i < 10; i++)
   {
-    auto* ex = VW::read_example(*vw, "1 |a 1:1 x:" + std::to_string(i * 0.1f) + " |b 1:1 y:" + std::to_string(i * 0.2f));
+    auto* ex =
+        VW::read_example(*vw, "1 |a 1:1 x:" + std::to_string(i * 0.1f) + " |b 1:1 y:" + std::to_string(i * 0.2f));
     vw->learn(*ex);
     vw->finish_example(*ex);
   }
@@ -1007,8 +1014,7 @@ TEST(CoverageMiscReductions, ExploreEvalZeroCost)
 TEST(CoverageMiscReductions, ExploreEvalManyActions)
 {
   auto vw = VW::initialize(vwtest::make_args("--explore_eval", "--quiet"));
-  learn_cb_adf_b17(*vw, "shared | s_1",
-      {"| a_1", "| a_2", "| a_3", "| a_4", "| a_5"}, 0, 1.0f, 0.2f);
+  learn_cb_adf_b17(*vw, "shared | s_1", {"| a_1", "| a_2", "| a_3", "| a_4", "| a_5"}, 0, 1.0f, 0.2f);
 }
 
 TEST(CoverageMiscReductions, ExploreEvalWithMetrics)
@@ -1124,7 +1130,8 @@ TEST(CoverageMiscReductions, FreegradProjectRestartCombined)
   for (int i = 0; i < 20; i++)
   {
     float label = (i % 2 == 0) ? 1.0f : -1.0f;
-    auto* ex = VW::read_example(*vw, std::to_string(label) + " | a:" + std::to_string(i * 0.1f) + " b:" + std::to_string(1.0f - i * 0.05f));
+    auto* ex = VW::read_example(
+        *vw, std::to_string(label) + " | a:" + std::to_string(i * 0.1f) + " b:" + std::to_string(1.0f - i * 0.05f));
     vw->learn(*ex);
     vw->finish_example(*ex);
   }
@@ -1152,9 +1159,7 @@ TEST(CoverageMiscReductions, CbzoLinearBasic)
   vw->finish_example(*ex);
 }
 
-// TODO: CBZO multi-example tests trigger clamp assertion in vw_math.h (min_label > max_label from NaN propagation)
-// Disabled pending fix in cbzo.cc set_minmax / inference.
-TEST(CoverageMiscReductions, DISABLED_CbzoConstantMultipleExamples)
+TEST(CoverageMiscReductions, CbzoConstantMultipleExamples)
 {
   auto vw = VW::initialize(vwtest::make_args("--cbzo", "--policy", "constant", "--quiet"));
   for (int i = 0; i < 10; i++)
@@ -1166,8 +1171,7 @@ TEST(CoverageMiscReductions, DISABLED_CbzoConstantMultipleExamples)
   }
 }
 
-// TODO: Same clamp assertion as CbzoConstantMultipleExamples
-TEST(CoverageMiscReductions, DISABLED_CbzoLinearMultipleExamples)
+TEST(CoverageMiscReductions, CbzoLinearMultipleExamples)
 {
   auto vw = VW::initialize(vwtest::make_args("--cbzo", "--policy", "linear", "--quiet"));
   for (int i = 0; i < 10; i++)
@@ -1221,8 +1225,7 @@ TEST(CoverageMiscReductions, CbzoLinearPredictOnly)
   vw->finish_example(*ex);
 }
 
-// TODO: Same clamp assertion as CbzoConstantMultipleExamples
-TEST(CoverageMiscReductions, DISABLED_CbzoLinearWithL2)
+TEST(CoverageMiscReductions, CbzoLinearWithL2)
 {
   auto vw = VW::initialize(vwtest::make_args("--cbzo", "--policy", "linear", "--l2", "0.01", "--quiet"));
   for (int i = 0; i < 5; i++)

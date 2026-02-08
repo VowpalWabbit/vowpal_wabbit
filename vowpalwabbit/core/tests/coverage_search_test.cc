@@ -10,6 +10,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+
 #include <string>
 #include <vector>
 
@@ -111,29 +112,29 @@ TEST(CoverageSearch, SearchRollinMixPerState)
 
 TEST(CoverageSearch, SearchRollinPolicyRolloutOracle)
 {
-  auto vw = VW::initialize(vwtest::make_args(
-      "--search", "3", "--search_task", "sequence", "--search_rollin", "policy", "--search_rollout", "oracle", "--quiet"));
+  auto vw = VW::initialize(vwtest::make_args("--search", "3", "--search_task", "sequence", "--search_rollin", "policy",
+      "--search_rollout", "oracle", "--quiet"));
   learn_sequence(*vw, {"1 | a", "2 | b", "3 | c"});
 }
 
 TEST(CoverageSearch, SearchRollinLearnRolloutPolicy)
 {
-  auto vw = VW::initialize(vwtest::make_args(
-      "--search", "3", "--search_task", "sequence", "--search_rollin", "learn", "--search_rollout", "policy", "--quiet"));
+  auto vw = VW::initialize(vwtest::make_args("--search", "3", "--search_task", "sequence", "--search_rollin", "learn",
+      "--search_rollout", "policy", "--quiet"));
   learn_sequence(*vw, {"1 | a", "2 | b", "3 | c"});
 }
 
 TEST(CoverageSearch, SearchRollinOracleRolloutPolicy)
 {
-  auto vw = VW::initialize(vwtest::make_args(
-      "--search", "3", "--search_task", "sequence", "--search_rollin", "oracle", "--search_rollout", "policy", "--quiet"));
+  auto vw = VW::initialize(vwtest::make_args("--search", "3", "--search_task", "sequence", "--search_rollin", "oracle",
+      "--search_rollout", "policy", "--quiet"));
   learn_sequence(*vw, {"1 | a", "2 | b", "3 | c"});
 }
 
 TEST(CoverageSearch, SearchRollinOracleRolloutNone)
 {
-  auto vw = VW::initialize(vwtest::make_args(
-      "--search", "3", "--search_task", "sequence", "--search_rollin", "oracle", "--search_rollout", "none", "--quiet"));
+  auto vw = VW::initialize(vwtest::make_args("--search", "3", "--search_task", "sequence", "--search_rollin", "oracle",
+      "--search_rollout", "none", "--quiet"));
   learn_sequence(*vw, {"1 | a", "2 | b"});
 }
 
@@ -160,9 +161,8 @@ TEST(CoverageSearch, SearchAlphaLarge)
 
 TEST(CoverageSearch, SearchBeta)
 {
-  auto vw = VW::initialize(vwtest::make_args(
-      "--search", "3", "--search_task", "sequence", "--search_beta", "0.5", "--search_interpolation", "policy",
-      "--passes", "2", "--holdout_off", "-k", "-c", "--quiet"));
+  auto vw = VW::initialize(vwtest::make_args("--search", "3", "--search_task", "sequence", "--search_beta", "0.5",
+      "--search_interpolation", "policy", "--passes", "2", "--holdout_off", "-k", "-c", "--quiet"));
   learn_sequence(*vw, {"1 | a", "2 | b", "3 | c"});
 }
 
@@ -342,15 +342,15 @@ TEST(CoverageSearch, EntityRelationOrder2MultipleIter)
 TEST(CoverageSearch, EntityRelationOrder3LDF)
 {
   // search_order 3 = LDF mode
-  auto vw = VW::initialize(vwtest::make_args(
-      "--search", "10", "--search_task", "entity_relation", "--search_order", "3", "--csoaa_ldf", "multiline", "--quiet"));
+  auto vw = VW::initialize(vwtest::make_args("--search", "10", "--search_task", "entity_relation", "--search_order",
+      "3", "--csoaa_ldf", "multiline", "--quiet"));
   learn_entity_relation_3ent(*vw);
 }
 
 TEST(CoverageSearch, EntityRelationOrder3LDFMultipleIter)
 {
-  auto vw = VW::initialize(vwtest::make_args(
-      "--search", "10", "--search_task", "entity_relation", "--search_order", "3", "--csoaa_ldf", "multiline", "--quiet"));
+  auto vw = VW::initialize(vwtest::make_args("--search", "10", "--search_task", "entity_relation", "--search_order",
+      "3", "--csoaa_ldf", "multiline", "--quiet"));
   for (int i = 0; i < 3; i++) { learn_entity_relation_3ent(*vw); }
 }
 
@@ -398,8 +398,8 @@ TEST(CoverageSearch, EntityRelationCustomCosts)
 
 TEST(CoverageSearch, EntityRelationSkipCost)
 {
-  auto vw = VW::initialize(vwtest::make_args("--search", "11", "--search_task", "entity_relation", "--search_order",
-      "2", "--skip_cost", "0.05", "--quiet"));
+  auto vw = VW::initialize(vwtest::make_args(
+      "--search", "11", "--search_task", "entity_relation", "--search_order", "2", "--skip_cost", "0.05", "--quiet"));
   learn_entity_relation_3ent(*vw);
 }
 
@@ -499,8 +499,8 @@ TEST(CoverageSearch, EntityRelationOrder0NoCaching)
 
 TEST(CoverageSearch, EntityRelationOrder2ConstraintsSkip)
 {
-  auto vw = VW::initialize(vwtest::make_args("--search", "11", "--search_task", "entity_relation", "--search_order",
-      "2", "--constraints", "--quiet"));
+  auto vw = VW::initialize(vwtest::make_args(
+      "--search", "11", "--search_task", "entity_relation", "--search_order", "2", "--constraints", "--quiet"));
   learn_entity_relation_3ent(*vw);
 }
 
@@ -582,8 +582,7 @@ TEST(CoverageSearch, ArgmaxTask)
 
 TEST(CoverageSearch, ArgmaxTaskWithCost)
 {
-  auto vw = VW::initialize(
-      vwtest::make_args("--search", "2", "--search_task", "argmax", "--cost", "5.0", "--quiet"));
+  auto vw = VW::initialize(vwtest::make_args("--search", "2", "--search_task", "argmax", "--cost", "5.0", "--quiet"));
   VW::multi_ex multi_ex;
   multi_ex.push_back(VW::read_example(*vw, "1 | a"));
   multi_ex.push_back(VW::read_example(*vw, "2 | b"));
@@ -594,8 +593,7 @@ TEST(CoverageSearch, ArgmaxTaskWithCost)
 
 TEST(CoverageSearch, ArgmaxTaskWithMax)
 {
-  auto vw =
-      VW::initialize(vwtest::make_args("--search", "2", "--search_task", "argmax", "--max", "--quiet"));
+  auto vw = VW::initialize(vwtest::make_args("--search", "2", "--search_task", "argmax", "--max", "--quiet"));
   VW::multi_ex multi_ex;
   multi_ex.push_back(VW::read_example(*vw, "1 | a"));
   multi_ex.push_back(VW::read_example(*vw, "2 | b"));
@@ -720,15 +718,15 @@ TEST(CoverageSearch, DepParserMultipleIterations)
 
 TEST(CoverageSearch, DepParserRolloutOracle)
 {
-  auto vw = VW::initialize(vwtest::make_args(
-      "--search", "3", "--search_task", "dep_parser", "--search_rollout", "oracle", "--quiet"));
+  auto vw = VW::initialize(
+      vwtest::make_args("--search", "3", "--search_task", "dep_parser", "--search_rollout", "oracle", "--quiet"));
   learn_dep_parser(*vw, {"2,1 | the", "0,8 | cat"});
 }
 
 TEST(CoverageSearch, DepParserRollinPolicy)
 {
-  auto vw = VW::initialize(vwtest::make_args(
-      "--search", "3", "--search_task", "dep_parser", "--search_rollin", "policy", "--quiet"));
+  auto vw = VW::initialize(
+      vwtest::make_args("--search", "3", "--search_task", "dep_parser", "--search_rollin", "policy", "--quiet"));
   learn_dep_parser(*vw, {"2,1 | the", "0,8 | cat"});
 }
 
@@ -750,8 +748,8 @@ TEST(CoverageSearch, DepParserOneLearner)
 {
   // one_learner maps actions up to 2+2*num_label; with num_label=3, need --search >= 8
   // root_label must be <= num_label; run() assigns tags[stack.back()] = root_label
-  auto vw = VW::initialize(vwtest::make_args(
-      "--search", "8", "--search_task", "dep_parser", "--one_learner", "--num_label", "3", "--root_label", "3", "--quiet"));
+  auto vw = VW::initialize(vwtest::make_args("--search", "8", "--search_task", "dep_parser", "--one_learner",
+      "--num_label", "3", "--root_label", "3", "--quiet"));
   learn_dep_parser(*vw, {"2,1 | the", "0,3 | cat", "2,2 | sat"});
 }
 
@@ -759,8 +757,8 @@ TEST(CoverageSearch, DepParserCostToGo)
 {
   // dep_parser with cost_to_go needs --search >= 1+2*num_label (default num_label=12 => 25)
   // Using fewer actions crashes with double-free (VW bug: cost_to_go doesn't handle action space mismatch)
-  auto vw = VW::initialize(
-      vwtest::make_args("--search", "25", "--search_task", "dep_parser", "--cost_to_go", "--quiet"));
+  auto vw =
+      VW::initialize(vwtest::make_args("--search", "25", "--search_task", "dep_parser", "--cost_to_go", "--quiet"));
   learn_dep_parser(*vw, {"2,1 | the", "0,3 | cat", "2,2 | sat"});
 }
 
@@ -768,22 +766,22 @@ TEST(CoverageSearch, DepParserCostToGoOneLearner)
 {
   // one_learner maps actions up to 2+2*num_label; with num_label=3, need --search >= 8
   // root_label must be <= num_label
-  auto vw = VW::initialize(vwtest::make_args(
-      "--search", "8", "--search_task", "dep_parser", "--cost_to_go", "--one_learner", "--num_label", "3", "--root_label", "3", "--quiet"));
+  auto vw = VW::initialize(vwtest::make_args("--search", "8", "--search_task", "dep_parser", "--cost_to_go",
+      "--one_learner", "--num_label", "3", "--root_label", "3", "--quiet"));
   learn_dep_parser(*vw, {"2,1 | the", "0,3 | cat", "2,2 | sat"});
 }
 
 TEST(CoverageSearch, DepParserCustomNumLabel)
 {
-  auto vw = VW::initialize(
-      vwtest::make_args("--search", "3", "--search_task", "dep_parser", "--num_label", "6", "--quiet"));
+  auto vw =
+      VW::initialize(vwtest::make_args("--search", "3", "--search_task", "dep_parser", "--num_label", "6", "--quiet"));
   learn_dep_parser(*vw, {"2,1 | the", "0,6 | cat", "2,3 | sat"});
 }
 
 TEST(CoverageSearch, DepParserCustomRootLabel)
 {
-  auto vw = VW::initialize(
-      vwtest::make_args("--search", "3", "--search_task", "dep_parser", "--root_label", "5", "--quiet"));
+  auto vw =
+      VW::initialize(vwtest::make_args("--search", "3", "--search_task", "dep_parser", "--root_label", "5", "--quiet"));
   learn_dep_parser(*vw, {"2,1 | the", "0,5 | cat", "2,2 | sat"});
 }
 
@@ -841,8 +839,8 @@ TEST(CoverageSearch, GraphTaskMultipleIterations)
 
 TEST(CoverageSearch, GraphTaskNoCaching)
 {
-  auto vw = VW::initialize(
-      vwtest::make_args("--search", "3", "--search_task", "graph", "--search_no_caching", "--quiet"));
+  auto vw =
+      VW::initialize(vwtest::make_args("--search", "3", "--search_task", "graph", "--search_no_caching", "--quiet"));
   learn_graph_3nodes(*vw);
 }
 
@@ -1019,14 +1017,19 @@ TEST(CoverageSearch, DebugMetataskWithRolloutNone)
   learn_sequence(*vw, {"1 | a", "2 | b", "3 | c"});
 }
 
-// TODO: SelectiveBranchingWithSequenceSpan removed - triggers assertion failure in
-// learner.cc:773 decrement_offset: ft_offset underflow when combining selective_branching
-// metatask with sequencespan task. VW bug: selective_branching doesn't account for
-// sequencespan's different learner width.
+TEST(CoverageSearch, SelectiveBranchingWithSequenceSpan)
+{
+  auto vw = VW::initialize(vwtest::make_args(
+      "--search", "3", "--search_task", "sequencespan", "--search_metatask", "selective_branching", "--quiet"));
+  learn_sequence(*vw, {"1 | a", "2 | b", "3 | c"});
+}
 
-// TODO: DebugMetataskWithSequenceCTG removed - triggers assertion failure in
-// learner.cc:773 decrement_offset: ft_offset underflow when combining debug metatask
-// with sequence_ctg task. Same class of VW bug as SelectiveBranchingWithSequenceSpan.
+TEST(CoverageSearch, DebugMetataskWithSequenceCTG)
+{
+  auto vw = VW::initialize(
+      vwtest::make_args("--search", "3", "--search_task", "sequence_ctg", "--search_metatask", "debug", "--quiet"));
+  learn_sequence(*vw, {"1 | a", "2 | b", "3 | c"});
+}
 
 TEST(CoverageSearch, SelectiveBranchingLongerSequence)
 {

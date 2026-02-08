@@ -354,8 +354,7 @@ TEST(CoverageTextParser, ParserCacheFileCreation)
 {
   const char* cache_file = "/tmp/vw_batch11_cache_1.cache";
   std::remove(cache_file);
-  auto vw = VW::initialize(
-      vwtest::make_args("--quiet", "--no_stdin", "--cache_file", cache_file, "--passes", "1"));
+  auto vw = VW::initialize(vwtest::make_args("--quiet", "--no_stdin", "--cache_file", cache_file, "--passes", "1"));
   auto* ex = VW::read_example(*vw, "1 | a b c");
   vw->learn(*ex);
   VW::finish_example(*vw, *ex);
@@ -370,16 +369,14 @@ TEST(CoverageTextParser, ParserKillCacheFlag)
   std::remove(cache_file);
   // First, create a cache
   {
-    auto vw = VW::initialize(
-        vwtest::make_args("--quiet", "--no_stdin", "--cache_file", cache_file));
+    auto vw = VW::initialize(vwtest::make_args("--quiet", "--no_stdin", "--cache_file", cache_file));
     auto* ex = VW::read_example(*vw, "1 | a b c");
     vw->learn(*ex);
     VW::finish_example(*vw, *ex);
   }
   // Now, --kill_cache should force recreation
   {
-    auto vw = VW::initialize(
-        vwtest::make_args("--quiet", "--no_stdin", "--cache_file", cache_file, "-k"));
+    auto vw = VW::initialize(vwtest::make_args("--quiet", "--no_stdin", "--cache_file", cache_file, "-k"));
     auto* ex = VW::read_example(*vw, "1 | a b c");
     vw->learn(*ex);
     VW::finish_example(*vw, *ex);
@@ -506,8 +503,8 @@ TEST(CoverageTextParser, ParserConstantValue)
 
 TEST(CoverageTextParser, ParserMinMaxPrediction)
 {
-  auto vw = VW::initialize(
-      vwtest::make_args("--quiet", "--no_stdin", "--min_prediction", "-5.0", "--max_prediction", "5.0"));
+  auto vw =
+      VW::initialize(vwtest::make_args("--quiet", "--no_stdin", "--min_prediction", "-5.0", "--max_prediction", "5.0"));
   auto* ex = VW::read_example(*vw, "1 | a b c");
   vw->learn(*ex);
   EXPECT_GE(ex->pred.scalar, -5.0f);
@@ -584,8 +581,7 @@ TEST(CoverageTextParser, ParserL2Lambda)
 
 TEST(CoverageTextParser, ParserNoBiasRegularization)
 {
-  auto vw =
-      VW::initialize(vwtest::make_args("--quiet", "--no_stdin", "--l2", "0.01", "--no_bias_regularization"));
+  auto vw = VW::initialize(vwtest::make_args("--quiet", "--no_stdin", "--l2", "0.01", "--no_bias_regularization"));
   auto* ex = VW::read_example(*vw, "1 | a b c");
   vw->learn(*ex);
   VW::finish_example(*vw, *ex);
@@ -593,8 +589,7 @@ TEST(CoverageTextParser, ParserNoBiasRegularization)
 
 TEST(CoverageTextParser, ParserNamedLabels)
 {
-  auto vw =
-      VW::initialize(vwtest::make_args("--quiet", "--no_stdin", "--named_labels", "cat,dog,bird", "--oaa", "3"));
+  auto vw = VW::initialize(vwtest::make_args("--quiet", "--no_stdin", "--named_labels", "cat,dog,bird", "--oaa", "3"));
   auto* ex = VW::read_example(*vw, "cat | a b c");
   vw->learn(*ex);
   VW::finish_example(*vw, *ex);
@@ -604,8 +599,7 @@ TEST(CoverageTextParser, ParserCacheMultipass)
 {
   const char* cache_file = "/tmp/vw_batch11_cache_mp.cache";
   std::remove(cache_file);
-  auto vw = VW::initialize(
-      vwtest::make_args("--quiet", "--no_stdin", "--cache_file", cache_file, "--passes", "2"));
+  auto vw = VW::initialize(vwtest::make_args("--quiet", "--no_stdin", "--cache_file", cache_file, "--passes", "2"));
   for (int i = 0; i < 5; i++)
   {
     auto* ex = VW::read_example(*vw, std::to_string(i % 2 == 0 ? 1.0f : -1.0f) + " | f:" + std::to_string(i));
@@ -821,8 +815,8 @@ TEST(CoverageTextParser, HoldoutPeriod)
 {
   const char* cache_file = "/tmp/vw_batch11_cache_holdout.cache";
   std::remove(cache_file);
-  auto vw = VW::initialize(vwtest::make_args(
-      "--quiet", "--no_stdin", "--holdout_period", "5", "--cache_file", cache_file, "--passes", "2"));
+  auto vw = VW::initialize(
+      vwtest::make_args("--quiet", "--no_stdin", "--holdout_period", "5", "--cache_file", cache_file, "--passes", "2"));
   for (int i = 0; i < 20; i++)
   {
     auto* ex = VW::read_example(*vw, "1 | a b c");
@@ -837,8 +831,8 @@ TEST(CoverageTextParser, HoldoutAfter)
 {
   const char* cache_file = "/tmp/vw_batch11_cache_holdout2.cache";
   std::remove(cache_file);
-  auto vw = VW::initialize(vwtest::make_args(
-      "--quiet", "--no_stdin", "--holdout_after", "10", "--cache_file", cache_file, "--passes", "2"));
+  auto vw = VW::initialize(
+      vwtest::make_args("--quiet", "--no_stdin", "--holdout_after", "10", "--cache_file", cache_file, "--passes", "2"));
   for (int i = 0; i < 20; i++)
   {
     auto* ex = VW::read_example(*vw, "1 | a b c");
@@ -853,8 +847,8 @@ TEST(CoverageTextParser, HoldoutOff)
 {
   const char* cache_file = "/tmp/vw_batch11_cache_holdout3.cache";
   std::remove(cache_file);
-  auto vw = VW::initialize(vwtest::make_args(
-      "--quiet", "--no_stdin", "--holdout_off", "--cache_file", cache_file, "--passes", "2"));
+  auto vw = VW::initialize(
+      vwtest::make_args("--quiet", "--no_stdin", "--holdout_off", "--cache_file", cache_file, "--passes", "2"));
   for (int i = 0; i < 10; i++)
   {
     auto* ex = VW::read_example(*vw, "1 | a b c");

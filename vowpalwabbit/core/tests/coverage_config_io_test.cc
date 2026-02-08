@@ -249,9 +249,9 @@ TEST(CoverageConfigIo, CLIParseSimpleInt)
   VW::config::options_cli opts({"--num_bits", "14", "--quiet"});
   uint32_t bits = 0;
   bool quiet = false;
-  auto group = VW::config::option_group_definition("Test").add(
-      VW::config::make_option("num_bits", bits)).add(
-      VW::config::make_option("quiet", quiet));
+  auto group = VW::config::option_group_definition("Test")
+                   .add(VW::config::make_option("num_bits", bits))
+                   .add(VW::config::make_option("quiet", quiet));
   opts.add_and_parse(group);
   EXPECT_TRUE(opts.was_supplied("num_bits"));
   EXPECT_EQ(bits, 14u);
@@ -264,9 +264,9 @@ TEST(CoverageConfigIo, CLIParseWithEqualSign)
   VW::config::options_cli opts({"--num_bits=16", "--quiet"});
   uint32_t bits = 0;
   bool quiet = false;
-  auto group = VW::config::option_group_definition("Test").add(
-      VW::config::make_option("num_bits", bits)).add(
-      VW::config::make_option("quiet", quiet));
+  auto group = VW::config::option_group_definition("Test")
+                   .add(VW::config::make_option("num_bits", bits))
+                   .add(VW::config::make_option("quiet", quiet));
   opts.add_and_parse(group);
   EXPECT_EQ(bits, 16u);
 }
@@ -276,9 +276,9 @@ TEST(CoverageConfigIo, CLIParseDefaultValueUsed)
   VW::config::options_cli opts({"--quiet"});
   uint32_t bits = 0;
   bool quiet = false;
-  auto group = VW::config::option_group_definition("Test").add(
-      VW::config::make_option("num_bits", bits).default_value(18)).add(
-      VW::config::make_option("quiet", quiet));
+  auto group = VW::config::option_group_definition("Test")
+                   .add(VW::config::make_option("num_bits", bits).default_value(18))
+                   .add(VW::config::make_option("quiet", quiet));
   opts.add_and_parse(group);
   EXPECT_FALSE(opts.was_supplied("num_bits"));
   EXPECT_EQ(bits, 18u);
@@ -288,8 +288,7 @@ TEST(CoverageConfigIo, CLIWasNotSupplied)
 {
   VW::config::options_cli opts({"--quiet"});
   bool quiet = false;
-  auto group = VW::config::option_group_definition("Test").add(
-      VW::config::make_option("quiet", quiet));
+  auto group = VW::config::option_group_definition("Test").add(VW::config::make_option("quiet", quiet));
   opts.add_and_parse(group);
   EXPECT_FALSE(opts.was_supplied("nonexistent"));
 }
@@ -298,8 +297,8 @@ TEST(CoverageConfigIo, CLIShortOption)
 {
   VW::config::options_cli opts({"-b", "14"});
   uint32_t bits = 0;
-  auto group = VW::config::option_group_definition("Test").add(
-      VW::config::make_option("num_bits", bits).short_name("b"));
+  auto group =
+      VW::config::option_group_definition("Test").add(VW::config::make_option("num_bits", bits).short_name("b"));
   opts.add_and_parse(group);
   EXPECT_TRUE(opts.was_supplied("b"));
   EXPECT_EQ(bits, 14u);
@@ -310,8 +309,8 @@ TEST(CoverageConfigIo, CLIShortOptionInlineValue)
   // Short option with value attached: -b14
   VW::config::options_cli opts({"-b14"});
   uint32_t bits = 0;
-  auto group = VW::config::option_group_definition("Test").add(
-      VW::config::make_option("num_bits", bits).short_name("b"));
+  auto group =
+      VW::config::option_group_definition("Test").add(VW::config::make_option("num_bits", bits).short_name("b"));
   opts.add_and_parse(group);
   EXPECT_EQ(bits, 14u);
 }
@@ -320,8 +319,7 @@ TEST(CoverageConfigIo, CLIUnknownOptionBecomesPositional)
 {
   VW::config::options_cli opts({"--unknown_flag", "--quiet"});
   bool quiet = false;
-  auto group = VW::config::option_group_definition("Test").add(
-      VW::config::make_option("quiet", quiet));
+  auto group = VW::config::option_group_definition("Test").add(VW::config::make_option("quiet", quiet));
   opts.add_and_parse(group);
   auto positional = opts.get_positional_tokens();
   EXPECT_GE(positional.size(), 1u);
@@ -331,18 +329,16 @@ TEST(CoverageConfigIo, CLICheckUnregisteredThrowsOnUnknown)
 {
   VW::config::options_cli opts({"--unknown_flag", "--quiet"});
   bool quiet = false;
-  auto group = VW::config::option_group_definition("Test").add(
-      VW::config::make_option("quiet", quiet));
+  auto group = VW::config::option_group_definition("Test").add(VW::config::make_option("quiet", quiet));
   opts.add_and_parse(group);
-  EXPECT_THROW(opts.check_unregistered(), VW::vw_unrecognised_option_exception);
+  EXPECT_THROW((void)opts.check_unregistered(), VW::vw_unrecognised_option_exception);
 }
 
 TEST(CoverageConfigIo, CLIInsertOption)
 {
   VW::config::options_cli opts({"--quiet"});
   bool quiet = false;
-  auto group = VW::config::option_group_definition("Test").add(
-      VW::config::make_option("quiet", quiet));
+  auto group = VW::config::option_group_definition("Test").add(VW::config::make_option("quiet", quiet));
   opts.add_and_parse(group);
   opts.insert("num_bits", "14");
   EXPECT_TRUE(opts.was_supplied("num_bits"));
@@ -359,8 +355,7 @@ TEST(CoverageConfigIo, CLIReplaceExistingOption)
 {
   VW::config::options_cli opts({"--num_bits", "14"});
   uint32_t bits = 0;
-  auto group = VW::config::option_group_definition("Test").add(
-      VW::config::make_option("num_bits", bits));
+  auto group = VW::config::option_group_definition("Test").add(VW::config::make_option("num_bits", bits));
   opts.add_and_parse(group);
   EXPECT_EQ(bits, 14u);
   opts.replace("num_bits", "20");
@@ -371,8 +366,7 @@ TEST(CoverageConfigIo, CLIReplaceInsertWhenMissing)
 {
   VW::config::options_cli opts({"--quiet"});
   bool quiet = false;
-  auto group = VW::config::option_group_definition("Test").add(
-      VW::config::make_option("quiet", quiet));
+  auto group = VW::config::option_group_definition("Test").add(VW::config::make_option("quiet", quiet));
   opts.add_and_parse(group);
   // replace on non-existent key inserts
   opts.replace("num_bits", "16");
@@ -383,8 +377,7 @@ TEST(CoverageConfigIo, CLIStringOption)
 {
   VW::config::options_cli opts({"--data", "myfile.txt"});
   std::string data;
-  auto group = VW::config::option_group_definition("Test").add(
-      VW::config::make_option("data", data));
+  auto group = VW::config::option_group_definition("Test").add(VW::config::make_option("data", data));
   opts.add_and_parse(group);
   EXPECT_EQ(data, "myfile.txt");
 }
@@ -393,8 +386,7 @@ TEST(CoverageConfigIo, CLIFloatOption)
 {
   VW::config::options_cli opts({"--learning_rate", "0.25"});
   float lr = 0.0f;
-  auto group = VW::config::option_group_definition("Test").add(
-      VW::config::make_option("learning_rate", lr));
+  auto group = VW::config::option_group_definition("Test").add(VW::config::make_option("learning_rate", lr));
   opts.add_and_parse(group);
   EXPECT_FLOAT_EQ(lr, 0.25f);
 }
@@ -404,8 +396,7 @@ TEST(CoverageConfigIo, CLIBoolDefaultFalse)
   // Bool that is not supplied gets default false
   VW::config::options_cli opts({});
   bool quiet = true;  // start with true
-  auto group = VW::config::option_group_definition("Test").add(
-      VW::config::make_option("quiet", quiet));
+  auto group = VW::config::option_group_definition("Test").add(VW::config::make_option("quiet", quiet));
   opts.add_and_parse(group);
   EXPECT_FALSE(quiet);
 }
@@ -414,8 +405,7 @@ TEST(CoverageConfigIo, CLIVectorStringOption)
 {
   VW::config::options_cli opts({"--interactions", "ab", "cd", "ef"});
   std::vector<std::string> interactions;
-  auto group = VW::config::option_group_definition("Test").add(
-      VW::config::make_option("interactions", interactions));
+  auto group = VW::config::option_group_definition("Test").add(VW::config::make_option("interactions", interactions));
   opts.add_and_parse(group);
   EXPECT_EQ(interactions.size(), 3u);
   EXPECT_EQ(interactions[0], "ab");
@@ -427,8 +417,7 @@ TEST(CoverageConfigIo, CLITerminatorHandling)
 {
   VW::config::options_cli opts({"--quiet", "--", "--not_an_option"});
   bool quiet = false;
-  auto group = VW::config::option_group_definition("Test").add(
-      VW::config::make_option("quiet", quiet));
+  auto group = VW::config::option_group_definition("Test").add(VW::config::make_option("quiet", quiet));
   opts.add_and_parse(group);
   auto positional = opts.get_positional_tokens();
   EXPECT_GE(positional.size(), 1u);
@@ -444,8 +433,7 @@ TEST(CoverageConfigIo, CLIDisagreeingOptionValues)
 {
   VW::config::options_cli opts({"--num_bits", "14", "--num_bits", "16"});
   uint32_t bits = 0;
-  auto group = VW::config::option_group_definition("Test").add(
-      VW::config::make_option("num_bits", bits));
+  auto group = VW::config::option_group_definition("Test").add(VW::config::make_option("num_bits", bits));
   EXPECT_THROW(opts.add_and_parse(group), VW::vw_argument_disagreement_exception);
 }
 
@@ -453,8 +441,8 @@ TEST(CoverageConfigIo, CLIAllowOverrideNoThrow)
 {
   VW::config::options_cli opts({"--num_bits", "14", "--num_bits", "16"});
   uint32_t bits = 0;
-  auto group = VW::config::option_group_definition("Test").add(
-      VW::config::make_option("num_bits", bits).allow_override());
+  auto group =
+      VW::config::option_group_definition("Test").add(VW::config::make_option("num_bits", bits).allow_override());
   // Should not throw because override is allowed
   opts.add_and_parse(group);
   EXPECT_EQ(bits, 14u);  // first value is used
@@ -465,8 +453,7 @@ TEST(CoverageConfigIo, CLITintAndResetTint)
   VW::config::options_cli opts({"--quiet"});
   bool quiet = false;
   opts.tint("my_reduction");
-  auto group = VW::config::option_group_definition("Test").add(
-      VW::config::make_option("quiet", quiet));
+  auto group = VW::config::option_group_definition("Test").add(VW::config::make_option("quiet", quiet));
   opts.add_and_parse(group);
   auto collection = opts.get_collection_of_options();
   EXPECT_TRUE(collection.count("my_reduction") > 0);
@@ -478,9 +465,9 @@ TEST(CoverageConfigIo, CLIGetAllOptions)
   VW::config::options_cli opts({"--num_bits", "14", "--quiet"});
   uint32_t bits = 0;
   bool quiet = false;
-  auto group = VW::config::option_group_definition("Test").add(
-      VW::config::make_option("num_bits", bits)).add(
-      VW::config::make_option("quiet", quiet));
+  auto group = VW::config::option_group_definition("Test")
+                   .add(VW::config::make_option("num_bits", bits))
+                   .add(VW::config::make_option("quiet", quiet));
   opts.add_and_parse(group);
   auto all_opts = opts.get_all_options();
   EXPECT_EQ(all_opts.size(), 2u);
@@ -490,8 +477,7 @@ TEST(CoverageConfigIo, CLIGetOptionByName)
 {
   VW::config::options_cli opts({"--num_bits", "14"});
   uint32_t bits = 0;
-  auto group = VW::config::option_group_definition("Test").add(
-      VW::config::make_option("num_bits", bits));
+  auto group = VW::config::option_group_definition("Test").add(VW::config::make_option("num_bits", bits));
   opts.add_and_parse(group);
   auto opt = opts.get_option("num_bits");
   EXPECT_EQ(opt->m_name, "num_bits");
@@ -501,10 +487,9 @@ TEST(CoverageConfigIo, CLIGetOptionNotFoundThrows)
 {
   VW::config::options_cli opts({"--quiet"});
   bool quiet = false;
-  auto group = VW::config::option_group_definition("Test").add(
-      VW::config::make_option("quiet", quiet));
+  auto group = VW::config::option_group_definition("Test").add(VW::config::make_option("quiet", quiet));
   opts.add_and_parse(group);
-  EXPECT_THROW(opts.get_option("nonexistent"), std::out_of_range);
+  EXPECT_THROW((void)opts.get_option("nonexistent"), std::out_of_range);
 }
 
 // ============================================================
@@ -661,8 +646,7 @@ TEST(CoverageConfigIo, CustomSinkLoggerCreation)
 TEST(CoverageConfigIo, CustomSinkLegacyLoggerCreation)
 {
   std::vector<std::string> messages;
-  auto func = [](void* ctx, const std::string& msg)
-  { static_cast<std::vector<std::string>*>(ctx)->push_back(msg); };
+  auto func = [](void* ctx, const std::string& msg) { static_cast<std::vector<std::string>*>(ctx)->push_back(msg); };
   auto logger = VW::io::create_custom_sink_logger_legacy(&messages, func);
   logger.err_info("hello {}", "legacy");
   EXPECT_GE(messages.size(), 1u);
@@ -1392,8 +1376,8 @@ TEST(CoverageConfigIo, AddParseAndCheckNecessaryTrue)
   std::string name;
   uint32_t param = 0;
   auto group = VW::config::option_group_definition("Test")
-      .add(VW::config::make_option("reduction_name", name).necessary())
-      .add(VW::config::make_option("param", param));
+                   .add(VW::config::make_option("reduction_name", name).necessary())
+                   .add(VW::config::make_option("param", param));
   bool necessary = opts.add_parse_and_check_necessary(group);
   EXPECT_TRUE(necessary);
   EXPECT_EQ(name, "myred");
@@ -1406,8 +1390,8 @@ TEST(CoverageConfigIo, AddParseAndCheckNecessaryFalse)
   std::string name;
   uint32_t param = 0;
   auto group = VW::config::option_group_definition("Test")
-      .add(VW::config::make_option("reduction_name", name).necessary())
-      .add(VW::config::make_option("param", param));
+                   .add(VW::config::make_option("reduction_name", name).necessary())
+                   .add(VW::config::make_option("param", param));
   bool necessary = opts.add_parse_and_check_necessary(group);
   EXPECT_FALSE(necessary);
 }
@@ -1435,8 +1419,7 @@ TEST(CoverageConfigIo, GetAllOptionGroupDefinitions)
 {
   VW::config::options_cli opts({"--quiet"});
   bool quiet = false;
-  auto group1 = VW::config::option_group_definition("Group1").add(
-      VW::config::make_option("quiet", quiet));
+  auto group1 = VW::config::option_group_definition("Group1").add(VW::config::make_option("quiet", quiet));
   opts.add_and_parse(group1);
   const auto& defs = opts.get_all_option_group_definitions();
   EXPECT_EQ(defs.size(), 1u);
@@ -1446,8 +1429,7 @@ TEST(CoverageConfigIo, GetTypedOption)
 {
   VW::config::options_cli opts({"--num_bits", "14"});
   uint32_t bits = 0;
-  auto group = VW::config::option_group_definition("Test").add(
-      VW::config::make_option("num_bits", bits));
+  auto group = VW::config::option_group_definition("Test").add(VW::config::make_option("num_bits", bits));
   opts.add_and_parse(group);
   auto& typed = opts.get_typed_option<uint32_t>("num_bits");
   EXPECT_EQ(typed.value(), 14u);
@@ -1457,8 +1439,7 @@ TEST(CoverageConfigIo, ConstGetAllOptions)
 {
   VW::config::options_cli opts({"--quiet"});
   bool quiet = false;
-  auto group = VW::config::option_group_definition("Test").add(
-      VW::config::make_option("quiet", quiet));
+  auto group = VW::config::option_group_definition("Test").add(VW::config::make_option("quiet", quiet));
   opts.add_and_parse(group);
   const VW::config::options_i& const_opts = opts;
   auto all = const_opts.get_all_options();
@@ -1469,8 +1450,7 @@ TEST(CoverageConfigIo, ConstGetOption)
 {
   VW::config::options_cli opts({"--quiet"});
   bool quiet = false;
-  auto group = VW::config::option_group_definition("Test").add(
-      VW::config::make_option("quiet", quiet));
+  auto group = VW::config::option_group_definition("Test").add(VW::config::make_option("quiet", quiet));
   opts.add_and_parse(group);
   const VW::config::options_i& const_opts = opts;
   auto opt = const_opts.get_option("quiet");
@@ -1481,8 +1461,7 @@ TEST(CoverageConfigIo, OptionBuilderHidden)
 {
   bool flag = false;
   VW::config::options_cli opts({"--hidden_flag"});
-  auto group = VW::config::option_group_definition("Test").add(
-      VW::config::make_option("hidden_flag", flag).hidden());
+  auto group = VW::config::option_group_definition("Test").add(VW::config::make_option("hidden_flag", flag).hidden());
   opts.add_and_parse(group);
   auto opt = opts.get_option("hidden_flag");
   EXPECT_TRUE(opt->m_hidden_from_help);
@@ -1492,8 +1471,8 @@ TEST(CoverageConfigIo, OptionBuilderExperimental)
 {
   bool flag = false;
   VW::config::options_cli opts({"--exp_flag"});
-  auto group = VW::config::option_group_definition("Test").add(
-      VW::config::make_option("exp_flag", flag).experimental());
+  auto group =
+      VW::config::option_group_definition("Test").add(VW::config::make_option("exp_flag", flag).experimental());
   opts.add_and_parse(group);
   auto opt = opts.get_option("exp_flag");
   EXPECT_TRUE(opt->m_experimental);
@@ -1503,8 +1482,7 @@ TEST(CoverageConfigIo, OptionBuilderKeep)
 {
   uint32_t val = 0;
   VW::config::options_cli opts({"--kept_opt", "5"});
-  auto group = VW::config::option_group_definition("Test").add(
-      VW::config::make_option("kept_opt", val).keep());
+  auto group = VW::config::option_group_definition("Test").add(VW::config::make_option("kept_opt", val).keep());
   opts.add_and_parse(group);
   auto opt = opts.get_option("kept_opt");
   EXPECT_TRUE(opt->m_keep);
@@ -1514,8 +1492,7 @@ TEST(CoverageConfigIo, OptionBuilderShortNameCharOverload)
 {
   uint32_t val = 0;
   VW::config::options_cli opts({"-x", "10"});
-  auto group = VW::config::option_group_definition("Test").add(
-      VW::config::make_option("xopt", val).short_name('x'));
+  auto group = VW::config::option_group_definition("Test").add(VW::config::make_option("xopt", val).short_name('x'));
   opts.add_and_parse(group);
   EXPECT_EQ(val, 10u);
 }
@@ -1523,17 +1500,14 @@ TEST(CoverageConfigIo, OptionBuilderShortNameCharOverload)
 TEST(CoverageConfigIo, OptionBuilderShortNameInvalidLength)
 {
   uint32_t val = 0;
-  EXPECT_THROW(
-      VW::config::make_option("xopt", val).short_name("ab"),
-      VW::vw_exception);
+  EXPECT_THROW(VW::config::make_option("xopt", val).short_name("ab"), VW::vw_exception);
 }
 
 TEST(CoverageConfigIo, OptionGroupCallOperator)
 {
   bool flag = false;
   uint32_t val = 0;
-  auto group = VW::config::option_group_definition("Test")(
-      VW::config::make_option("flag", flag))(
+  auto group = VW::config::option_group_definition("Test")(VW::config::make_option("flag", flag))(
       VW::config::make_option("val", val));
   EXPECT_EQ(group.m_options.size(), 2u);
 }

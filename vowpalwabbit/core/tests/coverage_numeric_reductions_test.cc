@@ -501,8 +501,8 @@ TEST(CoverageNumericReductions, BfgsBasicInit)
 {
   const char* cache_file = "/tmp/vw_batch9_bfgs_1.cache";
   std::remove(cache_file);
-  auto vw = VW::initialize(
-      vwtest::make_args("--bfgs", "--passes", "2", "--quiet", "--cache_file", cache_file, "--no_stdin"));
+  auto vw =
+      VW::initialize(vwtest::make_args("--bfgs", "--passes", "2", "--quiet", "--cache_file", cache_file, "--no_stdin"));
   auto* ex = VW::read_example(*vw, "1 |f x:1.0");
   vw->learn(*ex);
   vw->finish_example(*ex);
@@ -621,8 +621,8 @@ TEST(CoverageNumericReductions, BfgsFeedMultipleExamples)
 {
   const char* cache_file = "/tmp/vw_batch9_bfgs_11.cache";
   std::remove(cache_file);
-  auto vw = VW::initialize(
-      vwtest::make_args("--bfgs", "--passes", "2", "--quiet", "--cache_file", cache_file, "--no_stdin"));
+  auto vw =
+      VW::initialize(vwtest::make_args("--bfgs", "--passes", "2", "--quiet", "--cache_file", cache_file, "--no_stdin"));
   for (int i = 0; i < 10; i++)
   {
     float label = (i % 2 == 0) ? 1.0f : -1.0f;
@@ -637,8 +637,8 @@ TEST(CoverageNumericReductions, BfgsMultipleFeatures)
 {
   const char* cache_file = "/tmp/vw_batch9_bfgs_12.cache";
   std::remove(cache_file);
-  auto vw = VW::initialize(
-      vwtest::make_args("--bfgs", "--passes", "2", "--quiet", "--cache_file", cache_file, "--no_stdin"));
+  auto vw =
+      VW::initialize(vwtest::make_args("--bfgs", "--passes", "2", "--quiet", "--cache_file", cache_file, "--no_stdin"));
   auto* ex = VW::read_example(*vw, "1 |f x:1.0 y:0.5 z:0.3");
   vw->learn(*ex);
   vw->finish_example(*ex);
@@ -733,8 +733,8 @@ TEST(CoverageNumericReductions, BfgsMultiplePassesWithData)
 {
   const char* cache_file = "/tmp/vw_batch9_bfgs_20.cache";
   std::remove(cache_file);
-  auto vw = VW::initialize(
-      vwtest::make_args("--bfgs", "--passes", "3", "--quiet", "--cache_file", cache_file, "--no_stdin"));
+  auto vw =
+      VW::initialize(vwtest::make_args("--bfgs", "--passes", "3", "--quiet", "--cache_file", cache_file, "--no_stdin"));
   for (int i = 0; i < 5; i++)
   {
     auto* ex = VW::read_example(*vw, std::to_string(i * 0.5f) + " |f x:" + std::to_string(i * 0.1f));
@@ -840,8 +840,7 @@ TEST(CoverageNumericReductions, CsActiveTenClasses)
 
 TEST(CoverageNumericReductions, CsActiveMellownessLow)
 {
-  auto vw =
-      VW::initialize(vwtest::make_args("--cs_active", "3", "--simulation", "--mellowness", "0.01", "--quiet"));
+  auto vw = VW::initialize(vwtest::make_args("--cs_active", "3", "--simulation", "--mellowness", "0.01", "--quiet"));
   auto* ex = VW::read_example(*vw, "1:1.0 2:0.0 3:2.0 | a b c");
   vw->learn(*ex);
   vw->finish_example(*ex);
@@ -849,8 +848,7 @@ TEST(CoverageNumericReductions, CsActiveMellownessLow)
 
 TEST(CoverageNumericReductions, CsActiveMellownessHigh)
 {
-  auto vw =
-      VW::initialize(vwtest::make_args("--cs_active", "3", "--simulation", "--mellowness", "1.0", "--quiet"));
+  auto vw = VW::initialize(vwtest::make_args("--cs_active", "3", "--simulation", "--mellowness", "1.0", "--quiet"));
   auto* ex = VW::read_example(*vw, "1:1.0 2:0.0 3:2.0 | a b c");
   vw->learn(*ex);
   vw->finish_example(*ex);
@@ -858,8 +856,7 @@ TEST(CoverageNumericReductions, CsActiveMellownessHigh)
 
 TEST(CoverageNumericReductions, CsActiveDomination0)
 {
-  auto vw =
-      VW::initialize(vwtest::make_args("--cs_active", "3", "--simulation", "--domination", "0", "--quiet"));
+  auto vw = VW::initialize(vwtest::make_args("--cs_active", "3", "--simulation", "--domination", "0", "--quiet"));
   auto* ex = VW::read_example(*vw, "1:1.0 2:0.0 3:2.0 | a b c");
   vw->learn(*ex);
   vw->finish_example(*ex);
@@ -867,8 +864,7 @@ TEST(CoverageNumericReductions, CsActiveDomination0)
 
 TEST(CoverageNumericReductions, CsActiveDomination1)
 {
-  auto vw =
-      VW::initialize(vwtest::make_args("--cs_active", "3", "--simulation", "--domination", "1", "--quiet"));
+  auto vw = VW::initialize(vwtest::make_args("--cs_active", "3", "--simulation", "--domination", "1", "--quiet"));
   auto* ex = VW::read_example(*vw, "1:1.0 2:0.0 3:2.0 | a b c");
   vw->learn(*ex);
   vw->finish_example(*ex);
@@ -876,8 +872,8 @@ TEST(CoverageNumericReductions, CsActiveDomination1)
 
 TEST(CoverageNumericReductions, CsActiveBaseline)
 {
-  auto vw = VW::initialize(
-      vwtest::make_args("--cs_active", "3", "--simulation", "--baseline", "--global_only", "--quiet"));
+  auto vw =
+      VW::initialize(vwtest::make_args("--cs_active", "3", "--simulation", "--baseline", "--global_only", "--quiet"));
   auto* ex = VW::read_example(*vw, "1:1.0 2:0.0 3:2.0 | a b c");
   vw->learn(*ex);
   vw->finish_example(*ex);
@@ -894,8 +890,7 @@ TEST(CoverageNumericReductions, CsActiveCostRange)
 
 TEST(CoverageNumericReductions, CsActiveRangeC)
 {
-  auto vw =
-      VW::initialize(vwtest::make_args("--cs_active", "3", "--simulation", "--range_c", "1.0", "--quiet"));
+  auto vw = VW::initialize(vwtest::make_args("--cs_active", "3", "--simulation", "--range_c", "1.0", "--quiet"));
   auto* ex = VW::read_example(*vw, "1:1.0 2:0.0 3:2.0 | a b c");
   vw->learn(*ex);
   vw->finish_example(*ex);
@@ -967,8 +962,7 @@ TEST(CoverageNumericReductions, CsActiveZeroCosts)
 
 TEST(CoverageNumericReductions, CsActiveSimulationWithMellowness)
 {
-  auto vw =
-      VW::initialize(vwtest::make_args("--cs_active", "5", "--simulation", "--mellowness", "0.5", "--quiet"));
+  auto vw = VW::initialize(vwtest::make_args("--cs_active", "5", "--simulation", "--mellowness", "0.5", "--quiet"));
   for (int i = 0; i < 10; i++)
   {
     auto* ex = VW::read_example(*vw, "1:1.0 2:0.0 3:2.0 4:1.5 5:0.5 | a b c d e");
@@ -1003,8 +997,7 @@ TEST(CoverageNumericReductions, CsActiveNoDomination)
 
 TEST(CoverageNumericReductions, CsActiveWithAdax)
 {
-  auto vw =
-      VW::initialize(vwtest::make_args("--cs_active", "3", "--simulation", "--adax", "--quiet"));
+  auto vw = VW::initialize(vwtest::make_args("--cs_active", "3", "--simulation", "--adax", "--quiet"));
   auto* ex = VW::read_example(*vw, "1:1.0 2:0.0 3:2.0 | a b c");
   vw->learn(*ex);
   vw->finish_example(*ex);
@@ -1366,7 +1359,8 @@ TEST(CoverageNumericReductions, StagePolyMultipleLearnSmallBatch)
   for (int i = 0; i < 20; i++)
   {
     float v = static_cast<float>(i) / 10.0f;
-    auto* ex = VW::read_example(*vw, std::to_string(v) + " | x:" + std::to_string(v) + " y:" + std::to_string(1.0f - v));
+    auto* ex =
+        VW::read_example(*vw, std::to_string(v) + " | x:" + std::to_string(v) + " y:" + std::to_string(1.0f - v));
     vw->learn(*ex);
     vw->finish_example(*ex);
   }
@@ -1379,7 +1373,8 @@ TEST(CoverageNumericReductions, StagePolyMultipleLearnTriggerDoubling)
   for (int i = 0; i < 30; i++)
   {
     float v = static_cast<float>(i) / 10.0f;
-    auto* ex = VW::read_example(*vw, std::to_string(v) + " | x:" + std::to_string(v) + " y:" + std::to_string(1.0f - v));
+    auto* ex =
+        VW::read_example(*vw, std::to_string(v) + " | x:" + std::to_string(v) + " y:" + std::to_string(1.0f - v));
     vw->learn(*ex);
     vw->finish_example(*ex);
   }
@@ -1391,7 +1386,8 @@ TEST(CoverageNumericReductions, StagePolyNoDoblingMultipleLearn)
   for (int i = 0; i < 30; i++)
   {
     float v = static_cast<float>(i) / 10.0f;
-    auto* ex = VW::read_example(*vw, std::to_string(v) + " | x:" + std::to_string(v) + " y:" + std::to_string(1.0f - v));
+    auto* ex =
+        VW::read_example(*vw, std::to_string(v) + " | x:" + std::to_string(v) + " y:" + std::to_string(1.0f - v));
     vw->learn(*ex);
     vw->finish_example(*ex);
   }
@@ -1488,8 +1484,7 @@ TEST(CoverageNumericReductions, StagePolyBatchSz1)
 
 TEST(CoverageNumericReductions, StagePolySchedExponent05WithBatch)
 {
-  auto vw =
-      VW::initialize(vwtest::make_args("--stage_poly", "--sched_exponent", "0.5", "--batch_sz", "5", "--quiet"));
+  auto vw = VW::initialize(vwtest::make_args("--stage_poly", "--sched_exponent", "0.5", "--batch_sz", "5", "--quiet"));
   for (int i = 0; i < 20; i++)
   {
     float v = static_cast<float>(i) / 10.0f;
@@ -1568,8 +1563,8 @@ TEST(CoverageNumericReductions, BfgsMultipleExamplesWithFeatureVariance)
 {
   const char* cache_file = "/tmp/vw_batch9_bfgs_25.cache";
   std::remove(cache_file);
-  auto vw = VW::initialize(
-      vwtest::make_args("--bfgs", "--passes", "2", "--quiet", "--cache_file", cache_file, "--no_stdin"));
+  auto vw =
+      VW::initialize(vwtest::make_args("--bfgs", "--passes", "2", "--quiet", "--cache_file", cache_file, "--no_stdin"));
   for (int i = 0; i < 20; i++)
   {
     float x = static_cast<float>(i) * 0.1f;
@@ -1645,8 +1640,8 @@ TEST(CoverageNumericReductions, LdaLooseEpsilon)
 // Replacing with a safer pool_greedy + rbf combo test.
 TEST(CoverageNumericReductions, KsvmPoolGreedyWithRbf)
 {
-  auto vw = VW::initialize(
-      vwtest::make_args("--ksvm", "--pool_greedy", "--kernel", "rbf", "--bandwidth", "0.5", "--quiet"));
+  auto vw =
+      VW::initialize(vwtest::make_args("--ksvm", "--pool_greedy", "--kernel", "rbf", "--bandwidth", "0.5", "--quiet"));
   for (int i = 0; i < 10; i++)
   {
     std::string label = (i % 2 == 0) ? "1" : "-1";

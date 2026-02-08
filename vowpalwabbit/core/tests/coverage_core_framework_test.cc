@@ -921,8 +921,7 @@ TEST(CoverageCoreFramework, ParseRegressorPreservePerformanceCounters)
     vw->finish();
   }
   {
-    auto vw = VW::initialize(
-        vwtest::make_args("--quiet", "-i", model_file, "--preserve_performance_counters"));
+    auto vw = VW::initialize(vwtest::make_args("--quiet", "-i", model_file, "--preserve_performance_counters"));
     auto* ex = VW::read_example(*vw, "| a:1 b:2");
     vw->predict(*ex);
     EXPECT_TRUE(std::isfinite(ex->pred.scalar));
@@ -1032,8 +1031,7 @@ TEST(CoverageCoreFramework, ParseRegressorReadableModelSaveResume)
   const char* model_file = "/tmp/batch14_readable_sr.txt";
   std::remove(model_file);
   {
-    auto vw =
-        VW::initialize(vwtest::make_args("--quiet", "--save_resume", "--readable_model", model_file));
+    auto vw = VW::initialize(vwtest::make_args("--quiet", "--save_resume", "--readable_model", model_file));
     for (int i = 0; i < 5; i++)
     {
       auto* ex = VW::read_example(*vw, "1 | a:1 b:2");
@@ -1318,9 +1316,8 @@ TEST(CoverageCoreFramework, WorkspaceNewUnusedExample)
 
 TEST(CoverageCoreFramework, WorkspaceAllocDeallocExamples)
 {
-  VW::example* examples = VW::alloc_examples(3);
-  EXPECT_NE(examples, nullptr);
-  VW::dealloc_examples(examples, 3);
+  auto examples = std::make_unique<VW::example[]>(3);
+  EXPECT_NE(examples.get(), nullptr);
 }
 
 TEST(CoverageCoreFramework, WorkspaceSharedData)
@@ -1376,6 +1373,8 @@ TEST(CoverageCoreFramework, WorkspaceLearnMultipleExampleTypes)
   EXPECT_GT(pos_pred, neg_pred);
 }
 
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
 TEST(CoverageCoreFramework, WorkspaceCmdStringReplaceValue)
 {
   auto* ss = new std::stringstream();
@@ -1396,3 +1395,4 @@ TEST(CoverageCoreFramework, WorkspaceCmdStringReplaceValueNewFlag)
   EXPECT_NE(result.find("hello"), std::string::npos);
   delete ss;
 }
+VW_WARNING_STATE_POP

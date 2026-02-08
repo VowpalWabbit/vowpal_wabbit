@@ -115,8 +115,7 @@ TEST(CoverageAutomlTrees, MemoryTreeMaxLabels)
 
 TEST(CoverageAutomlTrees, MemoryTreeLeafMultiplier)
 {
-  auto vw = VW::initialize(
-      vwtest::make_args("--memory_tree", "8", "--leaf_example_multiplier", "3", "--quiet"));
+  auto vw = VW::initialize(vwtest::make_args("--memory_tree", "8", "--leaf_example_multiplier", "3", "--quiet"));
   for (int i = 0; i < 10; i++)
   {
     auto* ex = VW::read_example(*vw, std::to_string((i % 3) + 1) + " | x:" + std::to_string(i));
@@ -330,7 +329,8 @@ TEST(CoverageAutomlTrees, PltLargeK)
 
 TEST(CoverageAutomlTrees, PltKaryTree)
 {
-  auto vw = VW::initialize(vwtest::make_args("--plt", "10", "--kary_tree", "4", "--loss_function", "logistic", "--quiet"));
+  auto vw =
+      VW::initialize(vwtest::make_args("--plt", "10", "--kary_tree", "4", "--loss_function", "logistic", "--quiet"));
   for (int i = 0; i < 10; i++)
   {
     auto* ex = VW::read_example(*vw, std::to_string((i % 10) + 1) + " | a b c");
@@ -341,8 +341,8 @@ TEST(CoverageAutomlTrees, PltKaryTree)
 
 TEST(CoverageAutomlTrees, PltThreshold)
 {
-  auto vw = VW::initialize(
-      vwtest::make_args("--plt", "5", "--threshold", "0.3", "--loss_function", "logistic", "--quiet"));
+  auto vw =
+      VW::initialize(vwtest::make_args("--plt", "5", "--threshold", "0.3", "--loss_function", "logistic", "--quiet"));
   for (int i = 0; i < 10; i++)
   {
     auto* ex = VW::read_example(*vw, std::to_string((i % 5) + 1) + " | f:" + std::to_string(i));
@@ -353,8 +353,7 @@ TEST(CoverageAutomlTrees, PltThreshold)
 
 TEST(CoverageAutomlTrees, PltTopK)
 {
-  auto vw =
-      VW::initialize(vwtest::make_args("--plt", "10", "--top_k", "3", "--loss_function", "logistic", "--quiet"));
+  auto vw = VW::initialize(vwtest::make_args("--plt", "10", "--top_k", "3", "--loss_function", "logistic", "--quiet"));
   for (int i = 0; i < 10; i++)
   {
     auto* ex = VW::read_example(*vw, std::to_string((i % 10) + 1) + " | a b c d");
@@ -369,20 +368,18 @@ TEST(CoverageAutomlTrees, PltTopK)
 
 TEST(CoverageAutomlTrees, AutomlBasic)
 {
-  auto vw = VW::initialize(vwtest::make_args("--automl", "3", "--priority_type", "none",
-      "--cb_explore_adf", "--quiet", "--random_seed", "5"));
+  auto vw = VW::initialize(vwtest::make_args(
+      "--automl", "3", "--priority_type", "none", "--cb_explore_adf", "--quiet", "--random_seed", "5"));
   // Use prob=1.0 so IPS-weighted reward stays in [0,1] for confidence_sequence_robust
   learn_cb_adf_b18(*vw, "shared | s_1", {"| a_1", "| b_1"}, 0, -0.5f, 1.0f);
 }
 
 TEST(CoverageAutomlTrees, AutomlFourConfigs)
 {
-  auto vw = VW::initialize(
-      vwtest::make_args("--automl", "4", "--cb_explore_adf", "--quiet", "--random_seed", "5"));
+  auto vw = VW::initialize(vwtest::make_args("--automl", "4", "--cb_explore_adf", "--quiet", "--random_seed", "5"));
   for (int i = 0; i < 10; i++)
   {
-    learn_cb_adf_b18(
-        *vw, "shared | s_" + std::to_string(i), {"| a_1", "| b_1", "| c_1"}, i % 3, -0.5f, 1.0f);
+    learn_cb_adf_b18(*vw, "shared | s_" + std::to_string(i), {"| a_1", "| b_1", "| c_1"}, i % 3, -0.5f, 1.0f);
   }
 }
 
@@ -398,8 +395,8 @@ TEST(CoverageAutomlTrees, AutomlOracleOneDiff)
 
 TEST(CoverageAutomlTrees, AutomlOracleRand)
 {
-  auto vw = VW::initialize(vwtest::make_args(
-      "--automl", "3", "--oracle_type", "rand", "--cb_explore_adf", "--quiet", "--random_seed", "5"));
+  auto vw = VW::initialize(
+      vwtest::make_args("--automl", "3", "--oracle_type", "rand", "--cb_explore_adf", "--quiet", "--random_seed", "5"));
   for (int i = 0; i < 10; i++)
   {
     learn_cb_adf_b18(*vw, "shared | s_" + std::to_string(i), {"| a_1", "| b_1"}, i % 2, -0.5f, 1.0f);
@@ -418,8 +415,8 @@ TEST(CoverageAutomlTrees, AutomlOracleChampdupe)
 
 TEST(CoverageAutomlTrees, AutomlOracleOneDiffInclusion)
 {
-  auto vw = VW::initialize(vwtest::make_args("--automl", "3", "--oracle_type", "one_diff_inclusion",
-      "--cb_explore_adf", "--quiet", "--random_seed", "5"));
+  auto vw = VW::initialize(vwtest::make_args(
+      "--automl", "3", "--oracle_type", "one_diff_inclusion", "--cb_explore_adf", "--quiet", "--random_seed", "5"));
   for (int i = 0; i < 10; i++)
   {
     learn_cb_adf_b18(*vw, "shared | s_" + std::to_string(i), {"| a_1", "| b_1"}, i % 2, -0.5f, 1.0f);
@@ -448,8 +445,8 @@ TEST(CoverageAutomlTrees, AutomlDefaultLease)
 
 TEST(CoverageAutomlTrees, AutomlFixedSignificanceLevel)
 {
-  auto vw = VW::initialize(vwtest::make_args("--automl", "3", "--fixed_significance_level",
-      "--cb_explore_adf", "--quiet", "--random_seed", "5"));
+  auto vw = VW::initialize(vwtest::make_args(
+      "--automl", "3", "--fixed_significance_level", "--cb_explore_adf", "--quiet", "--random_seed", "5"));
   for (int i = 0; i < 10; i++)
   {
     learn_cb_adf_b18(*vw, "shared | s_" + std::to_string(i), {"| a_1", "| b_1"}, i % 2, -0.5f, 1.0f);
@@ -458,8 +455,7 @@ TEST(CoverageAutomlTrees, AutomlFixedSignificanceLevel)
 
 TEST(CoverageAutomlTrees, AutomlPredictAfterLearn)
 {
-  auto vw = VW::initialize(
-      vwtest::make_args("--automl", "3", "--cb_explore_adf", "--quiet", "--random_seed", "5"));
+  auto vw = VW::initialize(vwtest::make_args("--automl", "3", "--cb_explore_adf", "--quiet", "--random_seed", "5"));
   for (int i = 0; i < 10; i++)
   {
     learn_cb_adf_b18(*vw, "shared | s_" + std::to_string(i), {"| a_1", "| b_1"}, i % 2, -0.5f, 1.0f);
@@ -484,15 +480,14 @@ TEST(CoverageAutomlTrees, EpsilonDecayModelCount5)
       vwtest::make_args("--epsilon_decay", "--model_count", "5", "--cb_explore_adf", "--quiet", "--random_seed", "5"));
   for (int i = 0; i < 15; i++)
   {
-    learn_cb_adf_b18(
-        *vw, "shared | s_" + std::to_string(i), {"| a_1", "| b_1", "| c_1"}, i % 3, -0.5f, 1.0f);
+    learn_cb_adf_b18(*vw, "shared | s_" + std::to_string(i), {"| a_1", "| b_1", "| c_1"}, i % 3, -0.5f, 1.0f);
   }
 }
 
 TEST(CoverageAutomlTrees, EpsilonDecayMinScope)
 {
-  auto vw = VW::initialize(vwtest::make_args(
-      "--epsilon_decay", "--model_count", "3", "--min_scope", "10", "--cb_explore_adf", "--quiet", "--random_seed", "5"));
+  auto vw = VW::initialize(vwtest::make_args("--epsilon_decay", "--model_count", "3", "--min_scope", "10",
+      "--cb_explore_adf", "--quiet", "--random_seed", "5"));
   for (int i = 0; i < 20; i++)
   {
     learn_cb_adf_b18(*vw, "shared | s_" + std::to_string(i), {"| a_1", "| b_1"}, i % 2, -0.5f, 1.0f);
@@ -533,24 +528,20 @@ TEST(CoverageAutomlTrees, CcbBasicPredict)
 TEST(CoverageAutomlTrees, CcbBasicLearn)
 {
   auto vw = VW::initialize(vwtest::make_args("--ccb_explore_adf", "--quiet"));
-  learn_ccb(*vw, "ccb shared | s",
-      {"ccb action | a1", "ccb action | a2"},
-      {"ccb slot 0:0.5:0.5 | slot1"});
+  learn_ccb(*vw, "ccb shared | s", {"ccb action | a1", "ccb action | a2"}, {"ccb slot 0:0.5:0.5 | slot1"});
 }
 
 TEST(CoverageAutomlTrees, CcbTwoSlots)
 {
   auto vw = VW::initialize(vwtest::make_args("--ccb_explore_adf", "--quiet"));
-  learn_ccb(*vw, "ccb shared | s",
-      {"ccb action | a1", "ccb action | a2", "ccb action | a3"},
+  learn_ccb(*vw, "ccb shared | s", {"ccb action | a1", "ccb action | a2", "ccb action | a3"},
       {"ccb slot 0:0.5:0.5 | slot1", "ccb slot 1:0.3:0.5 | slot2"});
 }
 
 TEST(CoverageAutomlTrees, CcbThreeSlots)
 {
   auto vw = VW::initialize(vwtest::make_args("--ccb_explore_adf", "--quiet"));
-  learn_ccb(*vw, "ccb shared | s",
-      {"ccb action | a1", "ccb action | a2", "ccb action | a3", "ccb action | a4"},
+  learn_ccb(*vw, "ccb shared | s", {"ccb action | a1", "ccb action | a2", "ccb action | a3", "ccb action | a4"},
       {"ccb slot 0:1.0:0.25 | s1", "ccb slot 1:0.5:0.25 | s2", "ccb slot 2:0.0:0.25 | s3"});
 }
 
@@ -559,8 +550,7 @@ TEST(CoverageAutomlTrees, CcbMultipleExamples)
   auto vw = VW::initialize(vwtest::make_args("--ccb_explore_adf", "--quiet"));
   for (int i = 0; i < 10; i++)
   {
-    learn_ccb(*vw, "ccb shared | s_" + std::to_string(i),
-        {"ccb action | a1", "ccb action | a2"},
+    learn_ccb(*vw, "ccb shared | s_" + std::to_string(i), {"ccb action | a1", "ccb action | a2"},
         {"ccb slot 0:0.5:0.5 | slot1"});
   }
 }
@@ -585,8 +575,7 @@ TEST(CoverageAutomlTrees, CcbWithEpsilon)
   auto vw = VW::initialize(vwtest::make_args("--ccb_explore_adf", "--epsilon", "0.2", "--quiet"));
   for (int i = 0; i < 10; i++)
   {
-    learn_ccb(*vw, "ccb shared | s_" + std::to_string(i),
-        {"ccb action | a1", "ccb action | a2", "ccb action | a3"},
+    learn_ccb(*vw, "ccb shared | s_" + std::to_string(i), {"ccb action | a1", "ccb action | a2", "ccb action | a3"},
         {"ccb slot 0:0.5:0.33 | slot1", "ccb slot 1:1.0:0.33 | slot2"});
   }
 }
@@ -594,9 +583,7 @@ TEST(CoverageAutomlTrees, CcbWithEpsilon)
 TEST(CoverageAutomlTrees, CcbNoSlotIndex)
 {
   auto vw = VW::initialize(vwtest::make_args("--ccb_explore_adf", "--ccb_no_slot_index", "--quiet"));
-  learn_ccb(*vw, "ccb shared | s",
-      {"ccb action | a1", "ccb action | a2"},
-      {"ccb slot 0:0.5:0.5 | slot1"});
+  learn_ccb(*vw, "ccb shared | s", {"ccb action | a1", "ccb action | a2"}, {"ccb slot 0:0.5:0.5 | slot1"});
 }
 
 TEST(CoverageAutomlTrees, CcbAllSlotsLoss)
@@ -604,8 +591,7 @@ TEST(CoverageAutomlTrees, CcbAllSlotsLoss)
   auto vw = VW::initialize(vwtest::make_args("--ccb_explore_adf", "--all_slots_loss", "--quiet"));
   for (int i = 0; i < 5; i++)
   {
-    learn_ccb(*vw, "ccb shared | s_" + std::to_string(i),
-        {"ccb action | a1", "ccb action | a2"},
+    learn_ccb(*vw, "ccb shared | s_" + std::to_string(i), {"ccb action | a1", "ccb action | a2"},
         {"ccb slot 0:0.5:0.5 | slot1"});
   }
 }
@@ -614,8 +600,7 @@ TEST(CoverageAutomlTrees, CcbManyActions)
 {
   auto vw = VW::initialize(vwtest::make_args("--ccb_explore_adf", "--quiet"));
   learn_ccb(*vw, "ccb shared | s",
-      {"ccb action | a1", "ccb action | a2", "ccb action | a3", "ccb action | a4",
-          "ccb action | a5"},
+      {"ccb action | a1", "ccb action | a2", "ccb action | a3", "ccb action | a4", "ccb action | a5"},
       {"ccb slot 0:0.5:0.2 | slot1"});
 }
 
@@ -888,8 +873,7 @@ TEST(CoverageAutomlTrees, CbExploreAdfDrHighCost)
 TEST(CoverageAutomlTrees, CbExploreAdfDrManyActions)
 {
   auto vw = VW::initialize(vwtest::make_args("--cb_explore_adf", "--cb_type", "dr", "--quiet"));
-  learn_cb_adf_b18(*vw, "shared | s_1",
-      {"| a_1", "| a_2", "| a_3", "| a_4", "| a_5"}, 0, 1.0f, 0.2f);
+  learn_cb_adf_b18(*vw, "shared | s_1", {"| a_1", "| a_2", "| a_3", "| a_4", "| a_5"}, 0, 1.0f, 0.2f);
 }
 
 TEST(CoverageAutomlTrees, CbExploreAdfDmManyExamples)
@@ -1029,9 +1013,7 @@ TEST(CoverageAutomlTrees, MemoryTreeOas)
 TEST(CoverageAutomlTrees, CcbCbTypeIps)
 {
   auto vw = VW::initialize(vwtest::make_args("--ccb_explore_adf", "--cb_type", "ips", "--quiet"));
-  learn_ccb(*vw, "ccb shared | s",
-      {"ccb action | a1", "ccb action | a2"},
-      {"ccb slot 0:0.5:0.5 | slot1"});
+  learn_ccb(*vw, "ccb shared | s", {"ccb action | a1", "ccb action | a2"}, {"ccb slot 0:0.5:0.5 | slot1"});
 }
 
 // CCB with cb_type DR
@@ -1040,8 +1022,7 @@ TEST(CoverageAutomlTrees, CcbCbTypeDr)
   auto vw = VW::initialize(vwtest::make_args("--ccb_explore_adf", "--cb_type", "dr", "--quiet"));
   for (int i = 0; i < 5; i++)
   {
-    learn_ccb(*vw, "ccb shared | s_" + std::to_string(i),
-        {"ccb action | a1", "ccb action | a2"},
+    learn_ccb(*vw, "ccb shared | s_" + std::to_string(i), {"ccb action | a1", "ccb action | a2"},
         {"ccb slot 0:0.5:0.5 | slot1"});
   }
 }
@@ -1159,8 +1140,8 @@ TEST(CoverageAutomlTrees, FeatureGroupPushBackHashClosesExtent)
 // Automl with priority_challengers
 TEST(CoverageAutomlTrees, AutomlPriorityChallengers)
 {
-  auto vw = VW::initialize(vwtest::make_args("--automl", "4", "--priority_challengers", "1",
-      "--cb_explore_adf", "--quiet", "--random_seed", "5"));
+  auto vw = VW::initialize(vwtest::make_args(
+      "--automl", "4", "--priority_challengers", "1", "--cb_explore_adf", "--quiet", "--random_seed", "5"));
   for (int i = 0; i < 10; i++)
   {
     learn_cb_adf_b18(*vw, "shared | s_" + std::to_string(i), {"| a_1", "| b_1"}, i % 2, -0.5f, 1.0f);
