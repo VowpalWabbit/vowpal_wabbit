@@ -15,25 +15,31 @@ concurrency:
 
 jobs:
   check:
-    container:
-      image: vowpalwabbit/ubuntu1804-build:latest
     runs-on: ubuntu-latest
     steps:
-      # v1 must be used because newer versions require a node.js version that will not run on this old image.
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v6
         with:
-          submodules: recursive
+          submodules: false
+
+      - name: Init submodules with retry
+        shell: bash
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if git submodule update --init --recursive; then
+              echo "Submodule init succeeded on attempt $attempt"
+              exit 0
+            fi
+            echo "Attempt $attempt failed, retrying in 15s..."
+            sleep 15
+          done
+          echo "Submodule init failed after 5 attempts"
+          exit 1
 
       - name: Install dependencies
-        shell: bash
-        run: |
-          sudo apt update
-          sudo apt install -y xxd
+        run: sudo apt-get update && sudo apt-get install -y ninja-build xxd
 
       - name: Configure VW Slim
-        shell: bash
         run: |
-          rm -rf build
           cmake -S . -B build -G Ninja \
               -DBUILD_TESTING=On \
               -DVW_FEAT_FLATBUFFERS=Off \
@@ -41,28 +47,22 @@ jobs:
               -DFMT_SYS_DEP=Off \
               -DSPDLOG_SYS_DEP=Off \
               -DVW_ZLIB_SYS_DEP=Off \
-              -DVW_BOOST_MATH_SYS_DEP=Off \
-              -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+              -DVW_BOOST_MATH_SYS_DEP=Off
 
       - name: Build VW and VW Slim
-        shell: bash
         run: cmake --build build --target vw_cli_bin vw_slim vw_slim_test
 
       - name: Test VW Slim
-        shell: bash
         working-directory: build
         run: ctest --output-on-failure --no-tests=error --tests-regex "VowpalWabbitSlim|ExploreSlim|CommandLineOptionsSlim" --parallel 2
 
       - name: Generate test data with new VW executable
-        shell: bash
         working-directory: vowpalwabbit/slim/test/data/
         run: ./generate-data.sh ../../../../build/vowpalwabbit/cli/vw
 
       - name: Build VW Slim again
-        shell: bash
         run: cmake --build build --target vw_slim vw_slim_test
 
       - name: Test VW Slim again
-        shell: bash
         working-directory: build
         run: ctest --output-on-failure --no-tests=error --tests-regex "VowpalWabbitSlim|ExploreSlim|CommandLineOptionsSlim" --parallel 2

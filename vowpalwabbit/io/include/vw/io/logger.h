@@ -160,130 +160,74 @@ public:
   logger(logger&&) noexcept = default;
   logger& operator=(logger&&) noexcept = default;
 
-#if FMT_VERSION >= 80000
   template <typename... Args>
   void err_info(fmt::format_string<Args...> fmt, Args&&... args)
-#else
-  template <typename FormatString, typename... Args>
-  void err_info(const FormatString& fmt, Args&&... args)
-#endif
   {
     _logger_impl->err_info(fmt::format(fmt, std::forward<Args>(args)...));
   }
-#if FMT_VERSION >= 80000
+
   template <typename... Args>
   void err_warn(fmt::format_string<Args...> fmt, Args&&... args)
-#else
-  template <typename FormatString, typename... Args>
-  void err_warn(const FormatString& fmt, Args&&... args)
-#endif
   {
     _logger_impl->err_warn(fmt::format(fmt, std::forward<Args>(args)...));
   }
-#if FMT_VERSION >= 80000
+
   template <typename... Args>
   void err_error(fmt::format_string<Args...> fmt, Args&&... args)
-#else
-  template <typename FormatString, typename... Args>
-  void err_error(const FormatString& fmt, Args&&... args)
-#endif
   {
     _logger_impl->err_error(fmt::format(fmt, std::forward<Args>(args)...));
   }
-#if FMT_VERSION >= 80000
+
   template <typename... Args>
   void err_critical(fmt::format_string<Args...> fmt, Args&&... args)
-#else
-  template <typename FormatString, typename... Args>
-  void err_critical(const FormatString& fmt, Args&&... args)
-#endif
   {
     _logger_impl->err_critical(fmt::format(fmt, std::forward<Args>(args)...));
   }
-#if FMT_VERSION >= 80000
+
   template <typename... Args>
   void out_info(fmt::format_string<Args...> fmt, Args&&... args)
-#else
-  template <typename FormatString, typename... Args>
-  void out_info(const FormatString& fmt, Args&&... args)
-#endif
   {
     _logger_impl->out_info(fmt::format(fmt, std::forward<Args>(args)...));
   }
 
-#if FMT_VERSION >= 80000
   template <typename... Args>
   void out_warn(fmt::format_string<Args...> fmt, Args&&... args)
-#else
-  template <typename FormatString, typename... Args>
-  void out_warn(const FormatString& fmt, Args&&... args)
-#endif
   {
     _logger_impl->out_warn(fmt::format(fmt, std::forward<Args>(args)...));
   }
 
-#if FMT_VERSION >= 80000
   template <typename... Args>
   void out_error(fmt::format_string<Args...> fmt, Args&&... args)
-#else
-  template <typename FormatString, typename... Args>
-  void out_error(const FormatString& fmt, Args&&... args)
-#endif
   {
     _logger_impl->out_error(fmt::format(fmt, std::forward<Args>(args)...));
   }
 
-#if FMT_VERSION >= 80000
   template <typename... Args>
   void out_critical(fmt::format_string<Args...> fmt, Args&&... args)
-#else
-  template <typename FormatString, typename... Args>
-  void out_critical(const FormatString& fmt, Args&&... args)
-#endif
   {
     _logger_impl->out_critical(fmt::format(fmt, std::forward<Args>(args)...));
   }
 
-#if FMT_VERSION >= 80000
   template <typename... Args>
   void info(fmt::format_string<Args...> fmt, Args&&... args)
-#else
-  template <typename FormatString, typename... Args>
-  void info(const FormatString& fmt, Args&&... args)
-#endif
   {
     _logger_impl->out_info(fmt::format(fmt, std::forward<Args>(args)...));
   }
 
-#if FMT_VERSION >= 80000
   template <typename... Args>
   void warn(fmt::format_string<Args...> fmt, Args&&... args)
-#else
-  template <typename FormatString, typename... Args>
-  void warn(const FormatString& fmt, Args&&... args)
-#endif
   {
     _logger_impl->out_warn(fmt::format(fmt, std::forward<Args>(args)...));
   }
 
-#if FMT_VERSION >= 80000
   template <typename... Args>
   void error(fmt::format_string<Args...> fmt, Args&&... args)
-#else
-  template <typename FormatString, typename... Args>
-  void error(const FormatString& fmt, Args&&... args)
-#endif
   {
     _logger_impl->out_error(fmt::format(fmt, std::forward<Args>(args)...));
   }
 
-#if FMT_VERSION >= 80000
   template <typename... Args>
   void critical(fmt::format_string<Args...> fmt, Args&&... args)
-#else
-  template <typename FormatString, typename... Args>
-  void critical(const FormatString& fmt, Args&&... args)
-#endif
   {
     _logger_impl->out_critical(fmt::format(fmt, std::forward<Args>(args)...));
   }

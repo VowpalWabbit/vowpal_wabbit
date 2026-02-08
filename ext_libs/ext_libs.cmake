@@ -10,7 +10,7 @@ else()
 endif()
 
 if(FMT_SYS_DEP)
-  # fmt is now built against 8.1.1. Its possible earlier versions will also work, but that needs to be tested
+  # fmt is now built against 11.0.2. Its possible earlier versions will also work, but that needs to be tested
   find_package(fmt REQUIRED)
 else()
   if(VW_INSTALL)
@@ -22,7 +22,7 @@ endif()
 if(SPDLOG_SYS_DEP)
   # use header-only mode with system-installed spdlog to ensure a consistent version of fmt is used
   set(spdlog_target spdlog::spdlog_header_only)
-  # spdlog is now built against 1.9.2. Its possible earlier versions will also work, but that needs to be tested
+  # spdlog is now built against 1.15.0. Its possible earlier versions will also work, but that needs to be tested
   find_package(spdlog CONFIG REQUIRED)
 else()
   set(spdlog_target spdlog::spdlog)

@@ -15,20 +15,37 @@ concurrency:
 
 jobs:
   upload:
-    container:
-      image: vowpalwabbit/ubuntu1804-build:latest
     runs-on: ubuntu-latest
     steps:
-      # v1 must be used because newer versions require a node.js version that will not run on this old image.
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v6
         with:
-          submodules: recursive
+          submodules: false
+
+      - name: Init submodules with retry
+        shell: bash
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if git submodule update --init --recursive; then
+              echo "Submodule init succeeded on attempt $attempt"
+              exit 0
+            fi
+            echo "Attempt $attempt failed, retrying in 15s..."
+            sleep 15
+          done
+          echo "Submodule init failed after 5 attempts"
+          exit 1
+
+      - name: Install dependencies
+        run: sudo apt-get update && sudo apt-get install -y ninja-build lcov flatbuffers-compiler libflatbuffers-dev
+
       - name: Build with coverage C++
-        shell: bash
         run: ./.scripts/linux/build-with-coverage.sh
+
       - name: Test with coverage C++
-        shell: bash
         run: ./.scripts/linux/test-with-coverage.sh
+
       - name: Upload to codecov.io
-        shell: bash
-        run: bash <(curl -s https://codecov.io/bash) -Z
+        uses: codecov/codecov-action@v5
+        with:
+          fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}
