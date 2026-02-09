@@ -468,10 +468,10 @@ void VW::details::enable_sources(
     // background process (if foreground is not set)
     if (!input_options.foreground)
     {
-#ifdef _WIN32
+#  ifdef _WIN32
       // Windows stub: daemon() in Windows just exits the parent process.
       if (!all.reduction_state.active) { daemon(1, 1); }
-#else
+#  else
       if (!all.reduction_state.active)
       {
         pid_t pid = fork();
@@ -479,7 +479,7 @@ void VW::details::enable_sources(
         if (pid > 0) { _exit(0); }  // parent exits
         if (setsid() < 0) { THROWERRNO("setsid"); }
       }
-#endif
+#  endif
     }
 
     // write pid file
