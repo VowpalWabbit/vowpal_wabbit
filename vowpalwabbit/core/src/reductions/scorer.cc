@@ -50,10 +50,11 @@ void predict_or_learn(scorer& s, VW::LEARNER::learner& base, VW::example& ec)
 }
 
 template <float (*link)(float in)>
-inline void multipredict(scorer& /*unused*/, VW::LEARNER::learner& base, VW::example& ec, size_t count, size_t step,
+inline void multipredict(scorer& /*unused*/, VW::LEARNER::learner& base, VW::example& ec, size_t count, size_t /*step*/,
     VW::polyprediction* pred, bool finalize_predictions)
 {
-  base.multipredict(ec, step, count, pred, finalize_predictions);
+  // step is not passed as lo (starting offset) — the base learner handles stride internally
+  base.multipredict(ec, 0, count, pred, finalize_predictions);
   for (size_t c = 0; c < count; c++) { pred[c].scalar = link(pred[c].scalar); }
 }
 
