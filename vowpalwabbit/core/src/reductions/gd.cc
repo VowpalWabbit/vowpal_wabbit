@@ -136,6 +136,21 @@ void sync_weights(VW::workspace& all)
   all.sd->contraction = 1.;
 }
 
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_UNUSED_FUNCTION
+inline float quake_inv_sqrt(float x)
+{
+  // Carmack/Quake/SGI fast method:
+  float xhalf = 0.5f * x;
+  static_assert(sizeof(int) == sizeof(float), "Floats and ints are converted between, they must be the same size.");
+  int i = reinterpret_cast<int&>(x);  // store floating-point bits in integer
+  i = 0x5f3759d5 - (i >> 1);          // initial guess for Newton's method
+  x = reinterpret_cast<float&>(i);    // convert new bits into float
+  x = x * (1.5f - xhalf * x * x);     // One round of Newton's method
+  return x;
+}
+VW_WARNING_STATE_POP
+
 static inline float inv_sqrt(float x)
 {
 // Standard library used in CI because SSE2 path has floating point differences in github machines
