@@ -146,8 +146,14 @@ jobs:
           done
           echo "Submodule init failed after 5 attempts"
           exit 1
+      - name: Setup MSVC Developer Command Prompt
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Install ccache
+        run: choco install ccache -y
       - name: Build wheels
         uses: pypa/cibuildwheel@v3.3.0
+        env:
+          CCACHE_BASEDIR: ${{ github.workspace }}
       - uses: actions/upload-artifact@v4
         with:
           name: cibw-wheels-windows-2019
