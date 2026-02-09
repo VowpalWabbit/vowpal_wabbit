@@ -166,11 +166,8 @@ VW::workspace* initialize_with_builder(int argc, char* argv[], VW::io_buf* model
   std::unique_ptr<VW::config::options_i, VW::options_deleter_type> options(
       new VW::config::options_cli(std::vector<std::string>(argv + 1, argv + argc)),
       [](VW::config::options_i* ptr) { delete ptr; });
-  VW_WARNING_STATE_PUSH
-  VW_WARNING_DISABLE_DEPRECATED_USAGE
   return initialize_with_builder(
       std::move(options), model, skip_model_load, trace_listener, trace_context, std::move(setup_base));
-  VW_WARNING_STATE_POP
 }
 }  // namespace
 
@@ -184,18 +181,15 @@ VW::workspace* VW::initialize(config::options_i& options, io_buf* model, bool sk
     VW::trace_message_t trace_listener, void* trace_context)
 {
   std::unique_ptr<config::options_i, options_deleter_type> opts(&options, [](VW::config::options_i*) {});
-  VW_WARNING_STATE_PUSH
-  VW_WARNING_DISABLE_DEPRECATED_USAGE
-  return initialize(std::move(opts), model, skip_model_load, trace_listener, trace_context);
-  VW_WARNING_STATE_POP
+  return ::initialize_with_builder(std::move(opts), model, skip_model_load, trace_listener, trace_context, nullptr);
 }
 VW::workspace* VW::initialize(
     const std::string& s, io_buf* model, bool skip_model_load, VW::trace_message_t trace_listener, void* trace_context)
 {
-  VW_WARNING_STATE_PUSH
-  VW_WARNING_DISABLE_DEPRECATED_USAGE
-  return initialize_with_builder(s, model, skip_model_load, trace_listener, trace_context, nullptr);
-  VW_WARNING_STATE_POP
+  auto args = VW::split_command_line(s);
+  std::unique_ptr<config::options_i, options_deleter_type> options(
+      new VW::config::options_cli(args), [](VW::config::options_i* ptr) { delete ptr; });
+  return ::initialize_with_builder(std::move(options), model, skip_model_load, trace_listener, trace_context, nullptr);
 }
 VW::workspace* VW::initialize(int argc, char* argv[], io_buf* model, bool skip_model_load,
     VW::trace_message_t trace_listener, void* trace_context)
@@ -224,11 +218,11 @@ VW::workspace* VW::seed_vw_model(
   auto serialized_options = serializer.str();
   serialized_options = serialized_options + " " + extra_args;
 
-  VW_WARNING_STATE_PUSH
-  VW_WARNING_DISABLE_DEPRECATED_USAGE
-  VW::workspace* new_model =
-      VW::initialize(serialized_options, nullptr, true /* skip_model_load */, trace_listener, trace_context);
-  VW_WARNING_STATE_POP
+  auto args = VW::split_command_line(serialized_options);
+  std::unique_ptr<config::options_i, options_deleter_type> options(
+      new VW::config::options_cli(args), [](VW::config::options_i* ptr) { delete ptr; });
+  VW::workspace* new_model = ::initialize_with_builder(
+      std::move(options), nullptr, true /* skip_model_load */, trace_listener, trace_context, nullptr);
 
   // reference model states stored in the specified VW instance
   new_model->weights.shallow_copy(vw_model->weights);  // regressor
@@ -240,37 +234,10 @@ VW::workspace* VW::seed_vw_model(
 VW::workspace* VW::initialize_escaped(
     std::string const& s, io_buf* model, bool skip_model_load, VW::trace_message_t trace_listener, void* trace_context)
 {
-  int argc = 0;
-  VW_WARNING_STATE_PUSH
-  VW_WARNING_DISABLE_DEPRECATED_USAGE
-  char** argv = to_argv_escaped(s, argc);
-  VW_WARNING_STATE_POP
-
-  VW::workspace* ret = nullptr;
-
-  try
-  {
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_DEPRECATED_USAGE
-    ret = initialize(argc, argv, model, skip_model_load, trace_listener, trace_context);
-    VW_WARNING_STATE_POP
-  }
-  catch (...)
-  {
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_DEPRECATED_USAGE
-    free_args(argc, argv);
-    VW_WARNING_STATE_POP
-
-    throw;
-  }
-
-  VW_WARNING_STATE_PUSH
-  VW_WARNING_DISABLE_DEPRECATED_USAGE
-  free_args(argc, argv);
-  VW_WARNING_STATE_POP
-
-  return ret;
+  auto args = VW::details::escaped_tokenize(' ', s);
+  std::unique_ptr<config::options_i, options_deleter_type> options(
+      new VW::config::options_cli(args), [](VW::config::options_i* ptr) { delete ptr; });
+  return ::initialize_with_builder(std::move(options), model, skip_model_load, trace_listener, trace_context, nullptr);
 }
 
 std::unique_ptr<VW::workspace> VW::initialize_experimental(std::unique_ptr<config::options_i> options,
@@ -348,35 +315,11 @@ std::unique_ptr<VW::workspace> VW::seed_vw_model(VW::workspace& vw_model, const 
 VW::workspace* VW::initialize_with_builder(const std::string& s, io_buf* model, bool skip_model_load,
     VW::trace_message_t trace_listener, void* trace_context, std::unique_ptr<VW::setup_base_i> setup_base)
 {
-  int argc = 0;
-  VW_WARNING_STATE_PUSH
-  VW_WARNING_DISABLE_DEPRECATED_USAGE
-  char** argv = to_argv(s, argc);
-  VW_WARNING_STATE_POP
-
-  VW::workspace* ret = nullptr;
-
-  try
-  {
-    ret = ::initialize_with_builder(
-        argc, argv, model, skip_model_load, trace_listener, trace_context, std::move(setup_base));
-  }
-  catch (...)
-  {
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_DEPRECATED_USAGE
-    free_args(argc, argv);
-    VW_WARNING_STATE_POP
-
-    throw;
-  }
-
-  VW_WARNING_STATE_PUSH
-  VW_WARNING_DISABLE_DEPRECATED_USAGE
-  free_args(argc, argv);
-  VW_WARNING_STATE_POP
-
-  return ret;
+  auto args = VW::split_command_line(s);
+  std::unique_ptr<config::options_i, options_deleter_type> options(
+      new VW::config::options_cli(args), [](VW::config::options_i* ptr) { delete ptr; });
+  return ::initialize_with_builder(
+      std::move(options), model, skip_model_load, trace_listener, trace_context, std::move(setup_base));
 }
 
 void VW::cmd_string_replace_value(std::stringstream*& ss, std::string flag_to_replace, const std::string& new_value)
@@ -913,9 +856,10 @@ void VW::add_label(VW::example* ec, float label, float weight, float base)
 void VW::finish_example(VW::workspace& all, example& ec)
 {
   // only return examples to the pool that are from the pool and not externally allocated
+  // is_from_pool is deprecated but no alternative exists until VW 10 removes pool-based tracking
   VW_WARNING_STATE_PUSH
   VW_WARNING_DISABLE_DEPRECATED_USAGE
-  if (!is_ring_example(all, &ec)) { return; }
+  if (!all.parser_runtime.example_parser->example_pool.is_from_pool(&ec)) { return; }
   VW_WARNING_STATE_POP
 
   details::clean_example(all, ec);
