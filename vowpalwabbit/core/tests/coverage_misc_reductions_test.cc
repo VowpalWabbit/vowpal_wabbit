@@ -34,9 +34,10 @@ static void learn_cb_adf_b17(VW::workspace& vw, const std::string& shared, const
     }
     else { multi_ex.push_back(VW::read_example(vw, actions[i])); }
   }
-  multi_ex.push_back(VW::read_example(vw, ""));
   vw.learn(multi_ex);
   vw.finish_example(multi_ex);
+  auto* empty = VW::read_example(vw, "");
+  VW::finish_example(vw, *empty);
 }
 
 // Helper: learn+finish a csoaa_ldf multi_ex

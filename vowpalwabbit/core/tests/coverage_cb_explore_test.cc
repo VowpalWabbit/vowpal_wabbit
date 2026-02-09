@@ -33,9 +33,10 @@ static void learn_cb_adf(VW::workspace& vw, const std::string& shared, const std
     }
     else { multi_ex.push_back(VW::read_example(vw, actions[i])); }
   }
-  multi_ex.push_back(VW::read_example(vw, ""));
   vw.learn(multi_ex);
   vw.finish_example(multi_ex);
+  auto* empty = VW::read_example(vw, "");
+  VW::finish_example(vw, *empty);
 }
 
 static void predict_cb_adf(VW::workspace& vw, const std::string& shared, const std::vector<std::string>& actions)
@@ -43,9 +44,10 @@ static void predict_cb_adf(VW::workspace& vw, const std::string& shared, const s
   VW::multi_ex multi_ex;
   multi_ex.push_back(VW::read_example(vw, shared));
   for (const auto& a : actions) { multi_ex.push_back(VW::read_example(vw, a)); }
-  multi_ex.push_back(VW::read_example(vw, ""));
   vw.predict(multi_ex);
   vw.finish_example(multi_ex);
+  auto* empty = VW::read_example(vw, "");
+  VW::finish_example(vw, *empty);
 }
 
 // ============================================================
@@ -1150,9 +1152,10 @@ TEST(CoverageCbExplore, CbExploreAdfSingleAction)
   VW::multi_ex multi_ex;
   multi_ex.push_back(VW::read_example(*vw, "shared | s_1"));
   multi_ex.push_back(VW::read_example(*vw, "0:1.0:1.0 | a_1"));
-  multi_ex.push_back(VW::read_example(*vw, ""));
   vw->learn(multi_ex);
   vw->finish_example(multi_ex);
+  auto* empty = VW::read_example(*vw, "");
+  VW::finish_example(*vw, *empty);
 }
 
 TEST(CoverageCbExplore, CbExploreAdfSynthcoverSingleAction)
@@ -1161,9 +1164,10 @@ TEST(CoverageCbExplore, CbExploreAdfSynthcoverSingleAction)
   VW::multi_ex multi_ex;
   multi_ex.push_back(VW::read_example(*vw, "shared | s_1"));
   multi_ex.push_back(VW::read_example(*vw, "0:1.0:1.0 | a_1"));
-  multi_ex.push_back(VW::read_example(*vw, ""));
   vw->learn(multi_ex);
   vw->finish_example(multi_ex);
+  auto* empty = VW::read_example(*vw, "");
+  VW::finish_example(*vw, *empty);
 }
 
 // ============================================================

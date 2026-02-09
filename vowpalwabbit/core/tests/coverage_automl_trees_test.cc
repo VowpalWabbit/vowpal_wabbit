@@ -34,9 +34,10 @@ static void learn_cb_adf_b18(VW::workspace& vw, const std::string& shared, const
     }
     else { multi_ex.push_back(VW::read_example(vw, actions[i])); }
   }
-  multi_ex.push_back(VW::read_example(vw, ""));
   vw.learn(multi_ex);
   vw.finish_example(multi_ex);
+  auto* empty = VW::read_example(vw, "");
+  VW::finish_example(vw, *empty);
 }
 
 static void predict_cb_adf_b18(VW::workspace& vw, const std::string& shared, const std::vector<std::string>& actions)
@@ -44,9 +45,10 @@ static void predict_cb_adf_b18(VW::workspace& vw, const std::string& shared, con
   VW::multi_ex multi_ex;
   multi_ex.push_back(VW::read_example(vw, shared));
   for (const auto& a : actions) { multi_ex.push_back(VW::read_example(vw, a)); }
-  multi_ex.push_back(VW::read_example(vw, ""));
   vw.predict(multi_ex);
   vw.finish_example(multi_ex);
+  auto* empty = VW::read_example(vw, "");
+  VW::finish_example(vw, *empty);
 }
 
 // Helper for CCB multi_ex learn

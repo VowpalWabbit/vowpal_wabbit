@@ -481,9 +481,11 @@ void learner::persist_metrics(metric_sink& metrics)
 
 void learner::finish()
 {
-  // TODO: ensure that finish does not actually manage memory but just does driver finalization.
-  // Then move the call to finish from the destructor of workspace to driver_finalize
-  if (_finisher_f) { _finisher_f(); }
+  if (_finisher_f)
+  {
+    _finisher_f();
+    _finisher_f = nullptr;
+  }
   if (_base_learner) { _base_learner->finish(); }
 }
 
