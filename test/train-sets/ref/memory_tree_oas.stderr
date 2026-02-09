@@ -1,3 +1,11 @@
+tree initialization is done....
+max nodes 10
+tree size: 1
+max number of unique labels: 10
+learn at leaf: 0
+num of dream operations per example: 1
+current_pass: 0
+oas: 1
 memory_tree: max_nodes = 10 max_leaf_examples = 6 alpha = 0.1 oas = 1 online =0 
 using no cache
 Reading datafile = train-sets/multilabel
@@ -14,7 +22,9 @@ loss     last          counter         weight          label        predict feat
 n.a.     n.a.                1            1.0        unknown         0.0000        2
 n.a.     n.a.                2            2.0        unknown         0.0000        2
 n.a.     n.a.                4            4.0        unknown        -0.2534        2
+depth 1
 n.a.     n.a.                8            8.0        unknown         0.0000        2
+######### Current Pass: 1, with number of memories stored so far: 10
 
 finished run
 number of examples = 10

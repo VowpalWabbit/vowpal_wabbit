@@ -1,3 +1,11 @@
+tree initialization is done....
+max nodes 10
+tree size: 1
+max number of unique labels: 2
+learn at leaf: 1
+num of dream operations per example: 3
+current_pass: 0
+oas: 0
 memory_tree: max_nodes = 10 max_leaf_examples = 33 alpha = 0.1 oas = 0 online =1 
 using no cache
 Reading datafile = train-sets/rcv1_smaller.dat
@@ -18,7 +26,10 @@ loss     last          counter         weight          label        predict feat
 0.200000 0.000000           16           16.0              1              1       23
 0.090909 0.000000           32           32.0        unknown              1       31
 0.043478 0.000000           64           64.0        unknown              1       60
+depth 1
 0.018868 0.000000          128          128.0              1              1      105
+depth 2
+######### Current Pass: 1, with number of memories stored so far: 114
 
 finished run
 number of examples = 250

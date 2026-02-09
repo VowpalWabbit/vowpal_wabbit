@@ -1,3 +1,11 @@
+tree initialization is done....
+max nodes 1204
+tree size: 1
+max number of unique labels: 10
+learn at leaf: 0
+num of dream operations per example: 1
+current_pass: 0
+oas: 0
 memory_tree: max_nodes = 1204 max_leaf_examples = 10 alpha = 0.1 oas = 0 online =0 
 using no cache
 Reading datafile = test-sets/aloi_short_test.dat
@@ -18,6 +26,7 @@ loss     last          counter         weight          label        predict feat
 0.937500 0.875000           16           16.0            835            835       50
 0.937500 0.937500           32           32.0            585            899        8
 0.921875 0.906250           64           64.0            295            487       27
+######### Current Pass: 1, with number of memories stored so far: 100
 
 finished run
 number of examples = 100

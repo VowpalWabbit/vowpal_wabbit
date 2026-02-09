@@ -1,4 +1,12 @@
 final_regressor = cmt.model
+tree initialization is done....
+max nodes 1204
+tree size: 1
+max number of unique labels: 1000
+learn at leaf: 1
+num of dream operations per example: 20
+current_pass: 0
+oas: 0
 memory_tree: max_nodes = 1204 max_leaf_examples = 102 alpha = 0.1 oas = 0 online =1 
 using no cache
 Reading datafile = train-sets/aloi_short_train.dat
@@ -19,6 +27,7 @@ loss     last          counter         weight          label        predict feat
 1.000000 1.000000           16           16.0            995            331       40
 0.968750 0.937500           32           32.0            200            898       24
 0.984375 1.000000           64           64.0            697            796       41
+######### Current Pass: 1, with number of memories stored so far: 100
 
 finished run
 number of examples = 100
