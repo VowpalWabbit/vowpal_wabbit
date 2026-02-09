@@ -82,9 +82,12 @@ jobs:
       - name: Test
         run: python3 test/run_tests.py -f --clean_dirty -E 0.001
   big-tests:
-    name: big-tests
+    name: big-tests.[${{ matrix.segment }}]
     needs: build_vendor_linux
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        segment: [1, 2]
     steps:
       - uses: actions/checkout@v6
         with:
@@ -95,46 +98,8 @@ jobs:
           name: vw-linux-release
       - name: Prepare vw binary
         run: chmod +x vw
-      - name: Download and prepare Covertype dataset
-        working-directory: big_tests
-        run: |
-          mkdir -p dataSets/covtype.dir
-          wget -nv -P dataSets/covtype.dir \
-            https://archive.ics.uci.edu/ml/machine-learning-databases/covtype/covtype.data.gz
-          export testCodeDir=$(pwd)/testCode
-          cd dataSets/covtype.dir
-          $testCodeDir/covtype.munge.sh covtype.data.gz > prep
-      - name: Download and prepare URLRep dataset
-        working-directory: big_tests
-        run: |
-          mkdir -p dataSets/URLRep.dir
-          wget -nv -P dataSets/URLRep.dir \
-            https://archive.ics.uci.edu/ml/machine-learning-databases/url/url_svmlight.tar.gz
-          export testCodeDir=$(pwd)/testCode
-          cd dataSets/URLRep.dir
-          $testCodeDir/URLRep.munge.sh url_svmlight.tar.gz > prep
-      - name: Download and prepare OCR dataset
-        working-directory: big_tests
-        run: |
-          mkdir -p dataSets/OCR.dir
-          wget -nv -P dataSets/OCR.dir \
-            http://ai.stanford.edu/~btaskar/ocr/letter.data.gz \
-            http://ai.stanford.edu/~btaskar/ocr/letter.names
-          python3 testCode/ocr2vw.py \
-            dataSets/OCR.dir/letter.data.gz dataSets/OCR.dir/letter.names \
-            dataSets/OCR.dir/train.prep dataSets/OCR.dir/test.prep
-      - name: Download and prepare MovieLens dataset
-        working-directory: big_tests
-        run: |
-          mkdir -p dataSets/movielens.dir
-          wget -nv -P dataSets/movielens.dir \
-            http://files.grouplens.org/datasets/movielens/ml-1m.zip
-          cd dataSets/movielens.dir
-          unzip -ou ml-1m.zip
-          ../../testCode/movielensRatings2vw.pl pre.train.vw test.prep ml-1m/ratings.dat
-          perl -ne 'BEGIN { srand 8675309; }; 1; print join "\t", rand (), $_;' \
-            pre.train.vw | sort -k1 | cut -f2- > train.prep
       - name: Download and prepare MNIST dataset
+        if: matrix.segment == 1
         working-directory: big_tests
         run: |
           mkdir -p dataSets/mnist.dir
@@ -151,6 +116,49 @@ jobs:
             | $testCodeDir/shuffle.pl > train.prep
           $testCodeDir/mnist.munge.sh t10k-labels-idx1-ubyte.gz t10k-images-idx3-ubyte.gz \
             > test.prep
+      - name: Download and prepare Covertype dataset
+        if: matrix.segment == 1
+        working-directory: big_tests
+        run: |
+          mkdir -p dataSets/covtype.dir
+          wget -nv -P dataSets/covtype.dir \
+            https://archive.ics.uci.edu/ml/machine-learning-databases/covtype/covtype.data.gz
+          export testCodeDir=$(pwd)/testCode
+          cd dataSets/covtype.dir
+          $testCodeDir/covtype.munge.sh covtype.data.gz > prep
+      - name: Download and prepare URLRep dataset
+        if: matrix.segment == 1
+        working-directory: big_tests
+        run: |
+          mkdir -p dataSets/URLRep.dir
+          wget -nv -P dataSets/URLRep.dir \
+            https://archive.ics.uci.edu/ml/machine-learning-databases/url/url_svmlight.tar.gz
+          export testCodeDir=$(pwd)/testCode
+          cd dataSets/URLRep.dir
+          $testCodeDir/URLRep.munge.sh url_svmlight.tar.gz > prep
+      - name: Download and prepare MovieLens dataset
+        if: matrix.segment == 2
+        working-directory: big_tests
+        run: |
+          mkdir -p dataSets/movielens.dir
+          wget -nv -P dataSets/movielens.dir \
+            http://files.grouplens.org/datasets/movielens/ml-1m.zip
+          cd dataSets/movielens.dir
+          unzip -ou ml-1m.zip
+          ../../testCode/movielensRatings2vw.pl pre.train.vw test.prep ml-1m/ratings.dat
+          perl -ne 'BEGIN { srand 8675309; }; 1; print join "\t", rand (), $_;' \
+            pre.train.vw | sort -k1 | cut -f2- > train.prep
+      - name: Download and prepare OCR dataset
+        if: matrix.segment == 2
+        working-directory: big_tests
+        run: |
+          mkdir -p dataSets/OCR.dir
+          wget -nv -P dataSets/OCR.dir \
+            http://ai.stanford.edu/~btaskar/ocr/letter.data.gz \
+            http://ai.stanford.edu/~btaskar/ocr/letter.names
+          python3 testCode/ocr2vw.py \
+            dataSets/OCR.dir/letter.data.gz dataSets/OCR.dir/letter.names \
+            dataSets/OCR.dir/train.prep dataSets/OCR.dir/test.prep
       - name: Run tests
         working-directory: big_tests
         run: |
@@ -170,37 +178,39 @@ jobs:
             echo "=== Test $name PASSED ==="
           }
 
-          # Test 1a: MNIST train
-          run_test 1a --oaa 10 -d dataSets/mnist.dir/train.prep \
-            -f runs/1a.dir/mnist.model -b 24 --adaptive --invariant --holdout_off \
-            -l 0.1 --nn 40 --passes 24 -k --compressed --cache_file runs/1a.dir/mnist.cache
+          if [ "${{ matrix.segment }}" = "1" ]; then
+            # Test 1a: MNIST train
+            run_test 1a --oaa 10 -d dataSets/mnist.dir/train.prep \
+              -f runs/1a.dir/mnist.model -b 24 --adaptive --invariant --holdout_off \
+              -l 0.1 --nn 40 --passes 24 -k --compressed --cache_file runs/1a.dir/mnist.cache
 
-          # Test 1b: MNIST predict
-          run_test 1b -t -d dataSets/mnist.dir/test.prep -i runs/1a.dir/mnist.model
+            # Test 1b: MNIST predict
+            run_test 1b -t -d dataSets/mnist.dir/test.prep -i runs/1a.dir/mnist.model
 
-          # Test 2: Covertype
-          run_test 2 --oaa 7 -d dataSets/covtype.dir/prep
+            # Test 2: Covertype
+            run_test 2 --oaa 7 -d dataSets/covtype.dir/prep
 
-          # Test 3: URL Reputation
-          run_test 3 -d dataSets/URLRep.dir/prep
+            # Test 3: URL Reputation
+            run_test 3 -d dataSets/URLRep.dir/prep
+          else
+            # Test 5a: MovieLens train
+            run_test 5a --loss_function quantile -l 0.45 -b 24 --passes 100 -k \
+              --cache_file runs/5a.dir/movielens.cache -d dataSets/movielens.dir/train.prep \
+              --holdout_off --lrq um14 --lrqdropout --adaptive --invariant \
+              -f runs/5a.dir/movielens.model
 
-          # Test 5a: MovieLens train
-          run_test 5a --loss_function quantile -l 0.45 -b 24 --passes 100 -k \
-            --cache_file runs/5a.dir/movielens.cache -d dataSets/movielens.dir/train.prep \
-            --holdout_off --lrq um14 --lrqdropout --adaptive --invariant \
-            -f runs/5a.dir/movielens.model
+            # Test 5b: MovieLens predict
+            run_test 5b --loss_function quantile -t \
+              -i runs/5a.dir/movielens.model -d dataSets/movielens.dir/test.prep
 
-          # Test 5b: MovieLens predict
-          run_test 5b --loss_function quantile -t \
-            -i runs/5a.dir/movielens.model -d dataSets/movielens.dir/test.prep
+            # Test 6a: OCR train
+            run_test 6a -d dataSets/OCR.dir/train.prep \
+              -f runs/6a.dir/OCR.model --cache_file runs/6a.dir/OCR.cache -k \
+              --oaa 26 --adaptive --invariant --holdout_off --loss_function logistic --passes 14
 
-          # Test 6a: OCR train
-          run_test 6a -d dataSets/OCR.dir/train.prep \
-            -f runs/6a.dir/OCR.model --cache_file runs/6a.dir/OCR.cache -k \
-            --oaa 26 --adaptive --invariant --holdout_off --loss_function logistic --passes 14
-
-          # Test 6b: OCR predict
-          run_test 6b -i runs/6a.dir/OCR.model -d dataSets/OCR.dir/test.prep --testonly
+            # Test 6b: OCR predict
+            run_test 6b -i runs/6a.dir/OCR.model -d dataSets/OCR.dir/test.prep --testonly
+          fi
   build_vendor_windows:
     name: core-cli.${{ matrix.os }}.amd64.${{ matrix.build_type }}.msvc.standalone
     runs-on: ${{matrix.os}}

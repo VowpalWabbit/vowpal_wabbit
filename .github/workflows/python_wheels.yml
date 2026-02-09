@@ -146,6 +146,10 @@ jobs:
           done
           echo "Submodule init failed after 5 attempts"
           exit 1
+      - name: Setup MSVC Developer Command Prompt
+        uses: ilammy/msvc-dev-cmd@v1
+      - name: Install sccache
+        run: choco install sccache -y
       - name: Build wheels
         uses: pypa/cibuildwheel@v3.3.0
       - uses: actions/upload-artifact@v4

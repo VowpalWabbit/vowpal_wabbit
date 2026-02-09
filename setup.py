@@ -71,10 +71,13 @@ class BuildPyLibVWBindingsModule(_build_ext):
                 import glob
 
                 config = "Debug" if self.distribution.debug else "Release"
-                # CMake builds to build/temp.*/python/Release/ on Windows
-                # Note: self.build_temp already includes the config directory
+                # Multi-config generators (VS) build to python/<config>/
                 pattern = os.path.join(self.build_temp, "python", config, filename)
                 matches = glob.glob(pattern)
+                if not matches:
+                    # Single-config generators (Ninja) build to python/
+                    pattern = os.path.join(self.build_temp, "python", filename)
+                    matches = glob.glob(pattern)
                 if matches:
                     src = matches[0]
                 else:

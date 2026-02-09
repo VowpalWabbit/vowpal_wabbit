@@ -70,7 +70,7 @@ jobs:
     needs: build-valgrind
     strategy:
       matrix:
-        segment: [1, 2, 3]
+        segment: [1, 2, 3, 4]
     container:
       image: vowpalwabbit/ubuntu2004-build:latest
     runs-on: ubuntu-latest
@@ -102,7 +102,7 @@ jobs:
       - name: Run unit tests with Valgrind
         working-directory: build
         run: |
-          if ! ctest --output-on-failure --exclude-regex "WIterations" --label-regex VWTestList --timeout 10 -T memcheck --overwrite MemoryCheckCommandOptions="--leak-check=full --error-exitcode=100" --parallel 2 -I ${{ matrix.segment }},,3; then
+          if ! ctest --output-on-failure --exclude-regex "WIterations" --label-regex VWTestList --timeout 10 -T memcheck --overwrite MemoryCheckCommandOptions="--leak-check=full --error-exitcode=100" --parallel 2 -I ${{ matrix.segment }},,4; then
             find Testing/Temporary -name "MemoryChecker.*.log" -exec cat {} +
             exit 1
           fi
