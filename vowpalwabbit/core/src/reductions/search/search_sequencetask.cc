@@ -306,7 +306,7 @@ void run(Search::search& sch, VW::multi_ex& ec)
   {
     action oracle = ec[i]->l.multi.label;
     for (size_t k = 0; k < K; k++) { costs[k] = 1.; }
-    costs[oracle - 1] = 0.;
+    if (oracle > 0 && oracle <= K) { costs[oracle - 1] = 0.; }
     size_t prediction = search_predictor.set_tag(static_cast<ptag>(i) + 1)
                             .set_input(*ec[i])
                             .set_allowed(nullptr, costs.data(), K)

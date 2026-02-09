@@ -9,8 +9,8 @@
 #include "vw/core/api_status.h"
 #include "vw/core/best_constant.h"
 #include "vw/core/cb.h"
-#include "vw/core/cb_type.h"
 #include "vw/core/cb_continuous_label.h"
+#include "vw/core/cb_type.h"
 #include "vw/core/cb_with_observations_label.h"
 #include "vw/core/ccb_label.h"
 #include "vw/core/ccb_reduction_features.h"
@@ -990,8 +990,8 @@ TEST(ReductionsCoverage, GdMfTrainPredict)
   for (int i = 0; i < 20; ++i)
   {
     float label = static_cast<float>(i % 5);
-    auto* ex = VW::read_example(*vw, std::to_string(label) + " |a x:" + std::to_string(i) +
-        " |b y:" + std::to_string(i % 3));
+    auto* ex =
+        VW::read_example(*vw, std::to_string(label) + " |a x:" + std::to_string(i) + " |b y:" + std::to_string(i % 3));
     vw->learn(*ex);
     VW::finish_example(*vw, *ex);
   }
@@ -1008,8 +1008,8 @@ TEST(ReductionsCoverage, InteractTrainPredict)
   for (int i = 0; i < 10; ++i)
   {
     float label = static_cast<float>(i % 2);
-    auto* ex = VW::read_example(*vw, std::to_string(label) + " |a x:" + std::to_string(i) +
-        " |b y:" + std::to_string(i % 3));
+    auto* ex =
+        VW::read_example(*vw, std::to_string(label) + " |a x:" + std::to_string(i) + " |b y:" + std::to_string(i % 3));
     vw->learn(*ex);
     VW::finish_example(*vw, *ex);
   }
@@ -1041,8 +1041,8 @@ TEST(ReductionsCoverage, MarginalTrainAndSaveLoad)
 
   // Load and predict
   {
-    auto vw = VW::initialize(vwtest::make_args("--quiet"),
-        VW::io::create_buffer_view(model_buffer.data(), model_buffer.size()));
+    auto vw = VW::initialize(
+        vwtest::make_args("--quiet"), VW::io::create_buffer_view(model_buffer.data(), model_buffer.size()));
 
     auto* ex = VW::read_example(*vw, "|a x:2");
     vw->predict(*ex);
@@ -1058,8 +1058,8 @@ TEST(ReductionsCoverage, GenerateInteractionsQuadratic)
   for (int i = 0; i < 10; ++i)
   {
     float label = static_cast<float>(i % 2);
-    auto* ex = VW::read_example(*vw, std::to_string(label) + " |a x:" + std::to_string(i) +
-        " |b y:" + std::to_string(i % 3));
+    auto* ex =
+        VW::read_example(*vw, std::to_string(label) + " |a x:" + std::to_string(i) + " |b y:" + std::to_string(i % 3));
     vw->learn(*ex);
     VW::finish_example(*vw, *ex);
   }
@@ -1073,9 +1073,9 @@ TEST(ReductionsCoverage, GenerateInteractionsCubic)
   for (int i = 0; i < 10; ++i)
   {
     float label = static_cast<float>(i % 2);
-    auto* ex = VW::read_example(*vw, std::to_string(label) + " |a x:" + std::to_string(i) +
-        " |b y:" + std::to_string(i % 3) +
-        " |c z:" + std::to_string(i % 4));
+    auto* ex = VW::read_example(*vw,
+        std::to_string(label) + " |a x:" + std::to_string(i) + " |b y:" + std::to_string(i % 3) +
+            " |c z:" + std::to_string(i % 4));
     vw->learn(*ex);
     VW::finish_example(*vw, *ex);
   }
@@ -1229,7 +1229,11 @@ TEST(CWrapperCoverage, ActionScoreOperations)
   vw->learn(multi_ex);
 
   size_t as_len = VW::get_action_score_length(shared);
-  if (as_len > 0) { float score = VW::get_action_score(shared, 0); (void)score; }
+  if (as_len > 0)
+  {
+    float score = VW::get_action_score(shared, 0);
+    (void)score;
+  }
 
   vw->finish_example(multi_ex);
 }
@@ -1445,13 +1449,13 @@ TEST(ReductionsCoverage, BfgsBasicTraining)
   std::string tmp_cache = "./test_bfgs_cache.tmp";
   std::remove(tmp_cache.c_str());
 
-  auto vw = VW::initialize(vwtest::make_args("--bfgs", "--passes", "2",
-      "--cache_file", tmp_cache.c_str(), "--quiet"));
+  auto vw = VW::initialize(vwtest::make_args("--bfgs", "--passes", "2", "--cache_file", tmp_cache.c_str(), "--quiet"));
 
   for (int i = 0; i < 20; ++i)
   {
     float label = (i % 2 == 0) ? 1.0f : -1.0f;
-    auto* ex = VW::read_example(*vw, std::to_string(label) + " | a:" + std::to_string(i) + " b:" + std::to_string(i * 2));
+    auto* ex =
+        VW::read_example(*vw, std::to_string(label) + " | a:" + std::to_string(i) + " b:" + std::to_string(i * 2));
     vw->learn(*ex);
     VW::finish_example(*vw, *ex);
   }
@@ -1538,7 +1542,8 @@ TEST(ReductionsCoverage, NnTrainPredict)
   for (int i = 0; i < 20; ++i)
   {
     float label = (i % 2 == 0) ? 1.0f : -1.0f;
-    auto* ex = VW::read_example(*vw, std::to_string(label) + " | a:" + std::to_string(i) + " b:" + std::to_string(i * 2));
+    auto* ex =
+        VW::read_example(*vw, std::to_string(label) + " | a:" + std::to_string(i) + " b:" + std::to_string(i * 2));
     vw->learn(*ex);
     VW::finish_example(*vw, *ex);
   }
@@ -1585,7 +1590,7 @@ TEST(ReductionsCoverage, KernelSvmTrainPredict)
     float label = (i % 2 == 0) ? 1.0f : -1.0f;
     auto* ex = VW::read_example(*vw,
         std::to_string(label) + " |f 1:" + std::to_string(static_cast<float>(i) / 30.0f) +
-        " 2:" + std::to_string(static_cast<float>(i * 2) / 60.0f));
+            " 2:" + std::to_string(static_cast<float>(i * 2) / 60.0f));
     vw->learn(*ex);
     VW::finish_example(*vw, *ex);
   }
@@ -1597,8 +1602,8 @@ TEST(ReductionsCoverage, KernelSvmTrainPredict)
 
 TEST(ReductionsCoverage, ConfidenceSequenceRobustViaReduction)
 {
-  auto vw = VW::initialize(vwtest::make_args("--cb_explore_adf", "--cb_type", "mtr",
-      "--confidence_after_training", "--quiet"));
+  auto vw = VW::initialize(
+      vwtest::make_args("--cb_explore_adf", "--cb_type", "mtr", "--confidence_after_training", "--quiet"));
 
   for (int i = 0; i < 20; ++i)
   {
@@ -1688,8 +1693,8 @@ TEST(TextParserCoverage, ParseVariousLabelFormats)
 
 TEST(ReductionsCoverage, SearchSequenceLabeling)
 {
-  auto vw = VW::initialize(vwtest::make_args("--search", "3", "--search_task", "sequence",
-      "--search_alpha", "1e-5", "--quiet"));
+  auto vw = VW::initialize(
+      vwtest::make_args("--search", "3", "--search_task", "sequence", "--search_alpha", "1e-5", "--quiet"));
 
   // Simple sequence labeling: each word gets a label
   for (int i = 0; i < 5; ++i)
@@ -1732,8 +1737,8 @@ TEST(VwCoverage, SaveLoadModelRoundTrip)
   }
 
   {
-    auto vw = VW::initialize(vwtest::make_args("--quiet"),
-        VW::io::create_buffer_view(model_buffer.data(), model_buffer.size()));
+    auto vw = VW::initialize(
+        vwtest::make_args("--quiet"), VW::io::create_buffer_view(model_buffer.data(), model_buffer.size()));
     auto* ex = VW::read_example(*vw, "| a:5");
     vw->predict(*ex);
     VW::finish_example(*vw, *ex);
@@ -1749,8 +1754,8 @@ TEST(ReductionsCoverage, EigenMemoryTreeSaveLoad)
   std::vector<char> model_buffer;
 
   {
-    auto vw = VW::initialize(vwtest::make_args("--memory_tree", "5", "--max_number_of_labels", "3",
-        "--leaf_example_multiplier", "2", "--quiet"));
+    auto vw = VW::initialize(vwtest::make_args(
+        "--memory_tree", "5", "--max_number_of_labels", "3", "--leaf_example_multiplier", "2", "--quiet"));
 
     for (int i = 0; i < 30; ++i)
     {
@@ -1769,8 +1774,8 @@ TEST(ReductionsCoverage, EigenMemoryTreeSaveLoad)
   }
 
   {
-    auto vw = VW::initialize(vwtest::make_args("--quiet"),
-        VW::io::create_buffer_view(model_buffer.data(), model_buffer.size()));
+    auto vw = VW::initialize(
+        vwtest::make_args("--quiet"), VW::io::create_buffer_view(model_buffer.data(), model_buffer.size()));
     auto* ex = VW::read_example(*vw, "| a:5");
     vw->predict(*ex);
     EXPECT_GE(ex->pred.multiclass, 1u);
@@ -1785,8 +1790,8 @@ TEST(ReductionsCoverage, EigenMemoryTreeSaveLoad)
 
 TEST(ReductionsCoverage, SearchDepParserTraining)
 {
-  auto vw = VW::initialize(vwtest::make_args("--search", "4", "--search_task", "dep_parser",
-      "--search_alpha", "1e-5", "--quiet"));
+  auto vw = VW::initialize(
+      vwtest::make_args("--search", "4", "--search_task", "dep_parser", "--search_alpha", "1e-5", "--quiet"));
 
   // dep_parser expects a specific format: label 1:head |features...
   for (int i = 0; i < 3; ++i)
@@ -1838,7 +1843,8 @@ TEST(JsonParserCoverage, ParseJsonExample)
 {
   auto vw = VW::initialize(vwtest::make_args("--cb_explore_adf", "--json", "--quiet"));
 
-  std::string json_example = R"({"_label_cost":-1.0,"_label_probability":0.5,"_label_Action":1,"_labelIndex":0,"c":{"_multi":[{"a":{"x":1}},{"a":{"x":2}}],"_text":"hello world"}})";
+  std::string json_example =
+      R"({"_label_cost":-1.0,"_label_probability":0.5,"_label_Action":1,"_labelIndex":0,"c":{"_multi":[{"a":{"x":1}},{"a":{"x":2}}],"_text":"hello world"}})";
 
   auto examples = vwtest::parse_json(*vw, json_example);
   for (auto& ex : examples) { VW::finish_example(*vw, *ex); }
@@ -1854,8 +1860,9 @@ TEST(ReductionsCoverage2, LdaBasicTraining)
 
   for (int i = 0; i < 20; ++i)
   {
-    auto* ex = VW::read_example(*vw, "| word1:" + std::to_string(i % 5 + 1) +
-        " word2:" + std::to_string(i % 3 + 1) + " word3:" + std::to_string(i % 7 + 1));
+    auto* ex = VW::read_example(*vw,
+        "| word1:" + std::to_string(i % 5 + 1) + " word2:" + std::to_string(i % 3 + 1) +
+            " word3:" + std::to_string(i % 7 + 1));
     vw->learn(*ex);
     VW::finish_example(*vw, *ex);
   }
@@ -1877,8 +1884,7 @@ TEST(ReductionsCoverage2, LdaPreciseMathMode)
 TEST(ReductionsCoverage2, LdaMinibatchMode)
 {
   // Exercise the minibatch > 1 code paths in LDA
-  auto vw = VW::initialize(vwtest::make_args("--lda", "2", "--lda_D", "5",
-      "--minibatch", "4", "--quiet"));
+  auto vw = VW::initialize(vwtest::make_args("--lda", "2", "--lda_D", "5", "--minibatch", "4", "--quiet"));
 
   for (int i = 0; i < 20; ++i)
   {
@@ -1942,8 +1948,7 @@ TEST(ReductionsCoverage2, CbifyBasicTraining)
 TEST(ReductionsCoverage2, CbifyLdfMode)
 {
   // cbify_ldf is a boolean flag, requires --csoaa_ldf for LDF base, --cb_type for CB
-  auto vw = VW::initialize(vwtest::make_args("--cbify_ldf", "--csoaa_ldf", "mc",
-      "--cb_type", "mtr", "--quiet"));
+  auto vw = VW::initialize(vwtest::make_args("--cbify_ldf", "--csoaa_ldf", "mc", "--cb_type", "mtr", "--quiet"));
 
   for (int i = 0; i < 10; ++i)
   {
@@ -2063,7 +2068,8 @@ TEST(ReductionsCoverage2, GenerateInteractionsWithDuplicates)
   for (int i = 0; i < 10; ++i)
   {
     float label = static_cast<float>(i % 2);
-    auto* ex = VW::read_example(*vw, std::to_string(label) + " |a x:" + std::to_string(i) + " y:" + std::to_string(i + 1));
+    auto* ex =
+        VW::read_example(*vw, std::to_string(label) + " |a x:" + std::to_string(i) + " y:" + std::to_string(i + 1));
     vw->learn(*ex);
     VW::finish_example(*vw, *ex);
   }
@@ -2077,8 +2083,8 @@ TEST(ReductionsCoverage2, GenerateInteractionsWildcard)
   for (int i = 0; i < 10; ++i)
   {
     float label = static_cast<float>(i % 2);
-    auto* ex = VW::read_example(*vw, std::to_string(label) + " |a x:" + std::to_string(i) +
-        " |b y:" + std::to_string(i + 1));
+    auto* ex =
+        VW::read_example(*vw, std::to_string(label) + " |a x:" + std::to_string(i) + " |b y:" + std::to_string(i + 1));
     vw->learn(*ex);
     VW::finish_example(*vw, *ex);
   }
@@ -2135,14 +2141,14 @@ TEST(ReductionsCoverage2, StagewisePolyTraining)
   std::string tmp_cache = "./test_stagewise_cache.tmp";
   std::remove(tmp_cache.c_str());
 
-  auto vw = VW::initialize(vwtest::make_args("--stage_poly", "--sched_exponent", "1.0",
-      "--batch_sz", "50", "--passes", "2", "--cache_file", tmp_cache.c_str(), "--quiet"));
+  auto vw = VW::initialize(vwtest::make_args("--stage_poly", "--sched_exponent", "1.0", "--batch_sz", "50", "--passes",
+      "2", "--cache_file", tmp_cache.c_str(), "--quiet"));
 
   for (int i = 0; i < 100; ++i)
   {
     float label = (i % 2 == 0) ? 1.0f : -1.0f;
-    auto* ex = VW::read_example(*vw,
-        std::to_string(label) + " |a x:" + std::to_string(i) + " y:" + std::to_string(i * 2));
+    auto* ex =
+        VW::read_example(*vw, std::to_string(label) + " |a x:" + std::to_string(i) + " y:" + std::to_string(i * 2));
     vw->learn(*ex);
     VW::finish_example(*vw, *ex);
   }
@@ -2157,8 +2163,8 @@ TEST(ReductionsCoverage2, StagewisePolyTraining)
 TEST(ReductionsCoverage2, CsActiveWithDomination)
 {
   // Correct option is --domination (takes 0 or 1), not --use_domination
-  auto vw = VW::initialize(vwtest::make_args("--cs_active", "4", "--simulation",
-      "--domination", "1", "--cost_max", "2", "--mellowness", "0.5", "--quiet"));
+  auto vw = VW::initialize(vwtest::make_args(
+      "--cs_active", "4", "--simulation", "--domination", "1", "--cost_max", "2", "--mellowness", "0.5", "--quiet"));
 
   for (int i = 0; i < 30; ++i)
   {
@@ -2219,8 +2225,8 @@ TEST(TextParserCoverage2, ParseMultipleNamespaces)
 
 TEST(ReductionsCoverage2, SearchGraphTraining)
 {
-  auto vw = VW::initialize(vwtest::make_args("--search", "3",
-      "--search_task", "graph", "--search_alpha", "1e-5", "--quiet"));
+  auto vw =
+      VW::initialize(vwtest::make_args("--search", "3", "--search_task", "graph", "--search_alpha", "1e-5", "--quiet"));
 
   for (int i = 0; i < 3; ++i)
   {
@@ -2245,8 +2251,8 @@ TEST(ReductionsCoverage2, ConfidenceSequenceRobustSaveLoad)
   std::vector<char> model_buffer;
 
   {
-    auto vw = VW::initialize(vwtest::make_args("--cb_explore_adf", "--cb_type", "mtr",
-        "--confidence_after_training", "--quiet"));
+    auto vw = VW::initialize(
+        vwtest::make_args("--cb_explore_adf", "--cb_type", "mtr", "--confidence_after_training", "--quiet"));
 
     for (int i = 0; i < 30; ++i)
     {
@@ -2268,8 +2274,8 @@ TEST(ReductionsCoverage2, ConfidenceSequenceRobustSaveLoad)
   }
 
   {
-    auto vw = VW::initialize(vwtest::make_args("--quiet"),
-        VW::io::create_buffer_view(model_buffer.data(), model_buffer.size()));
+    auto vw = VW::initialize(
+        vwtest::make_args("--quiet"), VW::io::create_buffer_view(model_buffer.data(), model_buffer.size()));
 
     auto* shared = VW::read_example(*vw, "shared | s:15");
     auto* a1 = VW::read_example(*vw, "| a:1");
@@ -2308,8 +2314,8 @@ TEST(ReductionsCoverage2, LogMultiSaveLoad)
   }
 
   {
-    auto vw = VW::initialize(vwtest::make_args("--quiet"),
-        VW::io::create_buffer_view(model_buffer.data(), model_buffer.size()));
+    auto vw = VW::initialize(
+        vwtest::make_args("--quiet"), VW::io::create_buffer_view(model_buffer.data(), model_buffer.size()));
     auto* ex = VW::read_example(*vw, "| a:5");
     vw->predict(*ex);
     EXPECT_GE(ex->pred.multiclass, 1u);
@@ -2396,8 +2402,7 @@ TEST(ReductionsCoverage2, BoostingTrainPredict)
 TEST(ReductionsCoverage2, ActiveCoverTrainPredict)
 {
   // active_cover is a boolean flag, requires --loss_function logistic --binary
-  auto vw = VW::initialize(vwtest::make_args("--active_cover",
-      "--loss_function", "logistic", "--binary", "--quiet"));
+  auto vw = VW::initialize(vwtest::make_args("--active_cover", "--loss_function", "logistic", "--binary", "--quiet"));
 
   for (int i = 0; i < 30; ++i)
   {
@@ -2453,8 +2458,8 @@ TEST(ReductionsCoverage2, LrqTrainPredict)
   for (int i = 0; i < 20; ++i)
   {
     float label = static_cast<float>(i % 2);
-    auto* ex = VW::read_example(*vw,
-        std::to_string(label) + " |a x:" + std::to_string(i) + " |b y:" + std::to_string(i + 1));
+    auto* ex =
+        VW::read_example(*vw, std::to_string(label) + " |a x:" + std::to_string(i) + " |b y:" + std::to_string(i + 1));
     vw->learn(*ex);
     VW::finish_example(*vw, *ex);
   }
@@ -2471,8 +2476,8 @@ TEST(ReductionsCoverage2, LrqfaTrainPredict)
   for (int i = 0; i < 20; ++i)
   {
     float label = static_cast<float>(i % 2);
-    auto* ex = VW::read_example(*vw,
-        std::to_string(label) + " |a x:" + std::to_string(i) + " |b y:" + std::to_string(i + 1));
+    auto* ex =
+        VW::read_example(*vw, std::to_string(label) + " |a x:" + std::to_string(i) + " |b y:" + std::to_string(i + 1));
     vw->learn(*ex);
     VW::finish_example(*vw, *ex);
   }
@@ -2519,9 +2524,9 @@ TEST(ReductionsCoverage2, MwtTraining)
 TEST(ReductionsCoverage2, WarmCbTraining)
 {
   // warm_cb needs --cb_explore_adf --cb_type mtr, multiclass labels
-  auto vw = VW::initialize(vwtest::make_args("--warm_cb", "3", "--cb_explore_adf", "--cb_type", "mtr",
-      "--epsilon", "0.05", "--warm_start", "5", "--interaction", "10",
-      "--choices_lambda", "4", "--warm_start_update", "--interaction_update", "--quiet"));
+  auto vw = VW::initialize(vwtest::make_args("--warm_cb", "3", "--cb_explore_adf", "--cb_type", "mtr", "--epsilon",
+      "0.05", "--warm_start", "5", "--interaction", "10", "--choices_lambda", "4", "--warm_start_update",
+      "--interaction_update", "--quiet"));
 
   for (int i = 0; i < 20; ++i)
   {
@@ -2539,8 +2544,8 @@ TEST(ReductionsCoverage2, WarmCbTraining)
 TEST(ReductionsCoverage2, CbzoTraining)
 {
   // CBZO requires --policy, --radius; labels start with "ca action:cost:probability"
-  auto vw = VW::initialize(vwtest::make_args("--cbzo", "--policy", "constant",
-      "--radius", "0.1", "-l", "0.001", "--quiet"));
+  auto vw =
+      VW::initialize(vwtest::make_args("--cbzo", "--policy", "constant", "--radius", "0.1", "-l", "0.001", "--quiet"));
 
   for (int i = 0; i < 20; ++i)
   {
@@ -2549,8 +2554,7 @@ TEST(ReductionsCoverage2, CbzoTraining)
     float cost = static_cast<float>(i % 5) * 0.5f;
     auto* ex = VW::read_example(*vw,
         "ca " + std::to_string(action) + ":" + std::to_string(cost) + ":33554432 |ns a:" +
-        std::to_string(static_cast<float>(i) * 0.1f) + " b:" +
-        std::to_string(static_cast<float>(i) * 0.2f));
+            std::to_string(static_cast<float>(i) * 0.1f) + " b:" + std::to_string(static_cast<float>(i) * 0.2f));
     vw->learn(*ex);
     VW::finish_example(*vw, *ex);
   }
@@ -2569,8 +2573,8 @@ TEST(ReductionsCoverage2, OffsetTreeTraining)
   {
     int action = (i % 3) + 1;
     float cost = (i % 2 == 0) ? -1.0f : 0.0f;
-    auto* ex = VW::read_example(*vw,
-        std::to_string(action) + ":" + std::to_string(cost) + ":0.5 |f a:" + std::to_string(i));
+    auto* ex =
+        VW::read_example(*vw, std::to_string(action) + ":" + std::to_string(cost) + ":0.5 |f a:" + std::to_string(i));
     vw->learn(*ex);
     VW::finish_example(*vw, *ex);
   }
@@ -2642,8 +2646,7 @@ TEST(ReductionsCoverage2, BinaryReduction)
 
 TEST(ReductionsCoverage2, ExploreEvalTraining)
 {
-  auto vw = VW::initialize(vwtest::make_args("--cb_explore_adf",
-      "--explore_eval", "--quiet"));
+  auto vw = VW::initialize(vwtest::make_args("--cb_explore_adf", "--explore_eval", "--quiet"));
 
   for (int i = 0; i < 20; ++i)
   {
@@ -2746,16 +2749,13 @@ TEST(ParseArgsCoverage, AuditMode)
 // This test verifies that costs outside [0,1] do not crash.
 TEST(ReductionsCoverage2, EpsilonDecayClampsOutOfRangeReward)
 {
-  auto vw = VW::initialize(
-      vwtest::make_args("--cb_explore_adf", "--epsilon_decay", "--model_count", "3", "--quiet"));
+  auto vw = VW::initialize(vwtest::make_args("--cb_explore_adf", "--epsilon_decay", "--model_count", "3", "--quiet"));
 
   for (int i = 0; i < 30; ++i)
   {
     auto* shared = VW::read_example(*vw, "shared | s:" + std::to_string(i));
-    auto* a1 =
-        VW::read_example(*vw, std::string((i % 2 == 0) ? "0:1:0.5" : "") + " | a:1");
-    auto* a2 =
-        VW::read_example(*vw, std::string((i % 2 != 0) ? "0:2:0.5" : "") + " | a:2");
+    auto* a1 = VW::read_example(*vw, std::string((i % 2 == 0) ? "0:1:0.5" : "") + " | a:1");
+    auto* a2 = VW::read_example(*vw, std::string((i % 2 != 0) ? "0:2:0.5" : "") + " | a:2");
 
     VW::multi_ex multi_ex = {shared, a1, a2};
     vw->learn(multi_ex);
@@ -2853,7 +2853,8 @@ TEST(ReductionsCoverage3, NnMeanfieldMode)
 
   for (int i = 0; i < 20; ++i)
   {
-    auto* ex = VW::read_example(*vw, std::to_string(i % 2) + " | a:" + std::to_string(i) + " b:" + std::to_string(i * 2));
+    auto* ex =
+        VW::read_example(*vw, std::to_string(i % 2) + " | a:" + std::to_string(i) + " b:" + std::to_string(i * 2));
     vw->learn(*ex);
     VW::finish_example(*vw, *ex);
   }
@@ -2914,7 +2915,8 @@ TEST(ReductionsCoverage3, FreeGradRestartProject)
 
   for (int i = 0; i < 30; ++i)
   {
-    auto* ex = VW::read_example(*vw, std::to_string(i % 2) + " | a:" + std::to_string(i) + " b:" + std::to_string(i * 3));
+    auto* ex =
+        VW::read_example(*vw, std::to_string(i % 2) + " | a:" + std::to_string(i) + " b:" + std::to_string(i * 3));
     vw->learn(*ex);
     VW::finish_example(*vw, *ex);
   }
@@ -2965,7 +2967,8 @@ TEST(ReductionsCoverage3, GdMfTraining)
 
   for (int i = 0; i < 30; ++i)
   {
-    auto* ex = VW::read_example(*vw, std::to_string(i % 3 + 1) + " |a x:" + std::to_string(i) + " |b y:" + std::to_string(i * 2));
+    auto* ex = VW::read_example(
+        *vw, std::to_string(i % 3 + 1) + " |a x:" + std::to_string(i) + " |b y:" + std::to_string(i * 2));
     vw->learn(*ex);
     VW::finish_example(*vw, *ex);
   }
@@ -2991,16 +2994,13 @@ TEST(ReductionsCoverage3, InteractWithMissingAnchor)
 // ---- Explore eval with more training data (explore_eval.cc lines 184-195, 289-294) ----
 TEST(ReductionsCoverage3, ExploreEvalExtended)
 {
-  auto vw = VW::initialize(vwtest::make_args(
-      "--cb_explore_adf", "--explore_eval", "--quiet", "--epsilon", "0.1"));
+  auto vw = VW::initialize(vwtest::make_args("--cb_explore_adf", "--explore_eval", "--quiet", "--epsilon", "0.1"));
 
   for (int i = 0; i < 30; ++i)
   {
     auto* shared = VW::read_example(*vw, "shared | s:" + std::to_string(i));
-    auto* a1 = VW::read_example(*vw,
-        std::string((i % 2 == 0) ? "0:1:0.5" : "") + " | a:1 x:" + std::to_string(i));
-    auto* a2 = VW::read_example(*vw,
-        std::string((i % 2 != 0) ? "0:0.5:0.5" : "") + " | a:2 y:" + std::to_string(i));
+    auto* a1 = VW::read_example(*vw, std::string((i % 2 == 0) ? "0:1:0.5" : "") + " | a:1 x:" + std::to_string(i));
+    auto* a2 = VW::read_example(*vw, std::string((i % 2 != 0) ? "0:0.5:0.5" : "") + " | a:2 y:" + std::to_string(i));
     auto* empty = VW::read_example(*vw, "");
     VW::multi_ex multi_ex = {shared, a1, a2};
     vw->learn(multi_ex);
@@ -3012,8 +3012,7 @@ TEST(ReductionsCoverage3, ExploreEvalExtended)
 // ---- CS active simulation mode (cs_active.cc more paths) ----
 TEST(ReductionsCoverage3, CsActiveSimulationMode)
 {
-  auto vw = VW::initialize(vwtest::make_args(
-      "--cs_active", "3", "--simulation", "--mellowness", "0.1", "--quiet"));
+  auto vw = VW::initialize(vwtest::make_args("--cs_active", "3", "--simulation", "--mellowness", "0.1", "--quiet"));
 
   for (int i = 0; i < 20; ++i)
   {
@@ -3027,8 +3026,7 @@ TEST(ReductionsCoverage3, CsActiveSimulationMode)
 // ---- Cost sensitive with named labels (cost_sensitive.cc lines 138-143, 221-282) ----
 TEST(CostSensitiveCoverage3, WithNamedLabels)
 {
-  auto vw = VW::initialize(vwtest::make_args(
-      "--csoaa", "3", "--named_labels", "cat,dog,bird", "--quiet"));
+  auto vw = VW::initialize(vwtest::make_args("--csoaa", "3", "--named_labels", "cat,dog,bird", "--quiet"));
 
   for (int i = 0; i < 10; ++i)
   {
@@ -3091,12 +3089,12 @@ TEST(ReductionsCoverage3, MarginalCompeteModelPersistence)
 // ---- Stagewise poly with batching (stagewise_poly.cc lines 547-619) ----
 TEST(ReductionsCoverage3, StagewisePolyBatchDoubling)
 {
-  auto vw = VW::initialize(vwtest::make_args(
-      "--stage_poly", "--batch_sz", "10", "--batch_sz_no_doubling", "--quiet"));
+  auto vw = VW::initialize(vwtest::make_args("--stage_poly", "--batch_sz", "10", "--batch_sz_no_doubling", "--quiet"));
 
   for (int i = 0; i < 30; ++i)
   {
-    auto* ex = VW::read_example(*vw, std::to_string(i % 2) + " | a:" + std::to_string(i) + " b:" + std::to_string(i * 2));
+    auto* ex =
+        VW::read_example(*vw, std::to_string(i % 2) + " | a:" + std::to_string(i) + " b:" + std::to_string(i * 2));
     vw->learn(*ex);
     VW::finish_example(*vw, *ex);
   }
@@ -3123,8 +3121,8 @@ TEST(ReductionsCoverage3, GenerateInteractionsCubicWildcard)
 
   for (int i = 0; i < 10; ++i)
   {
-    auto* ex = VW::read_example(*vw,
-        "1.0 |a x:" + std::to_string(i) + " |b y:" + std::to_string(i) + " |c z:" + std::to_string(i));
+    auto* ex = VW::read_example(
+        *vw, "1.0 |a x:" + std::to_string(i) + " |b y:" + std::to_string(i) + " |c z:" + std::to_string(i));
     vw->learn(*ex);
     VW::finish_example(*vw, *ex);
   }
@@ -3298,8 +3296,8 @@ TEST(IoBufCoverage3, WriteAndReadBackModel)
 
   // Read it back
   {
-    auto vw = VW::initialize(vwtest::make_args("--quiet"),
-        VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
+    auto vw = VW::initialize(
+        vwtest::make_args("--quiet"), VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
     auto* ex = VW::read_example(*vw, "| a:5");
     vw->predict(*ex);
     VW::finish_example(*vw, *ex);
@@ -3342,7 +3340,8 @@ TEST(ReductionsCoverage3, ConfidenceWithMultipleExamples)
 
   for (int i = 0; i < 30; ++i)
   {
-    auto* ex = VW::read_example(*vw, std::to_string(i % 2) + " | a:" + std::to_string(i) + " b:" + std::to_string(i * 2));
+    auto* ex =
+        VW::read_example(*vw, std::to_string(i % 2) + " | a:" + std::to_string(i) + " b:" + std::to_string(i * 2));
     vw->learn(*ex);
     VW::finish_example(*vw, *ex);
   }

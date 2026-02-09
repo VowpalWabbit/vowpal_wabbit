@@ -471,6 +471,16 @@ set(vw_core_test_sources
       tests/cb_labels_test.cc
       tests/coverage_batch6_test.cc
       tests/coverage_batch8_test.cc
+      tests/coverage_numeric_reductions_test.cc
+      tests/coverage_search_test.cc
+      tests/coverage_text_parser_test.cc
+      tests/coverage_label_parser_test.cc
+      tests/coverage_cb_explore_test.cc
+      tests/coverage_core_framework_test.cc
+      tests/coverage_config_io_test.cc
+      tests/coverage_json_parser_test.cc
+      tests/coverage_misc_reductions_test.cc
+      tests/coverage_automl_trees_test.cc
       tests/coverage_gap_test.cc
       tests/example_utils_test.cc
       tests/learner_test.cc

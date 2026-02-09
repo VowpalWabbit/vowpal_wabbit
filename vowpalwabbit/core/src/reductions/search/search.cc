@@ -2086,8 +2086,16 @@ void BaseTask::Run()
   float old_test_loss = priv.test_loss;
   // float old_learn_loss = priv.learn_loss;
   float old_train_loss = priv.train_loss;
+
+  // Save ft_offset for all examples so that metatasks calling Run() multiple
+  // times on the same example set (e.g. selective_branching) don't accumulate
+  // offset drift that triggers underflow assertions in learner.cc.
+  std::vector<uint64_t> saved_ft_offsets;
+  saved_ft_offsets.reserve(ec.size());
+  for (const auto* ex : ec) { saved_ft_offsets.push_back(ex->ft_offset); }
+
   auto restore_priv = VW::scope_exit(
-      [this, &priv, old_should_produce_string, old_test_loss, old_train_loss]
+      [this, &priv, old_should_produce_string, old_test_loss, old_train_loss, &saved_ft_offsets]
       {
         priv.should_produce_string = old_should_produce_string;
         if (!this->_final_run)
@@ -2095,6 +2103,10 @@ void BaseTask::Run()
           priv.test_loss = old_test_loss;
           // priv.learn_loss = old_learn_loss;
           priv.train_loss = old_train_loss;
+        }
+        for (size_t i = 0; i < ec.size() && i < saved_ft_offsets.size(); i++)
+        {
+          ec[i]->ft_offset = saved_ft_offsets[i];
         }
       });
 

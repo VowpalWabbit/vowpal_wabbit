@@ -65,7 +65,7 @@ constexpr action REDUCE_LEFT = 3;
 constexpr action REDUCE = 4;
 constexpr uint32_t MY_NULL = 9999999; /*representing_default*/
 
-void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options)
+void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 {
   VW::workspace& all = sch.get_vw_pointer_unsafe();
   auto data = std::make_shared<task_data>();
@@ -116,7 +116,16 @@ void initialize(Search::search& sch, size_t& /*num_actions*/, options_i& options
   all.feature_tweaks_config.interactions.insert(
       std::end(all.feature_tweaks_config.interactions), std::begin(newtriples), std::end(newtriples));
 
-  if (data->cost_to_go) { sch.set_options(AUTO_CONDITION_FEATURES | NO_CACHING | ACTION_COSTS); }
+  if (data->cost_to_go)
+  {
+    sch.set_options(AUTO_CONDITION_FEATURES | NO_CACHING | ACTION_COSTS);
+    // When cost_to_go is enabled with one_learner, action IDs encode transition+label pairs.
+    // Arc-standard (hybrid): max action = 1 + 2*num_label
+    // Arc-eager: max action = 2 + 2*num_label (extra REDUCE action)
+    size_t min_actions = (data->transition_system == 2) ? (2 + 2 * static_cast<size_t>(data->num_label))
+                                                        : (1 + 2 * static_cast<size_t>(data->num_label));
+    if (num_actions < min_actions) { num_actions = min_actions; }
+  }
   else { sch.set_options(AUTO_CONDITION_FEATURES | NO_CACHING); }
 
   sch.set_label_parser(VW::multilabel_label_parser_global);

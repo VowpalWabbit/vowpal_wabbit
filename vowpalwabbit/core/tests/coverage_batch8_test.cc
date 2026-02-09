@@ -178,8 +178,8 @@ TEST(CoverageBatch8, MarginalCompeteSaveLoad)
   }
 
   // Reload model - this triggers the read path of save_load for expert_state
-  auto vw2 = VW::initialize(vwtest::make_args("--quiet"),
-      VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
+  auto vw2 = VW::initialize(
+      vwtest::make_args("--quiet"), VW::io::create_buffer_view(backing_vector->data(), backing_vector->size()));
   auto* ex2 = VW::read_example(*vw2, "1 |f x:1.0");
   vw2->predict(*ex2);
   vw2->finish_example(*ex2);
