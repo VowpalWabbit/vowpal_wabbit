@@ -265,15 +265,14 @@ void init_tree(memory_tree& b)
   b.max_routers = b.max_nodes;
   if (!b.all->output_config.quiet)
   {
-    *(b.all->output_runtime.trace_message)
-        << "tree initialization is done...." << std::endl
-        << "max nodes " << b.max_nodes << std::endl
-        << "tree size: " << b.nodes.size() << std::endl
-        << "max number of unique labels: " << b.max_num_labels << std::endl
-        << "learn at leaf: " << b.learn_at_leaf << std::endl
-        << "num of dream operations per example: " << b.dream_repeats << std::endl
-        << "current_pass: " << b.current_pass << std::endl
-        << "oas: " << b.oas << std::endl;
+    *(b.all->output_runtime.trace_message) << "tree initialization is done...." << std::endl
+                                           << "max nodes " << b.max_nodes << std::endl
+                                           << "tree size: " << b.nodes.size() << std::endl
+                                           << "max number of unique labels: " << b.max_num_labels << std::endl
+                                           << "learn at leaf: " << b.learn_at_leaf << std::endl
+                                           << "num of dream operations per example: " << b.dream_repeats << std::endl
+                                           << "current_pass: " << b.current_pass << std::endl
+                                           << "oas: " << b.oas << std::endl;
   }
 }
 
