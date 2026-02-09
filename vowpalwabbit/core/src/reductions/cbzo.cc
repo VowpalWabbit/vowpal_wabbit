@@ -107,10 +107,12 @@ void constant_update(cbzo& data, VW::example& ec)
   {
     float action_centroid = inference<CONSTANT_POLICY>(*data.all, ec);
     float denom = ec.l.cb_cont.costs[0].action - action_centroid;
-    // When action is very close to centroid, the gradient estimate cost/denom
-    // becomes numerically unstable. Clamp |denom| to at least radius.
-    if (denom > 0.f && denom < data.radius) { denom = data.radius; }
-    else if (denom < 0.f && denom > -data.radius) { denom = -data.radius; }
+    // Guard against division by zero or near-zero denominator which would produce
+    // inf/NaN gradients. Use a small absolute threshold rather than radius so we
+    // don't alter normal training behavior when denom is merely within the radius.
+    constexpr float MIN_DENOM = 1e-6f;
+    if (denom > 0.f && denom < MIN_DENOM) { denom = MIN_DENOM; }
+    else if (denom < 0.f && denom > -MIN_DENOM) { denom = -MIN_DENOM; }
     else if (denom == 0.f) { return; }
     float grad = ec.l.cb_cont.costs[0].cost / denom;
     float update = -data.all->update_rule_config.eta *
@@ -139,8 +141,9 @@ void linear_update(cbzo& data, VW::example& ec)
 
   float action_centroid = inference<LINEAR_POLICY>(*data.all, ec);
   float denom = ec.l.cb_cont.costs[0].action - action_centroid;
-  if (denom > 0.f && denom < data.radius) { denom = data.radius; }
-  else if (denom < 0.f && denom > -data.radius) { denom = -data.radius; }
+  constexpr float MIN_DENOM = 1e-6f;
+  if (denom > 0.f && denom < MIN_DENOM) { denom = MIN_DENOM; }
+  else if (denom < 0.f && denom > -MIN_DENOM) { denom = -MIN_DENOM; }
   else if (denom == 0.f) { return; }
   float part_grad = ec.l.cb_cont.costs[0].cost / denom;
 
