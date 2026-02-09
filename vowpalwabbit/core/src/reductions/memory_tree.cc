@@ -263,14 +263,17 @@ void init_tree(memory_tree& b)
 
   b.total_num_queries = 0;
   b.max_routers = b.max_nodes;
-  std::cout << "tree initiazliation is done...." << std::endl
-            << "max nodes " << b.max_nodes << std::endl
-            << "tree size: " << b.nodes.size() << std::endl
-            << "max number of unique labels: " << b.max_num_labels << std::endl
-            << "learn at leaf: " << b.learn_at_leaf << std::endl
-            << "num of dream operations per example: " << b.dream_repeats << std::endl
-            << "current_pass: " << b.current_pass << std::endl
-            << "oas: " << b.oas << std::endl;
+  if (!b.all->output_config.quiet)
+  {
+    *(b.all->output_runtime.trace_message) << "tree initialization is done...." << std::endl
+                                           << "max nodes " << b.max_nodes << std::endl
+                                           << "tree size: " << b.nodes.size() << std::endl
+                                           << "max number of unique labels: " << b.max_num_labels << std::endl
+                                           << "learn at leaf: " << b.learn_at_leaf << std::endl
+                                           << "num of dream operations per example: " << b.dream_repeats << std::endl
+                                           << "current_pass: " << b.current_pass << std::endl
+                                           << "oas: " << b.oas << std::endl;
+  }
 }
 
 // rout based on the prediction
@@ -311,7 +314,7 @@ inline int random_sample_example_pop(memory_tree& b, uint64_t& cn)
     }
     else
     {
-      std::cout << cn << " " << b.nodes[cn].nl << " " << b.nodes[cn].nr << std::endl;
+      b.all->logger.out_error("{0} {1} {2}", cn, b.nodes[cn].nl, b.nodes[cn].nr);
       b.all->logger.out_error("Error:  nl = 0, and nr = 0");
       exit(0);
     }
@@ -414,7 +417,10 @@ void split_leaf(memory_tree& b, learner& base, const uint64_t cn)
   if (b.nodes[cn].depth + 1 > b.max_depth)
   {
     b.max_depth = b.nodes[cn].depth + 1;
-    std::cout << "depth " << b.max_depth << std::endl;
+    if (!b.all->output_config.quiet)
+    {
+      *(b.all->output_runtime.trace_message) << "depth " << b.max_depth << std::endl;
+    }
   }
 
   b.nodes[cn].left = left_child;
@@ -1000,15 +1006,21 @@ void learn(memory_tree& b, learner& base, VW::example& ec)
   {
     b.iter++;
 
-    if (b.iter % 5000 == 0)
+    if (b.iter % 5000 == 0 && !b.all->output_config.quiet)
     {
       if (b.oas == false)
       {
-        std::cout << "at iter " << b.iter << ", top(" << b.top_k << ") pred error: " << b.num_mistakes * 1. / b.iter
-                  << ", total num queries so far: " << b.total_num_queries << ", max depth: " << b.max_depth
-                  << ", max exp in leaf: " << b.max_ex_in_leaf << std::endl;
+        *(b.all->output_runtime.trace_message) << "at iter " << b.iter << ", top(" << b.top_k
+                                               << ") pred error: " << b.num_mistakes * 1. / b.iter
+                                               << ", total num queries so far: " << b.total_num_queries
+                                               << ", max depth: " << b.max_depth
+                                               << ", max exp in leaf: " << b.max_ex_in_leaf << std::endl;
       }
-      else { std::cout << "at iter " << b.iter << ", avg hamming loss: " << b.hamming_loss * 1. / b.iter << std::endl; }
+      else
+      {
+        *(b.all->output_runtime.trace_message)
+            << "at iter " << b.iter << ", avg hamming loss: " << b.hamming_loss * 1. / b.iter << std::endl;
+      }
     }
 
     clock_t begin = clock();
@@ -1038,13 +1050,18 @@ void learn(memory_tree& b, learner& base, VW::example& ec)
   else if (b.test_mode == true)
   {
     b.iter++;
-    if (b.iter % 5000 == 0)
+    if (b.iter % 5000 == 0 && !b.all->output_config.quiet)
     {
       if (b.oas == false)
       {
-        std::cout << "at iter " << b.iter << ", pred error: " << b.num_mistakes * 1. / b.iter << std::endl;
+        *(b.all->output_runtime.trace_message)
+            << "at iter " << b.iter << ", pred error: " << b.num_mistakes * 1. / b.iter << std::endl;
       }
-      else { std::cout << "at iter " << b.iter << ", avg hamming loss: " << b.hamming_loss * 1. / b.iter << std::endl; }
+      else
+      {
+        *(b.all->output_runtime.trace_message)
+            << "at iter " << b.iter << ", avg hamming loss: " << b.hamming_loss * 1. / b.iter << std::endl;
+      }
     }
   }
 }
@@ -1052,8 +1069,12 @@ void learn(memory_tree& b, learner& base, VW::example& ec)
 void end_pass(memory_tree& b)
 {
   b.current_pass++;
-  std::cout << "######### Current Pass: " << b.current_pass
-            << ", with number of memories strored so far: " << b.examples.size() << std::endl;
+  if (!b.all->output_config.quiet)
+  {
+    *(b.all->output_runtime.trace_message) << "######### Current Pass: " << b.current_pass
+                                           << ", with number of memories stored so far: " << b.examples.size()
+                                           << std::endl;
+  }
 }
 
 ///////////////////Save & Load//////////////////////////////////////

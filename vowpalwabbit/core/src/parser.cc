@@ -468,11 +468,18 @@ void VW::details::enable_sources(
     // background process (if foreground is not set)
     if (!input_options.foreground)
     {
-      // FIXME switch to posix_spawn
-      VW_WARNING_STATE_PUSH
-      VW_WARNING_DISABLE_DEPRECATED_USAGE
-      if (!all.reduction_state.active && daemon(1, 1)) THROWERRNO("daemon");
-      VW_WARNING_STATE_POP
+#ifdef _WIN32
+      // Windows stub: daemon() in Windows just exits the parent process.
+      if (!all.reduction_state.active) { daemon(1, 1); }
+#else
+      if (!all.reduction_state.active)
+      {
+        pid_t pid = fork();
+        if (pid < 0) { THROWERRNO("fork"); }
+        if (pid > 0) { _exit(0); }  // parent exits
+        if (setsid() < 0) { THROWERRNO("setsid"); }
+      }
+#endif
     }
 
     // write pid file
