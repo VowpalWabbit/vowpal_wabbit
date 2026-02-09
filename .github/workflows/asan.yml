@@ -33,6 +33,7 @@ jobs:
     name: asan.${{ matrix.os }}.${{ matrix.preset }}
     env:
       UBSAN_OPTIONS: "print_stacktrace=1"
+      CCACHE_DIR: ${{ runner.temp }}/ccache
 
     steps:
       - uses: actions/checkout@v6
@@ -62,7 +63,23 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update || true
-          sudo apt-get install -y ninja-build autoconf automake autoconf-archive
+          sudo apt-get install -y ninja-build autoconf automake autoconf-archive ccache
+      - name: Install ccache (macOS only)
+        if: runner.os == 'macOS'
+        run: brew install ccache
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/ccache
+          key: ccache-asan-${{ matrix.os }}-${{ matrix.preset }}-${{ github.sha }}
+          restore-keys: |
+            ccache-asan-${{ matrix.os }}-${{ matrix.preset }}-
+      - name: Configure ccache
+        shell: bash
+        run: |
+          ccache --set-config=max_size=500M
+          ccache --set-config=compiler_check=content
+          ccache --zero-stats
       - name: Export GitHub Actions cache environment variables
         uses: actions/github-script@v7
         with:
@@ -86,7 +103,7 @@ jobs:
         run: |
           max_attempts=3
           attempt=1
-          until cmake --preset "${{ matrix.preset }}"; do
+          until cmake --preset "${{ matrix.preset }}" -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache; do
             if [ $attempt -ge $max_attempts ]; then
               echo "CMake configure failed after $max_attempts attempts"
               exit 1
@@ -97,6 +114,9 @@ jobs:
           done
       - name: Build
         run: cmake --build build
+      - name: Show ccache stats
+        if: always()
+        run: ccache --show-stats
       - name: Verify binaries exist
         run: |
           ls -la build/vowpalwabbit/cli/
@@ -122,6 +142,7 @@ jobs:
     name: asan.${{ matrix.os }}.${{ matrix.preset }}
     env:
       UBSAN_OPTIONS: "print_stacktrace=1"
+      CCACHE_DIR: ${{ runner.temp }}/ccache
 
     steps:
       - uses: actions/checkout@v6
@@ -148,7 +169,20 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update || true
-          sudo apt-get install -y ninja-build autoconf automake autoconf-archive
+          sudo apt-get install -y ninja-build autoconf automake autoconf-archive ccache
+      - name: Cache ccache
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/ccache
+          key: ccache-asan-${{ matrix.os }}-${{ matrix.preset }}-${{ github.sha }}
+          restore-keys: |
+            ccache-asan-${{ matrix.os }}-${{ matrix.preset }}-
+      - name: Configure ccache
+        shell: bash
+        run: |
+          ccache --set-config=max_size=500M
+          ccache --set-config=compiler_check=content
+          ccache --zero-stats
       - name: Export GitHub Actions cache environment variables
         uses: actions/github-script@v7
         with:
@@ -172,7 +206,7 @@ jobs:
         run: |
           max_attempts=3
           attempt=1
-          until cmake --preset "${{ matrix.preset }}"; do
+          until cmake --preset "${{ matrix.preset }}" -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache; do
             if [ $attempt -ge $max_attempts ]; then
               echo "CMake configure failed after $max_attempts attempts"
               exit 1
@@ -183,6 +217,9 @@ jobs:
           done
       - name: Build
         run: cmake --build build -t vw_cli_bin vw_spanning_tree vw_spanning_tree_bin vw_core_test
+      - name: Show ccache stats
+        if: always()
+        run: ccache --show-stats
       - name: Run unit tests
         run: ./build/vowpalwabbit/core/vw_core_test --gtest_filter=-\*WIiterations
       - name: Run python test script
