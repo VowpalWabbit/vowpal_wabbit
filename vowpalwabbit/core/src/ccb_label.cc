@@ -168,7 +168,6 @@ void parse_ccb_label(ccb_label& ld, VW::label_parser_reuse_mem& reuse_mem, const
       float total_pred = std::accumulate(ld.outcome->probabilities.begin(), ld.outcome->probabilities.end(), 0.f,
           [](float result_so_far, VW::action_score action_pred) { return result_so_far + action_pred.score; });
 
-      // TODO do a proper comparison here.
       if (!VW::math::are_same(total_pred, 1.f))
       {
         THROW("When providing all prediction probabilities they must add up to 1.f, instead summed to " << total_pred);

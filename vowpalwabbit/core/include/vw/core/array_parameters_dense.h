@@ -102,8 +102,6 @@ public:
   dense_parameters(dense_parameters&&) noexcept;
 
   bool not_null();
-  VW::weight* first() { return _begin.get(); }  // TODO: Temporary fix for allreduce.
-
   VW::weight* data() { return _begin.get(); }
 
   const VW::weight* data() const { return _begin.get(); }

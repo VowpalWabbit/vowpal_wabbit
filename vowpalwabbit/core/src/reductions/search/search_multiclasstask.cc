@@ -26,7 +26,6 @@ void initialize(Search::search& sch, size_t& num_actions, VW::config::options_i&
   sch.set_options(0);
   size_t num_learner_ceil = 1;
   while (num_learner_ceil < num_actions) { num_learner_ceil *= 2; }
-  // TODO: temporary fix to ensure enough learners, look into case where learner is created outside bounds
   sch.set_feature_width(num_learner_ceil);
   my_task_data->max_label = num_actions;
   my_task_data->num_level = static_cast<size_t>(ceil(log(num_actions) / log(2)));

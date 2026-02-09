@@ -247,14 +247,8 @@ template <bool probabilities>
 void update_stats_oaa(const VW::workspace& /* all */, VW::shared_data& sd, const oaa& data, const VW::example& ec,
     VW::io::logger& /* logger */)
 {
-  // === Compute multiclass_log_loss
-  // TODO:
-  // What to do if the correct label is unknown, i.e. (uint32_t)-1?
-  //   Suggestion: increase all.sd->weighted_unlabeled_examples???,
-  //               but not sd.example_number, so the average loss is not influenced.
-  // What to do if the correct_class_prob==0?
-  //   Suggestion: have some maximal multiclass_log_loss limit, e.g. 999.
-  float multiclass_log_loss = 999;  // -log(0) = plus infinity
+  // Multiclass log loss: default to 999 (-log(0) = infinity) when correct_class_prob is zero.
+  float multiclass_log_loss = 999;
   float correct_class_prob = 0;
   if (probabilities)
   {

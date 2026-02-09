@@ -12,9 +12,6 @@
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
 
-// TODO: delete this three includes
-#include "vw/core/reductions/cb/cb_adf.h"
-#include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
 
 #include <cfloat>

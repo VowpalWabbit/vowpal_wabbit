@@ -31,7 +31,7 @@ aml0  aml1  aml0  aml1   aml0   aml1   aml0   aml1    -- Shows how weights are g
 inline void clear_innermost_offset(dense_parameters& weights, const size_t offset, const size_t total_feature_width,
     const size_t innermost_feature_width_size)
 {
-  VW::weight* weights_arr = weights.first();
+  VW::weight* weights_arr = weights.data();
   const size_t overall_without_innermost_feature_width_size = total_feature_width / innermost_feature_width_size;
   assert(offset < innermost_feature_width_size);
 
@@ -52,7 +52,7 @@ inline void clear_innermost_offset(dense_parameters& weights, const size_t offse
 inline void move_innermost_offsets(dense_parameters& weights, const size_t from, const size_t to,
     const size_t total_feature_width, const size_t innermost_feature_width_size, bool swap = false)
 {
-  VW::weight* weights_arr = weights.first();
+  VW::weight* weights_arr = weights.data();
   const size_t overall_without_innermost_feature_width_size = total_feature_width / innermost_feature_width_size;
   assert(from < innermost_feature_width_size);
   assert(to < innermost_feature_width_size);
@@ -101,7 +101,7 @@ inline void move_innermost_offsets(dense_parameters& weights, const size_t from,
 inline void reduce_innermost_model_weights(dense_parameters& weights, const size_t offset,
     const size_t total_feature_width, const size_t innermost_feature_width_size)
 {
-  VW::weight* weights_arr = weights.first();
+  VW::weight* weights_arr = weights.data();
   const size_t overall_without_innermost_feature_width_size = total_feature_width / innermost_feature_width_size;
   for (size_t inner_feature_widths = 0; inner_feature_widths < innermost_feature_width_size; ++inner_feature_widths)
   {

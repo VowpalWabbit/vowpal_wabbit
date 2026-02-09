@@ -39,7 +39,7 @@ void VW::details::accumulate(VW::workspace& all, parameters& weights, size_t off
     }
   }
 
-  VW::details::all_reduce<float, add_float>(all, local_grad, length);  // TODO: modify to not use first()
+  VW::details::all_reduce<float, add_float>(all, local_grad, length);
 
   if (weights.sparse)
   {
@@ -87,7 +87,7 @@ void VW::details::accumulate_avg(VW::workspace& all, parameters& weights, size_t
     }
   }
 
-  VW::details::all_reduce<float, add_float>(all, local_grad, length);  // TODO: modify to not use first()
+  VW::details::all_reduce<float, add_float>(all, local_grad, length);
 
   if (weights.sparse)
   {
@@ -153,7 +153,7 @@ void VW::details::accumulate_weighted_avg(VW::workspace& all, parameters& weight
   else
   {
     VW::details::all_reduce<float, add_float>(
-        all, weights.dense_weights.first(), (static_cast<size_t>(length)) * (1ull << weights.stride_shift()));
+        all, weights.dense_weights.data(), (static_cast<size_t>(length)) * (1ull << weights.stride_shift()));
   }
   delete[] local_weights;
 }
