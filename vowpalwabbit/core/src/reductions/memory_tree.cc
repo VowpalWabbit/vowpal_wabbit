@@ -265,14 +265,15 @@ void init_tree(memory_tree& b)
   b.max_routers = b.max_nodes;
   if (!b.all->output_config.quiet)
   {
-    *(b.all->output_runtime.trace_message) << "tree initialization is done...." << std::endl
-                                           << "max nodes " << b.max_nodes << std::endl
-                                           << "tree size: " << b.nodes.size() << std::endl
-                                           << "max number of unique labels: " << b.max_num_labels << std::endl
-                                           << "learn at leaf: " << b.learn_at_leaf << std::endl
-                                           << "num of dream operations per example: " << b.dream_repeats << std::endl
-                                           << "current_pass: " << b.current_pass << std::endl
-                                           << "oas: " << b.oas << std::endl;
+    *(b.all->output_runtime.trace_message)
+        << "tree initialization is done...." << std::endl
+        << "max nodes " << b.max_nodes << std::endl
+        << "tree size: " << b.nodes.size() << std::endl
+        << "max number of unique labels: " << b.max_num_labels << std::endl
+        << "learn at leaf: " << b.learn_at_leaf << std::endl
+        << "num of dream operations per example: " << b.dream_repeats << std::endl
+        << "current_pass: " << b.current_pass << std::endl
+        << "oas: " << b.oas << std::endl;
   }
 }
 
@@ -417,10 +418,7 @@ void split_leaf(memory_tree& b, learner& base, const uint64_t cn)
   if (b.nodes[cn].depth + 1 > b.max_depth)
   {
     b.max_depth = b.nodes[cn].depth + 1;
-    if (!b.all->output_config.quiet)
-    {
-      *(b.all->output_runtime.trace_message) << "depth " << b.max_depth << std::endl;
-    }
+    if (!b.all->output_config.quiet) { *(b.all->output_runtime.trace_message) << "depth " << b.max_depth << std::endl; }
   }
 
   b.nodes[cn].left = left_child;
@@ -1010,11 +1008,10 @@ void learn(memory_tree& b, learner& base, VW::example& ec)
     {
       if (b.oas == false)
       {
-        *(b.all->output_runtime.trace_message) << "at iter " << b.iter << ", top(" << b.top_k
-                                               << ") pred error: " << b.num_mistakes * 1. / b.iter
-                                               << ", total num queries so far: " << b.total_num_queries
-                                               << ", max depth: " << b.max_depth
-                                               << ", max exp in leaf: " << b.max_ex_in_leaf << std::endl;
+        *(b.all->output_runtime.trace_message)
+            << "at iter " << b.iter << ", top(" << b.top_k << ") pred error: " << b.num_mistakes * 1. / b.iter
+            << ", total num queries so far: " << b.total_num_queries << ", max depth: " << b.max_depth
+            << ", max exp in leaf: " << b.max_ex_in_leaf << std::endl;
       }
       else
       {
@@ -1071,9 +1068,9 @@ void end_pass(memory_tree& b)
   b.current_pass++;
   if (!b.all->output_config.quiet)
   {
-    *(b.all->output_runtime.trace_message) << "######### Current Pass: " << b.current_pass
-                                           << ", with number of memories stored so far: " << b.examples.size()
-                                           << std::endl;
+    *(b.all->output_runtime.trace_message)
+        << "######### Current Pass: " << b.current_pass
+        << ", with number of memories stored so far: " << b.examples.size() << std::endl;
   }
 }
 

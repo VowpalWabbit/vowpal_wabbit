@@ -9,10 +9,9 @@
 #include "vw/core/automl_impl.h"
 #include "vw/core/estimators/confidence_sequence_robust.h"
 #include "vw/core/multi_model_utils.h"
+#include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
-
-#include "vw/core/setup_base.h"
 
 #include <cfloat>
 #include <iomanip>

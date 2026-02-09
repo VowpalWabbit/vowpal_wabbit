@@ -152,12 +152,10 @@ inline void find_cost_range(cs_active& cs_a, learner& base, VW::example& ec, uin
   else
   {
     // finding max_pred and min_pred by binary search
-    max_pred = std::min(
-        ec.pred.scalar +
+    max_pred = std::min(ec.pred.scalar +
             sens * VW::confidence_sequence_utility::binary_search(cs_a.cost_max - ec.pred.scalar, delta, sens, tol),
         cs_a.cost_max);
-    min_pred = std::max(
-        ec.pred.scalar -
+    min_pred = std::max(ec.pred.scalar -
             sens * VW::confidence_sequence_utility::binary_search(ec.pred.scalar - cs_a.cost_min, delta, sens, tol),
         cs_a.cost_min);
     is_range_large = (max_pred - min_pred > eta);
