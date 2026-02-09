@@ -70,17 +70,17 @@ repair-wheel-command = "delocate-wheel --require-archs {delocate_archs} -w {dest
 before-all = [
     # Install pybind11 via pip - setup.py will detect it automatically
     "pip install pybind11",
-    # Reset ccache stats for this job
-    "ccache --zero-stats",
+    # Reset sccache stats for this job
+    "sccache --zero-stats",
 ]
-# Show ccache stats before each Python version build (first = all misses, rest = cache hits)
-before-build = "ccache --show-stats || true"
+# Show sccache stats before each Python version build (first = all misses, rest = cache hits)
+before-build = "sccache --show-stats || true"
 # Use vendored zlib (VW_ZLIB_SYS_DEP=OFF) for self-contained wheels
 # pybind11_DIR is automatically detected by setup.py
-# Ninja generator + ccache: MSVC env must be set up by ilammy/msvc-dev-cmd in the workflow
-# ccache: CMAKE_C/CXX_COMPILER_LAUNCHER=ccache caches object files across the 5 Python version builds
-# CCACHE_BASEDIR is set in the workflow via github.workspace for correct path normalization
-environment = { CMAKE_ARGS="-DVW_ZLIB_SYS_DEP=OFF -DVW_FEAT_CSV=ON -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache", CMAKE_GENERATOR="Ninja", CCACHE_DIR="C:\\ccache", CCACHE_MAXSIZE="500M", CCACHE_COMPILERCHECK="content" }
+# Ninja generator + sccache: MSVC env must be set up by ilammy/msvc-dev-cmd in the workflow
+# sccache handles MSVC long paths correctly (ccache fails with "Filename too long" on Windows)
+# sccache caches object files across the 5 Python version builds (cp310-cp314)
+environment = { CMAKE_ARGS="-DVW_ZLIB_SYS_DEP=OFF -DVW_FEAT_CSV=ON -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache", CMAKE_GENERATOR="Ninja", SCCACHE_DIR="C:\\sccache" }
 
 # Override for ARM64 Linux builds
 # Compiler flags are applied in setup.py based on platform detection
