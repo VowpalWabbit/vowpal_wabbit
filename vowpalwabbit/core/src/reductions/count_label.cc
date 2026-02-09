@@ -74,10 +74,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::count_label_setup(VW::setu
     return base;
   }
 
-  // TODO use field on base when that is available. In most reductions we would
-  // return nullptr if the reduction is not active. However, in this reduction we
-  // have already constructed the base. So we must return what we've already
-  // constructed but it works because we aren't part of it
+  // In most reductions we would return nullptr if the reduction is not active.
+  // However, we have already constructed the base, so we must return it.
   if (base_label_type != label_type_t::SIMPLE) { return base; }
 
   auto data = VW::make_unique<reduction_data>(all, base.get());

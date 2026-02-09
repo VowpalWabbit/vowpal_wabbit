@@ -310,8 +310,6 @@ static int trim_cache(svm_params& params)
 void save_load_svm_model(svm_params& params, VW::io_buf& model_file, bool read, bool text)
 {
   svm_model* model = params.model;
-  // TODO: check about initialization
-
   if (model_file.num_files() == 0) { return; }
   std::stringstream msg;
   VW::details::bin_text_read_write_fixed(

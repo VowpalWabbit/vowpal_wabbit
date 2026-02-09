@@ -256,7 +256,6 @@ void ect_train(ect& e, learner& base, VW::example& ec)
     }
   } while (id != 0);
 
-  // TODO: error? warn? info? what level is this supposed to be?
   if (e.tournaments_won.empty())
   {
     e.logger.out_error("Internal error occurred. tournaments_won was empty which should not be possible.");
@@ -319,7 +318,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::ect_setup(VW::setup_base_i
   option_group_definition new_options("[Reduction] Error Correcting Tournament");
   new_options.add(make_option("ect", data->k).keep().necessary().help("Error correcting tournament with <k> labels"))
       .add(make_option("error", data->errors).keep().default_value(0).help("Errors allowed by ECT"))
-      // Used to check value. TODO replace
       .add(make_option("link", link)
                .default_value("identity")
                .keep()

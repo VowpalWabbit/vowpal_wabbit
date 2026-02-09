@@ -224,7 +224,7 @@ void predict_or_learn_multi(nn& n, learner& base, VW::example& ec)
       {
         if (i > 0) { output_string_stream << ' '; }
         output_string_stream << i << ':' << hidden_units[i].scalar << ','
-                             << fasttanh(hidden_units[i].scalar);  // TODO: huh, what was going on here?
+                             << fasttanh(hidden_units[i].scalar);  // Output both raw and tanh-transformed activations
       }
     }
 

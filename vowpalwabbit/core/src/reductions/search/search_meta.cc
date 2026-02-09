@@ -19,7 +19,6 @@ namespace DebugMT
 void run(Search::search& sch, VW::multi_ex& ec);
 Search::search_metatask metatask = {"debug", run, nullptr, nullptr, nullptr, nullptr};
 
-// TODO: which logger should this be using?
 void run(Search::search& sch, VW::multi_ex& ec)
 {
   // Can't do a lambda capture of the output since it changes the signature of the lambda function
