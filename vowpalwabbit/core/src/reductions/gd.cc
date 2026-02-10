@@ -430,8 +430,8 @@ void print_lda_features(VW::workspace& all, VW::example& ec)
   {
     for (const auto& f : fs.audit_range())
     {
-      trace << '\t' << VW::to_string(*f.audit()) << ':'
-            << ((f.index() >> stride_shift) & all.runtime_state.parse_mask) << ':' << f.value();
+      trace << '\t' << VW::to_string(*f.audit()) << ':' << ((f.index() >> stride_shift) & all.runtime_state.parse_mask)
+            << ':' << f.value();
       for (size_t k = 0; k < all.reduction_state.lda; k++) { trace << ':' << (&weights[f.index()])[k]; }
     }
   }

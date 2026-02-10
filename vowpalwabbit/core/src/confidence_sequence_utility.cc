@@ -8,10 +8,9 @@
 
 #include <cmath>
 
-void VW::confidence_sequence_utility::get_cost_ranges(float delta, VW::LEARNER::learner& base,
-    VW::multi_ex& examples, bool min_only, float min_cb_cost, float max_cb_cost, std::vector<float>& min_costs,
-    std::vector<float>& max_costs, std::vector<VW::action_scores>& ex_as,
-    std::vector<std::vector<VW::cb_class>>& ex_costs)
+void VW::confidence_sequence_utility::get_cost_ranges(float delta, VW::LEARNER::learner& base, VW::multi_ex& examples,
+    bool min_only, float min_cb_cost, float max_cb_cost, std::vector<float>& min_costs, std::vector<float>& max_costs,
+    std::vector<VW::action_scores>& ex_as, std::vector<std::vector<VW::cb_class>>& ex_costs)
 {
   const size_t num_actions = examples[0]->pred.a_s.size();
   min_costs.resize(num_actions);

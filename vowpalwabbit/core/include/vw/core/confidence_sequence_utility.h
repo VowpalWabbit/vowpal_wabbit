@@ -55,8 +55,8 @@ inline float binary_search(float fhat, float delta, float sens, float tol = 1e-6
 /// \param max_costs Output vector of maximum cost for each action (unchanged if min_only).
 /// \param ex_as Scratch buffer for backing up action scores.
 /// \param ex_costs Scratch buffer for backing up CB costs.
-void get_cost_ranges(float delta, VW::LEARNER::learner& base, VW::multi_ex& examples, bool min_only,
-    float min_cb_cost, float max_cb_cost, std::vector<float>& min_costs, std::vector<float>& max_costs,
+void get_cost_ranges(float delta, VW::LEARNER::learner& base, VW::multi_ex& examples, bool min_only, float min_cb_cost,
+    float max_cb_cost, std::vector<float>& min_costs, std::vector<float>& max_costs,
     std::vector<VW::action_scores>& ex_as, std::vector<std::vector<VW::cb_class>>& ex_costs);
 
 }  // namespace confidence_sequence_utility

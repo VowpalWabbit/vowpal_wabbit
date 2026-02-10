@@ -89,8 +89,8 @@ void cb_explore_adf_regcb::predict_impl(learner& base, VW::multi_ex& examples)
   // threshold on empirical loss difference
   const float delta =
       _c0 * std::log(static_cast<float>(num_actions * _counter)) * static_cast<float>(std::pow(max_range, 2));
-  VW::confidence_sequence_utility::get_cost_ranges(
-      delta, base, examples, /*min_only=*/_regcbopt, _min_cb_cost, _max_cb_cost, _min_costs, _max_costs, _ex_as, _ex_costs);
+  VW::confidence_sequence_utility::get_cost_ranges(delta, base, examples, /*min_only=*/_regcbopt, _min_cb_cost,
+      _max_cb_cost, _min_costs, _max_costs, _ex_as, _ex_costs);
 
   if (_regcbopt)  // optimistic variant
   {

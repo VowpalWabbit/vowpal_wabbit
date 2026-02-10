@@ -142,8 +142,8 @@ void cb_explore_adf_squarecb::predict(learner& base, VW::multi_ex& examples)
   }
   else  // elimination variant
   {
-    VW::confidence_sequence_utility::get_cost_ranges(
-        delta, base, examples, /*min_only=*/false, _min_cb_cost, _max_cb_cost, _min_costs, _max_costs, _ex_as, _ex_costs);
+    VW::confidence_sequence_utility::get_cost_ranges(delta, base, examples, /*min_only=*/false, _min_cb_cost,
+        _max_cb_cost, _min_costs, _max_costs, _ex_as, _ex_costs);
 
     float min_max_cost = FLT_MAX;
     for (size_t a = 0; a < num_actions; ++a)

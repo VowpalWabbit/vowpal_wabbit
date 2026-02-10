@@ -85,7 +85,11 @@ public:
   ~stagewise_poly()
   {
 #ifdef DEBUG
-    if (all) { *(all->output_runtime.trace_message) << "total feature number (after poly expansion!) = " << sum_sparsity << std::endl; }
+    if (all)
+    {
+      *(all->output_runtime.trace_message)
+          << "total feature number (after poly expansion!) = " << sum_sparsity << std::endl;
+    }
 #endif  // DEBUG
 
     free(sd);
@@ -351,8 +355,9 @@ void sort_data_update_support(stagewise_poly& poly)
         poly.sd[pos].wid != constant_feat_masked(poly));
     parent_toggle(poly, poly.sd[pos].wid);
 #ifdef DEBUG
-    *(poly.all->output_runtime.trace_message) << "Adding feature " << pos << "/" << num_new_features << " || wid " << poly.sd[pos].wid
-              << " || sort value " << poly.sd[pos].weightsal << std::endl;
+    *(poly.all->output_runtime.trace_message)
+        << "Adding feature " << pos << "/" << num_new_features << " || wid " << poly.sd[pos].wid << " || sort value "
+        << poly.sd[pos].weightsal << std::endl;
 #endif  // DEBUG
   }
 
@@ -441,8 +446,9 @@ void synthetic_create_rec(stagewise_poly& poly, float v, uint64_t findex)
     if (parent_get(poly, wid_cur))
     {
 #ifdef DEBUG
-      *(poly.all->output_runtime.trace_message) << "FOUND A TRANSPLANT!!! moving [" << wid_cur << "] from depth "
-                << (uint64_t)min_depths_get(poly, wid_cur) << " to depth " << poly.cur_depth << std::endl;
+      *(poly.all->output_runtime.trace_message)
+          << "FOUND A TRANSPLANT!!! moving [" << wid_cur << "] from depth " << (uint64_t)min_depths_get(poly, wid_cur)
+          << " to depth " << poly.cur_depth << std::endl;
 #endif  // DEBUG
       // XXX arguably, should also fear transplants that occured with
       // a different ft_offset ; e.g., need to look out for cross-reduction

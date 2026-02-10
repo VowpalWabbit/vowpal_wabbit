@@ -1339,8 +1339,7 @@ void save_load_memory_tree(memory_tree& b, VW::io_buf& model_file, bool read, bo
   {
     if (read)
     {
-      if (b.all->runtime_state.model_file_ver <
-          VW::version_definitions::VERSION_FILE_WITH_MEMORY_TREE_MODEL_UTILS)
+      if (b.all->runtime_state.model_file_ver < VW::version_definitions::VERSION_FILE_WITH_MEMORY_TREE_MODEL_UTILS)
       {
         save_load_memory_tree_legacy(b, model_file);
       }
