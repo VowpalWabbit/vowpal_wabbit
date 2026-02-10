@@ -73,7 +73,7 @@ constexpr VW::version_struct VERSION_FILE_WITH_FLAT_EXAMPLE_TAG_FIX{9, 6, 0};
 constexpr VW::version_struct VERSION_FILE_WITH_PLT_SAVE_LOAD_FIX{9, 7, 0};
 
 /// memory_tree serialization modernized from DEPRECATED_WRITEIT to model_utils in this version
-constexpr VW::version_struct VERSION_FILE_WITH_MEMORY_TREE_MODEL_UTILS{9, 11, 0};
+constexpr VW::version_struct VERSION_FILE_WITH_MEMORY_TREE_MODEL_UTILS{9, 10, 0};
 
 }  // namespace version_definitions
 }  // namespace VW
