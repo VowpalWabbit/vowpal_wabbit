@@ -425,17 +425,17 @@ void print_lda_features(VW::workspace& all, VW::example& ec)
   uint32_t stride_shift = weights.stride_shift();
   size_t count = 0;
   for (VW::features& fs : ec) { count += fs.size(); }
-  // TODO: Where should audit stuff output to?
+  auto& trace = *(all.output_runtime.trace_message);
   for (VW::features& fs : ec)
   {
     for (const auto& f : fs.audit_range())
     {
-      std::cout << '\t' << VW::to_string(*f.audit()) << ':'
-                << ((f.index() >> stride_shift) & all.runtime_state.parse_mask) << ':' << f.value();
-      for (size_t k = 0; k < all.reduction_state.lda; k++) { std::cout << ':' << (&weights[f.index()])[k]; }
+      trace << '\t' << VW::to_string(*f.audit()) << ':'
+            << ((f.index() >> stride_shift) & all.runtime_state.parse_mask) << ':' << f.value();
+      for (size_t k = 0; k < all.reduction_state.lda; k++) { trace << ':' << (&weights[f.index()])[k]; }
     }
   }
-  std::cout << " total of " << count << " features." << std::endl;
+  trace << " total of " << count << " features." << std::endl;
 }
 }  // namespace
 

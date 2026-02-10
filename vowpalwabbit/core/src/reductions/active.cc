@@ -43,10 +43,6 @@ float get_active_coin_bias(float example_count, float avg_loss, float alt_label_
   const float sqrt_avg_loss_plus_sqrt_alt_loss =
       std::min(1.f,  // std::sqrt(avg_loss) + // commented out because two square roots appears to conservative.
           std::sqrt(avg_loss + alt_label_error_rate_diff));  // emperical variance deflater.
-  // std::cout << "example_count = " << example_count << " avg_loss = " << avg_loss << " alt_label_error_rate_diff = "
-  // << alt_label_error_rate_diff << " mellowness = " << mellowness << " mlecoc = " << mellow_log_e_count_over_e_count
-  //	    << " sqrt_mellow_lecoec = " << sqrt_mellow_lecoec << " double sqrt = " << sqrt_avg_loss_plus_sqrt_alt_loss
-  //<< std::endl;
 
   if (alt_label_error_rate_diff <= sqrt_mellow_lecoec * sqrt_avg_loss_plus_sqrt_alt_loss  // deflater in use.
           + mellow_log_e_count_over_e_count)
@@ -61,7 +57,6 @@ float get_active_coin_bias(float example_count, float avg_loss, float alt_label_
                            std::sqrt(mellow_log_e_count_over_e_count +
                                4 * alt_label_error_rate_diff * mellow_log_e_count_over_e_count)) /
       2 * alt_label_error_rate_diff;
-  //  std::cout << "sqrt_s = " << sqrt_s << std::endl;
   return sqrt_s * sqrt_s;
 }
 
@@ -75,11 +70,8 @@ float query_decision(const active& a, float updates_to_change_prediction, float 
     const float avg_loss = (static_cast<float>(a._shared_data->sum_loss) / example_count);
     //+ std::sqrt((1.f + 0.5f * std::log(example_count)) / (weighted_queries + 0.0001f));  Commented this out, not
     // following why we need it from the theory.
-    //    std::cout << "avg_loss = " << avg_loss << " weighted_queries = " << weighted_queries << " sum_loss = " <<
-    //    a._shared_data->sum_loss << " example_count = " << example_count << std::endl;
     bias = get_active_coin_bias(example_count, avg_loss, updates_to_change_prediction / example_count, a.active_c0);
   }
-  //  std::cout << "bias = " << bias << std::endl;
   return (a._random_state->get_and_update_random() < bias) ? 1.f / bias : -1.f;
 }
 

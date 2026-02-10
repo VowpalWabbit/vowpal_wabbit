@@ -85,7 +85,7 @@ public:
   ~stagewise_poly()
   {
 #ifdef DEBUG
-    std::cout << "total feature number (after poly expansion!) = " << sum_sparsity << std::endl;
+    if (all) { *(all->output_runtime.trace_message) << "total feature number (after poly expansion!) = " << sum_sparsity << std::endl; }
 #endif  // DEBUG
 
     free(sd);
@@ -246,11 +246,11 @@ void sort_data_ensure_sz(stagewise_poly& poly, size_t len)
   {
     size_t len_candidate = 2 * len;
 #ifdef DEBUG
-    std::cout << "resizing sort buffer; current size " << poly.sd_len;
+    *(poly.all->output_runtime.trace_message) << "resizing sort buffer; current size " << poly.sd_len;
 #endif  // DEBUG
     poly.sd_len = (len_candidate > poly.all->length()) ? poly.all->length() : len_candidate;
 #ifdef DEBUG
-    std::cout << ", new size " << poly.sd_len << std::endl;
+    *(poly.all->output_runtime.trace_message) << ", new size " << poly.sd_len << std::endl;
 #endif              // DEBUG
     free(poly.sd);  // okay for null.
     poly.sd = VW::details::calloc_or_throw<sort_data>(poly.sd_len);
@@ -351,20 +351,23 @@ void sort_data_update_support(stagewise_poly& poly)
         poly.sd[pos].wid != constant_feat_masked(poly));
     parent_toggle(poly, poly.sd[pos].wid);
 #ifdef DEBUG
-    std::cout << "Adding feature " << pos << "/" << num_new_features << " || wid " << poly.sd[pos].wid
+    *(poly.all->output_runtime.trace_message) << "Adding feature " << pos << "/" << num_new_features << " || wid " << poly.sd[pos].wid
               << " || sort value " << poly.sd[pos].weightsal << std::endl;
 #endif  // DEBUG
   }
 
 #ifdef DEBUG
-  std::cout << "depths:";
-  for (uint64_t depth = 0; depth <= poly.max_depth && depth < sizeof(poly.depths) / sizeof(*poly.depths); ++depth)
-    std::cout << "  [" << depth << "] = " << poly.depths[depth];
-  std::cout << std::endl;
+  {
+    auto& trace = *(poly.all->output_runtime.trace_message);
+    trace << "depths:";
+    for (uint64_t depth = 0; depth <= poly.max_depth && depth < sizeof(poly.depths) / sizeof(*poly.depths); ++depth)
+      trace << "  [" << depth << "] = " << poly.depths[depth];
+    trace << std::endl;
 
-  std::cout << "Sanity check after sort... " << std::flush;
-  sanity_check_state(poly);
-  std::cout << "done" << std::endl;
+    trace << "Sanity check after sort... " << std::flush;
+    sanity_check_state(poly);
+    trace << "done" << std::endl;
+  }
 #endif  // DEBUG
 
   // it's okay that these may have been initially unequal; synth_ec value irrelevant so far.
@@ -438,7 +441,7 @@ void synthetic_create_rec(stagewise_poly& poly, float v, uint64_t findex)
     if (parent_get(poly, wid_cur))
     {
 #ifdef DEBUG
-      std::cout << "FOUND A TRANSPLANT!!! moving [" << wid_cur << "] from depth "
+      *(poly.all->output_runtime.trace_message) << "FOUND A TRANSPLANT!!! moving [" << wid_cur << "] from depth "
                 << (uint64_t)min_depths_get(poly, wid_cur) << " to depth " << poly.cur_depth << std::endl;
 #endif  // DEBUG
       // XXX arguably, should also fear transplants that occured with
@@ -558,7 +561,7 @@ void reduce_min_max(uint8_t& v1, const uint8_t& v2)
   if (parent_or_depth != p_or_d2)
   {
 #ifdef DEBUG
-    std::cout << "Reducing parent with depth";
+    // Reducing parent with depth mismatch — skip.
 #endif  // DEBUG
     return;
   }
@@ -580,7 +583,7 @@ void end_pass(stagewise_poly& poly)
   uint64_t num_examples_inc = poly.num_examples - poly.num_examples_sync;
 
 #ifdef DEBUG
-  std::cout << "Sanity before allreduce\n";
+  *(poly.all->output_runtime.trace_message) << "Sanity before allreduce\n";
   sanity_check_state(poly);
 #endif  // DEBUG
 
@@ -609,7 +612,7 @@ void end_pass(stagewise_poly& poly)
   poly.num_examples = poly.num_examples_sync;
 
 #ifdef DEBUG
-  std::cout << "Sanity after allreduce\n";
+  *(poly.all->output_runtime.trace_message) << "Sanity after allreduce\n";
   sanity_check_state(poly);
 #endif  // DEBUG
 

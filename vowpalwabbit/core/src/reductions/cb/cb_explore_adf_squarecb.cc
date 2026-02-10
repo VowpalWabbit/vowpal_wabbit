@@ -72,7 +72,6 @@ private:
   // for backing up cb example data when computing sensitivities
   std::vector<VW::action_scores> _ex_as;
   std::vector<std::vector<VW::cb_class>> _ex_costs;
-  void get_cost_ranges(float delta, learner& base, VW::multi_ex& examples, bool min_only);
 };
 
 cb_explore_adf_squarecb::cb_explore_adf_squarecb(float gamma_scale, float gamma_exponent, bool elim, float c0,
@@ -89,65 +88,6 @@ cb_explore_adf_squarecb::cb_explore_adf_squarecb(float gamma_scale, float gamma_
     , _model_file_version(model_file_version)
     , _store_gamma_in_reduction_features(store_gamma_in_reduction_features)
 {
-}
-
-void cb_explore_adf_squarecb::get_cost_ranges(float delta, learner& base, VW::multi_ex& examples, bool min_only)
-{
-  const size_t num_actions = examples[0]->pred.a_s.size();
-  _min_costs.resize(num_actions);
-  _max_costs.resize(num_actions);
-
-  _ex_as.clear();
-  _ex_costs.clear();
-
-  // backup cb example data
-  for (const auto& ex : examples)
-  {
-    _ex_as.push_back(ex->pred.a_s);
-    _ex_costs.push_back(ex->l.cb.costs);
-  }
-
-  // set regressor predictions
-  for (const auto& as : _ex_as[0]) { examples[as.action]->pred.scalar = as.score; }
-
-  const float cmin = _min_cb_cost;
-  const float cmax = _max_cb_cost;
-
-  for (size_t a = 0; a < num_actions; ++a)
-  {
-    auto* ec = examples[a];
-    ec->l.simple.label = cmin - 1;
-    float sens = base.sensitivity(*ec);
-    float w = 0;  // importance weight
-
-    if (ec->pred.scalar < cmin || std::isnan(sens) || std::isinf(sens)) { _min_costs[a] = cmin; }
-    else
-    {
-      w = VW::confidence_sequence_utility::binary_search(ec->pred.scalar - cmin + 1, delta, sens);
-      _min_costs[a] = (std::max)(ec->pred.scalar - sens * w, cmin);
-      if (_min_costs[a] > cmax) { _min_costs[a] = cmax; }
-    }
-
-    if (!min_only)
-    {
-      ec->l.simple.label = cmax + 1;
-      sens = base.sensitivity(*ec);
-      if (ec->pred.scalar > cmax || std::isnan(sens) || std::isinf(sens)) { _max_costs[a] = cmax; }
-      else
-      {
-        w = VW::confidence_sequence_utility::binary_search(cmax + 1 - ec->pred.scalar, delta, sens);
-        _max_costs[a] = (std::min)(ec->pred.scalar + sens * w, cmax);
-        if (_max_costs[a] < cmin) { _max_costs[a] = cmin; }
-      }
-    }
-  }
-
-  // reset cb example data
-  for (size_t i = 0; i < examples.size(); ++i)
-  {
-    examples[i]->pred.a_s = _ex_as[i];
-    examples[i]->l.cb.costs = _ex_costs[i];
-  }
 }
 
 void cb_explore_adf_squarecb::predict(learner& base, VW::multi_ex& examples)
@@ -202,7 +142,8 @@ void cb_explore_adf_squarecb::predict(learner& base, VW::multi_ex& examples)
   }
   else  // elimination variant
   {
-    get_cost_ranges(delta, base, examples, /*min_only=*/false);
+    VW::confidence_sequence_utility::get_cost_ranges(
+        delta, base, examples, /*min_only=*/false, _min_cb_cost, _max_cb_cost, _min_costs, _max_costs, _ex_as, _ex_costs);
 
     float min_max_cost = FLT_MAX;
     for (size_t a = 0; a < num_actions; ++a)

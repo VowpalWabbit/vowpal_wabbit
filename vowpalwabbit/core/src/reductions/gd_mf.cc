@@ -38,8 +38,8 @@ public:
 
 void mf_print_offset_features(gdmf& d, VW::example& ec, size_t offset)
 {
-  // TODO: Where should audit stuff output to?
   VW::workspace& all = *d.all;
+  auto& trace = *(all.output_runtime.trace_message);
   auto& weights = all.weights;
   uint64_t mask = weights.mask();
   for (VW::features& fs : ec)
@@ -47,10 +47,10 @@ void mf_print_offset_features(gdmf& d, VW::example& ec, size_t offset)
     bool audit = !fs.space_names.empty();
     for (const auto& f : fs.audit_range())
     {
-      std::cout << '\t';
-      if (audit) { std::cout << VW::to_string(*f.audit()) << ':'; }
-      std::cout << f.index() << "(" << ((f.index() + offset) & mask) << ")" << ':' << f.value();
-      std::cout << ':' << (&weights[f.index()])[offset];
+      trace << '\t';
+      if (audit) { trace << VW::to_string(*f.audit()) << ':'; }
+      trace << f.index() << "(" << ((f.index() + offset) & mask) << ")" << ':' << f.value();
+      trace << ':' << (&weights[f.index()])[offset];
     }
   }
   for (const auto& i : all.feature_tweaks_config.interactions)
@@ -67,21 +67,21 @@ void mf_print_offset_features(gdmf& d, VW::example& ec, size_t offset)
         {
           for (const auto& f2 : ec.feature_space[static_cast<unsigned char>(i[1])].audit_range())
           {
-            std::cout << '\t' << VW::to_string(*f1.audit()) << ':' << ((f1.index() + k) & mask) << "("
-                      << ((f1.index() + offset + k) & mask) << ")" << ':' << f1.value();
-            std::cout << ':' << (&weights[f1.index()])[offset + k];
+            trace << '\t' << VW::to_string(*f1.audit()) << ':' << ((f1.index() + k) & mask) << "("
+                  << ((f1.index() + offset + k) & mask) << ")" << ':' << f1.value();
+            trace << ':' << (&weights[f1.index()])[offset + k];
 
-            std::cout << ':' << VW::to_string(*f2.audit()) << ':' << ((f2.index() + k + d.rank) & mask) << "("
-                      << ((f2.index() + offset + k + d.rank) & mask) << ")" << ':' << f2.value();
-            std::cout << ':' << (&weights[f2.index()])[offset + k + d.rank];
+            trace << ':' << VW::to_string(*f2.audit()) << ':' << ((f2.index() + k + d.rank) & mask) << "("
+                  << ((f2.index() + offset + k + d.rank) & mask) << ")" << ':' << f2.value();
+            trace << ':' << (&weights[f2.index()])[offset + k + d.rank];
 
-            std::cout << ':' << (&weights[f1.index()])[offset + k] * (&weights[f2.index()])[offset + k + d.rank];
+            trace << ':' << (&weights[f1.index()])[offset + k] * (&weights[f2.index()])[offset + k + d.rank];
           }
         }
       }
     }
   }
-  std::cout << std::endl;
+  trace << std::endl;
 }
 
 void mf_print_audit_features(gdmf& d, VW::example& ec, size_t offset)

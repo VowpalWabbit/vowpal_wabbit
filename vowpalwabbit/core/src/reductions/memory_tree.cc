@@ -17,6 +17,7 @@
 #include "vw/core/setup_base.h"
 #include "vw/core/v_array.h"
 #include "vw/core/vw.h"
+#include "vw/core/vw_versions.h"
 #include "vw/io/logger.h"
 
 #include <algorithm>
@@ -1076,6 +1077,115 @@ void end_pass(memory_tree& b)
 ///////////////////Save & Load//////////////////////////////////////
 ////////////////////////////////////////////////////////////////////
 
+// Helper to read a field in the legacy binary format (matches DEPRECATED_WRITEIT behavior).
+template <typename T>
+void legacy_read(VW::io_buf& model_file, T& field)
+{
+  model_file.bin_read_fixed(reinterpret_cast<char*>(&field), sizeof(field));
+}
+
+// Legacy read path for models saved before 9.11.0 (using DEPRECATED_WRITEIT macros).
+// DEPRECATED_WRITEIT used sizeof() of the native type, so size_t fields are 8 bytes.
+void save_load_example_legacy(VW::example* ec, VW::io_buf& model_file, bool oas)
+{
+  legacy_read(model_file, ec->num_features);
+  legacy_read(model_file, ec->total_sum_feat_sq);
+  legacy_read(model_file, ec->weight);
+  legacy_read(model_file, ec->loss);
+  legacy_read(model_file, ec->ft_offset);
+  if (!oas)
+  {
+    legacy_read(model_file, ec->l.multi.label);
+    legacy_read(model_file, ec->l.multi.weight);
+  }
+  else
+  {
+    size_t label_size = 0;
+    legacy_read(model_file, label_size);
+    ec->l.multilabels.label_v.clear();
+    for (size_t i = 0; i < label_size; i++) { ec->l.multilabels.label_v.push_back(0); }
+    for (size_t i = 0; i < label_size; i++) { legacy_read(model_file, ec->l.multilabels.label_v[i]); }
+  }
+
+  size_t tag_number = 0;
+  legacy_read(model_file, tag_number);
+  ec->tag.clear();
+  for (size_t i = 0; i < tag_number; i++) { ec->tag.push_back('a'); }
+  for (size_t i = 0; i < tag_number; i++) { legacy_read(model_file, ec->tag[i]); }
+
+  size_t namespace_size = 0;
+  legacy_read(model_file, namespace_size);
+  ec->indices.clear();
+  for (size_t i = 0; i < namespace_size; i++) { ec->indices.push_back('\0'); }
+  for (size_t i = 0; i < namespace_size; i++) { legacy_read(model_file, ec->indices[i]); }
+
+  for (VW::namespace_index nc : ec->indices)
+  {
+    VW::features* fs = &ec->feature_space[nc];
+    size_t feat_size = 0;
+    legacy_read(model_file, feat_size);
+    fs->clear();
+    fs->values.clear();
+    fs->indices.clear();
+    for (size_t f_i = 0; f_i < feat_size; f_i++) { fs->push_back(0, 0); }
+    for (size_t f_i = 0; f_i < feat_size; f_i++) { legacy_read(model_file, fs->values[f_i]); }
+    for (size_t f_i = 0; f_i < feat_size; f_i++) { legacy_read(model_file, fs->indices[f_i]); }
+  }
+}
+
+void save_load_node_legacy(node& cn, VW::io_buf& model_file)
+{
+  legacy_read(model_file, cn.parent);
+  legacy_read(model_file, cn.internal);
+  legacy_read(model_file, cn.depth);
+  legacy_read(model_file, cn.base_router);
+  legacy_read(model_file, cn.left);
+  legacy_read(model_file, cn.right);
+  legacy_read(model_file, cn.nl);
+  legacy_read(model_file, cn.nr);
+  size_t leaf_n_examples = 0;
+  legacy_read(model_file, leaf_n_examples);
+  cn.examples_index.clear();
+  for (size_t k = 0; k < leaf_n_examples; k++) { cn.examples_index.push_back(0); }
+  for (size_t k = 0; k < leaf_n_examples; k++) { legacy_read(model_file, cn.examples_index[k]); }
+}
+
+void save_load_memory_tree_legacy(memory_tree& b, VW::io_buf& model_file)
+{
+  b.test_mode = true;
+
+  uint32_t ss = 0;
+  legacy_read(model_file, ss);
+  b.all->weights.stride_shift(ss);
+
+  legacy_read(model_file, b.max_nodes);
+  legacy_read(model_file, b.learn_at_leaf);
+  legacy_read(model_file, b.oas);
+
+  size_t n_nodes = 0;
+  legacy_read(model_file, n_nodes);
+  legacy_read(model_file, b.max_num_labels);
+
+  b.nodes.clear();
+  b.nodes.resize(n_nodes);
+  for (size_t i = 0; i < n_nodes; i++) { save_load_node_legacy(b.nodes[i], model_file); }
+
+  size_t n_examples = 0;
+  legacy_read(model_file, n_examples);
+  b.examples.clear();
+  for (size_t i = 0; i < n_examples; i++)
+  {
+    VW::example* new_ec = new VW::example;
+    b.examples.push_back(new_ec);
+  }
+  for (size_t i = 0; i < n_examples; i++)
+  {
+    save_load_example_legacy(b.examples[i], model_file, b.oas);
+    b.examples[i]->interactions = &b.all->feature_tweaks_config.interactions;
+    b.examples[i]->extent_interactions = &b.all->feature_tweaks_config.extent_interactions;
+  }
+}
+
 void save_load_example(VW::example* ec, VW::io_buf& model_file, bool read, bool text, bool oas)
 {
   if (read)
@@ -1229,38 +1339,46 @@ void save_load_memory_tree(memory_tree& b, VW::io_buf& model_file, bool read, bo
   {
     if (read)
     {
-      b.test_mode = true;
-
-      uint32_t ss = 0;
-      VW::model_utils::read_model_field(model_file, ss);
-      b.all->weights.stride_shift(ss);
-
-      VW::model_utils::read_model_field(model_file, b.max_nodes);
-      VW::model_utils::read_model_field(model_file, b.learn_at_leaf);
-      VW::model_utils::read_model_field(model_file, b.oas);
-
-      uint32_t n_nodes = 0;
-      VW::model_utils::read_model_field(model_file, n_nodes);
-      VW::model_utils::read_model_field(model_file, b.max_num_labels);
-
-      b.nodes.clear();
-      b.nodes.resize(n_nodes);
-
-      for (uint32_t i = 0; i < n_nodes; i++) { save_load_node(b.nodes[i], model_file, read, text); }
-
-      uint32_t n_examples = 0;
-      VW::model_utils::read_model_field(model_file, n_examples);
-      b.examples.clear();
-      for (uint32_t i = 0; i < n_examples; i++)
+      if (b.all->runtime_state.model_file_ver <
+          VW::version_definitions::VERSION_FILE_WITH_MEMORY_TREE_MODEL_UTILS)
       {
-        VW::example* new_ec = new VW::example;
-        b.examples.push_back(new_ec);
+        save_load_memory_tree_legacy(b, model_file);
       }
-      for (uint32_t i = 0; i < n_examples; i++)
+      else
       {
-        save_load_example(b.examples[i], model_file, read, text, b.oas);
-        b.examples[i]->interactions = &b.all->feature_tweaks_config.interactions;
-        b.examples[i]->extent_interactions = &b.all->feature_tweaks_config.extent_interactions;
+        b.test_mode = true;
+
+        uint32_t ss = 0;
+        VW::model_utils::read_model_field(model_file, ss);
+        b.all->weights.stride_shift(ss);
+
+        VW::model_utils::read_model_field(model_file, b.max_nodes);
+        VW::model_utils::read_model_field(model_file, b.learn_at_leaf);
+        VW::model_utils::read_model_field(model_file, b.oas);
+
+        uint32_t n_nodes = 0;
+        VW::model_utils::read_model_field(model_file, n_nodes);
+        VW::model_utils::read_model_field(model_file, b.max_num_labels);
+
+        b.nodes.clear();
+        b.nodes.resize(n_nodes);
+
+        for (uint32_t i = 0; i < n_nodes; i++) { save_load_node(b.nodes[i], model_file, read, text); }
+
+        uint32_t n_examples = 0;
+        VW::model_utils::read_model_field(model_file, n_examples);
+        b.examples.clear();
+        for (uint32_t i = 0; i < n_examples; i++)
+        {
+          VW::example* new_ec = new VW::example;
+          b.examples.push_back(new_ec);
+        }
+        for (uint32_t i = 0; i < n_examples; i++)
+        {
+          save_load_example(b.examples[i], model_file, read, text, b.oas);
+          b.examples[i]->interactions = &b.all->feature_tweaks_config.interactions;
+          b.examples[i]->extent_interactions = &b.all->feature_tweaks_config.extent_interactions;
+        }
       }
     }
     else

@@ -45,6 +45,11 @@ jobs:
           exit 1
       - name: Install requirements
         run: sudo apt-get install -y ninja-build libboost-test-dev
+      - name: Cache FetchContent downloads
+        uses: actions/cache@v4
+        with:
+          path: build/_deps
+          key: fetchcontent-${{ matrix.os }}-${{ hashFiles('cmake/VowpalWabbitUtils.cmake') }}
       - name: Configure
         env:
           CC: ${{matrix.compiler.cc}}
@@ -243,6 +248,11 @@ jobs:
           echo "Submodule init failed after 5 attempts"
           exit 1
       - uses: ilammy/msvc-dev-cmd@v1
+      - name: Cache FetchContent downloads
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.CMAKE_BUILD_DIR }}/_deps
+          key: fetchcontent-${{ matrix.os }}-${{ hashFiles('vw/cmake/VowpalWabbitUtils.cmake') }}
       - name: Configure
         run: >
           cmake -S "${{ env.SOURCE_DIR }}" -B "${{ env.CMAKE_BUILD_DIR }}" -A "x64"
@@ -293,6 +303,11 @@ jobs:
           exit 1
       - name: Install dependencies
         run: brew install cmake ninja
+      - name: Cache FetchContent downloads
+        uses: actions/cache@v4
+        with:
+          path: build/_deps
+          key: fetchcontent-${{ matrix.os }}-${{ hashFiles('cmake/VowpalWabbitUtils.cmake') }}
       - name: Configure
         run: >
           cmake -S . -B build -G Ninja

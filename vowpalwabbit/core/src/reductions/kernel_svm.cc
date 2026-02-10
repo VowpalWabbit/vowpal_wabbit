@@ -397,7 +397,6 @@ void predict(svm_params& params, svm_example** ec_arr, float* scores, size_t n)
   for (size_t i = 0; i < n; i++)
   {
     ec_arr[i]->compute_kernels(params);
-    // std::cout<<"size of krow = "<<ec_arr[i]->krow.size()<< endl;
     if (ec_arr[i]->krow.size() > 0)
     {
       scores[i] = dense_dot(ec_arr[i]->krow.begin(), model->alpha, model->num_support) / params.lambda;
