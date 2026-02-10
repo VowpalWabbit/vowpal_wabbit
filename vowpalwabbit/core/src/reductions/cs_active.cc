@@ -6,6 +6,7 @@
 
 #include "vw/common/vw_exception.h"
 #include "vw/config/options.h"
+#include "vw/core/confidence_sequence_utility.h"
 #include "vw/core/debug_log.h"
 #include "vw/core/example.h"
 #include "vw/core/learner.h"
@@ -20,9 +21,6 @@
 #include <cfloat>
 #include <cmath>
 #include <limits>
-
-// #define B_SEARCH_MAX_ITER 50
-#define B_SEARCH_MAX_ITER 20
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -78,26 +76,6 @@ public:
   float distance_to_range = 0.f;
   float range = 0.f;
 };
-
-float binary_search(float fhat, float delta, float sens, float tol)
-{
-  float maxw = std::min(fhat / sens, FLT_MAX);
-
-  if (maxw * fhat * fhat <= delta) { return maxw; }
-
-  float l = 0, u = maxw, w, v;
-
-  for (int iter = 0; iter < B_SEARCH_MAX_ITER; iter++)
-  {
-    w = (u + l) / 2.f;
-    v = w * (fhat * fhat - (fhat - sens * w) * (fhat - sens * w)) - delta;
-    if (v > 0) { u = w; }
-    else { l = w; }
-    if (std::fabs(v) <= tol || u - l <= tol) { break; }
-  }
-
-  return l;
-}
 
 template <bool is_learn, bool is_simulation>
 inline void inner_loop(cs_active& cs_a, learner& base, VW::example& ec, uint32_t i, float cost, uint32_t& prediction,
@@ -174,10 +152,12 @@ inline void find_cost_range(cs_active& cs_a, learner& base, VW::example& ec, uin
   else
   {
     // finding max_pred and min_pred by binary search
-    max_pred = std::min(
-        ec.pred.scalar + sens * binary_search(cs_a.cost_max - ec.pred.scalar, delta, sens, tol), cs_a.cost_max);
-    min_pred = std::max(
-        ec.pred.scalar - sens * binary_search(ec.pred.scalar - cs_a.cost_min, delta, sens, tol), cs_a.cost_min);
+    max_pred = std::min(ec.pred.scalar +
+            sens * VW::confidence_sequence_utility::binary_search(cs_a.cost_max - ec.pred.scalar, delta, sens, tol),
+        cs_a.cost_max);
+    min_pred = std::max(ec.pred.scalar -
+            sens * VW::confidence_sequence_utility::binary_search(ec.pred.scalar - cs_a.cost_min, delta, sens, tol),
+        cs_a.cost_min);
     is_range_large = (max_pred - min_pred > eta);
     if (cs_a.print_debug_stuff)
     {

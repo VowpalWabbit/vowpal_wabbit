@@ -323,7 +323,6 @@ TEST(Automl, NamespaceSwitchWIterations)
         return true;
       });
 
-  // TODO: Find champ change
   test_hooks.emplace(num_iterations,
       [&](cb_sim&, VW::workspace& all, VW::multi_ex&)
       {
@@ -376,11 +375,6 @@ TEST(Automl, ClearConfigsWIterations)
         aml_test::check_interactions_match_exclusions(aml);
         aml_test::check_config_states(aml);
         EXPECT_EQ(aml->cm->current_champ, 0);
-        // TODO: Find champ change
-        // EXPECT_EQ(clear_champ_switch, aml->cm->total_learn_count);
-        // EXPECT_EQ(aml->cm->estimators.size(), 2);
-        // EXPECT_EQ(aml->cm->_config_oracle.valid_config_size, 4);
-        // EXPECT_EQ(aml->cm->estimators[0].first.live_interactions.size(), 2);
         EXPECT_EQ(aml->current_state, VW::reductions::automl::automl_state::Experimenting);
         return true;
       });

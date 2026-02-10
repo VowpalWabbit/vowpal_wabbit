@@ -159,7 +159,6 @@ void initialize(Search::search& sch, size_t& num_actions, options_i& options)
 
   if (search_span_bilou)
   {
-    // TODO: is this the right logger?
     *(sch.get_vw_pointer_unsafe().output_runtime.trace_message)
         << "switching to BILOU encoding for sequence span labeling" << std::endl;
     data->encoding = encoding_type::BILOU;

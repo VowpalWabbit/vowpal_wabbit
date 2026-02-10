@@ -10,6 +10,7 @@
 #include "vw/core/example.h"
 #include "vw/core/feature_group.h"
 #include "vw/core/learner.h"
+#include "vw/core/model_utils.h"
 #include "vw/core/multiclass.h"
 #include "vw/core/multilabel.h"
 #include "vw/core/numeric_casts.h"
@@ -262,14 +263,17 @@ void init_tree(memory_tree& b)
 
   b.total_num_queries = 0;
   b.max_routers = b.max_nodes;
-  std::cout << "tree initiazliation is done...." << std::endl
-            << "max nodes " << b.max_nodes << std::endl
-            << "tree size: " << b.nodes.size() << std::endl
-            << "max number of unique labels: " << b.max_num_labels << std::endl
-            << "learn at leaf: " << b.learn_at_leaf << std::endl
-            << "num of dream operations per example: " << b.dream_repeats << std::endl
-            << "current_pass: " << b.current_pass << std::endl
-            << "oas: " << b.oas << std::endl;
+  if (!b.all->output_config.quiet)
+  {
+    *(b.all->output_runtime.trace_message) << "tree initialization is done...." << std::endl
+                                           << "max nodes " << b.max_nodes << std::endl
+                                           << "tree size: " << b.nodes.size() << std::endl
+                                           << "max number of unique labels: " << b.max_num_labels << std::endl
+                                           << "learn at leaf: " << b.learn_at_leaf << std::endl
+                                           << "num of dream operations per example: " << b.dream_repeats << std::endl
+                                           << "current_pass: " << b.current_pass << std::endl
+                                           << "oas: " << b.oas << std::endl;
+  }
 }
 
 // rout based on the prediction
@@ -310,7 +314,7 @@ inline int random_sample_example_pop(memory_tree& b, uint64_t& cn)
     }
     else
     {
-      std::cout << cn << " " << b.nodes[cn].nl << " " << b.nodes[cn].nr << std::endl;
+      b.all->logger.out_error("{0} {1} {2}", cn, b.nodes[cn].nl, b.nodes[cn].nr);
       b.all->logger.out_error("Error:  nl = 0, and nr = 0");
       exit(0);
     }
@@ -413,7 +417,7 @@ void split_leaf(memory_tree& b, learner& base, const uint64_t cn)
   if (b.nodes[cn].depth + 1 > b.max_depth)
   {
     b.max_depth = b.nodes[cn].depth + 1;
-    std::cout << "depth " << b.max_depth << std::endl;
+    if (!b.all->output_config.quiet) { *(b.all->output_runtime.trace_message) << "depth " << b.max_depth << std::endl; }
   }
 
   b.nodes[cn].left = left_child;
@@ -999,15 +1003,20 @@ void learn(memory_tree& b, learner& base, VW::example& ec)
   {
     b.iter++;
 
-    if (b.iter % 5000 == 0)
+    if (b.iter % 5000 == 0 && !b.all->output_config.quiet)
     {
       if (b.oas == false)
       {
-        std::cout << "at iter " << b.iter << ", top(" << b.top_k << ") pred error: " << b.num_mistakes * 1. / b.iter
-                  << ", total num queries so far: " << b.total_num_queries << ", max depth: " << b.max_depth
-                  << ", max exp in leaf: " << b.max_ex_in_leaf << std::endl;
+        *(b.all->output_runtime.trace_message)
+            << "at iter " << b.iter << ", top(" << b.top_k << ") pred error: " << b.num_mistakes * 1. / b.iter
+            << ", total num queries so far: " << b.total_num_queries << ", max depth: " << b.max_depth
+            << ", max exp in leaf: " << b.max_ex_in_leaf << std::endl;
       }
-      else { std::cout << "at iter " << b.iter << ", avg hamming loss: " << b.hamming_loss * 1. / b.iter << std::endl; }
+      else
+      {
+        *(b.all->output_runtime.trace_message)
+            << "at iter " << b.iter << ", avg hamming loss: " << b.hamming_loss * 1. / b.iter << std::endl;
+      }
     }
 
     clock_t begin = clock();
@@ -1037,13 +1046,18 @@ void learn(memory_tree& b, learner& base, VW::example& ec)
   else if (b.test_mode == true)
   {
     b.iter++;
-    if (b.iter % 5000 == 0)
+    if (b.iter % 5000 == 0 && !b.all->output_config.quiet)
     {
       if (b.oas == false)
       {
-        std::cout << "at iter " << b.iter << ", pred error: " << b.num_mistakes * 1. / b.iter << std::endl;
+        *(b.all->output_runtime.trace_message)
+            << "at iter " << b.iter << ", pred error: " << b.num_mistakes * 1. / b.iter << std::endl;
       }
-      else { std::cout << "at iter " << b.iter << ", avg hamming loss: " << b.hamming_loss * 1. / b.iter << std::endl; }
+      else
+      {
+        *(b.all->output_runtime.trace_message)
+            << "at iter " << b.iter << ", avg hamming loss: " << b.hamming_loss * 1. / b.iter << std::endl;
+      }
     }
   }
 }
@@ -1051,143 +1065,228 @@ void learn(memory_tree& b, learner& base, VW::example& ec)
 void end_pass(memory_tree& b)
 {
   b.current_pass++;
-  std::cout << "######### Current Pass: " << b.current_pass
-            << ", with number of memories strored so far: " << b.examples.size() << std::endl;
+  if (!b.all->output_config.quiet)
+  {
+    *(b.all->output_runtime.trace_message)
+        << "######### Current Pass: " << b.current_pass
+        << ", with number of memories stored so far: " << b.examples.size() << std::endl;
+  }
 }
 
 ///////////////////Save & Load//////////////////////////////////////
 ////////////////////////////////////////////////////////////////////
 
-void save_load_example(
-    VW::example* ec, VW::io_buf& model_file, bool& read, bool& text, std::stringstream& msg, bool& oas)
-{  // deal with tag
-   // deal with labels:
-  DEPRECATED_WRITEIT(ec->num_features, "num_features");
-  DEPRECATED_WRITEIT(ec->total_sum_feat_sq, "total_sum_features");
-  DEPRECATED_WRITEIT(ec->weight, "example_weight");
-  DEPRECATED_WRITEIT(ec->loss, "loss");
-  DEPRECATED_WRITEIT(ec->ft_offset, "ft_offset");
-  if (oas == false)
-  {  // multi-class
-    DEPRECATED_WRITEIT(ec->l.multi.label, "multiclass_label");
-    DEPRECATED_WRITEIT(ec->l.multi.weight, "multiclass_weight");
-  }
-  else
-  {  // multi-label
-    DEPRECATED_WRITEITVAR(ec->l.multilabels.label_v.size(), "label_size", label_size);
-    if (read)
+void save_load_example(VW::example* ec, VW::io_buf& model_file, bool read, bool text, bool oas)
+{
+  if (read)
+  {
+    VW::model_utils::read_model_field(model_file, ec->num_features);
+    VW::model_utils::read_model_field(model_file, ec->total_sum_feat_sq);
+    VW::model_utils::read_model_field(model_file, ec->weight);
+    VW::model_utils::read_model_field(model_file, ec->loss);
+    VW::model_utils::read_model_field(model_file, ec->ft_offset);
+    if (!oas)
     {
+      VW::model_utils::read_model_field(model_file, ec->l.multi.label);
+      VW::model_utils::read_model_field(model_file, ec->l.multi.weight);
+    }
+    else
+    {
+      uint32_t label_size = 0;
+      VW::model_utils::read_model_field(model_file, label_size);
       ec->l.multilabels.label_v.clear();
       for (uint32_t i = 0; i < label_size; i++) { ec->l.multilabels.label_v.push_back(0); }
+      for (uint32_t i = 0; i < label_size; i++)
+      {
+        VW::model_utils::read_model_field(model_file, ec->l.multilabels.label_v[i]);
+      }
     }
-    for (uint32_t i = 0; i < label_size; i++) DEPRECATED_WRITEIT(ec->l.multilabels.label_v[i], "ec_label");
-  }
 
-  DEPRECATED_WRITEITVAR(ec->tag.size(), "tags", tag_number);
-  if (read)
-  {
+    uint32_t tag_number = 0;
+    VW::model_utils::read_model_field(model_file, tag_number);
     ec->tag.clear();
     for (uint32_t i = 0; i < tag_number; i++) { ec->tag.push_back('a'); }
-  }
-  for (uint32_t i = 0; i < tag_number; i++) DEPRECATED_WRITEIT(ec->tag[i], "tag");
+    for (uint32_t i = 0; i < tag_number; i++) { VW::model_utils::read_model_field(model_file, ec->tag[i]); }
 
-  // deal with tag:
-  DEPRECATED_WRITEITVAR(ec->indices.size(), "namespaces", namespace_size);
-  if (read)
-  {
+    uint32_t namespace_size = 0;
+    VW::model_utils::read_model_field(model_file, namespace_size);
     ec->indices.clear();
     for (uint32_t i = 0; i < namespace_size; i++) { ec->indices.push_back('\0'); }
-  }
-  for (uint32_t i = 0; i < namespace_size; i++) DEPRECATED_WRITEIT(ec->indices[i], "VW::namespace_index");
+    for (uint32_t i = 0; i < namespace_size; i++) { VW::model_utils::read_model_field(model_file, ec->indices[i]); }
 
-  // deal with features
-  for (VW::namespace_index nc : ec->indices)
-  {
-    VW::features* fs = &ec->feature_space[nc];
-    DEPRECATED_WRITEITVAR(fs->size(), "features_", feat_size);
-    if (read)
+    for (VW::namespace_index nc : ec->indices)
     {
+      VW::features* fs = &ec->feature_space[nc];
+      uint32_t feat_size = 0;
+      VW::model_utils::read_model_field(model_file, feat_size);
       fs->clear();
       fs->values.clear();
       fs->indices.clear();
       for (uint32_t f_i = 0; f_i < feat_size; f_i++) { fs->push_back(0, 0); }
+      for (uint32_t f_i = 0; f_i < feat_size; f_i++) { VW::model_utils::read_model_field(model_file, fs->values[f_i]); }
+      for (uint32_t f_i = 0; f_i < feat_size; f_i++)
+      {
+        VW::model_utils::read_model_field(model_file, fs->indices[f_i]);
+      }
     }
-    for (uint32_t f_i = 0; f_i < feat_size; f_i++) DEPRECATED_WRITEIT(fs->values[f_i], "value");
-    for (uint32_t f_i = 0; f_i < feat_size; f_i++) DEPRECATED_WRITEIT(fs->indices[f_i], "index");
+  }
+  else
+  {
+    VW::model_utils::write_model_field(model_file, ec->num_features, "num_features", text);
+    VW::model_utils::write_model_field(model_file, ec->total_sum_feat_sq, "total_sum_features", text);
+    VW::model_utils::write_model_field(model_file, ec->weight, "example_weight", text);
+    VW::model_utils::write_model_field(model_file, ec->loss, "loss", text);
+    VW::model_utils::write_model_field(model_file, ec->ft_offset, "ft_offset", text);
+    if (!oas)
+    {
+      VW::model_utils::write_model_field(model_file, ec->l.multi.label, "multiclass_label", text);
+      VW::model_utils::write_model_field(model_file, ec->l.multi.weight, "multiclass_weight", text);
+    }
+    else
+    {
+      auto label_size = static_cast<uint32_t>(ec->l.multilabels.label_v.size());
+      VW::model_utils::write_model_field(model_file, label_size, "label_size", text);
+      for (uint32_t i = 0; i < label_size; i++)
+      {
+        VW::model_utils::write_model_field(model_file, ec->l.multilabels.label_v[i], "ec_label", text);
+      }
+    }
+
+    auto tag_number = static_cast<uint32_t>(ec->tag.size());
+    VW::model_utils::write_model_field(model_file, tag_number, "tags", text);
+    for (uint32_t i = 0; i < tag_number; i++)
+    {
+      VW::model_utils::write_model_field(model_file, ec->tag[i], "tag", text);
+    }
+
+    auto namespace_size = static_cast<uint32_t>(ec->indices.size());
+    VW::model_utils::write_model_field(model_file, namespace_size, "namespaces", text);
+    for (uint32_t i = 0; i < namespace_size; i++)
+    {
+      VW::model_utils::write_model_field(model_file, ec->indices[i], "namespace_index", text);
+    }
+
+    for (VW::namespace_index nc : ec->indices)
+    {
+      VW::features* fs = &ec->feature_space[nc];
+      auto feat_size = static_cast<uint32_t>(fs->size());
+      VW::model_utils::write_model_field(model_file, feat_size, "features_", text);
+      for (uint32_t f_i = 0; f_i < feat_size; f_i++)
+      {
+        VW::model_utils::write_model_field(model_file, fs->values[f_i], "value", text);
+      }
+      for (uint32_t f_i = 0; f_i < feat_size; f_i++)
+      {
+        VW::model_utils::write_model_field(model_file, fs->indices[f_i], "index", text);
+      }
+    }
   }
 }
 
-void save_load_node(node& cn, VW::io_buf& model_file, bool& read, bool& text, std::stringstream& msg)
+void save_load_node(node& cn, VW::io_buf& model_file, bool read, bool text)
 {
-  DEPRECATED_WRITEIT(cn.parent, "parent");
-  DEPRECATED_WRITEIT(cn.internal, "internal");
-  DEPRECATED_WRITEIT(cn.depth, "depth");
-  DEPRECATED_WRITEIT(cn.base_router, "base_router");
-  DEPRECATED_WRITEIT(cn.left, "left");
-  DEPRECATED_WRITEIT(cn.right, "right");
-  DEPRECATED_WRITEIT(cn.nl, "nl");
-  DEPRECATED_WRITEIT(cn.nr, "nr");
-  DEPRECATED_WRITEITVAR(cn.examples_index.size(), "leaf_n_examples", leaf_n_examples);
   if (read)
   {
+    VW::model_utils::read_model_field(model_file, cn.parent);
+    VW::model_utils::read_model_field(model_file, cn.internal);
+    VW::model_utils::read_model_field(model_file, cn.depth);
+    VW::model_utils::read_model_field(model_file, cn.base_router);
+    VW::model_utils::read_model_field(model_file, cn.left);
+    VW::model_utils::read_model_field(model_file, cn.right);
+    VW::model_utils::read_model_field(model_file, cn.nl);
+    VW::model_utils::read_model_field(model_file, cn.nr);
+    uint32_t leaf_n_examples = 0;
+    VW::model_utils::read_model_field(model_file, leaf_n_examples);
     cn.examples_index.clear();
     for (uint32_t k = 0; k < leaf_n_examples; k++) { cn.examples_index.push_back(0); }
+    for (uint32_t k = 0; k < leaf_n_examples; k++)
+    {
+      VW::model_utils::read_model_field(model_file, cn.examples_index[k]);
+    }
   }
-  for (uint32_t k = 0; k < leaf_n_examples; k++) DEPRECATED_WRITEIT(cn.examples_index[k], "example_location");
+  else
+  {
+    VW::model_utils::write_model_field(model_file, cn.parent, "parent", text);
+    VW::model_utils::write_model_field(model_file, cn.internal, "internal", text);
+    VW::model_utils::write_model_field(model_file, cn.depth, "depth", text);
+    VW::model_utils::write_model_field(model_file, cn.base_router, "base_router", text);
+    VW::model_utils::write_model_field(model_file, cn.left, "left", text);
+    VW::model_utils::write_model_field(model_file, cn.right, "right", text);
+    VW::model_utils::write_model_field(model_file, cn.nl, "nl", text);
+    VW::model_utils::write_model_field(model_file, cn.nr, "nr", text);
+    auto leaf_n_examples = static_cast<uint32_t>(cn.examples_index.size());
+    VW::model_utils::write_model_field(model_file, leaf_n_examples, "leaf_n_examples", text);
+    for (uint32_t k = 0; k < leaf_n_examples; k++)
+    {
+      VW::model_utils::write_model_field(model_file, cn.examples_index[k], "example_location", text);
+    }
+  }
 }
 
 void save_load_memory_tree(memory_tree& b, VW::io_buf& model_file, bool read, bool text)
 {
-  std::stringstream msg;
   if (model_file.num_files() > 0)
   {
-    if (read) { b.test_mode = true; }
-
     if (read)
     {
+      b.test_mode = true;
+
       uint32_t ss = 0;
-      DEPRECATED_WRITEIT(ss, "stride_shift");
+      VW::model_utils::read_model_field(model_file, ss);
       b.all->weights.stride_shift(ss);
-    }
-    else
-    {
-      uint32_t ss = b.all->weights.stride_shift();
-      DEPRECATED_WRITEIT(ss, "stride_shift");
-    }
 
-    DEPRECATED_WRITEIT(b.max_nodes, "max_nodes");
-    DEPRECATED_WRITEIT(b.learn_at_leaf, "learn_at_leaf");
-    DEPRECATED_WRITEIT(b.oas, "oas");
-    // DEPRECATED_WRITEIT(b.leaf_example_multiplier, "leaf_example_multiplier")
-    DEPRECATED_WRITEITVAR(b.nodes.size(), "nodes", n_nodes);
-    DEPRECATED_WRITEIT(b.max_num_labels, "max_number_of_labels");
+      VW::model_utils::read_model_field(model_file, b.max_nodes);
+      VW::model_utils::read_model_field(model_file, b.learn_at_leaf);
+      VW::model_utils::read_model_field(model_file, b.oas);
 
-    if (read)
-    {
+      uint32_t n_nodes = 0;
+      VW::model_utils::read_model_field(model_file, n_nodes);
+      VW::model_utils::read_model_field(model_file, b.max_num_labels);
+
       b.nodes.clear();
-      for (uint32_t i = 0; i < n_nodes; i++) { b.nodes.push_back(node()); }
-    }
+      b.nodes.resize(n_nodes);
 
-    // node
-    for (uint32_t i = 0; i < n_nodes; i++) { save_load_node(b.nodes[i], model_file, read, text, msg); }
-    // deal with examples:
-    DEPRECATED_WRITEITVAR(b.examples.size(), "examples", n_examples);
-    if (read)
-    {
+      for (uint32_t i = 0; i < n_nodes; i++) { save_load_node(b.nodes[i], model_file, read, text); }
+
+      uint32_t n_examples = 0;
+      VW::model_utils::read_model_field(model_file, n_examples);
       b.examples.clear();
       for (uint32_t i = 0; i < n_examples; i++)
       {
         VW::example* new_ec = new VW::example;
         b.examples.push_back(new_ec);
       }
+      for (uint32_t i = 0; i < n_examples; i++)
+      {
+        save_load_example(b.examples[i], model_file, read, text, b.oas);
+        b.examples[i]->interactions = &b.all->feature_tweaks_config.interactions;
+        b.examples[i]->extent_interactions = &b.all->feature_tweaks_config.extent_interactions;
+      }
     }
-    for (uint32_t i = 0; i < n_examples; i++)
+    else
     {
-      save_load_example(b.examples[i], model_file, read, text, msg, b.oas);
-      b.examples[i]->interactions = &b.all->feature_tweaks_config.interactions;
-      b.examples[i]->extent_interactions = &b.all->feature_tweaks_config.extent_interactions;
+      uint32_t ss = b.all->weights.stride_shift();
+      VW::model_utils::write_model_field(model_file, ss, "stride_shift", text);
+
+      VW::model_utils::write_model_field(model_file, b.max_nodes, "max_nodes", text);
+      VW::model_utils::write_model_field(model_file, b.learn_at_leaf, "learn_at_leaf", text);
+      VW::model_utils::write_model_field(model_file, b.oas, "oas", text);
+
+      auto n_nodes = static_cast<uint32_t>(b.nodes.size());
+      VW::model_utils::write_model_field(model_file, n_nodes, "nodes", text);
+      VW::model_utils::write_model_field(model_file, b.max_num_labels, "max_number_of_labels", text);
+
+      for (uint32_t i = 0; i < n_nodes; i++) { save_load_node(b.nodes[i], model_file, read, text); }
+
+      auto n_examples = static_cast<uint32_t>(b.examples.size());
+      VW::model_utils::write_model_field(model_file, n_examples, "examples", text);
+      for (uint32_t i = 0; i < n_examples; i++)
+      {
+        save_load_example(b.examples[i], model_file, read, text, b.oas);
+        b.examples[i]->interactions = &b.all->feature_tweaks_config.interactions;
+        b.examples[i]->extent_interactions = &b.all->feature_tweaks_config.extent_interactions;
+      }
     }
-    // std::cout<<"done loading...."<< std::endl;
   }
 }
 //////////////////////////////End of Save & Load///////////////////////////////

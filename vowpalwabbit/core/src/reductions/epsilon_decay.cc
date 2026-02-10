@@ -12,12 +12,8 @@
 #include "vw/core/model_utils.h"
 #include "vw/core/multi_model_utils.h"
 #include "vw/core/prediction_type.h"
-#include "vw/core/vw.h"
-
-// TODO: delete this three includes
-#include "vw/core/reductions/cb/cb_adf.h"
-#include "vw/core/reductions/gd.h"
 #include "vw/core/setup_base.h"
+#include "vw/core/vw.h"
 
 #include <algorithm>
 #include <utility>

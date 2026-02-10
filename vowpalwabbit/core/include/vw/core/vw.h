@@ -46,33 +46,27 @@ using driver_output_func_t = VW::trace_message_t;
     (2) The code is not yet reentrant.
    */
 
-// TODO: uncomment when all uses are migrated
 VW_DEPRECATED("Replaced with new unique_ptr based overload.")
 VW::workspace* initialize(std::unique_ptr<config::options_i, options_deleter_type> options, io_buf* model = nullptr,
     bool skip_model_load = false, trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 
-// TODO: uncomment when all uses are migrated
 VW_DEPRECATED("Replaced with new unique_ptr based overload.")
 VW::workspace* initialize(config::options_i& options, io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 
-// TODO: uncomment when all uses are migrated
 VW_DEPRECATED("Replaced with new unique_ptr based overload.")
 VW::workspace* initialize(const std::string& s, io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 
-// TODO: uncomment when all uses are migrated
 VW_DEPRECATED("Replaced with new unique_ptr based overload.")
 VW::workspace* initialize(int argc, char* argv[], io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 
-// TODO: uncomment when all uses are migrated
 VW_DEPRECATED("Replaced with new unique_ptr based overload.")
 VW::workspace* seed_vw_model(VW::workspace* vw_model, const std::string& extra_args,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);
 // Allows the input command line string to have spaces escaped by '\'
 
-// TODO: uncomment when all uses are migrated
 VW_DEPRECATED("Replaced with new unique_ptr based overload.")
 VW::workspace* initialize_escaped(std::string const& s, io_buf* model = nullptr, bool skip_model_load = false,
     trace_message_t trace_listener = nullptr, void* trace_context = nullptr);

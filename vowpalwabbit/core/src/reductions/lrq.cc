@@ -234,6 +234,5 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::lrq_setup(VW::setup_base_i
                .set_end_pass(reset_seed)
                .build();
 
-  // TODO: leaks memory ?
   return l;
 }

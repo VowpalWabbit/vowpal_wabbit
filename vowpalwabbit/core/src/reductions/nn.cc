@@ -116,14 +116,16 @@ void finish_setup(nn& n, VW::workspace& all)
     ++n.output_layer.num_features;
   }
 
-  // TODO: not correct if --noconstant
   n.hiddenbias.interactions = &all.feature_tweaks_config.interactions;
   n.hiddenbias.extent_interactions = &all.feature_tweaks_config.extent_interactions;
-  n.hiddenbias.indices.push_back(VW::details::CONSTANT_NAMESPACE);
-  n.hiddenbias.feature_space[VW::details::CONSTANT_NAMESPACE].push_back(1, VW::details::CONSTANT);
-  if (all.output_config.audit || all.output_config.hash_inv)
+  if (all.feature_tweaks_config.add_constant)
   {
-    n.hiddenbias.feature_space[VW::details::CONSTANT_NAMESPACE].space_names.emplace_back("", "HiddenBias");
+    n.hiddenbias.indices.push_back(VW::details::CONSTANT_NAMESPACE);
+    n.hiddenbias.feature_space[VW::details::CONSTANT_NAMESPACE].push_back(1, VW::details::CONSTANT);
+    if (all.output_config.audit || all.output_config.hash_inv)
+    {
+      n.hiddenbias.feature_space[VW::details::CONSTANT_NAMESPACE].space_names.emplace_back("", "HiddenBias");
+    }
   }
   n.hiddenbias.l.simple.label = FLT_MAX;
   n.hiddenbias.weight = 1;
@@ -224,7 +226,7 @@ void predict_or_learn_multi(nn& n, learner& base, VW::example& ec)
       {
         if (i > 0) { output_string_stream << ' '; }
         output_string_stream << i << ':' << hidden_units[i].scalar << ','
-                             << fasttanh(hidden_units[i].scalar);  // TODO: huh, what was going on here?
+                             << fasttanh(hidden_units[i].scalar);  // Output both raw and tanh-transformed activations
       }
     }
 

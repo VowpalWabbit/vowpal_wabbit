@@ -14,7 +14,6 @@ using namespace VW::config;
 
 namespace
 {
-// TODO: This file should probably(?) use trace_message
 class print
 {
 public:

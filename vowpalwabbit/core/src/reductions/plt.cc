@@ -358,14 +358,12 @@ void finish(plt& p)
     {
       for (size_t i = 0; i < p.top_k; ++i)
       {
-        // TODO: is this the correct logger?
         *(p.all->output_runtime.trace_message) << "p@" << i + 1 << " = " << p.p_at[i] / p.ec_count << std::endl;
         *(p.all->output_runtime.trace_message) << "r@" << i + 1 << " = " << p.r_at[i] / p.ec_count << std::endl;
       }
     }
     else if (p.threshold > 0)
     {
-      // TODO: is this the correct logger?
       *(p.all->output_runtime.trace_message)
           << "hamming loss = " << static_cast<double>(p.fp + p.fn) / p.ec_count << std::endl;
       *(p.all->output_runtime.trace_message)

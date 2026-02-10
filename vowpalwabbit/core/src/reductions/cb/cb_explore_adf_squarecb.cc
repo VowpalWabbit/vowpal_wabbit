@@ -7,6 +7,7 @@
 #include "vw/config/options.h"
 #include "vw/core/action_score.h"
 #include "vw/core/cb.h"
+#include "vw/core/confidence_sequence_utility.h"
 #include "vw/core/gen_cs_example.h"
 #include "vw/core/global_data.h"
 #include "vw/core/label_parser.h"
@@ -32,8 +33,6 @@ with the VW learner as the base algorithm.
 
 // All exploration algorithms return a vector of id, probability tuples, sorted in order of scores. The probabilities
 // are the probability with which each action should be replaced to the top of the list.
-
-#define B_SEARCH_MAX_ITER 20
 
 using namespace VW::LEARNER;
 
@@ -74,7 +73,6 @@ private:
   std::vector<VW::action_scores> _ex_as;
   std::vector<std::vector<VW::cb_class>> _ex_costs;
   void get_cost_ranges(float delta, learner& base, VW::multi_ex& examples, bool min_only);
-  float binary_search(float fhat, float delta, float sens, float tol = 1e-6);
 };
 
 cb_explore_adf_squarecb::cb_explore_adf_squarecb(float gamma_scale, float gamma_exponent, bool elim, float c0,
@@ -93,42 +91,6 @@ cb_explore_adf_squarecb::cb_explore_adf_squarecb(float gamma_scale, float gamma_
 {
 }
 
-// TODO: same as cs_active.cc and cb_explore_adf_regcb.cc, move to shared place
-float cb_explore_adf_squarecb::binary_search(float fhat, float delta, float sens, float tol)
-{
-  /*
-     Binary search to find the largest weight w such that w*(fhat^2 - (fhat - w*sens)^2) \leq delta.
-     Implements binary search procedure described at the end of Section 7.1 in https://arxiv.org/pdf/1703.01014.pdf.
-  */
-
-  // We are always guaranteed that the solution to the problem above lies in (0, maxw), as long as fhat \geq 0.
-  const float maxw = (std::min)(fhat / sens, FLT_MAX);
-
-  // If the objective value for maxw satisfies the delta constraint, we can just take this and skip the binary search.
-  if (maxw * fhat * fhat <= delta) { return maxw; }
-
-  // Upper and lower bounds on w for binary search.
-  float l = 0;
-  float u = maxw;
-  // Binary search variable.
-  float w;
-  // Value for w.
-  float v;
-
-  // Standard binary search given the objective described above.
-  for (int iter = 0; iter < B_SEARCH_MAX_ITER; iter++)
-  {
-    w = (u + l) / 2.f;
-    v = w * (fhat * fhat - (fhat - sens * w) * (fhat - sens * w)) - delta;
-    if (v > 0) { u = w; }
-    else { l = w; }
-    if (std::fabs(v) <= tol || u - l <= tol) { break; }
-  }
-
-  return l;
-}
-
-// TODO: Same as cb_explore_adf_regcb.cc
 void cb_explore_adf_squarecb::get_cost_ranges(float delta, learner& base, VW::multi_ex& examples, bool min_only)
 {
   const size_t num_actions = examples[0]->pred.a_s.size();
@@ -161,7 +123,7 @@ void cb_explore_adf_squarecb::get_cost_ranges(float delta, learner& base, VW::mu
     if (ec->pred.scalar < cmin || std::isnan(sens) || std::isinf(sens)) { _min_costs[a] = cmin; }
     else
     {
-      w = binary_search(ec->pred.scalar - cmin + 1, delta, sens);
+      w = VW::confidence_sequence_utility::binary_search(ec->pred.scalar - cmin + 1, delta, sens);
       _min_costs[a] = (std::max)(ec->pred.scalar - sens * w, cmin);
       if (_min_costs[a] > cmax) { _min_costs[a] = cmax; }
     }
@@ -173,7 +135,7 @@ void cb_explore_adf_squarecb::get_cost_ranges(float delta, learner& base, VW::mu
       if (ec->pred.scalar > cmax || std::isnan(sens) || std::isinf(sens)) { _max_costs[a] = cmax; }
       else
       {
-        w = binary_search(cmax + 1 - ec->pred.scalar, delta, sens);
+        w = VW::confidence_sequence_utility::binary_search(cmax + 1 - ec->pred.scalar, delta, sens);
         _max_costs[a] = (std::min)(ec->pred.scalar + sens * w, cmax);
         if (_max_costs[a] < cmin) { _max_costs[a] = cmin; }
       }

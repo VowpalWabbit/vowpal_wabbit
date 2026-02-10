@@ -163,7 +163,7 @@ void flatten_features(VW::workspace& all, example& ec, features& fs)
   ffs.stride_shift = all.weights.stride_shift();
   if (all.weights.not_null())
   {
-    // TODO:temporary fix. all.weights is not initialized at this point in some cases.
+    // all.weights may not be initialized when flatten_features is called during setup.
     ffs.mask = all.weights.mask() >> all.weights.stride_shift();
   }
   else { ffs.mask = all.runtime_state.parse_mask >> all.weights.stride_shift(); }

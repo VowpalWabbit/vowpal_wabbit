@@ -7,6 +7,7 @@
 #include "vw/config/options.h"
 #include "vw/core/action_score.h"
 #include "vw/core/cb.h"
+#include "vw/core/confidence_sequence_utility.h"
 #include "vw/core/gen_cs_example.h"
 #include "vw/core/global_data.h"
 #include "vw/core/label_parser.h"
@@ -26,8 +27,6 @@
 
 // All exploration algorithms return a vector of id, probability tuples, sorted in order of scores. The probabilities
 // are the probability with which each action should be replaced to the top of the list.
-
-#define B_SEARCH_MAX_ITER 20
 
 using namespace VW::cb_explore_adf;
 using namespace VW::LEARNER;
@@ -51,7 +50,6 @@ private:
   void learn_impl(learner& base, VW::multi_ex& examples);
 
   void get_cost_ranges(float delta, learner& base, VW::multi_ex& examples, bool min_only);
-  float binary_search(float fhat, float delta, float sens, float tol = 1e-6);
 
 private:
   size_t _counter;
@@ -81,29 +79,6 @@ cb_explore_adf_regcb::cb_explore_adf_regcb(bool regcbopt, float c0, bool first_o
     , _max_cb_cost(max_cb_cost)
     , _model_file_version(model_file_version)
 {
-}
-
-// TODO: same as cs_active.cc, move to shared place
-float cb_explore_adf_regcb::binary_search(float fhat, float delta, float sens, float tol)
-{
-  const float maxw = (std::min)(fhat / sens, FLT_MAX);
-
-  if (maxw * fhat * fhat <= delta) { return maxw; }
-
-  float l = 0;
-  float u = maxw;
-  float w, v;
-
-  for (int iter = 0; iter < B_SEARCH_MAX_ITER; iter++)
-  {
-    w = (u + l) / 2.f;
-    v = w * (fhat * fhat - (fhat - sens * w) * (fhat - sens * w)) - delta;
-    if (v > 0) { u = w; }
-    else { l = w; }
-    if (std::fabs(v) <= tol || u - l <= tol) { break; }
-  }
-
-  return l;
 }
 
 void cb_explore_adf_regcb::get_cost_ranges(float delta, learner& base, VW::multi_ex& examples, bool min_only)
@@ -138,7 +113,7 @@ void cb_explore_adf_regcb::get_cost_ranges(float delta, learner& base, VW::multi
     if (ec->pred.scalar < cmin || std::isnan(sens) || std::isinf(sens)) { _min_costs[a] = cmin; }
     else
     {
-      w = binary_search(ec->pred.scalar - cmin + 1, delta, sens);
+      w = VW::confidence_sequence_utility::binary_search(ec->pred.scalar - cmin + 1, delta, sens);
       _min_costs[a] = (std::max)(ec->pred.scalar - sens * w, cmin);
       if (_min_costs[a] > cmax) { _min_costs[a] = cmax; }
     }
@@ -150,7 +125,7 @@ void cb_explore_adf_regcb::get_cost_ranges(float delta, learner& base, VW::multi
       if (ec->pred.scalar > cmax || std::isnan(sens) || std::isinf(sens)) { _max_costs[a] = cmax; }
       else
       {
-        w = binary_search(cmax + 1 - ec->pred.scalar, delta, sens);
+        w = VW::confidence_sequence_utility::binary_search(cmax + 1 - ec->pred.scalar, delta, sens);
         _max_costs[a] = (std::min)(ec->pred.scalar + sens * w, cmax);
         if (_max_costs[a] < cmin) { _max_costs[a] = cmin; }
       }

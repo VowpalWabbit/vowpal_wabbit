@@ -183,11 +183,11 @@ bool all_weights_equal_test(cb_sim&, VW::workspace& all, VW::multi_ex&)
     size_t current_offset = (iter.index() >> weights.stride_shift()) & (all.reduction_state.total_feature_width - 1);
     if (current_offset == 0)
     {
-      float* first_weight = &weights.first()[(prestride_index + 0) << weights.stride_shift()];
+      float* first_weight = &weights.data()[(prestride_index + 0) << weights.stride_shift()];
       uint32_t till = 1;  // instead of all.reduction_state.total_feature_width, champdupe only uses 3 configs
       for (uint32_t i = 1; i <= till; ++i)
       {
-        float* other = &weights.first()[(prestride_index + i) << weights.stride_shift()];
+        float* other = &weights.data()[(prestride_index + i) << weights.stride_shift()];
         for (uint32_t j = 0; j < stride_size; ++j)
         {
           EXPECT_NEAR((&(*first_weight))[j], (&(*other))[j], AUTO_ML_FLOAT_TOL);

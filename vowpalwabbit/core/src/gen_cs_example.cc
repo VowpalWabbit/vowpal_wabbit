@@ -158,8 +158,6 @@ void VW::details::gen_cs_example_sm(VW::multi_ex&, uint32_t chosen_action, float
     if (current_action == chosen_action) { wc.x = action_val.score + sign_offset; }
     else { wc.x = action_val.score - sign_offset; }
 
-    // TODO: This clipping is conceptually unnecessary because the example weight for this instance should be close to
-    // 0.
     if (wc.x > 100.) { wc.x = 100.0; }
     if (wc.x < -100.) { wc.x = -100.0; }
 

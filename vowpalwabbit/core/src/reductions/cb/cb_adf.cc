@@ -153,8 +153,6 @@ void VW::reductions::cb_adf::learn_sm(learner& base, VW::multi_ex& examples)
   // better.
   VW::explore::generate_softmax(-1.0, begin_scores(_a_s), end_scores(_a_s), begin_scores(_prob_s), end_scores(_prob_s));
 
-  // TODO: Check Marco's example that causes VW to report prob > 1.
-
   for (auto const& action_score : _prob_s)  // Scale example_wt by prob of chosen action
   {
     if (action_score.action == chosen_action)
