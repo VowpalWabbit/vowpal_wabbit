@@ -18,9 +18,9 @@
 #include "vw/core/simple_label.h"
 
 #include <cfloat>
-#include <sstream>
 #include <cstdio>
 #include <fstream>
+#include <sstream>
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -90,8 +90,7 @@ void mf_print_offset_features(gdmf& d, VW::example& ec, size_t offset)
 
 void mf_print_audit_features(gdmf& d, VW::example& ec, size_t offset)
 {
-  VW::details::print_result_by_ref(
-      d.all->output_runtime.audit_writer.get(), ec.pred.scalar, -1, ec.tag, d.all->logger);
+  VW::details::print_result_by_ref(d.all->output_runtime.audit_writer.get(), ec.pred.scalar, -1, ec.tag, d.all->logger);
   mf_print_offset_features(d, ec, offset);
 }
 
