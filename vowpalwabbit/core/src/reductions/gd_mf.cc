@@ -20,6 +20,7 @@
 #include <cfloat>
 #include <cstdio>
 #include <fstream>
+#include <sstream>
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -38,19 +39,20 @@ public:
 
 void mf_print_offset_features(gdmf& d, VW::example& ec, size_t offset)
 {
-  // TODO: Where should audit stuff output to?
   VW::workspace& all = *d.all;
+  auto* writer = all.output_runtime.audit_writer.get();
   auto& weights = all.weights;
   uint64_t mask = weights.mask();
+  std::ostringstream ss;
   for (VW::features& fs : ec)
   {
     bool audit = !fs.space_names.empty();
     for (const auto& f : fs.audit_range())
     {
-      std::cout << '\t';
-      if (audit) { std::cout << VW::to_string(*f.audit()) << ':'; }
-      std::cout << f.index() << "(" << ((f.index() + offset) & mask) << ")" << ':' << f.value();
-      std::cout << ':' << (&weights[f.index()])[offset];
+      ss << '\t';
+      if (audit) { ss << VW::to_string(*f.audit()) << ':'; }
+      ss << f.index() << "(" << ((f.index() + offset) & mask) << ")" << ':' << f.value();
+      ss << ':' << (&weights[f.index()])[offset];
     }
   }
   for (const auto& i : all.feature_tweaks_config.interactions)
@@ -67,27 +69,28 @@ void mf_print_offset_features(gdmf& d, VW::example& ec, size_t offset)
         {
           for (const auto& f2 : ec.feature_space[static_cast<unsigned char>(i[1])].audit_range())
           {
-            std::cout << '\t' << VW::to_string(*f1.audit()) << ':' << ((f1.index() + k) & mask) << "("
-                      << ((f1.index() + offset + k) & mask) << ")" << ':' << f1.value();
-            std::cout << ':' << (&weights[f1.index()])[offset + k];
+            ss << '\t' << VW::to_string(*f1.audit()) << ':' << ((f1.index() + k) & mask) << "("
+               << ((f1.index() + offset + k) & mask) << ")" << ':' << f1.value();
+            ss << ':' << (&weights[f1.index()])[offset + k];
 
-            std::cout << ':' << VW::to_string(*f2.audit()) << ':' << ((f2.index() + k + d.rank) & mask) << "("
-                      << ((f2.index() + offset + k + d.rank) & mask) << ")" << ':' << f2.value();
-            std::cout << ':' << (&weights[f2.index()])[offset + k + d.rank];
+            ss << ':' << VW::to_string(*f2.audit()) << ':' << ((f2.index() + k + d.rank) & mask) << "("
+               << ((f2.index() + offset + k + d.rank) & mask) << ")" << ':' << f2.value();
+            ss << ':' << (&weights[f2.index()])[offset + k + d.rank];
 
-            std::cout << ':' << (&weights[f1.index()])[offset + k] * (&weights[f2.index()])[offset + k + d.rank];
+            ss << ':' << (&weights[f1.index()])[offset + k] * (&weights[f2.index()])[offset + k + d.rank];
           }
         }
       }
     }
   }
-  std::cout << std::endl;
+  ss << '\n';
+  std::string output = ss.str();
+  writer->write(output.data(), output.size());
 }
 
 void mf_print_audit_features(gdmf& d, VW::example& ec, size_t offset)
 {
-  VW::details::print_result_by_ref(
-      d.all->output_runtime.stdout_adapter.get(), ec.pred.scalar, -1, ec.tag, d.all->logger);
+  VW::details::print_result_by_ref(d.all->output_runtime.audit_writer.get(), ec.pred.scalar, -1, ec.tag, d.all->logger);
   mf_print_offset_features(d, ec, offset);
 }
 

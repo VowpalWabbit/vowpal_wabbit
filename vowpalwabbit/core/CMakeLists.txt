@@ -21,6 +21,7 @@ set(vw_core_headers
   include/vw/core/ccb_reduction_features.h
   include/vw/core/estimators/confidence_sequence.h
   include/vw/core/estimators/confidence_sequence_robust.h
+  include/vw/core/confidence_sequence_utility.h
   include/vw/core/constant.h
   include/vw/core/continuous_actions_reduction_features.h
   include/vw/core/correctedMath.h
@@ -196,6 +197,7 @@ set(vw_core_sources
   src/ccb_reduction_features.cc
   src/confidence_sequence.cc
   src/confidence_sequence_robust.cc
+  src/confidence_sequence_utility.cc
   src/cost_sensitive.cc
   src/cressieread.cc
   src/crossplat_compat.cc

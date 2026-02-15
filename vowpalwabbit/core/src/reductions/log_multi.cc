@@ -194,10 +194,6 @@ bool children(log_multi& b, uint32_t& current, uint32_t& class_index, uint32_t l
       uint32_t swap_child = find_switch_node(b);
       uint32_t swap_parent = b.nodes[swap_child].parent;
       uint32_t swap_grandparent = b.nodes[swap_parent].parent;
-      if (b.nodes[swap_child].min_count != b.nodes[0].min_count)
-      {
-        std::cout << "glargh " << b.nodes[swap_child].min_count << " != " << b.nodes[0].min_count << std::endl;
-      }
       b.nbofswaps++;
 
       uint32_t nonswap_child;
