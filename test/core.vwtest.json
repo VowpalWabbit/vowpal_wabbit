@@ -6815,7 +6815,7 @@
   {
     "id": 525,
     "desc": "gd_mf with audit",
-    "vw_command": "--rank 5 --audit --quiet -d train-sets/ml100k_small_train -p gd_mf_audit.predict -b 7",
+    "vw_command": "--rank 5 --audit -d train-sets/ml100k_small_train -p gd_mf_audit.predict -b 7",
     "diff_files": {
       "stdout": "train-sets/ref/gd_mf_audit.stdout",
       "gd_mf_audit.predict": "pred-sets/ref/gd_mf_audit.predict"
