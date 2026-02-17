@@ -90,8 +90,6 @@ template <bool is_learn>
 void predict_or_learn_greedy(cb_explore& data, learner& base, VW::example& ec)
 {
   // Explore uniform random an epsilon fraction of the time.
-  // TODO: pointers are copied here. What happens if base.learn/base.predict re-allocs?
-  // ec.pred.a_s = probs; will restore the than free'd memory
   if (is_learn) { base.learn(ec); }
   else { base.predict(ec); }
 

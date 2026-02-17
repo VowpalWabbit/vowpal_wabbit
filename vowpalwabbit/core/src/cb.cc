@@ -195,7 +195,8 @@ void ::VW::details::print_update_cb(VW::workspace& all, bool is_test, const VW::
     if (ec_seq != nullptr)
     {
       num_features = 0;
-      // TODO: code duplication csoaa.cc LabelDict::ec_is_example_header
+      // NOTE: This feature-counting pattern is also in cost_sensitive.cc, csoaa_ldf.cc,
+      // and cb_explore_adf_common.h. Consider extracting a shared helper.
       for (size_t i = 0; i < (*ec_seq).size(); i++)
       {
         if (VW::ec_is_example_header_cb(*(*ec_seq)[i]))

@@ -831,7 +831,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cbify_setup(VW::setup_base
         update_stats_func = update_stats_cbify_reg_discrete;
         // Prediction value output is not supported.
         output_example_prediction_func = nullptr;
-        // FIXME: this should not use the simple label version since the label types dont match.
+        // Note: Although out_label_type is CB, the learn/predict functions restore ec.l.simple
+        // and ec.pred.scalar before returning, so print_update_simple_label reads correct values.
         print_update_func = VW::details::print_update_simple_label<cbify>;
         name_addition = "-reg-discrete";
       }
@@ -843,7 +844,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cbify_setup(VW::setup_base
         predict_ptr = predict_or_learn_regression<false>;
         update_stats_func = update_stats_cbify_reg_continuous;
         output_example_prediction_func = output_example_prediction_cbify_reg_continuous;
-        // FIXME: this should not use the simple label version since the label types dont match.
+        // Note: Although out_label_type is CONTINUOUS, the learn/predict functions restore
+        // ec.l.simple and ec.pred.scalar before returning, so print_update_simple_label reads correct values.
         print_update_func = VW::details::print_update_simple_label<cbify>;
 
         name_addition = "-reg";

@@ -589,15 +589,28 @@ public:
 
   BaseState<audit>* Float(Context<audit>& ctx, float v) override
   {
-    // TODO: once we introduce label types, check here
-    ctx.ex->l.simple.label = v;
+    if (ctx._label_parser.label_type == VW::label_type_t::SIMPLE) { ctx.ex->l.simple.label = v; }
+    else if (ctx._label_parser.label_type == VW::label_type_t::MULTICLASS)
+    {
+      ctx.ex->l.multi.label = static_cast<uint32_t>(v);
+    }
+    else
+    {
+      ctx.error() << "Numeric _label is not supported for label type " << VW::to_string(ctx._label_parser.label_type);
+      return nullptr;
+    }
     return ctx.previous_state;
   }
 
   BaseState<audit>* Uint(Context<audit>& ctx, unsigned v) override
   {
-    // TODO: once we introduce label types, check here
-    ctx.ex->l.simple.label = static_cast<float>(v);
+    if (ctx._label_parser.label_type == VW::label_type_t::SIMPLE) { ctx.ex->l.simple.label = static_cast<float>(v); }
+    else if (ctx._label_parser.label_type == VW::label_type_t::MULTICLASS) { ctx.ex->l.multi.label = v; }
+    else
+    {
+      ctx.error() << "Numeric _label is not supported for label type " << VW::to_string(ctx._label_parser.label_type);
+      return nullptr;
+    }
     return ctx.previous_state;
   }
 };
@@ -1010,8 +1023,16 @@ public:
 
       if (ctx.key_length == 5 && !strcmp(ctx.key, "_text")) { return &ctx.text_state; }
 
-      // TODO: _multi in _multi...
-      if (ctx.key_length == 6 && !strcmp(ctx.key, "_multi")) { return &ctx.multi_state; }
+      if (ctx.key_length == 6 && !strcmp(ctx.key, "_multi"))
+      {
+        // Guard against nested _multi (e.g. _multi inside an action of another _multi).
+        if (ctx.examples->size() > 1)
+        {
+          ctx.error() << "Nested _multi is not supported";
+          return nullptr;
+        }
+        return &ctx.multi_state;
+      }
       if (ctx.key_length == 6 && !strcmp(ctx.key, "_graph")) { return &ctx.array_to_graph_state; }
 
       if (ctx.key_length == 6 && !strcmp(ctx.key, "_slots")) { return &ctx.slots_state; }
@@ -1523,17 +1544,9 @@ public:
 
   VW::parsers::json::decision_service_interaction* data;
 
-  BaseState<audit>* StartObject(Context<audit>& /* ctx */) override
-  {
-    // TODO: improve validation
-    return this;
-  }
+  BaseState<audit>* StartObject(Context<audit>& /* ctx */) override { return this; }
 
-  BaseState<audit>* EndObject(Context<audit>& /*ctx*/, rapidjson::SizeType /* memberCount */) override
-  {
-    // TODO: improve validation
-    return this;
-  }
+  BaseState<audit>* EndObject(Context<audit>& /*ctx*/, rapidjson::SizeType /* memberCount */) override { return this; }
 
   BaseState<audit>* Key(Context<audit>& ctx, const char* str, rapidjson::SizeType length, bool /* copy */) override
   {
@@ -1921,7 +1934,7 @@ inline bool apply_pdrop(VW::label_type_t label_type, float pdrop, VW::multi_ex& 
   }
   if (label_type == VW::label_type_t::SLATES)
   {
-    // TODO
+    for (auto& e : examples) { e->l.slates.weight /= 1 - pdrop; }
   }
   return true;
 }

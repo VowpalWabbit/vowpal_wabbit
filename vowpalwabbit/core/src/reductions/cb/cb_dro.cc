@@ -77,7 +77,7 @@ public:
             [](const VW::example* item) { return item->weight; });
         std::for_each(examples.begin(), examples.end(), [qlb](VW::example* item) { item->weight *= qlb; });
 
-        // TODO: make sure descendants "do the right thing" with example->weight
+        // Weight is scaled by qlb for the downstream learner, then restored below.
         multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset);
 
         // restore the original weights
