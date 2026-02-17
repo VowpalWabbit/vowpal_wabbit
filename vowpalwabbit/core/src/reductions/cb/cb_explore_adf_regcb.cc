@@ -49,8 +49,6 @@ private:
   void predict_impl(learner& base, VW::multi_ex& examples);
   void learn_impl(learner& base, VW::multi_ex& examples);
 
-  void get_cost_ranges(float delta, learner& base, VW::multi_ex& examples, bool min_only);
-
 private:
   size_t _counter;
   bool _regcbopt;  // use optimistic variant of RegCB
@@ -81,65 +79,6 @@ cb_explore_adf_regcb::cb_explore_adf_regcb(bool regcbopt, float c0, bool first_o
 {
 }
 
-void cb_explore_adf_regcb::get_cost_ranges(float delta, learner& base, VW::multi_ex& examples, bool min_only)
-{
-  const size_t num_actions = examples[0]->pred.a_s.size();
-  _min_costs.resize(num_actions);
-  _max_costs.resize(num_actions);
-
-  _ex_as.clear();
-  _ex_costs.clear();
-
-  // backup cb example data
-  for (const auto& ex : examples)
-  {
-    _ex_as.push_back(ex->pred.a_s);
-    _ex_costs.push_back(ex->l.cb.costs);
-  }
-
-  // set regressor predictions
-  for (const auto& as : _ex_as[0]) { examples[as.action]->pred.scalar = as.score; }
-
-  const float cmin = _min_cb_cost;
-  const float cmax = _max_cb_cost;
-
-  for (size_t a = 0; a < num_actions; ++a)
-  {
-    auto* ec = examples[a];
-    ec->l.simple.label = cmin - 1;
-    float sens = base.sensitivity(*ec);
-    float w = 0;  // importance weight
-
-    if (ec->pred.scalar < cmin || std::isnan(sens) || std::isinf(sens)) { _min_costs[a] = cmin; }
-    else
-    {
-      w = VW::confidence_sequence_utility::binary_search(ec->pred.scalar - cmin + 1, delta, sens);
-      _min_costs[a] = (std::max)(ec->pred.scalar - sens * w, cmin);
-      if (_min_costs[a] > cmax) { _min_costs[a] = cmax; }
-    }
-
-    if (!min_only)
-    {
-      ec->l.simple.label = cmax + 1;
-      sens = base.sensitivity(*ec);
-      if (ec->pred.scalar > cmax || std::isnan(sens) || std::isinf(sens)) { _max_costs[a] = cmax; }
-      else
-      {
-        w = VW::confidence_sequence_utility::binary_search(cmax + 1 - ec->pred.scalar, delta, sens);
-        _max_costs[a] = (std::min)(ec->pred.scalar + sens * w, cmax);
-        if (_max_costs[a] < cmin) { _max_costs[a] = cmin; }
-      }
-    }
-  }
-
-  // reset cb example data
-  for (size_t i = 0; i < examples.size(); ++i)
-  {
-    examples[i]->pred.a_s = _ex_as[i];
-    examples[i]->l.cb.costs = _ex_costs[i];
-  }
-}
-
 void cb_explore_adf_regcb::predict_impl(learner& base, VW::multi_ex& examples)
 {
   multiline_learn_or_predict<false>(base, examples, examples[0]->ft_offset);
@@ -150,7 +89,8 @@ void cb_explore_adf_regcb::predict_impl(learner& base, VW::multi_ex& examples)
   // threshold on empirical loss difference
   const float delta =
       _c0 * std::log(static_cast<float>(num_actions * _counter)) * static_cast<float>(std::pow(max_range, 2));
-  get_cost_ranges(delta, base, examples, /*min_only=*/_regcbopt);
+  VW::confidence_sequence_utility::get_cost_ranges(delta, base, examples, /*min_only=*/_regcbopt, _min_cb_cost,
+      _max_cb_cost, _min_costs, _max_costs, _ex_as, _ex_costs);
 
   if (_regcbopt)  // optimistic variant
   {

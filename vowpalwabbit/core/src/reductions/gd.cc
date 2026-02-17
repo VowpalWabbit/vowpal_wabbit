@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <cfloat>
+#include <sstream>
 
 #if !defined(VW_NO_INLINE_SIMD)
 #  if !defined(__SSE2__) && (defined(_M_AMD64) || defined(_M_X64))
@@ -425,17 +426,20 @@ void print_lda_features(VW::workspace& all, VW::example& ec)
   uint32_t stride_shift = weights.stride_shift();
   size_t count = 0;
   for (VW::features& fs : ec) { count += fs.size(); }
-  // TODO: Where should audit stuff output to?
+  auto* writer = all.output_runtime.audit_writer.get();
+  std::ostringstream ss;
   for (VW::features& fs : ec)
   {
     for (const auto& f : fs.audit_range())
     {
-      std::cout << '\t' << VW::to_string(*f.audit()) << ':'
-                << ((f.index() >> stride_shift) & all.runtime_state.parse_mask) << ':' << f.value();
-      for (size_t k = 0; k < all.reduction_state.lda; k++) { std::cout << ':' << (&weights[f.index()])[k]; }
+      ss << '\t' << VW::to_string(*f.audit()) << ':' << ((f.index() >> stride_shift) & all.runtime_state.parse_mask)
+         << ':' << f.value();
+      for (size_t k = 0; k < all.reduction_state.lda; k++) { ss << ':' << (&weights[f.index()])[k]; }
     }
   }
-  std::cout << " total of " << count << " features." << std::endl;
+  ss << " total of " << count << " features.\n";
+  std::string output = ss.str();
+  writer->write(output.data(), output.size());
 }
 }  // namespace
 
