@@ -183,15 +183,20 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::csoaa_setup(VW::setup_base
   options_i& options = *stack_builder.get_options();
   VW::workspace& all = *stack_builder.get_all_pointer();
   auto c = VW::make_unique<csoaa>(all.logger, all.runtime_state.indexing);
+  bool cs_absolute_loss = false;
   option_group_definition new_options("[Reduction] Cost Sensitive One Against All");
   new_options
       .add(make_option("csoaa", c->num_classes).keep().necessary().help("One-against-all multiclass with <k> costs"))
       .add(make_option("indexing", all.runtime_state.indexing)
                .one_of({0, 1})
                .keep()
-               .help("Choose between 0 or 1-indexing"));
+               .help("Choose between 0 or 1-indexing"))
+      .add(make_option("cs_absolute_loss", cs_absolute_loss)
+               .help("Report absolute cost as loss instead of relative (cost - min_cost)"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
+
+  if (cs_absolute_loss) { all.sd->cs_use_absolute_loss = true; }
 
   if (options.was_supplied("probabilities"))
   {

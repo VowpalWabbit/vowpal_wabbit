@@ -36,7 +36,8 @@ using namespace VW::config;
 
 namespace
 {
-// TODO: passthrough for ldf
+// NOTE: passthrough is not supported for LDF. Implementing it would require
+// non-trivial changes to how features are routed across the multi-example sequence.
 class ldf
 {
 public:
@@ -241,7 +242,6 @@ void do_actual_learning_wap(ldf& data, learner& base, VW::multi_ex& ec_seq)
 
       base.learn(*ec1);
     }
-    // TODO: What about partial_prediction? See do_actual_learning_oaa.
   }
 }
 
@@ -614,12 +614,7 @@ void update_stats_csoaa_ldf_prob(const VW::workspace& all, VW::shared_data& sd, 
   const float correct_class_prob = ec_seq[0]->pred.scalars[correct_class_k];
   if (correct_class_prob > 0.f) { multiclass_log_loss = -std::log(correct_class_prob); }
 
-  // TODO: How to detect if we should update holdout or normal loss?
-  // (ec.test_only) OR (COST_SENSITIVE::example_is_test(ec))
-  // What should be the "ec"? data.ec_seq[0]?
-  // Based on parse_args.cc (where "average multiclass log loss") is printed,
-  // I decided to try yet another way: (!all.passes_config.holdout_set_off).
-  if (!all.passes_config.holdout_set_off) { sd.holdout_multiclass_log_loss += multiclass_log_loss; }
+  if (ec_seq[0]->test_only) { sd.holdout_multiclass_log_loss += multiclass_log_loss; }
   else { sd.multiclass_log_loss += multiclass_log_loss; }
 }
 
@@ -732,10 +727,18 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::csldf_setup(VW::setup_base
                               .help("Use weighted all-pairs multiclass learning with label dependent features. "
                                     "Specify singleline or multiline."));
 
+  bool cs_absolute_loss = false;
+  option_group_definition cs_loss_options("[Reduction] Cost Sensitive Loss");
+  cs_loss_options.add(make_option("cs_absolute_loss", cs_absolute_loss)
+                          .help("Report absolute cost as loss instead of relative (cost - min_cost)"));
+
   if (!options.add_parse_and_check_necessary(csldf_outer_options))
   {
     if (!options.add_parse_and_check_necessary(csldf_inner_options)) { return nullptr; }
   }
+
+  options.add_and_parse(cs_loss_options);
+  if (cs_absolute_loss) { all.sd->cs_use_absolute_loss = true; }
 
   // csoaa_ldf does logistic link manually for probabilities because the unlinked values are
   // required elsewhere. This implemenation will provide correct probabilities regardless
@@ -782,7 +785,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::csldf_setup(VW::setup_base
   }
 
   all.parser_runtime.example_parser->emptylines_separate_examples =
-      true;  // TODO: check this to be sure!!!  !ld->is_singleline;
+      true;  // always multiline; singleline was removed
 
   ld->label_features.max_load_factor(0.25);
   ld->label_features.reserve(256);

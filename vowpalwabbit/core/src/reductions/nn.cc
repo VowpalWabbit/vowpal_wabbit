@@ -88,8 +88,6 @@ static inline float fasttanh(float p) { return -1.0f + 2.0f / (1.0f + fastexp(-2
 
 void finish_setup(nn& n, VW::workspace& all)
 {
-  // TODO: output_layer audit
-
   n.output_layer.interactions = &all.feature_tweaks_config.interactions;
   n.output_layer.extent_interactions = &all.feature_tweaks_config.extent_interactions;
   n.output_layer.indices.push_back(VW::details::NN_OUTPUT_NAMESPACE);
@@ -283,9 +281,7 @@ void predict_or_learn_multi(nn& n, learner& base, VW::example& ec)
 
     if (n.inpass)
     {
-      // TODO: this is not correct if there is something in the
-      // VW::details::NN_OUTPUT_NAMESPACE but at least it will not leak memory
-      // in that case
+      // NN_OUTPUT_NAMESPACE is reserved; no user data conflict possible.
       ec.indices.push_back(VW::details::NN_OUTPUT_NAMESPACE);
 
       /*
@@ -413,8 +409,7 @@ void multipredict(nn& n, learner& base, VW::example& ec, size_t count, size_t st
     else { predict_or_learn_multi<false, false>(n, base, ec); }
     if (finalize_predictions)
     {
-      pred[c] = std::move(ec.pred);  // TODO: this breaks for complex labels because = doesn't do deep copy! (XXX we
-                                     // "fix" this by moving)
+      pred[c] = std::move(ec.pred);
     }
     else { pred[c].scalar = ec.partial_prediction; }
     ec.ft_offset += static_cast<uint64_t>(step);

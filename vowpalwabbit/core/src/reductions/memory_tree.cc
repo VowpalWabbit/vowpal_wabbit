@@ -31,8 +31,6 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 
-// TODO: This file has several cout print statements. It looks like
-//       they should be using trace_message, but its difficult to tell
 namespace
 {
 ///////////////////////Helper//////////////////////////////

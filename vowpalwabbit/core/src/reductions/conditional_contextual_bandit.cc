@@ -305,7 +305,6 @@ void build_cb_example(VW::multi_ex& cb_ex, VW::example* slot, const VW::ccb_labe
   const bool slot_has_label = ccb_label.outcome != nullptr;
 
   // Merge the slot features with the shared example and set it in the cb multi-example
-  // TODO is it important for total_sum_feat_sq and num_features to be correct at this point?
   inject_slot_features(data.shared, slot);
   cb_ex.push_back(data.shared);
 
@@ -577,7 +576,6 @@ void update_stats_ccb(const VW::workspace& /* all */, shared_data& sd, const ccb
     bool holdout_example = num_labeled > 0;
     for (const auto* example : ec_seq) { holdout_example &= example->test_only; }
 
-    // TODO what does weight mean here?
     sd.update(holdout_example, num_labeled > 0, loss, ec_seq[VW::details::SHARED_EX_INDEX]->weight, num_features);
   }
 }

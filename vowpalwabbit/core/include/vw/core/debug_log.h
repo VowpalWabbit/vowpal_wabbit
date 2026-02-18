@@ -34,11 +34,12 @@ public:
   static constexpr bool CB_SAMPLE_PDF =       false;
   static constexpr bool CCB =                 false;
   static constexpr bool CB_SAMPLE =           false;
+  static constexpr bool STAGEWISE_POLY =     false;
   // clang-format on
 
   static constexpr bool TRACK_STACK = DEFAULT_LOG | LEARNER | SEARCH | GD | GD_PREDICT | BINARY | CB_ADF | CSOAA |
       CS_ACTIVE | CATS_TREE | CATS_PDF | CATS | CB_EXPLORE_PDF | CB_EXPLORE | CBIFY | GET_PMF | SAMPLE_PDF |
-      CB_EXPLORE_GET_PMF | CB_SAMPLE_PDF | CCB | SCORER | CB_SAMPLE | CSOAA_LDF;
+      CB_EXPLORE_GET_PMF | CB_SAMPLE_PDF | CCB | SCORER | CB_SAMPLE | CSOAA_LDF | STAGEWISE_POLY;
 };
 
 #define VW_DEBUG_LOG vw_dbg::DEFAULT_LOG

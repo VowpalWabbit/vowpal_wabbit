@@ -20,9 +20,6 @@
 using namespace VW::LEARNER;
 using namespace VW::config;
 
-// TODO: This file makes extensive use of cout and partial line logging.
-//       Will require some investigation on how to proceed
-
 namespace
 {
 class node_pred

@@ -18,9 +18,12 @@
 #include <cfloat>
 #include <cmath>
 
+#include "vw/core/debug_log.h"
+
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG vw_dbg::STAGEWISE_POLY
+
 // #define MAGIC_ARGUMENT //MAY IT NEVER DIE //LIVE LONG AND PROSPER
-//  TODO: This file makes extensive use of #ifdef DEBUG for printing
-//        leave this alone for now
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -84,13 +87,14 @@ public:
 
   ~stagewise_poly()
   {
-#ifdef DEBUG
-    if (all)
+    if VW_STD17_CONSTEXPR (VW_DEBUG_LOG)
     {
-      *(all->output_runtime.trace_message)
-          << "total feature number (after poly expansion!) = " << sum_sparsity << std::endl;
+      if (all)
+      {
+        *(all->output_runtime.trace_message)
+            << "total feature number (after poly expansion!) = " << sum_sparsity << std::endl;
+      }
     }
-#endif  // DEBUG
 
     free(sd);
     free(depthsbits);
@@ -213,7 +217,7 @@ void sanity_check_state(stagewise_poly& poly)
     assert(!(poly.depthsbits[wid_mask_un_shifted(poly, wid) * 2 + 1] & ~(parent_bit + cycle_bit + indicator_bit)));
   }
 }
-#endif  // NDEBUG
+#endif  // DEBUG
 
 // Note.  OUTPUT & INPUT masked.
 // It is very important that this function is invariant to stride.
@@ -249,25 +253,25 @@ void sort_data_ensure_sz(stagewise_poly& poly, size_t len)
   if (poly.sd_len < len)
   {
     size_t len_candidate = 2 * len;
-#ifdef DEBUG
-    *(poly.all->output_runtime.trace_message) << "resizing sort buffer; current size " << poly.sd_len;
-#endif  // DEBUG
+    if VW_STD17_CONSTEXPR (VW_DEBUG_LOG)
+    {
+      *(poly.all->output_runtime.trace_message) << "resizing sort buffer; current size " << poly.sd_len;
+    }
     poly.sd_len = (len_candidate > poly.all->length()) ? poly.all->length() : len_candidate;
-#ifdef DEBUG
-    *(poly.all->output_runtime.trace_message) << ", new size " << poly.sd_len << std::endl;
-#endif              // DEBUG
+    if VW_STD17_CONSTEXPR (VW_DEBUG_LOG)
+    {
+      *(poly.all->output_runtime.trace_message) << ", new size " << poly.sd_len << std::endl;
+    }
     free(poly.sd);  // okay for null.
     poly.sd = VW::details::calloc_or_throw<sort_data>(poly.sd_len);
   }
   assert(len <= poly.sd_len);
 }
 
-#ifdef DEBUG
 int sort_data_compar(const void* a_v, const void* b_v)
 {
   return 2 * (((sort_data*)a_v)->weightsal < ((sort_data*)b_v)->weightsal) - 1;
 }
-#endif  // DEBUG
 
 int sort_data_compar_heap(sort_data& a_v, sort_data& b_v) { return (a_v.weightsal > b_v.weightsal); }
 
@@ -344,21 +348,23 @@ void sort_data_update_support(stagewise_poly& poly)
   }
   num_new_features = static_cast<uint64_t>(heap_end - poly.sd);
 
-#ifdef DEBUG
-  // eyeballing weights a pain if unsorted.
-  qsort(poly.sd, num_new_features, sizeof(sort_data), sort_data_compar);
-#endif  // DEBUG
+  if VW_STD17_CONSTEXPR (VW_DEBUG_LOG)
+  {
+    // eyeballing weights a pain if unsorted.
+    qsort(poly.sd, num_new_features, sizeof(sort_data), sort_data_compar);
+  }
 
   for (uint64_t pos = 0; pos < num_new_features && pos < poly.sd_len; ++pos)
   {
     assert(!parent_get(poly, poly.sd[pos].wid) && poly.sd[pos].weightsal > TOLERANCE &&
         poly.sd[pos].wid != constant_feat_masked(poly));
     parent_toggle(poly, poly.sd[pos].wid);
-#ifdef DEBUG
-    *(poly.all->output_runtime.trace_message)
-        << "Adding feature " << pos << "/" << num_new_features << " || wid " << poly.sd[pos].wid << " || sort value "
-        << poly.sd[pos].weightsal << std::endl;
-#endif  // DEBUG
+    if VW_STD17_CONSTEXPR (VW_DEBUG_LOG)
+    {
+      *(poly.all->output_runtime.trace_message)
+          << "Adding feature " << pos << "/" << num_new_features << " || wid " << poly.sd[pos].wid
+          << " || sort value " << poly.sd[pos].weightsal << std::endl;
+    }
   }
 
 #ifdef DEBUG
@@ -445,11 +451,12 @@ void synthetic_create_rec(stagewise_poly& poly, float v, uint64_t findex)
   {
     if (parent_get(poly, wid_cur))
     {
-#ifdef DEBUG
-      *(poly.all->output_runtime.trace_message)
-          << "FOUND A TRANSPLANT!!! moving [" << wid_cur << "] from depth " << (uint64_t)min_depths_get(poly, wid_cur)
-          << " to depth " << poly.cur_depth << std::endl;
-#endif  // DEBUG
+      if VW_STD17_CONSTEXPR (VW_DEBUG_LOG)
+      {
+        *(poly.all->output_runtime.trace_message)
+            << "FOUND A TRANSPLANT!!! moving [" << wid_cur << "] from depth "
+            << static_cast<uint64_t>(min_depths_get(poly, wid_cur)) << " to depth " << poly.cur_depth << std::endl;
+      }
       // XXX arguably, should also fear transplants that occured with
       // a different ft_offset ; e.g., need to look out for cross-reduction
       // collisions.  Have not played with this issue yet...
@@ -566,9 +573,7 @@ void reduce_min_max(uint8_t& v1, const uint8_t& v2)
   else { p_or_d2 = false; }
   if (parent_or_depth != p_or_d2)
   {
-#ifdef DEBUG
     // Reducing parent with depth mismatch — skip.
-#endif  // DEBUG
     return;
   }
 

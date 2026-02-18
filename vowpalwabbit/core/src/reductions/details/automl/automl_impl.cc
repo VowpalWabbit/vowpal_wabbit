@@ -226,7 +226,6 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::apply_confi
   configs[config_index].state = VW::reductions::automl::config_state::Live;
 
   // We may also want to 0 out weights here? Currently keep all same in live_slot position
-  // TODO: reset stats of gd, cb_adf, sd patch , to default.. what is default?
 }
 
 template <typename config_oracle_impl, typename estimator_impl>
@@ -334,7 +333,6 @@ void interaction_config_manager<config_oracle_impl, estimator_impl>::do_learning
     LEARNER::learner& base, multi_ex& ec, uint64_t live_slot)
 {
   assert(live_slot < max_live_configs);
-  // TODO: what to do if that slot is switched with a new config?
   for (example* ex : ec) { apply_config(ex, &estimators[live_slot].first.live_interactions); }
   if (!base.learn_returns_prediction) { base.predict(ec, live_slot); }
   base.learn(ec, live_slot);
