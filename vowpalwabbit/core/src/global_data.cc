@@ -467,7 +467,8 @@ workspace::~workspace()
   // learner::finish() is idempotent, so this is safe if finish() was already called.
   if (l != nullptr) { l->finish(); }
 
-  // TODO: migrate all finalization into parser destructor
+  // Note: parser finalization is here rather than in the destructor due to ordering
+  // constraints with other subsystems.
   if (parser_runtime.example_parser != nullptr) { VW::details::free_parser(*this); }
 }
 

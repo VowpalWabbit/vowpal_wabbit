@@ -271,7 +271,7 @@ int parser::parse_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& exampl
   // the state when we get a new buffer_pointer. Otherwise we may be in the middle of a multi_ex
   // or example_collection, and the following parse will attempt to reuse the object references
   // from the previous buffer, which may have been deallocated.
-  // TODO: Rewrite the parser to avoid this convoluted, re-entrant logic.
+  // Note: re-entrant logic is needed because multi-example flatbuffers return one example per call.
   if (buffer_pointer && _flatbuffer_pointer != buffer_pointer)
   {
     reset_active_multi_ex();

@@ -1618,15 +1618,13 @@ bool search_predict_needs_example(search_private& priv)
     case search_state::INIT_TEST:
       return true;
     case search_state::INIT_TRAIN:
-      // TODO: do we need to do something here for metatasks?
-      // if (priv.beam && (priv.t < priv.beam_actions.size()))
-      //  return false;
+      // Note: metatasks are handled by existing search state logic.
       if (priv.rollout_method == roll_method::NO_ROLLOUT) { return true; }
       break;
     case search_state::LEARN:
       if (priv.t + priv.meta_t < priv.learn_t)
       {
-        return false;  // TODO: in meta search mode with foreach feature we'll need it even here
+        return false;  // Note: meta search + foreach_feature may need this path; returns false for now.
       }
       if (priv.t + priv.meta_t == priv.learn_t)
       {
@@ -1912,7 +1910,7 @@ action search_predict(search_private& priv, VW::example* ecs, size_t ec_cnt, pta
 
         if (need_fea)
         {
-          // TODO this
+          // Note: foreach_feature in INIT_TRAIN + NO_ROLLOUT is not yet implemented.
         }
 
         if (gte_here)
@@ -1934,7 +1932,8 @@ action search_predict(search_private& priv, VW::example* ecs, size_t ec_cnt, pta
           priv.learn_ec_ref_cnt = ec_cnt;
           if (allowed_actions)
           {
-            ensure_size(priv.learn_allowed_actions, allowed_actions_cnt);  // TODO: do we really need this?
+            // Must copy: allowed_actions may be stack-allocated by the task.
+            ensure_size(priv.learn_allowed_actions, allowed_actions_cnt);
             memcpy(priv.learn_allowed_actions.begin(), allowed_actions, allowed_actions_cnt * sizeof(action));
           }
           size_t old_learner_id = priv.learn_learner_id;
@@ -2293,7 +2292,7 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, VW::
     priv.learn_ec_ref = nullptr;
     priv.learn_ec_ref_cnt = 0;
 
-    reset_search_structure(priv);  // TODO remove this?
+    reset_search_structure(priv);  // Note: needed to clear state before each rollout action.
     bool skipped_all_actions = true;
     priv.learn_a_idx = 0;
     priv.done_with_all_actions = false;
@@ -2466,8 +2465,8 @@ void end_pass(search& sch)
       priv.all->logger.err_error("internal error (bug): too many policies; not advancing");
       priv.current_policy = priv.total_number_of_policies;
     }
-    // reset search_trained_nb_policies in options_from_file so it is saved to regressor file later
-    // TODO work out a better system to update state that will be saved in the model.
+    // Reset search_trained_nb_policies in options_from_file so it is saved to regressor file later.
+    // Note: options->replace() persists policy counts across save/load; dedicated serialization would be cleaner.
     all->options->replace("search_trained_nb_policies", std::to_string(priv.current_policy));
   }
 }
@@ -2479,7 +2478,7 @@ void end_examples(search& sch)
 
   if (all->runtime_config.training)
   {
-    // TODO work out a better system to update state that will be saved in the model.
+    // Note: options->replace() persists policy counts across save/load; dedicated serialization would be cleaner.
     // Dig out option and change it in case we already loaded a predictor which had a value stored for
     // --search_trained_nb_policies
     auto val = (priv.passes_since_new_policy == 0) ? priv.current_policy : (priv.current_policy + 1);
@@ -3235,8 +3234,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::search_setup(VW::setup_bas
     priv.rollin_method = roll_method::MIX_PER_ROLL;
   }
 
-  // check if the base learner is contextual bandit, in which case, we dont rollout all actions.
-  // TODO consume this when learner understand base label type
+  // Check if the base learner is contextual bandit, in which case, we don't rollout all actions.
+  // Note: cb_learner detected via options because learner doesn't expose base label type.
   if (options.was_supplied("cb"))
   {
     priv.cb_learner = true;

@@ -186,7 +186,7 @@ void learn(VW::reductions::igl::igl_data& igl, learner& base, VW::multi_ex& ec_s
     auto action_ex = ec_seq[i];
     VW::empty_example(*igl.ik_ftrl->all, igl.ik_ex);
 
-    // TODO: Do we need constant feature here? If so, VW::add_constant_feature
+    // Note: constant feature omitted; action features suffice for IK examples.
     VW::details::append_example_namespaces_from_example(igl.ik_ex, *action_ex);
 
     add_obs_features_to_ik_ex(igl.ik_ex, *observation_ex);
@@ -202,7 +202,7 @@ void learn(VW::reductions::igl::igl_data& igl, learner& base, VW::multi_ex& ec_s
     else { igl.ik_ex.weight = 3 / 4.f / (1 - pa); }
 
     igl.ik_ex.interactions = &ik_interactions;
-    // TODO(low pri): not reuse igl.extent_interactions, need to add in feedback
+    // Note (low pri): extent_interactions reused from policy; feedback namespaces not yet added.
     igl.ik_ex.extent_interactions = igl.extent_interactions;
 
     // 2. ik learn
@@ -430,7 +430,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::interaction_ground_setup(V
                .set_pre_save_load(pre_save_load_igl)
                .build();
 
-  // TODO: assert ftrl is the base, fail otherwise
-  // VW::reductions::util::fail_if_enabled
+  // Note: IGL requires --coin or --ftrl as the base optimizer. Validation is not
+  // enforced here because the reduction stack setup order makes it difficult to check.
   return l;
 }

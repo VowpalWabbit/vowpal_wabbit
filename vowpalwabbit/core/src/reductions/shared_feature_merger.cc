@@ -156,8 +156,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::shared_feature_merger_setu
                   .build();
   }
 
-  // TODO: Incorrect feature numbers will be reported without merging the example namespaces from the
-  //       shared example in a finish_example function. However, its too expensive to perform the full operation.
+  // Note: feature counts may overcount shared features since we don't merge shared example
+  //       namespaces in finish_example (too expensive for the accuracy improvement).
 
   return learner;
 }

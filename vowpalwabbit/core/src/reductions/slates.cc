@@ -111,7 +111,7 @@ void VW::reductions::slates_data::predict(VW::LEARNER::learner& base, multi_ex& 
   learn_or_predict<false>(base, examples);
 }
 
-// TODO this abstraction may not really work as this function now doesn't have access to the global cost...
+// Note: global cost is not available in this function; label output omits it.
 std::string VW::reductions::generate_slates_label_printout(const std::vector<example*>& slots)
 {
   size_t counter = 0;
