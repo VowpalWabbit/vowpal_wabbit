@@ -267,10 +267,12 @@ void sort_data_ensure_sz(stagewise_poly& poly, size_t len)
   assert(len <= poly.sd_len);
 }
 
+#ifdef DEBUG
 int sort_data_compar(const void* a_v, const void* b_v)
 {
   return 2 * (((sort_data*)a_v)->weightsal < ((sort_data*)b_v)->weightsal) - 1;
 }
+#endif
 
 int sort_data_compar_heap(sort_data& a_v, sort_data& b_v) { return (a_v.weightsal > b_v.weightsal); }
 
@@ -347,11 +349,10 @@ void sort_data_update_support(stagewise_poly& poly)
   }
   num_new_features = static_cast<uint64_t>(heap_end - poly.sd);
 
-  if VW_STD17_CONSTEXPR (VW_DEBUG_LOG)
-  {
-    // eyeballing weights a pain if unsorted.
-    qsort(poly.sd, num_new_features, sizeof(sort_data), sort_data_compar);
-  }
+#ifdef DEBUG
+  // eyeballing weights a pain if unsorted.
+  qsort(poly.sd, num_new_features, sizeof(sort_data), sort_data_compar);
+#endif
 
   for (uint64_t pos = 0; pos < num_new_features && pos < poly.sd_len; ++pos)
   {
