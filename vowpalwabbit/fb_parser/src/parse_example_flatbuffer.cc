@@ -400,7 +400,6 @@ bool get_namespace_hash(VW::workspace* all, const Namespace* ns, uint64_t& hash)
 bool features_have_names(const Namespace& ns)
 {
   return flatbuffers::IsFieldPresent(&ns, Namespace::VT_FEATURE_NAMES) && (ns.feature_names()->size() != 0);
-  // TODO: It is not clear what the right answer is when feature_values->size is 0
 }
 
 bool features_have_hashes(const Namespace& ns)

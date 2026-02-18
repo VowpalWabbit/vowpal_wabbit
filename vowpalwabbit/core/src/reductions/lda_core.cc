@@ -1176,7 +1176,7 @@ void compute_coherence_metrics(lda& l, T& weights)
     }
   }
 
-  float epsilon = 1e-6f;  // TODO
+  float epsilon = 1e-6f;  // Laplace smoothing for log(co-occurrence) in coherence metric
   float avg_coherence = 0;
   for (size_t topic = 0; topic < l.topics; topic++)
   {

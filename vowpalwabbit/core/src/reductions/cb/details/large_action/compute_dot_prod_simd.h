@@ -4,8 +4,8 @@
 
 #pragma once
 
-// TODO: Make simd work with MSVC. Only works on linux for now.
-// TODO: Only works for x86. Make simd work on other architectures e.g. using SIMDe.
+// Note: SIMD support is currently Linux/x86 only (GCC/Clang). MSVC and non-x86
+// architectures (e.g. via SIMDe) are not yet supported.
 #ifdef VW_FEAT_LAS_SIMD_ENABLED
 
 #  include "vw/core/example.h"

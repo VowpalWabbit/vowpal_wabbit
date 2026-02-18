@@ -208,7 +208,8 @@ void VW::parsers::cache::write_example_to_cache(io_buf& output, example* ex_ptr,
 int VW::parsers::cache::read_example_from_cache(VW::workspace* all, io_buf& input, VW::multi_ex& examples)
 {
   assert(all != nullptr);
-  // uint64_t size; TODO: Use to be able to skip cached examples on a read failure.
+  // The first uint64_t in each cached example is a size field, consumed below but discarded.
+  // It could be captured to enable skipping corrupt examples on read failure.
   char* unused_read_ptr = nullptr;
   // If this read returns 0 bytes, it means that we've reached the end of the cache file in an expected way.
   // (As opposed to being unable to get the next bytes while midway through reading an example)

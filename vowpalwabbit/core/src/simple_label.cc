@@ -26,7 +26,7 @@ VW::simple_label::simple_label(float label) : label(label) {}
 
 void VW::simple_label::reset_to_default() { label = FLT_MAX; }
 
-// TODO: Delete once there are no more usages.
+// Used by output_and_account_example below; both are legacy, retained for test coverage.
 void VW::details::print_update(VW::workspace& all, const VW::example& ec)
 {
   if (all.sd->weighted_labeled_examples + all.sd->weighted_unlabeled_examples >= all.sd->dump_interval &&

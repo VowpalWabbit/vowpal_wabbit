@@ -74,8 +74,7 @@ Offset<void> prototype_label_t::create_flatbuffer(FlatBufferBuilder& builder, VW
 
         auto action_scores = label.slates.probabilities;
 
-        // TODO: This conversion is kind of painful: we should consider expanding the probabilities
-        // vector into a pair of vectors
+        // Flatbuffer requires action_score objects; convert from VW's interleaved vector.
         std::vector<Offset<fb::action_score>> fb_action_scores;
         fb_action_scores.reserve(action_scores.size());
         for (const auto& action_score : action_scores)
@@ -127,7 +126,7 @@ void prototype_label_t::verify(VW::workspace&, const fb::Example* e) const
       verify_slates_label(e);
       break;
     }
-    // TODO: other label types
+    // Note: only SimpleLabel, CBLabel, and Slates_Label are verified; others throw.
     default:
     {
       THROW("Label type not currently supported for verify");
