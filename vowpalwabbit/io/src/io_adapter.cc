@@ -426,7 +426,10 @@ gzip_file_adapter::gzip_file_adapter(const char* filename, file_mode mode) : rea
 {
   const auto* file_mode_arg = _mode == file_mode::READ ? "rb" : "wb";
   _gz_file = gzopen(filename, file_mode_arg);
-  if (_gz_file == nullptr && *filename != '\0') { THROWERRNO("gzopen failed for: " << filename); }
+  if (_gz_file == nullptr && *filename != '\0')
+  {
+    std::cerr << "WARNING: gzopen failed for: " << filename << " (errno " << errno << ")" << std::endl;
+  }
 }
 
 gzip_file_adapter::gzip_file_adapter(int file_descriptor, file_mode mode) : reader(true /*is_resettable*/), _mode(mode)
