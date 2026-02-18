@@ -102,7 +102,6 @@ public:
     double ci = baseline.lower_bound_and_update();
     double expectation = policy_expectation.current();
 
-    // TODO don't check for it at every time step
     bool play_baseline = ci > expectation;
 
     if (play_baseline)

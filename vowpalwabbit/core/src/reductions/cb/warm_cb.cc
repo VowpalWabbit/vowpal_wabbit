@@ -299,7 +299,6 @@ void accumu_costs_iv_adf(warm_cb& data, learner& base, VW::example& ec)
 template <bool use_cs>
 void add_to_vali(warm_cb& data, VW::example& ec)
 {
-  // TODO: set the first parameter properly
   VW::example* ec_copy = new VW::example;
   VW::copy_example_data_with_label(ec_copy, &ec);
   data.ws_vali.push_back(ec_copy);

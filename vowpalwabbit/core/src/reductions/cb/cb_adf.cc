@@ -117,7 +117,7 @@ void VW::reductions::cb_adf::learn_sm(learner& base, VW::multi_ex& examples)
   // 6: restore example wts]
   _a_s.clear();
   _prob_s.clear();
-  // TODO: Check that predicted scores are always stored with the first example
+  // Predicted action scores are stored on the first example by cs_ldf.
   for (uint32_t i = 0; i < examples[0]->pred.a_s.size(); i++)
   {
     _a_s.push_back({examples[0]->pred.a_s[i].action, examples[0]->pred.a_s[i].score});
@@ -225,8 +225,7 @@ void VW::reductions::cb_adf::learn_mtr(learner& base, VW::multi_ex& examples)
           static_cast<float>(_gen_cs_mtr.per_model_state[_offset_index].action_sum));
 
   std::swap(_gen_cs_mtr.mtr_ec_seq[0]->pred.a_s, _a_s_mtr_cs);
-  // TODO!!! cb_labels are not getting properly restored (empty costs are
-  // dropped)
+  // cs_ldf_learn_or_predict saves/restores cb_labels for the examples in mtr_ec_seq.
   details::cs_ldf_learn_or_predict<true>(
       base, _gen_cs_mtr.mtr_ec_seq, _cb_labels, _cs_labels, _prepped_cs_labels, false, _offset);
   examples[_gen_cs_mtr.mtr_example]->num_features = nf;
@@ -451,7 +450,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_adf_setup(VW::setup_bas
                .keep()
                .default_value("mtr")
                .one_of({"ips", "dm", "dr", "mtr", "sm"})
-               .help("Contextual bandit method to use. Options: ips=Inverse Propensity Scoring, dm=Direct Method, dr=Doubly Robust, mtr=Multi-Task Regression, sm=Supervised Method"))
+               .help("Contextual bandit method to use. Options: ips=Inverse Propensity Scoring, dm=Direct Method, "
+                     "dr=Doubly Robust, mtr=Multi-Task Regression, sm=Supervised Method"))
       .add(make_option("per_model_save_load", per_model_save_load)
                .keep()
                .allow_override()
