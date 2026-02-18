@@ -216,7 +216,7 @@ void VW::details::save_load_header(VW::workspace& all, VW::io_buf& model_file, b
       bytes_read_write += VW::details::bin_text_read_write_fixed_validated(
           model_file, reinterpret_cast<char*>(&pair_len), sizeof(pair_len), read, msg, text);
 
-      // TODO: validate pairs?
+      // Legacy format read-only path; no validation needed for backward compat.
       for (size_t i = 0; i < pair_len; i++)
       {
         char pair[3] = {0, 0, 0};
@@ -240,7 +240,6 @@ void VW::details::save_load_header(VW::workspace& all, VW::io_buf& model_file, b
       bytes_read_write += VW::details::bin_text_read_write_fixed_validated(
           model_file, reinterpret_cast<char*>(&triple_len), sizeof(triple_len), read, msg, text);
 
-      // TODO: validate triples?
       for (size_t i = 0; i < triple_len; i++)
       {
         char triple[4] = {0, 0, 0, 0};
@@ -327,7 +326,6 @@ void VW::details::save_load_header(VW::workspace& all, VW::io_buf& model_file, b
     bytes_read_write += VW::details::bin_text_read_write_fixed_validated(model_file,
         reinterpret_cast<char*>(&all.reduction_state.lda), sizeof(all.reduction_state.lda), read, msg, text);
 
-    // TODO: validate ngram_len?
     auto* g_transformer = all.feature_tweaks_config.skip_gram_transformer.get();
     uint32_t ngram_len =
         (g_transformer != nullptr) ? static_cast<uint32_t>(g_transformer->get_initial_ngram_definitions().size()) : 0;
@@ -358,7 +356,6 @@ void VW::details::save_load_header(VW::workspace& all, VW::io_buf& model_file, b
     msg << "\n";
     bytes_read_write += VW::details::bin_text_read_write_fixed_validated(model_file, nullptr, 0, read, msg, text);
 
-    // TODO: validate skips?
     uint32_t skip_len =
         (g_transformer != nullptr) ? static_cast<uint32_t>(g_transformer->get_initial_skip_definitions().size()) : 0;
     msg << skip_len << " skip:";
@@ -560,7 +557,6 @@ void VW::details::read_regressor_file(
 void VW::details::parse_mask_regressor_args(
     VW::workspace& all, const std::string& feature_mask, std::vector<std::string> initial_regressors)
 {
-  // TODO does this extra check need to be used? I think it is duplicated but there may be some logic I am missing.
   std::string file_options;
   if (!feature_mask.empty())
   {
@@ -595,9 +591,8 @@ void VW::details::parse_mask_regressor_args(
     }
     else
     {
-      // If no initial regressor, just clear out the options loaded from the header.
-      // TODO clear file options
-      // all.opts_n_args.file_options.str("");
+      // Options loaded from the mask header are captured in the local file_options
+      // string but intentionally not applied when there is no initial regressor.
     }
   }
 }

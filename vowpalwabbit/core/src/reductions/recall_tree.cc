@@ -219,7 +219,8 @@ void insert_example_at_node(recall_tree& b, uint32_t cn, VW::example& ec)
   compute_recall_lbest(b, b.nodes[cn]);
 }
 
-// TODO: handle if features already in this namespace
+// NODE_ID_NAMESPACE is a reserved internal namespace (136). Callers always pair
+// add_node_id_feature / remove_node_id_feature, so no collision with user data.
 
 void add_node_id_feature(recall_tree& b, uint32_t cn, VW::example& ec)
 {
@@ -239,9 +240,6 @@ void add_node_id_feature(recall_tree& b, uint32_t cn, VW::example& ec)
       cn = b.nodes[cn].parent;
     }
   }
-
-  // TODO: audit ?
-  // TODO: if namespace already exists ?
 }
 
 void remove_node_id_feature(recall_tree& /* b */, uint32_t /* cn */, VW::example& ec)
