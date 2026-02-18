@@ -405,12 +405,9 @@ void learner::multipredict(polymorphic_ex ec, size_t lo, size_t count, polypredi
       _predict_f(ec);
       if (finalize_predictions)
       {
-        pred[c] = std::move(static_cast<VW::example&>(ec).pred);  // TODO: this breaks for complex labels because =
-                                                                  // doesn't do deep copy! (XXX we "fix" this by moving)
+        pred[c] = std::move(static_cast<VW::example&>(ec).pred);
       }
       else { pred[c].scalar = static_cast<VW::example&>(ec).partial_prediction; }
-      // pred[c].scalar = finalize_prediction ec.partial_prediction; // TODO: this breaks for complex labels because =
-      // doesn't do deep copy! // note works if ec.partial_prediction, but only if finalize_prediction is run????
       details::increment_offset(ec, feature_width_below, 1);
     }
     details::decrement_offset(ec, feature_width_below, lo + count);

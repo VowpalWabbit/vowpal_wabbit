@@ -333,8 +333,6 @@ void update_stats_igl(const VW::workspace& /* all */, VW::shared_data& sd, const
     else { num_features += example->get_num_features(); }
   }
 
-  // TODO: _metrics?
-
   bool labeled_example = true;
   if (data.known_cost.probability > 0)
   {

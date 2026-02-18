@@ -311,8 +311,6 @@ void update_stats_cs_active(const VW::workspace& /* all */, VW::shared_data& sd,
     }
 
     loss = (chosen_loss - min) * ec.weight;
-    // TODO(alberto): add option somewhere to allow using absolute loss instead?
-    // loss = chosen_loss;
   }
 
   sd.update(ec.test_only, !label.is_test_label(), loss, ec.weight, ec.get_num_features());
