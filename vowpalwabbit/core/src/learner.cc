@@ -403,10 +403,7 @@ void learner::multipredict(polymorphic_ex ec, size_t lo, size_t count, polypredi
     for (size_t c = 0; c < count; c++)
     {
       _predict_f(ec);
-      if (finalize_predictions)
-      {
-        pred[c] = std::move(static_cast<VW::example&>(ec).pred);
-      }
+      if (finalize_predictions) { pred[c] = std::move(static_cast<VW::example&>(ec).pred); }
       else { pred[c].scalar = static_cast<VW::example&>(ec).partial_prediction; }
       details::increment_offset(ec, feature_width_below, 1);
     }
