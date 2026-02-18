@@ -115,7 +115,6 @@ private:
   // used in output_example
   VW::cb_label _action_label;
   VW::cb_label _empty_label;
-  VW::action_scores _saved_pred;
   std::unique_ptr<cb_explore_metrics> _metrics;
 
   void _update_stats(

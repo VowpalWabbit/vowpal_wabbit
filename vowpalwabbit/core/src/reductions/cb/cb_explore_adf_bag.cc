@@ -41,9 +41,6 @@ public:
   void predict(VW::LEARNER::learner& base, VW::multi_ex& examples);
   void learn(VW::LEARNER::learner& base, VW::multi_ex& examples);
 
-  // TODO: This is an awful hack, we'll need to get rid of it at some point
-  const PredictionT& get_cached_prediction() const { return _action_probs; };
-
 private:
   float _epsilon;
   size_t _bag_size;
@@ -118,6 +115,10 @@ void cb_explore_adf_bag::predict(VW::LEARNER::learner& base, VW::multi_ex& examp
 
 void cb_explore_adf_bag::learn(VW::LEARNER::learner& base, VW::multi_ex& examples)
 {
+  // Copy predictions before the bag loop, since each sub-learner overwrites examples[0]->pred.a_s.
+  // Using copy (not move) so sub-learners can reuse the existing buffer.
+  auto saved_pred = examples[0]->pred.a_s;
+
   for (uint32_t i = 0; i < _bag_size; i++)
   {
     // learn_count determines how many times learner (i) will learn from this
@@ -132,33 +133,11 @@ void cb_explore_adf_bag::learn(VW::LEARNER::learner& base, VW::multi_ex& example
       VW::LEARNER::multiline_learn_or_predict<true>(base, examples, examples[0]->ft_offset, i);
     }
   }
+
+  // Restore predictions so that update_stats/print_update/output_example_prediction see the correct values.
+  examples[0]->pred.a_s = std::move(saved_pred);
 }
 
-void update_stats_bag(const VW::workspace& all, VW::shared_data& sd,
-    const cb_explore_adf_base<cb_explore_adf_bag>& data, const VW::multi_ex& ec_seq, VW::io::logger& logger)
-{
-  assert(ec_seq.size() > 0);
-  ec_seq[0]->pred.a_s = data.explore.get_cached_prediction();
-  cb_explore_adf_base<cb_explore_adf_bag>::update_stats(all, sd, data, ec_seq, logger);
-}
-
-void print_update_bag(VW::workspace& all, VW::shared_data& sd, const cb_explore_adf_base<cb_explore_adf_bag>& data,
-    const VW::multi_ex& ec_seq, VW::io::logger& logger)
-{
-  assert(ec_seq.size() > 0);
-  // TODO: We should not be modifying a const object...
-  ec_seq[0]->pred.a_s = data.explore.get_cached_prediction();
-  cb_explore_adf_base<cb_explore_adf_bag>::print_update(all, sd, data, ec_seq, logger);
-}
-
-void output_example_prediction_bag(VW::workspace& all, const cb_explore_adf_base<cb_explore_adf_bag>& data,
-    const VW::multi_ex& ec_seq, VW::io::logger& logger)
-{
-  assert(ec_seq.size() > 0);
-  // TODO: We should not be modifying a const object...
-  ec_seq[0]->pred.a_s = data.explore.get_cached_prediction();
-  cb_explore_adf_base<cb_explore_adf_bag>::output_example_prediction(all, data, ec_seq, logger);
-}
 }  // namespace
 
 std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_bag_setup(VW::setup_base_i& stack_builder)
@@ -207,9 +186,9 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cb_explore_adf_bag_setup(V
                .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                .set_feature_width(feature_width)
-               .set_output_example_prediction(::output_example_prediction_bag)
-               .set_update_stats(::update_stats_bag)
-               .set_print_update(::print_update_bag)
+               .set_output_example_prediction(explore_type::output_example_prediction)
+               .set_update_stats(explore_type::update_stats)
+               .set_print_update(explore_type::print_update)
                .set_persist_metrics(explore_type::persist_metrics)
                .build();
   return l;
