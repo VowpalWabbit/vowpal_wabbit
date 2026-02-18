@@ -407,10 +407,7 @@ void multipredict(nn& n, learner& base, VW::example& ec, size_t count, size_t st
   {
     if (c == 0) { predict_or_learn_multi<false, true>(n, base, ec); }
     else { predict_or_learn_multi<false, false>(n, base, ec); }
-    if (finalize_predictions)
-    {
-      pred[c] = std::move(ec.pred);
-    }
+    if (finalize_predictions) { pred[c] = std::move(ec.pred); }
     else { pred[c].scalar = ec.partial_prediction; }
     ec.ft_offset += static_cast<uint64_t>(step);
   }

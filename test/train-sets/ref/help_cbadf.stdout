@@ -252,6 +252,9 @@ Weight Options:
     --cbify arg                             Translate cbify to cb_adf. Disable with cb_force_legacy (type:
                                             uint, keep)
     --cb_force_legacy                       Default to non-adf cb implementation (cb_algs) (type: bool, keep)
+[Reduction] Cost Sensitive Loss Options:
+    --cs_absolute_loss                      Report absolute cost as loss instead of relative (cost - min_cost)
+                                            (type: bool)
 [Reduction] Cost Sensitive One Against All with Label Dependent Features Options:
     --csoaa_ldf arg                         Use one-against-all multiclass learning with label dependent
                                             features (type: str, choices {m, mc, multiline, multiline-classifier},

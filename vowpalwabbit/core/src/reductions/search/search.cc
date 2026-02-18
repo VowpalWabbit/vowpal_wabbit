@@ -539,8 +539,8 @@ void print_update_search(VW::workspace& all, VW::shared_data& /* sd */, const se
   auto const& total_cach = number_to_natural(priv.total_cache_hits);
   auto const& total_exge = number_to_natural(priv.total_examples_generated);
 
-  trace << fmt::format("{:<10.6f} {:<10.6f} {:>8s}  [{}] [{}] {:>5d} {:>5d}  {:>7s}  {:>7s}  {:>7s}  {:<8f}",
-      avg_loss, avg_loss_since, inst_cntr, true_label, pred_label, static_cast<int>(priv.read_example_last_pass),
+  trace << fmt::format("{:<10.6f} {:<10.6f} {:>8s}  [{}] [{}] {:>5d} {:>5d}  {:>7s}  {:>7s}  {:>7s}  {:<8f}", avg_loss,
+      avg_loss_since, inst_cntr, true_label, pred_label, static_cast<int>(priv.read_example_last_pass),
       static_cast<int>(priv.current_policy), total_pred, total_cach, total_exge,
       priv.active_csoaa ? priv.num_calls_to_run : priv.beta);
 
@@ -2255,8 +2255,7 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, VW::
   }
 
   // if there's nothing to train on, we're done!
-  if ((priv.loss_declared_cnt == 0) || (priv.t + priv.meta_t == 0) ||
-      (priv.rollout_method == roll_method::NO_ROLLOUT))
+  if ((priv.loss_declared_cnt == 0) || (priv.t + priv.meta_t == 0) || (priv.rollout_method == roll_method::NO_ROLLOUT))
   {
     return;
   }

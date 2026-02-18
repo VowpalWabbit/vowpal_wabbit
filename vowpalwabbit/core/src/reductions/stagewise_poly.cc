@@ -6,6 +6,7 @@
 
 #include "vw/config/options.h"
 #include "vw/core/accumulate.h"
+#include "vw/core/debug_log.h"
 #include "vw/core/guard.h"
 #include "vw/core/label_parser.h"
 #include "vw/core/learner.h"
@@ -17,8 +18,6 @@
 #include <cassert>
 #include <cfloat>
 #include <cmath>
-
-#include "vw/core/debug_log.h"
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::STAGEWISE_POLY
@@ -362,8 +361,8 @@ void sort_data_update_support(stagewise_poly& poly)
     if VW_STD17_CONSTEXPR (VW_DEBUG_LOG)
     {
       *(poly.all->output_runtime.trace_message)
-          << "Adding feature " << pos << "/" << num_new_features << " || wid " << poly.sd[pos].wid
-          << " || sort value " << poly.sd[pos].weightsal << std::endl;
+          << "Adding feature " << pos << "/" << num_new_features << " || wid " << poly.sd[pos].wid << " || sort value "
+          << poly.sd[pos].weightsal << std::endl;
     }
   }
 

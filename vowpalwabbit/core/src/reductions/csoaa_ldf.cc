@@ -567,7 +567,7 @@ void print_update_csoaa_ldf_rank(VW::workspace& all, VW::shared_data& /* sd */, 
   VW::details::print_cs_update_action_scores(all, predicted_ec == nullptr, cs_count_features(ec_seq), preds);
 }
 
-void update_stats_csoaa_ldf_prob(const VW::workspace& all, VW::shared_data& sd, const ldf& /* data */,
+void update_stats_csoaa_ldf_prob(const VW::workspace& /* all */, VW::shared_data& sd, const ldf& /* data */,
     const VW::multi_ex& ec_seq, VW::io::logger& logger)
 {
   if (test_ldf_sequence(ec_seq, logger)) { sd.weighted_unlabeled_examples += ec_seq[0]->weight; }
@@ -784,8 +784,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::csldf_setup(VW::setup_base
     }
   }
 
-  all.parser_runtime.example_parser->emptylines_separate_examples =
-      true;  // always multiline; singleline was removed
+  all.parser_runtime.example_parser->emptylines_separate_examples = true;  // always multiline; singleline was removed
 
   ld->label_features.max_load_factor(0.25);
   ld->label_features.reserve(256);

@@ -231,12 +231,12 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::lrq_setup(VW::setup_base_i
       ns_count[static_cast<unsigned char>(pair[0])]++;
       ns_count[static_cast<unsigned char>(pair[1])]++;
     }
-    for (const auto& [ns, count] : ns_count)
+    for (const auto& entry : ns_count)
     {
-      if (count > 1)
+      if (entry.second > 1)
       {
-        all.logger.err_warn(
-            "Namespace '{}' appears in {} LRQ pairs. This may cause weight collisions.", static_cast<char>(ns), count);
+        all.logger.err_warn("Namespace '{}' appears in {} LRQ pairs. This may cause weight collisions.",
+            static_cast<char>(entry.first), entry.second);
       }
     }
   }

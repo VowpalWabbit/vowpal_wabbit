@@ -20,13 +20,13 @@ Implementation by Miro Dudik.
 #include "vw/core/shared_data.h"
 #include "vw/core/simple_label.h"
 
+#include <fmt/format.h>
 #include <sys/timeb.h>
 
 #include <cassert>
 #include <cfloat>
 #include <chrono>
 #include <cmath>
-#include <fmt/format.h>
 #include <cstring>
 #include <exception>
 #include <fstream>
@@ -131,7 +131,7 @@ constexpr const char* CURV_MESSAGE =
     "Zero or negative curvature detected.\n"
     "To increase curvature you can increase regularization or rescale features.\n"
     "It is also possible that you have reached numerical accuracy\n"
-    "and further decrease in the objective cannot be reliably detected.\n";
+    "and further decrease in the objective cannot be reliably detected.";
 
 void zero_derivative(VW::workspace& all) { all.weights.set_zero(W_GT); }
 
@@ -701,7 +701,10 @@ int process_pass(VW::workspace& all, bfgs& b)
       b.t_end_global = std::chrono::system_clock::now();
       b.net_time = static_cast<double>(
           std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
-      if (!all.output_config.quiet) { *(all.output_runtime.trace_message) << fmt::format("{:<10s}\t{:<10.5f}\t{:<.5f}\n", "", d_mag, b.step_size); }
+      if (!all.output_config.quiet)
+      {
+        *(all.output_runtime.trace_message) << fmt::format("{:<10s}\t{:<10.5f}\t{:<.5f}\n", "", d_mag, b.step_size);
+      }
       b.predictions.clear();
       update_weight(all, b.step_size);
     }
@@ -725,14 +728,15 @@ int process_pass(VW::workspace& all, bfgs& b)
         {
           if (all.sd->holdout_sum_loss_since_last_pass == 0. && all.sd->weighted_holdout_examples_since_last_pass == 0.)
           {
-            *(all.output_runtime.trace_message) << fmt::format("{:2d} ", static_cast<long unsigned int>(b.current_pass) + 1);
+            *(all.output_runtime.trace_message)
+                << fmt::format("{:2d} ", static_cast<long unsigned int>(b.current_pass) + 1);
             *(all.output_runtime.trace_message) << "h unknown    ";
           }
           else
           {
-            *(all.output_runtime.trace_message) << fmt::format("{:2d} h{:<10.5f}\t",
-                static_cast<long unsigned int>(b.current_pass) + 1,
-                all.sd->holdout_sum_loss_since_last_pass / all.sd->weighted_holdout_examples_since_last_pass);
+            *(all.output_runtime.trace_message)
+                << fmt::format("{:2d} h{:<10.5f}\t", static_cast<long unsigned int>(b.current_pass) + 1,
+                       all.sd->holdout_sum_loss_since_last_pass / all.sd->weighted_holdout_examples_since_last_pass);
           }
         }
         else
@@ -767,7 +771,8 @@ int process_pass(VW::workspace& all, bfgs& b)
         float ratio = (b.step_size == 0.f) ? 0.f : static_cast<float>(new_step) / b.step_size;
         if (!all.output_config.quiet)
         {
-          *(all.output_runtime.trace_message) << fmt::format("{:<10s}\t{:<10s}\t(revise x {:.1f})\t{:<.5f}\n", "", "", ratio, new_step);
+          *(all.output_runtime.trace_message)
+              << fmt::format("{:<10s}\t{:<10s}\t(revise x {:.1f})\t{:<.5f}\n", "", "", ratio, new_step);
         }
         b.predictions.clear();
         update_weight(all, static_cast<float>(-b.step_size + new_step));
@@ -785,8 +790,9 @@ int process_pass(VW::workspace& all, bfgs& b)
         double rel_decrease = (b.previous_loss_sum - b.loss_sum) / b.previous_loss_sum;
         if (!std::isnan(static_cast<float>(rel_decrease)) && b.backstep_on && fabs(rel_decrease) < b.rel_threshold)
         {
+          b.all->logger.out_info("");
           b.all->logger.out_info(
-              "\nTermination condition reached in pass {}: decrease in loss less than {:.3f}%.\n"
+              "Termination condition reached in pass {}: decrease in loss less than {:.3f}%.\n"
               "If you want to optimize further, decrease termination threshold.",
               static_cast<long int>(b.current_pass) + 1, b.rel_threshold * 100.0);
           status = LEARN_CONV;
@@ -814,7 +820,10 @@ int process_pass(VW::workspace& all, bfgs& b)
           b.t_end_global = std::chrono::system_clock::now();
           b.net_time = static_cast<double>(
               std::chrono::duration_cast<std::chrono::milliseconds>(b.t_end_global - b.t_start_global).count());
-          if (!all.output_config.quiet) { *(all.output_runtime.trace_message) << fmt::format("{:<10s}\t{:<10.5f}\t{:<.5f}\n", "", d_mag, b.step_size); }
+          if (!all.output_config.quiet)
+          {
+            *(all.output_runtime.trace_message) << fmt::format("{:<10s}\t{:<10.5f}\t{:<.5f}\n", "", d_mag, b.step_size);
+          }
           b.predictions.clear();
           update_weight(all, b.step_size);
         }
@@ -860,7 +869,8 @@ int process_pass(VW::workspace& all, bfgs& b)
 
       if (!all.output_config.quiet)
       {
-        *(all.output_runtime.trace_message) << fmt::format("{:<10.5f}\t{:<10.5f}\t{:<.5f}\n", b.curvature / b.importance_weight_sum, d_mag, b.step_size);
+        *(all.output_runtime.trace_message) << fmt::format(
+            "{:<10.5f}\t{:<10.5f}\t{:<.5f}\n", b.curvature / b.importance_weight_sum, d_mag, b.step_size);
       }
       b.gradient_pass = true;
     }  // now start computing derivatives.
@@ -1082,9 +1092,8 @@ void save_load(bfgs& b, VW::io_buf& model_file, bool read, bool text)
     if (!all->output_config.quiet)
     {
       *(all->output_runtime.trace_message) << fmt::format(
-          "{:>2s} {:<10s}\t{:<10s}\t{:<10s}\t {:<10s}\t{:<10s}\t{:<10s}\t{:<10s}\t{:<10s}\t{:<s}\n",
-          "##", "avg. loss", "der. mag.", "d. m. cond.", "wolfe1", "wolfe2", "mix fraction",
-          "curvature", "dir. magnitude", "step size");
+          "{:>2s} {:<10s}\t{:<10s}\t{:<10s}\t {:<10s}\t{:<10s}\t{:<10s}\t{:<10s}\t{:<10s}\t{:<s}\n", "##", "avg. loss",
+          "der. mag.", "d. m. cond.", "wolfe1", "wolfe2", "mix fraction", "curvature", "dir. magnitude", "step size");
       all->output_runtime.trace_message->precision(5);
     }
 
@@ -1144,7 +1153,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::bfgs_setup(VW::setup_base_
   bfgs_options.add(
       make_option("bfgs", bfgs_option).keep().necessary().help("Use conjugate gradient based optimization"));
   bfgs_options.add(make_option("hessian_on", local_hessian_on).help("Use second derivative in line search"));
-  bfgs_options.add(make_option("mem", local_m).default_value(15).help("Number of stored corrections for L-BFGS optimization"));
+  bfgs_options.add(
+      make_option("mem", local_m).default_value(15).help("Number of stored corrections for L-BFGS optimization"));
   bfgs_options.add(make_option("termination", local_rel_threshold).default_value(0.001f).help("Termination threshold"));
 
   auto conjugate_gradient_enabled = options.add_parse_and_check_necessary(conjugate_gradient_options);
