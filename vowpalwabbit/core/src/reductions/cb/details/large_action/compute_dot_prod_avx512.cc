@@ -100,8 +100,7 @@ float compute_dot_prod_avx512(uint64_t column_index, VW::workspace* _all, uint64
       : *ex->extent_interactions;
   if (!extent_interactions.empty())
   {
-    // TODO: Add support for extent_interactions.
-    // This code should not be reachable, since we checked conflicting command line options.
+    // Note: extent_interactions are not supported by SIMD; blocked by conflicting option checks.
     _all->logger.err_error("Extent_interactions are not supported yet in large action space with SIMD implementations");
   }
 
@@ -109,8 +108,7 @@ float compute_dot_prod_avx512(uint64_t column_index, VW::workspace* _all, uint64
   {
     if (ns.size() != 2)
     {
-      // TODO: Add support for interactions other than quadratics.
-      // This code should not be reachable, since we checked conflicting command line options.
+      // Note: only quadratic interactions are supported by SIMD; blocked by conflicting option checks.
       _all->logger.err_error(
           "Generic interactions are not supported yet in large action space with SIMD implementations");
     }

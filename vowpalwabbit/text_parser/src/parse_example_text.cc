@@ -55,7 +55,7 @@ private:
     // That means if there is a null character somewhere in the range, it will terminate
     // the stringstream at that point! Minor hack to give us the behavior we actually want here (i think)..
     // the alternative is to do what the old code was doing.. str(_line).c_str()...
-    // TODO: Find a sane way to handle nulls in the middle of a string (either VW::string_view or substring)
+    // Truncate at first null to avoid partial output from string_view's operator<<.
     auto tmp_view = _line.substr(0, _line.find('\0'));
     std::stringstream ss;
     ss << message << var_msg << message2 << "in Example #" << example_number << ": \"" << tmp_view << "\"";

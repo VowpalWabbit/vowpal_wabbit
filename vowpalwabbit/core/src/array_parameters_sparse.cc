@@ -61,7 +61,7 @@ VW::sparse_parameters::sparse_parameters() : _weight_mask(0), _stride_shift(0), 
 
 void VW::sparse_parameters::shallow_copy(const sparse_parameters& input)
 {
-  // TODO: this is level-1 copy (VW::weight* are stilled shared)
+  // Note: level-1 shallow copy. VW::weight* are intentionally shared.
   _map = input._map;
   _weight_mask = input._weight_mask;
   _stride_shift = input._stride_shift;

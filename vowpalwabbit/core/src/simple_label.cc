@@ -26,17 +26,6 @@ VW::simple_label::simple_label(float label) : label(label) {}
 
 void VW::simple_label::reset_to_default() { label = FLT_MAX; }
 
-// TODO: Delete once there are no more usages.
-void VW::details::print_update(VW::workspace& all, const VW::example& ec)
-{
-  if (all.sd->weighted_labeled_examples + all.sd->weighted_unlabeled_examples >= all.sd->dump_interval &&
-      !all.output_config.quiet && !all.reduction_state.bfgs)
-  {
-    all.sd->print_update(*all.output_runtime.trace_message, all.passes_config.holdout_set_off,
-        all.passes_config.current_pass, ec.l.simple.label, ec.pred.scalar, ec.get_num_features());
-  }
-}
-
 void VW::details::output_and_account_example(VW::workspace& all, const VW::example& ec)
 {
   const simple_label& ld = ec.l.simple;
