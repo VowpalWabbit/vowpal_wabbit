@@ -79,7 +79,8 @@ flat_example* flatten_sort_example(VW::workspace& all, VW::example* ec)
   return &fec;
 }
 
-// TODO: do not depend on unstable cache format for model format of KSVM.
+// NOTE: KSVM model format reuses cache serialization for flat_example.
+// Decoupling would break backward compatibility with existing KSVM models.
 size_t read_model_field_flat_example(VW::io_buf& io, flat_example& fe, VW::label_parser& lbl_parser)
 {
   size_t bytes = 0;

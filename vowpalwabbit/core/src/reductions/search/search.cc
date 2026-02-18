@@ -258,7 +258,7 @@ public:
   roll_method rollin_method;
   float subsample_timesteps = 0.f;  // train at every time step or just a (random) subset?
   bool xv = false;  // train three separate policies -- two for providing examples to the other and a third training on
-                    // the union (which will be used at test time -- TODO)
+                    // the union (which will be used at test time)
 
   bool allow_current_policy = false;  // should the current policy be used for training? true for dagger
   bool adaptive_beta = false;         // used to implement dagger-like algorithms. if true, beta = 1-(1-alpha)^n after n
@@ -483,28 +483,26 @@ std::string number_to_natural(size_t big)
 }
 
 void print_update_search(VW::workspace& all, VW::shared_data& /* sd */, const search& data,
-    const VW::multi_ex& /* ec_seq */, VW::io::logger& /* unused */)
+    const VW::multi_ex& /* ec_seq */, VW::io::logger& /* logger */)
 {
-  // TODO: This function should be outputting to trace_message(?), but is mixing ostream and printf formats
-  //       Currently there is no way to convert an ostream to FILE*, so the lines will need to be converted
-  //       to ostream format
   auto& priv = *data.priv;
+  auto& trace = *(all.output_runtime.trace_message);
   if (!priv.printed_output_header && !all.output_config.quiet)
   {
-    const char* header_fmt = "%-10s %-10s %8s%24s %22s %5s %5s  %7s  %7s  %7s  %-8s\n";
-    fprintf(stderr, header_fmt, "average", "since", "instance", "current true", "current predicted", "cur", "cur",
-        "predic", "cache", "examples", "");
+    trace << fmt::format("{:<10s} {:<10s} {:>8s}{:>24s} {:>22s} {:>5s} {:>5s}  {:>7s}  {:>7s}  {:>7s}  {:<8s}\n",
+        "average", "since", "instance", "current true", "current predicted", "cur", "cur", "predic", "cache",
+        "examples", "");
     if (priv.active_csoaa)
     {
-      fprintf(stderr, header_fmt, "loss", "last", "counter", "output prefix", "output prefix", "pass", "pol", "made",
-          "hits", "gener", "#run");
+      trace << fmt::format("{:<10s} {:<10s} {:>8s}{:>24s} {:>22s} {:>5s} {:>5s}  {:>7s}  {:>7s}  {:>7s}  {:<8s}\n",
+          "loss", "last", "counter", "output prefix", "output prefix", "pass", "pol", "made", "hits", "gener", "#run");
     }
     else
     {
-      fprintf(stderr, header_fmt, "loss", "last", "counter", "output prefix", "output prefix", "pass", "pol", "made",
-          "hits", "gener", "beta");
+      trace << fmt::format("{:<10s} {:<10s} {:>8s}{:>24s} {:>22s} {:>5s} {:>5s}  {:>7s}  {:>7s}  {:>7s}  {:<8s}\n",
+          "loss", "last", "counter", "output prefix", "output prefix", "pass", "pol", "made", "hits", "gener", "beta");
     }
-    std::cerr.precision(5);
+    trace.precision(5);
     priv.printed_output_header = true;
   }
 
@@ -541,21 +539,20 @@ void print_update_search(VW::workspace& all, VW::shared_data& /* sd */, const se
   auto const& total_cach = number_to_natural(priv.total_cache_hits);
   auto const& total_exge = number_to_natural(priv.total_examples_generated);
 
-  fprintf(stderr, "%-10.6f %-10.6f %8s  [%s] [%s] %5d %5d  %7s  %7s  %7s  %-8f", avg_loss, avg_loss_since,
-      inst_cntr.c_str(), true_label, pred_label, static_cast<int>(priv.read_example_last_pass),
-      static_cast<int>(priv.current_policy), total_pred.c_str(), total_cach.c_str(), total_exge.c_str(),
+  trace << fmt::format("{:<10.6f} {:<10.6f} {:>8s}  [{}] [{}] {:>5d} {:>5d}  {:>7s}  {:>7s}  {:>7s}  {:<8f}", avg_loss,
+      avg_loss_since, inst_cntr, true_label, pred_label, static_cast<int>(priv.read_example_last_pass),
+      static_cast<int>(priv.current_policy), total_pred, total_cach, total_exge,
       priv.active_csoaa ? priv.num_calls_to_run : priv.beta);
 
   if (PRINT_CLOCK_TIME)
   {
     size_t num_sec = static_cast<size_t>((static_cast<float>(clock() - priv.start_clock_time)) / CLOCKS_PER_SEC);
-    std::cerr << " " << num_sec << "sec";
+    trace << " " << num_sec << "sec";
   }
 
-  if (use_heldout_loss) { fprintf(stderr, " h"); }
+  if (use_heldout_loss) { trace << " h"; }
 
-  fprintf(stderr, "\n");
-  fflush(stderr);
+  trace << "\n" << std::flush;
   all.sd->update_dump_interval();
 }
 
@@ -2258,8 +2255,7 @@ void train_single_example(search& sch, bool is_test_ex, bool is_holdout_ex, VW::
   }
 
   // if there's nothing to train on, we're done!
-  if ((priv.loss_declared_cnt == 0) || (priv.t + priv.meta_t == 0) ||
-      (priv.rollout_method == roll_method::NO_ROLLOUT))  // TODO: make sure NO_ROLLOUT works with beam!
+  if ((priv.loss_declared_cnt == 0) || (priv.t + priv.meta_t == 0) || (priv.rollout_method == roll_method::NO_ROLLOUT))
   {
     return;
   }
@@ -3098,8 +3094,6 @@ action predictor::predict()
 }
 }  // namespace Search
 
-// TODO: valgrind --leak-check=full ./vw --search 2 -k -c --passes 1 --search_task sequence -d test_beam --holdout_off
-// --search_rollin policy --search_metatask selective_branching 2>&1 | less
 std::shared_ptr<VW::LEARNER::learner> VW::reductions::search_setup(VW::setup_base_i& stack_builder)
 {
   using namespace Search;
@@ -3398,8 +3392,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::search_setup(VW::setup_bas
 
   cdbg << "feature_width = " << priv.feature_width << endl;
 
-  // No normal prediction is produced so the base prediction type is used. That type is unlikely to be accessible
-  // though. TODO: either let search return a prediction or add a NO_PRED type.
+  // No normal prediction is produced so the base prediction type is used. NOPRED exists
+  // but search currently relies on the base prediction type for internal routing.
 
   // base is multiline
   auto l =

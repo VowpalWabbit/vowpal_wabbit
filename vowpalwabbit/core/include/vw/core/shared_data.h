@@ -57,6 +57,9 @@ public:
   double multiclass_log_loss = 0.0;
   double holdout_multiclass_log_loss = 0.0;
 
+  // for --cs_absolute_loss
+  bool cs_use_absolute_loss = false;
+
   bool is_more_than_two_labels_observed = false;
   float first_observed_label = FLT_MAX;
   float second_observed_label = FLT_MAX;

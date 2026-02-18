@@ -16,6 +16,7 @@
 
 #include <cfloat>
 #include <cstring>
+#include <map>
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -93,8 +94,8 @@ void predict_or_learn(lrq_state& lrq, learner& base, VW::example& ec)
   {
     // Add left LRQ features, holding right LRQ features fixed
     //     and vice versa
-    // TODO: what happens with --lrq ab2 --lrq ac2
-    //       i.e. namespace occurs multiple times (?)
+    // NOTE: when a namespace appears in multiple LRQ pairs (e.g., --lrq ab2 --lrq ac2),
+    // the generated features accumulate across pairs, which may cause weight index collisions.
 
     for (std::string const& i : lrq.lrpairs)
     {
@@ -212,8 +213,6 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::lrq_setup(VW::setup_base_i
 
       *(all.output_runtime.trace_message) << i << " ";
     }
-    // TODO: colon-syntax
-
     unsigned int k = atoi(i.c_str() + 2);
 
     lrq->lrindices[static_cast<int>(i[0])] = true;
@@ -223,6 +222,24 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::lrq_setup(VW::setup_base_i
   }
 
   if (!all.output_config.quiet) { *(all.output_runtime.trace_message) << std::endl; }
+
+  // Warn if any namespace appears in multiple LRQ pairs (potential weight collision)
+  {
+    std::map<unsigned char, int> ns_count;
+    for (const auto& pair : lrq->lrpairs)
+    {
+      ns_count[static_cast<unsigned char>(pair[0])]++;
+      ns_count[static_cast<unsigned char>(pair[1])]++;
+    }
+    for (const auto& entry : ns_count)
+    {
+      if (entry.second > 1)
+      {
+        all.logger.err_warn("Namespace '{}' appears in {} LRQ pairs. This may cause weight collisions.",
+            static_cast<char>(entry.first), entry.second);
+      }
+    }
+  }
 
   all.reduction_state.total_feature_width = all.reduction_state.total_feature_width * static_cast<uint64_t>(1 + maxk);
   auto base = stack_builder.setup_base_learner(1 + maxk);

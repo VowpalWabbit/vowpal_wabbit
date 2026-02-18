@@ -228,7 +228,10 @@ bool config_oracle<oracle_impl>::insert_config(set_ns_list_t&& new_elements,
         else
         {
           configs[valid_config_size].reset(std::move(configs[i].elements), default_lease, conf_type);
-          // TODO: do we have to push here to index_quue?
+          float priority = calc_priority(configs[valid_config_size], ns_counter);
+          index_queue.push(std::make_pair(priority, valid_config_size));
+          ++valid_config_size;
+          return true;
         }
       }
     }

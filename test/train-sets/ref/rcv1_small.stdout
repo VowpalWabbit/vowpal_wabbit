@@ -1,4 +1,4 @@
 [info] m = 7, allocated 18M for weights and mem
-
-Termination condition reached in pass 13: decrease in loss less than 0.100%.
+[info] 
+[info] Termination condition reached in pass 13: decrease in loss less than 0.100%.
 If you want to optimize further, decrease termination threshold.

@@ -236,9 +236,7 @@ void VW::details::output_cs_example(
       all.logger.err_warn("csoaa predicted an invalid class. Are all multi-class labels in the {{1..k}} range?");
     }
 
-    loss = (chosen_loss - min) * ec.weight;
-    // TODO(alberto): add option somewhere to allow using absolute loss instead?
-    // loss = chosen_loss;
+    loss = all.sd->cs_use_absolute_loss ? (chosen_loss * ec.weight) : ((chosen_loss - min) * ec.weight);
   }
 
   all.sd->update(ec.test_only, !label.is_test_label(), loss, ec.weight, ec.get_num_features());
@@ -305,9 +303,7 @@ void VW::details::update_stats_cs_label(
       logger.err_warn("csoaa predicted an invalid class. Are all multi-class labels in the {{1..k}} range?");
     }
 
-    loss = (chosen_loss - min) * ec.weight;
-    // TODO(alberto): add option somewhere to allow using absolute loss instead?
-    // loss = chosen_loss;
+    loss = sd.cs_use_absolute_loss ? (chosen_loss * ec.weight) : ((chosen_loss - min) * ec.weight);
   }
 
   sd.update(ec.test_only, !label.is_test_label(), loss, ec.weight, ec.get_num_features());

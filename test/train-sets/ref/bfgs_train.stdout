@@ -1,5 +1,5 @@
 [info] m = 15, allocated 34M for weights and mem
-In bfgs_iter_middle: Zero or negative curvature detected.
+[info] In bfgs_iter_middle: Zero or negative curvature detected.
 To increase curvature you can increase regularization or rescale features.
 It is also possible that you have reached numerical accuracy
 and further decrease in the objective cannot be reliably detected.
