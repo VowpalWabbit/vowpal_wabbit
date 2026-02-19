@@ -43,7 +43,7 @@ VowpalWabbitBase::VowpalWabbitBase(VowpalWabbitSettings^ settings)
       if (settings->Arguments != nullptr)
         string = msclr::interop::marshal_as<std::string>(settings->Arguments);
 
-	  VW::trace_message_t trace_listener = nullptr;
+	  trace_message_t trace_listener = nullptr;
 	  void* trace_context = nullptr;
 
 	  if (settings->TraceListener != nullptr)

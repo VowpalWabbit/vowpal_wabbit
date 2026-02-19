@@ -33,7 +33,7 @@ private:
   /// <summary>
   /// The native example.
   /// </summary>
-  VW::example* m_example;
+  example* m_example;
 
   // float(*m_sum_of_squares)(float*, float*);
 
@@ -46,7 +46,7 @@ internal:
   /// <param name="features">Pointer into features owned by <see cref="VowpalWabbitExample"/>.</param>
   /// <param name="index">The namespace index.</param>
   /// <param name="example">The native example to build up.</param>
-  VowpalWabbitNamespaceBuilder(features* features, unsigned char index, VW::example* example);
+  VowpalWabbitNamespaceBuilder(features* features, unsigned char index, example* example);
 
 public:
   ~VowpalWabbitNamespaceBuilder();

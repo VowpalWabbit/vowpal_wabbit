@@ -167,7 +167,7 @@ void VowpalWabbit::Learn(List<VowpalWabbitExample^>^ examples)
   {
     for each (auto ex in examples)
     {
-      VW::example* pex = ex->m_example;
+      example* pex = ex->m_example;
       ex_coll.push_back(pex);
     }
 
@@ -187,7 +187,7 @@ void VowpalWabbit::Predict(List<VowpalWabbitExample^>^ examples)
   {
     for each (auto ex in examples)
     {
-      VW::example* pex = ex->m_example;
+      example* pex = ex->m_example;
       ex_coll.push_back(pex);
     }
 
@@ -311,7 +311,7 @@ List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<By
 			state->examples->Add(ex);
 
 			VW::multi_ex examples;
-			VW::example* native_example = ex->m_example;
+			example* native_example = ex->m_example;
 			examples.push_back(native_example);
 
 			interior_ptr<ParseJsonState^> state_ptr = &state;
@@ -380,7 +380,7 @@ List<VowpalWabbitExample^>^ VowpalWabbit::ParseDecisionServiceJson(cli::array<By
 			  state->examples->Add(ex);
 
 			  VW::multi_ex examples;
-			  VW::example* native_example = ex->m_example;
+			  example* native_example = ex->m_example;
 			  examples.push_back(native_example);
 
 			  interior_ptr<ParseJsonState^> state_ptr = &state;

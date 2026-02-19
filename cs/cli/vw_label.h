@@ -29,8 +29,8 @@ using namespace Newtonsoft::Json;
 
 public interface class ILabel
   {
-    void UpdateExample(VW::workspace* vw, VW::example* ex);
-    void ReadFromExample(VW::example* ex);
+    void UpdateExample(VW::workspace* vw, example* ex);
+    void ReadFromExample(example* ex);
   };
 
 public ref class ContextualBanditLabel sealed : ILabel
@@ -98,7 +98,7 @@ public:
     }
   }
 
-  virtual void ReadFromExample(VW::example* ex)
+  virtual void ReadFromExample(example* ex)
   {
     VW::cb_label* ld = &ex->l.cb;
     if (ld->costs.size() > 0)
@@ -111,7 +111,7 @@ public:
     }
   }
 
-  virtual void UpdateExample(VW::workspace* vw, VW::example* ex)
+  virtual void UpdateExample(VW::workspace* vw, example* ex)
   {
     VW::cb_label* ld = &ex->l.cb;
     VW::cb_class f;
@@ -151,7 +151,7 @@ private:
 public:
   static SharedLabel^ Instance = gcnew SharedLabel;
 
-  virtual void UpdateExample(VW::workspace* vw, VW::example* ex)
+  virtual void UpdateExample(VW::workspace* vw, example* ex)
   {
     VW::cb_label* ld = &ex->l.cb;
     VW::cb_class f;
@@ -168,7 +168,7 @@ public:
   { return "shared";
   }
 
-  virtual void ReadFromExample(VW::example* ex)
+  virtual void ReadFromExample(example* ex)
   {
   }
 };
@@ -219,7 +219,7 @@ public:
     }
   }
 
-  virtual void ReadFromExample(VW::example* ex)
+  virtual void ReadFromExample(example* ex)
   {
     auto* ld = &ex->l.simple;
 
@@ -230,7 +230,7 @@ public:
     m_initial = red_fts.initial;
   }
 
-  virtual void UpdateExample(VW::workspace* vw, VW::example* ex)
+  virtual void UpdateExample(VW::workspace* vw, example* ex)
   {
     auto* ld = &ex->l.simple;
     ld->label = m_label;
@@ -312,11 +312,11 @@ public:
     }
   }
 
-  virtual void ReadFromExample(VW::example* ex)
+  virtual void ReadFromExample(example* ex)
   { throw gcnew NotImplementedException("to be done...");
   }
 
-  virtual void UpdateExample(VW::workspace* vw, VW::example* ex) { throw gcnew NotImplementedException("to be done..."); }
+  virtual void UpdateExample(VW::workspace* vw, example* ex) { throw gcnew NotImplementedException("to be done..."); }
 
   virtual String^ ToString() override
   { auto sb = gcnew StringBuilder;
@@ -362,11 +362,11 @@ public:
     }
   }
 
-  virtual void ReadFromExample(VW::example* ex)
+  virtual void ReadFromExample(example* ex)
   { throw gcnew NotImplementedException("to be done...");
   }
 
-  virtual void UpdateExample(VW::workspace* vw, VW::example* ex)
+  virtual void UpdateExample(VW::workspace* vw, example* ex)
   { auto bytes = System::Text::Encoding::UTF8->GetBytes(m_label);
     auto valueHandle = GCHandle::Alloc(bytes, GCHandleType::Pinned);
 
@@ -448,11 +448,11 @@ public:
     }
   }
 
-  virtual void ReadFromExample(VW::example* ex)
+  virtual void ReadFromExample(example* ex)
   { throw gcnew NotImplementedException("Reading continuous action labels from examples is not yet implemented.");
   }
 
-  virtual void UpdateExample(VW::workspace* vw, VW::example* ex)
+  virtual void UpdateExample(VW::workspace* vw, example* ex)
   { // Format: ca action:cost:pdf_value
     auto labelString = String::Format(CultureInfo::InvariantCulture, "ca {0}:{1}:{2}", m_action, m_cost, m_pdfValue);
     auto bytes = System::Text::Encoding::UTF8->GetBytes(labelString);

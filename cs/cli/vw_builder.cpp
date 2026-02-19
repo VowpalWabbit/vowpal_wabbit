@@ -58,13 +58,13 @@ VowpalWabbitNamespaceBuilder^ VowpalWabbitExampleBuilder::AddNamespace(Char feat
 
 VowpalWabbitNamespaceBuilder^ VowpalWabbitExampleBuilder::AddNamespace(Byte featureGroup)
 { uint32_t index = featureGroup;
-  VW::example* ex = m_example->m_example;
+  example* ex = m_example->m_example;
 
   return gcnew VowpalWabbitNamespaceBuilder(ex->feature_space.data() + index, featureGroup, m_example->m_example);
 }
 
 VowpalWabbitNamespaceBuilder::VowpalWabbitNamespaceBuilder(features* features,
-    unsigned char index, VW::example* example)
+    unsigned char index, example* example)
   : m_features(features), m_index(index), m_example(example)
 {
 }
