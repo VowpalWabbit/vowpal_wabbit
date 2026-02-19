@@ -8,7 +8,7 @@
 #include "vw/text_parser/parse_example_text.h"
 
 vw_net_native::workspace_context* create_workspace(
-    std::string arguments, VW::io_buf* model, trace_message_t trace_listener, void* trace_context)
+    std::string arguments, VW::io_buf* model, VW::trace_message_t trace_listener, void* trace_context)
 {
   vw_net_native::workspace_context* context = new vw_net_native::workspace_context();
   context->vw = VW::initialize(arguments, model, false, trace_listener, trace_context);
@@ -22,7 +22,7 @@ vw_net_native::workspace_context* create_workspace(
 }
 
 vw_net_native::workspace_context* create_workspace_from_seed(
-    VW::workspace* seed, std::string extra_arguments, trace_message_t trace_listener, void* trace_context)
+    VW::workspace* seed, std::string extra_arguments, VW::trace_message_t trace_listener, void* trace_context)
 {
   vw_net_native::workspace_context* context = new vw_net_native::workspace_context();
   context->vw = VW::seed_vw_model(seed, extra_arguments, trace_listener, trace_context);
@@ -36,7 +36,7 @@ vw_net_native::workspace_context* create_workspace_from_seed(
 }
 
 API vw_net_native::workspace_context* CreateWorkspaceWithSeedVwModel(vw_net_native::workspace_context* seed,
-    char* arguments, size_t arguments_size, trace_message_t trace_listener, void* trace_context,
+    char* arguments, size_t arguments_size, VW::trace_message_t trace_listener, void* trace_context,
     VW::experimental::api_status* status)
 {
   try
@@ -51,7 +51,7 @@ API vw_net_native::workspace_context* CreateWorkspaceWithSeedVwModel(vw_net_nati
 }
 
 API vw_net_native::workspace_context* CreateWorkspaceWithModelData(char* arguments, size_t arguments_size,
-    vw_net_native::io_reader_vtable model_reader_vtable, trace_message_t trace_listener, void* trace_context,
+    vw_net_native::io_reader_vtable model_reader_vtable, VW::trace_message_t trace_listener, void* trace_context,
     VW::experimental::api_status* status)
 {
   try
@@ -69,7 +69,7 @@ API vw_net_native::workspace_context* CreateWorkspaceWithModelData(char* argumen
 }
 
 API vw_net_native::workspace_context* CreateWorkspace(char* arguments, size_t arguments_size,
-    trace_message_t trace_listener, void* trace_context, VW::experimental::api_status* status)
+    VW::trace_message_t trace_listener, void* trace_context, VW::experimental::api_status* status)
 {
   try
   {

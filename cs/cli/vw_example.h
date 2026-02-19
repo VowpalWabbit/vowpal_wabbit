@@ -162,12 +162,12 @@ internal:
   /// </summary>
   /// <param name="owner">The parent instance. Examples cannot be shared between vw instances.</param>
   /// <param name="example">The already allocated example structure</param>
-  VowpalWabbitExample(IVowpalWabbitExamplePool^ owner, example* example);
+  VowpalWabbitExample(IVowpalWabbitExamplePool^ owner, VW::example* example);
 
   /// <summary>
   /// The native example data structure.
   /// </summary>
-  example* m_example;
+  VW::example* m_example;
 
   /// <summary>
   /// The owner of this example.

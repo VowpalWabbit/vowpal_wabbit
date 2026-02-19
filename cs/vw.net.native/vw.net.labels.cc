@@ -47,7 +47,7 @@ API void CbLabelUpdateExample(VW::example* ex, const VW::cb_class* f)
   if (f) { ld->costs.push_back(*f); }
 }
 
-API vw_net_native::ERROR_CODE StringLabelParseAndUpdateExample(vw_net_native::workspace_context* workspace, example* ex,
+API vw_net_native::ERROR_CODE StringLabelParseAndUpdateExample(vw_net_native::workspace_context* workspace, VW::example* ex,
     const char* label, size_t label_len, VW::experimental::api_status* status)
 {
   std::string label_str(label, label_len);
