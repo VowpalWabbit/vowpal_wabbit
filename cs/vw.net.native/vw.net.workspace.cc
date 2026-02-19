@@ -7,6 +7,9 @@
 #include "vw/core/shared_data.h"
 #include "vw/text_parser/parse_example_text.h"
 
+VW_WARNING_STATE_PUSH
+VW_WARNING_DISABLE_DEPRECATED_USAGE
+
 vw_net_native::workspace_context* create_workspace(
     std::string arguments, VW::io_buf* model, VW::trace_message_t trace_listener, void* trace_context)
 {
@@ -34,6 +37,8 @@ vw_net_native::workspace_context* create_workspace_from_seed(
 
   return context;
 }
+
+VW_WARNING_STATE_POP
 
 API vw_net_native::workspace_context* CreateWorkspaceWithSeedVwModel(vw_net_native::workspace_context* seed,
     char* arguments, size_t arguments_size, VW::trace_message_t trace_listener, void* trace_context,
@@ -86,7 +91,10 @@ API vw_net_native::ERROR_CODE DeleteWorkspace(
 {
   try
   {
+    VW_WARNING_STATE_PUSH
+    VW_WARNING_DISABLE_DEPRECATED_USAGE
     VW::finish(*workspace->vw);
+    VW_WARNING_STATE_POP
     return VW::experimental::error_code::success;
   }
   CATCH_RETURN_STATUS
