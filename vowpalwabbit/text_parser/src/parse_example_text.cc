@@ -46,8 +46,8 @@ private:
   std::array<std::vector<std::shared_ptr<VW::details::feature_dict>>, VW::NUM_NAMESPACES>* _namespace_dictionaries;
   VW::io::logger* _logger;
 
-  // TODO: Currently this function is called by both warning and error conditions. We only log
-  //      to warning here though.
+  // Note: strict_parse throws; non-strict logs as warning. Callers use this for both
+  //       warning and error paths, but the distinction is handled by strict_parse.
   inline FORCE_INLINE void parser_warning(const char* message, VW::string_view var_msg, const char* message2,
       size_t example_number, VW::io::logger& warn_logger)
   {

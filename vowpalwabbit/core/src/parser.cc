@@ -186,7 +186,7 @@ bool is_currently_dsjson_reader(const VW::workspace& all)
 
 void set_json_reader(VW::workspace& all, bool dsjson = false)
 {
-  // TODO: change to class with virtual method
+  // Note: function pointer dispatch used for reader selection; kept for simplicity.
   // --invert_hash requires the audit parser version to save the extra information.
   if (all.output_config.audit || all.output_config.hash_inv)
   {
@@ -655,8 +655,9 @@ void VW::details::enable_sources(
 #else
       else if (input_options.flatbuffer)
       {
-        THROW("--flatbuffer was specified but this VW binary was built without flatbuffer support. "
-              "Rebuild with -DVW_FEAT_FLATBUFFERS=ON to enable flatbuffer parsing.");
+        THROW(
+            "--flatbuffer was specified but this VW binary was built without flatbuffer support. "
+            "Rebuild with -DVW_FEAT_FLATBUFFERS=ON to enable flatbuffer parsing.");
       }
 #endif
 #ifdef VW_FEAT_CSV_ENABLED

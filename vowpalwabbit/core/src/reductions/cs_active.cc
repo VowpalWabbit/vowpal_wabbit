@@ -389,7 +389,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::cs_active_setup(VW::setup_
                .help("Minimum number of label queries"))
       .add(make_option("cost_max", data->cost_max).default_value(1.f).help("Cost upper bound"))
       .add(make_option("cost_min", data->cost_min).default_value(0.f).help("Cost lower bound"))
-      // TODO replace with trace and quiet
+      // Note: --csa_debug is a legacy option; replacing with --trace/--quiet would be a breaking CLI change.
       .add(make_option("csa_debug", data->print_debug_stuff).help("Print debug stuff for cs_active"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }

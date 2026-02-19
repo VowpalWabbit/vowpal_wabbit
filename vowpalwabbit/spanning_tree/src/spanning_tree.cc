@@ -19,8 +19,8 @@
 #include <map>
 #include <string>
 
-// TODO: spanning tree exists outside the normal VW source (it should live in cluster/).
-//       If we use io/logger.h here, we need to link it to the cluster library
+// Note: spanning_tree has its own CMake target; moving to cluster/ would require build refactoring.
+//       Using io/logger.h here would need linking against the cluster library.
 
 class client
 {

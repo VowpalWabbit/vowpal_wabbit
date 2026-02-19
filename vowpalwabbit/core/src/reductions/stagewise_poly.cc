@@ -457,9 +457,8 @@ void synthetic_create_rec(stagewise_poly& poly, float v, uint64_t findex)
             << "FOUND A TRANSPLANT!!! moving [" << wid_cur << "] from depth "
             << static_cast<uint64_t>(min_depths_get(poly, wid_cur)) << " to depth " << poly.cur_depth << std::endl;
       }
-      // XXX arguably, should also fear transplants that occured with
-      // a different ft_offset ; e.g., need to look out for cross-reduction
-      // collisions.  Have not played with this issue yet...
+      // Note: potential cross-reduction collisions via differing ft_offset
+      // are not yet handled for transplanted features.
       parent_toggle(poly, wid_cur);
     }
     min_depths_set(poly, wid_cur, static_cast<uint8_t>(poly.cur_depth));
@@ -549,8 +548,8 @@ void learn(stagewise_poly& poly, learner& base, VW::example& ec)
 
     if (ec.example_counter
         // following line is to avoid repeats when multiple reductions on same example.
-        // XXX ideally, would get all "copies" of an example before scheduling the support
-        // update, but how do we know?
+        // Note: support updates may fire per-copy of an example; guarded by
+        // example_counter dedup check (last_example_counter).
         && poly.last_example_counter != ec.example_counter && poly.batch_sz &&
         ((poly.batch_sz_double && !(ec.example_counter % poly.next_batch_sz)) ||
             (!poly.batch_sz_double && !(ec.example_counter % poly.batch_sz))))

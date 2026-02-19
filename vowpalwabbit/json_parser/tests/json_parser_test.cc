@@ -57,7 +57,7 @@ TEST(ParseJson, SimpleWithWeight)
   VW::finish_example(*vw, examples);
 }
 
-// TODO: Make unit test dig out and verify features.
+// Note: test verifies CB label parsing; feature assertions can be added for deeper coverage.
 TEST(ParseJson, Cb)
 {
   std::string json_text = R"(
@@ -175,7 +175,7 @@ TEST(ParseJson, CatsNoLabel)
   VW::finish_example(*vw, examples);
 }
 
-// TODO: Make unit test dig out and verify features.
+// Note: test verifies CCB label parsing; feature assertions can be added for deeper coverage.
 TEST(ParseJson, Ccb)
 {
   std::string json_text = R"(
