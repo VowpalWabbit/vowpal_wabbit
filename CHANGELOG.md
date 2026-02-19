@@ -3,10 +3,12 @@
 All notable changes to Vowpal Wabbit are documented in this file. For changes
 prior to this file's creation, see [GitHub Releases](https://github.com/VowpalWabbit/vowpal_wabbit/releases).
 
-## [Unreleased](https://github.com/VowpalWabbit/vowpal_wabbit/compare/9.10.0...HEAD)
+## [9.11.0](https://github.com/VowpalWabbit/vowpal_wabbit/compare/9.10.0...9.11.0)
 
 ### Features
 
+- Add `--cs_absolute_loss` option for CSOAA and CSOAA_LDF to report absolute cost as loss
+  instead of relative (cost - min_cost) (#4883)
 - Migrate Python bindings from Boost.Python to pybind11 (#4766)
 - Add Python 3.10–3.13 support via cibuildwheel for Linux, macOS, and Windows (#4761, #4763)
 - Add Java JNI builds for Windows (#4869)
@@ -24,6 +26,12 @@ prior to this file's creation, see [GitHub Releases](https://github.com/VowpalWa
 
 ### Fixes
 
+- Fix CSOAA_LDF holdout loss routing: use per-example `test_only` instead of global flag (#4883)
+- Fix automl `insert_config` use-after-move when compacting config array (#4883)
+- Fix missing `gzopen()` error handling in `gzip_file_adapter` (#4885)
+- Delete unused `VW::details::print_update()` dead code (#4885)
+- Add LRQ namespace collision warning at setup time (#4883)
+- Convert search `fprintf(stderr)` calls to VW logger infrastructure (#4883)
 - Fix search `entity_relation` crashes for `search_order` 2 and 3 (#4845)
 - Fix kernel_svm assertion failure in `collision_cleanup` (#4846)
 - Fix bounds checking in ECT and CSOAA_LDF reductions (#4859)
@@ -54,13 +62,34 @@ prior to this file's creation, see [GitHub Releases](https://github.com/VowpalWa
 - Upgrade `actions/checkout` from v1/v3 to v6 across all workflows
 - Upgrade `docker/setup-qemu-action` from v1 to v3 (#4751)
 
+### Dependencies
+
+Core (vendored as git submodules; override with `*_SYS_DEP=ON` CMake flags):
+- Eigen 3.4.0, fmt 11.0.2, spdlog 1.15.0, RapidJSON 1.1.0, zlib 1.4.1
+- Boost.Math 1.90.0 (LDA only), Armadillo 14.4.4 / Ensmallen 2.19.1 (CB graph feedback only)
+
+Build tooling:
+- CMake ≥ 3.10, C++11 (C++17 for Java/Python bindings)
+- cibuildwheel 3.3.0, Python 3.10–3.14
+
+Java (via Maven):
+- JUnit 5.11.4, Gson 2.11.0, Guava 33.4.0-jre, maven-compiler-plugin 3.13.0
+
+.NET:
+- .NET Standard 2.0, Newtonsoft.Json 13.0.3
+
 ### Documentation
 
 - Add Python configuration tutorial (#4862)
 - Add examples index in `demo/README.md` and link from top-level README (#4848)
-- Improve option help text for several reductions (#4847)
+- Improve option help text for several reductions including `--cs_absolute_loss` (#4847)
 - Improve `search_rollin` and `search_rollout` help text (#4805)
 - Update README badges to use GitHub Actions (#4806)
+
+### Maintenance
+
+- Audit and resolve ~74 stale TODO/FIXME/XXX markers across the codebase (#4883, #4884, #4885, #4886)
+- Convert remaining non-actionable TODOs to descriptive notes documenting design rationale
 
 ### Tests
 

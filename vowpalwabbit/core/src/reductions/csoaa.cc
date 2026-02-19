@@ -192,7 +192,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::csoaa_setup(VW::setup_base
                .keep()
                .help("Choose between 0 or 1-indexing"))
       .add(make_option("cs_absolute_loss", cs_absolute_loss)
-               .help("Report absolute cost as loss instead of relative (cost - min_cost)"));
+               .help("Report absolute cost as loss instead of relative (cost - min_cost). "
+                     "Useful when comparing costs across examples with different minimum costs"));
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 

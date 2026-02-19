@@ -730,7 +730,8 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::csldf_setup(VW::setup_base
   bool cs_absolute_loss = false;
   option_group_definition cs_loss_options("[Reduction] Cost Sensitive Loss");
   cs_loss_options.add(make_option("cs_absolute_loss", cs_absolute_loss)
-                          .help("Report absolute cost as loss instead of relative (cost - min_cost)"));
+                          .help("Report absolute cost as loss instead of relative (cost - min_cost). "
+                                "Useful when comparing costs across examples with different minimum costs"));
 
   if (!options.add_parse_and_check_necessary(csldf_outer_options))
   {
