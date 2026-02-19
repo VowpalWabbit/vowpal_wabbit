@@ -555,8 +555,9 @@ Weight Options:
     --csoaa arg                             One-against-all multiclass with <k> costs (type: uint, keep,
                                             necessary)
     --indexing arg                          Choose between 0 or 1-indexing (type: uint, choices {0, 1}, keep)
-    --cs_absolute_loss                      Report absolute cost as loss instead of relative (cost - min_cost)
-                                            (type: bool)
+    --cs_absolute_loss                      Report absolute cost as loss instead of relative (cost - min_cost).
+                                            Useful when comparing costs across examples with different minimum
+                                            costs (type: bool)
 [Reduction] Cost Sensitive One Against All with Label Dependent Features Options:
     --csoaa_ldf arg                         Use one-against-all multiclass learning with label dependent
                                             features (type: str, choices {m, mc, multiline, multiline-classifier},
