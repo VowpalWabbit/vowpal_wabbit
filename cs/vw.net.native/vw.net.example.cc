@@ -18,7 +18,10 @@ API void DeleteExample(VW::example* example) { delete example; }
 
 API int IsRingExample(vw_net_native::workspace_context* workspace, VW::example* example)
 {
+  VW_WARNING_STATE_PUSH
+  VW_WARNING_DISABLE_DEPRECATED_USAGE
   return VW::is_ring_example(*workspace->vw, example);
+  VW_WARNING_STATE_POP
 }
 
 API int IsExampleNewline(VW::example* example) { return VW::example_is_newline(*example) != 0; }
@@ -273,5 +276,5 @@ API float GetAuditWeight(
   VW::workspace* vw = workspace->vw;
 
   float weight = GetWeight(workspace, example, feature_index);
-  return GD::trunc_weight(weight, (float)vw->sd->gravity) + (float)vw->sd->contraction;
+  return VW::trunc_weight(weight, (float)vw->sd->gravity) + (float)vw->sd->contraction;
 }

@@ -10,7 +10,7 @@ struct builder_context
 {
   VW::example* ex;
 
-  features* feature_data;
+  VW::features* feature_data;
   unsigned char feature_group;
 };
 
