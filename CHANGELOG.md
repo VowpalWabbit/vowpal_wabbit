@@ -22,7 +22,7 @@ prior to this file's creation, see [GitHub Releases](https://github.com/VowpalWa
 - Add C# `WorkspaceRunDriver()` and `WorkspaceRunDriverOneThread()` native APIs
 - Downgrade C# bindings from .NET Standard 2.1 to 2.0 for broader compatibility (#4865)
 - Enable AVX2 for Windows x64 Release builds (#4844)
-- Support building with Eigen 5.0.0 (#4728)
+- Upgrade Eigen 3.4.0 → 5.0.1; bump C++ minimum from C++11 to C++14 (#4728, #4888)
 
 ### Fixes
 
@@ -65,11 +65,11 @@ prior to this file's creation, see [GitHub Releases](https://github.com/VowpalWa
 ### Dependencies
 
 Core (vendored as git submodules; override with `*_SYS_DEP=ON` CMake flags):
-- Eigen 3.4.0, fmt 11.0.2, spdlog 1.15.0, RapidJSON 1.1.0, zlib 1.4.1
+- Eigen 5.0.1, fmt 11.0.2, spdlog 1.15.0, RapidJSON 1.1.0, zlib 1.4.1
 - Boost.Math 1.90.0 (LDA only), Armadillo 14.4.4 / Ensmallen 2.19.1 (CB graph feedback only)
 
 Build tooling:
-- CMake ≥ 3.10, C++11 (C++17 for Java/Python bindings)
+- CMake ≥ 3.10, C++14 (C++17 for Java/Python bindings)
 - cibuildwheel 3.3.0, Python 3.10–3.14
 
 Java (via Maven):
