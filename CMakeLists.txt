@@ -99,10 +99,10 @@ endif()
 
 vw_print_enabled_features()
 
-option(USE_LATEST_STD "Override using C++11 with the latest standard the compiler offers. Default is C++11. " OFF)
+option(USE_LATEST_STD "Override using C++14 with the latest standard the compiler offers. Default is C++14. " OFF)
 include(DetectCXXStandard)
 if(NOT VW_CXX_STANDARD)
-  set(VW_CXX_STANDARD 11)
+  set(VW_CXX_STANDARD 14)
 endif()
 if(USE_LATEST_STD)
   DetectCXXStandard(VW_CXX_STANDARD)

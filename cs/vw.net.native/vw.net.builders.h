@@ -8,9 +8,9 @@ namespace vw_net_native
 {
 struct builder_context
 {
-  example* ex;
+  VW::example* ex;
 
-  features* feature_data;
+  VW::features* feature_data;
   unsigned char feature_group;
 };
 
@@ -18,10 +18,10 @@ struct builder_context
 
 extern "C"
 {
-  API int SetupExample(vw_net_native::workspace_context* vw, example* ex, VW::experimental::api_status* status);
+  API int SetupExample(vw_net_native::workspace_context* vw, VW::example* ex, VW::experimental::api_status* status);
 
   API vw_net_native::builder_context* CreateBuilder(
-      vw_net_native::workspace_context* vw, example* ex, unsigned char feature_group);
+      vw_net_native::workspace_context* vw, VW::example* ex, unsigned char feature_group);
   API void DeleteBuilder(vw_net_native::builder_context* builder);
 
   API void BuilderPreallocate(vw_net_native::builder_context* builder, vw_net_native::dotnet_size_t size);

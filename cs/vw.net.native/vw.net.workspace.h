@@ -16,7 +16,7 @@ struct workspace_context
 {
   VW::workspace* vw;
 
-  trace_message_t trace_listener;
+  VW::trace_message_t trace_listener;
   void* trace_listener_context;
 };
 
@@ -31,7 +31,7 @@ struct performance_statistics_t
   float best_constant_loss;
 };
 
-using example_pool_get_example_fn = example& (*)(void*);
+using example_pool_get_example_fn = VW::example& (*)(void*);
 using create_prediction_callback_fn = void (*)();
 
 }  // namespace vw_net_native
@@ -39,13 +39,13 @@ using create_prediction_callback_fn = void (*)();
 extern "C"
 {
   API vw_net_native::workspace_context* CreateWorkspaceWithSeedVwModel(vw_net_native::workspace_context* seed,
-      char* arguments, size_t arguments_size, trace_message_t trace_listener, void* trace_context,
+      char* arguments, size_t arguments_size, VW::trace_message_t trace_listener, void* trace_context,
       VW::experimental::api_status* status);
   API vw_net_native::workspace_context* CreateWorkspaceWithModelData(char* arguments, size_t arguments_size,
-      vw_net_native::io_reader_vtable model_reader, trace_message_t trace_listener, void* trace_context,
+      vw_net_native::io_reader_vtable model_reader, VW::trace_message_t trace_listener, void* trace_context,
       VW::experimental::api_status* status);
   API vw_net_native::workspace_context* CreateWorkspace(char* arguments, size_t arguments_size,
-      trace_message_t trace_listener, void* trace_context, VW::experimental::api_status* status);
+      VW::trace_message_t trace_listener, void* trace_context, VW::experimental::api_status* status);
   API vw_net_native::ERROR_CODE DeleteWorkspace(
       vw_net_native::workspace_context* workspace, VW::experimental::api_status* status);
 
