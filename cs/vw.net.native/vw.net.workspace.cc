@@ -7,6 +7,8 @@
 #include "vw/core/shared_data.h"
 #include "vw/text_parser/parse_example_text.h"
 
+// Suppress deprecation warnings for VW::initialize, VW::seed_vw_model, and VW::finish.
+// Migrating to the new unique_ptr-based API is a separate effort.
 VW_WARNING_STATE_PUSH
 VW_WARNING_DISABLE_DEPRECATED_USAGE
 
@@ -37,8 +39,6 @@ vw_net_native::workspace_context* create_workspace_from_seed(
 
   return context;
 }
-
-VW_WARNING_STATE_POP
 
 API vw_net_native::workspace_context* CreateWorkspaceWithSeedVwModel(vw_net_native::workspace_context* seed,
     char* arguments, size_t arguments_size, VW::trace_message_t trace_listener, void* trace_context,
@@ -91,10 +91,7 @@ API vw_net_native::ERROR_CODE DeleteWorkspace(
 {
   try
   {
-    VW_WARNING_STATE_PUSH
-    VW_WARNING_DISABLE_DEPRECATED_USAGE
     VW::finish(*workspace->vw);
-    VW_WARNING_STATE_POP
     return VW::experimental::error_code::success;
   }
   CATCH_RETURN_STATUS
@@ -370,6 +367,8 @@ API vw_net_native::ERROR_CODE WorkspaceLearnMulti(vw_net_native::workspace_conte
   }
   CATCH_RETURN_STATUS
 }
+
+VW_WARNING_STATE_POP
 
 API char* WorkspaceGetIdDup(vw_net_native::workspace_context* workspace)
 {
