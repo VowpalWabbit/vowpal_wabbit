@@ -72,7 +72,7 @@ jobs:
         with:
           name: vw-jni-native-${{ matrix.config.name }}
           path: java/target/bin/natives/
-          retention-days: 90
+          retention-days: 400
 
   build-static-test:
     name: static-jni-test
