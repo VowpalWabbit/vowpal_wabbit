@@ -20,7 +20,7 @@ jobs:
     strategy:
       matrix:
         os: ["windows-2022"]
-        toolset: ["v141", "v142"]
+        toolset: ["v142", "v143"]
         arch_config:
         - { arch: x64, generator_arch: x64}
     steps:
@@ -109,7 +109,7 @@ jobs:
     strategy:
       matrix:
         os: ["windows-2022"]
-        toolset: ["v141", "v142"]
+        toolset: ["v142", "v143"]
     steps:
       - uses: actions/checkout@v6
         with:
