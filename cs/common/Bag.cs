@@ -165,8 +165,14 @@ namespace VW
 
             public IEnumerable<T> RemoveAll()
             {
-                // TODO: violates the lock constraint. though this is just used at disposable time
-                return this.queue;
+                var items = new List<T>();
+                while (this.queue.TryDequeue(out T item))
+                {
+                    Interlocked.Decrement(ref this.count);
+                    items.Add(item);
+                }
+
+                return items;
             }
 
             public int Count

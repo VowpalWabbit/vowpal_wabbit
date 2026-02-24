@@ -19,8 +19,8 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        os: ["windows-2019"]
-        toolset: ["v141", "v142"]
+        os: ["windows-2022"]
+        toolset: ["v142", "v143"]
         arch_config:
         - { arch: x64, generator_arch: x64}
     steps:
@@ -61,7 +61,7 @@ jobs:
       - name: Configure
         run: >
           cmake -S . -B build
-          -G "Visual Studio 16 2019" -A ${{ matrix.arch_config.generator_arch }}
+          -G "Visual Studio 17 2022" -A ${{ matrix.arch_config.generator_arch }}
           -T ${{ matrix.toolset }}
           -DVW_NUGET_PACKAGE_VERSION="${{ steps.get_version.outputs.version }}"
           -DNATIVE_NUGET_PLATFORM_TAG="${{ matrix.arch_config.arch }}"
@@ -108,8 +108,8 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        os: ["windows-2019"]
-        toolset: ["v141", "v142"]
+        os: ["windows-2022"]
+        toolset: ["v142", "v143"]
     steps:
       - uses: actions/checkout@v6
         with:
