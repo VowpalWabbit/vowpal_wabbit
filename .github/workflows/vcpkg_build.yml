@@ -88,6 +88,9 @@ jobs:
         run: cmake --build --preset "${{ matrix.preset }}"
       - name: Test
         run: ctest --preset "${{ matrix.preset }}"
+      - name: Test flatbuffers
+        if: runner.os == 'Linux'
+        run: python3 test/run_tests.py -f --epsilon 1e-3 --for_flatbuffers --clean_dirty
       - name: Package Windows binaries
         if: runner.os == 'Windows' && matrix.preset == 'vcpkg-release'
         shell: bash
