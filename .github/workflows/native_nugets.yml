@@ -101,6 +101,7 @@ jobs:
         with:
           name: VowpalWabbitNative-${{matrix.toolset}}-x64.${{ steps.get_version.outputs.version }}.nupkg
           path: nuget_staging/${{ steps.generate-nuget.outputs.NugetFileName }}
+          retention-days: ${{ github.event_name == 'pull_request' && 7 || 400 }}
 
   test_nuget_windows:
     needs: [build_nuget_windows]
