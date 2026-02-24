@@ -124,8 +124,8 @@ jobs:
 
   # Windows builds using cibuildwheel (Python 3.10-3.14)
   cibuildwheel-build-windows:
-    name: cibuildwheel.windows-2019
-    runs-on: windows-2019
+    name: cibuildwheel.windows-2022
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@v6
         with:
@@ -154,7 +154,7 @@ jobs:
         uses: pypa/cibuildwheel@v3.3.0
       - uses: actions/upload-artifact@v4
         with:
-          name: cibw-wheels-windows-2019
+          name: cibw-wheels-windows-2022
           path: ./wheelhouse/*.whl
 
   linux-python-sdist-bundle:
