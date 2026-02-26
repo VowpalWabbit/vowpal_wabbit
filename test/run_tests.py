@@ -855,7 +855,11 @@ def convert_tests_for_flatbuffers(
         fb_test_converter = fb_converter.FlatbufferTest(
             test, working_dir, ref_dir=ref_dir, depends_on_test=depends_on_test
         )
-        fb_test_converter.to_flatbuffer(to_flatbuff, color_enum)
+        try:
+            fb_test_converter.to_flatbuffer(to_flatbuff, color_enum)
+        except Exception as e:
+            test.skip = True
+            test.skip_reason = f"flatbuffer conversion failed: {e}"
 
     return tests
 

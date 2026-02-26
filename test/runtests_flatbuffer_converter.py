@@ -147,7 +147,10 @@ class FlatbufferTest:
                     color_enum.LIGHT_PURPLE, self.test_id, cmd, color_enum.ENDC
                 )
             )
-            result = subprocess.run(shlex.split(cmd), check=True, cwd=self.ref_dir)
+            result = subprocess.run(
+                shlex.split(cmd), cwd=self.ref_dir,
+                capture_output=True, text=True,
+            )
             if result.returncode != 0:
                 raise RuntimeError(
                     "Generating flatbuffer file failed with {} {} {}".format(
