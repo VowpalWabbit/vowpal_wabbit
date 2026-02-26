@@ -759,7 +759,7 @@ def convert_tests_for_flatbuffers(
     to_flatbuff: Path,
     working_dir: Path,
     color_enum: Type[Union[Color, NoColor]],
-    ref_dir: Path = None,
+    ref_dir: Optional[Path] = None,
 ):
     working_dir.mkdir(parents=True, exist_ok=True)
     for test in tests:
@@ -1269,7 +1269,10 @@ def main():
             )
             sys.exit(1)
         tests = convert_tests_for_flatbuffers(
-            tests, to_flatbuff_bin, test_base_working_dir, color_enum,
+            tests,
+            to_flatbuff_bin,
+            test_base_working_dir,
+            color_enum,
             ref_dir=test_base_ref_dir,
         )
 

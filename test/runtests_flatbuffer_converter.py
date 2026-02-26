@@ -20,7 +20,11 @@ def is_input_data_file(input_file):
 
 class FlatbufferTest:
     def __init__(
-        self, test: TestData, working_dir, ref_dir: Path, depends_on_test: Optional[TestData] = None
+        self,
+        test: TestData,
+        working_dir,
+        ref_dir: Path,
+        depends_on_test: Optional[TestData] = None,
     ):
         self.test = test
         self.working_dir = working_dir
@@ -74,7 +78,9 @@ class FlatbufferTest:
                     os.path.basename(str(self.working_dir.joinpath(stderr_file)))
                 )
             )
-            with open(self.ref_dir / stderr_file, "r") as f, open(stderr_test_file, "w") as tmp_f:
+            with open(self.ref_dir / stderr_file, "r") as f, open(
+                stderr_test_file, "w"
+            ) as tmp_f:
                 contents = [self.replace_line(line) for line in f]
                 for line in contents:
                     tmp_f.write(line)
@@ -148,8 +154,10 @@ class FlatbufferTest:
                 )
             )
             result = subprocess.run(
-                shlex.split(cmd), cwd=self.ref_dir,
-                capture_output=True, text=True,
+                shlex.split(cmd),
+                cwd=self.ref_dir,
+                capture_output=True,
+                text=True,
             )
             if result.returncode != 0:
                 raise RuntimeError(
