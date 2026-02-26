@@ -135,7 +135,7 @@ class FlatbufferTest:
                 "",
                 to_flatbuff_command,
             )
-            to_flatbuff_command = f"-d {self.ref_dir / from_file} " + to_flatbuff_command
+            to_flatbuff_command = f"-d {from_file} " + to_flatbuff_command
 
             cmd = "{} {} {} {}".format(
                 to_flatbuff, to_flatbuff_command, "--fb_out", to_file
@@ -147,7 +147,7 @@ class FlatbufferTest:
                     color_enum.LIGHT_PURPLE, self.test_id, cmd, color_enum.ENDC
                 )
             )
-            result = subprocess.run(shlex.split(cmd), check=True)
+            result = subprocess.run(shlex.split(cmd), check=True, cwd=self.ref_dir)
             if result.returncode != 0:
                 raise RuntimeError(
                     "Generating flatbuffer file failed with {} {} {}".format(
