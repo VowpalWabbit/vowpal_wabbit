@@ -759,6 +759,7 @@ def convert_tests_for_flatbuffers(
     to_flatbuff: Path,
     working_dir: Path,
     color_enum: Type[Union[Color, NoColor]],
+    ref_dir: Path = None,
 ):
     working_dir.mkdir(parents=True, exist_ok=True)
     for test in tests:
@@ -852,7 +853,7 @@ def convert_tests_for_flatbuffers(
         )
 
         fb_test_converter = fb_converter.FlatbufferTest(
-            test, working_dir, depends_on_test=depends_on_test
+            test, working_dir, ref_dir=ref_dir, depends_on_test=depends_on_test
         )
         fb_test_converter.to_flatbuffer(to_flatbuff, color_enum)
 
@@ -1239,7 +1240,8 @@ def main():
             )
             sys.exit(1)
         tests = convert_tests_for_flatbuffers(
-            tests, to_flatbuff_bin, test_base_working_dir, color_enum
+            tests, to_flatbuff_bin, test_base_working_dir, color_enum,
+            ref_dir=test_base_ref_dir,
         )
 
     if args.skip_network_tests:
