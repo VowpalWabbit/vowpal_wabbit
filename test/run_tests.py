@@ -799,9 +799,9 @@ def convert_tests_for_flatbuffers(
         # 336, 337, 338, 442, 444, 450, 452 - the FB converter script seems to be affecting the invert_hash
         # 423, 424, 425, 426 - FB converter removes feature names from invert_hash (probably the same issue as above)
         # 176, 187, 310, 314, 317 - JSON-specific warnings not produced in flatbuffer mode
-        # 298 - to_flatbuff converter produces empty output for dsjson input (missing dsjson support)
-        # 322, 323, 349, 392, 398, 409, 413 - output differs after flatbuffer conversion
-        # 436, 440, 448, 647 - flatbuffer-specific warnings or output differences
+        # 298, 322, 323, 349, 392, 398, 409, 413, 436 - to_flatbuff converter lacks dsjson support
+        # 440, 448 - FB converter affects invert_hash (same issue as 336-338 above)
+        # 647 - named_labels not preserved through flatbuffer conversion
         if str(test.id) in (
             "176",
             "187",
