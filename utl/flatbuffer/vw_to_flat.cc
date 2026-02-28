@@ -415,10 +415,7 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
   {
     // Newline separator examples don't carry meaningful labels.
     // Use no_label to avoid the FB parser warning about empty label arrays.
-    if (VW::example_is_newline(*ae))
-    {
-      to_flat::create_no_label(ae, ex_builder);
-    }
+    if (VW::example_is_newline(*ae)) { to_flat::create_no_label(ae, ex_builder); }
     else
     {
       // Create Label for current example
