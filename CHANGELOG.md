@@ -5,6 +5,16 @@ prior to this file's creation, see [GitHub Releases](https://github.com/VowpalWa
 
 ## [9.11.0](https://github.com/VowpalWabbit/vowpal_wabbit/compare/9.10.0...9.11.0)
 
+A high quality long term maintenance release. Testing across different
+languages, platforms, compilers, and through test cases has increased by an
+order of magnitude, cleaning up many bugs and issues found on the way. A few
+minor features were added. The set of CI-supported choices are:
+
+- **Languages**: C++, Python, Java, C#/.NET, WebAssembly/JS
+- **Platforms**: Linux x64/ARM, macOS Intel/ARM, Windows x64
+
+The WebAssembly one is particularly fun: it can run in your browser.
+
 ### Features
 
 - Add `--cs_absolute_loss` option for CSOAA and CSOAA_LDF to report absolute cost as loss
