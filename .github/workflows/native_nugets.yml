@@ -17,6 +17,8 @@ jobs:
   build_nuget_windows:
     name: nuget.${{ matrix.toolset }}.${{ matrix.arch_config.arch }}
     runs-on: ${{matrix.os}}
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
     strategy:
       matrix:
         os: ["windows-2022"]
@@ -115,41 +117,14 @@ jobs:
       - uses: actions/checkout@v6
         with:
           submodules: false
-
-      - name: Init submodules with retry
-        shell: bash
-        run: |
-          git config --global --add safe.directory "$(pwd)"
-          for attempt in 1 2 3 4 5; do
-            if git submodule update --init --recursive; then
-              echo "Submodule init succeeded on attempt $attempt"
-              exit 0
-            fi
-            echo "Attempt $attempt failed, retrying in 15s..."
-            sleep 15
-          done
-          echo "Submodule init failed after 5 attempts"
-          exit 1
       - uses: ilammy/msvc-dev-cmd@v1
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.1
 
-      # Get version number
-      - name: Update git tags
-        # Needed because actions/checkout performs a shallow checkout without tags
-        run: git fetch --unshallow --tags --recurse-submodules=no
-      - name: Get version number
-        id: get_version
-        shell: bash
-        run: |
-          version=$(./utl/version_number.py)
-          echo "Generated version number: $version"
-          echo "version=$version" >> $GITHUB_OUTPUT
-
-      # Download and install nuget
+      # Download and install nuget (version from build job)
       - uses: actions/download-artifact@v4
         with:
-          name: VowpalWabbitNative-${{matrix.toolset}}-x64.${{ steps.get_version.outputs.version }}.nupkg
+          name: VowpalWabbitNative-${{matrix.toolset}}-x64.${{ needs.build_nuget_windows.outputs.version }}.nupkg
           path: downloaded_nugets
       - name: List downloaded files
         run: ls downloaded_nugets
@@ -158,7 +133,7 @@ jobs:
           nuget install
           -Source "${{ github.workspace }}\downloaded_nugets"
           -OutputDirectory "${{ github.workspace }}\nuget\native\test\packages"
-          -Version "${{ steps.get_version.outputs.version }}"
+          -Version "${{ needs.build_nuget_windows.outputs.version }}"
           -Verbosity detailed
           -NonInteractive
           VowpalWabbitNative-${{ matrix.toolset }}-x64
