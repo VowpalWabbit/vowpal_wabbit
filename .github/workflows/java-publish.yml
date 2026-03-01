@@ -91,7 +91,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y ninja-build
+          sudo apt-get install -y ninja-build flatbuffers-compiler libflatbuffers-dev
 
       - name: Configure CMake (static linking)
         shell: bash
