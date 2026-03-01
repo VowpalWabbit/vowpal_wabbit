@@ -801,8 +801,11 @@ def convert_tests_for_flatbuffers(
         # 176, 187, 310, 314, 317 - JSON-specific warnings not produced in flatbuffer mode
         # 298, 322, 323, 349, 392, 398, 409, 413, 436 - to_flatbuff converter lacks dsjson support
         # 440, 448 - FB converter affects invert_hash (same issue as 336-338 above)
+        # 146, 148 - ECT multiclass float precision differs after flatbuffer round-trip
         # 647 - named_labels not preserved through flatbuffer conversion
         if str(test.id) in (
+            "146",
+            "148",
             "176",
             "187",
             "189",
