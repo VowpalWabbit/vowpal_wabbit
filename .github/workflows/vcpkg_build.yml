@@ -65,9 +65,25 @@ jobs:
           rm -rf ext_libs/vcpkg/buildtrees
           git submodule update --init ext_libs/vcpkg
       - name: Setup vcpkg
-        uses: lukka/run-vcpkg@v11
-        with:
-          vcpkgDirectory: '${{ github.workspace }}/ext_libs/vcpkg'
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            bootstrap="$VCPKG_ROOT/bootstrap-vcpkg.bat"
+          else
+            bootstrap="$VCPKG_ROOT/bootstrap-vcpkg.sh"
+          fi
+          for attempt in 1 2 3; do
+            if "$bootstrap"; then
+              echo "vcpkg bootstrap succeeded on attempt $attempt"
+              exit 0
+            fi
+            echo "Attempt $attempt failed, retrying in 15s..."
+            sleep 15
+          done
+          echo "vcpkg bootstrap failed after 3 attempts"
+          exit 1
+        env:
+          VCPKG_ROOT: ${{ github.workspace }}/ext_libs/vcpkg
       - name: Configure with CMake (with retry)
         env:
           VCPKG_ROOT: ${{github.workspace}}/ext_libs/vcpkg
