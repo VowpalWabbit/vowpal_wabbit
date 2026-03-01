@@ -33,7 +33,6 @@ jobs:
     name: asan.${{ matrix.os }}.${{ matrix.preset }}
     env:
       UBSAN_OPTIONS: "print_stacktrace=1"
-      CCACHE_DIR: ${{ runner.temp }}/ccache
 
     steps:
       - uses: actions/checkout@v6
@@ -77,9 +76,12 @@ jobs:
       - name: Configure ccache
         shell: bash
         run: |
+          echo "CCACHE_DIR=$RUNNER_TEMP/ccache" >> $GITHUB_ENV
           ccache --set-config=max_size=500M
           ccache --set-config=compiler_check=content
           ccache --zero-stats
+        env:
+          CCACHE_DIR: ${{ runner.temp }}/ccache
       - name: Export GitHub Actions cache environment variables
         uses: actions/github-script@v7
         with:
@@ -142,7 +144,6 @@ jobs:
     name: asan.${{ matrix.os }}.${{ matrix.preset }}
     env:
       UBSAN_OPTIONS: "print_stacktrace=1"
-      CCACHE_DIR: ${{ runner.temp }}/ccache
 
     steps:
       - uses: actions/checkout@v6
@@ -180,9 +181,12 @@ jobs:
       - name: Configure ccache
         shell: bash
         run: |
+          echo "CCACHE_DIR=$RUNNER_TEMP/ccache" >> $GITHUB_ENV
           ccache --set-config=max_size=500M
           ccache --set-config=compiler_check=content
           ccache --zero-stats
+        env:
+          CCACHE_DIR: ${{ runner.temp }}/ccache
       - name: Export GitHub Actions cache environment variables
         uses: actions/github-script@v7
         with:
