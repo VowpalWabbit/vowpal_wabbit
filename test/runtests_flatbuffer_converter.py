@@ -20,10 +20,15 @@ def is_input_data_file(input_file):
 
 class FlatbufferTest:
     def __init__(
-        self, test: TestData, working_dir, depends_on_test: Optional[TestData] = None
+        self,
+        test: TestData,
+        working_dir,
+        ref_dir: Path,
+        depends_on_test: Optional[TestData] = None,
     ):
         self.test = test
         self.working_dir = working_dir
+        self.ref_dir = ref_dir
         self.stashed_input_files = copy.copy(self.test.input_files)
         self.stashed_vw_command = copy.copy(self.test.command_line)
         self.test_id = str(self.test.id)
@@ -73,7 +78,9 @@ class FlatbufferTest:
                     os.path.basename(str(self.working_dir.joinpath(stderr_file)))
                 )
             )
-            with open(stderr_file, "r") as f, open(stderr_test_file, "w") as tmp_f:
+            with open(self.ref_dir / stderr_file, "r") as f, open(
+                stderr_test_file, "w"
+            ) as tmp_f:
                 contents = [self.replace_line(line) for line in f]
                 for line in contents:
                     tmp_f.write(line)
@@ -146,7 +153,12 @@ class FlatbufferTest:
                     color_enum.LIGHT_PURPLE, self.test_id, cmd, color_enum.ENDC
                 )
             )
-            result = subprocess.run(shlex.split(cmd), check=True)
+            result = subprocess.run(
+                shlex.split(cmd),
+                cwd=self.ref_dir,
+                capture_output=True,
+                text=True,
+            )
             if result.returncode != 0:
                 raise RuntimeError(
                     "Generating flatbuffer file failed with {} {} {}".format(

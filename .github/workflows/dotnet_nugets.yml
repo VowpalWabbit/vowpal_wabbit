@@ -155,6 +155,7 @@ jobs:
           name: VowpalWabbit.${{steps.get_version.outputs.version}}.nupkg
           path: nuget_staging/${{ steps.generate-nuget.outputs.NugetFileName }}
           overwrite: true
+          retention-days: ${{ github.event_name == 'pull_request' && 7 || 400 }}
 
       # Create the .NET Core runtime package, all platforms
       - name: Package .NET Core Runtime
@@ -171,6 +172,7 @@ jobs:
           name: VowpalWabbit.runtime.${{matrix.config.runtime_id}}.${{steps.get_version.outputs.version}}.nupkg
           path: nuget_staging/${{ steps.generate-runtime-nuget.outputs.NugetFileName }}
           overwrite: true
+          retention-days: ${{ github.event_name == 'pull_request' && 7 || 400 }}
 
   test_nuget_dotnetcore:
     needs: [build_nuget_dotnet]
