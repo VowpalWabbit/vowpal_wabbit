@@ -48,6 +48,8 @@ prior to this file's creation, see [GitHub Releases](https://github.com/VowpalWa
 - Fix FlatBuffer converter to use `unique_ptr`-based VW initialize API (#4733)
 - Eliminate ~62,000 MSVC compiler warnings (#4752, #4753, #4757, #4758, #4759)
 - Fix unsigned underflow in `ends_with()` (#4749)
+- Fix C# pooled native example memory leak on dispose (#4891)
+- Add missing `osx-arm64` runtime dependency to combined .NET NuGet package (#4894)
 
 ### CI / Build
 
@@ -61,6 +63,9 @@ prior to this file's creation, see [GitHub Releases](https://github.com/VowpalWa
 - Add submodule init retry to all checkout steps (#4856)
 - Upgrade `actions/checkout` from v1/v3 to v6 across all workflows
 - Upgrade `docker/setup-qemu-action` from v1 to v3 (#4751)
+- Add flatbuffers test to vcpkg builds (#4892)
+- Add static JNI build+test job to java-publish workflow (#4892)
+- Extend artifact retention for native JNI and NuGet packages (#4892)
 
 ### Dependencies
 
