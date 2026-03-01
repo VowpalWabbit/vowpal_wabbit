@@ -166,6 +166,21 @@ namespace VW
       }
     }
 
+    /// <summary>
+    /// Releases the native example handle and clears the InnerExample chain.
+    /// Called during pool cleanup when the owning VowpalWabbit is disposed.
+    /// </summary>
+    internal void DisposeNativeResources()
+    {
+      if (this.exampleHandle != null)
+      {
+        this.exampleHandle.Dispose();
+        this.exampleHandle = null;
+      }
+
+      this.InnerExample = null;
+    }
+
     internal void KeepAliveNative()
     {
       GC.KeepAlive(this.exampleHandle);

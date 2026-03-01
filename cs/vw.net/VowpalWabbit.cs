@@ -827,10 +827,11 @@ namespace VW {
     {
       Debug.Assert(!this.IsRingExample(example));
 
-      // If the bag is full, just dispose it
+      // If the bag is full, release native resources directly.
+      // (Calling example.Dispose() here would re-enter ReturnExampleToPool.)
       if (!this.m_examples.TryAdd(example))
       {
-        example.Dispose();
+        example.DisposeNativeResources();
       }
     }
 

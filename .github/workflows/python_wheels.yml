@@ -55,6 +55,7 @@ jobs:
         with:
           name: cibw-wheels-${{ matrix.os }}
           path: ./wheelhouse/*.whl
+          retention-days: ${{ github.event_name == 'pull_request' && 7 || 400 }}
 
   # Linux ARM64 builds using cibuildwheel (Python 3.10-3.14)
   cibuildwheel-build-linux-aarch64:
@@ -86,6 +87,7 @@ jobs:
         with:
           name: cibw-wheels-ubuntu-24.04-arm
           path: ./wheelhouse/*.whl
+          retention-days: ${{ github.event_name == 'pull_request' && 7 || 400 }}
 
   # macOS builds using cibuildwheel (Python 3.10-3.14)
   cibuildwheel-build-macos:
@@ -121,11 +123,12 @@ jobs:
         with:
           name: cibw-wheels-${{ matrix.os }}
           path: ./wheelhouse/*.whl
+          retention-days: ${{ github.event_name == 'pull_request' && 7 || 400 }}
 
   # Windows builds using cibuildwheel (Python 3.10-3.14)
   cibuildwheel-build-windows:
-    name: cibuildwheel.windows-2019
-    runs-on: windows-2019
+    name: cibuildwheel.windows-2022
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@v6
         with:
@@ -154,8 +157,9 @@ jobs:
         uses: pypa/cibuildwheel@v3.3.0
       - uses: actions/upload-artifact@v4
         with:
-          name: cibw-wheels-windows-2019
+          name: cibw-wheels-windows-2022
           path: ./wheelhouse/*.whl
+          retention-days: ${{ github.event_name == 'pull_request' && 7 || 400 }}
 
   linux-python-sdist-bundle:
     name: ubuntu-latest.amd64.py3.10.sdist-bundle
@@ -192,6 +196,7 @@ jobs:
           name: python_source_distribution
           path: dist/*.tar.gz
           if-no-files-found: error
+          retention-days: ${{ github.event_name == 'pull_request' && 7 || 400 }}
 
   linux-python-sdist-build-test:
     name: ubuntu-latest.amd64.py3.10.sdist-build-test

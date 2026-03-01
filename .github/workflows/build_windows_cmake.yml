@@ -21,7 +21,7 @@ jobs:
       fail-fast: false
       matrix:
         build_config: ["Debug", "Release"]
-        os: ["windows-2019", "windows-2022"]
+        os: ["windows-latest"]
     runs-on: ${{ matrix.os }}
     env:
       CMAKE_BUILD_DIR: ${{ github.workspace }}/vw/build

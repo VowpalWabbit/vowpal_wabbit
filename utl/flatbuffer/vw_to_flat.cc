@@ -413,44 +413,48 @@ void to_flat::convert_txt_to_flat(VW::workspace& all)
 
   while (ae != nullptr && !ae->end_pass)
   {
-    // Create Label for current example
-    flatbuffers::Offset<void> label;
-    VW::parsers::flatbuffer::Label label_type = VW::parsers::flatbuffer::Label_NONE;
-    switch (all.parser_runtime.example_parser->lbl_parser.label_type)
+    // Newline separator examples don't carry meaningful labels.
+    // Use no_label to avoid the FB parser warning about empty label arrays.
+    if (VW::example_is_newline(*ae)) { to_flat::create_no_label(ae, ex_builder); }
+    else
     {
-      case VW::label_type_t::NOLABEL:
-        to_flat::create_no_label(ae, ex_builder);
-        break;
-      case VW::label_type_t::CB:
-        to_flat::create_cb_label(ae, ex_builder);
-        break;
-      case VW::label_type_t::CCB:
-        to_flat::create_ccb_label(ae, ex_builder);
-        break;
-      case VW::label_type_t::MULTILABEL:
-        to_flat::create_multi_label(ae, ex_builder);
-        break;
-      case VW::label_type_t::MULTICLASS:
-        to_flat::create_mc_label(all.sd->ldict.get(), ae, ex_builder);
-        break;
-      case VW::label_type_t::CS:
-        to_flat::create_cs_label(ae, ex_builder);
-        break;
-      case VW::label_type_t::CB_EVAL:
-        to_flat::create_cb_eval_label(ae, ex_builder);
-        break;
-      case VW::label_type_t::SLATES:
-        to_flat::create_slates_label(ae, ex_builder);
-        break;
-      case VW::label_type_t::SIMPLE:
-        to_flat::create_simple_label(ae, ex_builder);
-        break;
-      case VW::label_type_t::CONTINUOUS:
-        to_flat::create_continuous_action_label(ae, ex_builder);
-        break;
-      default:
-        THROW("label_type has not been set or is unknown");
-        break;
+      // Create Label for current example
+      switch (all.parser_runtime.example_parser->lbl_parser.label_type)
+      {
+        case VW::label_type_t::NOLABEL:
+          to_flat::create_no_label(ae, ex_builder);
+          break;
+        case VW::label_type_t::CB:
+          to_flat::create_cb_label(ae, ex_builder);
+          break;
+        case VW::label_type_t::CCB:
+          to_flat::create_ccb_label(ae, ex_builder);
+          break;
+        case VW::label_type_t::MULTILABEL:
+          to_flat::create_multi_label(ae, ex_builder);
+          break;
+        case VW::label_type_t::MULTICLASS:
+          to_flat::create_mc_label(all.sd->ldict.get(), ae, ex_builder);
+          break;
+        case VW::label_type_t::CS:
+          to_flat::create_cs_label(ae, ex_builder);
+          break;
+        case VW::label_type_t::CB_EVAL:
+          to_flat::create_cb_eval_label(ae, ex_builder);
+          break;
+        case VW::label_type_t::SLATES:
+          to_flat::create_slates_label(ae, ex_builder);
+          break;
+        case VW::label_type_t::SIMPLE:
+          to_flat::create_simple_label(ae, ex_builder);
+          break;
+        case VW::label_type_t::CONTINUOUS:
+          to_flat::create_continuous_action_label(ae, ex_builder);
+          break;
+        default:
+          THROW("label_type has not been set or is unknown");
+          break;
+      }
     }
 
     uint64_t multiplier = (uint64_t)all.reduction_state.total_feature_width << all.weights.stride_shift();

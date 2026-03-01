@@ -205,6 +205,24 @@ namespace VW {
     [ReliabilityContract(Consistency.WillNotCorruptState, Cer.MayFail)]
     private void OperatorDelete(IntPtr workspace)
     {
+      // Drain the example pool before deleting the workspace. Pooled examples hold
+      // native handles that must be freed while the workspace is still valid.
+      if (this.m_examples != null)
+      {
+        foreach (var example in this.m_examples.RemoveAll())
+        {
+          example.DisposeNativeResources();
+        }
+
+        this.m_examples = null;
+      }
+
+      // Free the trace listener GCHandle so the delegate can be collected.
+      if (this.traceListenerHandle.IsAllocated)
+      {
+        this.traceListenerHandle.Free();
+      }
+
       using (ApiStatus status = new ApiStatus())
       {
         // It is so messed up that we can throw while shutting down.
