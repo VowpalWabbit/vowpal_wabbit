@@ -399,17 +399,20 @@ bool get_namespace_hash(VW::workspace* all, const Namespace* ns, uint64_t& hash)
 
 bool features_have_names(const Namespace& ns)
 {
-  return flatbuffers::IsFieldPresent(&ns, Namespace::VT_FEATURE_NAMES) && (ns.feature_names()->size() != 0);
+  return flatbuffers::IsFieldPresent(&ns, Namespace::VT_FEATURE_NAMES) && ns.feature_names() != nullptr &&
+      ns.feature_names()->size() != 0;
 }
 
 bool features_have_hashes(const Namespace& ns)
 {
-  return flatbuffers::IsFieldPresent(&ns, Namespace::VT_FEATURE_HASHES) && (ns.feature_hashes()->size() != 0);
+  return flatbuffers::IsFieldPresent(&ns, Namespace::VT_FEATURE_HASHES) && ns.feature_hashes() != nullptr &&
+      ns.feature_hashes()->size() != 0;
 }
 
 bool features_have_values(const Namespace& ns)
 {
-  return flatbuffers::IsFieldPresent(&ns, Namespace::VT_FEATURE_VALUES) && (ns.feature_values()->size() != 0);
+  return flatbuffers::IsFieldPresent(&ns, Namespace::VT_FEATURE_VALUES) && ns.feature_values() != nullptr &&
+      ns.feature_values()->size() != 0;
 }
 
 int parser::parse_namespaces(VW::workspace* all, example* ae, const Namespace* ns, VW::experimental::api_status* status)
