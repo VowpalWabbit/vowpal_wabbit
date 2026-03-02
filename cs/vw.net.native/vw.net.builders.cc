@@ -48,6 +48,8 @@ API void DeleteBuilder(vw_net_native::builder_context* builder)
       ex.is_newline = false;
     }
   }
+
+  delete builder;
 }
 
 API void BuilderPreallocate(vw_net_native::builder_context* builder, vw_net_native::dotnet_size_t size)
