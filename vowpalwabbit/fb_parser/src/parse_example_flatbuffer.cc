@@ -399,17 +399,20 @@ bool get_namespace_hash(VW::workspace* all, const Namespace* ns, uint64_t& hash)
 
 bool features_have_names(const Namespace& ns)
 {
-  return flatbuffers::IsFieldPresent(&ns, Namespace::VT_FEATURE_NAMES) && (ns.feature_names()->size() != 0);
+  return flatbuffers::IsFieldPresent(&ns, Namespace::VT_FEATURE_NAMES) && ns.feature_names() != nullptr &&
+      ns.feature_names()->size() != 0;
 }
 
 bool features_have_hashes(const Namespace& ns)
 {
-  return flatbuffers::IsFieldPresent(&ns, Namespace::VT_FEATURE_HASHES) && (ns.feature_hashes()->size() != 0);
+  return flatbuffers::IsFieldPresent(&ns, Namespace::VT_FEATURE_HASHES) && ns.feature_hashes() != nullptr &&
+      ns.feature_hashes()->size() != 0;
 }
 
 bool features_have_values(const Namespace& ns)
 {
-  return flatbuffers::IsFieldPresent(&ns, Namespace::VT_FEATURE_VALUES) && (ns.feature_values()->size() != 0);
+  return flatbuffers::IsFieldPresent(&ns, Namespace::VT_FEATURE_VALUES) && ns.feature_values() != nullptr &&
+      ns.feature_values()->size() != 0;
 }
 
 int parser::parse_namespaces(VW::workspace* all, example* ae, const Namespace* ns, VW::experimental::api_status* status)
@@ -436,6 +439,15 @@ int parser::parse_namespaces(VW::workspace* all, example* ae, const Namespace* n
   auto& fs = ae->feature_space[index];
 
   if (hash_found) { fs.start_ns_extent(hash); }
+
+  // Ensure end_ns_extent is called even on error paths to avoid leaving an
+  // unclosed extent, which can cause crashes (e.g. debug assert violations
+  // on Windows) when the example is later cleaned up or reused.
+  auto ns_extent_guard = VW::scope_exit(
+      [&]()
+      {
+        if (hash_found) { fs.end_ns_extent(); }
+      });
 
   if (!features_have_values(*ns)) { RETURN_NS_PARSER_ERROR(status, fb_parser_feature_values_missing) }
 
@@ -504,6 +516,8 @@ int parser::parse_namespaces(VW::workspace* all, example* ae, const Namespace* n
     }
   }
 
+  // Cancel the guard — we'll call end_ns_extent ourselves on the success path.
+  ns_extent_guard.cancel();
   if (hash_found) { fs.end_ns_extent(); }
 
   return VW::experimental::error_code::success;
