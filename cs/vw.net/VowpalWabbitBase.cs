@@ -139,6 +139,7 @@ namespace VW {
             IOReaderAdapter modelReader = new IOReaderAdapter(settings.ModelStream);
 
             IntPtr result = NativeMethods.CreateWorkspaceWithModelData(new IntPtr(argumentsPtr), argumentsSize, modelReader.GetVTable(), traceListener, localTraceContext, localStatus.ToNativeHandleOrNullptrDangerous());
+            GC.KeepAlive(modelReader);
 
             if (result == IntPtr.Zero || localStatus.ErrorCode != NativeMethods.SuccessStatus)
             {
@@ -423,6 +424,7 @@ namespace VW {
       IOWriterAdapter writer = new IOWriterAdapter(stream);
       NativeMethods.WorkspaceSavePredictorToWriter(this.DangerousGetHandle(), writer.GetVTable(), status.ToNativeHandleOrNullptrDangerous());
       GC.KeepAlive(this);
+      GC.KeepAlive(writer);
 
       if (status.ErrorCode != NativeMethods.SuccessStatus)
       {
