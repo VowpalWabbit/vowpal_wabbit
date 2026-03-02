@@ -121,6 +121,12 @@ int read_span_flatbuffer(VW::workspace* all, const uint8_t* span, size_t length,
         has_more = false;
         break;
       default:
+        // Reset parser state so that stale _active_multi_ex / _active_collection
+        // flags (and their associated object pointers) don't persist across calls.
+        // Without this, if the heap allocator reuses the same address for the next
+        // flatbuffer, the buffer_pointer == _flatbuffer_pointer check in
+        // parse_examples will skip the state reset, causing use-after-free.
+        all->parser_runtime.flat_converter->reset_state();
         RETURN_IF_FAIL(result);
     }
 
@@ -157,6 +163,12 @@ int read_span_flatbuffer(VW::workspace* all, const uint8_t* span, size_t length,
 }
 
 const VW::parsers::flatbuffer::ExampleRoot* parser::data() { return _data; }
+
+void parser::reset_state()
+{
+  reset_active_multi_ex();
+  reset_active_collection();
+}
 
 int parser::parse(io_buf& buf, const uint8_t* buffer_pointer, VW::experimental::api_status* status)
 {

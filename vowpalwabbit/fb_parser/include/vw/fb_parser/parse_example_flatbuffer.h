@@ -37,6 +37,12 @@ public:
   int parse_examples(VW::workspace* all, io_buf& buf, VW::multi_ex& examples, const uint8_t* buffer_pointer = nullptr,
       VW::experimental::api_status* status = nullptr);
 
+  // Reset all re-entrant parsing state. Must be called after a parse error
+  // to prevent stale _active_multi_ex / _active_collection flags (and their
+  // associated object pointers) from persisting across calls, which can lead
+  // to use-after-free when the previous flatbuffer is deallocated.
+  void reset_state();
+
 private:
   size_t _num_example_roots = 0;
   const VW::parsers::flatbuffer::ExampleRoot* _data;
