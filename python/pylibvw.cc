@@ -26,13 +26,13 @@
 #include "vw/core/vw.h"
 #include "vw/text_parser/parse_example_text.h"
 
+#include <pybind11/functional.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-#include <pybind11/functional.h>
 
 #include <cstring>
-#include <memory>
 #include <fstream>
+#include <memory>
 
 namespace py = pybind11;
 
@@ -277,15 +277,9 @@ public:
 vw_ptr my_initialize_with_log(py::list args, py_log_wrapper_ptr py_log)
 {
   std::vector<std::string> args_vec;
-  for (auto item : args) 
-  { 
-    args_vec.push_back(item.cast<std::string>()); 
-  }
+  for (auto item : args) { args_vec.push_back(item.cast<std::string>()); }
 
-  if (std::find(args_vec.begin(), args_vec.end(), "--no_stdin") == args_vec.end()) 
-  { 
-    args_vec.push_back("--no_stdin"); 
-  }
+  if (std::find(args_vec.begin(), args_vec.end(), "--no_stdin") == args_vec.end()) { args_vec.push_back("--no_stdin"); }
 
   VW::driver_output_func_t trace_listener = nullptr;
   void* trace_context = nullptr;
@@ -321,18 +315,12 @@ vw_ptr my_initialize_with_log(py::list args, py_log_wrapper_ptr py_log)
 }
 
 // Initialization function without logging
-vw_ptr my_initialize(py::list args)
-{
-  return my_initialize_with_log(args, nullptr);
-}
+vw_ptr my_initialize(py::list args) { return my_initialize_with_log(args, nullptr); }
 
 vw_ptr merge_workspaces(vw_ptr base_workspace, py::list workspaces)
 {
   std::vector<const VW::workspace*> const_workspaces;
-  for (auto item : workspaces)
-  {
-    const_workspaces.push_back(item.cast<vw_ptr>().get());
-  }
+  for (auto item : workspaces) { const_workspaces.push_back(item.cast<vw_ptr>().get()); }
   return std::shared_ptr<VW::workspace>(VW::merge_models(base_workspace.get(), const_workspaces));
 }
 
@@ -378,20 +366,14 @@ py::dict get_learner_metrics(vw_ptr all)
 }
 
 // Basic workspace functions
-void my_finish(vw_ptr all)
-{
-  all->finish();
-}
+void my_finish(vw_ptr all) { all->finish(); }
 
-void my_save(vw_ptr all, std::string name)
-{
-  VW::save_predictor(*all, name);
-}
+void my_save(vw_ptr all, std::string name) { VW::save_predictor(*all, name); }
 
 search_ptr get_search_ptr(vw_ptr all)
 {
   auto* search_data = (Search::search*)all->l->get_internal_type_erased_data_pointer_test_use_only();
-  return std::shared_ptr<Search::search>(search_data, [](Search::search*){});
+  return std::shared_ptr<Search::search>(search_data, [](Search::search*) {});
 }
 
 py::object get_options(vw_ptr all, py::object py_class, bool enabled_only)
@@ -402,15 +384,9 @@ py::object get_options(vw_ptr all, py::object py_class, bool enabled_only)
   return opt_manager.get_vw_option_pyobjects(enabled_only);
 }
 
-void my_audit_example(vw_ptr all, example_ptr ec)
-{
-  VW::details::print_audit_features(*all, *ec);
-}
+void my_audit_example(vw_ptr all, example_ptr ec) { VW::details::print_audit_features(*all, *ec); }
 
-const char* get_model_id(vw_ptr all)
-{
-  return all->id.c_str();
-}
+const char* get_model_id(vw_ptr all) { return all->id.c_str(); }
 
 std::string get_arguments(vw_ptr all)
 {
@@ -427,10 +403,7 @@ py::list get_enabled_learners(vw_ptr all)
   py::list py_enabled_learners;
   std::vector<std::string> enabled_learners;
   if (all->l) all->l->get_enabled_learners(enabled_learners);
-  for (auto ex : enabled_learners)
-  {
-    py_enabled_learners.append(ex);
-  }
+  for (auto ex : enabled_learners) { py_enabled_learners.append(ex); }
   return py_enabled_learners;
 }
 
@@ -488,20 +461,34 @@ size_t my_get_label_type(VW::workspace* all)
 size_t my_get_prediction_type(vw_ptr all)
 {
   VW::prediction_type_t pred_type = all->l->get_output_prediction_type();
-  if (pred_type == VW::prediction_type_t::SCALAR) return pSCALAR;
-  else if (pred_type == VW::prediction_type_t::SCALARS) return pSCALARS;
-  else if (pred_type == VW::prediction_type_t::ACTION_SCORES) return pACTION_SCORES;
-  else if (pred_type == VW::prediction_type_t::ACTION_PROBS) return pACTION_PROBS;
-  else if (pred_type == VW::prediction_type_t::MULTICLASS) return pMULTICLASS;
-  else if (pred_type == VW::prediction_type_t::MULTILABELS) return pMULTILABELS;
-  else if (pred_type == VW::prediction_type_t::PROB) return pPROB;
-  else if (pred_type == VW::prediction_type_t::MULTICLASS_PROBS) return pMULTICLASSPROBS;
-  else if (pred_type == VW::prediction_type_t::DECISION_PROBS) return pDECISION_SCORES;
-  else if (pred_type == VW::prediction_type_t::ACTION_PDF_VALUE) return pACTION_PDF_VALUE;
-  else if (pred_type == VW::prediction_type_t::PDF) return pPDF;
-  else if (pred_type == VW::prediction_type_t::ACTIVE_MULTICLASS) return pACTIVE_MULTICLASS;
-  else if (pred_type == VW::prediction_type_t::NOPRED) return pNOPRED;
-  else THROW("Unknown prediction type");
+  if (pred_type == VW::prediction_type_t::SCALAR)
+    return pSCALAR;
+  else if (pred_type == VW::prediction_type_t::SCALARS)
+    return pSCALARS;
+  else if (pred_type == VW::prediction_type_t::ACTION_SCORES)
+    return pACTION_SCORES;
+  else if (pred_type == VW::prediction_type_t::ACTION_PROBS)
+    return pACTION_PROBS;
+  else if (pred_type == VW::prediction_type_t::MULTICLASS)
+    return pMULTICLASS;
+  else if (pred_type == VW::prediction_type_t::MULTILABELS)
+    return pMULTILABELS;
+  else if (pred_type == VW::prediction_type_t::PROB)
+    return pPROB;
+  else if (pred_type == VW::prediction_type_t::MULTICLASS_PROBS)
+    return pMULTICLASSPROBS;
+  else if (pred_type == VW::prediction_type_t::DECISION_PROBS)
+    return pDECISION_SCORES;
+  else if (pred_type == VW::prediction_type_t::ACTION_PDF_VALUE)
+    return pACTION_PDF_VALUE;
+  else if (pred_type == VW::prediction_type_t::PDF)
+    return pPDF;
+  else if (pred_type == VW::prediction_type_t::ACTIVE_MULTICLASS)
+    return pACTIVE_MULTICLASS;
+  else if (pred_type == VW::prediction_type_t::NOPRED)
+    return pNOPRED;
+  else
+    THROW("Unknown prediction type");
 }
 
 void my_delete_example(void* voidec)
@@ -535,25 +522,16 @@ example_ptr my_read_example(vw_ptr all, size_t labelType, std::string str)
   return std::shared_ptr<VW::example>(ec, my_delete_example);
 }
 
-example_ptr my_existing_example(vw_ptr all, size_t labelType, example_ptr existing_example)
-{
-  return existing_example;
-}
+example_ptr my_existing_example(vw_ptr all, size_t labelType, example_ptr existing_example) { return existing_example; }
 
 multi_ex unwrap_example_list(py::list& ec_list)
 {
   multi_ex ex_coll;
-  for (auto item : ec_list)
-  {
-    ex_coll.push_back(item.cast<example_ptr>().get());
-  }
+  for (auto item : ec_list) { ex_coll.push_back(item.cast<example_ptr>().get()); }
   return ex_coll;
 }
 
-void my_finish_example(vw_ptr all, example_ptr ec)
-{
-  all->finish_example(*ec);
-}
+void my_finish_example(vw_ptr all, example_ptr ec) { all->finish_example(*ec); }
 
 void my_finish_multi_ex(vw_ptr& all, py::list& ec_list)
 {
@@ -561,15 +539,9 @@ void my_finish_multi_ex(vw_ptr& all, py::list& ec_list)
   all->finish_example(ex_coll);
 }
 
-void my_learn(vw_ptr all, example_ptr ec)
-{
-  all->learn(*ec);
-}
+void my_learn(vw_ptr all, example_ptr ec) { all->learn(*ec); }
 
-std::string my_json_weights(vw_ptr all)
-{
-  return all->dump_weights_to_json_experimental();
-}
+std::string my_json_weights(vw_ptr all) { return all->dump_weights_to_json_experimental(); }
 
 void my_predict(vw_ptr all, example_ptr ec)
 {
@@ -579,17 +551,15 @@ void my_predict(vw_ptr all, example_ptr ec)
   VW::LEARNER::require_singleline(all->l)->predict(*ec);
 }
 
-bool my_is_multiline(vw_ptr all)
-{
-  return all->l->is_multiline();
-}
+bool my_is_multiline(vw_ptr all) { return all->l->is_multiline(); }
 
-template<bool learn>
+template <bool learn>
 void predict_or_learn(vw_ptr& all, py::list& ec_list)
 {
   multi_ex ex_coll = unwrap_example_list(ec_list);
   if (learn) { all->learn(ex_coll); }
-  else {
+  else
+  {
     // Use the learner's predict directly instead of workspace::predict
     // because workspace::predict sets test_only = true for all examples,
     // which would cause subsequent learn calls to skip learning.
@@ -618,15 +588,9 @@ py::list my_parse(vw_ptr& all, std::string str)
   return result;
 }
 
-void my_learn_multi_ex(vw_ptr& all, py::list& ec_list)
-{
-  predict_or_learn<true>(all, ec_list);
-}
+void my_learn_multi_ex(vw_ptr& all, py::list& ec_list) { predict_or_learn<true>(all, ec_list); }
 
-void my_predict_multi_ex(vw_ptr& all, py::list& ec_list)
-{
-  predict_or_learn<false>(all, ec_list);
-}
+void my_predict_multi_ex(vw_ptr& all, py::list& ec_list) { predict_or_learn<false>(all, ec_list); }
 
 std::string varray_char_to_string(VW::v_array<char>& a)
 {
@@ -645,41 +609,20 @@ py::list varray_to_pylist(const VW::v_array<T>& a)
 }
 
 // Minimal example accessor functions
-std::string my_get_tag(example_ptr ec)
-{
-  return varray_char_to_string(ec->tag);
-}
+std::string my_get_tag(example_ptr ec) { return varray_char_to_string(ec->tag); }
 
 // Example namespace and feature methods
-uint32_t ex_num_namespaces(example_ptr ec) 
-{ 
-  return (uint32_t)ec->indices.size(); 
-}
+uint32_t ex_num_namespaces(example_ptr ec) { return (uint32_t)ec->indices.size(); }
 
-unsigned char ex_namespace(example_ptr ec, uint32_t i) 
-{ 
-  return ec->indices[i]; 
-}
+unsigned char ex_namespace(example_ptr ec, uint32_t i) { return ec->indices[i]; }
 
-uint32_t ex_num_features(example_ptr ec, unsigned char ns) 
-{ 
-  return (uint32_t)ec->feature_space[ns].size(); 
-}
+uint32_t ex_num_features(example_ptr ec, unsigned char ns) { return (uint32_t)ec->feature_space[ns].size(); }
 
-uint64_t ex_feature(example_ptr ec, unsigned char ns, uint32_t i) 
-{ 
-  return ec->feature_space[ns].indices[i]; 
-}
+uint64_t ex_feature(example_ptr ec, unsigned char ns, uint32_t i) { return ec->feature_space[ns].indices[i]; }
 
-float ex_feature_weight(example_ptr ec, unsigned char ns, uint32_t i) 
-{ 
-  return ec->feature_space[ns].values[i]; 
-}
+float ex_feature_weight(example_ptr ec, unsigned char ns, uint32_t i) { return ec->feature_space[ns].values[i]; }
 
-float ex_sum_feat_sq(example_ptr ec, unsigned char ns) 
-{ 
-  return ec->feature_space[ns].sum_feat_sq; 
-}
+float ex_sum_feat_sq(example_ptr ec, unsigned char ns) { return ec->feature_space[ns].sum_feat_sq; }
 
 void ex_push_feature(example_ptr ec, unsigned char ns, uint64_t fid, float v)
 {
@@ -687,7 +630,6 @@ void ex_push_feature(example_ptr ec, unsigned char ns, uint64_t fid, float v)
   ec->num_features++;
   ec->reset_total_sum_feat_sq();
 }
-
 
 void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, uint64_t ns_hash, py::list& a)
 {
@@ -721,10 +663,7 @@ void ex_push_feature_list(example_ptr ec, vw_ptr vw, unsigned char ns, uint64_t 
       uint64_t fhash = feature_id.cast<uint64_t>();
       ex_push_feature(ec, ns, fhash, fval);
     }
-    else
-    {
-      THROW("features must be strings, ints, or tuples of (str/int, float)");
-    }
+    else { THROW("features must be strings, ints, or tuples of (str/int, float)"); }
   }
 }
 
@@ -746,19 +685,11 @@ void ex_push_feature_dict(example_ptr ec, vw_ptr vw, unsigned char ns, uint64_t 
       uint64_t fhash = item.first.cast<uint64_t>();
       ex_push_feature(ec, ns, fhash, fval);
     }
-    else
-    {
-      THROW("feature id must be int or str");
-    }
+    else { THROW("feature id must be int or str"); }
   }
 }
 
-
-void ex_push_namespace(example_ptr ec, unsigned char ns) 
-{ 
-  ec->indices.push_back(ns); 
-}
-
+void ex_push_namespace(example_ptr ec, unsigned char ns) { ec->indices.push_back(ns); }
 
 void ex_ensure_namespace_exists(example_ptr ec, unsigned char ns)
 {
@@ -769,14 +700,13 @@ void ex_ensure_namespace_exists(example_ptr ec, unsigned char ns)
   ex_push_namespace(ec, ns);
 }
 
-
 void ex_push_dictionary(example_ptr ec, vw_ptr vw, py::dict dict)
 {
   for (auto item : dict)
   {
     unsigned char ns = 0;
     uint64_t ns_hash = 0;
-    
+
     if (py::isinstance<py::str>(item.first))
     {
       std::string ns_str = item.first.cast<std::string>();
@@ -789,11 +719,8 @@ void ex_push_dictionary(example_ptr ec, vw_ptr vw, py::dict dict)
       ns = item.first.cast<unsigned char>();
       ns_hash = VW::hash_space(*vw, std::string(1, (char)ns));
     }
-    else
-    {
-      THROW("namespace must be int or str");
-    }
-    
+    else { THROW("namespace must be int or str"); }
+
     ex_ensure_namespace_exists(ec, ns);
 
     if (py::isinstance<py::dict>(item.second))
@@ -806,13 +733,9 @@ void ex_push_dictionary(example_ptr ec, vw_ptr vw, py::dict dict)
       py::list flist = item.second.cast<py::list>();
       ex_push_feature_list(ec, vw, ns, ns_hash, flist);
     }
-    else
-    {
-      THROW("namespace value must be a dict or list of (feature, value) tuples");
-    }
+    else { THROW("namespace value must be a dict or list of (feature, value) tuples"); }
   }
 }
-
 
 bool ex_pop_feature(example_ptr ec, unsigned char ns)
 {
@@ -827,7 +750,6 @@ bool ex_pop_feature(example_ptr ec, unsigned char ns)
   ec->reset_total_sum_feat_sq();
   return true;
 }
-
 
 void ex_erase_namespace(example_ptr ec, unsigned char ns)
 {
@@ -849,10 +771,7 @@ bool ex_pop_namespace(example_ptr ec)
 typedef std::vector<VW::example*> multi_ex;
 
 // Additional workspace functions
-void my_setup_example(vw_ptr vw, example_ptr ec) 
-{ 
-  VW::setup_example(*vw, ec.get()); 
-}
+void my_setup_example(vw_ptr vw, example_ptr ec) { VW::setup_example(*vw, ec.get()); }
 
 void unsetup_example(vw_ptr vwP, example_ptr ae)
 {
@@ -898,7 +817,6 @@ void unsetup_example(vw_ptr vwP, example_ptr ae)
       for (auto& idx : ae->feature_space[ns].indices) idx /= multiplier;
 }
 
-
 void ex_set_label_string(example_ptr ec, vw_ptr vw, std::string label, size_t labelType)
 {
   VW::label_parser& old_lp = vw->parser_runtime.example_parser->lbl_parser;
@@ -908,46 +826,25 @@ void ex_set_label_string(example_ptr ec, vw_ptr vw, std::string label, size_t la
 }
 
 // Simple label accessors
-float ex_get_simplelabel_label(example_ptr ec)
-{
-  return ec->l.simple.label;
-}
+float ex_get_simplelabel_label(example_ptr ec) { return ec->l.simple.label; }
 
-float ex_get_simplelabel_weight(example_ptr ec)
-{
-  return ec->weight;
-}
+float ex_get_simplelabel_weight(example_ptr ec) { return ec->weight; }
 
 float ex_get_simplelabel_initial(example_ptr ec)
 {
   return ec->ex_reduction_features.template get<VW::simple_label_reduction_features>().initial;
 }
 
-float ex_get_simplelabel_prediction(example_ptr ec)
-{
-  return ec->pred.scalar;
-}
+float ex_get_simplelabel_prediction(example_ptr ec) { return ec->pred.scalar; }
 
 // Prediction type accessors
-float ex_get_prob(example_ptr ec)
-{
-  return ec->pred.prob;
-}
+float ex_get_prob(example_ptr ec) { return ec->pred.prob; }
 
-uint32_t ex_get_multiclass_label(example_ptr ec)
-{
-  return ec->l.multi.label;
-}
+uint32_t ex_get_multiclass_label(example_ptr ec) { return ec->l.multi.label; }
 
-float ex_get_multiclass_weight(example_ptr ec)
-{
-  return ec->l.multi.weight;
-}
+float ex_get_multiclass_weight(example_ptr ec) { return ec->l.multi.weight; }
 
-uint32_t ex_get_multiclass_prediction(example_ptr ec)
-{
-  return ec->pred.multiclass;
-}
+uint32_t ex_get_multiclass_prediction(example_ptr ec) { return ec->pred.multiclass; }
 
 py::list ex_get_scalars(example_ptr ec)
 {
@@ -1013,51 +910,27 @@ py::list ex_get_multilabel_predictions(example_ptr ec)
 }
 
 // Cost-sensitive label accessors
-uint32_t ex_get_costsensitive_prediction(example_ptr ec)
-{
-  return ec->pred.multiclass;
-}
+uint32_t ex_get_costsensitive_prediction(example_ptr ec) { return ec->pred.multiclass; }
 
-uint32_t ex_get_costsensitive_num_costs(example_ptr ec)
-{
-  return (uint32_t)ec->l.cs.costs.size();
-}
+uint32_t ex_get_costsensitive_num_costs(example_ptr ec) { return (uint32_t)ec->l.cs.costs.size(); }
 
-float ex_get_costsensitive_cost(example_ptr ec, uint32_t i)
-{
-  return ec->l.cs.costs[i].x;
-}
+float ex_get_costsensitive_cost(example_ptr ec, uint32_t i) { return ec->l.cs.costs[i].x; }
 
-uint32_t ex_get_costsensitive_class(example_ptr ec, uint32_t i)
-{
-  return ec->l.cs.costs[i].class_index;
-}
+uint32_t ex_get_costsensitive_class(example_ptr ec, uint32_t i) { return ec->l.cs.costs[i].class_index; }
 
 float ex_get_costsensitive_partial_prediction(example_ptr ec, uint32_t i)
 {
   return ec->l.cs.costs[i].partial_prediction;
 }
 
-float ex_get_costsensitive_wap_value(example_ptr ec, uint32_t i)
-{
-  return ec->l.cs.costs[i].wap_value;
-}
+float ex_get_costsensitive_wap_value(example_ptr ec, uint32_t i) { return ec->l.cs.costs[i].wap_value; }
 
 // Contextual bandits label accessors
-uint32_t ex_get_cbandits_prediction(example_ptr ec)
-{
-  return ec->pred.multiclass;
-}
+uint32_t ex_get_cbandits_prediction(example_ptr ec) { return ec->pred.multiclass; }
 
-uint32_t ex_get_cbandits_weight(example_ptr ec)
-{
-  return ec->l.cb.weight;
-}
+uint32_t ex_get_cbandits_weight(example_ptr ec) { return ec->l.cb.weight; }
 
-uint32_t ex_get_cbandits_num_costs(example_ptr ec)
-{
-  return (uint32_t)ec->l.cb.costs.size();
-}
+uint32_t ex_get_cbandits_num_costs(example_ptr ec) { return (uint32_t)ec->l.cb.costs.size(); }
 
 float ex_get_cbandits_cost(example_ptr ec, uint32_t i)
 {
@@ -1084,20 +957,11 @@ float ex_get_cbandits_partial_prediction(example_ptr ec, uint32_t i)
 }
 
 // CB eval label accessors
-uint32_t ex_get_cb_eval_action(example_ptr ec)
-{
-  return ec->l.cb_eval.action;
-}
+uint32_t ex_get_cb_eval_action(example_ptr ec) { return ec->l.cb_eval.action; }
 
-uint32_t ex_get_cb_eval_weight(example_ptr ec)
-{
-  return ec->l.cb_eval.event.weight;
-}
+uint32_t ex_get_cb_eval_weight(example_ptr ec) { return ec->l.cb_eval.event.weight; }
 
-uint32_t ex_get_cb_eval_num_costs(example_ptr ec)
-{
-  return (uint32_t)ec->l.cb_eval.event.costs.size();
-}
+uint32_t ex_get_cb_eval_num_costs(example_ptr ec) { return (uint32_t)ec->l.cb_eval.event.costs.size(); }
 
 float ex_get_cb_eval_cost(example_ptr ec, uint32_t i)
 {
@@ -1124,10 +988,7 @@ float ex_get_cb_eval_partial_prediction(example_ptr ec, uint32_t i)
 }
 
 // CB continuous label accessors
-uint32_t ex_get_cb_continuous_num_costs(example_ptr ec)
-{
-  return (uint32_t)ec->l.cb_cont.costs.size();
-}
+uint32_t ex_get_cb_continuous_num_costs(example_ptr ec) { return (uint32_t)ec->l.cb_cont.costs.size(); }
 
 float ex_get_cb_continuous_cost(example_ptr ec, uint32_t i)
 {
@@ -1163,30 +1024,15 @@ size_t ex_get_slates_type(example_ptr ec)
   }
 }
 
-float ex_get_slates_weight(example_ptr ec)
-{
-  return ec->l.slates.weight;
-}
+float ex_get_slates_weight(example_ptr ec) { return ec->l.slates.weight; }
 
-bool ex_get_slates_labeled(example_ptr ec)
-{
-  return ec->l.slates.labeled;
-}
+bool ex_get_slates_labeled(example_ptr ec) { return ec->l.slates.labeled; }
 
-float ex_get_slates_cost(example_ptr ec)
-{
-  return ec->l.slates.cost;
-}
+float ex_get_slates_cost(example_ptr ec) { return ec->l.slates.cost; }
 
-uint32_t ex_get_slates_slot_id(example_ptr ec)
-{
-  return ec->l.slates.slot_id;
-}
+uint32_t ex_get_slates_slot_id(example_ptr ec) { return ec->l.slates.slot_id; }
 
-size_t ex_get_slates_num_probabilities(example_ptr ec)
-{
-  return ec->l.slates.probabilities.size();
-}
+size_t ex_get_slates_num_probabilities(example_ptr ec) { return ec->l.slates.probabilities.size(); }
 
 uint32_t ex_get_slates_action(example_ptr ec, uint32_t i)
 {
@@ -1216,10 +1062,7 @@ size_t ex_get_ccb_type(example_ptr ec)
   }
 }
 
-bool ex_get_ccb_has_outcome(example_ptr ec)
-{
-  return ec->l.conditional_contextual_bandit.outcome != nullptr;
-}
+bool ex_get_ccb_has_outcome(example_ptr ec) { return ec->l.conditional_contextual_bandit.outcome != nullptr; }
 
 float ex_get_ccb_outcome_cost(example_ptr ec)
 {
@@ -1255,10 +1098,7 @@ float ex_get_ccb_probability(example_ptr ec, uint32_t i)
   return outcome_ptr->probabilities[i].score;
 }
 
-float ex_get_ccb_weight(example_ptr ec)
-{
-  return ec->l.conditional_contextual_bandit.weight;
-}
+float ex_get_ccb_weight(example_ptr ec) { return ec->l.conditional_contextual_bandit.weight; }
 
 py::list ex_get_ccb_explicitly_included_actions(example_ptr ec)
 {
@@ -1279,66 +1119,30 @@ float ex_get_topic_prediction(VW::workspace& all, example_ptr ec, size_t i)
   return VW::get_topic_prediction(ec.get(), i);
 }
 
-size_t get_example_counter(example_ptr ec) 
-{ 
-  return ec->example_counter; 
-}
+size_t get_example_counter(example_ptr ec) { return ec->example_counter; }
 
-uint64_t get_ft_offset(example_ptr ec)
-{
-  return ec->ft_offset;
-}
+uint64_t get_ft_offset(example_ptr ec) { return ec->ft_offset; }
 
-size_t ex_get_feature_number(example_ptr ec)
-{
-  return ec->get_num_features();
-}
+size_t ex_get_feature_number(example_ptr ec) { return ec->get_num_features(); }
 
-float get_partial_prediction(example_ptr ec)
-{
-  return ec->partial_prediction;
-}
+float get_partial_prediction(example_ptr ec) { return ec->partial_prediction; }
 
-float ex_get_updated_prediction(example_ptr ec)
-{
-  return ec->updated_prediction;
-}
+float ex_get_updated_prediction(example_ptr ec) { return ec->updated_prediction; }
 
-float get_loss(example_ptr ec) 
-{ 
-  return ec->loss; 
-}
+float get_loss(example_ptr ec) { return ec->loss; }
 
-float get_total_sum_feat_sq(example_ptr ec)
-{
-  return ec->get_total_sum_feat_sq();
-}
+float get_total_sum_feat_sq(example_ptr ec) { return ec->get_total_sum_feat_sq(); }
 
 // Workspace accessor functions
-double get_sum_loss(vw_ptr vw)
-{
-  return vw->sd->sum_loss;
-}
+double get_sum_loss(vw_ptr vw) { return vw->sd->sum_loss; }
 
-double get_holdout_sum_loss(vw_ptr vw)
-{
-  return vw->sd->holdout_sum_loss;
-}
+double get_holdout_sum_loss(vw_ptr vw) { return vw->sd->holdout_sum_loss; }
 
-double get_weighted_examples(vw_ptr vw)
-{
-  return vw->sd->weighted_examples();
-}
+double get_weighted_examples(vw_ptr vw) { return vw->sd->weighted_examples(); }
 
-bool search_should_output(search_ptr _sch)
-{
-  return _sch->output().good();
-}
+bool search_should_output(search_ptr _sch) { return _sch->output().good(); }
 
-void search_output(search_ptr _sch, std::string s)
-{
-  _sch->output() << s;
-}
+void search_output(search_ptr _sch, std::string s) { _sch->output() << s; }
 
 // Search helper functions
 void verify_search_set_properly(search_ptr _sch)
@@ -1412,10 +1216,7 @@ void search_takedown_fn(Search::search& _sch)
   }
 }
 
-void my_set_test_only(example_ptr ec, bool test_only)
-{
-  ec->test_only = test_only;
-}
+void my_set_test_only(example_ptr ec, bool test_only) { ec->test_only = test_only; }
 
 void set_force_oracle(search_ptr _sch, bool useOracle)
 {
@@ -1462,23 +1263,53 @@ std::string po_get_string(search_ptr _sch, std::string arg)
 int32_t po_get_int(search_ptr _sch, std::string arg)
 {
   HookTask::task_data* d = _sch->get_task_data<HookTask::task_data>();
-  try { return d->arg->get_typed_option<int32_t>(arg).value(); }
-  catch (...) {}
-  try { return static_cast<int32_t>(d->arg->get_typed_option<int64_t>(arg).value()); }
-  catch (...) {}
-  try { return (int32_t)d->arg->get_typed_option<uint32_t>(arg).value(); }
-  catch (...) {}
-  try { return (int32_t)d->arg->get_typed_option<uint64_t>(arg).value(); }
-  catch (...) {}
+  try
+  {
+    return d->arg->get_typed_option<int32_t>(arg).value();
+  }
+  catch (...)
+  {
+  }
+  try
+  {
+    return static_cast<int32_t>(d->arg->get_typed_option<int64_t>(arg).value());
+  }
+  catch (...)
+  {
+  }
+  try
+  {
+    return (int32_t)d->arg->get_typed_option<uint32_t>(arg).value();
+  }
+  catch (...)
+  {
+  }
+  try
+  {
+    return (int32_t)d->arg->get_typed_option<uint64_t>(arg).value();
+  }
+  catch (...)
+  {
+  }
   return d->arg->get_typed_option<int32_t>(arg).value();
 }
 
 py::object po_get(search_ptr _sch, std::string arg)
 {
-  try { return py::cast(po_get_string(_sch, arg)); }
-  catch (...) {}
-  try { return py::cast(po_get_int(_sch, arg)); }
-  catch (...) {}
+  try
+  {
+    return py::cast(po_get_string(_sch, arg));
+  }
+  catch (...)
+  {
+  }
+  try
+  {
+    return py::cast(po_get_int(_sch, arg));
+  }
+  catch (...)
+  {
+  }
   return py::none();
 }
 
@@ -1542,8 +1373,8 @@ PYBIND11_MODULE(pylibvw, m)
   // VW::workspace class (bound as "vw")
   // py::dynamic_attr() allows Python code to set arbitrary attributes on the object,
   // which is needed for the Workspace class in pyvw.py to work correctly.
-  py::class_<VW::workspace, vw_ptr>(m, "vw", py::dynamic_attr(),
-      "the basic VW object that holds weight vector, parser, etc.")
+  py::class_<VW::workspace, vw_ptr>(
+      m, "vw", py::dynamic_attr(), "the basic VW object that holds weight vector, parser, etc.")
       .def(py::init(&my_initialize))
       .def(py::init(&my_initialize_with_log))
       // Constructor that adopts an existing workspace (used by merge_models)
@@ -1586,23 +1417,25 @@ PYBIND11_MODULE(pylibvw, m)
       .def("_parse", &my_parse, "Parse a string into a collection of VW examples")
       .def("_is_multiline", &my_is_multiline, "true if the base reduction is multiline")
 
-      .def_readonly_static("lDefault", &lDEFAULT,
-          "Default label type -- used as input to the example() initializer")
+      .def_readonly_static("lDefault", &lDEFAULT, "Default label type -- used as input to the example() initializer")
       .def_readonly_static("lBinary", &lBINARY, "Binary label type -- used as input to the example() initializer")
       .def_readonly_static("lSimple", &lSIMPLE, "Simple label type -- used as input to the example() initializer")
-      .def_readonly_static("lMulticlass", &lMULTICLASS, "Multiclass label type -- used as input to the example() initializer")
-      .def_readonly_static("lCostSensitive", &lCOST_SENSITIVE,
-          "Cost sensitive label type -- used as input to the example() initializer")
+      .def_readonly_static(
+          "lMulticlass", &lMULTICLASS, "Multiclass label type -- used as input to the example() initializer")
+      .def_readonly_static(
+          "lCostSensitive", &lCOST_SENSITIVE, "Cost sensitive label type -- used as input to the example() initializer")
       .def_readonly_static("lContextualBandit", &lCONTEXTUAL_BANDIT,
           "Contextual bandit label type -- used as input to the example() initializer")
       .def_readonly_static("lMax", &lMAX, "DEPRECATED: Max label type -- used as input to the example() initializer")
       .def_readonly_static("lConditionalContextualBandit", &lCONDITIONAL_CONTEXTUAL_BANDIT,
           "Conditional contextual bandit label type -- used as input to the example() initializer")
       .def_readonly_static("lSlates", &lSLATES, "Slates label type -- used as input to the example() initializer")
-      .def_readonly_static("lContinuous", &lCONTINUOUS, "Continuous label type -- used as input to the example() initializer")
+      .def_readonly_static(
+          "lContinuous", &lCONTINUOUS, "Continuous label type -- used as input to the example() initializer")
       .def_readonly_static("lContextualBanditEval", &lCONTEXTUAL_BANDIT_EVAL,
           "Contextual bandit eval label type -- used as input to the example() initializer")
-      .def_readonly_static("lMultilabel", &lMULTILABEL, "Multilabel label type -- used as input to the example() initializer")
+      .def_readonly_static(
+          "lMultilabel", &lMULTILABEL, "Multilabel label type -- used as input to the example() initializer")
 
       .def_readonly_static("pSCALAR", &pSCALAR, "Scalar prediction type")
       .def_readonly_static("pSCALARS", &pSCALARS, "Multiple scalar-valued prediction type")
@@ -1625,12 +1458,9 @@ PYBIND11_MODULE(pylibvw, m)
 
   // example class
   py::class_<example, example_ptr>(m, "example")
-      .def(py::init(&my_read_example),
-          "Given a string as an argument parse that into a VW example")
-      .def(py::init(&my_empty_example),
-          "Construct an empty example; you must provide a label type")
-      .def(py::init(&my_existing_example),
-          "Create a new example object pointing to an existing object")
+      .def(py::init(&my_read_example), "Given a string as an argument parse that into a VW example")
+      .def(py::init(&my_empty_example), "Construct an empty example; you must provide a label type")
+      .def(py::init(&my_existing_example), "Create a new example object pointing to an existing object")
       .def("set_test_only", &my_set_test_only, "Change the test-only bit on an example")
 
       .def("get_tag", &my_get_tag, "Returns the tag associated with this example")
@@ -1641,7 +1471,8 @@ PYBIND11_MODULE(pylibvw, m)
       .def("get_example_counter", &get_example_counter,
           "Returns the counter of total number of examples seen up to and including this one")
       .def("get_ft_offset", &get_ft_offset,
-          "Returns the feature offset for this example (used, eg, by multiclass classification to bulk offset all features)")
+          "Returns the feature offset for this example (used, eg, by multiclass classification to bulk offset all "
+          "features)")
       .def("get_partial_prediction", &get_partial_prediction,
           "Returns the partial prediction associated with this example")
       .def("get_updated_prediction", &ex_get_updated_prediction,
@@ -1651,8 +1482,7 @@ PYBIND11_MODULE(pylibvw, m)
 
       // Namespace and feature methods
       .def("num_namespaces", &ex_num_namespaces, "The total number of namespaces associated with this example")
-      .def("namespace", &ex_namespace,
-          "Get the namespace id for namespace i (for i = 0.. num_namespaces)")
+      .def("namespace", &ex_namespace, "Get the namespace id for namespace i (for i = 0.. num_namespaces)")
       .def("sum_feat_sq", &ex_sum_feat_sq,
           "Get the sum of feature-values squared for a given namespace id (id=character-ord)")
       .def("num_features_in", &ex_num_features, "Get the number of features in a given namespace id")
@@ -1668,7 +1498,7 @@ PYBIND11_MODULE(pylibvw, m)
       .def("pop_namespace", &ex_pop_namespace, "Remove the top namespace off; returns True iff the list was non-empty")
       .def("erase_namespace", &ex_erase_namespace, "Remove all the features from a given namespace")
       .def("set_label_string", &ex_set_label_string, "(Re)assign the label of this example to this string")
-      
+
       // Simple label accessors
       .def("get_simplelabel_label", &ex_get_simplelabel_label,
           "Assuming a simple_label label type, return the corresponding label")
@@ -1697,8 +1527,7 @@ PYBIND11_MODULE(pylibvw, m)
       .def("get_active_multiclass", &ex_get_active_multiclass, "Get active multiclass from example prediction")
       .def("get_multilabel_predictions", &ex_get_multilabel_predictions,
           "Get multilabel predictions from example prediction")
-      .def("get_multilabel_labels", &ex_get_multilabel_labels,
-          "Get multilabel labels from example label")
+      .def("get_multilabel_labels", &ex_get_multilabel_labels, "Get multilabel labels from example label")
 
       // Cost-sensitive label accessors
       .def("get_costsensitive_prediction", &ex_get_costsensitive_prediction,
@@ -1717,8 +1546,7 @@ PYBIND11_MODULE(pylibvw, m)
       // Contextual bandits label accessors
       .def("get_cbandits_prediction", &ex_get_cbandits_prediction,
           "Assuming a contextual_bandits label type, return the prediction")
-      .def("get_cbandits_weight", &ex_get_cbandits_weight,
-          "Assuming a contextual_bandits label type, get the weight")
+      .def("get_cbandits_weight", &ex_get_cbandits_weight, "Assuming a contextual_bandits label type, get the weight")
       .def("get_cbandits_num_costs", &ex_get_cbandits_num_costs,
           "Assuming a contextual_bandits label type, return the number of costs")
       .def("get_cbandits_cost", &ex_get_cbandits_cost,
@@ -1735,10 +1563,9 @@ PYBIND11_MODULE(pylibvw, m)
       .def("get_cb_eval_weight", &ex_get_cb_eval_weight, "Assuming a cb_eval label type, get weight")
       .def("get_cb_eval_num_costs", &ex_get_cb_eval_num_costs,
           "Assuming a cb_eval label type, return the number of costs")
-      .def("get_cb_eval_cost", &ex_get_cb_eval_cost,
-          "Assuming a cb_eval label type, return the cost for the ith action")
-      .def("get_cb_eval_class", &ex_get_cb_eval_class,
-          "Assuming a cb_eval label type, return the ith class")
+      .def(
+          "get_cb_eval_cost", &ex_get_cb_eval_cost, "Assuming a cb_eval label type, return the cost for the ith action")
+      .def("get_cb_eval_class", &ex_get_cb_eval_class, "Assuming a cb_eval label type, return the ith class")
       .def("get_cb_eval_probability", &ex_get_cb_eval_probability,
           "Assuming a cb_eval label type, return the ith probability")
       .def("get_cb_eval_partial_prediction", &ex_get_cb_eval_partial_prediction,
@@ -1776,15 +1603,15 @@ PYBIND11_MODULE(pylibvw, m)
       .def("get_slates_slot_id", &ex_get_slates_slot_id, "Assuming a slates label type, get the slot id")
       .def("get_slates_num_probabilities", &ex_get_slates_num_probabilities,
           "Assuming a slates label type, return the number of probabilities")
-      .def("get_slates_action", &ex_get_slates_action,
-          "Assuming a slates label type, return the ith action")
+      .def("get_slates_action", &ex_get_slates_action, "Assuming a slates label type, return the ith action")
       .def("get_slates_probability", &ex_get_slates_probability,
           "Assuming a slates label type, return the ith probability");
 
   // Search::predictor class
   py::class_<Search::predictor, predictor_ptr>(m, "predictor")
       .def("set_input", &my_set_input, "set the input (an example) for this predictor (non-LDF mode only)")
-      .def("set_input_length", &Search::predictor::set_input_length, "declare the length of an LDF-sequence of examples")
+      .def(
+          "set_input_length", &Search::predictor::set_input_length, "declare the length of an LDF-sequence of examples")
       .def("set_input_at", &my_set_input_at,
           "put a given example at position in the LDF sequence (call after set_input_length)")
       .def("add_oracle", &my_add_oracle, "add an action to the current list of oracle actions")
@@ -1806,8 +1633,7 @@ PYBIND11_MODULE(pylibvw, m)
       .def("predict", &Search::predictor::predict, "make a prediction");
 
   // py_log_wrapper class
-  py::class_<py_log_wrapper, py_log_wrapper_ptr>(m, "vw_log",
-      "do not use, see pyvw.Workspace.init(enable_logging..)")
+  py::class_<py_log_wrapper, py_log_wrapper_ptr>(m, "vw_log", "do not use, see pyvw.Workspace.init(enable_logging..)")
       .def(py::init<py::object>());
 
   // Search::search class
