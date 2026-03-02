@@ -92,6 +92,7 @@ API vw_net_native::ERROR_CODE DeleteWorkspace(
   try
   {
     VW::finish(*workspace->vw);
+    delete workspace;
     return VW::experimental::error_code::success;
   }
   CATCH_RETURN_STATUS
