@@ -1,6 +1,6 @@
 {
   "name": "@vowpalwabbit/vowpalwabbit",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "wasm bindings for vowpal wabbit",
   "exports": {
     ".": {
