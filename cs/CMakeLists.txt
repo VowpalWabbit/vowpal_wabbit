@@ -39,6 +39,10 @@ if(vw_BUILD_NET_CORE)
   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/nuget/dotnet/runtime.json DESTINATION ./)
 endif()
 
+if(vw_BUILD_NET_CORE OR vw_BUILD_NET_FRAMEWORK)
+  install(FILES ${CMAKE_CURRENT_LIST_DIR}/../nuget/dotnet/README.md DESTINATION ./)
+endif()
+
 # Add the appropriate subdirectories depending on if we're build Core or Framework
 IF (vw_BUILD_NET_CORE)
   message(STATUS "Building .NET Core Bindings")
