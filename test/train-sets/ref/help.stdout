@@ -345,7 +345,7 @@ Weight Options:
     --all_slots_loss                        Report average loss from all slots (type: bool)
     --no_predict                            Do not do a prediction when training (type: bool)
     --ccb_no_slot_index                     Disable automatic _ccb_slot_index feature injection for multi-slot
-                                            examples (type: bool)
+                                            examples (type: bool, keep)
     --cb_type arg                           Contextual bandit method to use. Options: ips=Inverse Propensity
                                             Scoring, dm=Direct Method, dr=Doubly Robust, mtr=Multi-Task Regression,
                                             sm=Supervised Method (type: str, default: mtr, choices {dm, dr,
