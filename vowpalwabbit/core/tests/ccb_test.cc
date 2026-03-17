@@ -276,6 +276,7 @@ TEST(Ccb, NoSlotIndexOptionPersistsAcrossSaveLoad)
 
     vw->learn(examples);
     vw->finish_example(examples);
+    vw->finish();
   }
 
   // Reload and verify the option was persisted
