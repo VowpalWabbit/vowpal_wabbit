@@ -44,6 +44,140 @@ namespace cs_unittest
 
         [TestMethod]
         [TestCategory("Vowpal Wabbit")]
+        public async Task TestSaveModelAfterComplete()
+        {
+            var settings = new VowpalWabbitSettings("--cb_adf --rank_all --interact xy")
+            {
+                ParallelOptions = new ParallelOptions
+                {
+                    MaxDegreeOfParallelism = 2
+                },
+                ExampleCountPerRun = 2000,
+                ExampleDistribution = VowpalWabbitExampleDistribution.RoundRobin
+            };
+
+            var modelPath = "save_after_complete.model";
+
+            using (var vw = new VowpalWabbitThreadedLearning(settings))
+            {
+                for (int i = 0; i < 100; i++)
+                    vw.Learn(new List<string> { "shared | s", "0:1:0.5 | a", " | b" });
+
+                // complete training first, then save — the natural user pattern
+                await vw.Complete();
+
+                await vw.SaveModel(modelPath);
+            }
+
+            Assert.IsTrue(File.Exists(modelPath));
+            Assert.IsTrue(new FileInfo(modelPath).Length > 0);
+
+            File.Delete(modelPath);
+        }
+
+        [TestMethod]
+        [TestCategory("Vowpal Wabbit")]
+        public async Task TestPerformanceStatisticsAfterComplete()
+        {
+            var settings = new VowpalWabbitSettings("--cb_adf --rank_all --interact xy")
+            {
+                ParallelOptions = new ParallelOptions
+                {
+                    MaxDegreeOfParallelism = 2
+                },
+                ExampleCountPerRun = 2000,
+                ExampleDistribution = VowpalWabbitExampleDistribution.RoundRobin
+            };
+
+            using (var vw = new VowpalWabbitThreadedLearning(settings))
+            {
+                for (int i = 0; i < 100; i++)
+                    vw.Learn(new List<string> { "shared | s", "0:1:0.5 | a", " | b" });
+
+                await vw.Complete();
+
+                // accessing stats after complete should work
+                var stats = await vw.PerformanceStatistics;
+                Assert.IsNotNull(stats);
+                Assert.IsTrue(stats.TotalNumberOfFeatures > 0);
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Vowpal Wabbit")]
+        public async Task TestFlush()
+        {
+            var settings = new VowpalWabbitSettings("--cb_adf --rank_all --interact xy")
+            {
+                ParallelOptions = new ParallelOptions
+                {
+                    MaxDegreeOfParallelism = 2
+                },
+                // high enough that CheckEndOfPass won't trigger during the test
+                ExampleCountPerRun = 50000,
+                ExampleDistribution = VowpalWabbitExampleDistribution.RoundRobin
+            };
+
+            var modelPath = "flush_test.model";
+
+            using (var vw = new VowpalWabbitThreadedLearning(settings))
+            {
+                for (int i = 0; i < 100; i++)
+                    vw.Learn(new List<string> { "shared | s", "0:1:0.5 | a", " | b" });
+
+                // enqueue a save and force it via Flush — without waiting for ExampleCountPerRun
+                var saveTask = vw.SaveModel(modelPath);
+                await vw.Flush();
+                await saveTask;
+
+                Assert.IsTrue(File.Exists(modelPath));
+                Assert.IsTrue(new FileInfo(modelPath).Length > 0);
+
+                File.Delete(modelPath);
+
+                // can continue learning after flush
+                for (int i = 0; i < 100; i++)
+                    vw.Learn(new List<string> { "shared | s", "0:1:0.5 | d", " | e" });
+
+                await vw.Complete();
+            }
+        }
+
+        [TestMethod]
+        [TestCategory("Vowpal Wabbit")]
+        public async Task TestSaveModelBeforeComplete()
+        {
+            // Verify the original pattern (save before complete) still works
+            var settings = new VowpalWabbitSettings("--cb_adf --rank_all --interact xy")
+            {
+                ParallelOptions = new ParallelOptions
+                {
+                    MaxDegreeOfParallelism = 2
+                },
+                ExampleCountPerRun = 2000,
+                ExampleDistribution = VowpalWabbitExampleDistribution.RoundRobin
+            };
+
+            var modelPath = "save_before_complete.model";
+
+            using (var vw = new VowpalWabbitThreadedLearning(settings))
+            {
+                for (int i = 0; i < 100; i++)
+                    vw.Learn(new List<string> { "shared | s", "0:1:0.5 | a", " | b" });
+
+                var saveTask = vw.SaveModel(modelPath);
+                await vw.Complete();
+                await saveTask;
+            }
+
+            Assert.IsTrue(File.Exists(modelPath));
+            Assert.IsTrue(new FileInfo(modelPath).Length > 0);
+
+            File.Delete(modelPath);
+        }
+
+        [TestMethod]
+        [TestCategory("Vowpal Wabbit")]
         public async Task TestAllReduce()
         {
             var data = Enumerable.Range(1, 1000).Select(_ => Generator.GenerateShared(10)).ToList();

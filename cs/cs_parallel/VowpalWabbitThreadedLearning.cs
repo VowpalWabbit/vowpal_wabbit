@@ -59,6 +59,11 @@ namespace VW
         private Task[] completionTasks;
 
         /// <summary>
+        /// Combined task tracking whether all completion tasks have finished.
+        /// </summary>
+        private Task allCompletedTask;
+
+        /// <summary>
         /// Number of examples seen sofar. Used by round robin example distributor.
         /// </summary>
         private int exampleCount;
@@ -147,8 +152,10 @@ namespace VW
                         // perform final AllReduce
                         vw.EndOfPass();
 
-                        // execute synchronization actions
-                        foreach (var syncAction in this.syncActions.RemoveAll())
+                        // atomically drain and mark complete — allows sync actions
+                        // (e.g. SaveModel) to be enqueued between Complete() and this
+                        // continuation executing
+                        foreach (var syncAction in this.syncActions.CompleteAndRemoveAll())
                         {
                             syncAction(vw);
                         }
@@ -230,6 +237,39 @@ namespace VW
         }
 
         /// <summary>
+        /// Forces an AllReduce synchronization and drains all pending sync actions
+        /// (e.g. <see cref="SaveModel()"/>, <see cref="PerformanceStatistics"/>)
+        /// without waiting for <see cref="VowpalWabbitSettings.ExampleCountPerRun"/> to be reached.
+        /// </summary>
+        /// <returns>Task that completes once the synchronization and all pending sync actions have executed.</returns>
+        public Task Flush()
+        {
+            var completionSource = new TaskCompletionSource<bool>();
+
+            this.syncActions.Add(vw => completionSource.SetResult(true));
+
+            this.observers[0].OnNext(vw =>
+            {
+                // perform AllReduce
+                vw.EndOfPass();
+
+                // execute synchronization actions
+                foreach (var syncAction in this.syncActions.RemoveAll())
+                {
+                    syncAction(vw);
+                }
+            });
+
+            for (int i = 1; i < this.observers.Length; i++)
+            {
+                // perform AllReduce
+                this.observers[i].OnNext(vw => vw.EndOfPass());
+            }
+
+            return completionSource.Task;
+        }
+
+        /// <summary>
         /// Enqueues an action to be executed on one of vw instances.
         /// </summary>
         /// <param name="action">The action to be executed (e.g. Learn/Predict/...).</param>
@@ -300,14 +340,25 @@ namespace VW
         /// <summary>
         /// Synchronized performance statistics.
         /// </summary>
-        /// <remarks>The task is only completed after synchronization of all instances, triggered <see cref="VowpalWabbitSettings.ExampleCountPerRun"/> example.</remarks>
+        /// <remarks>
+        /// Can be accessed before or after <see cref="Complete"/>. If accessed after completion,
+        /// returns statistics directly from the root VW instance.
+        /// </remarks>
         public Task<VowpalWabbitPerformanceStatistics> PerformanceStatistics
         {
             get
             {
+                if (this.allCompletedTask != null && this.allCompletedTask.IsCompleted)
+                {
+                    return Task.FromResult(this.vws[0].PerformanceStatistics);
+                }
+
                 var completionSource = new TaskCompletionSource<VowpalWabbitPerformanceStatistics>();
 
-                this.syncActions.Add(vw => completionSource.SetResult(vw.PerformanceStatistics));
+                if (!this.syncActions.TryAdd(vw => completionSource.SetResult(vw.PerformanceStatistics)))
+                {
+                    return Task.FromResult(this.vws[0].PerformanceStatistics);
+                }
 
                 return completionSource.Task;
             }
@@ -319,31 +370,44 @@ namespace VW
         /// <returns>Task completes once the learning and cleanup is done.</returns>
         public Task Complete()
         {
-            // make sure no more sync actions are added, which might otherwise never been called
-            this.syncActions.CompleteAdding();
-
             foreach (var actionBlock in this.actionBlocks)
             {
                 actionBlock.Complete();
             }
 
-            return Task.WhenAll(this.completionTasks);
-
+            this.allCompletedTask = Task.WhenAll(this.completionTasks);
+            return this.allCompletedTask;
         }
 
         /// <summary>
         /// Saves a model as part of the synchronization.
         /// </summary>
-        /// <returns>Task compeletes once the model is saved.</returns>
+        /// <remarks>
+        /// Can be called before or after <see cref="Complete"/>. If called after completion,
+        /// the model is saved directly on the root VW instance. If called before, the save is
+        /// deferred until the next synchronization point or completion.
+        /// </remarks>
+        /// <returns>Task that completes once the model is saved.</returns>
         public Task SaveModel()
         {
+            if (this.allCompletedTask != null && this.allCompletedTask.IsCompleted)
+            {
+                this.vws[0].SaveModel();
+                return Task.CompletedTask;
+            }
+
             var completionSource = new TaskCompletionSource<bool>();
 
-            this.syncActions.Add(vw =>
+            if (!this.syncActions.TryAdd(vw =>
             {
                 vw.SaveModel();
                 completionSource.SetResult(true);
-            });
+            }))
+            {
+                // sync actions were already drained and marked complete
+                this.vws[0].SaveModel();
+                return Task.CompletedTask;
+            }
 
             return completionSource.Task;
         }
@@ -351,18 +415,34 @@ namespace VW
         /// <summary>
         /// Saves a model as part of the synchronization.
         /// </summary>
-        /// <returns>Task compeletes once the model is saved.</returns>
+        /// <remarks>
+        /// Can be called before or after <see cref="Complete"/>. If called after completion,
+        /// the model is saved directly on the root VW instance. If called before, the save is
+        /// deferred until the next synchronization point or completion.
+        /// </remarks>
+        /// <returns>Task that completes once the model is saved.</returns>
         public Task SaveModel(string filename)
         {
             Debug.Assert(!string.IsNullOrEmpty(filename));
 
+            if (this.allCompletedTask != null && this.allCompletedTask.IsCompleted)
+            {
+                this.vws[0].SaveModel(filename);
+                return Task.CompletedTask;
+            }
+
             var completionSource = new TaskCompletionSource<bool>();
 
-            this.syncActions.Add(vw =>
+            if (!this.syncActions.TryAdd(vw =>
             {
                 vw.SaveModel(filename);
                 completionSource.SetResult(true);
-            });
+            }))
+            {
+                // sync actions were already drained and marked complete
+                this.vws[0].SaveModel(filename);
+                return Task.CompletedTask;
+            }
 
             return completionSource.Task;
         }
@@ -445,6 +525,23 @@ namespace VW
             }
 
             /// <summary>
+            /// Tries to add an object to the end of the list.
+            /// </summary>
+            /// <param name="item">The object to be added to the list.</param>
+            /// <returns>True if the item was added; false if the list has been marked complete.</returns>
+            public bool TryAdd(T item)
+            {
+                lock (this.lockObject)
+                {
+                    if (completed)
+                        return false;
+
+                    this.items.Add(item);
+                    return true;
+                }
+            }
+
+            /// <summary>
             /// Marks this list as complete. Any subsequent calls to <see cref="Add"/> will trigger an <see cref="InvalidOperationException"/>.
             /// </summary>
             public void CompleteAdding()
@@ -452,6 +549,22 @@ namespace VW
                 lock (this.lockObject)
                 {
                     this.completed = true;
+                }
+            }
+
+            /// <summary>
+            /// Atomically marks this list as complete and removes all elements.
+            /// </summary>
+            /// <returns>The elements removed.</returns>
+            public T[] CompleteAndRemoveAll()
+            {
+                lock (this.lockObject)
+                {
+                    this.completed = true;
+                    var ret = this.items.ToArray();
+                    this.items.Clear();
+
+                    return ret;
                 }
             }
 
