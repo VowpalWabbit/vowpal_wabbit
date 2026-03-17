@@ -665,6 +665,7 @@ std::shared_ptr<VW::LEARNER::learner> VW::reductions::ccb_explore_adf_setup(VW::
       .add(make_option("all_slots_loss", all_slots_loss_report).help("Report average loss from all slots"))
       .add(make_option("no_predict", data->no_pred).help("Do not do a prediction when training"))
       .add(make_option("ccb_no_slot_index", data->disable_slot_index)
+               .keep()
                .help("Disable automatic _ccb_slot_index feature injection for multi-slot examples"))
       .add(make_option("cb_type", type_string)
                .keep()

@@ -11,6 +11,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <cstdio>
 #include <vector>
 
 TEST(Ccb, ExplicitIncludedActionsNoOverlap)
@@ -253,4 +254,51 @@ TEST(Ccb, NoAvailableActions)
 
     vw->finish_example(examples);
   }
+}
+
+// Test that --ccb_no_slot_index persists across save/load cycle
+TEST(Ccb, NoSlotIndexOptionPersistsAcrossSaveLoad)
+{
+  const char* model_file = "ccb_no_slot_index_persist.model";
+  std::remove(model_file);
+
+  // Train with --ccb_no_slot_index and save
+  {
+    auto vw = VW::initialize(
+        vwtest::make_args("--ccb_explore_adf", "--quiet", "-q", "CA", "--ccb_no_slot_index", "-f", model_file));
+
+    VW::multi_ex examples;
+    examples.push_back(VW::read_example(*vw, "ccb shared | s"));
+    examples.push_back(VW::read_example(*vw, "ccb action | a"));
+    examples.push_back(VW::read_example(*vw, "ccb action | b"));
+    examples.push_back(VW::read_example(*vw, "ccb slot 0:1:0.5 0 |"));
+    examples.push_back(VW::read_example(*vw, "ccb slot 1 |"));
+
+    vw->learn(examples);
+    vw->finish_example(examples);
+  }
+
+  // Reload and verify the option was persisted
+  {
+    auto vw = VW::initialize(vwtest::make_args("--quiet", "-i", model_file));
+    EXPECT_TRUE(vw->options->was_supplied("ccb_no_slot_index"));
+
+    // Verify the option is functional: interactions should NOT include ccb_id namespace
+    VW::multi_ex examples;
+    examples.push_back(VW::read_example(*vw, "ccb shared | s"));
+    examples.push_back(VW::read_example(*vw, "ccb action | a"));
+    examples.push_back(VW::read_example(*vw, "ccb action | b"));
+    examples.push_back(VW::read_example(*vw, "ccb slot 0 |"));
+    examples.push_back(VW::read_example(*vw, "ccb slot 1 |"));
+
+    vw->predict(examples);
+
+    std::set<std::string> expected{"CA"};
+    auto result = interaction_vec_t_to_set(vw->feature_tweaks_config.interactions);
+    EXPECT_THAT(result, testing::ContainerEq(expected));
+
+    vw->finish_example(examples);
+  }
+
+  std::remove(model_file);
 }
