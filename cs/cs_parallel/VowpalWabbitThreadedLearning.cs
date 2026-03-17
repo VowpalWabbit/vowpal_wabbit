@@ -393,7 +393,7 @@ namespace VW
             if (this.allCompletedTask != null && this.allCompletedTask.IsCompleted)
             {
                 this.vws[0].SaveModel();
-                return Task.CompletedTask;
+                return Task.FromResult(true);
             }
 
             var completionSource = new TaskCompletionSource<bool>();
@@ -406,7 +406,7 @@ namespace VW
             {
                 // sync actions were already drained and marked complete
                 this.vws[0].SaveModel();
-                return Task.CompletedTask;
+                return Task.FromResult(true);
             }
 
             return completionSource.Task;
@@ -428,7 +428,7 @@ namespace VW
             if (this.allCompletedTask != null && this.allCompletedTask.IsCompleted)
             {
                 this.vws[0].SaveModel(filename);
-                return Task.CompletedTask;
+                return Task.FromResult(true);
             }
 
             var completionSource = new TaskCompletionSource<bool>();
@@ -441,7 +441,7 @@ namespace VW
             {
                 // sync actions were already drained and marked complete
                 this.vws[0].SaveModel(filename);
-                return Task.CompletedTask;
+                return Task.FromResult(true);
             }
 
             return completionSource.Task;
