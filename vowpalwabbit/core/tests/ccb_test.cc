@@ -168,8 +168,8 @@ TEST(Ccb, ExplicitIncludedActionsNonExistentAction)
 TEST(Ccb, NoSlotIndexOptionDisablesSlotIndexInteractions)
 {
   // With --ccb_no_slot_index, interactions should NOT include ccb_id namespace
-  auto vw = VW::initialize(
-      vwtest::make_args("--ccb_explore_adf", "--quiet", "-q", "AA", "-q", "BB", "--ccb_no_slot_index"));
+  auto vw =
+      VW::initialize(vwtest::make_args("--ccb_explore_adf", "--quiet", "-q", "AA", "-q", "BB", "--ccb_no_slot_index"));
 
   // Even after seeing a multi-slot example, interactions should not change
   VW::multi_ex examples;
