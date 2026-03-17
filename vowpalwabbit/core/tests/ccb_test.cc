@@ -259,7 +259,7 @@ TEST(Ccb, NoAvailableActions)
 // Test that --ccb_no_slot_index persists across save/load cycle
 TEST(Ccb, NoSlotIndexOptionPersistsAcrossSaveLoad)
 {
-  const char* model_file = "ccb_no_slot_index_persist.model";
+  const char* model_file = "/tmp/ccb_no_slot_index_persist.model";
   std::remove(model_file);
 
   // Train with --ccb_no_slot_index and save
