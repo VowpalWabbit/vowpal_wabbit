@@ -19,6 +19,41 @@ namespace VW
     /// <summary>
     /// VW wrapper supporting multi-core learning by utilizing thread-based allreduce.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This class manages multiple internal VW instances coordinated via allreduce.
+    /// Each instance runs on its own thread with a bounded work queue. Calls to
+    /// <see cref="Learn(string)"/> enqueue examples and return immediately — learning
+    /// happens asynchronously on one of the internal instances (chosen by
+    /// <see cref="VowpalWabbitSettings.ExampleDistribution"/>). This is not the same as
+    /// thread-safe concurrent learning; callers submit work from a single thread (or
+    /// coordinate externally) and the class handles parallelism internally.
+    /// </para>
+    /// <para>Typical usage:</para>
+    /// <code>
+    /// using (var vw = new VowpalWabbitThreadedLearning(settings))
+    /// {
+    ///     foreach (var example in examples)
+    ///         vw.Learn(example);
+    ///
+    ///     // Option A: save mid-training by flushing
+    ///     var saveTask = vw.SaveModel("checkpoint.model");
+    ///     await vw.Flush();
+    ///     await saveTask;
+    ///
+    ///     // Option B: save after training is complete
+    ///     await vw.Complete();
+    ///     await vw.SaveModel("final.model");
+    /// }
+    /// </code>
+    /// <para>
+    /// Weight synchronization (allreduce) occurs automatically every
+    /// <see cref="VowpalWabbitSettings.ExampleCountPerRun"/> examples, or explicitly
+    /// via <see cref="Flush"/>. Deferred operations like <see cref="SaveModel()"/> and
+    /// <see cref="PerformanceStatistics"/> execute at these synchronization points, or
+    /// can be called directly after <see cref="Complete"/>.
+    /// </para>
+    /// </remarks>
     public class VowpalWabbitThreadedLearning : IDisposable
     {
         /// <summary>
@@ -319,6 +354,12 @@ namespace VW
         /// Learns from the given example.
         /// </summary>
         /// <param name="line">The example to learn.</param>
+        /// <remarks>
+        /// This method enqueues the example for asynchronous learning on one of the
+        /// internal VW instances and returns immediately. The example string is captured
+        /// by the work item and must not be mutated after this call. To ensure all
+        /// enqueued learning is complete, call <see cref="Complete"/> or <see cref="Flush"/>.
+        /// </remarks>
         public void Learn(string line)
         {
             Debug.Assert(line != null);
@@ -327,9 +368,15 @@ namespace VW
         }
 
         /// <summary>
-        /// Learns from the given example.
+        /// Learns from the given multi-line example.
         /// </summary>
         /// <param name="lines">The multi-line example to learn.</param>
+        /// <remarks>
+        /// This method enqueues the example for asynchronous learning on one of the
+        /// internal VW instances and returns immediately. The lines are captured
+        /// by the work item and must not be mutated after this call. To ensure all
+        /// enqueued learning is complete, call <see cref="Complete"/> or <see cref="Flush"/>.
+        /// </remarks>
         public void Learn(IEnumerable<string> lines)
         {
             Debug.Assert(lines != null);
@@ -365,9 +412,16 @@ namespace VW
         }
 
         /// <summary>
-        /// Signal that no more examples are send.
+        /// Signals that no more examples will be submitted.
         /// </summary>
-        /// <returns>Task completes once the learning and cleanup is done.</returns>
+        /// <returns>Task that completes once all enqueued examples have been learned
+        /// and a final allreduce synchronization has been performed.</returns>
+        /// <remarks>
+        /// After awaiting this task, the model is fully trained and methods like
+        /// <see cref="SaveModel()"/> and <see cref="PerformanceStatistics"/> can be
+        /// called synchronously (they execute immediately on the root VW instance
+        /// rather than being deferred to a sync point).
+        /// </remarks>
         public Task Complete()
         {
             foreach (var actionBlock in this.actionBlocks)
