@@ -7,6 +7,7 @@
 #include "vw/common/vw_exception.h"
 #include "vw/common/vw_throw.h"
 
+#include <cstdint>
 #include <memory>
 #include <set>
 #include <sstream>
