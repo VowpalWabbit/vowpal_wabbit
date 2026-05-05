@@ -111,6 +111,8 @@ jobs:
           sudo apt-get install -y python3-pip
       - name: Generate models
         shell: bash
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
           set -x
           python3 -m pip install setuptools wheel
@@ -119,7 +121,7 @@ jobs:
           echo "=== Verifying vowpalwabbit import ==="
           python3 -c "import vowpalwabbit; print('vowpalwabbit imported successfully')"
           echo "=== Running model generation script ==="
-          python3 ./test/run_tests_model_gen_and_load.py --generate_models --skip_pr_tests "${{ github.event.pull_request.title }}" || (echo "Model generation failed with exit code $?" && exit 1)
+          python3 ./test/run_tests_model_gen_and_load.py --generate_models --skip_pr_tests "$PR_TITLE" || (echo "Model generation failed with exit code $?" && exit 1)
           echo "=== Checking generated files ==="
           ls -la ~/.vw_runtests_model_gen_working_dir/ || echo "Working directory not found"
       - name: Copy generated files to workspace
@@ -172,11 +174,13 @@ jobs:
           path: master_wheel
       - name: Test loading models with master
         shell: bash
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
           mv .vw_runtests_model_gen_working_dir ~
           python3 -m pip install setuptools wheel
           python3 -m pip install master_wheel/*.whl
-          python3 ./test/run_tests_model_gen_and_load.py --load_models --skip_missing_args --skip_pr_tests "${{ github.event.pull_request.title }}"
+          python3 ./test/run_tests_model_gen_and_load.py --load_models --skip_missing_args --skip_pr_tests "$PR_TITLE"
 
   backward-generate:
     name: Generate models from master code
@@ -198,6 +202,8 @@ jobs:
           sudo apt-get install -y libboost-test-dev
       - name: Generate models
         shell: bash
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
           set -x
           pip install setuptools wheel
@@ -206,7 +212,7 @@ jobs:
           echo "=== Verifying vowpalwabbit import ==="
           python -c "import vowpalwabbit; print('vowpalwabbit imported successfully')"
           echo "=== Running model generation script ==="
-          python ./test/run_tests_model_gen_and_load.py --generate_models --skip_missing_args --skip_pr_tests "${{ github.event.pull_request.title }}" || (echo "Model generation failed with exit code $?" && exit 1)
+          python ./test/run_tests_model_gen_and_load.py --generate_models --skip_missing_args --skip_pr_tests "$PR_TITLE" || (echo "Model generation failed with exit code $?" && exit 1)
           echo "=== Checking generated files ==="
           ls -la ~/.vw_runtests_model_gen_working_dir/ || echo "Working directory not found"
       - name: Copy generated files to workspace
@@ -255,11 +261,13 @@ jobs:
           path: current_wheel
       - name: Test loading models with current code
         shell: bash
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
           mv .vw_runtests_model_gen_working_dir ~
           python3 -m pip install setuptools wheel
           python3 -m pip install current_wheel/*.whl
-          python3 ./test/run_tests_model_gen_and_load.py --load_models --skip_pr_tests "${{ github.event.pull_request.title }}"
+          python3 ./test/run_tests_model_gen_and_load.py --load_models --skip_pr_tests "$PR_TITLE"
 
   # --- Type checking ---
 
