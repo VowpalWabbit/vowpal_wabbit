@@ -7,6 +7,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -31,7 +32,7 @@ namespace VW.Serializer
         /// <summary>
         /// Example and example result type based serializer cache.
         /// </summary>
-        private static readonly Dictionary<Key, object> SerializerCache = new Dictionary<Key, object>();
+        private static readonly ConcurrentDictionary<Key, object> SerializerCache = new ConcurrentDictionary<Key, object>();
 
         private sealed class Key
         {
