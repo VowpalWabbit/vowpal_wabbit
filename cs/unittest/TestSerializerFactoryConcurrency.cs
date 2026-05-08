@@ -1,7 +1,10 @@
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using VW;
+using VW.Serializer;
 using VW.Serializer.Attributes;
 
 namespace cs_unittest
@@ -26,6 +29,24 @@ namespace cs_unittest
             })).ToArray();
 
             Task.WaitAll(tasks);
+        }
+
+        [TestMethod]
+        [TestCategory("Vowpal Wabbit")]
+        public void TestSerializerCacheHonorsCustomFeaturizerSequenceEquality()
+        {
+            // The Key.Equals method compares CustomFeaturizer with SequenceEqual, so two
+            // distinct list instances with identical content must hit the same cache entry.
+            // Previously Key.GetHashCode used the list's reference hash, which violated the
+            // Equals/GetHashCode contract and caused spurious cache misses (and the cache
+            // would silently store duplicate entries for "equivalent" keys).
+            var settings1 = new VowpalWabbitSettings { CustomFeaturizer = new List<Type> { typeof(CustomFeaturizer) } };
+            var settings2 = new VowpalWabbitSettings { CustomFeaturizer = new List<Type> { typeof(CustomFeaturizer) } };
+
+            var compiler1 = VowpalWabbitSerializerFactory.CreateSerializer<MyContext>(settings1);
+            var compiler2 = VowpalWabbitSerializerFactory.CreateSerializer<MyContext>(settings2);
+
+            Assert.AreSame(compiler1, compiler2);
         }
 
         public class ConcurrentConstructionExample
