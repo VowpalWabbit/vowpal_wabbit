@@ -15,7 +15,7 @@
 #include "vw/core/setup_base.h"
 #include "vw/io/logger.h"
 
-#include <fmt/core.h>
+#include <fmt/format.h>
 
 #include <cfloat>
 #include <ctime>
