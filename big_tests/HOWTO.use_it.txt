@@ -85,7 +85,7 @@ To save time and bandwidth, you can create and retrieve all the data used in all
 
 make ARF=<archive file> archive
 
-You can then stash the archive wherever you like, probably at a URL-accessible location in the cloud.  Later, to retrieve the data again, you can type 
+You can then stash the archive wherever you like, probably at a URL-accessible location in the cloud.  Later, to retrieve the data again, you can type
 
 make URL=<url> prepData
 
