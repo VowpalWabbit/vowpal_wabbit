@@ -30,7 +30,10 @@ jobs:
         - { language: "java", os: ubuntu-latest }
         - { language: "python", os: ubuntu-latest }
         - { language: "csharp", os: ubuntu-latest }
-        - { language: "csharp", os: windows-latest }
+        # Pinned to windows-2022: the .NET Framework (net452) build needs the
+        # VS 2022 toolchain and Framework targeting packs, which are absent
+        # from the newer windows-latest image.
+        - { language: "csharp", os: windows-2022 }
 
     steps:
     - name: Checkout repository

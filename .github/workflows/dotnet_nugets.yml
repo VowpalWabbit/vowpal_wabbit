@@ -21,7 +21,10 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - { os: "windows-latest", runtime_id: "win-x64" }
+          # Pinned to windows-2022: the .NET Framework (net452) build needs the
+          # VS 2022 toolchain and Framework targeting packs, which are absent
+          # from the newer windows-latest image.
+          - { os: "windows-2022", runtime_id: "win-x64" }
           - { os: "ubuntu-latest", runtime_id: "linux-x64" }
           - { os: "macos-14", runtime_id: "osx-arm64" }
           - { os: "macos-15-intel", runtime_id: "osx-x64" }
