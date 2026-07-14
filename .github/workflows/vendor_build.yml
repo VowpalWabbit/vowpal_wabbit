@@ -267,7 +267,7 @@ jobs:
           -DVW_BOOST_MATH_SYS_DEP=Off
           -DVW_INSTALL=Off
           -DVW_SIMD_INV_SQRT=OFF
-          -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+          "-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
       - name: Build
         run: cmake --build "${{ env.CMAKE_BUILD_DIR }}" --config ${{ matrix.build_type }}
       - name: Test run_tests.py
