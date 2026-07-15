@@ -21,10 +21,7 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          # Pinned to windows-2022: the .NET Framework (net452) build needs the
-          # VS 2022 toolchain and Framework targeting packs, which are absent
-          # from the newer windows-latest image.
-          - { os: "windows-2022", runtime_id: "win-x64" }
+          - { os: "windows-latest", runtime_id: "win-x64" }
           - { os: "ubuntu-latest", runtime_id: "linux-x64" }
           - { os: "macos-14", runtime_id: "osx-arm64" }
           - { os: "macos-15-intel", runtime_id: "osx-x64" }
@@ -52,6 +49,14 @@ jobs:
       - name: Setup MSVC Developer Command Prompt
         if: ${{ startsWith(matrix.config.os, 'windows') }}
         uses: ilammy/msvc-dev-cmd@v1
+      - name: Install .NET Framework targeting packs
+        # The runner image ships targeting packs for v4.6.2 and newer only -- the
+        # out-of-support ones VW targets (v4.5.2, and v4.6 for the unit tests) are
+        # present as directories but lack mscorlib.dll and RedistList/FrameworkList.xml,
+        # so MSBuild rejects them with MSB3644. Install the developer packs to
+        # complete them.
+        if: ${{ startsWith(matrix.config.os, 'windows') }}
+        run: choco install netfx-4.5.2-devpack netfx-4.6-devpack -y --no-progress
       - name: Install Ninja
         uses: seanmiddleditch/gha-setup-ninja@master
       - name: Install NuGet (Linux)
@@ -119,7 +124,7 @@ jobs:
       - name: Configure .NET Framework
         if: ${{ startsWith(matrix.config.os, 'windows') }}
         run: >
-          cmake -S . -B build -G "Visual Studio 17 2022" -A x64
+          cmake -S . -B build -A x64
           -Dvw_BUILD_NET_FRAMEWORK=On
           -DVW_NUGET_PACKAGE_NAME=VowpalWabbit
           -DVW_NUGET_PACKAGE_VERSION="${{ steps.get_version.outputs.version }}"
