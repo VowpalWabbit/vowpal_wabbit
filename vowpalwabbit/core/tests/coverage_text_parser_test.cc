@@ -4,10 +4,14 @@
 
 // Batch 11: Targeted tests for Text & Core Parsers coverage.
 
+#include "vw/common/vw_exception.h"
 #include "vw/core/example.h"
 #include "vw/core/parse_primitives.h"
+#include "vw/core/parser.h"
+#include "vw/core/simple_label.h"
 #include "vw/core/vw.h"
 #include "vw/test_common/test_common.h"
+#include "vw/text_parser/parse_example_text.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -15,6 +19,7 @@
 #include <cfloat>
 #include <cmath>
 #include <cstdio>
+#include <limits>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -1419,5 +1424,59 @@ TEST(CoverageTextParser, AffixSuffixLongWord)
   auto vw = VW::initialize(vwtest::make_args("--quiet", "--no_stdin", "--affix", "-7"));
   auto* ex = VW::read_example(*vw, "1 | ab");
   vw->learn(*ex);
+  VW::finish_example(*vw, *ex);
+}
+
+// ============================================================
+// Invalid importance weight (issues #4924 / #4925)
+//
+// The check lives in VW::setup_example, the single point every parsed example flows through, so all
+// input formats (text, JSON, CSV, flatbuffer, cache) behave identically. Negative and NaN weights are
+// surfaced -- a warning by default, a throw under --strict_parse. A weight of exactly 0 stays valid.
+// ============================================================
+
+TEST(CoverageTextParser, NegativeImportanceWeightWarnsByDefault)
+{
+  // By default the invalid weight is surfaced with a warning but the example is still accepted -- it
+  // must NOT throw at a library caller such as read_example.
+  auto vw = VW::initialize(vwtest::make_args("--quiet", "--no_stdin"));
+  VW::example* ex = nullptr;
+  EXPECT_NO_THROW(ex = VW::read_example(*vw, "1 -1.0 | a b c"));
+  ASSERT_NE(ex, nullptr);
+  EXPECT_FLOAT_EQ(ex->weight, -1.0f);
+  VW::finish_example(*vw, *ex);
+}
+
+TEST(CoverageTextParser, ZeroImportanceWeightHeldOutIsAccepted)
+{
+  // A weight of exactly 0 is the documented predict-only / held-out convention and must stay valid.
+  auto vw = VW::initialize(vwtest::make_args("--quiet", "--no_stdin"));
+  VW::example* ex = nullptr;
+  EXPECT_NO_THROW(ex = VW::read_example(*vw, "1 0.0 | a b c"));
+  ASSERT_NE(ex, nullptr);
+  EXPECT_FLOAT_EQ(ex->weight, 0.0f);
+  VW::finish_example(*vw, *ex);
+}
+
+TEST(CoverageTextParser, NegativeImportanceWeightThrowsUnderStrictParse)
+{
+  // read_example would leak a pooled example on throw (tripping the object_pool teardown assert), so
+  // obtain the example explicitly, parse it (no throw yet), and set it up to trigger the check.
+  auto vw = VW::initialize(vwtest::make_args("--quiet", "--no_stdin", "--strict_parse"));
+  VW::example* ex = &VW::get_unused_example(vw.get());
+  VW::parsers::text::read_line(*vw, ex, "1 -1.0 | a b c");
+  EXPECT_THROW(VW::setup_example(*vw, ex), VW::vw_exception);
+  VW::finish_example(*vw, *ex);
+}
+
+TEST(CoverageTextParser, NaNImportanceWeightThrowsUnderStrictParse)
+{
+  // A NaN weight (which a text token cannot produce -- float_of_string maps it to 0 -- but the JSON
+  // parser and the library API can) is rejected on the same path as a negative one.
+  auto vw = VW::initialize(vwtest::make_args("--quiet", "--no_stdin", "--strict_parse"));
+  VW::example* ex = &VW::get_unused_example(vw.get());
+  VW::parsers::text::read_line(*vw, ex, "1 | a b c");
+  ex->ex_reduction_features.get<VW::simple_label_reduction_features>().weight = std::numeric_limits<float>::quiet_NaN();
+  EXPECT_THROW(VW::setup_example(*vw, ex), VW::vw_exception);
   VW::finish_example(*vw, *ex);
 }

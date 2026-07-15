@@ -26,6 +26,7 @@
 // needed for fmt::join
 #include <fmt/ranges.h>
 
+#include <cmath>
 #include <iostream>
 
 namespace
@@ -698,6 +699,23 @@ void VW::setup_example(VW::workspace& all, VW::example* ae)
   }
 
   ae->weight = all.parser_runtime.example_parser->lbl_parser.get_weight(ae->l, ae->ex_reduction_features);
+
+  // A negative or NaN importance weight is silently dropped during training: the scorer reduction
+  // reroutes any example with weight <= 0 -- and NaN, since NaN > 0 is false -- to predict-only, so the
+  // model never trains on it (and gd's documented assert(ec.weight > 0.) invariant is never exercised).
+  // Surface it here, at the single point every parsed example flows through, so all input formats (text,
+  // JSON, CSV, flatbuffer, cache) behave identically. Follows VW's strict_parse convention: warn by
+  // default, throw only under --strict_parse. A weight of exactly 0 stays valid -- it is the documented
+  // predict-only / held-out convention.
+  if (ae->weight < 0.f || std::isnan(ae->weight))
+  {
+    const std::string msg = fmt::format(
+        "Example has an invalid importance weight ({}); importance weights must be non-negative. Use 0 to "
+        "hold an example out of training.",
+        ae->weight);
+    if (all.parser_runtime.example_parser->strict_parse) { THROW_EX(VW::strict_parse_exception, msg); }
+    else { all.logger.err_warn("{}", msg); }
+  }
 
   if (all.feature_tweaks_config.ignore_some)
   {
