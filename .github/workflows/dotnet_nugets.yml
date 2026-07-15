@@ -21,7 +21,10 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - { os: "windows-latest", runtime_id: "win-x64" }
+          # Pinned to windows-2022: the .NET Framework (net452) build needs the
+          # VS 2022 toolchain and Framework targeting packs, which are absent
+          # from the newer windows-latest image.
+          - { os: "windows-2022", runtime_id: "win-x64" }
           - { os: "ubuntu-latest", runtime_id: "linux-x64" }
           - { os: "macos-14", runtime_id: "osx-arm64" }
           - { os: "macos-15-intel", runtime_id: "osx-x64" }
@@ -103,7 +106,7 @@ jobs:
           -DVW_BUILD_VW_C_WRAPPER=Off
           -DBUILD_TESTING=Off
           -DBUILD_SHARED_LIBS=Off
-          ${{ runner.os != 'macOS' && '-DCMAKE_POLICY_VERSION_MINIMUM=3.5' || '' }}
+          ${{ runner.os != 'macOS' && '"-DCMAKE_POLICY_VERSION_MINIMUM=3.5"' || '' }}
       - name: Build .NET Core
         run: cmake --build build --config Release
       - name: Install .NET Core
@@ -130,7 +133,7 @@ jobs:
           -DVW_BUILD_VW_C_WRAPPER=Off
           -DBUILD_TESTING=Off
           -DBUILD_SHARED_LIBS=Off
-          -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+          "-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
       - name: Build .NET Framework
         if: ${{ startsWith(matrix.config.os, 'windows') }}
         run: cmake --build build --config Release

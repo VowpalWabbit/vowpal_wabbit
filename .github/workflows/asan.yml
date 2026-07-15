@@ -65,7 +65,16 @@ jobs:
           sudo apt-get install -y ninja-build autoconf automake autoconf-archive ccache
       - name: Install ccache (macOS only)
         if: runner.os == 'macOS'
-        run: brew install ccache
+        run: |
+          brew install ccache
+          # ccache depends on Homebrew's fmt. On Intel runners Homebrew's prefix is
+          # /usr/local, whose include dir is on the compiler's default search path, so
+          # those headers shadow the fmt that vcpkg provides. Homebrew's fmt/core.h
+          # chains to base.h, which declares fmt::format_string but not fmt::format,
+          # so vw/io/logger.h fails to compile. Unlinking drops the headers from
+          # /usr/local/include; ccache still resolves its own dylib via /usr/local/opt.
+          # arm64 runners are unaffected because Homebrew lives in /opt/homebrew.
+          brew unlink fmt || true
       - name: Cache ccache
         uses: actions/cache@v4
         with:
