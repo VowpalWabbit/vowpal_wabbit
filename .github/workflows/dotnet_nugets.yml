@@ -88,13 +88,27 @@ jobs:
         shell: bash
         run: |
           version=$(./utl/version_number.py)
+          # The version flows into `run:` blocks and package metadata. Reject
+          # anything outside the semver character set so a tampered
+          # version_number.py cannot smuggle shell metacharacters downstream.
+          if [[ ! "$version" =~ ^[0-9A-Za-z.+-]+$ ]]; then
+            echo "Refusing malformed version number: $version" >&2
+            exit 1
+          fi
           version_trimmed=$(echo $version | sed 's/\+.*//')
           echo "Generated version number: $version"
           echo "version=$version" >> $GITHUB_OUTPUT
           echo "version_trimmed=$version_trimmed" >> $GITHUB_OUTPUT
 
       # Build .NET Core, all platforms
-      - name: Configure .NET Core
+      # This step runs on Linux, macOS and Windows, so its `run:` body is parsed
+      # by bash on some runners and PowerShell on others. There is no env-var
+      # reference that both shells understand, and forcing `shell: bash` here
+      # would change how Windows parses the cmake arguments -- exactly the
+      # breakage #4927 repaired. The version is instead validated against the
+      # semver character set where it is produced, above, so it cannot carry
+      # shell metacharacters.
+      - name: Configure .NET Core # zizmor: ignore[template-injection]
         run: >
           cmake -S . -B build -G Ninja
           -Dvw_BUILD_NET_CORE=On
@@ -123,12 +137,15 @@ jobs:
         run: Remove-Item -Recurse -Force .\build
       - name: Configure .NET Framework
         if: ${{ startsWith(matrix.config.os, 'windows') }}
+        env:
+          VW_VERSION: ${{ steps.get_version.outputs.version }}
+          VW_VERSION_TRIMMED: ${{ steps.get_version.outputs.version_trimmed }}
         run: >
           cmake -S . -B build -A x64
           -Dvw_BUILD_NET_FRAMEWORK=On
           -DVW_NUGET_PACKAGE_NAME=VowpalWabbit
-          -DVW_NUGET_PACKAGE_VERSION="${{ steps.get_version.outputs.version }}"
-          -DVW_NUGET_PACKAGE_VERSION_TRIMMED="${{ steps.get_version.outputs.version_trimmed }}"
+          -DVW_NUGET_PACKAGE_VERSION="$env:VW_VERSION"
+          -DVW_NUGET_PACKAGE_VERSION_TRIMMED="$env:VW_VERSION_TRIMMED"
           -DVW_FEAT_FLATBUFFERS=Off
           -DRAPIDJSON_SYS_DEP=Off
           -DFMT_SYS_DEP=Off
@@ -224,6 +241,13 @@ jobs:
         shell: bash
         run: |
           version=$(./utl/version_number.py)
+          # The version flows into `run:` blocks and package metadata. Reject
+          # anything outside the semver character set so a tampered
+          # version_number.py cannot smuggle shell metacharacters downstream.
+          if [[ ! "$version" =~ ^[0-9A-Za-z.+-]+$ ]]; then
+            echo "Refusing malformed version number: $version" >&2
+            exit 1
+          fi
           echo "Generated version number: $version"
           echo "version=$version" >> $GITHUB_OUTPUT
 
@@ -254,9 +278,12 @@ jobs:
         run: ls downloaded_nugets
 
       - name: Install package
+        shell: bash
+        env:
+          VW_VERSION: ${{ steps.get_version.outputs.version }}
         run: |
           cd nuget/dotnet/test
-          dotnet add dotnetcore_nuget_test.csproj package VowpalWabbit --version ${{steps.get_version.outputs.version}} --source "${{github.workspace}}/downloaded_nugets" --no-restore
+          dotnet add dotnetcore_nuget_test.csproj package VowpalWabbit --version "$VW_VERSION" --source "${{github.workspace}}/downloaded_nugets" --no-restore
           dotnet restore dotnetcore_nuget_test.csproj --runtime ${{matrix.config.runtime_id}} --source "https://api.nuget.org/v3/index.json" --source "${{github.workspace}}/downloaded_nugets"
       - name: Build and run test
         run: |
@@ -297,6 +324,13 @@ jobs:
         shell: bash
         run: |
           version=$(./utl/version_number.py)
+          # The version flows into `run:` blocks and package metadata. Reject
+          # anything outside the semver character set so a tampered
+          # version_number.py cannot smuggle shell metacharacters downstream.
+          if [[ ! "$version" =~ ^[0-9A-Za-z.+-]+$ ]]; then
+            echo "Refusing malformed version number: $version" >&2
+            exit 1
+          fi
           echo "Generated version number: $version"
           echo "version=$version" >> $GITHUB_OUTPUT
 
@@ -327,9 +361,11 @@ jobs:
         run: ls downloaded_nugets
 
       - name: Install package
+        env:
+          VW_VERSION: ${{ steps.get_version.outputs.version }}
         run: |
           cd nuget/dotnet/test
-          dotnet add dotnetframework_nuget_test.csproj package VowpalWabbit --version ${{steps.get_version.outputs.version}} --source "${{github.workspace}}/downloaded_nugets" --no-restore
+          dotnet add dotnetframework_nuget_test.csproj package VowpalWabbit --version "$env:VW_VERSION" --source "${{github.workspace}}/downloaded_nugets" --no-restore
           dotnet restore dotnetframework_nuget_test.csproj --runtime win-x64 --source "https://api.nuget.org/v3/index.json" --source "${{github.workspace}}/downloaded_nugets"
       - name: Build and run test
         run: |
@@ -376,6 +412,13 @@ jobs:
         shell: bash
         run: |
           version=$(./utl/version_number.py)
+          # The version flows into `run:` blocks and package metadata. Reject
+          # anything outside the semver character set so a tampered
+          # version_number.py cannot smuggle shell metacharacters downstream.
+          if [[ ! "$version" =~ ^[0-9A-Za-z.+-]+$ ]]; then
+            echo "Refusing malformed version number: $version" >&2
+            exit 1
+          fi
           echo "Generated version number: $version"
           echo "version=$version" >> $GITHUB_OUTPUT
 
@@ -406,10 +449,12 @@ jobs:
         run: ls downloaded_nugets
 
       - name: Install package
+        env:
+          VW_VERSION: ${{ steps.get_version.outputs.version }}
         run: |
           cd test/benchmarks/dotnet
-          dotnet add dotnet_benchmark.csproj package VowpalWabbit --version ${{steps.get_version.outputs.version}} --source "${{github.workspace}}/downloaded_nugets" --no-restore
-          dotnet add dotnet_benchmark.csproj package VowpalWabbit.runtime.win-x64 --version ${{steps.get_version.outputs.version}} --source "${{github.workspace}}/downloaded_nugets" --no-restore
+          dotnet add dotnet_benchmark.csproj package VowpalWabbit --version "$env:VW_VERSION" --source "${{github.workspace}}/downloaded_nugets" --no-restore
+          dotnet add dotnet_benchmark.csproj package VowpalWabbit.runtime.win-x64 --version "$env:VW_VERSION" --source "${{github.workspace}}/downloaded_nugets" --no-restore
           dotnet restore dotnet_benchmark.csproj --runtime win-x64 --source "https://api.nuget.org/v3/index.json" --source "${{github.workspace}}/downloaded_nugets"
       - name: Build and run benchmarks
         run: |

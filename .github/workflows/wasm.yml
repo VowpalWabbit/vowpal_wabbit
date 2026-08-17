@@ -53,7 +53,12 @@ jobs:
         with:
           vcpkgDirectory: '${{ github.workspace }}/ext_libs/vcpkg'
       - uses: mymindstorm/setup-emsdk@29ba4851d6da084ffdc1e0fc390efadbd75df9d1 # v11
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      # actions/setup-node only caches when a `cache:` input is given, and none is
+      # given here, so this step restores nothing. zizmor's cache-poisoning
+      # heuristic fires on the workflow's publishing-shaped trigger rather than on
+      # any cache this workflow actually uses.
+      - name: Set up Node # zizmor: ignore[cache-poisoning]
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
             node-version: 20
       - name: Configure
