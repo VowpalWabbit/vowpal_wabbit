@@ -35,7 +35,7 @@ jobs:
     timeout-minutes: 90
     steps:
       # Setup for build
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           submodules: false
 
@@ -55,7 +55,7 @@ jobs:
           exit 1
       - name: Setup MSVC Developer Command Prompt
         if: ${{ startsWith(matrix.config.os, 'windows') }}
-        uses: ilammy/msvc-dev-cmd@v1
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
       - name: Install .NET Framework targeting packs
         # The runner image ships targeting packs for v4.6.2 and newer only -- the
         # out-of-support ones VW targets (v4.5.2, and v4.6 for the unit tests) are
@@ -65,7 +65,7 @@ jobs:
         if: ${{ startsWith(matrix.config.os, 'windows') }}
         run: choco install netfx-4.5.2-devpack netfx-4.6-devpack -y --no-progress
       - name: Install Ninja
-        uses: seanmiddleditch/gha-setup-ninja@master
+        uses: seanmiddleditch/gha-setup-ninja@3b1f8f94a2f8254bd26914c4ab9474d4f0015f67 # v6
       - name: Install NuGet (Linux)
         if: runner.os == 'Linux'
         run: |
@@ -79,7 +79,7 @@ jobs:
         if: runner.os == 'macOS'
         run: brew install nuget
       - name: Setup .NET SDK
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
         with:
           dotnet-version: '8.0.x'
       - name: Install dotnet t4
@@ -164,7 +164,7 @@ jobs:
           echo "NugetFileName=$NugetFileName" >> $GITHUB_OUTPUT
       - name: Upload Combined
         if: ${{ startsWith(matrix.config.os, 'windows') }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: VowpalWabbit.${{steps.get_version.outputs.version}}.nupkg
           path: nuget_staging/${{ steps.generate-nuget.outputs.NugetFileName }}
@@ -181,7 +181,7 @@ jobs:
           NugetFileName=(*runtime*.nupkg)
           echo "NugetFileName=${NugetFileName[0]}" >> $GITHUB_OUTPUT
       - name: Upload .NET Core Runtime
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: VowpalWabbit.runtime.${{matrix.config.runtime_id}}.${{steps.get_version.outputs.version}}.nupkg
           path: nuget_staging/${{ steps.generate-runtime-nuget.outputs.NugetFileName }}
@@ -201,7 +201,7 @@ jobs:
     runs-on: ${{matrix.config.os}}
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           submodules: false
 
@@ -220,7 +220,7 @@ jobs:
           echo "Submodule init failed after 5 attempts"
           exit 1
       - if: ${{ startsWith(matrix.config.os, 'windows') }}
-        uses: ilammy/msvc-dev-cmd@v1
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
 
       # Get version number
       - name: Update git tags
@@ -237,23 +237,23 @@ jobs:
       # Download the previously built Nuget packages
       - name: Clear nuget cache
         run: dotnet nuget locals all --clear
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: VowpalWabbit.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: VowpalWabbit.runtime.win-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: VowpalWabbit.runtime.linux-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: VowpalWabbit.runtime.osx-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: VowpalWabbit.runtime.osx-arm64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
@@ -276,7 +276,7 @@ jobs:
     runs-on: "windows-latest"
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           submodules: false
 
@@ -294,7 +294,7 @@ jobs:
           done
           echo "Submodule init failed after 5 attempts"
           exit 1
-      - uses: ilammy/msvc-dev-cmd@v1
+      - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
 
       # Get version number
       - name: Update git tags
@@ -311,23 +311,23 @@ jobs:
       # Download the previously built Nuget packages
       - name: Clear nuget cache
         run: dotnet nuget locals all --clear
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: VowpalWabbit.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: VowpalWabbit.runtime.win-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: VowpalWabbit.runtime.linux-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: VowpalWabbit.runtime.osx-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: VowpalWabbit.runtime.osx-arm64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
@@ -354,7 +354,7 @@ jobs:
       deployments: write
     if: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           submodules: false
 
@@ -372,9 +372,9 @@ jobs:
           done
           echo "Submodule init failed after 5 attempts"
           exit 1
-      - uses: ilammy/msvc-dev-cmd@v1
+      - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
       # Needed for generating benchmark plots
-      - uses: r-lib/actions/setup-r@v2
+      - uses: r-lib/actions/setup-r@d3c5be51b12e724e68f33216ca3c148b66d5f0b6 # v2.12.1
 
       # Get version number
       - name: Update git tags
@@ -391,23 +391,23 @@ jobs:
       # Download the previously built Nuget packages
       - name: Clear nuget cache
         run: dotnet nuget locals all --clear
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: VowpalWabbit.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: VowpalWabbit.runtime.win-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: VowpalWabbit.runtime.linux-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: VowpalWabbit.runtime.osx-x64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: VowpalWabbit.runtime.osx-arm64.${{steps.get_version.outputs.version}}.nupkg
           path: downloaded_nugets
@@ -440,7 +440,7 @@ jobs:
           echo "## .NET Benchmark Results" >> $GITHUB_STEP_SUMMARY
           cat BenchmarkRun-joined-*.md | sed 's/\*\*//g' >> $GITHUB_STEP_SUMMARY
       - name: Upload benchmark artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: benchmark_results
           path: test/benchmarks/dotnet/BenchmarkDotNet.Artifacts/results/
@@ -464,7 +464,7 @@ jobs:
           # Filter to .NET Core results with valid Statistics (some entries may have null Statistics if skipped)
           cat BenchmarkRun-joined-*.json | jq '.Benchmarks |= map(select((.DisplayInfo | contains(".NET Framework") | not) and .Statistics != null))' > BenchmarkRun.json
           echo "Filtered benchmark count: $(jq '.Benchmarks | length' BenchmarkRun.json)"
-      - uses: benchmark-action/github-action-benchmark@v1
+      - uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba # v1.22.1
         with:
           tool: 'benchmarkdotnet'
           output-file-path: test/benchmarks/dotnet/BenchmarkDotNet.Artifacts/results/BenchmarkRun.json
