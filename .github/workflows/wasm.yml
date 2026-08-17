@@ -17,7 +17,7 @@ jobs:
   job:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           submodules: false
           fetch-depth: 0
@@ -36,7 +36,7 @@ jobs:
           done
           echo "Submodule init failed after 5 attempts"
           exit 1
-      - uses: lukka/get-cmake@latest
+      - uses: lukka/get-cmake@fffaaafeea488556c2c12dad60690008bc1caacb # v4.4.2
       - name: Install build dependencies (Linux only)
         if: runner.os == 'Linux'
         run: |
@@ -49,11 +49,11 @@ jobs:
           rm -rf ext_libs/vcpkg/buildtrees
           git submodule update --init ext_libs/vcpkg
       - name: Setup vcpkg
-        uses: lukka/run-vcpkg@v11
+        uses: lukka/run-vcpkg@b1a0dd252f06b9e25b3c022a9a03bd7a427fb6a2 # v11.6
         with:
           vcpkgDirectory: '${{ github.workspace }}/ext_libs/vcpkg'
-      - uses: mymindstorm/setup-emsdk@v11
-      - uses: actions/setup-node@v4
+      - uses: mymindstorm/setup-emsdk@29ba4851d6da084ffdc1e0fc390efadbd75df9d1 # v11
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
             node-version: 20
       - name: Configure
@@ -68,7 +68,7 @@ jobs:
           echo "Patched spdlog headers to remove SPDLOG_FMT_STRING wrapper"
       - name: Build
         run: cmake --build build --target vw-wasm
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           path: wasm
       - name: Test
