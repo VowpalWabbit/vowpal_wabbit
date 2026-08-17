@@ -21,6 +21,7 @@ jobs:
   zizmor:
     name: Audit GitHub Actions workflows
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     permissions:
       security-events: write
       contents: read

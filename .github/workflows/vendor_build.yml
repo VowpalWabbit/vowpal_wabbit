@@ -13,6 +13,12 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
+env:
+  # apt on the hosted images can block forever on an interactive
+  # needrestart/debconf prompt; -y does not suppress those.
+  DEBIAN_FRONTEND: noninteractive
+  NEEDRESTART_MODE: a
+
 jobs:
   build_vendor_linux:
     name: core-cli.${{ matrix.os }}.amd64.${{ matrix.build_type }}.${{ matrix.compiler.cxx }}.standalone
@@ -24,6 +30,7 @@ jobs:
         - { cc: "gcc", cxx: "g++"}
         - { cc: "clang", cxx: "clang++"}
     runs-on: ${{matrix.os}}
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6
         with:
@@ -90,6 +97,7 @@ jobs:
     name: big-tests.[${{ matrix.segment }}]
     needs: build_vendor_linux
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     strategy:
       matrix:
         segment: [1, 2]
@@ -219,6 +227,7 @@ jobs:
   build_vendor_windows:
     name: core-cli.${{ matrix.os }}.amd64.${{ matrix.build_type }}.msvc.standalone
     runs-on: ${{matrix.os}}
+    timeout-minutes: 90
     strategy:
       matrix:
         os: ["windows-latest"]
@@ -277,6 +286,7 @@ jobs:
         run: ctest --output-on-failure --no-tests=error --label-regex VWTestList --build-config ${{ matrix.build_type }} --parallel 2
   build_vendor_macos:
     runs-on: ${{matrix.os}}
+    timeout-minutes: 90
     name: core-cli.${{ matrix.os }}.amd64.${{ matrix.build_type }}.AppleClang.standalone
     strategy:
       matrix:

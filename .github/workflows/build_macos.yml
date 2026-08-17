@@ -16,6 +16,7 @@ concurrency:
 jobs:
   build_macos:
     runs-on: ${{matrix.os}}
+    timeout-minutes: 90
     strategy:
       matrix:
         os: [macos-14]

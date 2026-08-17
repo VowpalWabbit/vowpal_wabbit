@@ -23,6 +23,7 @@ jobs:
         build_config: ["Debug", "Release"]
         os: ["windows-latest"]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
     env:
       CMAKE_BUILD_DIR: ${{ github.workspace }}/vw/build
       SOURCE_DIR: ${{ github.workspace }}/vw

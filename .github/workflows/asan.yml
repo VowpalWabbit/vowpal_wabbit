@@ -14,6 +14,10 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  # apt on the hosted images can block forever on an interactive
+  # needrestart/debconf prompt; -y does not suppress those.
+  DEBIAN_FRONTEND: noninteractive
+  NEEDRESTART_MODE: a
   VCPKG_BINARY_SOURCES: 'clear;x-gha,readwrite'
 
 jobs:
@@ -30,6 +34,7 @@ jobs:
           # UBSan runs out of disk space on Linux
           - { os: ubuntu-latest, preset: vcpkg-ubsan-debug }
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
     name: asan.${{ matrix.os }}.${{ matrix.preset }}
     env:
       UBSAN_OPTIONS: "print_stacktrace=1"
@@ -150,6 +155,7 @@ jobs:
         os: [ubuntu-latest]
         preset: [vcpkg-ubsan-debug]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
     name: asan.${{ matrix.os }}.${{ matrix.preset }}
     env:
       UBSAN_OPTIONS: "print_stacktrace=1"

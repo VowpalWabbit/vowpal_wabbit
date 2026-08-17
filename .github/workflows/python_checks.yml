@@ -24,10 +24,17 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
+env:
+  # apt on the hosted images can block forever on an interactive
+  # needrestart/debconf prompt; -y does not suppress those.
+  DEBIAN_FRONTEND: noninteractive
+  NEEDRESTART_MODE: a
+
 jobs:
   build-wheel:
     name: Build python wheel (current)
     runs-on: ubuntu-22.04
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6
         with:
@@ -69,6 +76,7 @@ jobs:
   build-wheel-master:
     name: Build python wheel (master)
     runs-on: ubuntu-22.04
+    timeout-minutes: 90
     steps:
       - name: Install dependencies
         run: |
@@ -97,6 +105,7 @@ jobs:
     name: Generate models from current code
     needs: build-wheel
     runs-on: ubuntu-22.04
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v5
@@ -142,6 +151,7 @@ jobs:
     name: Test current models with master code
     needs: [build-wheel-master, forward-generate]
     runs-on: ubuntu-22.04
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6
         with:
@@ -188,6 +198,7 @@ jobs:
     name: Generate models from master code
     needs: build-wheel-master
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v5
@@ -233,6 +244,7 @@ jobs:
     name: Test master models with current code
     needs: [build-wheel, backward-generate]
     runs-on: ubuntu-22.04
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6
         with:
@@ -279,6 +291,7 @@ jobs:
     container:
       image: python:3.10
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6
         with:
@@ -329,6 +342,7 @@ jobs:
   cpp-docs:
     name: Build C++ docs
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6
       - uses: cachix/install-nix-action@v18
@@ -343,6 +357,7 @@ jobs:
   dump-options:
     name: Build vw-dump-options
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6
         with:
@@ -378,6 +393,7 @@ jobs:
     name: Build Python docs
     needs: [build-wheel, dump-options]
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6
         with:
@@ -450,6 +466,7 @@ jobs:
     name: Upload documentation
     needs: [cpp-docs, python-docs]
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     if: ${{ github.repository == 'VowpalWabbit/vowpal_wabbit' && (github.event_name == 'push' || github.event_name == 'release' || github.event_name == 'workflow_dispatch') }}
     steps:
       - name: Set folder name to latest if push

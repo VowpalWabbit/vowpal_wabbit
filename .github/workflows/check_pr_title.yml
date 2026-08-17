@@ -14,6 +14,7 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       # Accepted types: https://github.com/commitizen/conventional-commit-types/blob/master/index.json
       - uses: amannn/action-semantic-pull-request@v3.4.2
