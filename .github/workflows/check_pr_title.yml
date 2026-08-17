@@ -18,9 +18,16 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   check:
     runs-on: ubuntu-latest
+    # The action reads the pull request and, for validateSingleCommit, its commit
+    # list. Nothing is checked out, so contents is not needed.
+    permissions:
+      pull-requests: read
     timeout-minutes: 90
     steps:
       # Accepted types: https://github.com/commitizen/conventional-commit-types/blob/master/index.json
