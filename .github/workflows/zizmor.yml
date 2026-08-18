@@ -33,4 +33,15 @@ jobs:
           persist-credentials: false
 
       - name: Run zizmor
-        uses: zizmorcore/zizmor-action@b1d7e1fb5de872772f31590499237e7cce841e8e # v0.5.3
+        uses: zizmorcore/zizmor-action@3dc1ecc9bcb9e94e9b2c709687979e1298497054 # v0.6.2
+        with:
+          # Name the zizmor version explicitly. The action resolves its default
+          # of `latest` from a digest map baked into its own release, so the
+          # version is only as current as the action pin -- v0.5.3 was still
+          # running zizmor 1.24.1. Leaving it implicit meant local runs and CI
+          # audited with different versions, which silently disagreed about
+          # where a `# zizmor: ignore` comment has to sit.
+          #
+          # Bump this together with the action pin above; valid values are the
+          # ones listed in support/versions for that action release.
+          version: 1.29.0
