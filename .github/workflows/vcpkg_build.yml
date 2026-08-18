@@ -31,7 +31,7 @@ jobs:
         os: [ubuntu-latest, macos-14, macos-15-intel, windows-latest]
         preset: [vcpkg-debug, vcpkg-release]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           submodules: false
           fetch-depth: 0
@@ -50,14 +50,14 @@ jobs:
           done
           echo "Submodule init failed after 5 attempts"
           exit 1
-      - uses: lukka/get-cmake@latest
-      - uses: ilammy/msvc-dev-cmd@v1
+      - uses: lukka/get-cmake@fffaaafeea488556c2c12dad60690008bc1caacb # v4.4.2
+      - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
       - name: Install build dependencies (Linux only)
         if: runner.os == 'Linux'
         run: |
           bash "$GITHUB_WORKSPACE/.github/scripts/apt-install.sh" ninja-build autoconf automake autoconf-archive
       - name: Export GitHub Actions cache environment variables
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
         with:
           script: |
             core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
@@ -128,7 +128,7 @@ jobs:
         run: |
           python3 test/run_tests.py -f --clean_dirty -E 0.01 --skip_spanning_tree_tests `
             --vw_bin_path ${{ github.workspace }}/artifact/vw.exe
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: runner.os == 'Windows' && matrix.preset == 'vcpkg-release'
         with:
           name: vw-${{ matrix.os }}-${{ github.sha }}

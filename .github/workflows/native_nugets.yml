@@ -28,7 +28,7 @@ jobs:
         - { arch: x64, generator_arch: x64}
     steps:
       # Get repository and setup dependencies
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           submodules: false
 
@@ -46,7 +46,7 @@ jobs:
           done
           echo "Submodule init failed after 5 attempts"
           exit 1
-      - uses: ilammy/msvc-dev-cmd@v1
+      - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
 
       # Get version number
       - name: Update git tags
@@ -57,16 +57,25 @@ jobs:
         shell: bash
         run: |
           version=$(./utl/version_number.py)
+          # The version flows into `run:` blocks and package metadata. Reject
+          # anything outside the semver character set so a tampered
+          # version_number.py cannot smuggle shell metacharacters downstream.
+          if [[ ! "$version" =~ ^[0-9A-Za-z.+-]+$ ]]; then
+            echo "Refusing malformed version number: $version" >&2
+            exit 1
+          fi
           echo "Generated version number: $version"
           echo "version=$version" >> $GITHUB_OUTPUT
 
       # Compile code
       - name: Configure
+        env:
+          VW_VERSION: ${{ steps.get_version.outputs.version }}
         run: >
           cmake -S . -B build
           -G "Visual Studio 17 2022" -A ${{ matrix.arch_config.generator_arch }}
           -T ${{ matrix.toolset }}
-          -DVW_NUGET_PACKAGE_VERSION="${{ steps.get_version.outputs.version }}"
+          -DVW_NUGET_PACKAGE_VERSION="$env:VW_VERSION"
           -DNATIVE_NUGET_PLATFORM_TAG="${{ matrix.arch_config.arch }}"
           -DVW_FEAT_FLATBUFFERS=Off
           -DBUILD_TESTING=Off
@@ -100,7 +109,7 @@ jobs:
           $NugetFileName = Get-ChildItem *.nupkg -name
           echo "NugetFileName=$NugetFileName" >> $GITHUB_OUTPUT
       - name: Upload
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: VowpalWabbitNative-${{matrix.toolset}}-x64.${{ steps.get_version.outputs.version }}.nupkg
           path: nuget_staging/${{ steps.generate-nuget.outputs.NugetFileName }}
@@ -116,26 +125,28 @@ jobs:
         os: ["windows-2022"]
         toolset: ["v142", "v143"]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           submodules: false
-      - uses: ilammy/msvc-dev-cmd@v1
+      - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
       - name: Add msbuild to PATH
-        uses: microsoft/setup-msbuild@v1.1
+        uses: microsoft/setup-msbuild@34cfbaee7f672c76950673338facd8a73f637506 # v1.1.3
 
       # Download and install nuget (version from build job)
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: VowpalWabbitNative-${{matrix.toolset}}-x64.${{ needs.build_nuget_windows.outputs.version }}.nupkg
           path: downloaded_nugets
       - name: List downloaded files
         run: ls downloaded_nugets
       - name: Install nuget
+        env:
+          VW_VERSION: ${{ needs.build_nuget_windows.outputs.version }}
         run: >
           nuget install
           -Source "${{ github.workspace }}\downloaded_nugets"
           -OutputDirectory "${{ github.workspace }}\nuget\native\test\packages"
-          -Version "${{ needs.build_nuget_windows.outputs.version }}"
+          -Version "$env:VW_VERSION"
           -Verbosity detailed
           -NonInteractive
           VowpalWabbitNative-${{ matrix.toolset }}-x64

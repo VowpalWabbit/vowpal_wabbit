@@ -31,7 +31,7 @@ jobs:
         os: [ubuntu-latest]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           submodules: false
           fetch-depth: 0
@@ -51,8 +51,8 @@ jobs:
           echo "Submodule init failed after 5 attempts"
           exit 1
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3.3.0
-      - uses: actions/upload-artifact@v4
+        uses: pypa/cibuildwheel@63fd63b352a9a8bdcc24791c9dbee952ee9a8abc # v3.3.0
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: cibw-wheels-${{ matrix.os }}
           path: ./wheelhouse/*.whl
@@ -64,7 +64,7 @@ jobs:
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           submodules: false
           fetch-depth: 0
@@ -84,8 +84,8 @@ jobs:
           echo "Submodule init failed after 5 attempts"
           exit 1
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3.3.0
-      - uses: actions/upload-artifact@v4
+        uses: pypa/cibuildwheel@63fd63b352a9a8bdcc24791c9dbee952ee9a8abc # v3.3.0
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: cibw-wheels-ubuntu-24.04-arm
           path: ./wheelhouse/*.whl
@@ -101,7 +101,7 @@ jobs:
         os: [macos-14, macos-15-intel]
       fail-fast: false
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           submodules: false
           fetch-depth: 0
@@ -121,8 +121,8 @@ jobs:
           echo "Submodule init failed after 5 attempts"
           exit 1
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3.3.0
-      - uses: actions/upload-artifact@v4
+        uses: pypa/cibuildwheel@63fd63b352a9a8bdcc24791c9dbee952ee9a8abc # v3.3.0
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: cibw-wheels-${{ matrix.os }}
           path: ./wheelhouse/*.whl
@@ -134,7 +134,7 @@ jobs:
     runs-on: windows-2022
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           submodules: false
           fetch-depth: 0
@@ -154,12 +154,12 @@ jobs:
           echo "Submodule init failed after 5 attempts"
           exit 1
       - name: Setup MSVC Developer Command Prompt
-        uses: ilammy/msvc-dev-cmd@v1
+        uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
       - name: Install sccache
         run: choco install sccache -y
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3.3.0
-      - uses: actions/upload-artifact@v4
+        uses: pypa/cibuildwheel@63fd63b352a9a8bdcc24791c9dbee952ee9a8abc # v3.3.0
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: cibw-wheels-windows-2022
           path: ./wheelhouse/*.whl
@@ -170,7 +170,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           submodules: false
 
@@ -188,7 +188,7 @@ jobs:
           done
           echo "Submodule init failed after 5 attempts"
           exit 1
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: '3.10'
           architecture: 'x64'
@@ -196,7 +196,7 @@ jobs:
         shell: bash
         run: python setup.py sdist
       - name: Upload built wheel
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: python_source_distribution
           path: dist/*.tar.gz
@@ -210,13 +210,13 @@ jobs:
     timeout-minutes: 90
     steps:
       # Only the apt retry helper; the rest of this job does not need the repo.
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           sparse-checkout: .github/scripts
           submodules: false
           persist-credentials: false
-      - uses: actions/setup-python@v5
-      - uses: actions/download-artifact@v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: python_source_distribution
           path: dist/
@@ -228,7 +228,7 @@ jobs:
       - name: Install source dist
         shell: bash
         run: pip install dist/*.tar.gz
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           submodules: false
 
