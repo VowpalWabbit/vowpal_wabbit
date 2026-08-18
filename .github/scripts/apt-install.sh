@@ -7,6 +7,12 @@
 # returns and the job burns its whole timeout. `timeout` converts that hang
 # into a failure, which can then be retried.
 #
+# `timeout` must run *inside* sudo, not outside it. Run as the unprivileged
+# user it cannot signal the root apt-get at all, and without -k it then waits
+# forever for a child that never dies -- which is exactly the hang it was
+# meant to break. As root, with -k, it escalates to SIGKILL and always
+# returns.
+#
 # Usage: apt-install.sh <package> [package...]
 set -euo pipefail
 
@@ -17,9 +23,9 @@ fi
 
 for attempt in 1 2 3; do
   # An index refresh that fails is survivable; the install below is not.
-  timeout 300 sudo -E apt-get update -o Acquire::Retries=3 || true
+  sudo -E timeout -k 30 300 apt-get update -o Acquire::Retries=3 || true
 
-  if timeout 600 sudo -E apt-get install -y -o Acquire::Retries=3 "$@"; then
+  if sudo -E timeout -k 30 600 apt-get install -y -o Acquire::Retries=3 "$@"; then
     exit 0
   fi
 

@@ -436,7 +436,7 @@ jobs:
         run: chmod +x ./vw-dump-options/vw-dump-options
       - name: Install system dependencies
         run: |
-          timeout 300 sudo apt-get update -o Acquire::Retries=3 || true
+          sudo timeout -k 30 300 apt-get update -o Acquire::Retries=3 || true
       - name: Install dependencies
         shell: bash
         run: |
