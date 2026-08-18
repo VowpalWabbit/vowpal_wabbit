@@ -63,8 +63,8 @@ jobs:
       # given here, so this step restores nothing. zizmor's cache-poisoning
       # heuristic fires on the workflow's publishing-shaped trigger rather than on
       # any cache this workflow actually uses.
-      - name: Set up Node # zizmor: ignore[cache-poisoning]
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0 # zizmor: ignore[cache-poisoning]
         with:
             node-version: 20
       - name: Configure
