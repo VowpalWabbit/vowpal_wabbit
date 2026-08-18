@@ -1,6 +1,13 @@
 name: Require semantic PR title
 
-on:
+# pull_request_target is required here rather than merely convenient: it makes
+# the workflow definition come from the base branch, so a pull request cannot
+# disable its own title check by editing this file. The usual danger of the
+# trigger -- running untrusted head-ref code with a privileged token -- does not
+# apply, because this workflow never checks the pull request out and has no
+# `run:` steps at all. The action reads the title from the event payload via the
+# API and nothing else.
+on: # zizmor: ignore[dangerous-triggers]
   pull_request_target:
     types:
       - opened
