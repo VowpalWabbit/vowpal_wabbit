@@ -17,6 +17,7 @@ jobs:
   analyze:
     name: Analyze
     runs-on: ${{ matrix.config.os }}
+    timeout-minutes: 90
     permissions:
       actions: read
       contents: read

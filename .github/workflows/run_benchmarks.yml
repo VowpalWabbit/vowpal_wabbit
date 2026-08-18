@@ -13,11 +13,16 @@ concurrency:
   cancel-in-progress: true
 
 env:
+  # apt on the hosted images can block forever on an interactive
+  # needrestart/debconf prompt; -y does not suppress those.
+  DEBIAN_FRONTEND: noninteractive
+  NEEDRESTART_MODE: a
   VCPKG_BINARY_SOURCES: 'clear;x-gha,readwrite'
 
 jobs:
   benchmark:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     permissions:
       contents: write
       deployments: write
@@ -41,7 +46,14 @@ jobs:
           done
           echo "Submodule init failed after 5 attempts"
           exit 1
+      # Pinned to 3.31.x: the benchmark port in our vcpkg pin passes the bogus
+      # option -Werror=old-style-cast to cmake, which CMake >= 4.4 rejects with
+      # "The warning category \"old-style-cast\" is not known". Upstream vcpkg
+      # dropped that option in benchmark 1.9.5; unpin once ext_libs/vcpkg is
+      # refreshed past it.
       - uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: '~3.31.0'
       - name: Install build dependencies (Linux only)
         if: runner.os == 'Linux'
         run: |

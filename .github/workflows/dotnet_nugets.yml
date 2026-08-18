@@ -15,6 +15,12 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
+env:
+  # apt on the hosted images can block forever on an interactive
+  # needrestart/debconf prompt; -y does not suppress those.
+  DEBIAN_FRONTEND: noninteractive
+  NEEDRESTART_MODE: a
+
 jobs:
   build_nuget_dotnet:
     strategy:
@@ -26,6 +32,7 @@ jobs:
           - { os: "macos-14", runtime_id: "osx-arm64" }
           - { os: "macos-15-intel", runtime_id: "osx-x64" }
     runs-on: ${{matrix.config.os}}
+    timeout-minutes: 90
     steps:
       # Setup for build
       - uses: actions/checkout@v6
@@ -193,6 +200,7 @@ jobs:
           - { os: "macos-14", runtime_id: "osx-arm64" }
           - { os: "macos-15-intel", runtime_id: "osx-x64" }
     runs-on: ${{matrix.config.os}}
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6
         with:
@@ -267,6 +275,7 @@ jobs:
   test_nuget_dotnetframework:
     needs: [build_nuget_dotnet]
     runs-on: "windows-latest"
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6
         with:
@@ -340,6 +349,7 @@ jobs:
   benchmark_nuget:
     needs: [build_nuget_dotnet]
     runs-on: "windows-latest"
+    timeout-minutes: 90
     permissions:
       contents: write
       deployments: write

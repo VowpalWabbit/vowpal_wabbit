@@ -11,10 +11,17 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  # apt on the hosted images can block forever on an interactive
+  # needrestart/debconf prompt; -y does not suppress those.
+  DEBIAN_FRONTEND: noninteractive
+  NEEDRESTART_MODE: a
+
 jobs:
   build-native:
     name: native.${{ matrix.config.name }}
     runs-on: ${{ matrix.config.os }}
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
@@ -77,6 +84,7 @@ jobs:
   build-static-test:
     name: static-jni-test
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6
         with:
@@ -125,6 +133,7 @@ jobs:
     name: Assemble multi-platform JAR
     needs: build-native
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6
         with:

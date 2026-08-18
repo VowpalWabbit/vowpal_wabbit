@@ -17,6 +17,7 @@ jobs:
   build_nuget_windows:
     name: nuget.${{ matrix.toolset }}.${{ matrix.arch_config.arch }}
     runs-on: ${{matrix.os}}
+    timeout-minutes: 90
     outputs:
       version: ${{ steps.get_version.outputs.version }}
     strategy:
@@ -109,6 +110,7 @@ jobs:
     needs: [build_nuget_windows]
     name: nuget-test.${{ matrix.toolset }}
     runs-on: ${{matrix.os}}
+    timeout-minutes: 90
     strategy:
       matrix:
         os: ["windows-2022"]

@@ -10,6 +10,10 @@ on:
       - '*'
 
 env:
+  # apt on the hosted images can block forever on an interactive
+  # needrestart/debconf prompt; -y does not suppress those.
+  DEBIAN_FRONTEND: noninteractive
+  NEEDRESTART_MODE: a
   VCPKG_BINARY_SOURCES: 'clear;x-gha,readwrite'
 
 concurrency:
@@ -20,6 +24,7 @@ jobs:
   job:
     name: ${{ matrix.os }}-${{ matrix.preset }}-${{ github.workflow }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:

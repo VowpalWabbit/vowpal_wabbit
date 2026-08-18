@@ -24,10 +24,17 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
+env:
+  # apt on the hosted images can block forever on an interactive
+  # needrestart/debconf prompt; -y does not suppress those.
+  DEBIAN_FRONTEND: noninteractive
+  NEEDRESTART_MODE: a
+
 jobs:
   build-wheel:
     name: Build python wheel (current)
     runs-on: ubuntu-22.04
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6
         with:
@@ -55,7 +62,8 @@ jobs:
       - name: Build wheel
         shell: bash
         run: |
-          python3 -m pip install wheel auditwheel
+          # patchelf from pip: ubuntu-22.04 ships 0.14.3, current auditwheel needs >= 0.14.5
+          python3 -m pip install wheel auditwheel patchelf
           export PYBIND11_DIR=$(python3 -m pybind11 --cmakedir)
           CMAKE_ARGS="-DSTATIC_LINK_VW_JAVA=On -DCMAKE_BUILD_TYPE=Release -DVW_ZLIB_SYS_DEP=OFF -DVW_FEAT_CSV=ON -Dpybind11_DIR=${PYBIND11_DIR}" python3 -m pip wheel . -w wheel_output/ --verbose
           auditwheel repair wheel_output/*whl -w audit_output/
@@ -68,12 +76,14 @@ jobs:
   build-wheel-master:
     name: Build python wheel (master)
     runs-on: ubuntu-22.04
+    timeout-minutes: 90
     steps:
       - name: Install dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y cmake ninja-build libboost-test-dev python3-dev python3-pip zlib1g-dev
-          python3 -m pip install build wheel setuptools auditwheel pybind11
+          # patchelf from pip: ubuntu-22.04 ships 0.14.3, current auditwheel needs >= 0.14.5
+          python3 -m pip install build wheel setuptools auditwheel patchelf pybind11
       - name: Build wheel
         shell: bash
         run: |
@@ -95,6 +105,7 @@ jobs:
     name: Generate models from current code
     needs: build-wheel
     runs-on: ubuntu-22.04
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v5
@@ -140,6 +151,7 @@ jobs:
     name: Test current models with master code
     needs: [build-wheel-master, forward-generate]
     runs-on: ubuntu-22.04
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6
         with:
@@ -186,6 +198,7 @@ jobs:
     name: Generate models from master code
     needs: build-wheel-master
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v5
@@ -231,6 +244,7 @@ jobs:
     name: Test master models with current code
     needs: [build-wheel, backward-generate]
     runs-on: ubuntu-22.04
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6
         with:
@@ -277,6 +291,7 @@ jobs:
     container:
       image: python:3.10
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6
         with:
@@ -327,6 +342,7 @@ jobs:
   cpp-docs:
     name: Build C++ docs
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6
       - uses: cachix/install-nix-action@v18
@@ -341,6 +357,7 @@ jobs:
   dump-options:
     name: Build vw-dump-options
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6
         with:
@@ -376,6 +393,7 @@ jobs:
     name: Build Python docs
     needs: [build-wheel, dump-options]
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6
         with:
@@ -448,6 +466,7 @@ jobs:
     name: Upload documentation
     needs: [cpp-docs, python-docs]
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     if: ${{ github.repository == 'VowpalWabbit/vowpal_wabbit' && (github.event_name == 'push' || github.event_name == 'release' || github.event_name == 'workflow_dispatch') }}
     steps:
       - name: Set folder name to latest if push

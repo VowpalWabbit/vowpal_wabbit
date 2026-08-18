@@ -13,10 +13,17 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
   cancel-in-progress: true
 
+env:
+  # apt on the hosted images can block forever on an interactive
+  # needrestart/debconf prompt; -y does not suppress those.
+  DEBIAN_FRONTEND: noninteractive
+  NEEDRESTART_MODE: a
+
 jobs:
   python-formatting:
     name: lint.python.formatting
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6
         with:
@@ -47,6 +54,7 @@ jobs:
   cpp-formatting:
     name: lint.c++.formatting
     runs-on: ubuntu-22.04
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6
         with:
@@ -92,6 +100,7 @@ jobs:
   run-clang-tidy:
     name: lint.c++.clang-tidy
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6
       - uses: cachix/install-nix-action@v18
