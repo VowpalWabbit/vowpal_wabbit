@@ -26,6 +26,9 @@ jobs:
     permissions:
       contents: write
       deployments: write
+      # comment-on-alert posts a PR review; without this it fails with
+      # "Resource not accessible by integration" instead of reporting the alert.
+      pull-requests: write
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
@@ -92,7 +95,9 @@ jobs:
           output-file-path: benchmark_results.json
           alert-threshold: '150%'
           fail-on-alert: true
-          comment-on-alert: true
+          # A fork PR's GITHUB_TOKEN is read-only whatever the permissions block
+          # says, so commenting can only ever 403 there.
+          comment-on-alert: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
           auto-push: false
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Push results to gh-pages branch
