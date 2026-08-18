@@ -53,15 +53,7 @@ jobs:
           done
           echo "Submodule init failed after 5 attempts"
           exit 1
-      # Pinned to 3.31.x: the benchmark port in our vcpkg pin passes the bogus
-      # option -Werror=old-style-cast to cmake, which CMake >= 4.4 rejects with
-      # "The warning category \"old-style-cast\" is not known". Upstream vcpkg
-      # dropped that option in benchmark 1.9.5; unpin once ext_libs/vcpkg is
-      # refreshed past it. The trailing comment on `uses:` is the action's own
-      # release tag, not the CMake version it installs -- cmakeVersion sets that.
       - uses: lukka/get-cmake@fffaaafeea488556c2c12dad60690008bc1caacb # v4.4.2
-        with:
-          cmakeVersion: '~3.31.0'
       - name: Install build dependencies (Linux only)
         if: runner.os == 'Linux'
         run: |
