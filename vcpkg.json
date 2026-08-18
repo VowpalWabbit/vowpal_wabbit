@@ -2,7 +2,7 @@
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
   "name": "vowpal-wabbit",
   "version": "9.10.0",
-  "builtin-baseline": "af752f21c9d79ba3df9cb0250ce2233933f58486",
+  "builtin-baseline": "9e593bb18ea69cc5095e012465dcd675a822ed0d",
   "dependencies": [
     "eigen3",
     "fmt",
