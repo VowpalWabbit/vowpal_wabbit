@@ -66,8 +66,7 @@ jobs:
       - name: Install build dependencies (Linux only)
         if: runner.os == 'Linux'
         run: |
-          sudo apt-get update || true
-          sudo apt-get install -y ninja-build autoconf automake autoconf-archive ccache
+          bash "$GITHUB_WORKSPACE/.github/scripts/apt-install.sh" ninja-build autoconf automake autoconf-archive ccache
       - name: Install ccache (macOS only)
         if: runner.os == 'macOS'
         run: |
@@ -184,8 +183,7 @@ jobs:
       - name: Install build dependencies (Linux only)
         if: runner.os == 'Linux'
         run: |
-          sudo apt-get update || true
-          sudo apt-get install -y ninja-build autoconf automake autoconf-archive ccache
+          bash "$GITHUB_WORKSPACE/.github/scripts/apt-install.sh" ninja-build autoconf automake autoconf-archive ccache
       - name: Cache ccache
         uses: actions/cache@v4
         with:

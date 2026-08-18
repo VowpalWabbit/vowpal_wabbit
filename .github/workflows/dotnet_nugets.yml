@@ -69,8 +69,7 @@ jobs:
       - name: Install NuGet (Linux)
         if: runner.os == 'Linux'
         run: |
-          sudo apt-get update
-          sudo apt-get install -y mono-complete
+          bash "$GITHUB_WORKSPACE/.github/scripts/apt-install.sh" mono-complete
           wget https://dist.nuget.org/win-x86-commandline/latest/nuget.exe
           sudo install -m 755 nuget.exe /usr/local/bin/nuget.exe
           echo '#!/bin/bash' | sudo tee /usr/local/bin/nuget

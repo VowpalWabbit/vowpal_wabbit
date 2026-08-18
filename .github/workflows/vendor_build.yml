@@ -51,7 +51,7 @@ jobs:
           echo "Submodule init failed after 5 attempts"
           exit 1
       - name: Install requirements
-        run: sudo apt-get install -y ninja-build libboost-test-dev
+        run: bash "$GITHUB_WORKSPACE/.github/scripts/apt-install.sh" ninja-build libboost-test-dev
       - name: Cache FetchContent downloads
         uses: actions/cache@v4
         with:

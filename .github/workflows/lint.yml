@@ -45,8 +45,7 @@ jobs:
           exit 1
       - name: Install python dependencies
         run: |
-          sudo apt-get update || true
-          sudo apt-get install -y python3-pip
+          bash "$GITHUB_WORKSPACE/.github/scripts/apt-install.sh" python3-pip
           pip install black black[jupyter]
       - shell: bash
         run: |
@@ -65,8 +64,7 @@ jobs:
         if: github.event_name == 'pull_request'
         shell: bash
         run: |
-          sudo apt update
-          sudo apt install clang-format
+          bash "$GITHUB_WORKSPACE/.github/scripts/apt-install.sh" clang-format
           clang-format --version
       - name: Check code formatting for codebase
         shell: bash

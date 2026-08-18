@@ -43,7 +43,7 @@ jobs:
           exit 1
 
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y ninja-build xxd
+        run: bash "$GITHUB_WORKSPACE/.github/scripts/apt-install.sh" ninja-build xxd
 
       - name: Configure VW Slim
         run: |

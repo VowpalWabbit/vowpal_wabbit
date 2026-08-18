@@ -209,6 +209,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
+      # Only the apt retry helper; the rest of this job does not need the repo.
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          sparse-checkout: .github/scripts
+          submodules: false
+          persist-credentials: false
       - uses: actions/setup-python@v5
       - uses: actions/download-artifact@v4
         with:
@@ -217,8 +223,7 @@ jobs:
       - name: Install dependencies
         shell: bash
         run: |
-          sudo apt update
-          sudo apt install libboost-test-dev zlib1g-dev cmake ninja-build g++
+          bash "$GITHUB_WORKSPACE/.github/scripts/apt-install.sh" libboost-test-dev zlib1g-dev cmake ninja-build g++
           pip install pybind11
       - name: Install source dist
         shell: bash

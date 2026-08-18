@@ -47,8 +47,7 @@ jobs:
       - name: Install build dependencies (Linux only)
         if: runner.os == 'Linux'
         run: |
-          sudo apt-get update || true
-          sudo apt-get install -y ninja-build autoconf automake autoconf-archive
+          bash "$GITHUB_WORKSPACE/.github/scripts/apt-install.sh" ninja-build autoconf automake autoconf-archive
       - name: Clear vcpkg cache and update
         shell: bash
         run: |
