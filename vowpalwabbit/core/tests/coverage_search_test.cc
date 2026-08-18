@@ -11,8 +11,31 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <cstdio>
 #include <string>
 #include <vector>
+
+namespace
+{
+// Passing -c gives every test the same cache path: the default is
+// data_filename + ".cache", and with no data file that is just "./.cache".
+// Tests running concurrently under `ctest --parallel` then write over each
+// other's cache and fail the second pass with "need a cache file for multiple
+// passes". Give each test its own file instead.
+std::string test_cache_file()
+{
+  const auto* info = ::testing::UnitTest::GetInstance()->current_test_info();
+  return std::string("./") + info->test_suite_name() + "." + info->name() + ".cache.tmp";
+}
+
+// The cache is written to <name>.writing and only renamed to <name> once the
+// write is finalized, which these tests do not reach. Remove both.
+void remove_cache_file(const std::string& path)
+{
+  std::remove(path.c_str());
+  std::remove((path + ".writing").c_str());
+}
+}  // namespace
 
 // ============================================================
 // Helper: learn a simple sequence example group
@@ -29,7 +52,6 @@ static void learn_sequence(VW::workspace& vw, const std::vector<std::string>& li
 // ============================================================
 // 1. Search Core (~30 tests)
 // ============================================================
-
 TEST(CoverageSearch, SearchBasicSequenceTask)
 {
   auto vw = VW::initialize(vwtest::make_args("--search", "3", "--search_task", "sequence", "--quiet"));
@@ -161,9 +183,12 @@ TEST(CoverageSearch, SearchAlphaLarge)
 
 TEST(CoverageSearch, SearchBeta)
 {
-  auto vw = VW::initialize(vwtest::make_args("--search", "3", "--search_task", "sequence", "--search_beta", "0.5",
-      "--search_interpolation", "policy", "--passes", "2", "--holdout_off", "-k", "-c", "--quiet"));
+  const auto cache_file = test_cache_file();
+  auto vw = VW::initialize(
+      vwtest::make_args("--search", "3", "--search_task", "sequence", "--search_beta", "0.5", "--search_interpolation",
+          "policy", "--passes", "2", "--holdout_off", "-k", "--cache_file", cache_file, "--quiet"));
   learn_sequence(*vw, {"1 | a", "2 | b", "3 | c"});
+  remove_cache_file(cache_file);
 }
 
 TEST(CoverageSearch, SearchTotalNbPolicies)
@@ -239,9 +264,11 @@ TEST(CoverageSearch, SearchSubsampleTimeFloat)
 
 TEST(CoverageSearch, SearchInterpolationPolicy)
 {
+  const auto cache_file = test_cache_file();
   auto vw = VW::initialize(vwtest::make_args("--search", "3", "--search_task", "sequence", "--search_interpolation",
-      "policy", "--passes", "2", "--holdout_off", "-k", "-c", "--quiet"));
+      "policy", "--passes", "2", "--holdout_off", "-k", "--cache_file", cache_file, "--quiet"));
   learn_sequence(*vw, {"1 | a", "2 | b", "3 | c"});
+  remove_cache_file(cache_file);
 }
 
 TEST(CoverageSearch, SearchPerturbOracle)
@@ -507,7 +534,6 @@ TEST(CoverageSearch, EntityRelationOrder2ConstraintsSkip)
 // ============================================================
 // 3. Sequence Task Variants (~15 tests)
 // ============================================================
-
 TEST(CoverageSearch, SequenceSpanTask)
 {
   auto vw = VW::initialize(vwtest::make_args("--search", "5", "--search_task", "sequencespan", "--quiet"));
@@ -953,7 +979,6 @@ TEST(CoverageSearch, GraphTaskPredict)
 // ============================================================
 // 6. Meta Tasks (~15 tests)
 // ============================================================
-
 TEST(CoverageSearch, DebugMetataskSequence)
 {
   auto vw = VW::initialize(
