@@ -11,7 +11,6 @@
 #pragma once
 #include "vw/common/string_view.h"
 
-#include <fmt/core.h>
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 

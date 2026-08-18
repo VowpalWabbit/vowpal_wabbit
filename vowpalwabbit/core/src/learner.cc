@@ -12,7 +12,7 @@
 //     'fmt.v7.format_system_error(fmt.v7.detail.buffer<System.SByte!System.Runtime.CompilerServices.IsSignUnspecifiedByte>*!System.Runtime.CompilerServices.IsImplicitlyDereferenced,System.Int32,fmt.v7.basic_string_view<System.SByte!System.Runtime.CompilerServices.IsSignUnspecifiedByte>)':
 //     badly-formed XML: Invalid at the top level of the document.
 #endif
-#include "fmt/core.h"
+#include "fmt/format.h"
 #ifdef _WIN32
 #  pragma warning(pop)
 #endif

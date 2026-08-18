@@ -19,7 +19,7 @@
 #include "vw/core/vw_math.h"
 #include "vw/io/logger.h"
 
-#include <fmt/core.h>
+#include <fmt/format.h>
 
 #include <cfloat>
 #include <climits>
