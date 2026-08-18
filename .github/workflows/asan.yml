@@ -20,6 +20,9 @@ env:
   NEEDRESTART_MODE: a
   VCPKG_BINARY_SOURCES: 'clear;x-gha,readwrite'
 
+permissions:
+  contents: read
+
 jobs:
   test_with_sanitizers:
     strategy:
@@ -42,6 +45,7 @@ jobs:
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
+          persist-credentials: false
           submodules: false
           fetch-depth: 0
 
@@ -167,6 +171,7 @@ jobs:
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
+          persist-credentials: false
           submodules: false
           fetch-depth: 0
 

@@ -21,6 +21,9 @@ env:
   DEBIAN_FRONTEND: noninteractive
   NEEDRESTART_MODE: a
 
+permissions:
+  contents: read
+
 jobs:
   build_nuget_dotnet:
     strategy:
@@ -37,6 +40,7 @@ jobs:
       # Setup for build
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
+          persist-credentials: false
           submodules: false
 
       - name: Init submodules with retry
@@ -220,6 +224,7 @@ jobs:
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
+          persist-credentials: false
           submodules: false
 
       - name: Init submodules with retry
@@ -305,6 +310,7 @@ jobs:
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
+          persist-credentials: false
           submodules: false
 
       - name: Init submodules with retry
@@ -392,6 +398,7 @@ jobs:
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
+          persist-credentials: false
           submodules: false
 
       - name: Init submodules with retry
