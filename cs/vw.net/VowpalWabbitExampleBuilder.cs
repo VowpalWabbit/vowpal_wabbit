@@ -11,6 +11,9 @@ namespace Vw.Net.Native
   {
     [DllImport("vw.net.native")]
     public static extern int SetupExample(IntPtr vw, IntPtr ex, IntPtr status);
+
+    [DllImport("vw.net.native")]
+    public static extern int CopyExample(IntPtr vw, IntPtr dst, IntPtr src, IntPtr status);
   }
 }
 
@@ -33,6 +36,46 @@ namespace VW
 
       this.owner = vw;
       this.ex = this.owner.GetOrCreateNativeExample();
+    }
+
+    private VowpalWabbitExampleBuilder(IVowpalWabbitExamplePool vw, VowpalWabbitExample ex)
+    {
+      this.owner = vw;
+      this.ex = ex;
+    }
+
+    // Deep-copies the example under construction into a new builder. The copy has not been through
+    // VW::setup_example either, so shared namespaces can be built once and stamped into any number of
+    // examples, each of which is finalized exactly once by its own CreateExample call.
+    public VowpalWabbitExampleBuilder Clone()
+    {
+      if (this.ex == null)
+      {
+        throw new ObjectDisposedException(nameof(VowpalWabbitExampleBuilder));
+      }
+
+      VowpalWabbitExample copy = this.owner.GetOrCreateNativeExample();
+
+      try
+      {
+        ApiStatus status = new ApiStatus();
+        if (NativeMethods.CopyExample(this.owner.DangerousGetNativeHandle(), copy.DangerousGetNativeHandle(), this.ex.DangerousGetNativeHandle(), status.ToNativeHandleOrNullptrDangerous()) != NativeMethods.SuccessStatus)
+        {
+          throw new VWException(status);
+        }
+
+        this.owner.KeepAlive();
+        this.ex.KeepAliveNative();
+        copy.KeepAliveNative();
+        GC.KeepAlive(status);
+      }
+      catch
+      {
+        copy.Dispose();
+        throw;
+      }
+
+      return new VowpalWabbitExampleBuilder(this.owner, copy);
     }
 
     public VowpalWabbitExample CreateExample()
