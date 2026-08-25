@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1787646161838,
+  "lastUpdate": 1787646187217,
   "repoUrl": "https://github.com/VowpalWabbit/vowpal_wabbit",
   "entries": {
     "Benchmark": [
@@ -221100,6 +221100,150 @@ window.BENCHMARK_DATA = {
             "value": 159701.06608072916,
             "unit": "ns",
             "range": "± 904.1596172333897"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "professor.moody@pm.me",
+            "name": "m00dy",
+            "username": "professor-moody"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2d044ef565efe9518ebd2a488ddc9d157ab55e99",
+          "message": "Merge commit from fork\n\n* Bound model-file lengths in save_load_header and mwt::save_load\n\nsave_load_header read a file-controlled interaction length (inter_len) into the\nfixed 512-byte buff2 with no cap -> heap OOB write. mwt::save_load indexed\nc.evals (sized to the weight table) by a file-controlled 64-bit policy id with no\nbounds check -> OOB write. Reject inter_len > buff2.size() and policy >=\nc.evals.size() before the respective reads.\n\n* test: regression tests for crafted-model header/mwt heap OOB writes (GHSA-x3cx-p52g-p5q7)\n\nAdd two AddressSanitizer-catchable regression tests for the model-load out-of-bounds\nwrites fixed in the previous commit:\n\n- SaveLoad.CraftedModelOversizedInteractionLengthIsRejected constructs a minimal\n  version-7.10.2 model whose legacy-interaction length (inter_len) exceeds the fixed\n  512-byte header buffer and drives save_load_header directly. Without the bound this\n  reproduces the heap-buffer-overflow WRITE in io_buf::bin_read_fixed; with the fix the\n  oversized length is rejected with a VW::vw_exception before the copy.\n\n- SaveLoad.CraftedModelMwtPolicyIdOutOfRangeIsRejected trains a real --multiworld_test\n  model, then overwrites one serialized policy id with an out-of-range value (locating\n  the mwt block structurally by its total/policies_size prefix, asserted unique). Without\n  the bound this reproduces the out-of-bounds c.evals[policy] access in mwt::save_load;\n  with the fix the load is rejected with a VW::vw_exception. --multiworld_test is a\n  persisted (keep()) option, so the corrupted model re-enables the reduction on its own.\n\nBoth tests fail under ASan on the unpatched code and pass with the fix; valid models are\nunaffected.\n\n---------\n\nCo-authored-by: professor-moody <professor-moody@users.noreply.github.com>\nCo-authored-by: John Langford <jl@hunch.net>",
+          "timestamp": "2026-08-25T03:48:39-04:00",
+          "tree_id": "2e9b6c20883112ad10474da966a8797c25181ce6",
+          "url": "https://github.com/VowpalWabbit/vowpal_wabbit/commit/2d044ef565efe9518ebd2a488ddc9d157ab55e99"
+        },
+        "date": 1787646184270,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_num_features)",
+            "value": 3763.045392717634,
+            "unit": "ns",
+            "range": "± 34.94368028043935"
+          },
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_string_fts)",
+            "value": 5939.501253763835,
+            "unit": "ns",
+            "range": "± 16.76918753973092"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 1_feature)",
+            "value": 552.7785428365072,
+            "unit": "ns",
+            "range": "± 3.0757246745839244"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 8_features)",
+            "value": 492.9119873046875,
+            "unit": "ns",
+            "range": "± 6.375444473050665"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_interactions)",
+            "value": 532831.875,
+            "unit": "ns",
+            "range": "± 7845.498140033593"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_no_interactions)",
+            "value": 401707.5911458333,
+            "unit": "ns",
+            "range": "± 5477.272482620562"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_no_namespaces)",
+            "value": 401648.37757457385,
+            "unit": "ns",
+            "range": "± 9764.517810176942"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_interactions)",
+            "value": 517345.6430288461,
+            "unit": "ns",
+            "range": "± 3528.7632141195722"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_no_interactions)",
+            "value": 389731.68538411456,
+            "unit": "ns",
+            "range": "± 759.679915754058"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_interactions)",
+            "value": 1937609.291294643,
+            "unit": "ns",
+            "range": "± 20395.733423207737"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_no_interactions)",
+            "value": 765428.1598772322,
+            "unit": "ns",
+            "range": "± 8853.843162087756"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_no_namespaces)",
+            "value": 699730.0065104166,
+            "unit": "ns",
+            "range": "± 4373.047451271324"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_interactions)",
+            "value": 1627530.1199776786,
+            "unit": "ns",
+            "range": "± 9674.332639918413"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_no_interactions)",
+            "value": 709240.6119791666,
+            "unit": "ns",
+            "range": "± 4270.196511028677"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: few_features)",
+            "value": 2666.8942200510123,
+            "unit": "ns",
+            "range": "± 90.6202091478234"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: few_features)",
+            "value": 10108.812187457906,
+            "unit": "ns",
+            "range": "± 288.08330881327936"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: many_features)",
+            "value": 51356.98881603422,
+            "unit": "ns",
+            "range": "± 1199.7575006601087"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: many_features)",
+            "value": 14364.724586123511,
+            "unit": "ns",
+            "range": "± 334.1249991941947"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: quadratic)",
+            "value": 1982670.9375,
+            "unit": "ns",
+            "range": "± 16395.734451443554"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: simple)",
+            "value": 154673.4828404018,
+            "unit": "ns",
+            "range": "± 1200.8268102202612"
           }
         ]
       }
