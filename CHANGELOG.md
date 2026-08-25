@@ -3,6 +3,20 @@
 All notable changes to Vowpal Wabbit are documented in this file. For changes
 prior to this file's creation, see [GitHub Releases](https://github.com/VowpalWabbit/vowpal_wabbit/releases).
 
+## [9.11.3](https://github.com/VowpalWabbit/vowpal_wabbit/compare/9.11.2...9.11.3)
+
+Security patch release addressing two heap out-of-bounds writes.
+
+### Security
+
+- Fix heap out-of-bounds write when loading a crafted model: bound the file-controlled
+  legacy interaction length in `save_load_header` and bounds-check policy ids in
+  `mwt::save_load`, rejecting malformed values with a clean exception before the copy
+  (GHSA-x3cx-p52g-p5q7)
+- Fix heap out-of-bounds write in the slates DSJSON parser: validate that the `_outcomes`,
+  `_a`, and `_p` arrays are consistent before writing per-slot probabilities, instead of
+  relying on `NDEBUG`-elided asserts (GHSA-c8v3-p4fg-v3pm)
+
 ## [9.11.0](https://github.com/VowpalWabbit/vowpal_wabbit/compare/9.10.0...9.11.0)
 
 A high quality long term maintenance release. Testing across different
