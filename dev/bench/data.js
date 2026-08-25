@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1787645670139,
+  "lastUpdate": 1787646161838,
   "repoUrl": "https://github.com/VowpalWabbit/vowpal_wabbit",
   "entries": {
     "Benchmark": [
@@ -220956,6 +220956,150 @@ window.BENCHMARK_DATA = {
             "value": 10672086.95348874,
             "unit": "ns/iter",
             "extra": "iterations: 387\ncpu: 10670813.976744743 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jl@hunch.net",
+            "name": "John",
+            "username": "JohnLangford"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "109d496879f290b70020710058a0eb4dd8e6184c",
+          "message": "Merge commit from fork\n\nIn parse_slates_example_dsjson, the per-slot probability v_array is grown by one\nentry per element of the actions array `_a`, but probabilities were then written\nback with `destination[j]` for every element of the separate `_p` array with no\ncheck that `_p` is not longer than `_a`. The intended invariant was only guarded\nby `assert()`s, which are compiled out under -DNDEBUG (the default for Release and\nRelWithDebInfo), and `v_array::operator[]` is unchecked under NDEBUG. A crafted\nslates DSJSON line with `_p` longer than `_a` therefore wrote attacker-controlled\n4-byte floats past the end of the heap allocation.\n\nReplace the three NDEBUG-elided asserts with runtime validation that throws a clean\nVW parse error: reject `_outcomes` whose count does not match the number of slots,\nreject a scalar `_p` when `_a` is empty, and reject a `_p` array whose length differs\nfrom `_a`. Valid input where |_p| == |_a| is unaffected.\n\nAdd regression tests (json_parser dsjson suite) covering the mismatched-length and\nempty-actions cases (rejected with VW::vw_exception) plus a matched-length positive\ncontrol. Under AddressSanitizer the mismatched-length test reproduces the heap\nout-of-bounds write at parse_example_slates_json.cc:302 without the fix.",
+          "timestamp": "2026-08-25T03:48:16-04:00",
+          "tree_id": "29f95661e1e7900389b7d98f543b6137e60c8121",
+          "url": "https://github.com/VowpalWabbit/vowpal_wabbit/commit/109d496879f290b70020710058a0eb4dd8e6184c"
+        },
+        "date": 1787646158892,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_num_features)",
+            "value": 3677.3234049479165,
+            "unit": "ns",
+            "range": "± 29.53799252211706"
+          },
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_string_fts)",
+            "value": 5603.509249005999,
+            "unit": "ns",
+            "range": "± 39.449482832162076"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 1_feature)",
+            "value": 550.4584895239936,
+            "unit": "ns",
+            "range": "± 11.771524362886256"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 8_features)",
+            "value": 471.4607980516222,
+            "unit": "ns",
+            "range": "± 9.719299688960232"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_interactions)",
+            "value": 522984.6121651786,
+            "unit": "ns",
+            "range": "± 11983.338696196706"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_no_interactions)",
+            "value": 416935.4085286458,
+            "unit": "ns",
+            "range": "± 2981.0485235461947"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_no_namespaces)",
+            "value": 378362.0247395833,
+            "unit": "ns",
+            "range": "± 3044.472690370888"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_interactions)",
+            "value": 524963.232421875,
+            "unit": "ns",
+            "range": "± 9748.827538574664"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_no_interactions)",
+            "value": 391974.89013671875,
+            "unit": "ns",
+            "range": "± 7448.614150392512"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_interactions)",
+            "value": 2070662.5558035714,
+            "unit": "ns",
+            "range": "± 32210.004053079698"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_no_interactions)",
+            "value": 808671.58203125,
+            "unit": "ns",
+            "range": "± 16314.555830849715"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_no_namespaces)",
+            "value": 699482.3993389423,
+            "unit": "ns",
+            "range": "± 8838.920656873343"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_interactions)",
+            "value": 1727354.53125,
+            "unit": "ns",
+            "range": "± 10967.837474830383"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_no_interactions)",
+            "value": 695484.3294270834,
+            "unit": "ns",
+            "range": "± 6834.500831061774"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: few_features)",
+            "value": 2414.740880330404,
+            "unit": "ns",
+            "range": "± 19.38914203188066"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: few_features)",
+            "value": 8961.312662760416,
+            "unit": "ns",
+            "range": "± 98.44038265815749"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: many_features)",
+            "value": 60344.06417043586,
+            "unit": "ns",
+            "range": "± 1266.4045540816521"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: many_features)",
+            "value": 13690.625435965401,
+            "unit": "ns",
+            "range": "± 90.16486776224832"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: quadratic)",
+            "value": 1955153.3203125,
+            "unit": "ns",
+            "range": "± 14446.205628115478"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: simple)",
+            "value": 159701.06608072916,
+            "unit": "ns",
+            "range": "± 904.1596172333897"
           }
         ]
       }
