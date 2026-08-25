@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1787649629680,
+  "lastUpdate": 1787650230812,
   "repoUrl": "https://github.com/VowpalWabbit/vowpal_wabbit",
   "entries": {
     "Benchmark": [
@@ -221616,6 +221616,150 @@ window.BENCHMARK_DATA = {
             "value": 10312789.228155077,
             "unit": "ns/iter",
             "extra": "iterations: 412\ncpu: 10311678.584951626 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jl@hunch.net",
+            "name": "John",
+            "username": "JohnLangford"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3c0fc519c71827e8fb63301894f5ddda57152545",
+          "message": "feat(c#): clone a partially built example, bulk sparse AddFeatures (#4943)\n\nAddresses #4942, which asks for a way to reuse a large shared namespace\nacross a fan-out prediction loop instead of rebuilding it feature by\nfeature for every candidate.\n\nFix namespace index registration in the builders\n------------------------------------------------\nVowpalWabbitNamespaceBuilder wrote features straight into\nexample->feature_space[ns] but only pushed ns onto example->indices when\nthe builder was disposed. All example iteration is driven by indices\n(example_predict::begin), so a group written before its index is\nregistered is invisible to VW::setup_example, VW::empty_example and\nVW::copy_example_data alike.\n\nThe visible consequence: calling CreateExample() while a namespace\nbuilder is still open -- the pattern in the existing TestBuilderSimple --\nproduced an example VW considered empty. setup_example iterated past the\ngroup, so its weight indices were never scaled by the stride multiplier\n(4 in the default configuration) and num_features stayed 0. The same gap\nlet a half-built example survive VW::empty_example and leak its features\ninto the next user of a pooled example.\n\nCreateBuilder now registers the namespace up front and DeleteBuilder\nreconciles the index against what the group actually holds, so the\ninvariant survives multiple builders open on one group. The same fix is\napplied to the deprecated C++/CLI binding.\n\nAdd VowpalWabbitExampleBuilder.Clone()\n--------------------------------------\nBacked by a new CopyExample native entry point over\nVW::copy_example_data_with_label. Because the copy is taken before\nsetup_example runs, each clone is finalized exactly once by its own\nCreateExample(), which avoids re-scaling weight indices and re-adding the\nconstant feature. CopyExample also empties the destination first (so\nnothing is left orphaned), releases the destination's passthrough that\ncopy_example_metadata would otherwise overwrite, and carries\nex_reduction_features, which the core copy helpers do not.\n\nAdd VowpalWabbitNamespaceBuilder.AddFeatures()\n----------------------------------------------\nBatches arbitrary sparse (index, value) pairs through one interop\ntransition. AddFeaturesUnchecked only handles a dense run at consecutive\nweight indices, so there was no bulk path for hashed features. Unlike\nthat method this one reserves before appending and maintains\nsum_feat_sq. Pushing two slices around an excluded element covers the\ncandidate-exclusion pattern in #4942.\n\nOn a 5000-candidate x 100-feature loop this cuts build+predict time from\n16.6ms to 7.0ms.",
+          "timestamp": "2026-08-25T04:55:14-04:00",
+          "tree_id": "cdd2f59e06eb962f16b62335fdece02fd87184da",
+          "url": "https://github.com/VowpalWabbit/vowpal_wabbit/commit/3c0fc519c71827e8fb63301894f5ddda57152545"
+        },
+        "date": 1787650227529,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_num_features)",
+            "value": 3736.1190870696423,
+            "unit": "ns",
+            "range": "± 150.94833732411303"
+          },
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_string_fts)",
+            "value": 5730.905776328229,
+            "unit": "ns",
+            "range": "± 221.23314256621862"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 1_feature)",
+            "value": 516.9366200764974,
+            "unit": "ns",
+            "range": "± 2.7109774515947573"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 8_features)",
+            "value": 433.2363568819486,
+            "unit": "ns",
+            "range": "± 2.1845682268273503"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_interactions)",
+            "value": 496869.88699776784,
+            "unit": "ns",
+            "range": "± 3115.264040471964"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_no_interactions)",
+            "value": 381486.2369791667,
+            "unit": "ns",
+            "range": "± 4121.060373753182"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_no_namespaces)",
+            "value": 384629.99549278844,
+            "unit": "ns",
+            "range": "± 6268.193858088072"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_interactions)",
+            "value": 491981.4908854167,
+            "unit": "ns",
+            "range": "± 3500.575103973678"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_no_interactions)",
+            "value": 377814.79143415176,
+            "unit": "ns",
+            "range": "± 3617.39869278823"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_interactions)",
+            "value": 2007056.5364583333,
+            "unit": "ns",
+            "range": "± 14051.119016151348"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_no_interactions)",
+            "value": 793872.6702008928,
+            "unit": "ns",
+            "range": "± 10331.522315192924"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_no_namespaces)",
+            "value": 681263.828125,
+            "unit": "ns",
+            "range": "± 4166.675751089456"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_interactions)",
+            "value": 1639400.859375,
+            "unit": "ns",
+            "range": "± 15938.475612461349"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_no_interactions)",
+            "value": 726610.2388822115,
+            "unit": "ns",
+            "range": "± 8834.856983125961"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: few_features)",
+            "value": 2448.6178178053638,
+            "unit": "ns",
+            "range": "± 18.15167273796336"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: few_features)",
+            "value": 8765.99391056941,
+            "unit": "ns",
+            "range": "± 65.49169837469488"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: many_features)",
+            "value": 58281.25017438616,
+            "unit": "ns",
+            "range": "± 1898.5808073326564"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: many_features)",
+            "value": 13636.940220424107,
+            "unit": "ns",
+            "range": "± 77.64327247406648"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: quadratic)",
+            "value": 1963181.9270833333,
+            "unit": "ns",
+            "range": "± 24860.575265363852"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: simple)",
+            "value": 163259.22397347383,
+            "unit": "ns",
+            "range": "± 5989.946646345798"
           }
         ]
       }
