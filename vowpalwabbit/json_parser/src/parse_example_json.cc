@@ -1484,6 +1484,16 @@ public:
 
   BaseState<audit>* StartObject(Context<audit>& ctx) override
   {
+    // slot_object_index starts past the shared/action examples and advances one step per _outcomes entry,
+    // so more _outcomes than slot examples walks it off the end of the examples vector -- and the label is
+    // then written through whatever that produced.
+    if (static_cast<size_t>(slot_object_index) >= ctx.examples->size())
+    {
+      ctx.error() << "Badly formed ccb example. More _outcomes were supplied than there are slot examples ("
+                  << ctx.examples->size() << " examples in total).";
+      return nullptr;
+    }
+
     // Set current example so that default state correctly sets the label.
     ctx.ex = (*ctx.examples)[slot_object_index];
     // The end object logic assumes shared example so we need to take one here.
