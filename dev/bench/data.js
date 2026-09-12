@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789231441959,
+  "lastUpdate": 1789231948049,
   "repoUrl": "https://github.com/VowpalWabbit/vowpal_wabbit",
   "entries": {
     "Benchmark": [
@@ -223164,6 +223164,150 @@ window.BENCHMARK_DATA = {
             "value": 10126117.679802684,
             "unit": "ns/iter",
             "extra": "iterations: 406\ncpu: 10125042.261083852 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jl@hunch.net",
+            "name": "John",
+            "username": "JohnLangford"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "2845680a611d0fcbedab37230ff614f6afff3dfd",
+          "message": "Merge commit from fork\n\nmwt::save_load trusts a serialized policies_size and passes it to\nv_array::resize. reserve_nocheck computes sizeof(T) * length with no\noverflow check, so a large enough count wraps: realloc returns a small\nbuffer while _end_array records the full count, and the container then\nlies about its own capacity. The memset at the end of reserve_nocheck and\nthe placement-new loop in resize both write past the allocation.\n\nBound the count where it enters: every entry of c.policies is an index\ninto c.evals, which mwt_setup sizes to the weight table, so that size is\nthe semantic maximum. value_policy only pushes an index the first time it\nis seen (guarded by evals[i].seen), so policies.size() <= evals.size()\nholds for every legitimately trained model and the bound cannot reject\none. Bounding the count also bounds the product on the following read,\nsince evals.size() * sizeof(feature_index) cannot approach SIZE_MAX for\nany valid bit precision.\n\nAlso reject length > SIZE_MAX / sizeof(T) in reserve_nocheck itself,\nbefore the multiply is computed, so the same wrap cannot be reached\nthrough any other v_array user. THROW_OR_RETURN matches the existing\nconvention at that call site and degrades to a plain return under\nVW_NOEXCEPT.\n\nThe regression test trains a real --multiworld_test model and overwrites\nonly the serialized policies_size, locating the mwt block structurally by\nits (total, policies_size) prefix. Without the bound it reproduces\n\"heap-buffer-overflow WRITE of size 8 ... mwt.cc:245 in\nv_array<unsigned long>::resize\" under AddressSanitizer. The 278-byte\ncrafted model supplied with the report is rejected with a clean error.\n\nClaude-Session: https://claude.ai/code/session_01EVprwZHP4KXAhsF6JGXK9k",
+          "timestamp": "2026-09-12T12:19:09-04:00",
+          "tree_id": "b1fafa57a0f10b78071ea48235acc985c6c01bf7",
+          "url": "https://github.com/VowpalWabbit/vowpal_wabbit/commit/2845680a611d0fcbedab37230ff614f6afff3dfd"
+        },
+        "date": 1789231945184,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_num_features)",
+            "value": 3547.7159118652344,
+            "unit": "ns",
+            "range": "± 24.51684175281298"
+          },
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_string_fts)",
+            "value": 5444.521059308733,
+            "unit": "ns",
+            "range": "± 37.94205403668522"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 1_feature)",
+            "value": 544.640973409017,
+            "unit": "ns",
+            "range": "± 5.3004828456465924"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 8_features)",
+            "value": 421.0328261057536,
+            "unit": "ns",
+            "range": "± 4.565034113712185"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_interactions)",
+            "value": 494873.6848958333,
+            "unit": "ns",
+            "range": "± 4001.5849590268836"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_no_interactions)",
+            "value": 383886.3053385417,
+            "unit": "ns",
+            "range": "± 2219.2605197570624"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_no_namespaces)",
+            "value": 380421.5645926339,
+            "unit": "ns",
+            "range": "± 2588.6662203351734"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_interactions)",
+            "value": 496851.62109375,
+            "unit": "ns",
+            "range": "± 3934.07018843576"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_no_interactions)",
+            "value": 382062.82784598216,
+            "unit": "ns",
+            "range": "± 2122.02360129866"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_interactions)",
+            "value": 2050219.9819711538,
+            "unit": "ns",
+            "range": "± 10470.905803137053"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_no_interactions)",
+            "value": 798154.3033854166,
+            "unit": "ns",
+            "range": "± 7325.3370588273365"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_no_namespaces)",
+            "value": 696227.9166666666,
+            "unit": "ns",
+            "range": "± 4775.582721773705"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_interactions)",
+            "value": 1743245.703125,
+            "unit": "ns",
+            "range": "± 14378.468977167215"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_no_interactions)",
+            "value": 708390.3401692709,
+            "unit": "ns",
+            "range": "± 2989.274462671203"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: few_features)",
+            "value": 2460.6926236833847,
+            "unit": "ns",
+            "range": "± 14.818930039843593"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: few_features)",
+            "value": 8895.568193708148,
+            "unit": "ns",
+            "range": "± 65.57388587556318"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: many_features)",
+            "value": 56343.66934640067,
+            "unit": "ns",
+            "range": "± 410.5125002863867"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: many_features)",
+            "value": 13867.961832682291,
+            "unit": "ns",
+            "range": "± 76.30987218198096"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: quadratic)",
+            "value": 1915795.703125,
+            "unit": "ns",
+            "range": "± 18227.922860197727"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: simple)",
+            "value": 169988.92728365384,
+            "unit": "ns",
+            "range": "± 1235.1236936920263"
           }
         ]
       }
