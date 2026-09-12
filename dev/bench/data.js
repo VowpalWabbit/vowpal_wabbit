@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789225120943,
+  "lastUpdate": 1789225607905,
   "repoUrl": "https://github.com/VowpalWabbit/vowpal_wabbit",
   "entries": {
     "Benchmark": [
@@ -222648,6 +222648,150 @@ window.BENCHMARK_DATA = {
             "value": 7005058.449572567,
             "unit": "ns/iter",
             "extra": "iterations: 585\ncpu: 7004527.627350399 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jl@hunch.net",
+            "name": "John",
+            "username": "JohnLangford"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f1c0c6c0c222c1c29b3ebfe00cfae998788b738a",
+          "message": "Merge commit from fork\n\nThe persisted-options field is read into a std::vector<char> sized to\nexactly the declared length and filled with exactly that many file bytes,\nwith no requirement that any of them be NUL. It was then appended with\nfile_options + \" \" + buff2.data(), and operator+ on a const char* runs\nstrlen -- so a field whose bytes contain no terminator makes the scan\ncross the end of the allocation and continue through adjacent heap memory\nuntil it happens to find a zero. The option text ends up contaminated\nwith whatever followed it, and the read itself is out of bounds.\n\nAppend an explicit bounded range instead: stop at the first NUL within\nthe bytes actually read. Use the count bin_read_fixed returned rather\nthan the declared length, so a truncated file scans only what was really\ndelivered instead of trailing uninitialized bytes. No input is rejected\nthat was accepted before -- a well-formed field still yields the same\nstring.\n\nAlso fix an off-by-one on the write path: len + 1 bytes are written (the\noptions text plus its terminator), but the buffer was only grown when\nlen > buff2.size(), so at len == buff2.size() exactly the terminator\nlanded one byte past the end.\n\nThe regression test builds a version-7.10.2 model by hand, which matters\nfor two reasons: 7.10.2 predates VERSION_FILE_WITH_HEADER_CHAINED_HASH,\nso no header checksum has to be forged, and the declared options length\ncan exceed the 512-byte default buffer so buff2 is resized to exactly\nthat length and the overrun lands off a heap allocation of precisely that\nsize. It asserts the substantive property -- file_options ends with\nexactly the declared payload and picks up none of the bytes that follow\nit -- so it fails on unpatched code with or without a sanitizer. Under\nAddressSanitizer the unpatched loader reports \"heap-buffer-overflow READ\nof size 1025 ... in __interceptor_strlen\".\n\nClaude-Session: https://claude.ai/code/session_01EVprwZHP4KXAhsF6JGXK9k",
+          "timestamp": "2026-09-12T10:34:43-04:00",
+          "tree_id": "f4342e82d523718750db7d2a39c0e87fadf9b696",
+          "url": "https://github.com/VowpalWabbit/vowpal_wabbit/commit/f1c0c6c0c222c1c29b3ebfe00cfae998788b738a"
+        },
+        "date": 1789225605182,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_num_features)",
+            "value": 3648.274748665946,
+            "unit": "ns",
+            "range": "± 42.358320693101135"
+          },
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_string_fts)",
+            "value": 5437.925011771066,
+            "unit": "ns",
+            "range": "± 51.50075420000167"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 1_feature)",
+            "value": 540.6084809984479,
+            "unit": "ns",
+            "range": "± 4.808576288534851"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 8_features)",
+            "value": 460.24032660893033,
+            "unit": "ns",
+            "range": "± 2.0212364105518836"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_interactions)",
+            "value": 492541.171875,
+            "unit": "ns",
+            "range": "± 3135.9209443059294"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_no_interactions)",
+            "value": 380836.6438802083,
+            "unit": "ns",
+            "range": "± 2222.5157044753028"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_no_namespaces)",
+            "value": 379543.2547433036,
+            "unit": "ns",
+            "range": "± 2677.2987229804157"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_interactions)",
+            "value": 495125.9207589286,
+            "unit": "ns",
+            "range": "± 2235.0865555426726"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_no_interactions)",
+            "value": 395423.59793526784,
+            "unit": "ns",
+            "range": "± 2369.983019753154"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_interactions)",
+            "value": 2006979.8958333333,
+            "unit": "ns",
+            "range": "± 14996.248917624487"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_no_interactions)",
+            "value": 788378.4480168269,
+            "unit": "ns",
+            "range": "± 5612.426786842188"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_no_namespaces)",
+            "value": 680458.9092548077,
+            "unit": "ns",
+            "range": "± 3580.2495319349023"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_interactions)",
+            "value": 1691492.1875,
+            "unit": "ns",
+            "range": "± 9682.263200894069"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_no_interactions)",
+            "value": 697377.2809709822,
+            "unit": "ns",
+            "range": "± 5123.5662169711095"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: few_features)",
+            "value": 2471.2445322672525,
+            "unit": "ns",
+            "range": "± 25.11662300987244"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: few_features)",
+            "value": 8858.62321120042,
+            "unit": "ns",
+            "range": "± 24.257451140747104"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: many_features)",
+            "value": 55320.887451171875,
+            "unit": "ns",
+            "range": "± 425.7483645909755"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: many_features)",
+            "value": 13656.718444824219,
+            "unit": "ns",
+            "range": "± 73.6513784370474"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: quadratic)",
+            "value": 1948931.8359375,
+            "unit": "ns",
+            "range": "± 19012.428582435994"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: simple)",
+            "value": 161245.4638671875,
+            "unit": "ns",
+            "range": "± 1733.68261150916"
           }
         ]
       }
