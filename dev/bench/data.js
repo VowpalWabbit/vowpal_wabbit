@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789234442916,
+  "lastUpdate": 1789234795152,
   "repoUrl": "https://github.com/VowpalWabbit/vowpal_wabbit",
   "entries": {
     "Benchmark": [
@@ -224196,6 +224196,150 @@ window.BENCHMARK_DATA = {
             "value": 159276.48053850446,
             "unit": "ns",
             "range": "± 633.6312977386514"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jl@hunch.net",
+            "name": "John",
+            "username": "JohnLangford"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "318147f07cbd0325d93ecc1db370486d6e13962d",
+          "message": "Merge commit from fork\n\nFollow-up to GHSA-c8v3-p4fg-v3pm. The fix released in 9.11.3 rejects a _p\narray whose length differs from _a, but an outcome carrying neither --\n{\"_a\": [], \"_p\": []} -- satisfies that check with both sizes zero, so the\nadvisory is not fully addressed by that release.\n\n\"labeled\" is set on every example as soon as _label_cost is present,\nbefore _outcomes has been read. A slot whose outcome supplied no actions\nand no probabilities therefore still arrives at the interaction-building\nloop marked labeled with an empty probabilities array, and\nprobabilities[0] reads off the end of the v_array. The slates reduction's\nown output path (generate_slates_label_printout) indexes probabilities[0]\nunder the same \"labeled\" guard, so the invariant has to hold for the\nlabel itself rather than being re-checked at each use.\n\nA slot that carries neither an action nor a probability conveys no label,\nso clear \"labeled\" rather than rejecting the line. This is what the SAX\nparser already does -- it only sets labeled when actions and probs are\nboth non-empty and of equal length -- so the DOM path now establishes the\nsame invariant its consumers assume.\n\nWithout the fix the added test reproduces \"SEGV on unknown address\n0x000000000004\" under AddressSanitizer.\n\nClaude-Session: https://claude.ai/code/session_01EVprwZHP4KXAhsF6JGXK9k",
+          "timestamp": "2026-09-12T13:06:14-04:00",
+          "tree_id": "484ca41389fdfbaffe181aa89f1c86d8321f0b57",
+          "url": "https://github.com/VowpalWabbit/vowpal_wabbit/commit/318147f07cbd0325d93ecc1db370486d6e13962d"
+        },
+        "date": 1789234791868,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_num_features)",
+            "value": 3577.9124704996743,
+            "unit": "ns",
+            "range": "± 28.461762843884017"
+          },
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_string_fts)",
+            "value": 5401.3002522786455,
+            "unit": "ns",
+            "range": "± 27.842234242465725"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 1_feature)",
+            "value": 538.3141771952311,
+            "unit": "ns",
+            "range": "± 6.294896433810669"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 8_features)",
+            "value": 435.58752877371654,
+            "unit": "ns",
+            "range": "± 3.613456173641261"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_interactions)",
+            "value": 493440.3678385417,
+            "unit": "ns",
+            "range": "± 4498.925852545343"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_no_interactions)",
+            "value": 380848.38518415176,
+            "unit": "ns",
+            "range": "± 2479.764618475386"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_no_namespaces)",
+            "value": 380683.271484375,
+            "unit": "ns",
+            "range": "± 2545.3610665775254"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_interactions)",
+            "value": 495666.0026041667,
+            "unit": "ns",
+            "range": "± 1950.2538183510694"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_no_interactions)",
+            "value": 380550.6673177083,
+            "unit": "ns",
+            "range": "± 2461.8263351291425"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_interactions)",
+            "value": 2024573.671875,
+            "unit": "ns",
+            "range": "± 14961.987788193264"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_no_interactions)",
+            "value": 788714.6763392857,
+            "unit": "ns",
+            "range": "± 4549.1139310048475"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_no_namespaces)",
+            "value": 687006.9140625,
+            "unit": "ns",
+            "range": "± 3113.1916236755933"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_interactions)",
+            "value": 1644714.7916666667,
+            "unit": "ns",
+            "range": "± 10750.01526574015"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_no_interactions)",
+            "value": 691813.0161830357,
+            "unit": "ns",
+            "range": "± 2868.4098554755556"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: few_features)",
+            "value": 2482.7612813313804,
+            "unit": "ns",
+            "range": "± 22.23092315770437"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: few_features)",
+            "value": 8903.996785481771,
+            "unit": "ns",
+            "range": "± 56.0131983785374"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: many_features)",
+            "value": 56030.050455729164,
+            "unit": "ns",
+            "range": "± 368.52093097956663"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: many_features)",
+            "value": 13620.651041666666,
+            "unit": "ns",
+            "range": "± 72.33662767087009"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: quadratic)",
+            "value": 1915491.2239583333,
+            "unit": "ns",
+            "range": "± 20145.43840112158"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: simple)",
+            "value": 158525.44270833334,
+            "unit": "ns",
+            "range": "± 1224.351676058174"
           }
         ]
       }
