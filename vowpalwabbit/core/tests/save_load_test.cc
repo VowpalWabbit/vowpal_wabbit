@@ -5,6 +5,8 @@
 #include "vw/config/options_cli.h"
 #include "vw/core/io_buf.h"
 #include "vw/core/parse_regressor.h"
+#include "vw/core/reductions/ftrl.h"
+#include "vw/core/reductions/gd.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
 #include "vw/test_common/test_common.h"
@@ -328,4 +330,45 @@ TEST(SaveLoad, CraftedModelMwtPoliciesSizeOverflowIsRejected)
   EXPECT_THROW(VW::initialize(
                    vwtest::make_args("--no_stdin", "--quiet"), VW::io::create_buffer_view(model.data(), model.size())),
       VW::vw_exception);
+}
+
+// Regression test for GHSA-9463-43mc-xhc6: save_load_online_state_gd indexed pms[0] guarded only by
+// assert(pms.size() >= 1), which is compiled out under NDEBUG. The vector is not always non-empty --
+// ftrl deserializes it with an element count taken from the model file (reachable through the persisted
+// --experimental_igl option), so a crafted model can empty it. The single-normalizer layout must still be
+// consumed to keep the stream aligned for the reductions that follow, so it is now routed through a
+// scratch state rather than through pms[0].
+TEST(SaveLoad, OnlineStateLoadWithNoPerModelStateDoesNotIndexEmptyVector)
+{
+  auto vw = VW::initialize(vwtest::make_args("--no_stdin", "--quiet"));
+
+  // Enough bytes to satisfy every fixed-size field the online-state block reads.
+  std::vector<char> state(512, 0);
+  VW::io_buf model_file;
+  model_file.add_file(VW::io::create_buffer_view(state.data(), state.size()));
+
+  std::vector<VW::reductions::details::gd_per_model_state> empty_pms;
+  ASSERT_TRUE(empty_pms.empty());
+
+  EXPECT_NO_THROW(VW::details::save_load_online_state_gd(
+      *vw, model_file, /*read*/ true, /*text*/ false, empty_pms, /*g*/ nullptr, /*ftrl_size*/ 0));
+}
+
+// The file-controlled path that produces the empty vector above: ftrl's read_model_field clears
+// gd_per_model_states and refills it from a count read out of the model, so a declared count of zero left
+// it empty while ftrl_setup guarantees exactly one state and the prediction and save/load paths index [0]
+// unconditionally. The invariant is now re-established after the read.
+TEST(SaveLoad, FtrlReadModelFieldWithZeroPerModelStatesRestoresOne)
+{
+  std::vector<char> serialized;
+  append_pod<uint32_t>(serialized, 0u);  // vector element count, straight from the file
+
+  VW::io_buf io_reader;
+  io_reader.add_file(VW::io::create_buffer_view(serialized.data(), serialized.size()));
+
+  VW::reductions::ftrl ftrl_data;
+  ftrl_data.gd_per_model_states.emplace_back();
+  VW::reductions::model_utils::read_model_field(io_reader, ftrl_data);
+
+  EXPECT_EQ(ftrl_data.gd_per_model_states.size(), 1u);
 }

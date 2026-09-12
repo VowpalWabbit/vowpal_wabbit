@@ -53,6 +53,10 @@ size_t read_model_field(io_buf& io, ftrl& ftrl_data)
   size_t bytes = 0;
   ftrl_data.gd_per_model_states.clear();
   bytes += VW::model_utils::read_model_field(io, ftrl_data.gd_per_model_states);
+  // The element count above is read from the model file, so a crafted model can declare zero states. The
+  // prediction and save/load paths index [0] unconditionally (ftrl_setup always seeds exactly one state),
+  // so re-establish that invariant rather than leaving the vector empty.
+  if (ftrl_data.gd_per_model_states.empty()) { ftrl_data.gd_per_model_states.emplace_back(); }
   return bytes;
 }
 }  // namespace model_utils

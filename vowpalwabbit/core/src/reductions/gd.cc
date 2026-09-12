@@ -1133,7 +1133,14 @@ void VW::details::save_load_online_state_gd(VW::workspace& all, VW::io_buf& mode
   VW::details::bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&all.update_rule_config.initial_t),
       sizeof(all.update_rule_config.initial_t), read, msg, text);
 
-  assert(pms.size() >= 1);
+  // pms is normally non-empty, but its element count can come from the model file (ftrl deserializes the
+  // vector, and --experimental_igl is a persisted option that reaches that path), so a crafted model can
+  // leave it empty. The assert guarding the [0] accesses below is compiled out under NDEBUG. The
+  // single-normalizer layout still has to be consumed to keep the stream aligned for the reductions that
+  // follow, so route it through a scratch state when there is nowhere to put it.
+  VW::reductions::details::gd_per_model_state scratch_pms;
+  auto& first_pms = pms.empty() ? scratch_pms : pms[0];
+
   if (g != nullptr && g->per_model_save_load)
   {
     for (size_t ind = 0; ind < pms.size(); ++ind)
@@ -1145,9 +1152,9 @@ void VW::details::save_load_online_state_gd(VW::workspace& all, VW::io_buf& mode
   }
   else
   {
-    msg << "norm normalizer " << pms[0].normalized_sum_norm_x << "\n";
-    VW::details::bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&pms[0].normalized_sum_norm_x),
-        sizeof(pms[0].normalized_sum_norm_x), read, msg, text);
+    msg << "norm normalizer " << first_pms.normalized_sum_norm_x << "\n";
+    VW::details::bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&first_pms.normalized_sum_norm_x),
+        sizeof(first_pms.normalized_sum_norm_x), read, msg, text);
   }
 
   msg << "t " << all.sd->t << "\n";
@@ -1201,7 +1208,6 @@ void VW::details::save_load_online_state_gd(VW::workspace& all, VW::io_buf& mode
 
   if (!read || all.runtime_state.model_file_ver >= VW::version_definitions::VERSION_SAVE_RESUME_FIX)
   {
-    assert(pms.size() >= 1);
     // restore some data to allow save_resume work more accurate
 
     // fix average loss
@@ -1216,9 +1222,10 @@ void VW::details::save_load_online_state_gd(VW::workspace& all, VW::io_buf& mode
     }
     else
     {
-      msg << "total_weight " << pms[0].total_weight << "\n";
-      VW::details::bin_text_read_write_fixed(
-          model_file, reinterpret_cast<char*>(&pms[0].total_weight), sizeof(pms[0].total_weight), read, msg, text);
+      // See the note above: first_pms falls back to a scratch state when pms is empty.
+      msg << "total_weight " << first_pms.total_weight << "\n";
+      VW::details::bin_text_read_write_fixed(model_file, reinterpret_cast<char*>(&first_pms.total_weight),
+          sizeof(first_pms.total_weight), read, msg, text);
     }
 
     // fix "loss since last" for first printed out example details

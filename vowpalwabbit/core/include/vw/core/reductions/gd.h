@@ -15,6 +15,7 @@
 // we need it for learner
 #include "vw/core/vw_fwd.h"
 
+#include <algorithm>
 #include <memory>
 
 namespace VW
@@ -37,7 +38,9 @@ public:
 class gd
 {
 public:
-  gd(size_t feature_width_above = 1) : gd_per_model_states(feature_width_above) {}
+  // Always keep at least one per-model state: the save/load and update paths index [0] unconditionally,
+  // and a feature width of 0 from the stack above would otherwise leave this empty.
+  gd(size_t feature_width_above = 1) : gd_per_model_states(std::max<size_t>(feature_width_above, 1)) {}
   std::vector<VW::reductions::details::gd_per_model_state> gd_per_model_states;
   VW::reductions::details::gd_per_model_state* current_model_state = nullptr;
   size_t no_win_counter = 0;
