@@ -3,6 +3,39 @@
 All notable changes to Vowpal Wabbit are documented in this file. For changes
 prior to this file's creation, see [GitHub Releases](https://github.com/VowpalWabbit/vowpal_wabbit/releases).
 
+## [9.11.4](https://github.com/VowpalWabbit/vowpal_wabbit/compare/9.11.3...9.11.4)
+
+Security patch release addressing three further model-loading vulnerabilities and
+completing the slates DSJSON fix started in 9.11.3.
+
+All four are reachable through ordinary use -- loading a model with `-i`, or parsing
+slates DSJSON input. In every case an attacker-controlled length or count taken from
+the input file was guarded only by an `assert`, which `-DNDEBUG` removes from `Release`
+and `RelWithDebInfo` builds, so these affected optimized builds and not just sanitizer
+ones.
+
+### Security
+
+- Fix integer-overflow-driven heap out-of-bounds write when loading a crafted model:
+  `mwt::save_load` passed a file-controlled `policies_size` to `v_array::resize`, where
+  `sizeof(T) * length` could wrap and produce an allocation smaller than the recorded
+  element count. The count is now bounded by the number of policy slots, and
+  `v_array::reserve_nocheck` rejects any length whose byte size would overflow
+  (GHSA-q2hj-ggqm-4g62)
+- Fix crash when loading a crafted model with no per-model gradient-descent state:
+  `save_load_online_state_gd` indexed `pms[0]` unconditionally. The vector's element
+  count is deserialized from the model via ftrl, so a crafted file could empty it. The
+  minimum is now established where the vector is built and restored after the
+  file-controlled read (GHSA-9463-43mc-xhc6)
+- Fix heap out-of-bounds read when loading a crafted model: the persisted-options field
+  was appended as a C string without requiring a terminating NUL, so the scan could run
+  past its allocation into adjacent heap memory. The append is now bounded by the number
+  of bytes actually read (GHSA-9cm9-qvp3-c2v4)
+- Complete the slates DSJSON fix from 9.11.3: an outcome supplying neither actions nor
+  probabilities satisfied the length-equality check with both sizes zero and still
+  reached `probabilities[0]` on an empty array. Such a slot is now treated as unlabeled
+  (GHSA-c8v3-p4fg-v3pm)
+
 ## [9.11.3](https://github.com/VowpalWabbit/vowpal_wabbit/compare/9.11.2...9.11.3)
 
 Security patch release addressing two heap out-of-bounds writes.
