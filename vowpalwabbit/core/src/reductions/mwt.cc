@@ -227,6 +227,17 @@ void save_load(mwt& c, VW::io_buf& model_file, bool read, bool text)
   VW::details::bin_text_read_write_fixed_validated(
       model_file, reinterpret_cast<char*>(&policies_size), sizeof(policies_size), read, msg, text);
 
+  // policies_size comes straight from the model file and is about to drive both an allocation
+  // (sizeof(feature_index) * policies_size, which wraps if the count is large enough) and a read of that
+  // many bytes. Every entry is an index into c.evals, which mwt_setup already sized to the weight table,
+  // so that size is the semantic maximum. Bounding the count here also bounds the product, since
+  // c.evals.size() * sizeof(feature_index) cannot approach SIZE_MAX for any valid bit precision.
+  if (read && policies_size > c.evals.size())
+  {
+    THROW("Bad model format: mwt policies_size (" << policies_size << ") exceeds the number of policy slots ("
+                                                  << c.evals.size() << ").");
+  }
+
   if (read) { c.policies.resize(policies_size); }
   else
   {

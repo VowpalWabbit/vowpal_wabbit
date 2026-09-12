@@ -18,6 +18,7 @@
 #include <cstdint>
 #include <cstring>
 #include <iterator>
+#include <limits>
 #include <memory>
 #include <vector>
 
@@ -273,4 +274,58 @@ TEST(SaveLoad, CraftedModelUnterminatedOptionsFieldIsNotScannedPastTheEnd)
   // picking up none of the bytes that follow it in the buffer.
   EXPECT_THAT(file_options, ::testing::EndsWith(unterminated_options));
   EXPECT_EQ(file_options.find('B'), std::string::npos);
+}
+
+// Regression test for GHSA-q2hj-ggqm-4g62: mwt::save_load trusts a serialized policies_size and hands it
+// to v_array::resize. The underlying reserve_nocheck computes sizeof(T) * length without checking for
+// overflow, so a sufficiently large count wraps to a small realloc while _end_array records the full
+// count -- a buffer that lies about its capacity, followed by an out-of-bounds memset and an
+// out-of-bounds construction loop. The count is now bounded by the number of policy slots before it is
+// used, and v_array itself rejects a length whose byte size would overflow.
+//
+// As with the policy-id test above, a valid --multiworld_test model is trained first and only the
+// serialized policies_size is overwritten, so every other byte of the model is well-formed.
+TEST(SaveLoad, CraftedModelMwtPoliciesSizeOverflowIsRejected)
+{
+  const std::array<std::string, 8> cb_eval = {"1:0:0.5 |f :1 :2", "2:1:0.5 |f :1 :2", "1:0:0.5 |f :1 :2",
+      "2:1:0.5 |f :1 :2", "1:0:0.5 |f :1 :2", "2:1:0.5 |f :1 :2", "1:0:0.5 |f :1 :2", "2:1:0.5 |f :1 :2"};
+
+  auto vw_train = VW::initialize(vwtest::make_args("--multiworld_test", "f", "--no_stdin", "--quiet"));
+  for (const auto& line : cb_eval)
+  {
+    auto& ex = VW::get_unused_example(vw_train.get());
+    VW::parsers::text::read_line(*vw_train, &ex, line.c_str());
+    VW::setup_example(*vw_train, &ex);
+    vw_train->learn(ex);
+    vw_train->finish_example(ex);
+  }
+
+  auto backing_vector = std::make_shared<std::vector<char>>();
+  VW::io_buf io_writer;
+  io_writer.add_file(VW::io::create_vector_writer(backing_vector));
+  VW::save_predictor(*vw_train, io_writer);
+  io_writer.flush();
+
+  // The mwt block is: total (double) | policies_size (size_t) | policies | per-policy data. Eight
+  // observations were learned (total == 8.0) with two policies, giving a unique 16-byte prefix.
+  const double expected_total = 8.0;
+  const uint64_t expected_policies_size = 2;
+  std::vector<char> signature(sizeof(double) + sizeof(uint64_t));
+  std::memcpy(signature.data(), &expected_total, sizeof(double));
+  std::memcpy(signature.data() + sizeof(double), &expected_policies_size, sizeof(uint64_t));
+
+  auto& model = *backing_vector;
+  auto sig_begin = std::search(model.begin(), model.end(), signature.begin(), signature.end());
+  ASSERT_NE(sig_begin, model.end()) << "mwt block signature not found in serialized model";
+  ASSERT_EQ(std::search(sig_begin + 1, model.end(), signature.begin(), signature.end()), model.end())
+      << "mwt block signature is not unique; test needs updating";
+
+  // Overwrite policies_size with a count whose byte size (count * sizeof(feature_index)) wraps size_t.
+  const size_t policies_size_offset = static_cast<size_t>(std::distance(model.begin(), sig_begin)) + sizeof(double);
+  const uint64_t overflowing_count = (std::numeric_limits<uint64_t>::max)() / sizeof(uint64_t) + 2;
+  std::memcpy(model.data() + policies_size_offset, &overflowing_count, sizeof(uint64_t));
+
+  EXPECT_THROW(VW::initialize(
+                   vwtest::make_args("--no_stdin", "--quiet"), VW::io::create_buffer_view(model.data(), model.size())),
+      VW::vw_exception);
 }

@@ -10,6 +10,8 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstddef>
+#include <limits>
 #include <ostream>
 #include <type_traits>
 #include <utility>
@@ -353,6 +355,16 @@ private:
   {
     if (capacity() == length || length == 0) { return; }
     const size_t old_len = size();
+
+    // sizeof(T) * length must be checked before it is computed: element counts can come from a model file,
+    // and a wrapped multiply would hand realloc a small size while _end_array below records the full
+    // (huge) length -- a buffer that lies about its own capacity, and an out-of-bounds write on the very
+    // next memset. Reject the count instead of allocating.
+    if (length > (std::numeric_limits<size_t>::max)() / sizeof(T))
+    {
+      THROW_OR_RETURN("reserve_nocheck() length " << length << " exceeds the maximum number of " << sizeof(T)
+                                                  << "-byte elements that can be allocated.");
+    }
 
     T* temp = static_cast<T*>(std::realloc(_begin, sizeof(T) * length));
     if (temp == nullptr)
