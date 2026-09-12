@@ -2,6 +2,7 @@
 // individual contributors. All rights reserved. Released under a BSD (revised)
 // license as described in the file LICENSE.
 
+#include "vw/common/vw_exception.h"
 #include "vw/core/reductions/conditional_contextual_bandit.h"
 #include "vw/core/vw.h"
 #include "vw/json_parser/parse_example_json.h"
@@ -764,6 +765,42 @@ TEST(ParseDsjson, Slates)
   EXPECT_EQ(ds_interaction.skip_learn, true);
   EXPECT_THAT(ds_interaction.actions, ::testing::ElementsAre(1, 0));
   EXPECT_THAT(ds_interaction.probabilities, ::testing::ElementsAre(0.8f, 0.6f));
+
+  VW::finish_example(*vw, examples);
+}
+
+// GHSA-c8v3-p4fg-v3pm follow-up. The shipped fix rejects a _p array whose length differs from _a, but an
+// outcome carrying neither ("_a": [], "_p": []) satisfies that check with both sizes zero. "labeled" is set
+// for every example when _label_cost is present, before _outcomes is read, so the slot still arrives at the
+// interaction-building loop marked labeled with an empty probabilities array, and probabilities[0] reads off
+// the end of the v_array. (The slates reduction's own output path indexes probabilities[0] under the same
+// "labeled" guard, so the invariant has to hold for the label, not just for that one loop.)
+//
+// A slot that carries no action and no probability conveys no label, so the parser now clears "labeled"
+// rather than rejecting the line. Under AddressSanitizer this reproduces the out-of-bounds read without the
+// fix; with it, the line parses and the slot is simply unlabeled.
+TEST(ParseDsjson, SlatesEmptyActionsAndProbabilitiesLeavesSlotUnlabeled)
+{
+  const std::string json_text = R"(
+{
+    "_label_cost": 1,
+    "_outcomes": [ { "_a": [], "_p": [] } ],
+    "c": { "shared_feature": 1.0, "_multi": [ { "_slot_id": 0, "feature": 1.0 } ], "_slots": [ { "feature": 1.0 } ] }
+})";
+
+  auto vw = VW::initialize(vwtest::make_args("--slates", "--dsjson", "--chain_hash", "--no_stdin", "--quiet"));
+  VW::parsers::json::decision_service_interaction ds_interaction;
+  auto examples = vwtest::parse_dsjson(*vw, json_text, &ds_interaction);
+
+  // The slot example is last; it must carry no label rather than an empty-but-labeled one.
+  const auto& slot_label = examples.back()->l.slates;
+  EXPECT_EQ(slot_label.type, VW::slates::example_type::SLOT);
+  EXPECT_TRUE(slot_label.probabilities.empty());
+  EXPECT_FALSE(slot_label.labeled);
+
+  // Nothing was appended to the interaction for a slot with no outcome.
+  EXPECT_TRUE(ds_interaction.actions.empty());
+  EXPECT_TRUE(ds_interaction.probabilities.empty());
 
   VW::finish_example(*vw, examples);
 }

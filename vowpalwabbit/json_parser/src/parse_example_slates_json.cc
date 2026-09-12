@@ -325,9 +325,15 @@ void VW::parsers::json::details::parse_slates_example_dsjson(VW::workspace& all,
       }
     }
 
-    for (const auto& slot : slot_examples)
+    for (auto* slot : slot_examples)
     {
-      const auto& slates_label = slot->l.slates;
+      auto& slates_label = slot->l.slates;
+      // "labeled" is set for every example up front when _label_cost is present, before _outcomes has been
+      // read, so a slot whose outcome carried neither actions nor probabilities arrives here marked labeled
+      // with an empty probabilities array. Such a slot conveys no label, and leaving it marked would break
+      // the "labeled implies at least one probability" invariant that both this loop and the slates
+      // reduction's output path rely on when they index probabilities[0].
+      if (slates_label.probabilities.empty()) { slates_label.labeled = false; }
       if (slates_label.labeled)
       {
         data->probabilities.push_back(slates_label.probabilities[0].score);
