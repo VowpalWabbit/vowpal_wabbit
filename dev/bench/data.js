@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789234296889,
+  "lastUpdate": 1789234442916,
   "repoUrl": "https://github.com/VowpalWabbit/vowpal_wabbit",
   "entries": {
     "Benchmark": [
@@ -224052,6 +224052,150 @@ window.BENCHMARK_DATA = {
             "value": 10305210.879606808,
             "unit": "ns/iter",
             "extra": "iterations: 407\ncpu: 10304428.27027009 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jl@hunch.net",
+            "name": "John",
+            "username": "JohnLangford"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "99190d8e04ae64a6233a6bc3b9bdcaadcf55ca01",
+          "message": "Merge commit from fork\n\nsave_load_online_state_gd indexed pms[0] guarded only by\nassert(pms.size() >= 1), which -DNDEBUG removes from Release and\nRelWithDebInfo. On an empty vector that is a null dereference during\nmodel load.\n\nThe vector is not always non-empty, and the reachable path is not the one\nthe feature width suggests. gd's states are sized from\n_feature_width_above, which starts at 1 and is only ever multiplied, so\nreaching zero there requires an internal bug. ftrl is the file-controlled\nroute: its gd_per_model_states is a plain default-empty vector, and\nread_model_field clears it and refills it from an element count read\nstraight out of the model (model_utils.h). --experimental_igl is a\npersisted keep() option whose save_load reaches that read, so a crafted\nmodel can declare zero states and empty the vector.\n\nFix all three layers, each through normal control flow:\n\n- gd's constructor keeps at least one state, so a zero feature width from\n  the stack above cannot produce an empty vector.\n- ftrl's read_model_field re-establishes the invariant after the read.\n  ftrl_setup always seeds exactly one state and the prediction path\n  (update_after_prediction) indexes [0] on every example, so an empty\n  vector is not merely a load-time hazard.\n- save_load_online_state_gd routes the single-normalizer layout through a\n  scratch state when pms is empty. Those bytes still have to be consumed\n  to keep the stream aligned for the reductions that follow, so skipping\n  the read would desynchronise the rest of the model. The asserts are\n  dropped, since the empty case is now handled rather than forbidden.\n\nThe regression tests drive the function with an empty vector directly\n(reproduces \"SEGV on unknown address 0x000000000000\" without the fix) and\ncover the file-controlled count that produces it.\n\nClaude-Session: https://claude.ai/code/session_01EVprwZHP4KXAhsF6JGXK9k",
+          "timestamp": "2026-09-12T13:03:34-04:00",
+          "tree_id": "f3b59dd417b777f28d28a892cfd4b921f5f9c1d0",
+          "url": "https://github.com/VowpalWabbit/vowpal_wabbit/commit/99190d8e04ae64a6233a6bc3b9bdcaadcf55ca01"
+        },
+        "date": 1789234439681,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_num_features)",
+            "value": 3591.793409983317,
+            "unit": "ns",
+            "range": "± 10.886878844269068"
+          },
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_string_fts)",
+            "value": 5590.14036996024,
+            "unit": "ns",
+            "range": "± 49.15899051773134"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 1_feature)",
+            "value": 533.4929339090983,
+            "unit": "ns",
+            "range": "± 4.603726145730518"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 8_features)",
+            "value": 425.51102297646656,
+            "unit": "ns",
+            "range": "± 1.7356399557766282"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_interactions)",
+            "value": 501630.8723958333,
+            "unit": "ns",
+            "range": "± 4068.632764279007"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_no_interactions)",
+            "value": 383482.7897135417,
+            "unit": "ns",
+            "range": "± 3465.9876685563204"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_no_namespaces)",
+            "value": 387478.7174479167,
+            "unit": "ns",
+            "range": "± 2824.711758986994"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_interactions)",
+            "value": 506897.98828125,
+            "unit": "ns",
+            "range": "± 3125.9916028861044"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_no_interactions)",
+            "value": 387267.8287760417,
+            "unit": "ns",
+            "range": "± 2321.509434686171"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_interactions)",
+            "value": 2023939.5052083333,
+            "unit": "ns",
+            "range": "± 14297.544758190736"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_no_interactions)",
+            "value": 801348.984375,
+            "unit": "ns",
+            "range": "± 4798.573406534465"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_no_namespaces)",
+            "value": 695739.7112165178,
+            "unit": "ns",
+            "range": "± 11188.642343583406"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_interactions)",
+            "value": 1708611.3802083333,
+            "unit": "ns",
+            "range": "± 10405.187987627058"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_no_interactions)",
+            "value": 713456.8209134615,
+            "unit": "ns",
+            "range": "± 7734.106553768869"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: few_features)",
+            "value": 2440.8160146077475,
+            "unit": "ns",
+            "range": "± 26.565085214889038"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: few_features)",
+            "value": 8906.45730154855,
+            "unit": "ns",
+            "range": "± 30.590085998801875"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: many_features)",
+            "value": 56625.63232421875,
+            "unit": "ns",
+            "range": "± 405.63032465854695"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: many_features)",
+            "value": 13643.54952298678,
+            "unit": "ns",
+            "range": "± 40.25039340258162"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: quadratic)",
+            "value": 1975653.8541666667,
+            "unit": "ns",
+            "range": "± 16302.170335251902"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: simple)",
+            "value": 159276.48053850446,
+            "unit": "ns",
+            "range": "± 633.6312977386514"
           }
         ]
       }
