@@ -391,10 +391,14 @@ void VW::details::save_load_header(VW::workspace& all, VW::io_buf& model_file, b
       size_t ret = model_file.bin_read_fixed(reinterpret_cast<char*>(&len), sizeof(len));
       if (len > 104857600 /*sanity check: 100 Mb*/ || ret < sizeof(uint32_t)) THROW("Bad model format.");
       if (buff2.size() < len) { buff2.resize(len); }
-      bytes_read_write += model_file.bin_read_fixed(buff2.data(), len) + ret;
+      // buff2 is sized to exactly len, and the file supplies len bytes with no guarantee of a terminating
+      // NUL, so the option text must never be consumed as a C string. Track how many bytes were actually
+      // read (a truncated file yields fewer than len) and bound every later scan by that count.
+      const size_t options_len = model_file.bin_read_fixed(buff2.data(), len);
+      bytes_read_write += options_len + ret;
 
       // Write out file options to caller.
-      if (len > 0)
+      if (options_len > 0)
       {
         // There is a potential bug here if len is read out to be zero (e.g. corrupted file). If we naively
         // append buff2 into file_options it might contain old information and thus be invalid. Before, what
@@ -404,7 +408,12 @@ void VW::details::save_load_header(VW::workspace& all, VW::io_buf& model_file, b
         // In some cases we end up with a std::string like: "--bit_precision 18 <something_not_an_int>", which will
         // cause a "bad program options value" exception, rather than the true "file is corrupted" issue. Only
         // pushing the contents of buff2 into file_options when it is valid will prevent this false error.
-        file_options = file_options + " " + buff2.data();
+        // Append by explicit bounded range rather than as a C string: the field carries no guaranteed
+        // terminator, so strlen (which operator+ on a const char* performs) would scan past the end of
+        // buff2's allocation and pull in adjacent heap bytes. Stop at the first NUL within what was read.
+        const char* const options_begin = buff2.data();
+        const char* const options_end = std::find(options_begin, options_begin + options_len, '\0');
+        file_options.append(" ").append(options_begin, options_end);
       }
     }
     else
@@ -447,7 +456,9 @@ void VW::details::save_load_header(VW::workspace& all, VW::io_buf& model_file, b
       msg << "options:" << serialized_keep_options << "\n";
 
       const auto len = serialized_keep_options.length();
-      if (len > buff2.size()) { buff2.resize(len + 1); }
+      // len + 1 bytes are written below (the options text plus its terminator), so the buffer has to hold
+      // len + 1, not len -- at len == buff2.size() exactly, the terminator would land one past the end.
+      if (len + 1 > buff2.size()) { buff2.resize(len + 1); }
       memcpy(buff2.data(), serialized_keep_options.c_str(), len + 1);
       *(buff2.data() + len) = 0;
       bytes_read_write += VW::details::bin_text_read_write(model_file, buff2.data(), len + 1,  // len+1 to write a \0

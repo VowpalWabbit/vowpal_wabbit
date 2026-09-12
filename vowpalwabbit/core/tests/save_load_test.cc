@@ -212,3 +212,65 @@ TEST(SaveLoad, CraftedModelMwtPolicyIdOutOfRangeIsRejected)
                    VW::io::create_buffer_view(model.data(), model.size())),
       VW::vw_exception);
 }
+
+// Regression test for GHSA-9cm9-qvp3-c2v4: the persisted-options field is stored in a std::vector<char>
+// sized to exactly the declared length and filled with exactly that many file bytes, but the loader then
+// appended it as a C string. operator+ on a const char* runs strlen, so a field whose bytes contain no NUL
+// makes the scan cross the end of the allocation and keep going through adjacent heap memory -- the field
+// text ends up contaminated with whatever followed it, and the read itself is out of bounds.
+//
+// The crafted model declares version 7.10.2 for the same reasons as the test above, and additionally
+// because 7.10.2 is below VERSION_FILE_WITH_HEADER_CHAINED_HASH (8.0.2): no header checksum is written, so
+// the options field can be given an arbitrary length and content without the load failing a hash check
+// before it reaches the append. The declared length exceeds the 512-byte default buffer, so buff2 is
+// resized to exactly that length and the unterminated scan runs off an allocation of precisely that size.
+//
+// The bounded append stops at the declared length, so file_options ends with exactly the bytes the model
+// supplied and nothing more. Under AddressSanitizer the unpatched loader instead reports a
+// heap-buffer-overflow read here.
+TEST(SaveLoad, CraftedModelUnterminatedOptionsFieldIsNotScannedPastTheEnd)
+{
+  // A distinctive payload longer than the 512-byte default buffer, deliberately not NUL-terminated.
+  const std::string unterminated_options(600, 'A');
+
+  std::vector<char> model;
+  // Version block: bin_read expects a uint32 length prefix followed by that many bytes.
+  const std::string version = "7.10.2";
+  append_pod<uint32_t>(model, static_cast<uint32_t>(version.size() + 1));
+  model.insert(model.end(), version.begin(), version.end());
+  model.push_back('\0');
+  // Model marker.
+  model.push_back('m');
+  // Min/max label (float each).
+  append_pod<float>(model, 0.0f);
+  append_pod<float>(model, 0.0f);
+  // Bit precision (uint32).
+  append_pod<uint32_t>(model, 18u);
+  // Legacy interaction block (version < 7.10.3): pair count, triple count, and -- because 7.10.2 is
+  // VERSION_FILE_WITH_INTERACTIONS -- the interactions-among-pairs-and-triples count. All empty.
+  append_pod<uint32_t>(model, 0u);  // pair_len
+  append_pod<uint32_t>(model, 0u);  // triple_len
+  append_pod<uint32_t>(model, 0u);  // interactions len
+  // 7.10.2 is above VERSION_FILE_WITH_RANK_IN_HEADER (7.8.0), so no rank field is present.
+  append_pod<uint32_t>(model, 0u);  // lda
+  append_pod<uint32_t>(model, 0u);  // ngram count
+  append_pod<uint32_t>(model, 0u);  // skip count
+  // Persisted options: a uint32 length followed by that many bytes, with no terminator among them.
+  append_pod<uint32_t>(model, static_cast<uint32_t>(unterminated_options.size()));
+  model.insert(model.end(), unterminated_options.begin(), unterminated_options.end());
+  // Trailing bytes an unbounded strlen would run into after leaving the options allocation.
+  model.insert(model.end(), 4096, 'B');
+
+  auto vw = VW::initialize(vwtest::make_args("--no_stdin", "--quiet"));
+
+  VW::io_buf model_file;
+  model_file.add_file(VW::io::create_buffer_view(model.data(), model.size()));
+
+  std::string file_options;
+  VW::details::save_load_header(*vw, model_file, /*read*/ true, /*text*/ false, file_options, *vw->options);
+
+  // The options text must stop exactly where the model said it does: ending with the declared payload and
+  // picking up none of the bytes that follow it in the buffer.
+  EXPECT_THAT(file_options, ::testing::EndsWith(unterminated_options));
+  EXPECT_EQ(file_options.find('B'), std::string::npos);
+}
