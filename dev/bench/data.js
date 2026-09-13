@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789334607432,
+  "lastUpdate": 1789335202732,
   "repoUrl": "https://github.com/VowpalWabbit/vowpal_wabbit",
   "entries": {
     "Benchmark": [
@@ -226260,6 +226260,150 @@ window.BENCHMARK_DATA = {
             "value": 10538608.204433667,
             "unit": "ns/iter",
             "extra": "iterations: 406\ncpu: 10537628.66256129 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jl@hunch.net",
+            "name": "John",
+            "username": "JohnLangford"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1637cfcc79406b3816eb1430f72233e3e736e1c5",
+          "message": "fix(c#): retain SimpleLabel importance weight when building examples (#4949)\n\nSimpleLabelUpdateExample wrote the importance weight to example::weight, but\nthat field is not where a simple label's weight lives. VW::setup_example --\nwhich VowpalWabbitExampleBuilder.CreateExample runs to finalize the example --\nreassigns it:\n\n  ae->weight = lbl_parser.get_weight(ae->l, ae->ex_reduction_features);\n\nand for simple labels get_weight returns simple_label_reduction_features::weight,\nwhich ApplyLabel never set. So the weight was overwritten with its default of 1\nbetween ApplyLabel and CreateExample, and SimpleLabelReadFromExample -- which\nreads the reduction feature, and was correct all along -- reported 1.\n\nReported in #4945: a label built as { Label = 7, Weight = 4, Initial = 3 } reads\nback as 7 1 3. StringLabel is unaffected because the text parser writes\nsimple_red_features.weight directly, which is why it round-trips correctly and\nmade the two paths disagree.\n\nThe consequence is worse than a bad round-trip: because ex->weight is what the\nlearner consumes, an importance weight supplied through SimpleLabel never\nreached training at all -- every such example trained as though weighted 1.0.\n\nSet the reduction feature, which is the source of truth and survives\nsetup_example, and keep assigning ex->weight so the value is also correct for\ncallers that never run setup_example.\n\nVerified by driving the same native entry points the builder uses\n(SimpleLabelUpdateExample -> VW::setup_example -> SimpleLabelReadFromExample):\nbefore the change the harness reports \"label=7 weight=1 initial=3\", matching the\nreport exactly; after it reports \"label=7 weight=4 initial=3\" with ex->weight=4.\n\nAdds two regression tests mirroring the reporter's: one that the weight\nround-trips, and one that it actually affects training.\n\nCloses #4945\n\nClaude-Session: https://claude.ai/code/session_01EVprwZHP4KXAhsF6JGXK9k",
+          "timestamp": "2026-09-13T16:58:16-04:00",
+          "tree_id": "2cd06af45b5826a70ec685b621cee3dfda1a81b3",
+          "url": "https://github.com/VowpalWabbit/vowpal_wabbit/commit/1637cfcc79406b3816eb1430f72233e3e736e1c5"
+        },
+        "date": 1789335199767,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_num_features)",
+            "value": 3727.57814847506,
+            "unit": "ns",
+            "range": "± 30.841594169321283"
+          },
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_string_fts)",
+            "value": 5833.561297825405,
+            "unit": "ns",
+            "range": "± 161.84125895723784"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 1_feature)",
+            "value": 524.6161680955154,
+            "unit": "ns",
+            "range": "± 4.040795014652959"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 8_features)",
+            "value": 432.65932287488664,
+            "unit": "ns",
+            "range": "± 2.391912606525282"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_interactions)",
+            "value": 550375.9172712053,
+            "unit": "ns",
+            "range": "± 9671.470061852615"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_no_interactions)",
+            "value": 379705.5078125,
+            "unit": "ns",
+            "range": "± 4314.050996766737"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_no_namespaces)",
+            "value": 379581.298828125,
+            "unit": "ns",
+            "range": "± 1750.7426947485264"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_interactions)",
+            "value": 487168.7918526786,
+            "unit": "ns",
+            "range": "± 3888.4010977850303"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_no_interactions)",
+            "value": 379100.068359375,
+            "unit": "ns",
+            "range": "± 4536.194362505661"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_interactions)",
+            "value": 2011238.364955357,
+            "unit": "ns",
+            "range": "± 16913.654930870296"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_no_interactions)",
+            "value": 787913.1315104166,
+            "unit": "ns",
+            "range": "± 5440.824913241133"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_no_namespaces)",
+            "value": 685644.8111979166,
+            "unit": "ns",
+            "range": "± 5403.383580155709"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_interactions)",
+            "value": 1681311.3731971155,
+            "unit": "ns",
+            "range": "± 25064.390593639964"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_no_interactions)",
+            "value": 708251.0591947115,
+            "unit": "ns",
+            "range": "± 8980.915371269159"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: few_features)",
+            "value": 2446.5462493896484,
+            "unit": "ns",
+            "range": "± 18.994063517600132"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: few_features)",
+            "value": 8900.794110979352,
+            "unit": "ns",
+            "range": "± 72.08152703901429"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: many_features)",
+            "value": 58459.971516927086,
+            "unit": "ns",
+            "range": "± 1061.2860967738422"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: many_features)",
+            "value": 13815.580342610678,
+            "unit": "ns",
+            "range": "± 76.42765747470503"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: quadratic)",
+            "value": 1968388.4635416667,
+            "unit": "ns",
+            "range": "± 23159.96793776573"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: simple)",
+            "value": 159267.10728236608,
+            "unit": "ns",
+            "range": "± 1570.0934210755074"
           }
         ]
       }
