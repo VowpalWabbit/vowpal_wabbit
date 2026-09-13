@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789266256358,
+  "lastUpdate": 1789266884427,
   "repoUrl": "https://github.com/VowpalWabbit/vowpal_wabbit",
   "entries": {
     "Benchmark": [
@@ -224712,6 +224712,150 @@ window.BENCHMARK_DATA = {
             "value": 8651639.776859205,
             "unit": "ns/iter",
             "extra": "iterations: 484\ncpu: 8650499.0516532 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jl@hunch.net",
+            "name": "John",
+            "username": "JohnLangford"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a44f1b5923b099a97283fa3ebc310dca359e4c5e",
+          "message": "fix(ci): unblock big-tests by pinning the MovieLens dataset checksum (#4948)\n\nfiles.grouplens.org is serving an expired TLS certificate, so wget's\nverification fails and the \"Download and prepare MovieLens dataset\" step\naborts with exit code 5 before any test runs. This fails big-tests.[2] on\nevery push to master and on every pull request, and cancels big-tests.[1]\nalong with it, so the whole Standalone workflow has been red since the\ncertificate lapsed.\n\nThe host itself is healthy and the file is unchanged (Last-Modified\n2019-12-03). Rather than wait on the certificate, skip verification for this\none download and authenticate the content with a pinned SHA-256 instead.\n\nIntegrity is not weakened by this. Before, the download was authenticated by\nthe certificate and its contents were never checked; now it is authenticated\nby a hash of the exact bytes, which is what actually matters for a dataset\nthat gets trained on. The pinned digest was confirmed against the MD5\nGroupLens publishes alongside the archive (c4d9eecfca2ab87c1945afe126590906)\nand the zip verified with unzip -t.\n\nScoped deliberately: the other dataset hosts in this workflow\n(archive.ics.uci.edu, ai.stanford.edu, storage.googleapis.com) were checked\nand all return 200 with valid certificates, so they are left alone and keep\nfull certificate verification.\n\nClaude-Session: https://claude.ai/code/session_01EVprwZHP4KXAhsF6JGXK9k",
+          "timestamp": "2026-09-12T21:59:56-04:00",
+          "tree_id": "c450395f2a088bdcd6a119d08398f3f3f3c7fefb",
+          "url": "https://github.com/VowpalWabbit/vowpal_wabbit/commit/a44f1b5923b099a97283fa3ebc310dca359e4c5e"
+        },
+        "date": 1789266881482,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_num_features)",
+            "value": 3562.5912886399487,
+            "unit": "ns",
+            "range": "± 55.55047733045761"
+          },
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_string_fts)",
+            "value": 5450.146538870676,
+            "unit": "ns",
+            "range": "± 94.39231052689652"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 1_feature)",
+            "value": 523.3987399509975,
+            "unit": "ns",
+            "range": "± 3.773356002797645"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 8_features)",
+            "value": 418.37416966756183,
+            "unit": "ns",
+            "range": "± 3.9123752424866365"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_interactions)",
+            "value": 488341.5299479167,
+            "unit": "ns",
+            "range": "± 3024.509917504256"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_no_interactions)",
+            "value": 389269.81670673075,
+            "unit": "ns",
+            "range": "± 6013.191718510784"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_no_namespaces)",
+            "value": 415577.2202435662,
+            "unit": "ns",
+            "range": "± 13240.51440876444"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_interactions)",
+            "value": 491720.4406738281,
+            "unit": "ns",
+            "range": "± 3374.560644721773"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_no_interactions)",
+            "value": 388779.7677176339,
+            "unit": "ns",
+            "range": "± 4528.5093902889475"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_interactions)",
+            "value": 1968998.59375,
+            "unit": "ns",
+            "range": "± 19962.20926099175"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_no_interactions)",
+            "value": 790150.2473958334,
+            "unit": "ns",
+            "range": "± 5668.688239524568"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_no_namespaces)",
+            "value": 679917.919921875,
+            "unit": "ns",
+            "range": "± 4342.18951616001"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_interactions)",
+            "value": 1681333.0240885417,
+            "unit": "ns",
+            "range": "± 12270.129089043365"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_no_interactions)",
+            "value": 704122.2028459822,
+            "unit": "ns",
+            "range": "± 6199.413848152339"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: few_features)",
+            "value": 2409.8422241210938,
+            "unit": "ns",
+            "range": "± 16.371699261877367"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: few_features)",
+            "value": 8914.881795247396,
+            "unit": "ns",
+            "range": "± 90.11072688928647"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: many_features)",
+            "value": 55369.63195800781,
+            "unit": "ns",
+            "range": "± 547.1246573502278"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: many_features)",
+            "value": 13619.208585298979,
+            "unit": "ns",
+            "range": "± 48.98145611166599"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: quadratic)",
+            "value": 1976386.5234375,
+            "unit": "ns",
+            "range": "± 39952.50115891017"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: simple)",
+            "value": 161418.75174386162,
+            "unit": "ns",
+            "range": "± 2053.1308216026346"
           }
         ]
       }
