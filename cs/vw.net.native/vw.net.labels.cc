@@ -20,12 +20,21 @@ API void SimpleLabelUpdateExample(vw_net_native::workspace_context* workspace, V
   auto* ld = &ex->l.simple;
   ld->label = label;
 
-  if (maybe_weight) { ex->weight = *maybe_weight; }
-
-  if (maybe_initial)
+  // The importance weight lives in the simple-label reduction features, not on the example.
+  // VW::setup_example assigns ex->weight from lbl_parser.get_weight(), which for simple labels
+  // reads simple_label_reduction_features::weight -- so writing only ex->weight here was silently
+  // discarded when the builder finalized the example, leaving the default weight of 1.
+  // Set both: the reduction feature is the source of truth and survives setup_example, while
+  // ex->weight keeps the value correct for callers that never run setup_example.
+  if (maybe_weight || maybe_initial)
   {
     auto& red_fts = ex->ex_reduction_features.template get<VW::simple_label_reduction_features>();
-    red_fts.initial = *maybe_initial;
+    if (maybe_weight)
+    {
+      red_fts.weight = *maybe_weight;
+      ex->weight = *maybe_weight;
+    }
+    if (maybe_initial) { red_fts.initial = *maybe_initial; }
   }
 
   VW::count_label(*workspace->vw->sd, ld->label);
