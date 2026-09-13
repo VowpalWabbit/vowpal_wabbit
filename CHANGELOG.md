@@ -3,10 +3,16 @@
 All notable changes to Vowpal Wabbit are documented in this file. For changes
 prior to this file's creation, see [GitHub Releases](https://github.com/VowpalWabbit/vowpal_wabbit/releases).
 
-## [9.11.4](https://github.com/VowpalWabbit/vowpal_wabbit/compare/9.11.3...9.11.4)
+## [9.11.4](https://github.com/VowpalWabbit/vowpal_wabbit/compare/9.11.2...9.11.4)
 
 Security patch release addressing three further model-loading vulnerabilities and
 completing the slates DSJSON fix started in 9.11.3.
+
+**9.11.3 was never published** -- its version bump landed but no tag, GitHub release or
+package was produced, so no artifact containing its fixes was ever available. 9.11.4
+therefore supersedes it and carries everything from it, including the two advisories
+listed under 9.11.3 below (GHSA-x3cx-p52g-p5q7 and GHSA-c8v3-p4fg-v3pm). Anyone still on
+9.11.2 or earlier should upgrade directly to 9.11.4.
 
 All four are reachable through ordinary use -- loading a model with `-i`, or parsing
 slates DSJSON input. In every case an attacker-controlled length or count taken from
@@ -35,6 +41,17 @@ ones.
   probabilities satisfied the length-equality check with both sizes zero and still
   reached `probabilities[0]` on an empty array. Such a slot is now treated as unlabeled
   (GHSA-c8v3-p4fg-v3pm)
+
+### Fixed
+
+- Bound the `_outcomes` array against the number of slot examples in the CCB DSJSON parser.
+  More `_outcomes` entries than slots walked the example index off the end of the examples
+  vector and set a label through the resulting pointer (#4946)
+- C# bindings: retain a `SimpleLabel`'s importance weight when building examples. The weight
+  was written to `example::weight`, which `VW::setup_example` reassigns from the simple-label
+  reduction features, so it was reset to 1 by `CreateExample()`. Beyond reading back
+  incorrectly, the supplied weight never reached the learner -- affected examples trained as
+  though weighted 1.0 (#4949, reported in #4945)
 
 ## [9.11.3](https://github.com/VowpalWabbit/vowpal_wabbit/compare/9.11.2...9.11.3)
 
