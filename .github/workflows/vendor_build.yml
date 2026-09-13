@@ -164,8 +164,15 @@ jobs:
         working-directory: big_tests
         run: |
           mkdir -p dataSets/movielens.dir
-          wget -nv -P dataSets/movielens.dir \
-            http://files.grouplens.org/datasets/movielens/ml-1m.zip
+          # files.grouplens.org is serving an expired TLS certificate, which fails wget's
+          # verification and blocks this job. The dataset itself is unchanged (Last-Modified
+          # 2019-12-03), so integrity is enforced with a pinned SHA-256 instead of relying on
+          # the certificate. Do not drop the checksum: it is the only thing authenticating this
+          # download while verification is off.
+          wget -nv --no-check-certificate -P dataSets/movielens.dir \
+            https://files.grouplens.org/datasets/movielens/ml-1m.zip
+          echo "a6898adb50b9ca05aa231689da44c217cb524e7ebd39d264c56e2832f2c54e20  dataSets/movielens.dir/ml-1m.zip" \
+            | sha256sum --check --strict
           cd dataSets/movielens.dir
           unzip -ou ml-1m.zip
           ../../testCode/movielensRatings2vw.pl pre.train.vw test.prep ml-1m/ratings.dat
