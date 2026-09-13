@@ -805,6 +805,46 @@ TEST(ParseDsjson, SlatesEmptyActionsAndProbabilitiesLeavesSlotUnlabeled)
   VW::finish_example(*vw, examples);
 }
 
+// The same missing-bound class in the CCB DSJSON SAX parser: SlotOutcomeList::StartObject walked
+// slot_object_index across the _outcomes array without checking it against the number of parsed examples,
+// so more _outcomes entries than slots indexed past the end of the examples vector and then set a label
+// through the resulting pointer. This file's convention for malformed input is ctx.error() + a null state,
+// which read_line_decision_service_json escalates to an exception only under --strict_parse, so that is
+// what this test asserts. Under AddressSanitizer the out-of-bounds access happens before any error is
+// raised, so the unpatched parser fails here either way.
+//
+// The parser is driven directly rather than through vwtest::parse_dsjson because it throws part-way
+// through, after the SAX handler has already taken examples from the pool. That helper only hands the
+// examples back on the success path, so the test owns them here and returns them on both paths.
+TEST(ParseDsjson, CcbOutcomesCountExceedsSlotsIsRejected)
+{
+  std::string json_text = R"(
+{
+  "c":{
+      "_multi": [ { "b_": "1" }, { "b_": "2" } ],
+      "_slots":[ { "test": 4 }, { "other": 6 } ]
+  },
+  "_outcomes":[
+    { "_label_cost": 2, "_o": [], "_a": 1, "_p": 0.25 },
+    { "_label_cost": 4, "_o": [], "_a": [2, 1], "_p": [0.75, 0.25] },
+    { "_label_cost": 4, "_o": [], "_a": 1, "_p": 0.5 }
+  ]
+})";
+
+  auto vw = VW::initialize(
+      vwtest::make_args("--ccb_explore_adf", "--dsjson", "--chain_hash", "--strict_parse", "--no_stdin", "--quiet"));
+
+  VW::multi_ex examples;
+  examples.push_back(&VW::get_unused_example(vw.get()));
+  VW::parsers::json::decision_service_interaction interaction;
+
+  EXPECT_THROW(VW::parsers::json::read_line_decision_service_json<true>(*vw, examples, &json_text[0], json_text.size(),
+                   false, std::bind(VW::get_unused_example, vw.get()), &interaction),
+      VW::vw_exception);
+
+  VW::finish_example(*vw, examples);
+}
+
 TEST(ParseDsjson, SlatesDomParser)
 {
   std::string json_text = R"(
