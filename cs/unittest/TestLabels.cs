@@ -81,6 +81,81 @@ namespace cs_unittest
             }
         }
 
+
+        /// <summary>
+        /// Regression test for #4945. SimpleLabelUpdateExample wrote the importance weight to
+        /// example::weight, but VW::setup_example -- which the builder runs inside CreateExample --
+        /// reassigns that field from the simple-label reduction features, so the weight was
+        /// overwritten with the default of 1 before anything could read it back. StringLabel was
+        /// unaffected because the text parser writes the reduction feature directly.
+        /// </summary>
+        [TestMethod]
+        [TestCategory("Vowpal Wabbit")]
+        public void TestSimpleLabelRetainsWeight()
+        {
+            using (var vw = new VowpalWabbit("--quiet"))
+            using (var builder = new VowpalWabbitExampleBuilder(vw))
+            {
+                builder.ApplyLabel(new SimpleLabel { Label = 7f, Weight = 4f, Initial = 3f });
+
+                using (var example = builder.CreateExample())
+                {
+                    var read = (SimpleLabel)example.Label;
+                    Assert.AreEqual(7f, read.Label, "label");
+                    Assert.AreEqual(4f, read.Weight, "weight");
+                    Assert.AreEqual(3f, read.Initial, "initial");
+                }
+            }
+        }
+
+        /// <summary>
+        /// The consequence of the above: a weight that never reaches the learner trains as though
+        /// it were 1.0, so these two produced identical predictions before the fix.
+        /// </summary>
+        [TestMethod]
+        [TestCategory("Vowpal Wabbit")]
+        public void TestSimpleLabelWeightAffectsTraining()
+        {
+            Func<ILabel, float> train = label =>
+            {
+                using (var vw = new VowpalWabbit("--link logistic --loss_function logistic -b 18 --quiet"))
+                {
+                    using (var builder = new VowpalWabbitExampleBuilder(vw))
+                    {
+                        using (var ns = builder.AddNamespace('a'))
+                        {
+                            ns.AddFeature(vw.HashFeature("x", vw.HashSpace("a")), 1f);
+                        }
+
+                        builder.ApplyLabel(label);
+
+                        using (var example = builder.CreateExample())
+                        {
+                            vw.Learn(example);
+                        }
+                    }
+
+                    using (var scoreBuilder = new VowpalWabbitExampleBuilder(vw))
+                    {
+                        using (var ns = scoreBuilder.AddNamespace('a'))
+                        {
+                            ns.AddFeature(vw.HashFeature("x", vw.HashSpace("a")), 1f);
+                        }
+
+                        using (var scored = scoreBuilder.CreateExample())
+                        {
+                            return vw.Predict(scored, VowpalWabbitPredictionType.Scalar);
+                        }
+                    }
+                }
+            };
+
+            var heavy = train(new SimpleLabel { Label = 1f, Weight = 4f });
+            var light = train(new SimpleLabel { Label = 1f, Weight = 0.05f });
+
+            Assert.AreNotEqual(heavy, light,
+                "importance weight had no effect on training: both behaved as weight 1.0");
+        }
     }
 
     public class SimpleContext
