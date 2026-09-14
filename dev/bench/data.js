@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789347252372,
+  "lastUpdate": 1789347862136,
   "repoUrl": "https://github.com/VowpalWabbit/vowpal_wabbit",
   "entries": {
     "Benchmark": [
@@ -226776,6 +226776,150 @@ window.BENCHMARK_DATA = {
             "value": 10723835.146214273,
             "unit": "ns/iter",
             "extra": "iterations: 383\ncpu: 10722998.046997491 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jl@hunch.net",
+            "name": "John",
+            "username": "JohnLangford"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "63317862be157d30615236eb3154f55f1dfaf1d5",
+          "message": "docs: complete the 9.11.4 changelog entry before tagging (#4950)\n\nThree corrections found while preparing the release.\n\n1. 9.11.3 was never published. Its version bump landed on master but no tag,\n   GitHub release or package followed -- git tags stop at 9.11.2, the latest\n   GitHub release is 9.11.2, and PyPI's latest vowpalwabbit is 9.11.2. No\n   artifact containing its two advisory fixes was ever available to users, and\n   the reporter of #4945 was running a \"9.11.3-ci\" build rather than a release.\n   The entry now says so, and states that 9.11.4 supersedes it and carries its\n   fixes, so anyone on 9.11.2 upgrades straight to 9.11.4.\n\n2. The compare link pointed at a 9.11.3 tag that does not exist, which would\n   render as a broken link. It now diffs from 9.11.2, the last real release.\n\n3. Two fixes in this release were undocumented. Both merged between 9.11.3 and\n   the tag point, so tagging without this would ship them silently:\n\n   - the CCB _outcomes bound (#4946), which merged before the release commit\n   - the C# SimpleLabel weight fix (#4949), which merged after it\n\n   The second is worth documenting for users rather than just for the record:\n   the weight never reached the learner, so affected examples trained as though\n   weighted 1.0.\n\nNo released content changes; documentation only.\n\nClaude-Session: https://claude.ai/code/session_01EVprwZHP4KXAhsF6JGXK9k",
+          "timestamp": "2026-09-13T20:28:45-04:00",
+          "tree_id": "238a9ff9926a873a1712e5bb470b7dea13c007ad",
+          "url": "https://github.com/VowpalWabbit/vowpal_wabbit/commit/63317862be157d30615236eb3154f55f1dfaf1d5"
+        },
+        "date": 1789347859181,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_num_features)",
+            "value": 3840.6558227539062,
+            "unit": "ns",
+            "range": "± 102.4217773260433"
+          },
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_string_fts)",
+            "value": 5864.358909762635,
+            "unit": "ns",
+            "range": "± 188.35773569736597"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 1_feature)",
+            "value": 532.4661509195963,
+            "unit": "ns",
+            "range": "± 7.405064386258739"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 8_features)",
+            "value": 432.72657712300617,
+            "unit": "ns",
+            "range": "± 5.363378532283561"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_interactions)",
+            "value": 503374.5535714286,
+            "unit": "ns",
+            "range": "± 13966.23873348227"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_no_interactions)",
+            "value": 389809.5085592831,
+            "unit": "ns",
+            "range": "± 7522.238419812949"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_no_namespaces)",
+            "value": 388153.39898003475,
+            "unit": "ns",
+            "range": "± 7568.630518889758"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_interactions)",
+            "value": 498598.31194196426,
+            "unit": "ns",
+            "range": "± 3735.5436353624505"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_no_interactions)",
+            "value": 396751.66015625,
+            "unit": "ns",
+            "range": "± 9096.132189014093"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_interactions)",
+            "value": 2055580.6640625,
+            "unit": "ns",
+            "range": "± 21738.24836811888"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_no_interactions)",
+            "value": 821299.2098721591,
+            "unit": "ns",
+            "range": "± 20075.67347885324"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_no_namespaces)",
+            "value": 709091.4127604166,
+            "unit": "ns",
+            "range": "± 11821.144593320065"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_interactions)",
+            "value": 1746262.2349330357,
+            "unit": "ns",
+            "range": "± 24344.99277096978"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_no_interactions)",
+            "value": 721755.3580729166,
+            "unit": "ns",
+            "range": "± 9835.56742135606"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: few_features)",
+            "value": 2531.9532553354898,
+            "unit": "ns",
+            "range": "± 124.68309514560319"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: few_features)",
+            "value": 8969.012044270834,
+            "unit": "ns",
+            "range": "± 89.4102378529439"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: many_features)",
+            "value": 57926.90226236979,
+            "unit": "ns",
+            "range": "± 350.8037475318369"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: many_features)",
+            "value": 13882.685089111328,
+            "unit": "ns",
+            "range": "± 128.24496740177474"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: quadratic)",
+            "value": 2073898.690257353,
+            "unit": "ns",
+            "range": "± 41632.03377482081"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: simple)",
+            "value": 175539.47372436523,
+            "unit": "ns",
+            "range": "± 5332.1804712463045"
           }
         ]
       }
