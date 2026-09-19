@@ -53,53 +53,81 @@ npm run docs
 
 ### Release on npm
 
-The published tarball must contain the transpiled JavaScript under `dist/` **and** the
-emscripten output `dist/vw-wasm.js`. These come from two different builds, which is how
-0.0.9 shipped broken: the TypeScript step silently stopped running at publish time and
-only `vw-wasm.js` made it into the tarball, so `require('@vowpalwabbit/vowpalwabbit')`
-failed for every Node consumer (#4921).
+Publishing is automatic. Pushing a `wasm_v<version>` tag runs `.github/workflows/wasm.yml`,
+which builds the WASM artifact, transpiles the TypeScript, verifies the tarball and
+publishes to npm. There is no manual `npm publish` step and no npm token to store.
 
-Two guards now make that failure loud instead of silent:
+#### Why the guards exist
 
-- the `prepare` script runs `tsc` before both `npm pack` and `npm publish`. Do not
-  replace it with `prepublish`, which modern npm ignores at publish time -- that is the
-  exact regression that broke 0.0.9.
-- `npm run verify-package` packs the tarball and fails if anything `package.json` points
-  at is missing from it. It runs in CI on every pull request and again from
-  `prepublishOnly`, so a publish cannot proceed without it passing.
+The tarball needs output from **two different builds**: `dist/vw-wasm.js` from emscripten
+via cmake, and `dist/*.js` from `tsc`. 0.0.9 shipped with only the first, because the
+TypeScript step silently stopped running at publish time, so
+`require('@vowpalwabbit/vowpalwabbit')` failed for every Node consumer (#4921).
 
-Steps:
+Three things now prevent a repeat, and none of them need a human:
 
-1. Update the version in `package.json`.
-2. Build the WASM artifact so `dist/vw-wasm.js` exists and is current:
-   ```sh
-   emcmake cmake --preset wasm -G Ninja -DCMAKE_BUILD_TYPE=MinSizeRel
-   cmake --build build --target vw-wasm
-   ```
-   Skipping this publishes a stale `vw-wasm.js` -- the version table below will claim a
-   VW version the bundle does not actually contain.
-3. `npm install` (this runs `prepare`, transpiling `src/*.ts` into `dist/`).
-4. Run `npm run docs` and check in the new `documentation.md` if it has changed.
-5. Change all version references in `README.md`. Relative links stay broken until the
-   change is merged to master and the tag is cut.
-6. Add a row to the version table in `README.md` mapping the new npm version to the VW
-   version and tag.
-7. Verify the tarball before going any further:
-   ```sh
-   npm run verify-package
-   npm pack --dry-run          # eyeball the file list
-   ```
-   Confirm `dist/vw.js`, `dist/vwnode.js`, `dist/vwbrowser.js` and `dist/vw-wasm.js` are
-   all listed. If any are missing, stop -- publishing would break consumers.
-8. Commit the changes to master.
-9. Tag the release as `wasm_v<major>.<minor>.<patch>` (for example `wasm_v0.0.10`) and
-   push the tag.
-10. Publish: `npm publish --access public`. You need to be signed in to npm and have
-    access to the `vowpalwabbit` organisation.
-11. Smoke-test the published package from a clean directory, which is what actually
-    catches a bad tarball:
-    ```sh
-    cd $(mktemp -d) && npm init -y >/dev/null
-    npm install @vowpalwabbit/vowpalwabbit@<version>
-    node -e "require('@vowpalwabbit/vowpalwabbit'); console.log('ok')"
-    ```
+- the `prepare` script runs `tsc` before both `npm pack` and `npm publish`. Do not replace
+  it with `prepublish`, which modern npm ignores at publish time -- that is the exact
+  regression that broke 0.0.9.
+- `npm run verify-package` packs the tarball and fails if anything `package.json` points at
+  is missing. It runs in CI on every pull request and again before publishing.
+- after publishing, the workflow installs the published package from the registry in a
+  clean directory and requires it. A publish that "succeeds" but produces a broken package
+  fails the job.
+
+#### Authentication
+
+The workflow uses [npm trusted publishing](https://docs.npmjs.com/trusted-publishers).
+npm detects the GitHub OIDC environment and exchanges a short-lived token; there is no
+`NODE_AUTH_TOKEN`. Because the repository and package are both public, npm also generates
+provenance attestations automatically.
+
+The trusted publisher must be registered once, on npmjs.com under the package's Settings:
+
+- **Organization or user**: `VowpalWabbit`
+- **Repository**: `vowpal_wabbit`
+- **Workflow filename**: `wasm.yml`
+- **Environment**: leave empty (the job does not use a GitHub environment)
+
+The publisher binds to the workflow *file name*, so renaming `wasm.yml` or moving the
+publish job into another workflow breaks publishing until it is updated.
+
+Trusted publishing requires npm >= 11.5.1 and Node >= 22.14.0. Node 22 ships an older npm,
+so the workflow upgrades npm explicitly -- do not remove that step.
+
+#### Cutting a release
+
+1. Update `version` in `package.json`.
+2. Run `npm run docs` and check in `documentation.md` if it changed.
+3. Update version references in `README.md`, and add a row to the version table mapping the
+   new npm version to the VW version and tag.
+4. Commit to master.
+5. Tag `wasm_v<version>` (for example `wasm_v0.0.10`) and push the tag. That is the whole
+   publishing step.
+6. Watch the `Publish to npm` job in the tag's workflow run.
+
+The version in the tag must match `package.json`; the workflow checks this and fails
+otherwise, so a tag cannot publish a version nobody intended.
+
+#### The version table is a claim about the WASM binary
+
+The table in `README.md` maps each npm version to a VW version. That is only true if
+`dist/vw-wasm.js` was built from a commit containing that VW code. The workflow builds it
+from the tagged commit, so tag the commit you actually want to ship. Publishing from an
+artifact built elsewhere can ship a stale binary under a version number claiming otherwise.
+
+#### When it fails
+
+**Tag/version mismatch** -- the tag says one version and `package.json` another. Fix
+whichever is wrong; delete and re-push the tag if needed.
+
+**`npm error need auth` or a 401/403 on publish** -- the trusted publisher is not
+registered, or does not match this run. Check the organization, repository and workflow
+filename on npmjs.com.
+
+**`verify-package` reports missing files** -- the TypeScript build did not run, or
+`dist/vw-wasm.js` is absent from the build artifact. Publishing is refused; this is the
+guard working.
+
+**The tag built but nothing published** -- the publish job depends on the build job. If the
+build or tests failed, publishing is skipped by design.
