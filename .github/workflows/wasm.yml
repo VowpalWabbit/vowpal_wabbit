@@ -91,3 +91,9 @@ jobs:
         run: |
           npm install
           npm test
+      # 0.0.9 was published without its transpiled entry points, so every Node consumer
+      # got MODULE_NOT_FOUND (#4921). This packs the tarball exactly as `npm publish`
+      # would and fails if anything package.json points at is missing from it.
+      - name: Verify package contents
+        working-directory: wasm
+        run: npm run verify-package
