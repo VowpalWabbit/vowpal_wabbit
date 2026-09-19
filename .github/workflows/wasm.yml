@@ -133,13 +133,21 @@ jobs:
       # Trusted publishing needs npm >= 11.5.1 and Node >= 22.14.0. Node 22 ships an npm
       # older than that, so npm is upgraded explicitly rather than relying on the bundled
       # version.
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      # No `cache:` input is given, so setup-node restores nothing and there is no cache
+      # for an attacker to poison. zizmor's heuristic fires on the publishing-shaped
+      # trigger, not on any cache this job actually uses -- same as the build job above.
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0 # zizmor: ignore[cache-poisoning]
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org
+      # Trusted publishing needs npm >= 11.5.1, and Node 22 ships an older npm. Pinned to
+      # an exact version rather than a range so the toolchain is reproducible; bump it
+      # deliberately. zizmor flags any install outside a lockfile, which cannot apply to
+      # the package manager installing itself.
       - name: Use an npm that supports trusted publishing
+        # zizmor: ignore[adhoc-packages]
         run: |
-          npm install -g npm@^11
+          npm install -g npm@11.19.1
           npm --version
           node --version
       - name: Check the tag matches the package version
@@ -172,6 +180,9 @@ jobs:
         # No token: npm picks up the OIDC credentials from the id-token permission above.
         run: npm publish --access public
       - name: Confirm the published package loads
+        # Installing the freshly published package from the registry is the point of this
+        # step, so it cannot come from a lockfile.
+        # zizmor: ignore[adhoc-packages]
         shell: bash
         env:
           GIT_REF: ${{ github.ref }}
@@ -186,5 +197,7 @@ jobs:
           npm init -y >/dev/null
           # This is the check that would have caught 0.0.9: installing the published
           # tarball and requiring it, rather than trusting that publish succeeded.
+          # Installing the freshly published package from the registry is the point of
+          # this step, so it cannot come from a lockfile.
           npm install "@vowpalwabbit/vowpalwabbit@${version}"
           node -e "require('@vowpalwabbit/vowpalwabbit'); console.log('published package loads OK')"
