@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789855358458,
+  "lastUpdate": 1789855557227,
   "repoUrl": "https://github.com/VowpalWabbit/vowpal_wabbit",
   "entries": {
     "Benchmark": [
@@ -227292,6 +227292,150 @@ window.BENCHMARK_DATA = {
             "value": 7055643.514900412,
             "unit": "ns/iter",
             "extra": "iterations: 604\ncpu: 7055047.284768233 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jl@hunch.net",
+            "name": "John",
+            "username": "JohnLangford"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "da788d85b15f2fafc7a3069d598f299f994b3321",
+          "message": "fix(wasm): run the TypeScript build at publish time and verify the tarball (#4951)\n\n@vowpalwabbit/vowpalwabbit@0.0.9 was published without dist/vw.js,\ndist/vwnode.js and dist/vwbrowser.js, so every Node consumer got\nMODULE_NOT_FOUND on require(). 0.0.8 shipped all four dist files; confirmed by\ndiffing the two published tarballs.\n\nRoot cause is the lifecycle hook. package.json had:\n\n  \"prepublish\":     \"npm run build\",            <- tsc\n  \"prepublishOnly\": \"npm install && npm test\",  <- no build\n\nnpm deprecated \"prepublish\" for publish in npm 5 and dropped its remaining\ninstall-time behaviour in npm 9, so on a modern npm neither script ever ran tsc.\ndist/vw-wasm.js survived only because emscripten writes it directly, which is\nwhy exactly the TypeScript outputs went missing.\n\nUse \"prepare\", which npm runs before both pack and publish, and leave\nprepublishOnly for checks. Bump to 0.0.10; 0.0.9 is unusable on Node.\n\nAlso adds scripts/verify-package.js, which runs `npm pack --dry-run --json` --\nthe same prepare/prepack lifecycle a real publish uses -- and fails if anything\npackage.json points at is absent from the tarball. Wired into prepublishOnly and\ninto the wasm CI job, so this cannot be published broken again without an\nexplicit override.\n\nVerified both directions: with prepare removed and dist cleared the guard fails\nnaming the missing entry points; with the fix in place it regenerates dist via\ntsc and passes.\n\nThe npm release steps in wasm/developer_readme.md are rewritten to cover the\npart that was undocumented and that made the failure possible -- that the\ntarball needs output from two separate builds (tsc and emscripten), plus a\npost-publish smoke test from a clean directory.\n\nCloses #4921\n\nClaude-Session: https://claude.ai/code/session_01EVprwZHP4KXAhsF6JGXK9k",
+          "timestamp": "2026-09-19T17:38:32-04:00",
+          "tree_id": "8bc9d548d596a139538741ea9611fa13de769664",
+          "url": "https://github.com/VowpalWabbit/vowpal_wabbit/commit/da788d85b15f2fafc7a3069d598f299f994b3321"
+        },
+        "date": 1789855554455,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_num_features)",
+            "value": 3656.3061577933177,
+            "unit": "ns",
+            "range": "± 28.56660617962046"
+          },
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_string_fts)",
+            "value": 5548.403222220285,
+            "unit": "ns",
+            "range": "± 50.596791715452575"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 1_feature)",
+            "value": 527.9700074877057,
+            "unit": "ns",
+            "range": "± 5.196102875354502"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 8_features)",
+            "value": 422.9049171720232,
+            "unit": "ns",
+            "range": "± 5.455809099281873"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_interactions)",
+            "value": 496822.16796875,
+            "unit": "ns",
+            "range": "± 4346.291965123277"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_no_interactions)",
+            "value": 385575.85100446426,
+            "unit": "ns",
+            "range": "± 2395.7754433775435"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_no_namespaces)",
+            "value": 390367.919921875,
+            "unit": "ns",
+            "range": "± 2620.587386934007"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_interactions)",
+            "value": 495771.6145833333,
+            "unit": "ns",
+            "range": "± 4217.3545662030565"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_no_interactions)",
+            "value": 392531.9498697917,
+            "unit": "ns",
+            "range": "± 2337.5216514438957"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_interactions)",
+            "value": 2151675.5063657407,
+            "unit": "ns",
+            "range": "± 58530.725699098555"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_no_interactions)",
+            "value": 798869.5162259615,
+            "unit": "ns",
+            "range": "± 5356.026764167237"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_no_namespaces)",
+            "value": 697775.17578125,
+            "unit": "ns",
+            "range": "± 4537.355970328411"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_interactions)",
+            "value": 1721225,
+            "unit": "ns",
+            "range": "± 11464.100260709414"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_no_interactions)",
+            "value": 723156.2581380209,
+            "unit": "ns",
+            "range": "± 2098.377489621848"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: few_features)",
+            "value": 2472.928784688314,
+            "unit": "ns",
+            "range": "± 15.181001528445355"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: few_features)",
+            "value": 8951.363372802734,
+            "unit": "ns",
+            "range": "± 55.5611804399985"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: many_features)",
+            "value": 56015.873209635414,
+            "unit": "ns",
+            "range": "± 587.5622016076233"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: many_features)",
+            "value": 13768.441874186197,
+            "unit": "ns",
+            "range": "± 67.63919144003212"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: quadratic)",
+            "value": 1914490.9555288462,
+            "unit": "ns",
+            "range": "± 14281.273711400536"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: simple)",
+            "value": 158102.45768229166,
+            "unit": "ns",
+            "range": "± 1010.5511962499389"
           }
         ]
       }
