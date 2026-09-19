@@ -1,6 +1,6 @@
 {
   "name": "@vowpalwabbit/vowpalwabbit",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "wasm bindings for vowpal wabbit",
   "exports": {
     ".": {
@@ -36,9 +36,10 @@
     "typescript": "^5.0.4"
   },
   "scripts": {
-    "prepublish": "npm run build",
-    "prepublishOnly": "npm install && npm test",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm test && npm run verify-package",
     "build": "tsc",
+    "verify-package": "node scripts/verify-package.js",
     "test": "node ./node_modules/mocha/bin/mocha --delay",
     "docs": "jsdoc2md ./dist/vw*.js > documentation.md"
   },
