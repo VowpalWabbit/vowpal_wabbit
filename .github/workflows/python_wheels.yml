@@ -11,6 +11,9 @@ on:
       - master
       - 'releases/**'
       - rlos2023/test
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+      - '[0-9]+.[0-9]+.[0-9]+-*'
   pull_request:
     branches:
       - '*'
@@ -264,3 +267,92 @@ jobs:
         shell: bash
         run: |
           python -m pytest ./python/tests/ --ignore=python/tests/e2e_v2
+
+  # Publish to PyPI when a release tag is pushed.
+  #
+  # Authentication is keyless: PyPI issues a short-lived token in exchange for this run's
+  # GitHub OIDC token, validated against a trusted publisher registered for the project.
+  # There is no API token stored in this repository.
+  #
+  # See python/RELEASE.md for the publisher setup and failure modes.
+  publish_pypi:
+    name: Publish to PyPI
+    needs:
+      - cibuildwheel-build-linux
+      - cibuildwheel-build-linux-aarch64
+      - cibuildwheel-build-macos
+      - cibuildwheel-build-windows
+      - linux-python-sdist-bundle
+      - linux-python-sdist-build-test
+    # Tags only. This workflow also runs on branch pushes and pull requests, which must
+    # never publish.
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Scoped to this job so no other job in this workflow can mint an OIDC token.
+      id-token: write
+    steps:
+      # Every wheel job and the sdist job uploads its own artifact. Collect them all into
+      # one directory; PyPI wants the complete set published together.
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: cibw-wheels-*
+          path: dist
+          merge-multiple: true
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: python_source_distribution
+          path: dist
+      - name: Show what will be published
+        shell: bash
+        run: |
+          set -euo pipefail
+          ls -l dist
+          wheels=$(find dist -name '*.whl' | wc -l)
+          sdists=$(find dist -name '*.tar.gz' | wc -l)
+          echo "wheels=$wheels sdists=$sdists"
+          # Guard against publishing a partial set: a release missing a platform's wheels
+          # silently falls back to building from the sdist on those platforms, which for
+          # this project means a long compile or an outright failure for the user.
+          if [[ "$sdists" -ne 1 ]]; then
+            echo "::error::Expected exactly 1 sdist, found $sdists." >&2
+            exit 1
+          fi
+          if [[ "$wheels" -lt 20 ]]; then
+            echo "::error::Only $wheels wheels present; expected the full matrix (9.11.2 shipped 25)." >&2
+            exit 1
+          fi
+      - name: Check the tag matches the package version
+        shell: bash
+        env:
+          GIT_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          tag_version="${GIT_REF#refs/tags/}"
+          # Every artifact encodes the version in its filename.
+          sdist=$(find dist -name '*.tar.gz' -printf '%f\n')
+          file_version=$(echo "$sdist" | sed -E 's/^vowpalwabbit-(.+)\.tar\.gz$/\1/')
+          echo "tag=$tag_version sdist=$sdist parsed=$file_version"
+          if [[ "$tag_version" != "$file_version" ]]; then
+            echo "::error::Tag $tag_version does not match built version $file_version." >&2
+            exit 1
+          fi
+      - name: Publish
+        # No token: the action uses the OIDC credentials from the id-token permission.
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
+      - name: Confirm the published package installs
+        shell: bash
+        env:
+          GIT_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          version="${GIT_REF#refs/tags/}"
+          # PyPI's CDN is eventually consistent, so give the new files a moment.
+          sleep 60
+          python -m venv /tmp/verify_vw
+          . /tmp/verify_vw/bin/activate
+          # Installing from the index and importing is what actually proves the release
+          # is usable, rather than trusting that upload succeeded.
+          pip install "vowpalwabbit==${version}"
+          python -c "from vowpalwabbit import Workspace; print('published package imports OK')"
