@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789858291469,
+  "lastUpdate": 1789859014671,
   "repoUrl": "https://github.com/VowpalWabbit/vowpal_wabbit",
   "entries": {
     "Benchmark": [
@@ -227808,6 +227808,150 @@ window.BENCHMARK_DATA = {
             "value": 10462868.590000197,
             "unit": "ns/iter",
             "extra": "iterations: 400\ncpu: 10461722.800000075 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jl@hunch.net",
+            "name": "John",
+            "username": "JohnLangford"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "635b4d4eb48d8fa71501edff9b6c6771f4c3349f",
+          "message": "feat(ci): publish the .NET packages to nuget.org on tag via trusted publishing (#4953)\n\nThe NuGet packages are stranded at 9.3.0 while the project has released many\nversions past it. dotnet_nugets.yml built the packages on every release tag and\nthen only uploaded them as CI artifacts; actually publishing them was a manual\nstep documented as \"currently a manual process\", and it stopped happening.\n\nAdd a publish_nuget job so pushing a release tag publishes. Authentication is\nkeyless: the job requests a GitHub OIDC token and NuGet/login exchanges it with\nnuget.org for an API key valid for one hour and a single use, validated against a\ntrusted publishing policy bound to this repository and workflow file. There is no\nlong-lived API key to store or rotate, which also removes the 365-day expiry that\nwould otherwise become its own silent release failure.\n\nGuards, all automatic, since the point is to publish without a human in the loop:\n\n- runs only on refs/tags/, never on master pushes or pull requests\n- depends on the build and both test jobs, so a failed platform cannot produce a\n  partial publish\n- refuses to start unless all five .nupkg files are present\n- fails the job if any individual push fails. VowpalWabbit depends on the four\n  VowpalWabbit.runtime.<rid> packages, so publishing the combined package alone\n  would leave a broken release on nuget.org -- worse than publishing nothing\n- --skip-duplicate, so re-running a tag's workflow is a no-op rather than an error\n- id-token: write scoped to this job alone\n- fails loudly when NUGET_USER is unset instead of quietly skipping\n\nNote the trusted publishing scope must permit new packages, not just new versions:\nthe four VowpalWabbit.runtime.* IDs have never been published, so their first push\ncreates them. The narrower scope fails those four while the combined package\nsucceeds, which is exactly the partial publish above.\n\nAdds nuget/dotnet/RELEASE.md covering the policy fields, what the five packages\nare, that VowpalWabbit.JSON and VowpalWabbit.Parallel are not built here and\nremain at 9.3.0, and how to diagnose each failure mode -- including that the\npolicy binds to the workflow *file name*, so renaming this file breaks publishing\nuntil the policy is updated.\n\nRequires the NUGET_USER repository secret (the nuget.org profile name) and a\ntrusted publishing policy on nuget.org before the next tag.\n\nClaude-Session: https://claude.ai/code/session_01EVprwZHP4KXAhsF6JGXK9k",
+          "timestamp": "2026-09-19T18:26:56-04:00",
+          "tree_id": "10d9b1db7fd4255e5e63e233d85894bdaa3f0a0f",
+          "url": "https://github.com/VowpalWabbit/vowpal_wabbit/commit/635b4d4eb48d8fa71501edff9b6c6771f4c3349f"
+        },
+        "date": 1789859011629,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_num_features)",
+            "value": 4175.764745076497,
+            "unit": "ns",
+            "range": "± 58.54253742430962"
+          },
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_string_fts)",
+            "value": 5841.499501354289,
+            "unit": "ns",
+            "range": "± 222.9958514296214"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 1_feature)",
+            "value": 528.6998271942139,
+            "unit": "ns",
+            "range": "± 6.499877051938996"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 8_features)",
+            "value": 403.3622582753499,
+            "unit": "ns",
+            "range": "± 2.7845886087398575"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_interactions)",
+            "value": 507060.625,
+            "unit": "ns",
+            "range": "± 13405.798648773867"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_no_interactions)",
+            "value": 381790.07742745534,
+            "unit": "ns",
+            "range": "± 2554.3650110852586"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_no_namespaces)",
+            "value": 407566.8235085227,
+            "unit": "ns",
+            "range": "± 27385.75370872856"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_interactions)",
+            "value": 499267.1419270833,
+            "unit": "ns",
+            "range": "± 7059.1308231028015"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_no_interactions)",
+            "value": 379814.59209735575,
+            "unit": "ns",
+            "range": "± 2616.7455616914954"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_interactions)",
+            "value": 2032280.4966517857,
+            "unit": "ns",
+            "range": "± 14714.01427563268"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_no_interactions)",
+            "value": 802073.8839285715,
+            "unit": "ns",
+            "range": "± 12077.928428494446"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_no_namespaces)",
+            "value": 688580.52734375,
+            "unit": "ns",
+            "range": "± 6280.87609581131"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_interactions)",
+            "value": 1715635.5202414773,
+            "unit": "ns",
+            "range": "± 40554.56126215317"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_no_interactions)",
+            "value": 708312.5854492188,
+            "unit": "ns",
+            "range": "± 17956.81121942335"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: few_features)",
+            "value": 2414.4601821899414,
+            "unit": "ns",
+            "range": "± 18.38942100969354"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: few_features)",
+            "value": 8894.850463867188,
+            "unit": "ns",
+            "range": "± 33.43685663010803"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: many_features)",
+            "value": 56079.09464518229,
+            "unit": "ns",
+            "range": "± 329.78009203360995"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: many_features)",
+            "value": 13607.413155691964,
+            "unit": "ns",
+            "range": "± 62.51571528314105"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: quadratic)",
+            "value": 1946395.6901041667,
+            "unit": "ns",
+            "range": "± 21884.617141609717"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: simple)",
+            "value": 166515.95458984375,
+            "unit": "ns",
+            "range": "± 3246.5098477326883"
           }
         ]
       }
