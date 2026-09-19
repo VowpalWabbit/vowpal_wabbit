@@ -527,3 +527,139 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Push results to gh-pages branch
         run: git push 'https://VowpalWabbit:${{ secrets.GITHUB_TOKEN }}@github.com/VowpalWabbit/vowpal_wabbit.git' gh-pages:gh-pages
+
+  # Publish to nuget.org when a release tag is pushed.
+  #
+  # Authentication is keyless: NuGet/login exchanges this run's GitHub OIDC token for a
+  # short-lived API key, validated against the trusted publishing policy registered on
+  # nuget.org (owner VowpalWabbit, repo vowpal_wabbit, workflow dotnet_nugets.yml). There
+  # is no long-lived key to rotate or leak. NUGET_USER is only the nuget.org profile name,
+  # not a credential.
+  #
+  # See nuget/dotnet/RELEASE.md for the policy setup and what to do when this fails.
+  publish_nuget:
+    name: Publish to nuget.org
+    needs: [build_nuget_dotnet, test_nuget_dotnetcore, test_nuget_dotnetframework]
+    # Tags only. This workflow also runs on master pushes and pull requests, which must
+    # never publish. Fork pull requests cannot reach this in any case, since GitHub
+    # withholds OIDC from them.
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Scoped to this job alone so no other job in this workflow can mint an OIDC token.
+      id-token: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+          submodules: false
+          fetch-depth: 0
+      - name: Update git tags
+        run: git fetch --unshallow --tags --recurse-submodules=no
+      - name: Get version number
+        id: get_version
+        shell: bash
+        run: |
+          version=$(./utl/version_number.py)
+          if [[ ! "$version" =~ ^[0-9A-Za-z.+-]+$ ]]; then
+            echo "Refusing malformed version number: $version" >&2
+            exit 1
+          fi
+          echo "version=$version" >> $GITHUB_OUTPUT
+      - name: Check publishing is configured
+        id: preflight
+        shell: bash
+        env:
+          NUGET_USER: ${{ secrets.NUGET_USER }}
+        run: |
+          if [[ -z "$NUGET_USER" ]]; then
+            echo "::error::NUGET_USER is not set, so this tag will not be published to nuget.org."
+            echo "Set it to the nuget.org profile name that owns the trusted publishing policy"
+            echo "(Settings -> Secrets and variables -> Actions). See nuget/dotnet/RELEASE.md."
+            exit 1
+          fi
+      # Download every package the build produced. Each is a separate artifact.
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: VowpalWabbit.${{steps.get_version.outputs.version}}.nupkg
+          path: to_publish
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: VowpalWabbit.runtime.win-x64.${{steps.get_version.outputs.version}}.nupkg
+          path: to_publish
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: VowpalWabbit.runtime.linux-x64.${{steps.get_version.outputs.version}}.nupkg
+          path: to_publish
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: VowpalWabbit.runtime.osx-x64.${{steps.get_version.outputs.version}}.nupkg
+          path: to_publish
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: VowpalWabbit.runtime.osx-arm64.${{steps.get_version.outputs.version}}.nupkg
+          path: to_publish
+      - name: Verify all five packages are present
+        shell: bash
+        run: |
+          set -euo pipefail
+          ls -l to_publish
+          count=$(find to_publish -name '*.nupkg' | wc -l)
+          # VowpalWabbit plus four VowpalWabbit.runtime.<rid> packages. Publishing the
+          # combined package without its runtime packages would leave a broken release on
+          # nuget.org, so refuse to start rather than publish a subset.
+          if [[ "$count" -ne 5 ]]; then
+            echo "::error::Expected 5 .nupkg files to publish, found $count." >&2
+            exit 1
+          fi
+      # The key NuGet issues is valid for one hour and is single use, so this must sit
+      # immediately before the push.
+      - name: NuGet login (OIDC to short-lived API key)
+        id: login
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
+        with:
+          user: ${{ secrets.NUGET_USER }}
+      - name: Push packages
+        shell: bash
+        env:
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
+        run: |
+          set -euo pipefail
+          failed=0
+          for pkg in to_publish/*.nupkg; do
+            echo "::group::Pushing $pkg"
+            # --skip-duplicate makes re-running a tag's workflow a no-op rather than an
+            # error for versions already on nuget.org.
+            if ! dotnet nuget push "$pkg" \
+                 --api-key "$NUGET_API_KEY" \
+                 --source https://api.nuget.org/v3/index.json \
+                 --skip-duplicate; then
+              echo "::error::Failed to push $pkg"
+              failed=1
+            fi
+            echo "::endgroup::"
+          done
+          # Fail if any package failed. A partial publish is worse than none: consumers
+          # would get a VowpalWabbit package whose runtime dependencies do not exist.
+          if [[ "$failed" -ne 0 ]]; then
+            echo "::error::One or more packages failed to publish. The release is incomplete." >&2
+            exit 1
+          fi
+      - name: Confirm packages are live
+        shell: bash
+        env:
+          VERSION: ${{ steps.get_version.outputs.version }}
+        run: |
+          # nuget.org indexes asynchronously, so this is a best-effort confirmation that
+          # the push actually landed rather than a gate.
+          sleep 60
+          for id in vowpalwabbit vowpalwabbit.runtime.win-x64 vowpalwabbit.runtime.linux-x64 \
+                    vowpalwabbit.runtime.osx-x64 vowpalwabbit.runtime.osx-arm64; do
+            url="https://api.nuget.org/v3/registration5-semver1/${id}/index.json"
+            if curl -fsS "$url" | grep -q "\"${VERSION}\""; then
+              echo "  live: ${id} ${VERSION}"
+            else
+              echo "  not indexed yet (this is usually just lag): ${id} ${VERSION}"
+            fi
+          done
