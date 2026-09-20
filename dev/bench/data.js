@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1789867542302,
+  "lastUpdate": 1789868056397,
   "repoUrl": "https://github.com/VowpalWabbit/vowpal_wabbit",
   "entries": {
     "Benchmark": [
@@ -228324,6 +228324,150 @@ window.BENCHMARK_DATA = {
             "value": 7727273.612132572,
             "unit": "ns/iter",
             "extra": "iterations: 544\ncpu: 7726290.088235162 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jl@hunch.net",
+            "name": "John",
+            "username": "JohnLangford"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "13eae731a75066220c5e270adb8ca1dd7d9a857e",
+          "message": "feat(ci): publish the npm package on tag via trusted publishing (#4954)\n\n* feat(ci): publish the npm package on tag via trusted publishing\n\nThe WASM npm package went two security releases stale (0.0.9 maps to VW 9.11.1)\nand, when it was last published, shipped broken. Both are symptoms of the same\nthing: publishing was a manual sequence of steps that had to be performed\ncorrectly and silently was not.\n\nPush a wasm_v* tag and the package publishes. The workflow already built the\nemscripten artifact on master and pull requests; it now also runs on the\npackage's own tags, and a publish_npm job consumes the build artifact,\ntranspiles, verifies and publishes.\n\nAuthentication is keyless. npm detects the GitHub OIDC environment and exchanges\na short-lived token against a trusted publisher registered for the package, so\nthere is no NODE_AUTH_TOKEN and no long-lived npm token to store or rotate.\nRepository and package are both public, so npm also produces provenance\nattestations automatically.\n\nNote trusted publishing requires npm >= 11.5.1 and Node >= 22.14.0. Node 22 ships\nan older npm, so the job upgrades npm explicitly rather than relying on the\nbundled version.\n\nGuards, none of which need a human:\n\n- only wasm_v* tags publish; master pushes and pull requests never do\n- depends on the build job, so a failed build cannot publish\n- the tag version must match package.json, so a tag cannot publish a version\n  nobody intended\n- npm install runs prepare, so the TypeScript output is always rebuilt rather\n  than assumed present -- the 0.0.9 failure\n- verify-package runs before publishing\n- after publishing, the workflow installs the package from the registry in a\n  clean directory and requires it. A publish that \"succeeds\" but produces a\n  broken package now fails the job, which is what 0.0.9 needed and did not have\n- id-token: write scoped to the publish job alone\n\nThe build artifact is given an explicit name rather than the default, since the\npublish job now depends on it.\n\nwasm/developer_readme.md is rewritten for the automated flow: the trusted\npublisher fields, the npm/Node version requirement, each failure mode, and a note\nthat the README version table is a claim about which VW commit the WASM binary\nwas built from -- so the tagged commit is the one that ships.\n\nRequires registering the trusted publisher on npmjs.com (organization\nVowpalWabbit, repository vowpal_wabbit, workflow wasm.yml) before the next tag.\n\nClaude-Session: https://claude.ai/code/session_01EVprwZHP4KXAhsF6JGXK9k\n\n* fix(ci): satisfy zizmor in the npm publish job\n\nThe publish job tripped three zizmor audits:\n\n- cache-poisoning on setup-node. No `cache:` input is given, so it restores\n  nothing and there is no cache to poison; the heuristic fires on the\n  publishing-shaped trigger. Suppressed with the same reasoning, and in the same\n  place, as the build job's existing suppression.\n- adhoc-packages on the npm upgrade. Pinned to an exact version rather than a\n  range, so the toolchain is reproducible, and suppressed: the audit cannot apply\n  to the package manager installing itself.\n- adhoc-packages on the post-publish verification. Installing the freshly\n  published package from the registry is the entire point of that step, so it\n  cannot come from a lockfile.\n\nVerified locally with zizmor 1.29.0, the version CI pins. Worth noting the\nsuppression for a `run:` step has to sit on the step, not inline in the script --\nan inline comment is silently ignored, which is the placement problem the\nzizmor.yml comment already warns about.\n\nClaude-Session: https://claude.ai/code/session_01EVprwZHP4KXAhsF6JGXK9k",
+          "timestamp": "2026-09-19T21:01:13-04:00",
+          "tree_id": "ba302357f81d0cd40e1f8dacb009191dd063cead",
+          "url": "https://github.com/VowpalWabbit/vowpal_wabbit/commit/13eae731a75066220c5e270adb8ca1dd7d9a857e"
+        },
+        "date": 1789868054305,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_num_features)",
+            "value": 1658.4009329477947,
+            "unit": "ns",
+            "range": "± 13.08718495520698"
+          },
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_string_fts)",
+            "value": 2623.461176554362,
+            "unit": "ns",
+            "range": "± 27.335885568651744"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 1_feature)",
+            "value": 278.76660346984863,
+            "unit": "ns",
+            "range": "± 4.51074936377137"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 8_features)",
+            "value": 228.04037424234244,
+            "unit": "ns",
+            "range": "± 2.058388047295532"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_interactions)",
+            "value": 282438.9535757211,
+            "unit": "ns",
+            "range": "± 1303.6524691045945"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_no_interactions)",
+            "value": 215171.12943209134,
+            "unit": "ns",
+            "range": "± 1029.088917697107"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_no_namespaces)",
+            "value": 216515.47328404017,
+            "unit": "ns",
+            "range": "± 1873.1578800358027"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_interactions)",
+            "value": 279418.56863839284,
+            "unit": "ns",
+            "range": "± 1224.184562738484"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_no_interactions)",
+            "value": 221924.83520507812,
+            "unit": "ns",
+            "range": "± 4275.897543926626"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_interactions)",
+            "value": 1081065.9505208333,
+            "unit": "ns",
+            "range": "± 14599.594573359574"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_no_interactions)",
+            "value": 471760.1143973214,
+            "unit": "ns",
+            "range": "± 6160.78783297088"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_no_namespaces)",
+            "value": 418606.36160714284,
+            "unit": "ns",
+            "range": "± 4439.917642018426"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_interactions)",
+            "value": 938223.2142857143,
+            "unit": "ns",
+            "range": "± 9220.924087533202"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_no_interactions)",
+            "value": 426978.49469866074,
+            "unit": "ns",
+            "range": "± 3354.690740186208"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: few_features)",
+            "value": 1518.467374948355,
+            "unit": "ns",
+            "range": "± 24.17383651537588"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: few_features)",
+            "value": 6052.102762858073,
+            "unit": "ns",
+            "range": "± 74.68680731398656"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: many_features)",
+            "value": 22290.406545003254,
+            "unit": "ns",
+            "range": "± 127.6702841597604"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: many_features)",
+            "value": 8726.468607584635,
+            "unit": "ns",
+            "range": "± 75.84858364455295"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: quadratic)",
+            "value": 874284.4377790178,
+            "unit": "ns",
+            "range": "± 11831.110486734515"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: simple)",
+            "value": 79265.17682756696,
+            "unit": "ns",
+            "range": "± 1001.0374063739656"
           }
         ]
       }
