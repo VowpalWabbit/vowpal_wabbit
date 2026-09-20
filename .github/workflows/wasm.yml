@@ -5,6 +5,9 @@ on:
     branches:
       - master
       - 'releases/**'
+    # The npm package versions independently of VW itself, so it has its own tags.
+    tags:
+      - 'wasm_v*'
   pull_request:
     branches:
       - '*'
@@ -83,8 +86,11 @@ jobs:
           echo "Patched spdlog headers to remove SPDLOG_FMT_STRING wrapper"
       - name: Build
         run: cmake --build build --target vw-wasm
+      # Uploaded after the emscripten build (so dist/vw-wasm.js is present) and before
+      # npm install (so node_modules is not). The publish job consumes this.
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
+          name: wasm-npm-package
           path: wasm
       - name: Test
         working-directory: wasm
@@ -97,3 +103,101 @@ jobs:
       - name: Verify package contents
         working-directory: wasm
         run: npm run verify-package
+
+  # Publish @vowpalwabbit/vowpalwabbit to npm when a wasm_v* tag is pushed.
+  #
+  # Authentication is keyless: npm detects the GitHub OIDC environment and exchanges a
+  # short-lived token against the trusted publisher registered for the package. There is no
+  # NODE_AUTH_TOKEN and no long-lived npm token to store or rotate. Because the repository
+  # and package are both public, npm also generates provenance attestations automatically.
+  #
+  # See wasm/developer_readme.md for the trusted publisher setup and failure modes.
+  publish_npm:
+    name: Publish to npm
+    needs: job
+    # Only the package's own tags. This workflow also runs on master pushes and pull
+    # requests, which must never publish.
+    if: startsWith(github.ref, 'refs/tags/wasm_v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Scoped to this job so no other job in this workflow can mint an OIDC token.
+      id-token: write
+    steps:
+      # The build job's artifact already contains the emscripten output dist/vw-wasm.js,
+      # which cannot be rebuilt here without the full emscripten toolchain.
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: wasm-npm-package
+          path: wasm
+      # Trusted publishing needs npm >= 11.5.1 and Node >= 22.14.0. Node 22 ships an npm
+      # older than that, so npm is upgraded explicitly rather than relying on the bundled
+      # version.
+      # No `cache:` input is given, so setup-node restores nothing and there is no cache
+      # for an attacker to poison. zizmor's heuristic fires on the publishing-shaped
+      # trigger, not on any cache this job actually uses -- same as the build job above.
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0 # zizmor: ignore[cache-poisoning]
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      # Trusted publishing needs npm >= 11.5.1, and Node 22 ships an older npm. Pinned to
+      # an exact version rather than a range so the toolchain is reproducible; bump it
+      # deliberately. zizmor flags any install outside a lockfile, which cannot apply to
+      # the package manager installing itself.
+      - name: Use an npm that supports trusted publishing
+        # zizmor: ignore[adhoc-packages]
+        run: |
+          npm install -g npm@11.19.1
+          npm --version
+          node --version
+      - name: Check the tag matches the package version
+        working-directory: wasm
+        shell: bash
+        env:
+          GIT_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          tag="${GIT_REF#refs/tags/}"
+          tag_version="${tag#wasm_v}"
+          pkg_version=$(node -p "require('./package.json').version")
+          echo "tag=$tag tag_version=$tag_version package.json=$pkg_version"
+          # A mismatch would publish a version nobody tagged, or tag a version nobody
+          # published. Both have happened to this project in other ecosystems.
+          if [[ "$tag_version" != "$pkg_version" ]]; then
+            echo "::error::Tag $tag implies version $tag_version but package.json says $pkg_version." >&2
+            exit 1
+          fi
+      - name: Install and build
+        working-directory: wasm
+        # Runs the prepare script, transpiling src/*.ts into dist/. Without this the
+        # tarball would contain only the emscripten output -- the 0.0.9 failure (#4921).
+        run: npm install
+      - name: Verify the tarball has every declared entry point
+        working-directory: wasm
+        run: npm run verify-package
+      - name: Publish
+        working-directory: wasm
+        # No token: npm picks up the OIDC credentials from the id-token permission above.
+        run: npm publish --access public
+      - name: Confirm the published package loads
+        # Installing the freshly published package from the registry is the point of this
+        # step, so it cannot come from a lockfile.
+        # zizmor: ignore[adhoc-packages]
+        shell: bash
+        env:
+          GIT_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          tag="${GIT_REF#refs/tags/}"
+          version="${tag#wasm_v}"
+          # npm's registry is read-through-cached, so allow a moment for the new version.
+          sleep 30
+          workdir=$(mktemp -d)
+          cd "$workdir"
+          npm init -y >/dev/null
+          # This is the check that would have caught 0.0.9: installing the published
+          # tarball and requiring it, rather than trusting that publish succeeded.
+          # Installing the freshly published package from the registry is the point of
+          # this step, so it cannot come from a lockfile.
+          npm install "@vowpalwabbit/vowpalwabbit@${version}"
+          node -e "require('@vowpalwabbit/vowpalwabbit'); console.log('published package loads OK')"
