@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790119274794,
+  "lastUpdate": 1790119816384,
   "repoUrl": "https://github.com/VowpalWabbit/vowpal_wabbit",
   "entries": {
     "Benchmark": [
@@ -230616,6 +230616,150 @@ window.BENCHMARK_DATA = {
             "value": 10238353.808353541,
             "unit": "ns/iter",
             "extra": "iterations: 407\ncpu: 10237516.42506098 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jl@hunch.net",
+            "name": "John",
+            "username": "JohnLangford"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "74ab32d535f9652fbebf92da995711d9d38b88ce",
+          "message": "fix(ci): remove the --unshallow step from the NuGet publish job (#4959)\n\nThe 9.11.5 publish job died before reaching nuget.org:\n\n  fatal: --unshallow on a complete repository does not make sense\n\nThe step was copied from the build job, which checks out shallow and needs\n--unshallow before version_number.py will run. The publish job checks out with\nfetch-depth: 0, which is already a complete clone including tags, so the same\ncommand is invalid there.\n\nDrop the step. Verified against a real clone of the 9.11.5 tag: a complete\ncheckout yields \"9.11.5+3888ddaee\" from version_number.py, and --unshallow on\nthat same clone reproduces the fatal error exactly.\n\nA comment now records why the step must not be reinstated, since it looks like an\nomission next to the build job.\n\nClaude-Session: https://claude.ai/code/session_01EVprwZHP4KXAhsF6JGXK9k",
+          "timestamp": "2026-09-22T18:56:13-04:00",
+          "tree_id": "f97677acbf8d39bb3fb85c658ea974f82858d0e6",
+          "url": "https://github.com/VowpalWabbit/vowpal_wabbit/commit/74ab32d535f9652fbebf92da995711d9d38b88ce"
+        },
+        "date": 1790119813542,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_num_features)",
+            "value": 3650.967465914213,
+            "unit": "ns",
+            "range": "± 12.355578226880885"
+          },
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_string_fts)",
+            "value": 5764.785385131836,
+            "unit": "ns",
+            "range": "± 191.6976709550523"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 1_feature)",
+            "value": 538.7275695800781,
+            "unit": "ns",
+            "range": "± 6.439135929832402"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 8_features)",
+            "value": 423.44103200095043,
+            "unit": "ns",
+            "range": "± 2.8515414241379022"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_interactions)",
+            "value": 486071.2727864583,
+            "unit": "ns",
+            "range": "± 3066.8482548429934"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_no_interactions)",
+            "value": 387545.97486413043,
+            "unit": "ns",
+            "range": "± 9509.41191599161"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_no_namespaces)",
+            "value": 407332.2163426599,
+            "unit": "ns",
+            "range": "± 14802.252903422293"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_interactions)",
+            "value": 484072.9947916667,
+            "unit": "ns",
+            "range": "± 3580.4440445491196"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_no_interactions)",
+            "value": 379698.4016927083,
+            "unit": "ns",
+            "range": "± 4334.855617683389"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_interactions)",
+            "value": 2017191.099330357,
+            "unit": "ns",
+            "range": "± 24859.124478882615"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_no_interactions)",
+            "value": 783391.6782924107,
+            "unit": "ns",
+            "range": "± 10412.250022778131"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_no_namespaces)",
+            "value": 679937.9817708334,
+            "unit": "ns",
+            "range": "± 7657.403161532367"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_interactions)",
+            "value": 1709707.03125,
+            "unit": "ns",
+            "range": "± 17376.556960443413"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_no_interactions)",
+            "value": 699315.3620793269,
+            "unit": "ns",
+            "range": "± 11440.823033859888"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: few_features)",
+            "value": 2352.714729309082,
+            "unit": "ns",
+            "range": "± 17.56150244250801"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: few_features)",
+            "value": 8886.40856061663,
+            "unit": "ns",
+            "range": "± 43.78813509044981"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: many_features)",
+            "value": 56018.889973958336,
+            "unit": "ns",
+            "range": "± 271.3783011110436"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: many_features)",
+            "value": 13712.9052734375,
+            "unit": "ns",
+            "range": "± 93.55967534751525"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: quadratic)",
+            "value": 1975180.552455357,
+            "unit": "ns",
+            "range": "± 33135.0495562996"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: simple)",
+            "value": 161298.37890625,
+            "unit": "ns",
+            "range": "± 2024.1357662515559"
           }
         ]
       }
