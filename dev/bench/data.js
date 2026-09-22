@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790103488442,
+  "lastUpdate": 1790104080530,
   "repoUrl": "https://github.com/VowpalWabbit/vowpal_wabbit",
   "entries": {
     "Benchmark": [
@@ -229212,6 +229212,150 @@ window.BENCHMARK_DATA = {
             "value": 10159790.91084335,
             "unit": "ns/iter",
             "extra": "iterations: 415\ncpu: 10158866.327710493 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jl@hunch.net",
+            "name": "John",
+            "username": "JohnLangford"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "87ccd61e104d26a4f74f9a9e6a58f6a434471ffb",
+          "message": "fix(ci): report benchmark regressions without blocking merges (#4957)\n\nThe benchmark job compares against whatever the last master run stored, and\nmaster runs and pull request runs land on different machines from GitHub's\nstandard pool. That pool mixes CPU generations. A master baseline measured at\n3500 MHz against a pull request measured at 3219 MHz -- hardware differing in\nmore than clock speed -- moved these benchmarks by 1.5-1.9x with no code change.\n\nIt blocked both the 9.11.4 and 9.11.5 release pull requests. Neither contained a\nline of executable code: version.txt, CHANGELOG.md and 47 test reference files\nwhose only diff is the version string on line one. The 9.11.5 failure reproduced\nacross re-runs with near-identical numbers, so it was not noise. Master runs\nshowed no alerts throughout, because those compare master to master.\n\nA gate that fires on runner assignment rather than on code is not protecting\nanything. It teaches people to bypass it, and it was doing that on security\nreleases, which is precisely where a bypass habit is most expensive.\n\nThe alert still posts a comment on the pull request, so a genuine regression\nstays visible; it no longer stops the merge.\n\nFixing it properly means not comparing across machines: pinned hardware (larger\nor self-hosted runners, neither of which this org currently has) or building the\nbase and head binaries in one run and comparing them on the same machine. The\nlatter is the better answer but roughly doubles a job whose benchmark phase is\nalready 18 of its 25 minutes, so it is left as a separate decision.\n\nClaude-Session: https://claude.ai/code/session_01EVprwZHP4KXAhsF6JGXK9k",
+          "timestamp": "2026-09-22T14:33:13-04:00",
+          "tree_id": "51aad556fe0aeb636e8339f99289bb490e43d661",
+          "url": "https://github.com/VowpalWabbit/vowpal_wabbit/commit/87ccd61e104d26a4f74f9a9e6a58f6a434471ffb"
+        },
+        "date": 1790104077253,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_num_features)",
+            "value": 3925.14845904182,
+            "unit": "ns",
+            "range": "± 76.77614011837916"
+          },
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_string_fts)",
+            "value": 5846.532723563058,
+            "unit": "ns",
+            "range": "± 190.2476041454149"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 1_feature)",
+            "value": 528.3782482147217,
+            "unit": "ns",
+            "range": "± 6.377220636043207"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 8_features)",
+            "value": 421.9367567698161,
+            "unit": "ns",
+            "range": "± 4.610353805468069"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_interactions)",
+            "value": 497062.56760817306,
+            "unit": "ns",
+            "range": "± 5569.450562603416"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_no_interactions)",
+            "value": 387516.16559709824,
+            "unit": "ns",
+            "range": "± 2659.0089663111435"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_no_namespaces)",
+            "value": 384946.2890625,
+            "unit": "ns",
+            "range": "± 4128.478015356952"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_interactions)",
+            "value": 536903.935546875,
+            "unit": "ns",
+            "range": "± 21546.89572342001"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_no_interactions)",
+            "value": 392120.01953125,
+            "unit": "ns",
+            "range": "± 7775.204189455918"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_interactions)",
+            "value": 2033702.03125,
+            "unit": "ns",
+            "range": "± 26064.86662689514"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_no_interactions)",
+            "value": 806280.2669270834,
+            "unit": "ns",
+            "range": "± 7183.4699701740565"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_no_namespaces)",
+            "value": 697866.97265625,
+            "unit": "ns",
+            "range": "± 5618.109218369788"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_interactions)",
+            "value": 1703909.7786458333,
+            "unit": "ns",
+            "range": "± 25976.121625751"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_no_interactions)",
+            "value": 715307.1568080357,
+            "unit": "ns",
+            "range": "± 9214.454465169465"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: few_features)",
+            "value": 2419.9930572509766,
+            "unit": "ns",
+            "range": "± 16.203778057650883"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: few_features)",
+            "value": 8842.80517578125,
+            "unit": "ns",
+            "range": "± 67.33553270519698"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: many_features)",
+            "value": 56818.08878580729,
+            "unit": "ns",
+            "range": "± 526.2456471954924"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: many_features)",
+            "value": 13700.241902669271,
+            "unit": "ns",
+            "range": "± 86.11844358324514"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: quadratic)",
+            "value": 1975176.1568509615,
+            "unit": "ns",
+            "range": "± 15656.54898625626"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: simple)",
+            "value": 157682.88899739584,
+            "unit": "ns",
+            "range": "± 1417.506845623827"
           }
         ]
       }
