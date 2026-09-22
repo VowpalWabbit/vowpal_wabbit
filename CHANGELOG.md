@@ -3,6 +3,32 @@
 All notable changes to Vowpal Wabbit are documented in this file. For changes
 prior to this file's creation, see [GitHub Releases](https://github.com/VowpalWabbit/vowpal_wabbit/releases).
 
+## [9.11.5](https://github.com/VowpalWabbit/vowpal_wabbit/compare/9.11.4...9.11.5)
+
+A packaging release. It contains no library code changes: its purpose is to reach the
+package registries that 9.11.4 did not.
+
+9.11.4 was tagged and released on GitHub, but the .NET, Python and WASM packages were
+still published by hand, and were not. Those packages had drifted badly as a result --
+NuGet was last published at 9.3.0, PyPI at 9.11.2 -- so the security fixes in 9.11.3 and
+9.11.4 were unavailable to anyone installing from a package manager. Publishing now
+happens automatically when a release tag is pushed, so this release is the first to carry
+those fixes to package users.
+
+**If you install Vowpal Wabbit from pip or NuGet, this is the first release containing the
+security fixes from 9.11.3 and 9.11.4.** See those entries below for what they address.
+
+### Changed
+
+- Publish the .NET packages to nuget.org automatically on a release tag, using trusted
+  publishing rather than a stored API key (#4953)
+- Publish the npm WASM package automatically on a `wasm_v*` tag, and always run the
+  TypeScript build before publishing. 0.0.9 shipped without its transpiled entry points and
+  was unusable from Node (#4951, #4954)
+- Publish the Python wheels and source distribution to PyPI automatically on a release tag.
+  The macOS ARM wheels no longer need building by hand; CI has produced them since GitHub
+  added Apple Silicon runners (#4955)
+
 ## [9.11.4](https://github.com/VowpalWabbit/vowpal_wabbit/compare/9.11.2...9.11.4)
 
 Security patch release addressing three further model-loading vulnerabilities and
