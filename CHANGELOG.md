@@ -3,6 +3,28 @@
 All notable changes to Vowpal Wabbit are documented in this file. For changes
 prior to this file's creation, see [GitHub Releases](https://github.com/VowpalWabbit/vowpal_wabbit/releases).
 
+## [9.11.6](https://github.com/VowpalWabbit/vowpal_wabbit/compare/9.11.5...9.11.6)
+
+Identical in content to 9.11.5, which failed to publish.
+
+9.11.5 was the first release meant to reach the package registries automatically, and both
+publish jobs failed: the .NET job ran `git fetch --unshallow` against an already complete
+checkout and aborted before uploading, and the PyPI trusted publisher had been registered
+against `python_wheels.yaml` rather than `python_wheels.yml`, so the OIDC exchange found no
+matching publisher. Nothing was uploaded and nothing was left partially published; both
+failures were in the publish step itself.
+
+Publishing runs from the workflow file as it exists at the tagged commit, so neither fix
+could apply retroactively to the 9.11.5 tag. This release carries them.
+
+**If you install Vowpal Wabbit from pip or NuGet, this is the first release containing the
+security fixes from 9.11.3 and 9.11.4.** See those entries below for what they address.
+
+### Fixed
+
+- Remove the `--unshallow` step from the NuGet publish job, which fails on the complete
+  checkout that job uses (#4959)
+
 ## [9.11.5](https://github.com/VowpalWabbit/vowpal_wabbit/compare/9.11.4...9.11.5)
 
 A packaging release. It contains no library code changes: its purpose is to reach the
