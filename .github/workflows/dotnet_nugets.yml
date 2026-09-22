@@ -554,9 +554,13 @@ jobs:
         with:
           persist-credentials: false
           submodules: false
+          # A complete clone, including tags, which is what version_number.py needs.
+          # Do not add the build job's `git fetch --unshallow` step here: that exists
+          # because the build job checks out shallow, and --unshallow on an already
+          # complete repository fails with
+          #   fatal: --unshallow on a complete repository does not make sense
+          # which is exactly how the 9.11.5 publish died before it reached nuget.org.
           fetch-depth: 0
-      - name: Update git tags
-        run: git fetch --unshallow --tags --recurse-submodules=no
       - name: Get version number
         id: get_version
         shell: bash
