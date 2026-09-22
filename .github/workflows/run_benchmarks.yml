@@ -90,7 +90,30 @@ jobs:
           tool: 'googlecpp'
           output-file-path: benchmark_results.json
           alert-threshold: '150%'
-          fail-on-alert: true
+          # Report regressions, but do not block merges on them.
+          #
+          # The comparison is against whatever the last master run stored, and master runs
+          # and pull request runs land on different machines from GitHub's standard pool.
+          # That pool mixes CPU generations: a master baseline measured at 3500 MHz
+          # against a pull request measured at 3219 MHz, on hardware differing in more
+          # than clock, moved these benchmarks by 1.5-1.9x with no code change at all.
+          #
+          # This blocked the 9.11.4 and 9.11.5 release pull requests, neither of which
+          # contained a single line of executable code -- only version.txt, CHANGELOG.md
+          # and test reference files. Reproducibly, across re-runs. Meanwhile master runs
+          # showed no alerts, because those compare master to master.
+          #
+          # A gate that fires on runner assignment rather than on code is not protecting
+          # anything; it just teaches people to bypass it, and it was doing that on
+          # security releases. The alert still posts a comment on the pull request, so a
+          # real regression remains visible -- it simply no longer stops the merge.
+          #
+          # Fixing this properly means not comparing across machines: either pinned
+          # hardware (larger or self-hosted runners, neither of which this org currently
+          # has) or building both the base and head binaries in one run and comparing them
+          # on the same machine. The latter is the better answer but roughly doubles a job
+          # whose benchmark phase is already 18 of its 25 minutes.
+          fail-on-alert: false
           # A fork PR's GITHUB_TOKEN is read-only whatever the permissions block
           # says, so commenting can only ever 403 there.
           comment-on-alert: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
