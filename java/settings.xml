@@ -3,10 +3,14 @@
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
           https://maven.apache.org/xsd/settings-1.0.0.xsd">
           <servers>
+                  <!-- Must match <publishingServerId> in pom.xml.in. These are Central
+                       Portal user token credentials, generated at
+                       https://central.sonatype.com/usertoken. They are not the old OSSRH
+                       username and password, and not the Sonatype account login. -->
                   <server>
-                          <id>ossrh</id>
-                          <username>${ossrh.username}</username>
-                          <password>${ossrh.password}</password>
+                          <id>central</id>
+                          <username>${central.username}</username>
+                          <password>${central.password}</password>
                   </server>
           </servers>
 </settings>

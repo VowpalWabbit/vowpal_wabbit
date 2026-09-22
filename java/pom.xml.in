@@ -19,16 +19,6 @@
         <url>https://github.com/VowpalWabbit/vowpal_wabbit/tree/master</url>
     </scm>
 
-    <distributionManagement>
-        <snapshotRepository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </snapshotRepository>
-        <repository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-        </repository>
-    </distributionManagement>
 
     <licenses>
         <license>
@@ -277,15 +267,26 @@
                     </execution>
                 </executions>
             </plugin>
+            <!-- Publishes to Maven Central through the Central Portal. This replaces the
+                 nexus-staging-maven-plugin, which talked to the Nexus 2 API on
+                 oss.sonatype.org; OSSRH reached end of life on 2025-06-30 and was shut
+                 down, so that path no longer exists.
+
+                 publishingServerId must match a <server> entry in settings.xml holding a
+                 Central Portal user token (generated at
+                 https://central.sonatype.com/usertoken), not the old OSSRH credentials.
+
+                 autoPublish mirrors the previous autoReleaseAfterClose behaviour: the
+                 deployment publishes once validation passes, rather than waiting to be
+                 released by hand in a web UI. -->
             <plugin>
-                <groupId>org.sonatype.plugins</groupId>
-                <artifactId>nexus-staging-maven-plugin</artifactId>
-                <version>1.7.0</version>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <version>0.11.0</version>
                 <extensions>true</extensions>
                 <configuration>
-                    <serverId>ossrh</serverId>
-                    <nexusUrl>https://oss.sonatype.org/</nexusUrl>
-                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                    <publishingServerId>central</publishingServerId>
+                    <autoPublish>true</autoPublish>
                 </configuration>
             </plugin>
             <plugin>
