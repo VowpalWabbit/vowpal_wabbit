@@ -99,15 +99,41 @@ curl -sSL --fail --max-time 300 \
 NEW_SHA512="$(sha512_of "$ARCHIVE")"
 note "sha512: ${NEW_SHA512}"
 
+# Clone upstream, not the fork. A fork that has not been synced for a while still carries
+# the *old* port, and a branch cut from it produces a pull request that reverts whatever
+# landed in between -- versions/baseline.json conflicts on the same lines, and the diff
+# looks like it is redoing someone else's update. Upstream is the only safe base.
+#
+# The push to the fork then makes every upstream commit since the fork last synced newly
+# reachable in the fork, and some of those touch .github/workflows. GitHub refuses that
+# from an OAuth token without the `workflow` scope -- as a plain 422 on `gh repo sync`,
+# and (less helpfully) as a bare 404 on ref creation. `gh auth status` shows the scopes.
+note "checking gh has the scopes this needs"
+if [[ "$DRY_RUN" -eq 0 ]]; then
+  if ! gh auth status 2>&1 | grep -q "Token scopes:.*'workflow'"; then
+    echo "" >&2
+    echo "gh is authenticated without the 'workflow' scope." >&2
+    echo "Pushing a branch to your vcpkg fork also pushes the upstream commits the fork is" >&2
+    echo "missing, some of which touch .github/workflows, and GitHub rejects that." >&2
+    echo "" >&2
+    echo "  gh auth refresh -h github.com -s workflow" >&2
+    echo "" >&2
+    echo "then re-run this script." >&2
+    exit 1
+  fi
+fi
+
 note "forking and cloning ${VCPKG_REPO} (shallow)"
 if [[ "$DRY_RUN" -eq 0 ]]; then
   gh repo fork "$VCPKG_REPO" --clone=false >/dev/null 2>&1 || true
   VCPKG_FORK="$(gh api /user --jq .login)/vcpkg"
-  git clone -q --depth 1 "https://github.com/${VCPKG_FORK}.git" "${WORK}/vcpkg"
+  gh repo sync "$VCPKG_FORK" --source "$VCPKG_REPO" >/dev/null
+  git clone -q --depth 1 "https://github.com/${VCPKG_REPO}.git" "${WORK}/vcpkg"
   cd "${WORK}/vcpkg"
+  git remote add fork "https://github.com/${VCPKG_FORK}.git"
   git checkout -q -b "vowpal-wabbit-${VERSION}"
 else
-  note "[dry run] would fork, clone and branch vowpal-wabbit-${VERSION}"
+  note "[dry run] would sync the fork, clone ${VCPKG_REPO} and branch vowpal-wabbit-${VERSION}"
 fi
 
 PORT="ports/vowpal-wabbit"
@@ -173,7 +199,7 @@ PY
       commit -q -m "[vowpal-wabbit] x-add-version"
 
   note "pushing and opening the pull request"
-  git push -q origin "vowpal-wabbit-${VERSION}"
+  git push -q fork "vowpal-wabbit-${VERSION}"
   gh pr create --repo "$VCPKG_REPO" \
     --base master --head "$(gh api /user --jq .login):vowpal-wabbit-${VERSION}" \
     --title "[vowpal-wabbit] Update to ${VERSION}" \
@@ -183,7 +209,7 @@ Source: https://github.com/${UPSTREAM}/releases/tag/${VERSION}
 
 - version bumped, \`port-version\` reset
 - SHA512 updated for the ${VERSION} source archive
-- existing port patches confirmed to still apply
+- existing port patches confirmed to still apply against the ${VERSION} source
 - \`x-add-version\` run in a separate commit"
 else
   note "[dry run] would set version=${VERSION}, reset port-version, update SHA512,"
