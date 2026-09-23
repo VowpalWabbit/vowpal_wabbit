@@ -203,3 +203,111 @@ jobs:
             java/target/vw-jni-*.jar
             !java/target/vw-jni-*-test*.jar
           retention-days: 400
+
+  # Deploy to Maven Central on a release tag.
+  #
+  # Unlike the NuGet, npm and PyPI pipelines, this cannot be keyless: Maven Central has no
+  # OIDC trusted publishing, so it needs a Portal user token and a GPG signing key stored as
+  # secrets. Use a dedicated release-only signing key, so it can be revoked without
+  # collateral.
+  #
+  # This job reuses the assemble job's work rather than rebuilding: the JAR needs native
+  # libraries for five platforms, which only CI produces, and that is what made publishing
+  # by hand impractical.
+  #
+  # See java/RELEASE.md for the setup and failure modes.
+  publish_maven:
+    name: Publish to Maven Central
+    needs: [assemble, build-static-test]
+    # Tags only. This workflow also runs on workflow_dispatch, which must not publish.
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+          submodules: false
+      - name: Check publishing is configured
+        shell: bash
+        env:
+          CENTRAL_TOKEN_USERNAME: ${{ secrets.CENTRAL_TOKEN_USERNAME }}
+          CENTRAL_TOKEN_PASSWORD: ${{ secrets.CENTRAL_TOKEN_PASSWORD }}
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          missing=""
+          for v in CENTRAL_TOKEN_USERNAME CENTRAL_TOKEN_PASSWORD GPG_PRIVATE_KEY GPG_PASSPHRASE; do
+            [[ -z "${!v}" ]] && missing="$missing $v"
+          done
+          if [[ -n "$missing" ]]; then
+            echo "::error::Maven Central publishing is not configured. Missing secrets:$missing"
+            echo "See java/RELEASE.md. Until these are set, release tags will not reach Maven Central."
+            exit 1
+          fi
+      # setup-java writes the settings.xml server entry, so the token never has to be
+      # interpolated into a shell command. The id must match <publishingServerId> in the pom.
+      - name: Set up JDK 11
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+          server-id: central
+          server-username: CENTRAL_TOKEN_USERNAME
+          server-password: CENTRAL_TOKEN_PASSWORD
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg-passphrase: GPG_PASSPHRASE
+      - name: Download all native libraries
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: vw-jni-native-*
+          path: java/target/bin/natives/
+          merge-multiple: true
+      - name: Verify all platforms present
+        shell: bash
+        run: |
+          for platform in linux_64 linux_arm64 macos_arm64 macos_x64 windows_64; do
+            count=$(find "java/target/bin/natives/$platform" -type f 2>/dev/null | wc -l)
+            if [[ "$count" -eq 0 ]]; then
+              echo "::error::Missing native library for $platform; refusing to publish a partial JAR."
+              exit 1
+            fi
+            echo "OK: $platform ($count files)"
+          done
+      - name: Check the tag matches version.txt
+        shell: bash
+        env:
+          GIT_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          tag="${GIT_REF#refs/tags/}"
+          version=$(tr -d '[:space:]' < version.txt)
+          echo "tag=$tag version.txt=$version"
+          if [[ "$tag" != "$version" ]]; then
+            echo "::error::Tag $tag does not match version.txt ($version)."
+            exit 1
+          fi
+          # A -SNAPSHOT version cannot be released to Central, and silently produces a
+          # snapshot deployment rather than a release.
+          if [[ "$version" == *-SNAPSHOT ]]; then
+            echo "::error::version.txt is a SNAPSHOT ($version); Central will not accept it."
+            exit 1
+          fi
+      - name: Generate pom.xml
+        shell: bash
+        run: |
+          VERSION=$(tr -d '[:space:]' < version.txt)
+          sed -e "s/@PACKAGE_VERSION@/$VERSION/g" \
+              -e "s/@VW_JNI_NATIVES_DIR@/linux_64/g" \
+              java/pom.xml.in > java/pom.xml
+      # performRelease activates the release-sign-artifacts profile, which signs every
+      # artifact. Central rejects unsigned deployments.
+      - name: Deploy to Maven Central
+        working-directory: java
+        env:
+          CENTRAL_TOKEN_USERNAME: ${{ secrets.CENTRAL_TOKEN_USERNAME }}
+          CENTRAL_TOKEN_PASSWORD: ${{ secrets.CENTRAL_TOKEN_PASSWORD }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: mvn -B deploy -DskipTests=true -DperformRelease=true
