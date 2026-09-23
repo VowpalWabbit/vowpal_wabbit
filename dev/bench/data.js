@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790182344996,
+  "lastUpdate": 1790183078211,
   "repoUrl": "https://github.com/VowpalWabbit/vowpal_wabbit",
   "entries": {
     "Benchmark": [
@@ -231504,6 +231504,150 @@ window.BENCHMARK_DATA = {
             "value": 10290254.271144386,
             "unit": "ns/iter",
             "extra": "iterations: 402\ncpu: 10289385.472636545 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jl@hunch.net",
+            "name": "John",
+            "username": "JohnLangford"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8f4c6e85407c88e3b07738fcfe8f57fda4ef0ff9",
+          "message": "feat(ci): deploy vw-jni to Maven Central on a release tag (#4961)\n\nMaven Central sits at 9.9.0, older than every other ecosystem, because\npublishing stopped being possible when OSSRH shut down and was never restored.\n#4958 migrated the pom to the Central Portal; this makes the deployment happen.\n\nThe assemble job already builds the multi-platform JAR from the five native\nlibraries the matrix produces. A publish_maven job now takes the same inputs and\nruns a signed `mvn deploy` on a release tag.\n\nAutomating rather than documenting a manual path was the pragmatic choice: the\nJAR bundles native libraries for five platforms that only CI builds, so a manual\ndeployment means downloading five artifacts, placing them by hand and running a\nsigned deploy locally. That is what the process had degenerated into.\n\nThis is the one pipeline that cannot be keyless. NuGet, npm and PyPI all use OIDC\ntrusted publishing and store no credentials; Maven Central has no equivalent, so\nthis needs a Portal user token and a GPG signing key as secrets. That is a real\ndifference in risk -- anyone who can change a workflow on master can sign as this\nproject -- so java/RELEASE.md calls for a dedicated release-only key that can be\nrevoked without collateral.\n\nGuards, all automatic:\n\n- only tags publish; workflow_dispatch does not\n- depends on assemble and the static test job\n- refuses to publish unless all five platforms' native libraries are present,\n  rather than shipping a JAR that fails at runtime on the missing one\n- the tag must match version.txt, and a -SNAPSHOT version is rejected outright\n  since Central would otherwise take it as a snapshot deployment\n- fails with an explicit list of missing secrets rather than skipping quietly\n\nThe Portal token is written into settings.xml by setup-java rather than being\ninterpolated into a shell command.\n\nAdds java/RELEASE.md covering the secrets, how to generate a signing key and\npublish its public half to a keyserver, and each failure mode. Central does not\nrequire key continuity, so a fresh key is fine and whoever held the pre-2025\nOSSRH key is irrelevant.\n\nUntested against the live service; the first release through this path should be\nwatched.\n\nClaude-Session: https://claude.ai/code/session_01EVprwZHP4KXAhsF6JGXK9k",
+          "timestamp": "2026-09-23T12:27:16-04:00",
+          "tree_id": "be0a7050ab87363d5680880538f3e08a363a1ab8",
+          "url": "https://github.com/VowpalWabbit/vowpal_wabbit/commit/8f4c6e85407c88e3b07738fcfe8f57fda4ef0ff9"
+        },
+        "date": 1790183075271,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_num_features)",
+            "value": 3867.5313176335517,
+            "unit": "ns",
+            "range": "± 131.4070799397756"
+          },
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_string_fts)",
+            "value": 5945.396359761556,
+            "unit": "ns",
+            "range": "± 74.26020097680231"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 1_feature)",
+            "value": 576.2348492940267,
+            "unit": "ns",
+            "range": "± 4.360113557086071"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 8_features)",
+            "value": 422.2771827991192,
+            "unit": "ns",
+            "range": "± 2.4076266425040456"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_interactions)",
+            "value": 491469.30588942306,
+            "unit": "ns",
+            "range": "± 3460.723142711671"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_no_interactions)",
+            "value": 378024.7000558036,
+            "unit": "ns",
+            "range": "± 2419.4630869142657"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_no_namespaces)",
+            "value": 391346.96751644736,
+            "unit": "ns",
+            "range": "± 8693.002548021714"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_interactions)",
+            "value": 495425.3841145833,
+            "unit": "ns",
+            "range": "± 4690.929727226018"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_no_interactions)",
+            "value": 383457.4235026042,
+            "unit": "ns",
+            "range": "± 5774.389760157085"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_interactions)",
+            "value": 2005298.076923077,
+            "unit": "ns",
+            "range": "± 15721.776850456483"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_no_interactions)",
+            "value": 805128.1684027778,
+            "unit": "ns",
+            "range": "± 15692.960922118822"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_no_namespaces)",
+            "value": 666518.0594308035,
+            "unit": "ns",
+            "range": "± 6294.628029841591"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_interactions)",
+            "value": 1761563.7408088236,
+            "unit": "ns",
+            "range": "± 31619.01116263797"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_no_interactions)",
+            "value": 694948.5416666666,
+            "unit": "ns",
+            "range": "± 6020.316665540669"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: few_features)",
+            "value": 2432.662800380162,
+            "unit": "ns",
+            "range": "± 17.44143950390374"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: few_features)",
+            "value": 8857.84169514974,
+            "unit": "ns",
+            "range": "± 58.94093057681829"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: many_features)",
+            "value": 56150.0497000558,
+            "unit": "ns",
+            "range": "± 481.0065162690794"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: many_features)",
+            "value": 13700.014343261719,
+            "unit": "ns",
+            "range": "± 62.732531998266175"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: quadratic)",
+            "value": 1937808.9564732143,
+            "unit": "ns",
+            "range": "± 21162.13658102124"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: simple)",
+            "value": 164276.67125355115,
+            "unit": "ns",
+            "range": "± 3985.2343205788015"
           }
         ]
       }
