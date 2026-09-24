@@ -126,7 +126,13 @@ fi
 note "forking and cloning ${VCPKG_REPO} (shallow)"
 if [[ "$DRY_RUN" -eq 0 ]]; then
   gh repo fork "$VCPKG_REPO" --clone=false >/dev/null 2>&1 || true
-  VCPKG_FORK="$(gh api /user --jq .login)/vcpkg"
+  # A fork does not have to keep the upstream name -- this account's is "vcpkg-vw" -- and
+  # `gh repo fork` just says "already exists" without telling you what it is called. Ask the
+  # API instead: the request follows the rename redirect and .full_name comes back as the
+  # name the fork has now. Pushing through a stale redirect happens to work, but the
+  # redirect disappears the moment anything else claims the old name.
+  VCPKG_FORK="$(gh api "repos/$(gh api /user --jq .login)/vcpkg" --jq .full_name)"
+  note "fork: ${VCPKG_FORK}"
   gh repo sync "$VCPKG_FORK" --source "$VCPKG_REPO" >/dev/null
   git clone -q --depth 1 "https://github.com/${VCPKG_REPO}.git" "${WORK}/vcpkg"
   cd "${WORK}/vcpkg"
@@ -201,7 +207,7 @@ PY
   note "pushing and opening the pull request"
   git push -q fork "vowpal-wabbit-${VERSION}"
   gh pr create --repo "$VCPKG_REPO" \
-    --base master --head "$(gh api /user --jq .login):vowpal-wabbit-${VERSION}" \
+    --base master --head "${VCPKG_FORK%%/*}:vowpal-wabbit-${VERSION}" \
     --title "[vowpal-wabbit] Update to ${VERSION}" \
     --body "Updates the vowpal-wabbit port to ${VERSION}.
 
