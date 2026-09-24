@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790220879643,
+  "lastUpdate": 1790221298296,
   "repoUrl": "https://github.com/VowpalWabbit/vowpal_wabbit",
   "entries": {
     "Benchmark": [
@@ -232536,6 +232536,150 @@ window.BENCHMARK_DATA = {
             "value": 10477443.49253703,
             "unit": "ns/iter",
             "extra": "iterations: 402\ncpu: 10476749.796019824 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jl@hunch.net",
+            "name": "John",
+            "username": "JohnLangford"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c0619ae2b83d6f74629de1d5c267df95bc2ee607",
+          "message": "fix(release): look up the vcpkg fork's real name instead of assuming it (#4963)\n\nA fork does not have to keep the upstream repository's name. This account's\nis JohnLangford/vcpkg-vw, and `gh repo fork` only says \"already exists\"\nwithout saying what the fork is actually called, so the hardcoded\n<login>/vcpkg was wrong.\n\nIt worked while opening the 9.11.6 port PR only because GitHub still serves a\nrename redirect for the old name, and that redirect goes away as soon as\nanything else claims it. Ask the API for .full_name -- the request follows the\nredirect -- and use that for the sync, the push remote and the pull request\nhead.\n\nClaude-Session: https://claude.ai/code/session_01EVprwZHP4KXAhsF6JGXK9k",
+          "timestamp": "2026-09-23T23:09:21-04:00",
+          "tree_id": "36016e6a129dbfcc618dfa620c204c5c083c9ad1",
+          "url": "https://github.com/VowpalWabbit/vowpal_wabbit/commit/c0619ae2b83d6f74629de1d5c267df95bc2ee607"
+        },
+        "date": 1790221295787,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_num_features)",
+            "value": 2756.912340436663,
+            "unit": "ns",
+            "range": "± 18.687564466017157"
+          },
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_string_fts)",
+            "value": 4457.963507516043,
+            "unit": "ns",
+            "range": "± 25.229482034546333"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 1_feature)",
+            "value": 444.36391830444336,
+            "unit": "ns",
+            "range": "± 3.372010785947839"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 8_features)",
+            "value": 330.4355841416579,
+            "unit": "ns",
+            "range": "± 2.300160148480987"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_interactions)",
+            "value": 402329.41545758926,
+            "unit": "ns",
+            "range": "± 2186.5122728179895"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_no_interactions)",
+            "value": 300534.78515625,
+            "unit": "ns",
+            "range": "± 2212.045141867493"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_no_namespaces)",
+            "value": 301462.5846354167,
+            "unit": "ns",
+            "range": "± 1430.7453271743148"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_interactions)",
+            "value": 401889.61838942306,
+            "unit": "ns",
+            "range": "± 1255.4533156983016"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_no_interactions)",
+            "value": 302325.0174386161,
+            "unit": "ns",
+            "range": "± 1899.8417737853501"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_interactions)",
+            "value": 1445992.734375,
+            "unit": "ns",
+            "range": "± 7711.232128959604"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_no_interactions)",
+            "value": 591763.1068638393,
+            "unit": "ns",
+            "range": "± 4426.572360869657"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_no_namespaces)",
+            "value": 555102.197265625,
+            "unit": "ns",
+            "range": "± 10099.78284728271"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_interactions)",
+            "value": 1241059.9158653845,
+            "unit": "ns",
+            "range": "± 3028.2101888822835"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_no_interactions)",
+            "value": 545397.6692708334,
+            "unit": "ns",
+            "range": "± 4130.175566487237"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: few_features)",
+            "value": 1982.5097401936848,
+            "unit": "ns",
+            "range": "± 14.300920353759"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: few_features)",
+            "value": 7243.224217341496,
+            "unit": "ns",
+            "range": "± 26.731309467734633"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: many_features)",
+            "value": 38225.518798828125,
+            "unit": "ns",
+            "range": "± 331.43258680102343"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: many_features)",
+            "value": 11013.982645670572,
+            "unit": "ns",
+            "range": "± 52.72799443715535"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: quadratic)",
+            "value": 1528125.0558035714,
+            "unit": "ns",
+            "range": "± 7818.863842677451"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: simple)",
+            "value": 118235.16031901042,
+            "unit": "ns",
+            "range": "± 791.4938881086753"
           }
         ]
       }
