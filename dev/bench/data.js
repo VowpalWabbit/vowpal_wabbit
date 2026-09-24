@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790217492843,
+  "lastUpdate": 1790218063672,
   "repoUrl": "https://github.com/VowpalWabbit/vowpal_wabbit",
   "entries": {
     "Benchmark": [
@@ -232020,6 +232020,150 @@ window.BENCHMARK_DATA = {
             "value": 10232713.364963528,
             "unit": "ns/iter",
             "extra": "iterations: 411\ncpu: 10231836.953771055 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jl@hunch.net",
+            "name": "John",
+            "username": "JohnLangford"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a53f8c0b7cf2a77c5673aa6da1af5140d8ed7d37",
+          "message": "feat: add a post-release script for vcpkg and Docker (#4962)\n\n* feat: add a post-release script for vcpkg and Docker\n\nEvery other destination publishes from CI: nuget.org, PyPI and Maven Central from\nthe release tag, npm from its own wasm_v* tag, Homebrew and conda-forge from bots.\nvcpkg and Docker live in other repositories, so driving them from this\nrepository's workflows would mean storing a cross-repository token -- the kind of\nstored credential the trusted-publishing setup exists to avoid. Running them from\na maintainer's machine uses that maintainer's own gh auth instead.\n\nThe script dispatches the docker-images release build and prepares the vcpkg port\nupdate: hashes the source archive, bumps the version, resets port-version, updates\nthe SHA512, runs x-add-version in its own commit, and opens the pull request.\n\nIt defaults to a dry run and only acts with --yes, since both steps write to\nrepositories this project does not own.\n\nIt deliberately stops rather than guessing when a port patch no longer applies.\nThat is not hypothetical: fix-fmt-header.patch does not apply to 9.11.6, because\n5f3aecba8 landed those exact edits upstream, so the patch is now obsolete and\nshould be deleted rather than rewritten. The script leaves the prepared branch on\ndisk and says so.\n\nVerified by dry-running against the real 9.11.6 tag, and by applying the version,\nport-version and SHA512 edits to the live port files: the resulting vcpkg.json is\nvalid and the SHA512 matches the published archive. Writing it also turned up that\nthe docker workflow's input is named build_tag rather than tag, which the first\ndraft got wrong.\n\nClaude-Session: https://claude.ai/code/session_01EVprwZHP4KXAhsF6JGXK9k\n\n* fix(release): cut the vcpkg branch from upstream, not from a stale fork\n\nPreparing the 9.11.6 port update by hand turned up two problems with the\nvcpkg half of this script.\n\nCloning the fork means inheriting whatever the fork last synced. Both of the\nexisting vcpkg forks on this account sit at March 2026, when the port was\nstill 9.10.0#4, so a branch cut from there would have produced a pull request\nthat undid the 9.11.2 update and conflicted with master on the same lines of\nversions/baseline.json. Clone microsoft/vcpkg instead and push the branch to\nthe fork through a second remote.\n\nPushing to a fork that is behind also pushes every upstream commit it is\nmissing, and some of those touch .github/workflows. GitHub rejects that from\na token without the `workflow` scope -- as a 422 from `gh repo sync` and, more\nconfusingly, as a bare 404 from the ref-creation API. Check the scope up front\nand say how to fix it rather than failing halfway through.\n\nClaude-Session: https://claude.ai/code/session_01EVprwZHP4KXAhsF6JGXK9k",
+          "timestamp": "2026-09-23T22:13:17-04:00",
+          "tree_id": "220f06f0a8067de59f3e7a60142cff3d3943aea4",
+          "url": "https://github.com/VowpalWabbit/vowpal_wabbit/commit/a53f8c0b7cf2a77c5673aa6da1af5140d8ed7d37"
+        },
+        "date": 1790218058865,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_num_features)",
+            "value": 3752.593700702374,
+            "unit": "ns",
+            "range": "± 34.65248774317478"
+          },
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_string_fts)",
+            "value": 5655.887767246792,
+            "unit": "ns",
+            "range": "± 53.86103717726805"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 1_feature)",
+            "value": 536.2104733784994,
+            "unit": "ns",
+            "range": "± 4.428459230152619"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 8_features)",
+            "value": 425.64340273539227,
+            "unit": "ns",
+            "range": "± 4.687536754247232"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_interactions)",
+            "value": 491431.3736979167,
+            "unit": "ns",
+            "range": "± 4128.654581564467"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_no_interactions)",
+            "value": 378350.78473772324,
+            "unit": "ns",
+            "range": "± 1959.7591159323604"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_no_namespaces)",
+            "value": 382538.38239397324,
+            "unit": "ns",
+            "range": "± 2280.2297009998547"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_interactions)",
+            "value": 501395.8812040441,
+            "unit": "ns",
+            "range": "± 9599.954487538442"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_no_interactions)",
+            "value": 382647.9475350216,
+            "unit": "ns",
+            "range": "± 10989.486912595868"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_interactions)",
+            "value": 1978227.9897836538,
+            "unit": "ns",
+            "range": "± 11422.614572800107"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_no_interactions)",
+            "value": 785708.7960379465,
+            "unit": "ns",
+            "range": "± 3636.5449409322505"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_no_namespaces)",
+            "value": 686408.5658482143,
+            "unit": "ns",
+            "range": "± 4745.4717127197855"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_interactions)",
+            "value": 1694762.3604910714,
+            "unit": "ns",
+            "range": "± 6628.704329615059"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_no_interactions)",
+            "value": 702945.3841145834,
+            "unit": "ns",
+            "range": "± 6910.969595423018"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: few_features)",
+            "value": 2441.350555419922,
+            "unit": "ns",
+            "range": "± 20.083166692244212"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: few_features)",
+            "value": 8802.64663696289,
+            "unit": "ns",
+            "range": "± 56.63313802165092"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: many_features)",
+            "value": 55264.532063802086,
+            "unit": "ns",
+            "range": "± 584.7025016699012"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: many_features)",
+            "value": 13793.197631835938,
+            "unit": "ns",
+            "range": "± 61.980321177398515"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: quadratic)",
+            "value": 1966442.5603693181,
+            "unit": "ns",
+            "range": "± 29228.98683005845"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: simple)",
+            "value": 155690.46020507812,
+            "unit": "ns",
+            "range": "± 940.6763046732838"
           }
         ]
       }
