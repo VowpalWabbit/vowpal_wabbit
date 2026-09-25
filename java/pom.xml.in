@@ -276,9 +276,17 @@
                  Central Portal user token (generated at
                  https://central.sonatype.com/usertoken), not the old OSSRH credentials.
 
-                 autoPublish mirrors the previous autoReleaseAfterClose behaviour: the
-                 deployment publishes once validation passes, rather than waiting to be
-                 released by hand in a web UI. -->
+                 autoPublish is deliberately false for now. Maven Central is the only
+                 destination here with no undo: a published version cannot be replaced or
+                 withdrawn, only superseded. This pipeline has never run against the live
+                 service, so the first tag that exercises it stops at VALIDATED and waits
+                 for a human to press Publish in the Portal. waitUntil defaults to
+                 "validated", so the job still fails if Central rejects the bundle:
+                 signatures, missing sources/javadoc jars and bad coordinates all surface
+                 in CI rather than after the fact.
+
+                 Once a release has gone through cleanly, flip this to true and publishing
+                 becomes fully automatic like the others. -->
             <plugin>
                 <groupId>org.sonatype.central</groupId>
                 <artifactId>central-publishing-maven-plugin</artifactId>
@@ -286,7 +294,8 @@
                 <extensions>true</extensions>
                 <configuration>
                     <publishingServerId>central</publishingServerId>
-                    <autoPublish>true</autoPublish>
+                    <autoPublish>false</autoPublish>
+                    <deploymentName>vw-jni @PACKAGE_VERSION@</deploymentName>
                 </configuration>
             </plugin>
             <plugin>
