@@ -57,6 +57,11 @@ Publishing is automatic. Pushing a `wasm_v<version>` tag runs `.github/workflows
 which builds the WASM artifact, transpiles the TypeScript, verifies the tarball and
 publishes to npm. There is no manual `npm publish` step and no npm token to store.
 
+> **Blocked as of 9.11.7.** The automatic path needs a trusted publisher registered on
+> npmjs.com, and registering one needs admin rights on the `@vowpalwabbit` scope, which
+> nobody currently reachable has. See [publishing by hand](#publishing-by-hand-while-the-scope-is-blocked)
+> below, and delete that section once the registration exists.
+
 #### Why the guards exist
 
 The tarball needs output from **two different builds**: `dist/vw-wasm.js` from emscripten
@@ -108,6 +113,55 @@ so the workflow upgrades npm explicitly -- do not remove that step.
 
 The version in the tag must match `package.json`; the workflow checks this and fails
 otherwise, so a tag cannot publish a version nobody intended.
+
+#### Publishing by hand while the scope is blocked
+
+Until the trusted publisher can be registered, releases go out with a local `npm publish`.
+The risk this reintroduces is precisely the one that broke 0.0.9: publishing whatever
+happens to be sitting in `dist/`. Do not skip step 3.
+
+1. Check out the tag you intend to ship, clean. Not a dirty working tree, and not master
+   if master has moved on:
+
+   ```sh
+   git checkout wasm_v<version>
+   git status --porcelain   # must be empty
+   ```
+
+2. Build both halves from that commit, following the build instructions above. `dist/`
+   must end up with `vw-wasm.js` from emscripten *and* the `tsc` output.
+
+3. Verify the tarball before pushing anything anywhere:
+
+   ```sh
+   npm run verify-package
+   ```
+
+   This is the same check CI runs. It packs the tarball and fails if anything
+   `package.json` points at is missing.
+
+4. Publish:
+
+   ```sh
+   npm publish --access public --provenance=false
+   ```
+
+   Provenance attestation is off because it is generated from the CI OIDC environment and
+   is not available locally.
+
+5. Verify what the registry actually serves, from an empty directory:
+
+   ```sh
+   cd "$(mktemp -d)"
+   npm install @vowpalwabbit/vowpalwabbit@<version>
+   node -e "require('@vowpalwabbit/vowpalwabbit'); console.log('ok')"
+   ```
+
+   0.0.9 published successfully and was broken for every consumer. A green `npm publish`
+   is not evidence that the package works.
+
+Steps 3 and 5 are what the workflow does around the publish. Doing one without the other
+is how the last manual release failed.
 
 #### The version table is a claim about the WASM binary
 
