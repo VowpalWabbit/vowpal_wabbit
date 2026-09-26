@@ -37,7 +37,8 @@ so it can be revoked without affecting anything else.
 The alternative is not "publish manually" — it is "do not publish". The JAR bundles native
 libraries for five platforms, which only CI builds, so a manual deployment means downloading
 five artifacts, placing them by hand, and running a signed `mvn deploy` locally. That is
-what the process degenerated into, and Maven Central sat at 9.9.0 as a result.
+what the process degenerated into. Maven Central sat at 9.9.0 until 9.11.1 was pushed by
+hand in March 2026, and nothing has reached it since.
 
 ## Required secrets
 

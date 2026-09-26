@@ -8,11 +8,12 @@ prior to this file's creation, see [GitHub Releases](https://github.com/VowpalWa
 No library code changes. This release exists to exercise the Maven Central pipeline, which
 was built for 9.11.6 but has never run against the live service.
 
-Java artifacts have been stuck at 9.9.0 since OSSRH shut down on 2025-06-30. The
-replacement publishes through the Sonatype Central Portal and is wired to the release tag,
-but an untested credentialed pipeline is not the same as a working one, and Maven Central
-is the only destination here that cannot be undone: a published version can be superseded
-but never withdrawn. So this release uploads and stops at VALIDATED, and going live is one
+Maven Central is at 9.11.1, pushed by hand in March 2026, and has received nothing since;
+before that it sat at 9.9.0 from the OSSRH shutdown on 2025-06-30. The replacement
+publishes through the Sonatype Central Portal and is wired to the release tag, but an
+untested credentialed pipeline is not the same as a working one, and Central is the only
+destination here that cannot be undone: a published version can be superseded, never
+withdrawn. So this release uploads and stops at VALIDATED, and going live is one
 deliberate click.
 
 npm is unaffected by this tag. The WASM package versions independently and publishes from
