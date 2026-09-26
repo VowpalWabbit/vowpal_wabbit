@@ -36,6 +36,9 @@ jobs:
       # Two of the release checklist's boxes were "did you write a changelog entry" and
       # "does its compare link point at a tag that exists". Both are checkable, and a
       # check on every pull request is worth more than a box someone ticks.
+      #
+      # prepare-release.sh requires the entry as an argument, so a release it prepared
+      # arrives with one already. This is the backstop for a hand-made release commit.
       - name: Changelog covers version.txt
         shell: bash
         run: |
@@ -46,7 +49,7 @@ jobs:
             exit 1
           fi
           if grep -q '^TODO:' /tmp/section.md; then
-            echo "::error file=CHANGELOG.md::The $version changelog entry is still the skeleton left by prepare-release.sh."
+            echo "::error file=CHANGELOG.md::The $version changelog entry still has a TODO placeholder in it."
             exit 1
           fi
           echo "CHANGELOG.md has a $version section, $(wc -l < /tmp/section.md) lines."

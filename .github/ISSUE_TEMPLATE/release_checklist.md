@@ -16,24 +16,27 @@ Reference: [Release-Process wiki page](https://github.com/VowpalWabbit/vowpal_wa
 
 ### 1. Prepare
 
+Write the changelog entry first — what changed, in the terms a user of this release would
+care about, covering everything since the last **released** version (not necessarily the
+last version bump). Then:
+
 ```sh
-utl/prepare-release.sh X.Y.Z          # dry run
-utl/prepare-release.sh X.Y.Z --yes    # branch, edit, commit, push, open the PR
+utl/prepare-release.sh X.Y.Z --notes notes.md          # dry run
+utl/prepare-release.sh X.Y.Z --notes notes.md --yes    # branch, commit, push, open the PR
 ```
 
-Bumps `version.txt`, rewrites the test reference files that embed the version string,
-inserts a changelog skeleton, and refuses to run if the previous version was never tagged
-(which is what would make the compare link point at nothing).
+The entry is a required argument, not a box to tick afterwards, so there is no way to run
+this and end up with a release that has nothing to say for itself. Omit `--notes` and it
+opens `$EDITOR`. It also bumps `version.txt`, rewrites the test reference files that embed
+the version string, and refuses to run if the previous version was never tagged — which is
+what would make the compare link point at nothing.
 
-- [ ] `utl/prepare-release.sh X.Y.Z --yes`
-- [ ] **Write the changelog entry.** Cover everything since the last *released* version,
-      which is not always the last version bump. CI fails while the skeleton `TODO:` is
-      still there.
+- [ ] `utl/prepare-release.sh X.Y.Z --notes <file> --yes`
 - [ ] Release PR merged, CI green on master
 
-`lint.release-consistency` checks on every PR that the changelog has a section for
-`version.txt`, that it is not still the skeleton, and that its compare link names a tag
-that exists. Those used to be three boxes here.
+`lint.release-consistency` is the backstop for a hand-made release commit: on every PR it
+checks that the changelog has a section for `version.txt`, that it has no `TODO` left in
+it, and that its compare link names a tag that exists. Those used to be three boxes here.
 
 ### 2. Tag
 
