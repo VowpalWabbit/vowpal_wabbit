@@ -1,0 +1,71 @@
+name: GitHub Release
+
+# Creating the GitHub release was a manual step, and 9.11.3 is what that costs: the version
+# was bumped and merged, the tag was never pushed, no release was ever cut, and two security
+# fixes reached nobody for three weeks before anyone noticed.
+#
+# The tag is the trigger for every publish pipeline, so by the time this runs the decision
+# to release has already been made. Cutting the release from the tag is bookkeeping, and
+# bookkeeping is what CI is for.
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+      - '[0-9]+.[0-9]+.[0-9]+-*'
+
+permissions:
+  contents: read
+
+jobs:
+  github_release:
+    name: Create the GitHub release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      # Needed to create the release. Scoped to this job alone.
+      contents: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+          submodules: false
+
+      - name: Check the tag matches version.txt
+        shell: bash
+        env:
+          GIT_REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          tag="${GIT_REF#refs/tags/}"
+          version="$(tr -d '[:space:]' < version.txt)"
+          if [[ "$tag" != "$version" ]]; then
+            echo "::error::Tag $tag does not match version.txt ($version)."
+            exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_ENV"
+
+      # The changelog is the release notes. Keeping one source means they cannot disagree,
+      # and it makes the missing-changelog-entry case loud instead of silent.
+      - name: Extract the changelog section
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 utl/changelog_section.py "$tag" > release-notes.md
+          echo "--- release notes ---"
+          cat release-notes.md
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "::notice::Release $tag already exists; updating its notes."
+            gh release edit "$tag" --repo "$GITHUB_REPOSITORY" --notes-file release-notes.md
+          else
+            gh release create "$tag" --repo "$GITHUB_REPOSITORY" \
+              --title "$tag" --notes-file release-notes.md --verify-tag
+          fi
+          echo "::notice::https://github.com/$GITHUB_REPOSITORY/releases/tag/$tag"

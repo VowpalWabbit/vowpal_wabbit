@@ -23,6 +23,61 @@ permissions:
   contents: read
 
 jobs:
+  release-consistency:
+    name: lint.release-consistency
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+          submodules: false
+
+      # Two of the release checklist's boxes were "did you write a changelog entry" and
+      # "does its compare link point at a tag that exists". Both are checkable, and a
+      # check on every pull request is worth more than a box someone ticks.
+      - name: Changelog covers version.txt
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(tr -d '[:space:]' < version.txt)"
+          if ! python3 utl/changelog_section.py "$version" > /tmp/section.md; then
+            echo "::error file=CHANGELOG.md::version.txt says $version but CHANGELOG.md has no section for it."
+            exit 1
+          fi
+          if grep -q '^TODO:' /tmp/section.md; then
+            echo "::error file=CHANGELOG.md::The $version changelog entry is still the skeleton left by prepare-release.sh."
+            exit 1
+          fi
+          echo "CHANGELOG.md has a $version section, $(wc -l < /tmp/section.md) lines."
+
+      # A compare link against a version that was never tagged renders as a dead link on
+      # the release page. 9.11.3 was bumped and merged without ever being tagged, so this
+      # is a real shape of mistake rather than a hypothetical one.
+      - name: Compare link points at a tag that exists
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(tr -d '[:space:]' < version.txt)"
+          line="$(grep -m1 -F "## [$version](" CHANGELOG.md || true)"
+          if [[ -z "$line" ]]; then
+            echo "No bracketed heading for $version; nothing to check."
+            exit 0
+          fi
+          prev="$(printf '%s' "$line" | sed -n 's|.*/compare/\([^/]*\)\.\.\..*|\1|p')"
+          if [[ -z "$prev" ]]; then
+            echo "No compare link on the $version heading; nothing to check."
+            exit 0
+          fi
+          echo "Compare link: $prev...$version"
+          if git ls-remote --tags "https://github.com/$GITHUB_REPOSITORY.git" "refs/tags/$prev" \
+             | grep -q "refs/tags/$prev"; then
+            echo "Tag $prev exists."
+          else
+            echo "::error file=CHANGELOG.md::Compare link points at $prev, which is not a tag; that version was never released."
+            exit 1
+          fi
+
   python-formatting:
     name: lint.python.formatting
     runs-on: ubuntu-latest
