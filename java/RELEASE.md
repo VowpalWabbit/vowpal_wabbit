@@ -1,8 +1,28 @@
 # Publishing vw-jni to Maven Central
 
-Publishing is automatic. Pushing a release tag runs `.github/workflows/java-publish.yml`,
-which builds the JNI library for all five platforms, assembles the multi-platform JAR, and
-deploys it to Maven Central through the Sonatype Central Portal.
+Pushing a release tag runs `.github/workflows/java-publish.yml`, which builds the JNI
+library for all five platforms, assembles the multi-platform JAR, and uploads it to Maven
+Central through the Sonatype Central Portal.
+
+## One manual step, for now
+
+The upload currently stops short of going live. `autoPublish` is `false` in
+`java/pom.xml.in`, so the deployment reaches **VALIDATED** and then waits for someone to
+press **Publish** at <https://central.sonatype.com/publishing/deployments>.
+
+This is not an oversight. Maven Central is the only destination in this project with no
+undo: a published version cannot be replaced or withdrawn, only superseded by a new one.
+PyPI, NuGet and npm all allow yanking a bad release; Central does not. Since this pipeline
+had never run against the live service, the first release to use it holds at the point
+where a mistake is still free.
+
+The job is not merely "upload and hope" in this mode. `waitUntil` defaults to `validated`,
+so Central's checks run before the job reports success, and signature failures, missing
+sources or javadoc jars, and bad coordinates all fail CI rather than surfacing afterwards.
+What the manual step buys is a look at the actual artifact list before it becomes permanent.
+
+**Once a release has gone through cleanly, set `autoPublish` to `true`** and this becomes
+as hands-off as the other pipelines.
 
 ## Why this is the one pipeline with stored secrets
 
@@ -17,7 +37,8 @@ so it can be revoked without affecting anything else.
 The alternative is not "publish manually" — it is "do not publish". The JAR bundles native
 libraries for five platforms, which only CI builds, so a manual deployment means downloading
 five artifacts, placing them by hand, and running a signed `mvn deploy` locally. That is
-what the process degenerated into, and Maven Central sat at 9.9.0 as a result.
+what the process degenerated into. Maven Central sat at 9.9.0 until 9.11.1 was pushed by
+hand in March 2026, and nothing has reached it since.
 
 ## Required secrets
 

@@ -3,6 +3,35 @@
 All notable changes to Vowpal Wabbit are documented in this file. For changes
 prior to this file's creation, see [GitHub Releases](https://github.com/VowpalWabbit/vowpal_wabbit/releases).
 
+## [9.11.7](https://github.com/VowpalWabbit/vowpal_wabbit/compare/9.11.6...9.11.7)
+
+No library code changes. This release exists to exercise the Maven Central pipeline, which
+was built for 9.11.6 but has never run against the live service.
+
+Maven Central is at 9.11.1, pushed by hand in March 2026, and has received nothing since;
+before that it sat at 9.9.0 from the OSSRH shutdown on 2025-06-30. The replacement
+publishes through the Sonatype Central Portal and is wired to the release tag, but an
+untested credentialed pipeline is not the same as a working one, and Central is the only
+destination here that cannot be undone: a published version can be superseded, never
+withdrawn. So this release uploads and stops at VALIDATED, and going live is one
+deliberate click.
+
+npm is unaffected by this tag. The WASM package versions independently and publishes from
+its own `wasm_v*` tag; that pipeline is currently blocked on registering a trusted
+publisher for the `@vowpalwabbit` scope, so it is being published by hand in the meantime.
+See `wasm/developer_readme.md`.
+
+### Changed
+
+- Maven Central deployments stop at VALIDATED rather than publishing automatically, until
+  the pipeline has completed one clean release (`java/pom.xml.in`)
+
+### Added
+
+- `utl/post-release.sh`, which dispatches the Docker image build and opens the vcpkg port
+  pull request, the two destinations that live in other repositories (#4962, #4963)
+- Documented manual npm publishing steps for as long as the scope is blocked
+
 ## [9.11.6](https://github.com/VowpalWabbit/vowpal_wabbit/compare/9.11.5...9.11.6)
 
 Identical in content to 9.11.5, which failed to publish.

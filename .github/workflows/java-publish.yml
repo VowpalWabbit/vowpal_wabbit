@@ -304,10 +304,22 @@ jobs:
               java/pom.xml.in > java/pom.xml
       # performRelease activates the release-sign-artifacts profile, which signs every
       # artifact. Central rejects unsigned deployments.
-      - name: Deploy to Maven Central
+      #
+      # This uploads and validates but does not publish: autoPublish is false in
+      # pom.xml.in while the pipeline is still unproven, so the deployment waits in the
+      # Portal for a human. See java/RELEASE.md.
+      - name: Upload to Maven Central
         working-directory: java
         env:
           CENTRAL_TOKEN_USERNAME: ${{ secrets.CENTRAL_TOKEN_USERNAME }}
           CENTRAL_TOKEN_PASSWORD: ${{ secrets.CENTRAL_TOKEN_PASSWORD }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: mvn -B deploy -DskipTests=true -DperformRelease=true
+      # A green job is easy to read as "published". While autoPublish is false it is
+      # not, and nothing else in the run says so.
+      - name: Say what still has to happen
+        shell: bash
+        run: |
+          if grep -q '<autoPublish>false</autoPublish>' java/pom.xml.in; then
+            echo "::notice::Uploaded and validated, NOT published. Press Publish at https://central.sonatype.com/publishing/deployments to make this release live."
+          fi
