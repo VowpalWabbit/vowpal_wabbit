@@ -29,7 +29,13 @@ TIMEOUT = 30
 UA = {"User-Agent": "vw-verify-release"}
 
 # Registry states. "pending" is not a failure: bots and mirrors take their own time.
-LIVE, MISSING, PENDING, ERROR, SKIPPED = "live", "missing", "pending", "error", "skipped"
+LIVE, MISSING, PENDING, ERROR, SKIPPED = (
+    "live",
+    "missing",
+    "pending",
+    "error",
+    "skipped",
+)
 
 
 def _get(url):
@@ -89,7 +95,11 @@ def check_maven(version, _npm):
     try:
         _, body = _get(f"{base}/maven-metadata.xml")
         text = body.decode("utf-8", "replace")
-        latest = text.split("<release>")[1].split("</release>")[0] if "<release>" in text else "?"
+        latest = (
+            text.split("<release>")[1].split("</release>")[0]
+            if "<release>" in text
+            else "?"
+        )
         return MISSING, f"latest on Central is {latest}"
     except Exception:
         return MISSING, "nothing published under this groupId"
@@ -170,33 +180,47 @@ MARK = {LIVE: "OK  ", MISSING: "MISS", PENDING: "WAIT", ERROR: "ERR ", SKIPPED: 
 
 
 def main():
-    ap = argparse.ArgumentParser(description=__doc__,
-                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     ap.add_argument("version", help="VW version, e.g. 9.11.7")
-    ap.add_argument("--npm", metavar="V", help="npm package version (versions independently)")
-    ap.add_argument("--strict", action="store_true",
-                    help="also fail on destinations that publish on their own schedule")
+    ap.add_argument(
+        "--npm", metavar="V", help="npm package version (versions independently)"
+    )
+    ap.add_argument(
+        "--strict",
+        action="store_true",
+        help="also fail on destinations that publish on their own schedule",
+    )
     args = ap.parse_args()
 
     def run(item):
         name, fn = item
         try:
             return name, fn(args.version, args.npm)
-        except Exception as exc:  # network, JSON, anything: report, do not abort the rest
+        except (
+            Exception
+        ) as exc:  # network, JSON, anything: report, do not abort the rest
             return name, (ERROR, f"{type(exc).__name__}: {exc}")
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=len(CHECKS)) as pool:
         results = dict(pool.map(run, CHECKS))
 
-    print(f"\nVowpal Wabbit {args.version}"
-          + (f"  (npm {args.npm})" if args.npm else "") + "\n")
+    print(
+        f"\nVowpal Wabbit {args.version}"
+        + (f"  (npm {args.npm})" if args.npm else "")
+        + "\n"
+    )
     width = max(len(n) for n, _ in CHECKS)
     for name, _ in CHECKS:
         state, note = results[name]
         print(f"  {MARK[state]}  {name.ljust(width)}  {note}")
 
-    hard = [n for n, _ in CHECKS
-            if results[n][0] in (MISSING, ERROR) and (args.strict or n not in SOFT)]
+    hard = [
+        n
+        for n, _ in CHECKS
+        if results[n][0] in (MISSING, ERROR) and (args.strict or n not in SOFT)
+    ]
     waiting = [n for n, _ in CHECKS if results[n][0] == PENDING]
 
     print()

@@ -40,8 +40,9 @@ def sections(text):
 
 
 def main():
-    ap = argparse.ArgumentParser(description=__doc__,
-                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     ap.add_argument("version")
     ap.add_argument("--changelog", default=str(CHANGELOG))
     args = ap.parse_args()
