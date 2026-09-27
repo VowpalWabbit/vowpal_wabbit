@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790473441467,
+  "lastUpdate": 1790474008347,
   "repoUrl": "https://github.com/VowpalWabbit/vowpal_wabbit",
   "entries": {
     "Benchmark": [
@@ -233052,6 +233052,150 @@ window.BENCHMARK_DATA = {
             "value": 10214726.44309915,
             "unit": "ns/iter",
             "extra": "iterations: 413\ncpu: 10213956.435835304 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jl@hunch.net",
+            "name": "John",
+            "username": "JohnLangford"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "87a2313628d5f1f3ca0562fd9dbdabe2827ab223",
+          "message": "feat(release): automate the checklist down to the judgement calls (#4965)\n\n* feat(release): automate the checklist down to the judgement calls\n\nThe checklist in #4952 had 21 boxes and most of them said \"go look at a\nthing\". A checklist that long is one nobody runs, which is the failure it\nwas written to prevent.\n\nEvery box that was a lookup is now a command.\n\nutl/verify-release.py asks all nine registries directly -- GitHub, PyPI,\nNuGet (each of the five packages), Maven Central, npm, conda-forge,\nHomebrew, vcpkg, Docker Hub -- concurrently, and exits non-zero if anything\nwe publish ourselves is missing. Destinations driven by somebody else's bot\nreport as still propagating rather than failed, so the exit status means\nsomething. Read-only and credential-free; it can be run against a release\nthat has not happened yet to see how far along it is. Run against 9.11.6 it\nimmediately found that Maven Central is at 9.11.1 rather than 9.9.0 as the\ndocs claimed, and that the vcpkg port had landed.\n\n.github/workflows/release.yml cuts the GitHub release from the tag, with\nnotes taken from CHANGELOG.md via utl/changelog_section.py. Creating the\nrelease by hand is exactly what was skipped for 9.11.3: version bumped and\nmerged, no tag, no release, two security fixes reaching nobody for three\nweeks. One source for the notes also means the release page and the\nchangelog cannot disagree.\n\nutl/prepare-release.sh does the four mechanical preparation steps and\nrefuses to run when the previous version was never tagged, since that is\nwhat makes a compare link point at nothing. It stages with `git add -u`\nrather than `git add -A`, because a working tree with a build directory in\nit otherwise puts several hundred megabytes of object files in the release\ncommit and the push hangs instead of failing.\n\nlint.release-consistency turns two more boxes into a check that runs on\nevery pull request: the changelog has a section matching version.txt, it is\nnot still the skeleton, and its compare link names a tag that exists.\n\nWhat is left needs a person: write the changelog, decide to ship, press\nPublish on Maven Central while that pipeline is still unproven, and publish\nnpm by hand until the scope is unblocked. The last two carry the condition\nfor deleting them.\n\n21 boxes to 13, of which 3 are a single command and 2 are temporary.\n\nCloses #4952\n\nClaude-Session: https://claude.ai/code/session_01EVprwZHP4KXAhsF6JGXK9k\n\n* style: black-format the new release scripts\n\nClaude-Session: https://claude.ai/code/session_01EVprwZHP4KXAhsF6JGXK9k\n\n* feat(release): make the changelog entry a required argument\n\nThe changelog was the one box left that said \"and also remember to do this\":\nprepare-release.sh inserted a TODO skeleton, and CI failed later if nobody\nreplaced it. That works, but it documents the requirement in the wrong\nplace. Every release needs an entry, so the interface should say so.\n\n    utl/prepare-release.sh 9.11.8 --notes notes.md --yes\n    ... | utl/prepare-release.sh 9.11.8 --notes - --yes\n    utl/prepare-release.sh 9.11.8 --yes          # opens $EDITOR\n\nThe entry is read and validated before anything is written, including in a\ndry run, so \"I have nothing to say about this release\" fails immediately\nrather than after the working tree has been edited. Empty or whitespace-only\nis refused; so is a body carrying its own \"## \" heading, which would nest\nunder the generated one and break changelog_section.py.\n\nWithout --notes and without a terminal -- CI, or a script -- it stops and\nsays how to pass one rather than guessing.\n\nThe lint check stays as the backstop for a release commit made by hand, with\nits wording no longer referring to a skeleton that no longer exists.\n\nVerified end to end: insertion preserves the file's CRLF endings, places the\nentry above the previous version, leaves the previous section untouched, and\nround-trips through changelog_section.py, so the generated release notes are\nexactly the text that was passed in.\n\nClaude-Session: https://claude.ai/code/session_01EVprwZHP4KXAhsF6JGXK9k",
+          "timestamp": "2026-09-26T21:19:11-04:00",
+          "tree_id": "b18bb586982349adf85673f2dac3333f8aa5d18a",
+          "url": "https://github.com/VowpalWabbit/vowpal_wabbit/commit/87a2313628d5f1f3ca0562fd9dbdabe2827ab223"
+        },
+        "date": 1790474004491,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_num_features)",
+            "value": 1774.1790090288434,
+            "unit": "ns",
+            "range": "± 24.21768054648698"
+          },
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_string_fts)",
+            "value": 2788.5144805908203,
+            "unit": "ns",
+            "range": "± 51.00761410963416"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 1_feature)",
+            "value": 292.4918072564261,
+            "unit": "ns",
+            "range": "± 2.523340768998395"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 8_features)",
+            "value": 251.2685673577445,
+            "unit": "ns",
+            "range": "± 3.456612646208476"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_interactions)",
+            "value": 287477.04031808034,
+            "unit": "ns",
+            "range": "± 3237.684447548103"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_no_interactions)",
+            "value": 220355.12044270834,
+            "unit": "ns",
+            "range": "± 2273.0620121131287"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_no_namespaces)",
+            "value": 227669.6044921875,
+            "unit": "ns",
+            "range": "± 4645.359518512169"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_interactions)",
+            "value": 280720.88341346156,
+            "unit": "ns",
+            "range": "± 2378.8447545634785"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_no_interactions)",
+            "value": 215390.9414438101,
+            "unit": "ns",
+            "range": "± 1936.2453579630335"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_interactions)",
+            "value": 1064933.368389423,
+            "unit": "ns",
+            "range": "± 5716.003391453371"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_no_interactions)",
+            "value": 471396.9308035714,
+            "unit": "ns",
+            "range": "± 3867.8943210917587"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_no_namespaces)",
+            "value": 420778.77371651784,
+            "unit": "ns",
+            "range": "± 4369.088108778705"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_interactions)",
+            "value": 967571.2681361607,
+            "unit": "ns",
+            "range": "± 15615.349724068827"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_no_interactions)",
+            "value": 433805.3405761719,
+            "unit": "ns",
+            "range": "± 7488.595736593124"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: few_features)",
+            "value": 1494.552571432931,
+            "unit": "ns",
+            "range": "± 17.838982125605853"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: few_features)",
+            "value": 6150.99846976144,
+            "unit": "ns",
+            "range": "± 96.51026623192871"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: many_features)",
+            "value": 22655.769465519832,
+            "unit": "ns",
+            "range": "± 140.5463258590012"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: many_features)",
+            "value": 8813.588358561197,
+            "unit": "ns",
+            "range": "± 133.1397186093156"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: quadratic)",
+            "value": 893605.4059709822,
+            "unit": "ns",
+            "range": "± 13600.913164694539"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: simple)",
+            "value": 85205.80679086539,
+            "unit": "ns",
+            "range": "± 1037.9807501102225"
           }
         ]
       }
