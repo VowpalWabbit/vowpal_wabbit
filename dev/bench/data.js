@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790508696998,
+  "lastUpdate": 1790509131014,
   "repoUrl": "https://github.com/VowpalWabbit/vowpal_wabbit",
   "entries": {
     "Benchmark": [
@@ -233940,6 +233940,150 @@ window.BENCHMARK_DATA = {
             "value": 10916833.114583468,
             "unit": "ns/iter",
             "extra": "iterations: 384\ncpu: 10915715.403645739 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jl@hunch.net",
+            "name": "John",
+            "username": "JohnLangford"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ab4442f63c48961fc82f876dd2f3bf969dd01a58",
+          "message": "test(java): prove the published JAR loads on every platform it claims (#4967)\n\nThe Java pipeline tests the code but never the artifact. build-static-test\nruns the suite against a JNI library built in that job; assemble checks the\nJAR with `jar tf | grep natives/`. Nothing loads the thing we publish.\n\nThat gap is not academic. common.Native computes a platform directory from\nos.name and os.arch, looks for natives/<platform>/ inside the JAR, extracts\nit and System.load()s it. `jar tf` proves a file sits at some path in the\narchive. It cannot prove the loader finds it here, that it is the right\narchitecture, that the upload for one of five parallel build jobs was not\ntruncated, or that the symbols resolve -- a JNI function missing extern \"C\"\ngets its name mangled and throws UnsatisfiedLinkError out of a JAR that\npasses every existing check.\n\nJarConsumerTest runs with the assembled JAR as its entire classpath: sparse\ncheckout so nothing from the working tree can leak in, and java.library.path\nleft alone so the JAR-extraction fallback is exercised -- the path anyone\nwho just adds the dependency takes. It mirrors VWScalarLearnerTest: two\nlearns on the same features with different labels have to move the\nprediction. It asserts nothing about VW's numbers; the suite does that.\n\nVerified both directions against a real JAR built from this tree:\n\n  intact JAR   natives/linux_64/libvw_jni.so\n               prediction 0.0 -> 0.099995464, exit 0\n\n  same JAR, natives/linux_64 renamed to natives/linux_wrongarch:\n               `jar tf | grep natives/` STILL REPORTS A NATIVE\n               consumer: UnsupportedOperationException: No native library\n               found for platform: linux_64, exit 1\n\nSo it catches a broken artifact that every check we have today passes.\n\npublish_maven now needs it. Maven Central cannot be unpublished, so a JAR\nthat will not load somewhere should block the release rather than be\ndiscovered on Central afterwards.\n\nThe multi-platform JAR is only assembled at tag time, so there is nothing\nfor a pull request to test; workflow_dispatch runs it on demand.\n\nClaude-Session: https://claude.ai/code/session_01EVprwZHP4KXAhsF6JGXK9k",
+          "timestamp": "2026-09-27T07:06:26-04:00",
+          "tree_id": "df2669be46c949fd048a5fa86d1d798e3bc78a08",
+          "url": "https://github.com/VowpalWabbit/vowpal_wabbit/commit/ab4442f63c48961fc82f876dd2f3bf969dd01a58"
+        },
+        "date": 1790509127842,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_num_features)",
+            "value": 3808.2882199968612,
+            "unit": "ns",
+            "range": "± 161.7158970193205"
+          },
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_string_fts)",
+            "value": 5827.997272770579,
+            "unit": "ns",
+            "range": "± 205.80037399749415"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 1_feature)",
+            "value": 509.690591267177,
+            "unit": "ns",
+            "range": "± 3.421930474045319"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 8_features)",
+            "value": 417.584422656468,
+            "unit": "ns",
+            "range": "± 3.2786769087841128"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_interactions)",
+            "value": 488382.0763221154,
+            "unit": "ns",
+            "range": "± 2258.4697781696973"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_no_interactions)",
+            "value": 383372.3356119792,
+            "unit": "ns",
+            "range": "± 3525.911266312564"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_no_namespaces)",
+            "value": 387866.6770241477,
+            "unit": "ns",
+            "range": "± 6245.028873428473"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_interactions)",
+            "value": 498990.28677591466,
+            "unit": "ns",
+            "range": "± 17855.997115493145"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_no_interactions)",
+            "value": 379214.7591145833,
+            "unit": "ns",
+            "range": "± 3060.8017255046657"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_interactions)",
+            "value": 2016527.5111607143,
+            "unit": "ns",
+            "range": "± 24825.758599616656"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_no_interactions)",
+            "value": 792246.5169270834,
+            "unit": "ns",
+            "range": "± 10353.273774898813"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_no_namespaces)",
+            "value": 680805.2278645834,
+            "unit": "ns",
+            "range": "± 4250.534678712229"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_interactions)",
+            "value": 1686785.7003348214,
+            "unit": "ns",
+            "range": "± 21147.934668978367"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_no_interactions)",
+            "value": 704215.91796875,
+            "unit": "ns",
+            "range": "± 4093.8083886628247"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: few_features)",
+            "value": 2394.2869333120493,
+            "unit": "ns",
+            "range": "± 16.712251075210485"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: few_features)",
+            "value": 8785.818379720053,
+            "unit": "ns",
+            "range": "± 76.63487552399354"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: many_features)",
+            "value": 56427.90730794271,
+            "unit": "ns",
+            "range": "± 573.9533195279912"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: many_features)",
+            "value": 13844.769941057477,
+            "unit": "ns",
+            "range": "± 107.86497526188384"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: quadratic)",
+            "value": 1934840.9765625,
+            "unit": "ns",
+            "range": "± 25583.049751756145"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: simple)",
+            "value": 156511.84244791666,
+            "unit": "ns",
+            "range": "± 1057.8642261375676"
           }
         ]
       }
