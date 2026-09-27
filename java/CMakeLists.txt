@@ -95,25 +95,49 @@ target_include_directories(vw_jni PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${JNI_INCLUDE_DIRS})
 
-# Determine platform-specific natives directory
+# Determine platform-specific natives directory.
+#
+# These names are the contract with common.Native.platformDir(), which recomputes them at
+# runtime on the consumer's machine. Nothing but java/src/test/java/common/
+# NativePlatformTest.java connects the two, so change both together. They drifted once --
+# windows_64 here against windows_x64 there -- and the Windows native in the published
+# 9.11.1 JAR was unloadable while every build and test passed.
+#
+# Lowercased first because CMAKE_SYSTEM_PROCESSOR is "ARM64" on Windows and "arm64" or
+# "aarch64" elsewhere.
+string(TOLOWER "${CMAKE_SYSTEM_PROCESSOR}" VW_JNI_PROCESSOR)
+
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-  if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64")
+  if(VW_JNI_PROCESSOR MATCHES "aarch64|arm64")
     set(VW_JNI_NATIVES_DIR "linux_arm64")
   else()
     set(VW_JNI_NATIVES_DIR "linux_64")
   endif()
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-  if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64")
+  if(VW_JNI_PROCESSOR MATCHES "aarch64|arm64")
     set(VW_JNI_NATIVES_DIR "macos_arm64")
   else()
     set(VW_JNI_NATIVES_DIR "macos_x64")
   endif()
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-  set(VW_JNI_NATIVES_DIR "windows_64")
+  # This branch used to ignore the processor, so a Windows ARM64 build would have landed
+  # in windows_64 while the loader looked in windows_arm64.
+  if(VW_JNI_PROCESSOR MATCHES "aarch64|arm64")
+    set(VW_JNI_NATIVES_DIR "windows_arm64")
+  else()
+    set(VW_JNI_NATIVES_DIR "windows_64")
+  endif()
 else()
-  set(VW_JNI_NATIVES_DIR "unknown")
-  message(WARNING "Unknown platform for Java natives: ${CMAKE_SYSTEM_NAME}")
+  # Previously a warning that set the directory to "unknown". The build then succeeded, the
+  # JAR assembled with a native in it, `jar tf` found one, and no loader could ever locate
+  # it. BUILD_JAVA is opt-in, so if it was asked for on a platform we cannot name, saying
+  # so is more useful than shipping an unloadable artifact.
+  message(FATAL_ERROR
+    "Cannot determine the Java natives directory for ${CMAKE_SYSTEM_NAME} "
+    "(${CMAKE_SYSTEM_PROCESSOR}). Add it here and to common.Native.platformDir(), or "
+    "configure without -DBUILD_JAVA=On.")
 endif()
+message(STATUS "VW Java natives directory: ${VW_JNI_NATIVES_DIR}")
 
 # Ensure target directory exists
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/target/bin/natives/${VW_JNI_NATIVES_DIR}/)
