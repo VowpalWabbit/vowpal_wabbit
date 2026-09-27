@@ -7,53 +7,12 @@ import java.util.jar.*;
 import java.util.*;
 
 public class Native {
-    private static final String PLATFORM_DIR = getPlatformDir();
-    private static final String LIB_NAME = getLibraryName();
-
-    /**
-     * Detects the current platform and returns the appropriate natives directory name.
-     * Supported platforms: linux_64, linux_arm64, macos_x64, macos_arm64, windows_64
-     */
-    private static String getPlatformDir() {
-        String os = System.getProperty("os.name", "").toLowerCase();
-        String arch = System.getProperty("os.arch", "").toLowerCase();
-
-        String osDir;
-        if (os.contains("linux")) {
-            osDir = "linux";
-        } else if (os.contains("mac") || os.contains("darwin")) {
-            osDir = "macos";
-        } else if (os.contains("win")) {
-            osDir = "windows";
-        } else {
-            throw new UnsupportedOperationException("Unsupported operating system: " + os);
-        }
-
-        String archDir;
-        if (arch.equals("amd64") || arch.equals("x86_64")) {
-            archDir = osDir.equals("linux") ? "64" : "x64";
-        } else if (arch.equals("aarch64") || arch.equals("arm64")) {
-            archDir = "arm64";
-        } else {
-            throw new UnsupportedOperationException("Unsupported architecture: " + arch);
-        }
-
-        return osDir + "_" + archDir;
-    }
-
-    /**
-     * Returns the platform-specific library file name.
-     */
-    private static String getLibraryName() {
-        String os = System.getProperty("os.name", "").toLowerCase();
-        if (os.contains("win")) {
-            return "vw_jni.dll";
-        } else if (os.contains("mac") || os.contains("darwin")) {
-            return "libvw_jni.dylib";
-        } else {
-            return "libvw_jni.so";
-        }
-    }
+    // Delegated to NativePlatform, which has no static initialiser, so the mapping stays
+    // testable without a native library present. See NativePlatformTest.
+    private static final String PLATFORM_DIR =
+        NativePlatform.directory(System.getProperty("os.name", ""), System.getProperty("os.arch", ""));
+    private static final String LIB_NAME =
+        NativePlatform.libraryName(System.getProperty("os.name", ""));
 
     private static void try_load_from_path() {
         System.loadLibrary("vw_jni");
