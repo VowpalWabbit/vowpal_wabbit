@@ -3,6 +3,45 @@
 All notable changes to Vowpal Wabbit are documented in this file. For changes
 prior to this file's creation, see [GitHub Releases](https://github.com/VowpalWabbit/vowpal_wabbit/releases).
 
+## [9.11.8](https://github.com/VowpalWabbit/vowpal_wabbit/compare/9.11.7...9.11.8)
+
+The Windows native library inside the Java JAR has never been loadable. This release
+fixes that, and is the first to publish Java artifacts through the Sonatype Central
+Portal.
+
+`vw-jni` bundles a native library for each supported platform and extracts the right one
+at runtime. The loader looked for `natives/windows_x64/`, while every build has written
+`natives/windows_64/`, so on Windows the extraction failed and creating a learner threw
+`UnsatisfiedLinkError` out of a JAR containing a perfectly good `vw_jni.dll`. The only
+way to use it was to put the DLL on `java.library.path` by hand.
+
+This affects every JAR built since 2026-02-05, including 9.11.1 on Maven Central. Windows
+users of `vw-jni` should upgrade; other platforms were never affected.
+
+9.11.7 reached PyPI, NuGet and GitHub, but its Java publish was blocked by this bug being
+caught before anything was uploaded. Maven Central goes from 9.11.1 to 9.11.8.
+
+### Fixed
+
+- The Windows native in the Java JAR is now found and loaded. `common.Native` computed
+  `windows_x64` where the build writes `windows_64`
+- `libraryName("Darwin")` returned `vw_jni.dll`, because "darwin" contains "win", while
+  the same platform's directory resolved to `macos_*`. Latent, since HotSpot reports
+  "Mac OS X", but the two mappings disagreed
+- The CMake natives directory ignored the processor on Windows, and an unrecognised
+  platform produced `natives/unknown/` with only a warning — a JAR whose native nothing
+  could ever load. That is now a hard error
+- The NuGet publish job's "confirm packages are live" step queried an endpoint that never
+  matched, so every successful release reported that it could not confirm
+
+### Added
+
+- Java releases now run a consumer test on all five platforms: the assembled JAR is the
+  entire classpath, the native is loaded from it, and a learner has to train. Publishing
+  to Maven Central is gated on it passing, because Central cannot be unpublished
+- `NativePlatformTest` pins the platform-to-directory mapping that the build and the
+  loader each compute independently, so the two cannot drift again unnoticed
+
 ## [9.11.7](https://github.com/VowpalWabbit/vowpal_wabbit/compare/9.11.6...9.11.7)
 
 No library code changes. This release exists to exercise the Maven Central pipeline, which
