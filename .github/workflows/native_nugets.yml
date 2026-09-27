@@ -8,6 +8,26 @@ on:
   pull_request:
     branches:
       - '*'
+    # Building and consumer-testing the packages takes 15-35 minutes across Windows, macOS
+    # and Linux. A pull request that only touches prose cannot affect any of it: #4952
+    # added one markdown file and ran the whole matrix, then failed on an unrelated
+    # transient TLS fault on a Windows runner.
+    #
+    # Deliberately a deny-list of things that provably cannot affect a build, not an
+    # allow-list of C# paths. The dangerous direction for a path filter is silently *not*
+    # testing something that needed it, and an allow-list gets that wrong every time
+    # somebody adds a source directory.
+    #
+    # Only `pull_request` is filtered. `push` is left alone so that a release tag can never
+    # be skipped by a path rule, whatever that commit happens to touch, and so master keeps
+    # catching merge skew between two pull requests that passed separately.
+    #
+    # NOTE: master currently has no required status checks. If that changes, a filtered
+    # workflow becomes a merge trap -- GitHub waits forever for a check that will not run.
+    paths-ignore:
+      - '**.md'
+      - '.github/ISSUE_TEMPLATE/**'
+      - 'LICENSE'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.sha }}
