@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790519411285,
+  "lastUpdate": 1790520091324,
   "repoUrl": "https://github.com/VowpalWabbit/vowpal_wabbit",
   "entries": {
     "Benchmark": [
@@ -235116,6 +235116,150 @@ window.BENCHMARK_DATA = {
             "value": 6976011.705192425,
             "unit": "ns/iter",
             "extra": "iterations: 597\ncpu: 6975122.08040231 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jl@hunch.net",
+            "name": "John",
+            "username": "JohnLangford"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b574c5613ce43407dc00df7241f08e4b00266b9d",
+          "message": "fix(ci): make the NuGet confirmation actually confirm something (#4969)\n\nMy change in #4966 was wrong twice over, and the 9.11.7 release showed it.\n\nIt switched the step to steps.get_version.outputs.version_trimmed without\nchecking that the publish job's get_version emits it. The four build and test\njobs do; the publish job only ever emitted `version`. So the reference\nresolved to the empty string and the step reported, for all five packages:\n\n    not indexed yet (this is usually just lag): vowpalwabbit\n\nwith a blank version. Worse than the bug it replaced, because an empty\nvariable reads as a formatting glitch rather than a broken check.\n\nFixing that alone would not have been enough. The step queried\nregistration5-semver1, whose index is paged and stops inlining version\nstrings once a package has enough versions, so grepping it could never match\nregardless of trimming. v3-flatcontainer returns a plain versions array and\nanswers the actual question -- it is what utl/verify-release.py uses, and\nthat tool worked first time.\n\nSo: emit version_trimmed in the publish job, query the flat container, parse\nthe JSON rather than grepping it, and fail loudly on an empty version instead\nof carrying on with nonsense.\n\nVerified against the live registry with the real 9.11.7 publish:\n\n  VERSION=9.11.7            4 of 5 \"live\", osx-arm64 genuinely still\n                            indexing minutes after the push -- the step\n                            reporting real state for the first time\n  VERSION=\"\"                ::error:: and exit 1\n  VERSION=9.11.7+06a564358  correctly not found, which is why trimming matters\n\nThe packages themselves published correctly for 9.11.7; only this\nconfirmation was broken.\n\nClaude-Session: https://claude.ai/code/session_01EVprwZHP4KXAhsF6JGXK9k",
+          "timestamp": "2026-09-27T10:05:30-04:00",
+          "tree_id": "49ff053a442895a604c149d52b1502bf5bbf75ab",
+          "url": "https://github.com/VowpalWabbit/vowpal_wabbit/commit/b574c5613ce43407dc00df7241f08e4b00266b9d"
+        },
+        "date": 1790520088212,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_num_features)",
+            "value": 3882.273597717285,
+            "unit": "ns",
+            "range": "± 155.99165555038755"
+          },
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_string_fts)",
+            "value": 6328.19766998291,
+            "unit": "ns",
+            "range": "± 135.46179609070265"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 1_feature)",
+            "value": 592.8152697426932,
+            "unit": "ns",
+            "range": "± 5.602412206506856"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 8_features)",
+            "value": 523.1271471296038,
+            "unit": "ns",
+            "range": "± 2.7424646839467934"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_interactions)",
+            "value": 540270.2018229166,
+            "unit": "ns",
+            "range": "± 5202.3838287907565"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_no_interactions)",
+            "value": 433942.74553571426,
+            "unit": "ns",
+            "range": "± 3221.9647963587886"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_no_namespaces)",
+            "value": 427639.453125,
+            "unit": "ns",
+            "range": "± 14656.265645469186"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_interactions)",
+            "value": 554703.666015625,
+            "unit": "ns",
+            "range": "± 22370.017619593746"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_no_interactions)",
+            "value": 419988.78348214284,
+            "unit": "ns",
+            "range": "± 6471.201046585175"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_interactions)",
+            "value": 1834342.103794643,
+            "unit": "ns",
+            "range": "± 10423.39265855227"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_no_interactions)",
+            "value": 810356.8134014423,
+            "unit": "ns",
+            "range": "± 5204.582655985122"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_no_namespaces)",
+            "value": 701376.2276785715,
+            "unit": "ns",
+            "range": "± 9656.547919573351"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_interactions)",
+            "value": 1489718.7081473214,
+            "unit": "ns",
+            "range": "± 17460.62035852004"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_no_interactions)",
+            "value": 712025.2178485577,
+            "unit": "ns",
+            "range": "± 8886.454800030186"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: few_features)",
+            "value": 2604.2706298828125,
+            "unit": "ns",
+            "range": "± 28.915440408819762"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: few_features)",
+            "value": 8729.580815633139,
+            "unit": "ns",
+            "range": "± 55.3687402041635"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: many_features)",
+            "value": 42772.208251953125,
+            "unit": "ns",
+            "range": "± 332.0440340850749"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: many_features)",
+            "value": 12831.361389160156,
+            "unit": "ns",
+            "range": "± 56.407786399005595"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: quadratic)",
+            "value": 2272037.9832474226,
+            "unit": "ns",
+            "range": "± 134279.03000103342"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: simple)",
+            "value": 169126.42396438954,
+            "unit": "ns",
+            "range": "± 6209.307878880814"
           }
         ]
       }
