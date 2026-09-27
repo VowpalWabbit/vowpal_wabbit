@@ -204,6 +204,79 @@ jobs:
             !java/target/vw-jni-*-test*.jar
           retention-days: 400
 
+  # Does the JAR we are about to publish actually work, on each platform it claims to
+  # support?
+  #
+  # Everything upstream of here tests the code. build-static-test runs the Java suite, but
+  # against a JNI library built in that job, not against the assembled artifact. The
+  # assemble job checks the artifact with `jar tf | grep natives/`, which proves a file is
+  # in the archive at some path -- not that common.Native finds it for this platform, not
+  # that it is the right architecture, and not that its symbols resolve. A JNI function
+  # missing extern "C" gets its name mangled and throws UnsatisfiedLinkError out of a JAR
+  # that passes every check above.
+  #
+  # That is not hypothetical for a JAR stitched together from five independent build jobs,
+  # and Maven Central cannot be unpublished, so this gates publish_maven rather than
+  # merely reporting.
+  #
+  # The JAR is only assembled at tag time, so there is nothing for a pull request to test
+  # here; use workflow_dispatch to run it on demand.
+  jar-consumer-test:
+    name: jar-consumer.${{ matrix.config.name }}
+    needs: assemble
+    runs-on: ${{ matrix.config.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - { os: ubuntu-latest,    name: linux_64 }
+          - { os: ubuntu-24.04-arm, name: linux_arm64 }
+          - { os: macos-14,         name: macos_arm64 }
+          - { os: macos-15-intel,   name: macos_x64 }
+          - { os: windows-latest,   name: windows_64 }
+    steps:
+      # Only the consumer source is checked out. Nothing else from the working tree may
+      # end up on the classpath, or this stops testing the artifact.
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+          submodules: false
+          sparse-checkout: java/consumer-test
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+
+      - name: Download the assembled JARs
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: vw-jni-jars
+          path: jars
+
+      - name: Run the consumer against the JAR
+        shell: bash
+        run: |
+          set -euo pipefail
+          # The upload also carries -sources and -javadoc; neither contains a native.
+          jar="$(find jars -name 'vw-jni-*.jar' \
+                   ! -name '*-sources.jar' ! -name '*-javadoc.jar' | head -1)"
+          if [[ -z "$jar" ]]; then
+            echo "::error::No main vw-jni JAR in the assemble artifact."
+            find jars -type f
+            exit 1
+          fi
+          echo "Testing $jar"
+          echo "::group::natives in the JAR"
+          jar tf "$jar" | grep natives/ | sort
+          echo "::endgroup::"
+          # Source-file mode, so there is no build output directory to leak onto the
+          # classpath. java.library.path is left alone deliberately: the JAR-extraction
+          # fallback is the path a real consumer takes.
+          java -cp "$jar" java/consumer-test/JarConsumerTest.java
+
   # Deploy to Maven Central on a release tag.
   #
   # Unlike the NuGet, npm and PyPI pipelines, this cannot be keyless: Maven Central has no
@@ -218,7 +291,7 @@ jobs:
   # See java/RELEASE.md for the setup and failure modes.
   publish_maven:
     name: Publish to Maven Central
-    needs: [assemble, build-static-test]
+    needs: [assemble, build-static-test, jar-consumer-test]
     # Tags only. This workflow also runs on workflow_dispatch, which must not publish.
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
