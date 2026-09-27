@@ -375,8 +375,12 @@ jobs:
           sed -e "s/@PACKAGE_VERSION@/$VERSION/g" \
               -e "s/@VW_JNI_NATIVES_DIR@/linux_64/g" \
               java/pom.xml.in > java/pom.xml
-      # performRelease activates the release-sign-artifacts profile, which signs every
+      # vwPerformRelease activates the release-sign-artifacts profile, which signs every
       # artifact. Central rejects unsigned deployments.
+      #
+      # Not -DperformRelease=true: that name also activates Maven's own release-profile
+      # from the super POM, which attaches sources and javadocs that this pom already
+      # attaches itself, and the deploy fails with "We have duplicated artifacts attached".
       #
       # This uploads and validates but does not publish: autoPublish is false in
       # pom.xml.in while the pipeline is still unproven, so the deployment waits in the
@@ -387,7 +391,7 @@ jobs:
           CENTRAL_TOKEN_USERNAME: ${{ secrets.CENTRAL_TOKEN_USERNAME }}
           CENTRAL_TOKEN_PASSWORD: ${{ secrets.CENTRAL_TOKEN_PASSWORD }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-        run: mvn -B deploy -DskipTests=true -DperformRelease=true
+        run: mvn -B deploy -DskipTests=true -DvwPerformRelease=true
       # A green job is easy to read as "published". While autoPublish is false it is
       # not, and nothing else in the run says so.
       - name: Say what still has to happen

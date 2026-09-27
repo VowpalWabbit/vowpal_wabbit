@@ -342,8 +342,14 @@
         <profile>
             <id>release-sign-artifacts</id>
             <activation>
+                <!-- Deliberately NOT "performRelease". That name is reserved by Maven's
+                     super POM, whose built-in release-profile activates on it and attaches
+                     sources and javadocs. This pom already declares maven-source-plugin and
+                     maven-javadoc-plugin in the main build, so activating both produced two
+                     sources jars and the deploy failed with "We have duplicated artifacts
+                     attached". Use a name of our own so only this profile switches on. -->
                 <property>
-                    <name>performRelease</name>
+                    <name>vwPerformRelease</name>
                     <value>true</value>
                 </property>
             </activation>
