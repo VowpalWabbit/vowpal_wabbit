@@ -4,25 +4,27 @@ Pushing a release tag runs `.github/workflows/java-publish.yml`, which builds th
 library for all five platforms, assembles the multi-platform JAR, and uploads it to Maven
 Central through the Sonatype Central Portal.
 
-## One manual step, for now
+## What stands between a tag and Maven Central
 
-The upload currently stops short of going live. `autoPublish` is `false` in
-`java/pom.xml.in`, so the deployment reaches **VALIDATED** and then waits for someone to
-press **Publish** at <https://central.sonatype.com/publishing/deployments>.
+Publishing is automatic: the tag uploads, Central validates, and the release goes live
+without anyone pressing anything. `autoPublish` was `false` until 9.11.9 proved the
+pipeline end to end, because Central is the only destination here with no undo — a
+published version can be superseded but never withdrawn.
 
-This is not an oversight. Maven Central is the only destination in this project with no
-undo: a published version cannot be replaced or withdrawn, only superseded by a new one.
-PyPI, NuGet and npm all allow yanking a bad release; Central does not. Since this pipeline
-had never run against the live service, the first release to use it holds at the point
-where a mistake is still free.
+Two gates make that acceptable:
 
-The job is not merely "upload and hope" in this mode. `waitUntil` defaults to `validated`,
-so Central's checks run before the job reports success, and signature failures, missing
-sources or javadoc jars, and bad coordinates all fail CI rather than surfacing afterwards.
-What the manual step buys is a look at the actual artifact list before it becomes permanent.
+- `publish_maven` declares `needs: jar-consumer-test`, which loads the assembled JAR on
+  all five platforms and trains a learner. A JAR whose native will not load never reaches
+  the upload. That job is not decorative: it caught the Windows native being unloadable,
+  a bug that had shipped in 9.11.1
+- `waitUntil` defaults to `validated`, so Central's own checks — GPG signatures, the
+  sources and javadoc jars, coordinates, POM metadata — run before the job reports
+  success, rather than surfacing afterwards
 
-**Once a release has gone through cleanly, set `autoPublish` to `true`** and this becomes
-as hands-off as the other pipelines.
+To make a release wait for a human again, set `autoPublish` to `false` in
+`java/pom.xml.in`. The deployment then stops at VALIDATED in
+[the Portal](https://central.sonatype.com/publishing/deployments), and the workflow says
+so in its run summary instead of letting a green job read as "published".
 
 ## Why this is the one pipeline with stored secrets
 

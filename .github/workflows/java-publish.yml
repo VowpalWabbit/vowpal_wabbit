@@ -382,9 +382,9 @@ jobs:
       # from the super POM, which attaches sources and javadocs that this pom already
       # attaches itself, and the deploy fails with "We have duplicated artifacts attached".
       #
-      # This uploads and validates but does not publish: autoPublish is false in
-      # pom.xml.in while the pipeline is still unproven, so the deployment waits in the
-      # Portal for a human. See java/RELEASE.md.
+      # Uploads, waits for Central to validate, and publishes. autoPublish in pom.xml.in
+      # controls that last part: set it to false and the deployment stops at VALIDATED for
+      # a human, which the step below then says out loud. See java/RELEASE.md.
       - name: Upload to Maven Central
         working-directory: java
         env:

@@ -61,13 +61,8 @@ cross-repository token. Needs the `workflow` scope; it says so and stops if it i
 - [ ] `utl/post-release.sh X.Y.Z --yes`
 - [ ] vcpkg PR merged (a vcpkg maintainer has to review it)
 
-### 4. The two that still need hands
+### 4. The one that still needs hands
 
-- [ ] **Maven Central** — the tag uploads and validates, then stops at VALIDATED. Press
-      Publish at [central.sonatype.com](https://central.sonatype.com/publishing/deployments).
-      Deliberate: Central is the only destination with no undo. Once a release has gone
-      through cleanly, set `autoPublish` to `true` in `java/pom.xml.in` and delete this box
-      ([`java/RELEASE.md`](../../java/RELEASE.md))
 - [ ] **npm (WASM)** — blocked on registering a trusted publisher for the `@vowpalwabbit`
       scope. Until that exists, publish by hand following
       [`wasm/developer_readme.md`](../../wasm/developer_readme.md#publishing-by-hand-while-the-scope-is-blocked).
