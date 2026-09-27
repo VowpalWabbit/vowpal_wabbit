@@ -31,7 +31,10 @@ public class Native {
 
         String archDir;
         if (arch.equals("amd64") || arch.equals("x86_64")) {
-            archDir = osDir.equals("linux") ? "64" : "x64";
+            // macOS is the odd one out: it uses macos_x64, while linux and windows use
+            // linux_64 and windows_64. This has to match the directory names the build
+            // actually puts in the JAR, which are the five listed above.
+            archDir = osDir.equals("macos") ? "x64" : "64";
         } else if (arch.equals("aarch64") || arch.equals("arm64")) {
             archDir = "arm64";
         } else {
