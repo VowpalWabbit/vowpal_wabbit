@@ -695,6 +695,9 @@ jobs:
             exit 1
           fi
           echo "version=$version" >> $GITHUB_OUTPUT
+          # nuget.org discards build metadata, so confirming against the registry
+          # needs it without the +hash. The build and test jobs emit this too.
+          echo "version_trimmed=${version%%+*}" >> $GITHUB_OUTPUT
       - name: Check publishing is configured
         id: preflight
         shell: bash
@@ -778,19 +781,31 @@ jobs:
         shell: bash
         env:
           # version_trimmed, not version: nuget.org discards build metadata on ingest, so
-          # it reports 9.11.6 where version_number.py derived 9.11.6+d05970680. Grepping
-          # for the untrimmed form never matched, and every successful release printed
-          # "not indexed yet" for all five packages -- a confirmation step that always
-          # says it cannot confirm just teaches you to skip reading it.
+          # it reports 9.11.7 where version_number.py derived 9.11.7+06a564358.
           VERSION: ${{ steps.get_version.outputs.version_trimmed }}
         run: |
-          # nuget.org indexes asynchronously, so this is a best-effort confirmation that
-          # the push actually landed rather than a gate.
+          set -uo pipefail
+          # An unset output resolves to the empty string, and this step used to grep for
+          # it happily and report nothing useful. Fail loudly instead.
+          if [[ -z "$VERSION" ]]; then
+            echo "::error::No version to confirm; get_version did not set version_trimmed."
+            exit 1
+          fi
+          # v3-flatcontainer, not registration5-semver1. The registration index is paged
+          # and does not inline version strings once a package has enough versions, so
+          # grepping it never matched and every successful release reported "not indexed
+          # yet" for all five packages. A confirmation that always says it cannot confirm
+          # teaches you to stop reading it. The flat container returns a plain versions
+          # array, which is what utl/verify-release.py uses.
+          #
+          # nuget.org indexes asynchronously, so this stays best-effort rather than a gate.
           sleep 60
           for id in vowpalwabbit vowpalwabbit.runtime.win-x64 vowpalwabbit.runtime.linux-x64 \
                     vowpalwabbit.runtime.osx-x64 vowpalwabbit.runtime.osx-arm64; do
-            url="https://api.nuget.org/v3/registration5-semver1/${id}/index.json"
-            if curl -fsS "$url" | grep -q "\"${VERSION}\""; then
+            url="https://api.nuget.org/v3-flatcontainer/${id}/index.json"
+            if curl -fsS "$url" | python3 -c \
+                 'import json,sys; sys.exit(0 if sys.argv[1] in json.load(sys.stdin)["versions"] else 1)' \
+                 "$VERSION"; then
               echo "  live: ${id} ${VERSION}"
             else
               echo "  not indexed yet (this is usually just lag): ${id} ${VERSION}"
