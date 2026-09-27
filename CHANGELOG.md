@@ -3,6 +3,28 @@
 All notable changes to Vowpal Wabbit are documented in this file. For changes
 prior to this file's creation, see [GitHub Releases](https://github.com/VowpalWabbit/vowpal_wabbit/releases).
 
+## [9.11.9](https://github.com/VowpalWabbit/vowpal_wabbit/compare/9.11.8...9.11.9)
+
+Identical in content to 9.11.8, which failed to publish its Java artifacts.
+
+9.11.8's Maven Central upload was run with `-DperformRelease=true`. That property is
+reserved by Maven's own super POM, whose built-in `release-profile` attaches sources and
+javadoc jars that this project's POM already attaches, so the deploy aborted with "We have
+duplicated artifacts attached" and nothing was uploaded. The signing profile now activates
+on a property of its own.
+
+Everything else in 9.11.8 published normally and is unchanged here: if you install from
+pip or NuGet, 9.11.8 and 9.11.9 are the same code. This release exists so the Java
+artifacts can reach Maven Central, which they have not since 9.11.1.
+
+Publishing runs from the workflow and POM as they exist at the tagged commit, so the fix
+could not apply retroactively to the 9.11.8 tag.
+
+### Fixed
+
+- The Maven Central deploy no longer activates Maven's built-in `release-profile` by
+  reusing its `performRelease` property, which made it attach two sources jars and fail
+
 ## [9.11.8](https://github.com/VowpalWabbit/vowpal_wabbit/compare/9.11.7...9.11.8)
 
 The Windows native library inside the Java JAR has never been loadable. This release
