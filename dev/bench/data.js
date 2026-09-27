@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790547534824,
+  "lastUpdate": 1790548093899,
   "repoUrl": "https://github.com/VowpalWabbit/vowpal_wabbit",
   "entries": {
     "Benchmark": [
@@ -236664,6 +236664,150 @@ window.BENCHMARK_DATA = {
             "value": 10302267.743780937,
             "unit": "ns/iter",
             "extra": "iterations: 402\ncpu: 10301303.542289034 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jl@hunch.net",
+            "name": "John",
+            "username": "JohnLangford"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "f59323358b96f36025cfb5163a59536bc49c6ddc",
+          "message": "fix(java): stop activating Maven's built-in release-profile by accident (#4971)\n\nThe 9.11.8 tag got all the way to the Central upload and failed there:\n\n    [ERROR] We have duplicated artifacts attached.\n    [ERROR] Failed to execute goal maven-source-plugin:3.3.1:jar-no-fork\n            (attach-sources) on project vw-jni: Presumably you have configured\n            maven-source-plugin to execute twice in your build.\n\nperformRelease is not our property. Maven's super POM defines a release-profile\nactivated by that exact name, which attaches sources and javadocs. This pom\ndeclares maven-source-plugin and maven-javadoc-plugin in the main build already,\nso -DperformRelease=true ran both twice and Maven refused to attach two sources\njars.\n\nOur profile only exists to turn on GPG signing, so it gets a name of its own:\nvwPerformRelease. Maven's release-profile then stays switched off and our\nplugins run once each.\n\nReproduced and verified locally against the 9.11.8 pom:\n\n  mvn package -DperformRelease=true     the exact CI error\n  mvn package -DvwPerformRelease=true   succeeds; one main, one sources, one\n                                        javadoc jar\n  help:active-profiles, with            release-sign-artifacts active, so\n                                        signing still happens\n  help:active-profiles, without         no active profiles, so ordinary builds\n                                        do not try to sign\n\nEverything before this step passed on the tag, including the consumer test on\nall five platforms with the Windows native loading for the first time. Nothing\nwas uploaded to Central, so nothing needs undoing there.\n\nClaude-Session: https://claude.ai/code/session_01EVprwZHP4KXAhsF6JGXK9k",
+          "timestamp": "2026-09-27T17:53:58-04:00",
+          "tree_id": "10d3e20c7ecc25454dc3885ffbb090127d0cc63a",
+          "url": "https://github.com/VowpalWabbit/vowpal_wabbit/commit/f59323358b96f36025cfb5163a59536bc49c6ddc"
+        },
+        "date": 1790548082718,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_num_features)",
+            "value": 3691.3037109375,
+            "unit": "ns",
+            "range": "± 30.5181630198423"
+          },
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_string_fts)",
+            "value": 5518.375193277995,
+            "unit": "ns",
+            "range": "± 68.60598046730172"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 1_feature)",
+            "value": 533.3740843666924,
+            "unit": "ns",
+            "range": "± 17.62237127271587"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 8_features)",
+            "value": 419.9820391337077,
+            "unit": "ns",
+            "range": "± 4.028202005036147"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_interactions)",
+            "value": 503008.0008370536,
+            "unit": "ns",
+            "range": "± 6727.105598861223"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_no_interactions)",
+            "value": 383063.3614676339,
+            "unit": "ns",
+            "range": "± 2107.281020681303"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_no_namespaces)",
+            "value": 397748.97809709824,
+            "unit": "ns",
+            "range": "± 14231.74869752242"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_interactions)",
+            "value": 505702.55984042556,
+            "unit": "ns",
+            "range": "± 19333.72048650729"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_no_interactions)",
+            "value": 381691.2109375,
+            "unit": "ns",
+            "range": "± 1843.265796378975"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_interactions)",
+            "value": 2068717.4479166667,
+            "unit": "ns",
+            "range": "± 23502.169501467157"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_no_interactions)",
+            "value": 794809.033203125,
+            "unit": "ns",
+            "range": "± 5722.156799522248"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_no_namespaces)",
+            "value": 678330.78125,
+            "unit": "ns",
+            "range": "± 6287.877968172535"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_interactions)",
+            "value": 1708577.2916666667,
+            "unit": "ns",
+            "range": "± 17784.126920774765"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_no_interactions)",
+            "value": 706050.9765625,
+            "unit": "ns",
+            "range": "± 8221.798284161376"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: few_features)",
+            "value": 2405.182851155599,
+            "unit": "ns",
+            "range": "± 24.313953433572824"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: few_features)",
+            "value": 8850.773315429688,
+            "unit": "ns",
+            "range": "± 62.64053993684384"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: many_features)",
+            "value": 57159.28257533482,
+            "unit": "ns",
+            "range": "± 501.37885782098977"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: many_features)",
+            "value": 13657.604777018229,
+            "unit": "ns",
+            "range": "± 43.83336572971387"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: quadratic)",
+            "value": 1957664.955357143,
+            "unit": "ns",
+            "range": "± 25202.30108588092"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: simple)",
+            "value": 156175.11393229166,
+            "unit": "ns",
+            "range": "± 1648.6978612838702"
           }
         ]
       }
