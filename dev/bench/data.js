@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790509131014,
+  "lastUpdate": 1790509173371,
   "repoUrl": "https://github.com/VowpalWabbit/vowpal_wabbit",
   "entries": {
     "Benchmark": [
@@ -234084,6 +234084,150 @@ window.BENCHMARK_DATA = {
             "value": 156511.84244791666,
             "unit": "ns",
             "range": "± 1057.8642261375676"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jl@hunch.net",
+            "name": "John",
+            "username": "JohnLangford"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e28c647cdf910a8e447b66cc58714b3e63049e20",
+          "message": "fix(ci): make the tag fetch survive both ways it has broken a release (#4966)\n\n* fix(ci): make the tag fetch survive both ways it has broken a release\n\n`git fetch --unshallow --tags` before utl/version_number.py appears in five\njobs, bare, and it has taken out a release twice in two different ways.\n\n`--unshallow` is fatal on a checkout that is already complete -- \"fatal:\n--unshallow on a complete repository does not make sense\" -- which is how\nthe 9.11.5 NuGet publish failed. #4959 removed the step from the publish\njob, where the checkout is complete, but left it everywhere else, so the\nlandmine is still armed for any job whose checkout depth changes. Ask\n`git rev-parse --is-shallow-repository` instead of assuming.\n\nA bare fetch also fails the job on any transient network fault. On #4952 a\nWindows runner could not validate GitHub's own certificate chain (schannel\nSEC_E_UNTRUSTED_ROOT) and failed the whole job at this step, on a pull\nrequest that added one markdown file. publish_nuget declares\n`needs: [build_nuget_dotnet, test_nuget_dotnetcore, test_nuget_dotnetframework]`,\nso one hiccup on one runner blocks a release's NuGet publish. The same job\nalready retries submodule init five times; this uses that pattern.\n\nVerified against real clones:\n\n  shallow      -> unshallows, 137 tags, \"Fetched tags on attempt 1\"\n  complete     -> old code: fatal; new code: succeeds\n  after either -> utl/version_number.py runs\n\nClaude-Session: https://claude.ai/code/session_01EVprwZHP4KXAhsF6JGXK9k\n\n* fix(ci): confirm against the version nuget.org actually reports, and skip prose PRs\n\nTwo things found while looking at why the tag fetch keeps breaking releases.\n\nThe \"Confirm packages are live\" step grepped the registry for the untrimmed\nversion. version_number.py derives 9.11.6+d05970680 at a tag, nuget.org\ndiscards build metadata on ingest and reports 9.11.6, so the grep could\nnever match: every successful release printed \"not indexed yet (this is\nusually just lag)\" for all five packages. The publish job already computes\nversion_trimmed for exactly this; the step just used the wrong one. A\nconfirmation that always says it cannot confirm is worse than none, because\nit teaches you to stop reading it.\n\nBuilding and consumer-testing the packages takes 15-35 minutes across three\noperating systems, and a pull request touching only prose cannot affect any\nof it. #4952 added one markdown file, ran the whole matrix, and failed on an\nunrelated transient TLS fault on a Windows runner.\n\nThe filter is a deny-list of things that provably cannot affect a build,\nnot an allow-list of C# paths: the dangerous direction is silently not\ntesting something that needed it, and an allow-list gets that wrong the\nfirst time somebody adds a source directory.\n\nOnly pull_request is filtered. push is left alone, so a release tag can\nnever be skipped by a path rule whatever that commit touches, and master\nkeeps catching skew between two pull requests that passed separately.\n\nmaster has no required status checks today, so a skipped job is genuinely\nskipped rather than a merge trap. Noted in the file, since that stops being\ntrue the moment branch protection gains one.\n\nClaude-Session: https://claude.ai/code/session_01EVprwZHP4KXAhsF6JGXK9k",
+          "timestamp": "2026-09-27T07:05:40-04:00",
+          "tree_id": "cf890a6e8abb587fff50f1f7d9598cc8af6ee3a6",
+          "url": "https://github.com/VowpalWabbit/vowpal_wabbit/commit/e28c647cdf910a8e447b66cc58714b3e63049e20"
+        },
+        "date": 1790509170320,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_num_features)",
+            "value": 4163.99543762207,
+            "unit": "ns",
+            "range": "± 56.81264371992196"
+          },
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_string_fts)",
+            "value": 5698.569869995117,
+            "unit": "ns",
+            "range": "± 90.0906339441013"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 1_feature)",
+            "value": 515.1033621567947,
+            "unit": "ns",
+            "range": "± 3.297519593315056"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 8_features)",
+            "value": 419.680233001709,
+            "unit": "ns",
+            "range": "± 4.636354012747129"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_interactions)",
+            "value": 523243.6375473485,
+            "unit": "ns",
+            "range": "± 40155.85911917467"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_no_interactions)",
+            "value": 382249.8177083333,
+            "unit": "ns",
+            "range": "± 2402.551112032263"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_no_namespaces)",
+            "value": 383176.19140625,
+            "unit": "ns",
+            "range": "± 2805.701467978939"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_interactions)",
+            "value": 492310.92354910716,
+            "unit": "ns",
+            "range": "± 6316.3333264151015"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_no_interactions)",
+            "value": 380938.9404296875,
+            "unit": "ns",
+            "range": "± 2341.9288011804165"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_interactions)",
+            "value": 2005861.5885416667,
+            "unit": "ns",
+            "range": "± 13320.596174407465"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_no_interactions)",
+            "value": 779464.1183035715,
+            "unit": "ns",
+            "range": "± 5071.925828741564"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_no_namespaces)",
+            "value": 683128.7190755209,
+            "unit": "ns",
+            "range": "± 10476.519728585277"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_interactions)",
+            "value": 1725476.4775815217,
+            "unit": "ns",
+            "range": "± 42280.83325089278"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_no_interactions)",
+            "value": 724339.5768229166,
+            "unit": "ns",
+            "range": "± 12933.143162360382"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: few_features)",
+            "value": 2424.268264770508,
+            "unit": "ns",
+            "range": "± 21.4777764662213"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: few_features)",
+            "value": 8781.89697265625,
+            "unit": "ns",
+            "range": "± 47.876627532675144"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: many_features)",
+            "value": 55612.74373372396,
+            "unit": "ns",
+            "range": "± 276.6412801206795"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: many_features)",
+            "value": 13761.168721516928,
+            "unit": "ns",
+            "range": "± 109.28873087157723"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: quadratic)",
+            "value": 1960175.1302083333,
+            "unit": "ns",
+            "range": "± 23532.497821324592"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: simple)",
+            "value": 156628.23955829328,
+            "unit": "ns",
+            "range": "± 1047.46212178321"
           }
         ]
       }
