@@ -14,6 +14,7 @@ include(UseJava)
 add_jar(vw_jni_generate_native_headers_do_not_use_jar
 SOURCES
   src/main/java/common/Native.java
+  src/main/java/common/NativePlatform.java
   src/main/java/org/vowpalwabbit/spark/ClusterSpanningTree.java
   src/main/java/org/vowpalwabbit/spark/prediction
   src/main/java/org/vowpalwabbit/spark/prediction/ScalarPrediction.java
