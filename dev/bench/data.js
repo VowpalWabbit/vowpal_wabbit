@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790521713750,
+  "lastUpdate": 1790522339317,
   "repoUrl": "https://github.com/VowpalWabbit/vowpal_wabbit",
   "entries": {
     "Benchmark": [
@@ -235632,6 +235632,150 @@ window.BENCHMARK_DATA = {
             "value": 10347583.602469407,
             "unit": "ns/iter",
             "extra": "iterations: 405\ncpu: 10346509.558024833 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jl@hunch.net",
+            "name": "John",
+            "username": "JohnLangford"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e5e70141f24547844ed150b6733945e221d3557e",
+          "message": "fix(java): the JAR's Windows native has never been loadable (#4968)\n\n* fix(java): the JAR's Windows native has never been loadable\n\ngetPlatformDir() computes windows_x64 on Windows/amd64. The build puts the\nDLL in natives/windows_64. So try_load_from_jar looks in a directory that\ndoes not exist and throws \"No native library found for platform:\nwindows_x64\", out of a JAR that contains a perfectly good vw_jni.dll.\n\nThe method's own javadoc, three lines above the bug, lists the contract it\nbreaks:\n\n    Supported platforms: linux_64, linux_arm64, macos_x64, macos_arm64, windows_64\n\nmacOS is the odd one out at x64; linux and windows are both plain 64. The\nternary treated linux as the exception instead.\n\nThis is live in a published release. The 9.11.1 JAR on Maven Central\ncontains natives/windows_64/vw_jni.dll and ships the loader that looks for\nwindows_x64, so no Windows consumer has ever been able to load it from the\nJAR -- only by putting the DLL on java.library.path themselves, which is the\nfallback try_load_from_path covers. Introduced in 34c54ea16 (2026-02-05),\nbefore 9.11.1 was pushed to Central on 2026-03-12.\n\nVerified against that published artifact, by patching only this class into a\ncopy of it and simulating each platform with -Dos.name/-Dos.arch:\n\n  before, Windows/amd64: UnsupportedOperationException: No native library\n                         found for platform: windows_x64\n  after,  Windows/amd64: extracts natives/windows_64/vw_jni.dll, reaches\n                         System.load, fails with \"invalid ELF header\"\n                         -- correct for a DLL on Linux, so the lookup works\n\n  linux_64, linux_arm64, macos_x64 and macos_arm64 all still resolve to the\n  same directories they did before and reach System.load. No regression.\n\nFound by the consumer test added in #4967, on its first real run: the\n9.11.7 tag's jar-consumer.windows_64 job failed and Publish to Maven Central\nwas skipped, so nothing reached Central.\n\nClaude-Session: https://claude.ai/code/session_01EVprwZHP4KXAhsF6JGXK9k\n\n* refactor(java): pin the natives directory contract with a test\n\nThe previous commit fixed the windows_x64/windows_64 drift. Nothing stopped\nit recurring: the directory names are chosen twice, by java/CMakeLists.txt at\nbuild time and by common.Native at runtime, in two languages, with nothing\nconnecting them.\n\nThe mapping cannot be removed from the Java side -- the consumer's platform\nis unknown when we build -- so the contract gets policed instead of\neliminated.\n\nExtracted the naming into common.NativePlatform, taking os and arch as\narguments. It had to leave Native to be testable at all: Native's static\ninitialiser loads the library, so reading any constant on it drags that in,\nand the first version of this test failed all six cases with\nUnsatisfiedLinkError rather than testing anything.\n\nNativePlatformTest then pins every row of the table -- including the Windows\nones -- in 9ms, on any platform, with no native present. Reintroducing the\noriginal bug fails it immediately:\n\n    windowsDirectories: Windows Server 2025 / amd64\n    expected:<windows_[]64> but was:<windows_[x]64>\n\nWriting the test found a second live bug. libraryName() tested\nos.contains(\"win\") before macOS, and \"darwin\" contains \"win\", so\nlibraryName(\"Darwin\") returned vw_jni.dll while directory() put the same\nplatform in macos_*. A JVM reporting Darwin would have looked for\nmacos_arm64/vw_jni.dll. HotSpot reports \"Mac OS X\" so it never fired, but\ndirectory() accepts \"darwin\" explicitly and the two should not disagree.\nNow matches macOS first and \"windows\" rather than \"win\".\n\nOn the CMake side:\n\n  - the Windows branch ignored the processor entirely, so a Windows ARM64\n    build would have landed in windows_64 while the loader looked in\n    windows_arm64. Latent, since nothing builds that, but it is the same\n    drift again.\n  - CMAKE_SYSTEM_PROCESSOR is \"ARM64\" on Windows and \"arm64\"/\"aarch64\"\n    elsewhere, so it is lowercased before matching.\n  - an unrecognised platform set the directory to \"unknown\" and warned. The\n    build then succeeded, the JAR assembled with a native in it, `jar tf`\n    found one, and no loader could ever locate it. BUILD_JAVA is opt-in, so\n    that is now a FATAL_ERROR naming both places to add the platform.\n\nClaude-Session: https://claude.ai/code/session_01EVprwZHP4KXAhsF6JGXK9k\n\n* fix(java): add NativePlatform.java to the JNI header jar's source list\n\nThe add_jar target that generates the JNI headers takes an explicit list of\nsources, so extracting NativePlatform out of Native broke it on all three\nplatforms:\n\n    src/main/java/common/Native.java:13: error: cannot find symbol\n      symbol:   variable NativePlatform\n\nI verified the refactor locally with `javac $(find java/src/main -name '*.java')`,\nwhich compiles everything and therefore could not see this. Reproduced it\nproperly by extracting the list out of CMakeLists.txt and compiling exactly\nthose 40 files: fails without the new entry, passes with it.\n\nClaude-Session: https://claude.ai/code/session_01EVprwZHP4KXAhsF6JGXK9k",
+          "timestamp": "2026-09-27T10:43:15-04:00",
+          "tree_id": "f5d88ae63bf671fa38d8e3b56f914464c96b4171",
+          "url": "https://github.com/VowpalWabbit/vowpal_wabbit/commit/e5e70141f24547844ed150b6733945e221d3557e"
+        },
+        "date": 1790522329932,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_num_features)",
+            "value": 3762.3499298095703,
+            "unit": "ns",
+            "range": "± 40.71383106518166"
+          },
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_string_fts)",
+            "value": 5805.8948040008545,
+            "unit": "ns",
+            "range": "± 109.00133785612073"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 1_feature)",
+            "value": 538.2961523653281,
+            "unit": "ns",
+            "range": "± 32.85653161499503"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 8_features)",
+            "value": 417.3660087585449,
+            "unit": "ns",
+            "range": "± 3.4571201567752126"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_interactions)",
+            "value": 493233.8065011161,
+            "unit": "ns",
+            "range": "± 2621.8160899204736"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_no_interactions)",
+            "value": 379311.474609375,
+            "unit": "ns",
+            "range": "± 4249.722910992353"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_no_namespaces)",
+            "value": 383979.5751953125,
+            "unit": "ns",
+            "range": "± 3916.820804249095"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_interactions)",
+            "value": 496324.4140625,
+            "unit": "ns",
+            "range": "± 7629.981400285545"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_no_interactions)",
+            "value": 385272.09123883926,
+            "unit": "ns",
+            "range": "± 2757.8158794565607"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_interactions)",
+            "value": 2035554.5545212766,
+            "unit": "ns",
+            "range": "± 78711.70891541101"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_no_interactions)",
+            "value": 791627.2761418269,
+            "unit": "ns",
+            "range": "± 9051.243650698603"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_no_namespaces)",
+            "value": 689780.5208333334,
+            "unit": "ns",
+            "range": "± 7513.9645203632335"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_interactions)",
+            "value": 1724672.6143973214,
+            "unit": "ns",
+            "range": "± 25198.7519024054"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_no_interactions)",
+            "value": 697663.1575520834,
+            "unit": "ns",
+            "range": "± 5040.747831750844"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: few_features)",
+            "value": 2418.9319338117325,
+            "unit": "ns",
+            "range": "± 12.435487231752546"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: few_features)",
+            "value": 8899.329121907553,
+            "unit": "ns",
+            "range": "± 17.495732975119687"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: many_features)",
+            "value": 57068.43026968149,
+            "unit": "ns",
+            "range": "± 484.26759524736923"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: many_features)",
+            "value": 13729.0405860314,
+            "unit": "ns",
+            "range": "± 53.23647568886319"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: quadratic)",
+            "value": 1938599.0885416667,
+            "unit": "ns",
+            "range": "± 16723.483937304416"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: simple)",
+            "value": 164396.11002604166,
+            "unit": "ns",
+            "range": "± 2432.480684454669"
           }
         ]
       }
