@@ -117,51 +117,91 @@ otherwise, so a tag cannot publish a version nobody intended.
 #### Publishing by hand while the scope is blocked
 
 Until the trusted publisher can be registered, releases go out with a local `npm publish`.
-The risk this reintroduces is precisely the one that broke 0.0.9: publishing whatever
-happens to be sitting in `dist/`. Do not skip step 3.
+This was done for 0.0.10; what follows is what actually worked, not what seemed like it
+should.
 
-1. Check out the tag you intend to ship, clean. Not a dirty working tree, and not master
-   if master has moved on:
+Do not build locally unless you already have emscripten set up. The WASM half needs it,
+and the documented Docker route needs a running daemon. **Take CI's build instead**, which
+is also what makes the version table honest: the binary then comes from the commit CI
+built, not from whatever your machine produced.
+
+1. Find a green `wasm.yml` run for the commit you are shipping and download its artifact:
 
    ```sh
-   git checkout wasm_v<version>
-   git status --porcelain   # must be empty
+   gh run list --workflow=wasm.yml --branch master --limit 3
+   gh run download <run-id> --name wasm-npm-package --dir ./wasmpkg
    ```
 
-2. Build both halves from that commit, following the build instructions above. `dist/`
-   must end up with `vw-wasm.js` from emscripten *and* the `tsc` output.
+2. **That artifact is not publishable as it stands.** It is uploaded before the package is
+   built, so it carries `dist/vw-wasm.js` from emscripten and *none* of the TypeScript
+   output -- no `dist/vwnode.js`, which `package.json` names as `main`. Publishing it with
+   `--ignore-scripts` reproduces the 0.0.9 bug exactly. The `publish_npm` job regenerates
+   that half with its own "Install and build" step, and so must you:
 
-3. Verify the tarball before pushing anything anywhere:
+   ```sh
+   cd wasmpkg
+   npm install          # runs `prepare`, which runs tsc
+   ```
+
+   Node 20 or newer. CI builds on 20 and publishes on 22; the `tsc` and dependency set do
+   not work on older runtimes.
+
+3. Verify, and do not skip this:
 
    ```sh
    npm run verify-package
    ```
 
-   This is the same check CI runs. It packs the tarball and fails if anything
-   `package.json` points at is missing.
+   It should list every declared entry point. `dist/vwnode.js` missing here is the 0.0.9
+   failure caught before publishing rather than after.
 
-4. Publish:
-
-   ```sh
-   npm publish --access public --provenance=false
-   ```
-
-   Provenance attestation is off because it is generated from the CI OIDC environment and
-   is not available locally.
-
-5. Verify what the registry actually serves, from an empty directory:
+4. Prove the tarball works before it is public, not after:
 
    ```sh
-   cd "$(mktemp -d)"
-   npm install @vowpalwabbit/vowpalwabbit@<version>
-   node -e "require('@vowpalwabbit/vowpalwabbit'); console.log('ok')"
+   npm pack
+   cd "$(mktemp -d)" && npm init -y
+   npm install /path/to/vowpalwabbit-vowpalwabbit-<version>.tgz
+   node -e "require('@vowpalwabbit/vowpalwabbit').then(vw => {
+     const m = new vw.Workspace({args_str: '--quiet'});
+     m.learn(m.parse('1 | a:.5')); console.log(m.predict(m.parse('| a:.5'))); m.delete();
+   })"
    ```
 
-   0.0.9 published successfully and was broken for every consumer. A green `npm publish`
-   is not evidence that the package works.
+   The package resolves to a promise; the exports are empty until the WASM finishes
+   loading, so a bare `Object.keys(require(...))` tells you nothing.
 
-Steps 3 and 5 are what the workflow does around the publish. Doing one without the other
-is how the last manual release failed.
+5. Publish. The registry requires 2FA for this package, so a plain `npm publish` after
+   `npm login` fails with:
+
+   ```
+   403 ... Two-factor authentication or granular access token with bypass 2fa
+   enabled is required to publish packages
+   ```
+
+   Either pass a one-time code, or use a granular access token created on npmjs.com with
+   **read and write** on `@vowpalwabbit/vowpalwabbit` and **bypass 2FA** ticked:
+
+   ```sh
+   npm publish --access public --otp=<code>
+   # or, with a token, keeping it out of ~/.npmrc and out of the tarball:
+   umask 077
+   printf '//registry.npmjs.org/:_authToken=%s\n' "$TOKEN" > /tmp/npmrc-publish
+   npm publish --access public --userconfig /tmp/npmrc-publish
+   shred -u /tmp/npmrc-publish
+   ```
+
+   A token that authenticates but lacks the bypass fails the same way as no token. One
+   that is expired or revoked gives `401` from `npm whoami`, so check that first rather
+   than reading a publish failure as a permissions problem.
+
+6. Confirm against the registry, not against your tarball. Allow a few minutes for the
+   metadata to update, then repeat step 4 installing `@vowpalwabbit/vowpalwabbit@<version>`
+   from npm. 0.0.9 published successfully and was broken for every consumer; a green
+   publish is not evidence of anything.
+
+7. Tag `wasm_v<version>` at the commit CI built, so the repository records what shipped.
+   The tag's `publish_npm` job will fail while the trusted publisher is unregistered. That
+   failure is accurate and worth leaving visible.
 
 #### The version table is a claim about the WASM binary
 
