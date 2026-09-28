@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790602255487,
+  "lastUpdate": 1790602831087,
   "repoUrl": "https://github.com/VowpalWabbit/vowpal_wabbit",
   "entries": {
     "Benchmark": [
@@ -238584,6 +238584,150 @@ window.BENCHMARK_DATA = {
             "value": 10163308.968599442,
             "unit": "ns/iter",
             "extra": "iterations: 414\ncpu: 10162207.045893678 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jl@hunch.net",
+            "name": "John",
+            "username": "JohnLangford"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "00196b35f63bcb8a6d66966e2b4cf67d6a2bd335",
+          "message": "docs(wasm): npm trusted publishing works; by-hand is the fallback (#4975)\n\nThe @vowpalwabbit scope registration exists now, and wasm_v0.0.10 proved the\nautomatic path works: that run authenticated and was rejected only because\n0.0.10 had been published by hand twenty minutes earlier. A publish with no\ncredential fails ENEEDAUTH before the registry is asked about the version, so\nreaching a duplicate-version error is evidence authentication succeeded.\n\nThe docs still said \"Blocked as of 9.11.7\" and presented publishing by hand\nas the path, which had it backwards, and invites the reasonable but wrong\nconclusion that npm releases need someone holding a token.\n\nThey do not. publish_npm requests id-token: write, GitHub mints a short-lived\nOIDC token for that one run, npm exchanges it for publish rights. wasm.yml\nreferences no secrets at all, and the repository holds no npm token:\n\n  publish_npm permissions: {contents: read, id-token: write}\n  secrets.* anywhere in wasm.yml: False\n  repo secrets matching npm/node: none\n\nSo npm now holds fewer credentials than Maven Central, which needs a Portal\ntoken and a GPG key. Releasing npm is a tag push.\n\nThe by-hand procedure stays, retitled as the fallback it is: for a lapsed\nregistration, or publishing from a machine where there is no OIDC to\nexchange. It notes what it costs -- a granular token with 2FA bypass -- and\nthat CI would have published the byte-identical artifact from a tag push with\nno credential at all.\n\nThe release checklist loses its last \"still needs hands\" section. What is\nleft that needs a person: write the changelog, and decide to ship.\n\nClaude-Session: https://claude.ai/code/session_01EVprwZHP4KXAhsF6JGXK9k",
+          "timestamp": "2026-09-28T09:06:21-04:00",
+          "tree_id": "af4ba39009104e1549ebb6acf37fabbcf339cf64",
+          "url": "https://github.com/VowpalWabbit/vowpal_wabbit/commit/00196b35f63bcb8a6d66966e2b4cf67d6a2bd335"
+        },
+        "date": 1790602827263,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_num_features)",
+            "value": 2866.9090270996094,
+            "unit": "ns",
+            "range": "± 38.778003979684044"
+          },
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_string_fts)",
+            "value": 4521.712439400809,
+            "unit": "ns",
+            "range": "± 31.38731082687951"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 1_feature)",
+            "value": 451.18065561567033,
+            "unit": "ns",
+            "range": "± 7.703112243256114"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 8_features)",
+            "value": 353.1874179840088,
+            "unit": "ns",
+            "range": "± 4.390236159623903"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_interactions)",
+            "value": 402715.75055803574,
+            "unit": "ns",
+            "range": "± 3426.8860467723157"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_no_interactions)",
+            "value": 316293.7308933424,
+            "unit": "ns",
+            "range": "± 7954.556208519205"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_no_namespaces)",
+            "value": 302189.2936197917,
+            "unit": "ns",
+            "range": "± 1294.9434373492352"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_interactions)",
+            "value": 399915.63895089284,
+            "unit": "ns",
+            "range": "± 2946.635472548654"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_no_interactions)",
+            "value": 300853.06222098216,
+            "unit": "ns",
+            "range": "± 1751.8258465491992"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_interactions)",
+            "value": 1466618.1790865385,
+            "unit": "ns",
+            "range": "± 15591.225209784203"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_no_interactions)",
+            "value": 584562.3395647322,
+            "unit": "ns",
+            "range": "± 4268.482130265486"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_no_namespaces)",
+            "value": 543415.2604166666,
+            "unit": "ns",
+            "range": "± 2628.6142047097637"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_interactions)",
+            "value": 1260783.5807291667,
+            "unit": "ns",
+            "range": "± 6123.574421848902"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_no_interactions)",
+            "value": 548660.15625,
+            "unit": "ns",
+            "range": "± 3343.911987373917"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: few_features)",
+            "value": 1962.1065139770508,
+            "unit": "ns",
+            "range": "± 15.900797393202915"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: few_features)",
+            "value": 7704.033948554367,
+            "unit": "ns",
+            "range": "± 330.0436769853764"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: many_features)",
+            "value": 38680.28869628906,
+            "unit": "ns",
+            "range": "± 204.38470525870812"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: many_features)",
+            "value": 10923.237609863281,
+            "unit": "ns",
+            "range": "± 48.57062844455579"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: quadratic)",
+            "value": 1541656.8880208333,
+            "unit": "ns",
+            "range": "± 14417.059090861298"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: simple)",
+            "value": 118575.31575520833,
+            "unit": "ns",
+            "range": "± 894.5717746227765"
           }
         ]
       }
