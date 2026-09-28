@@ -57,10 +57,25 @@ Publishing is automatic. Pushing a `wasm_v<version>` tag runs `.github/workflows
 which builds the WASM artifact, transpiles the TypeScript, verifies the tarball and
 publishes to npm. There is no manual `npm publish` step and no npm token to store.
 
-> **Blocked as of 9.11.7.** The automatic path needs a trusted publisher registered on
-> npmjs.com, and registering one needs admin rights on the `@vowpalwabbit` scope, which
-> nobody currently reachable has. See [publishing by hand](#publishing-by-hand-while-the-scope-is-blocked)
-> below, and delete that section once the registration exists.
+This was blocked for a while: the trusted publisher had to be registered on npmjs.com, and
+that needed admin rights on the `@vowpalwabbit` scope. The registration now exists, and
+`wasm_v0.0.10` proved it works — that run authenticated and was rejected only because
+0.0.10 had just been published by hand. (A run with no credential fails `ENEEDAUTH`
+before the registry is ever asked about the version, so reaching a duplicate-version error
+is proof that authentication succeeded.)
+
+**There is no token to hold.** `publish_npm` requests `id-token: write`, GitHub mints a
+short-lived OIDC token for that one run, and npm exchanges it for publish rights. Nothing
+is stored in repository secrets, nothing expires, and nobody has to have credentials to
+hand when a release happens. Releasing is:
+
+```sh
+git tag wasm_v<version> && git push origin wasm_v<version>
+```
+
+[Publishing by hand](#publishing-by-hand-as-a-fallback) is the fallback for when that path
+is unavailable — a lapsed registration, or publishing from a machine rather than CI, where
+there is no OIDC to exchange.
 
 #### Why the guards exist
 
@@ -114,11 +129,16 @@ so the workflow upgrades npm explicitly -- do not remove that step.
 The version in the tag must match `package.json`; the workflow checks this and fails
 otherwise, so a tag cannot publish a version nobody intended.
 
-#### Publishing by hand while the scope is blocked
+#### Publishing by hand as a fallback
 
-Until the trusted publisher can be registered, releases go out with a local `npm publish`.
-This was done for 0.0.10; what follows is what actually worked, not what seemed like it
-should.
+Not the normal path — pushing a `wasm_v*` tag is, and it needs no credentials. Use this
+only when CI cannot publish: a lapsed trusted-publisher registration, or publishing from a
+machine, where there is no OIDC token to exchange and a real npm credential is required.
+
+This is what was done for 0.0.10, and what follows is what actually worked rather than what
+seemed like it should. Worth knowing before starting: it cost a granular access token with
+2FA bypass, and CI would have published the byte-identical artifact from a tag push with no
+credential at all.
 
 Do not build locally unless you already have emscripten set up. The WASM half needs it,
 and the documented Docker route needs a running daemon. **Take CI's build instead**, which
