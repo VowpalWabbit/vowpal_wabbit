@@ -276,17 +276,20 @@
                  Central Portal user token (generated at
                  https://central.sonatype.com/usertoken), not the old OSSRH credentials.
 
-                 autoPublish is deliberately false for now. Maven Central is the only
-                 destination here with no undo: a published version cannot be replaced or
-                 withdrawn, only superseded. This pipeline has never run against the live
-                 service, so the first tag that exercises it stops at VALIDATED and waits
-                 for a human to press Publish in the Portal. waitUntil defaults to
-                 "validated", so the job still fails if Central rejects the bundle:
-                 signatures, missing sources/javadoc jars and bad coordinates all surface
-                 in CI rather than after the fact.
+                 autoPublish was false while this pipeline was unproven, because Maven
+                 Central is the only destination here with no undo: a published version
+                 cannot be replaced or withdrawn, only superseded. 9.11.9 went through it
+                 cleanly (uploaded, validated, published), so it is on.
 
-                 Once a release has gone through cleanly, flip this to true and publishing
-                 becomes fully automatic like the others. -->
+                 What still stands between a tag and Central is worth knowing. publish_maven
+                 needs jar-consumer-test, which loads the assembled JAR on all five
+                 platforms, so a JAR whose native will not load never reaches the upload.
+                 waitUntil then defaults to "validated", so Central's own checks on
+                 signatures, sources and javadoc jars, coordinates and POM metadata run
+                 before the job reports success.
+
+                 Set this back to false to make a release wait for a human in the Portal
+                 again; the workflow notices and says so in its summary. -->
             <plugin>
                 <groupId>org.sonatype.central</groupId>
                 <artifactId>central-publishing-maven-plugin</artifactId>
@@ -294,7 +297,7 @@
                 <extensions>true</extensions>
                 <configuration>
                     <publishingServerId>central</publishingServerId>
-                    <autoPublish>false</autoPublish>
+                    <autoPublish>true</autoPublish>
                     <deploymentName>vw-jni @PACKAGE_VERSION@</deploymentName>
                 </configuration>
             </plugin>
