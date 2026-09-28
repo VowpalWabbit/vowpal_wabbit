@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1790561421183,
+  "lastUpdate": 1790562124620,
   "repoUrl": "https://github.com/VowpalWabbit/vowpal_wabbit",
   "entries": {
     "Benchmark": [
@@ -238068,6 +238068,150 @@ window.BENCHMARK_DATA = {
             "value": 10181444.521739043,
             "unit": "ns/iter",
             "extra": "iterations: 414\ncpu: 10180529.120773185 ns\nthreads: 1"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "jl@hunch.net",
+            "name": "John",
+            "username": "JohnLangford"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "37e92498e4d104695ae05b467539dcee17972f69",
+          "message": "docs(wasm): correct the manual npm procedure, and the 0.0.10 version claim (#4974)\n\nPublishing 0.0.10 by hand showed the procedure I wrote was wrong in the one\nway that matters: it would have shipped the bug it exists to prevent.\n\nIt said to build locally. That needs emscripten, or Docker with a running\ndaemon, and neither is a given. The right source is CI's wasm-npm-package\nartifact, which is also what makes the version table honest, since the binary\nthen comes from the commit CI built.\n\nBut that artifact is NOT publishable as downloaded. It is uploaded at step 12\nof the build job, before \"Verify package contents\", so it carries\ndist/vw-wasm.js from emscripten and none of the TypeScript output -- no\ndist/vwnode.js, which package.json names as main. Publishing it with\n--ignore-scripts reproduces 0.0.9 exactly. The publish_npm job regenerates\nthat half with its own \"Install and build\" step; a human has to do the same,\non node 20 or newer.\n\nAlso records what actually happens at the registry: publishing needs 2FA, so\na plain `npm publish` after `npm login` gives 403 asking for an OTP or a\ngranular token with bypass-2FA. A token that authenticates but lacks the\nbypass fails identically, and an expired one gives 401 from `npm whoami` --\nworth checking first rather than reading a publish failure as a permissions\nproblem.\n\nAnd a verification step that runs before publishing rather than after, since\na green publish is not evidence of anything: pack, install the tarball in an\nempty directory, and train a model. The package resolves to a promise, so the\nexports are empty until the WASM loads and a bare Object.keys(require(...))\ntells you nothing.\n\nThe version table claimed 0.0.10 was VW 9.11.4. The published binary was\nbuilt from 4c2f7a80b, whose nearest tag is 9.11.9. That table is a claim\nabout which VW code is inside the artifact, so a stale row is worse than no\nrow.\n\nClaude-Session: https://claude.ai/code/session_01EVprwZHP4KXAhsF6JGXK9k",
+          "timestamp": "2026-09-27T21:45:41-04:00",
+          "tree_id": "e750dce9043d954ad733a31a313cbe156b62c42c",
+          "url": "https://github.com/VowpalWabbit/vowpal_wabbit/commit/37e92498e4d104695ae05b467539dcee17972f69"
+        },
+        "date": 1790562121595,
+        "tool": "benchmarkdotnet",
+        "benches": [
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_num_features)",
+            "value": 3818.8368479410806,
+            "unit": "ns",
+            "range": "± 48.78472700211399"
+          },
+          {
+            "name": "BenchmarkText.Benchmark(args: 120_string_fts)",
+            "value": 6445.622202555339,
+            "unit": "ns",
+            "range": "± 105.96800167131568"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 1_feature)",
+            "value": 521.5839165907639,
+            "unit": "ns",
+            "range": "± 2.625234177241448"
+          },
+          {
+            "name": "BenchmarkLearnSimple.Benchmark(args: 8_features)",
+            "value": 429.0759856884296,
+            "unit": "ns",
+            "range": "± 3.034429894179018"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_interactions)",
+            "value": 502041.7708333333,
+            "unit": "ns",
+            "range": "± 7429.105308655679"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_diff_char_no_interactions)",
+            "value": 391553.8155691964,
+            "unit": "ns",
+            "range": "± 4846.121336120344"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_no_namespaces)",
+            "value": 389465.966796875,
+            "unit": "ns",
+            "range": "± 2811.3069312822813"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_interactions)",
+            "value": 517563.19110576925,
+            "unit": "ns",
+            "range": "± 8179.741660065315"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: cb_adf_same_char_no_interactions)",
+            "value": 398749.4856770833,
+            "unit": "ns",
+            "range": "± 4999.805429142393"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_interactions)",
+            "value": 2041545.390625,
+            "unit": "ns",
+            "range": "± 23122.79916134147"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_diff_char_no_interactions)",
+            "value": 780884.7865513393,
+            "unit": "ns",
+            "range": "± 4799.245399859554"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_no_namespaces)",
+            "value": 700840.8056640625,
+            "unit": "ns",
+            "range": "± 12538.520966597785"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_interactions)",
+            "value": 1689619.9739583333,
+            "unit": "ns",
+            "range": "± 11653.078565317108"
+          },
+          {
+            "name": "BenchmarkMulti.Benchmark(args: ccb_adf_same_char_no_interactions)",
+            "value": 723550.8897569445,
+            "unit": "ns",
+            "range": "± 13755.12750295886"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: few_features)",
+            "value": 2399.6335165841238,
+            "unit": "ns",
+            "range": "± 13.95805463796417"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: few_features)",
+            "value": 9003.143419538226,
+            "unit": "ns",
+            "range": "± 45.157831087749784"
+          },
+          {
+            "name": "BenchmarkCbAdfLearn.Benchmark(args: many_features)",
+            "value": 57102.35107421875,
+            "unit": "ns",
+            "range": "± 518.4499755014657"
+          },
+          {
+            "name": "BenchmarkCcbAdfLearn.Benchmark(args: many_features)",
+            "value": 13801.063864571708,
+            "unit": "ns",
+            "range": "± 80.60851885639289"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: quadratic)",
+            "value": 2117804.04296875,
+            "unit": "ns",
+            "range": "± 47620.67638342689"
+          },
+          {
+            "name": "BenchmarkRCV1.Benchmark(args: simple)",
+            "value": 163708.74837239584,
+            "unit": "ns",
+            "range": "± 1994.0194505777397"
           }
         ]
       }
