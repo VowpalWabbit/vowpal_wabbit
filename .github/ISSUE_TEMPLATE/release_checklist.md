@@ -61,13 +61,18 @@ cross-repository token. Needs the `workflow` scope; it says so and stops if it i
 - [ ] `utl/post-release.sh X.Y.Z --yes`
 - [ ] vcpkg PR merged (a vcpkg maintainer has to review it)
 
-### 4. The one that still needs hands
+### 4. npm, if the WASM package changed
 
-- [ ] **npm (WASM)** — blocked on registering a trusted publisher for the `@vowpalwabbit`
-      scope. Until that exists, publish by hand following
-      [`wasm/developer_readme.md`](../../wasm/developer_readme.md#publishing-by-hand-while-the-scope-is-blocked).
-      The npm package versions independently of VW; delete this box once the publisher is
-      registered and a `wasm_v*` tag does it
+The npm package versions independently of VW and publishes from its own tag. It needs no
+credentials: the job exchanges a GitHub OIDC token for publish rights, so there is nothing
+stored and nothing to have to hand.
+
+- [ ] Only if shipping a new WASM version: bump `wasm/package.json`, add a row to the table
+      in `wasm/README.md`, then `git tag wasm_v<version> && git push origin wasm_v<version>`
+
+If that ever fails to authenticate, the trusted-publisher registration has lapsed; see
+[`wasm/developer_readme.md`](../../wasm/developer_readme.md#publishing-by-hand-as-a-fallback)
+for the by-hand fallback.
 
 ### 5. Confirm it actually landed
 
